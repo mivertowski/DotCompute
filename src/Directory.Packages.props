@@ -1,0 +1,104 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+
+  <!-- Production Dependencies -->
+  <ItemGroup>
+    <!-- Core Dependencies -->
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0-preview.*" />
+    <PackageVersion Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0-preview.*" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="9.0.0-preview.*" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0-preview.*" />
+    <PackageVersion Include="Microsoft.Extensions.Logging" Version="9.0.0-preview.*" />
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0-preview.*" />
+    <PackageVersion Include="Microsoft.Extensions.Options" Version="9.0.0-preview.*" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration" Version="9.0.0-preview.*" />
+    <PackageVersion Include="Microsoft.Extensions.Configuration.Binder" Version="9.0.0-preview.*" />
+    
+    <!-- Memory and Performance -->
+    <PackageVersion Include="System.Runtime.CompilerServices.Unsafe" Version="6.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="9.0.0-preview.*" />
+    <PackageVersion Include="System.IO.Pipelines" Version="9.0.0-preview.*" />
+    
+    <!-- Telemetry -->
+    <PackageVersion Include="OpenTelemetry" Version="1.8.*" />
+    <PackageVersion Include="OpenTelemetry.Api" Version="1.8.*" />
+    <PackageVersion Include="OpenTelemetry.Extensions.Hosting" Version="1.8.*" />
+    <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.8.*" />
+    <PackageVersion Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" Version="1.8.*-rc.*" />
+    
+    <!-- Source Generators -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.9.*" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.Analyzers" Version="3.3.*" />
+    
+    <!-- Native Interop -->
+    <PackageVersion Include="Microsoft.Windows.CsWin32" Version="0.3.*-beta" PrivateAssets="all" />
+    <PackageVersion Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+  </ItemGroup>
+
+  <!-- Backend-Specific Dependencies -->
+  <ItemGroup>
+    <!-- CUDA -->
+    <PackageVersion Include="ManagedCuda" Version="12.*" />
+    <PackageVersion Include="NVRTC" Version="12.*" />
+    
+    <!-- Vulkan -->
+    <PackageVersion Include="Silk.NET.Vulkan" Version="2.20.*" />
+    
+    <!-- OpenCL -->
+    <PackageVersion Include="Silk.NET.OpenCL" Version="2.20.*" />
+  </ItemGroup>
+
+  <!-- Algorithm Dependencies -->
+  <ItemGroup>
+    <!-- Math -->
+    <PackageVersion Include="System.Numerics.Tensors" Version="9.0.0-preview.*" />
+    
+    <!-- ML -->
+    <PackageVersion Include="Microsoft.ML.OnnxRuntime" Version="1.17.*" />
+    <PackageVersion Include="Microsoft.ML" Version="3.0.*" />
+  </ItemGroup>
+
+  <!-- Development Dependencies -->
+  <ItemGroup>
+    <!-- Testing -->
+    <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.9.*" />
+    <PackageVersion Include="xunit" Version="2.7.*" />
+    <PackageVersion Include="xunit.runner.visualstudio" Version="2.5.*" />
+    <PackageVersion Include="coverlet.collector" Version="6.0.*" />
+    <PackageVersion Include="coverlet.msbuild" Version="6.0.*" />
+    <PackageVersion Include="FluentAssertions" Version="6.12.*" />
+    <PackageVersion Include="FluentAssertions.Analyzers" Version="0.31.*" />
+    <PackageVersion Include="NSubstitute" Version="5.1.*" />
+    <PackageVersion Include="NSubstitute.Analyzers.CSharp" Version="1.0.*" />
+    <PackageVersion Include="Verify.Xunit" Version="23.*" />
+    <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="9.0.0-preview.*" />
+    
+    <!-- Benchmarking -->
+    <PackageVersion Include="BenchmarkDotNet" Version="0.13.*" />
+    <PackageVersion Include="BenchmarkDotNet.Diagnostics.Windows" Version="0.13.*" />
+    <PackageVersion Include="BenchmarkDotNet.Annotations" Version="0.13.*" />
+    
+    <!-- Code Quality -->
+    <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0-preview.*" />
+    <PackageVersion Include="Microsoft.VisualStudio.Threading.Analyzers" Version="17.9.*" />
+    <PackageVersion Include="Meziantou.Analyzer" Version="2.0.*" />
+    <PackageVersion Include="SonarAnalyzer.CSharp" Version="9.21.*" />
+    <PackageVersion Include="StyleCop.Analyzers" Version="1.2.0-beta.556" />
+    <PackageVersion Include="Roslynator.Analyzers" Version="4.10.*" />
+    
+    <!-- Build Tools -->
+    <PackageVersion Include="Microsoft.SourceLink.GitHub" Version="8.0.*" />
+    <PackageVersion Include="MinVer" Version="5.0.*" />
+    <PackageVersion Include="Nerdbank.GitVersioning" Version="3.6.*" />
+  </ItemGroup>
+
+  <!-- Version Overrides for Compatibility -->
+  <ItemGroup>
+    <!-- Override transitive dependencies if needed -->
+    <PackageVersion Include="System.Text.Json" Version="9.0.0-preview.*" />
+    <PackageVersion Include="System.Text.Encodings.Web" Version="9.0.0-preview.*" />
+  </ItemGroup>
+</Project>
