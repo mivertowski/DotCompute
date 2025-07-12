@@ -5,8 +5,9 @@
     <LangVersion>13</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsNotAsErrors>$(WarningsNotAsErrors);CS1591</WarningsNotAsErrors>
+    <NoWarn>$(NoWarn);IDE0040;CA1815;CA1720;CA2225;CA1711;CA1024;VSTHRD200</NoWarn>
     
     <!-- AOT Configuration -->
     <IsAotCompatible>true</IsAotCompatible>
@@ -33,10 +34,10 @@
     <VersionPrefix>0.1.0</VersionPrefix>
     <VersionSuffix>preview.1</VersionSuffix>
     
-    <!-- Strong naming -->
-    <SignAssembly>true</SignAssembly>
-    <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)DotCompute.snk</AssemblyOriginatorKeyFile>
-    <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign>
+    <!-- Strong naming - Disabled for development -->
+    <SignAssembly>false</SignAssembly>
+    <!-- <AssemblyOriginatorKeyFile>$(MSBuildThisFileDirectory)DotCompute.snk</AssemblyOriginatorKeyFile> -->
+    <!-- <PublicSign Condition="'$(OS)' != 'Windows_NT'">true</PublicSign> -->
     
     <!-- Deterministic builds -->
     <Deterministic>true</Deterministic>

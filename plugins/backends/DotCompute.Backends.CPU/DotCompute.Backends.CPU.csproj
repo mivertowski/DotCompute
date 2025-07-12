@@ -30,6 +30,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

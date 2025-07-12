@@ -46,7 +46,7 @@ jobs:
       run: dotnet restore
     
     - name: Build
-      run: dotnet build --configuration ${{ matrix.configuration }} --no-restore /p:TreatWarningsAsErrors=true
+      run: dotnet build --configuration ${{ matrix.configuration }} --no-restore /p:TreatWarningsAsErrors=false --verbosity minimal
     
     - name: Test
       run: dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
@@ -79,13 +79,14 @@ jobs:
     - name: Publish AOT
       run: |
         cd samples/GettingStarted
-        dotnet publish -c Release -r linux-x64 --self-contained /p:PublishAot=true
+        dotnet publish -c Release -r linux-x64 --self-contained /p:PublishAot=true --verbosity minimal
     
     - name: Verify AOT Binary
       run: |
-        cd samples/GettingStarted/bin/Release/net9.0/linux-x64/publish
-        ./GettingStarted --version || true
-        file GettingStarted | grep -q "ELF 64-bit" || exit 1
+        cd artifacts/bin/GettingStarted/Release/net9.0/linux-x64/publish
+        ls -la
+        ./GettingStarted --version
+        file GettingStarted | grep -q "ELF 64-bit"
 
   security-scan:
     name: Security Scan

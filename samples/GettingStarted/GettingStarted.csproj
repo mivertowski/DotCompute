@@ -23,12 +23,12 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
     <ProjectReference Include="..\..\src\DotCompute.Runtime\DotCompute.Runtime.csproj" />
-    <ProjectReference Include="..\..\plugins\backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
+    <!-- <ProjectReference Include="..\..\plugins\backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" /> -->
   </ItemGroup>
 
   <ItemGroup>
     <!-- Minimal dependencies for sample -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
   </ItemGroup>
 
 </Project>

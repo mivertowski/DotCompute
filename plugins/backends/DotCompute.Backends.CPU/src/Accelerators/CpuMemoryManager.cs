@@ -3,7 +3,7 @@ using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DotCompute.Core;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -21,13 +21,13 @@ internal sealed class CpuMemoryManager : IMemoryManager, IDisposable
 
     public ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,
-        MemoryFlags flags = MemoryFlags.None,
+        MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
-        var buffer = new CpuMemoryBuffer(sizeInBytes, flags, this);
+        var buffer = new CpuMemoryBuffer(sizeInBytes, options, this);
         
         lock (_lock)
         {
@@ -41,11 +41,11 @@ internal sealed class CpuMemoryManager : IMemoryManager, IDisposable
 
     public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
         ReadOnlyMemory<T> source,
-        MemoryFlags flags = MemoryFlags.None,
+        MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         var sizeInBytes = source.Length * Marshal.SizeOf<T>();
-        var buffer = await AllocateAsync(sizeInBytes, flags, cancellationToken).ConfigureAwait(false);
+        var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
         
         await buffer.CopyFromHostAsync(source, 0, cancellationToken).ConfigureAwait(false);
         
@@ -101,21 +101,22 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     private readonly CpuMemoryManager _manager;
     private readonly IMemoryOwner<byte> _memoryOwner;
     private readonly long _sizeInBytes;
-    private readonly MemoryFlags _flags;
+    private readonly MemoryOptions _options;
     private readonly long _viewOffset;
     private readonly long _viewLength;
     private int _disposed;
 
-    public CpuMemoryBuffer(long sizeInBytes, MemoryFlags flags, CpuMemoryManager manager)
+    public CpuMemoryBuffer(long sizeInBytes, MemoryOptions options, CpuMemoryManager manager)
     {
         _sizeInBytes = sizeInBytes;
-        _flags = flags;
+        _options = options;
         _manager = manager;
         _viewOffset = 0;
         _viewLength = sizeInBytes;
 
         // Use ArrayPool for smaller allocations, native memory for larger ones
-        if (sizeInBytes <= ArrayPool<byte>.Shared.MaxArrayLength)
+        const int maxArrayLength = 1024 * 1024 * 1024; // 1GB limit
+        if (sizeInBytes <= maxArrayLength)
         {
             _memoryOwner = MemoryPool<byte>.Shared.Rent((int)sizeInBytes);
         }
@@ -123,7 +124,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         {
             // For very large allocations, we'd use native memory
             // For now, throw an exception
-            throw new NotSupportedException($"Allocations larger than {ArrayPool<byte>.Shared.MaxArrayLength} bytes are not yet supported");
+            throw new NotSupportedException($"Allocations larger than {maxArrayLength} bytes are not yet supported");
         }
     }
 
@@ -131,7 +132,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     {
         _memoryOwner = parent._memoryOwner;
         _sizeInBytes = parent._sizeInBytes;
-        _flags = parent._flags;
+        _options = parent._options;
         _manager = parent._manager;
         _viewOffset = parent._viewOffset + offset;
         _viewLength = length;
@@ -139,7 +140,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
 
     public long SizeInBytes => _viewLength;
 
-    public MemoryFlags Flags => _flags;
+    public MemoryOptions Options => _options;
 
     public Memory<byte> GetMemory()
     {
@@ -161,7 +162,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     {
         ThrowIfDisposed();
         
-        if ((_flags & MemoryFlags.WriteOnly) != 0 && (_flags & MemoryFlags.ReadOnly) != 0)
+        if ((_options & MemoryOptions.WriteOnly) != 0 && (_options & MemoryOptions.ReadOnly) != 0)
             throw new InvalidOperationException("Cannot write to read-only buffer");
 
         var elementSize = Marshal.SizeOf<T>();
@@ -184,7 +185,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     {
         ThrowIfDisposed();
         
-        if ((_flags & MemoryFlags.ReadOnly) != 0 && (_flags & MemoryFlags.WriteOnly) != 0)
+        if ((_options & MemoryOptions.ReadOnly) != 0 && (_options & MemoryOptions.WriteOnly) != 0)
             throw new InvalidOperationException("Cannot read from write-only buffer");
 
         var elementSize = Marshal.SizeOf<T>();

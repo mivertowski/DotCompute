@@ -4,7 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Threading;
-using DotCompute.Core;
+using DotCompute.Backends.CPU.Kernels;
+using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -73,24 +74,32 @@ public sealed class CpuAccelerator : IAccelerator
     /// <inheritdoc/>
     public async ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
-        CompilationOptions options = default,
+        CompilationOptions? options = default,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(definition);
         options ??= CompilationOptions.Default;
 
-        _logger.LogDebug("Compiling kernel '{KernelName}' for CPU", definition.Name);
+        _logger.LogDebug("Compiling kernel '{KernelName}' for CPU with vectorization", definition.Name);
 
-        // For now, return a stub implementation
-        // In a real implementation, this would:
-        // 1. Parse the kernel source
-        // 2. Generate vectorized CPU code
-        // 3. JIT compile to native code
-        // 4. Return a compiled kernel ready for execution
-        
-        await Task.Yield(); // Simulate async work
+        // Create kernel compilation context
+        var compilationContext = new CpuKernelCompilationContext
+        {
+            Definition = definition,
+            Options = options,
+            SimdCapabilities = SimdCapabilities.GetSummary(),
+            ThreadPool = _threadPool,
+            Logger = _logger
+        };
 
-        return new CpuCompiledKernel(definition, _threadPool, _logger);
+        // Compile the kernel with vectorization support
+        var compiler = new CpuKernelCompiler();
+        var compiledKernel = await compiler.CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false);
+
+        _logger.LogDebug("Successfully compiled kernel '{KernelName}' with {VectorWidth}-bit vectorization", 
+            definition.Name, SimdCapabilities.PreferredVectorWidth);
+
+        return compiledKernel;
     }
 
     /// <inheritdoc/>
@@ -185,4 +194,19 @@ public sealed class CpuAcceleratorOptions
     /// Gets or sets whether to use NUMA-aware memory allocation.
     /// </summary>
     public bool EnableNumaAwareAllocation { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the minimum work size for vectorization.
+    /// </summary>
+    public int MinVectorizationWorkSize { get; set; } = 256;
+
+    /// <summary>
+    /// Gets or sets whether to enable aggressive loop unrolling.
+    /// </summary>
+    public bool EnableLoopUnrolling { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the target vector width in bits (0 = auto-detect).
+    /// </summary>
+    public int TargetVectorWidth { get; set; }
 }

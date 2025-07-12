@@ -1,208 +1,101 @@
 using System;
-using System.Buffers;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace DotCompute.Abstractions;
 
 /// <summary>
-/// Manages memory allocation and data transfer for an accelerator device.
-/// Designed for zero-copy operations and AOT compatibility.
+/// Manages memory allocation and transfer for an accelerator.
 /// </summary>
-public interface IMemoryManager : IDisposable
+public interface IMemoryManager
 {
     /// <summary>
-    /// Gets the accelerator associated with this memory manager.
+    /// Allocates memory on the accelerator.
     /// </summary>
-    IAccelerator Accelerator { get; }
-    
+    public ValueTask<IMemoryBuffer> AllocateAsync(
+        long sizeInBytes,
+        MemoryOptions options = MemoryOptions.None,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
-    /// Allocates memory on the accelerator device.
+    /// Allocates memory and copies data from host.
     /// </summary>
-    /// <param name="sizeInBytes">The size of memory to allocate in bytes.</param>
-    /// <returns>A handle to the allocated memory.</returns>
-    DeviceMemory Allocate(long sizeInBytes);
-    
+    public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
+        ReadOnlyMemory<T> source,
+        MemoryOptions options = MemoryOptions.None,
+        CancellationToken cancellationToken = default) where T : unmanaged;
+
     /// <summary>
-    /// Allocates memory with a specific alignment requirement.
+    /// Creates a view over existing memory.
     /// </summary>
-    /// <param name="sizeInBytes">The size of memory to allocate in bytes.</param>
-    /// <param name="alignment">The alignment requirement in bytes.</param>
-    /// <returns>A handle to the allocated memory.</returns>
-    DeviceMemory AllocateAligned(long sizeInBytes, int alignment);
-    
-    /// <summary>
-    /// Frees previously allocated device memory.
-    /// </summary>
-    /// <param name="memory">The memory to free.</param>
-    void Free(DeviceMemory memory);
-    
-    /// <summary>
-    /// Copies data from host memory to device memory.
-    /// </summary>
-    /// <typeparam name="T">The element type.</typeparam>
-    /// <param name="source">The source data on the host.</param>
-    /// <param name="destination">The destination memory on the device.</param>
-    void CopyToDevice<T>(ReadOnlySpan<T> source, DeviceMemory destination) where T : unmanaged;
-    
-    /// <summary>
-    /// Copies data from device memory to host memory.
-    /// </summary>
-    /// <typeparam name="T">The element type.</typeparam>
-    /// <param name="source">The source memory on the device.</param>
-    /// <param name="destination">The destination buffer on the host.</param>
-    void CopyToHost<T>(DeviceMemory source, Span<T> destination) where T : unmanaged;
-    
-    /// <summary>
-    /// Copies data between device memory regions.
-    /// </summary>
-    /// <param name="source">The source memory on the device.</param>
-    /// <param name="destination">The destination memory on the device.</param>
-    /// <param name="sizeInBytes">The number of bytes to copy.</param>
-    void CopyDeviceToDevice(DeviceMemory source, DeviceMemory destination, long sizeInBytes);
-    
-    /// <summary>
-    /// Asynchronously copies data from host to device.
-    /// </summary>
-    /// <typeparam name="T">The element type.</typeparam>
-    /// <param name="source">The source data on the host.</param>
-    /// <param name="destination">The destination memory on the device.</param>
-    /// <param name="stream">The stream to use for the async operation.</param>
-    void CopyToDeviceAsync<T>(ReadOnlyMemory<T> source, DeviceMemory destination, AcceleratorStream stream) where T : unmanaged;
-    
-    /// <summary>
-    /// Asynchronously copies data from device to host.
-    /// </summary>
-    /// <typeparam name="T">The element type.</typeparam>
-    /// <param name="source">The source memory on the device.</param>
-    /// <param name="destination">The destination buffer on the host.</param>
-    /// <param name="stream">The stream to use for the async operation.</param>
-    void CopyToHostAsync<T>(DeviceMemory source, Memory<T> destination, AcceleratorStream stream) where T : unmanaged;
-    
-    /// <summary>
-    /// Gets the total available memory on the device in bytes.
-    /// </summary>
-    /// <returns>The available memory in bytes.</returns>
-    long GetAvailableMemory();
-    
-    /// <summary>
-    /// Gets the total memory on the device in bytes.
-    /// </summary>
-    /// <returns>The total memory in bytes.</returns>
-    long GetTotalMemory();
-    
-    /// <summary>
-    /// Attempts to allocate pinned host memory for efficient transfers.
-    /// </summary>
-    /// <typeparam name="T">The element type.</typeparam>
-    /// <param name="length">The number of elements to allocate.</param>
-    /// <returns>A memory owner for the pinned memory.</returns>
-    IMemoryOwner<T> AllocatePinnedHost<T>(int length) where T : unmanaged;
+    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length);
 }
 
 /// <summary>
-/// Represents a handle to memory allocated on an accelerator device.
-/// This is a value type for performance and AOT compatibility.
+/// Represents a memory buffer on an accelerator.
 /// </summary>
-public readonly struct DeviceMemory : IEquatable<DeviceMemory>
+public interface IMemoryBuffer : IAsyncDisposable
 {
     /// <summary>
-    /// Gets the native pointer to the device memory.
-    /// </summary>
-    public IntPtr NativePointer { get; }
-    
-    /// <summary>
-    /// Gets the size of the allocated memory in bytes.
+    /// Gets the size of the buffer in bytes.
     /// </summary>
     public long SizeInBytes { get; }
-    
+
     /// <summary>
-    /// Gets whether this memory handle is valid.
+    /// Gets the memory flags.
     /// </summary>
-    public bool IsValid => NativePointer != IntPtr.Zero && SizeInBytes > 0;
-    
-    public DeviceMemory(IntPtr nativePointer, long sizeInBytes)
-    {
-        NativePointer = nativePointer;
-        SizeInBytes = sizeInBytes;
-    }
-    
+    public MemoryOptions Options { get; }
+
     /// <summary>
-    /// Gets an invalid memory handle.
+    /// Copies data from host memory to this buffer.
     /// </summary>
-    public static DeviceMemory Invalid => default;
-    
-    public bool Equals(DeviceMemory other)
-    {
-        return NativePointer == other.NativePointer && SizeInBytes == other.SizeInBytes;
-    }
-    
-    public override bool Equals(object? obj)
-    {
-        return obj is DeviceMemory other && Equals(other);
-    }
-    
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(NativePointer, SizeInBytes);
-    }
-    
-    public static bool operator ==(DeviceMemory left, DeviceMemory right)
-    {
-        return left.Equals(right);
-    }
-    
-    public static bool operator !=(DeviceMemory left, DeviceMemory right)
-    {
-        return !left.Equals(right);
-    }
+    public ValueTask CopyFromHostAsync<T>(
+        ReadOnlyMemory<T> source,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged;
+
+    /// <summary>
+    /// Copies data from this buffer to host memory.
+    /// </summary>
+    public ValueTask CopyToHostAsync<T>(
+        Memory<T> destination,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged;
 }
 
 /// <summary>
-/// Represents an execution stream on an accelerator for asynchronous operations.
+/// Memory allocation flags.
 /// </summary>
-public readonly struct AcceleratorStream : IEquatable<AcceleratorStream>
+[Flags]
+public enum MemoryOptions
 {
     /// <summary>
-    /// Gets the native stream handle.
+    /// No special flags.
     /// </summary>
-    public IntPtr NativeHandle { get; }
-    
+    None = 0,
+
     /// <summary>
-    /// Gets whether this is the default stream.
+    /// Memory is read-only.
     /// </summary>
-    public bool IsDefault => NativeHandle == IntPtr.Zero;
-    
-    public AcceleratorStream(IntPtr nativeHandle)
-    {
-        NativeHandle = nativeHandle;
-    }
-    
+    ReadOnly = 1,
+
     /// <summary>
-    /// Gets the default stream.
+    /// Memory is write-only.
     /// </summary>
-    public static AcceleratorStream Default => default;
-    
-    public bool Equals(AcceleratorStream other)
-    {
-        return NativeHandle == other.NativeHandle;
-    }
-    
-    public override bool Equals(object? obj)
-    {
-        return obj is AcceleratorStream other && Equals(other);
-    }
-    
-    public override int GetHashCode()
-    {
-        return NativeHandle.GetHashCode();
-    }
-    
-    public static bool operator ==(AcceleratorStream left, AcceleratorStream right)
-    {
-        return left.Equals(right);
-    }
-    
-    public static bool operator !=(AcceleratorStream left, AcceleratorStream right)
-    {
-        return !left.Equals(right);
-    }
+    WriteOnly = 2,
+
+    /// <summary>
+    /// Memory should be allocated in host-visible memory if possible.
+    /// </summary>
+    HostVisible = 4,
+
+    /// <summary>
+    /// Memory should be cached if possible.
+    /// </summary>
+    Cached = 8,
+
+    /// <summary>
+    /// Memory will be used for atomic operations.
+    /// </summary>
+    Atomic = 16
 }

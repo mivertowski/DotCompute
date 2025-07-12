@@ -1,0 +1,139 @@
+{
+  "performanceTargets": {
+    "memory": {
+      "allocationSpeed": {
+        "managedArray": {
+          "target": "< 1000 ns",
+          "description": "Managed array allocation should be under 1 microsecond"
+        },
+        "arrayPool": {
+          "target": "< 500 ns",
+          "description": "Array pool rent should be under 500 nanoseconds"
+        },
+        "nativeMemory": {
+          "target": "< 100 ns",
+          "description": "Native memory allocation should be under 100 nanoseconds"
+        }
+      },
+      "throughput": {
+        "smallAllocations": {
+          "target": "> 1000000 ops/sec",
+          "description": "Small allocations (1KB) should exceed 1M operations per second"
+        },
+        "largeAllocations": {
+          "target": "> 10000 ops/sec",
+          "description": "Large allocations (1MB) should exceed 10K operations per second"
+        }
+      }
+    },
+    "vectorization": {
+      "speedup": {
+        "addition": {
+          "target": "4x-8x",
+          "description": "Vector addition should be 4-8x faster than scalar"
+        },
+        "multiplication": {
+          "target": "4x-8x",
+          "description": "Vector multiplication should be 4-8x faster than scalar"
+        },
+        "dotProduct": {
+          "target": "8x-16x",
+          "description": "Vector dot product should be 8-16x faster than scalar"
+        }
+      },
+      "throughput": {
+        "floatOperations": {
+          "target": "> 1000000000 ops/sec",
+          "description": "Float operations should exceed 1B operations per second"
+        }
+      }
+    },
+    "transfer": {
+      "bandwidth": {
+        "memoryToMemory": {
+          "target": "> 10 GB/sec",
+          "description": "Memory-to-memory transfer should exceed 10 GB/sec"
+        },
+        "hostToDevice": {
+          "target": "> 1 GB/sec",
+          "description": "Host-to-device transfer should exceed 1 GB/sec"
+        }
+      },
+      "latency": {
+        "smallTransfers": {
+          "target": "< 100 ns",
+          "description": "Small transfers (1KB) should be under 100 nanoseconds"
+        },
+        "largeTransfers": {
+          "target": "< 1000 ns",
+          "description": "Large transfers (1MB) should be under 1 microsecond"
+        }
+      }
+    },
+    "threadPool": {
+      "efficiency": {
+        "taskSpawning": {
+          "target": "< 1000 ns",
+          "description": "Task spawning should be under 1 microsecond"
+        },
+        "workItemProcessing": {
+          "target": "> 100000 ops/sec",
+          "description": "Work item processing should exceed 100K operations per second"
+        }
+      },
+      "scalability": {
+        "concurrentTasks": {
+          "target": "Linear scaling up to CPU cores",
+          "description": "Should scale linearly with CPU cores"
+        },
+        "queueThroughput": {
+          "target": "> 1000000 ops/sec",
+          "description": "Queue throughput should exceed 1M operations per second"
+        }
+      }
+    }
+  },
+  "stressTestTargets": {
+    "memoryLeak": {
+      "duration": "24 hours",
+      "maxMemoryGrowth": "< 10% per hour",
+      "maxGen2Collections": "< 100 per hour",
+      "description": "Memory should not grow more than 10% per hour over 24 hours"
+    },
+    "concurrentAllocation": {
+      "threadCount": 16,
+      "duration": "1 hour",
+      "maxFailureRate": "< 0.1%",
+      "minThroughput": "> 10000 allocations/sec",
+      "description": "Concurrent allocation should maintain low failure rate and high throughput"
+    },
+    "highFrequencyTransfer": {
+      "producerCount": 8,
+      "consumerCount": 8,
+      "duration": "1 hour",
+      "maxLatency": "< 1 ms",
+      "minThroughput": "> 100 MB/sec",
+      "description": "High-frequency transfers should maintain low latency and high throughput"
+    }
+  },
+  "benchmarkSettings": {
+    "warmupIterations": 3,
+    "measurementIterations": 10,
+    "invocationCount": 1,
+    "unrollFactor": 1,
+    "strategy": "Throughput",
+    "platform": "X64",
+    "runtime": "Core80",
+    "gcServer": true,
+    "gcConcurrent": true
+  },
+  "hardwareBaselines": {
+    "cpuCores": 8,
+    "memoryGB": 16,
+    "l1CacheKB": 32,
+    "l2CacheMB": 1,
+    "l3CacheMB": 8,
+    "memoryBandwidthGBps": 25.6,
+    "description": "Baseline hardware configuration for performance targets"
+  }
+}
