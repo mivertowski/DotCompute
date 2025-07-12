@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
 using System;
 using System.Threading;
 using System.Threading.Tasks;
@@ -141,42 +144,42 @@ public interface IDeviceCapabilities
     /// <summary>
     /// Gets the compute capability version.
     /// </summary>
-    Version ComputeCapability { get; }
+    public Version ComputeCapability { get; }
 
     /// <summary>
     /// Gets the maximum work group size.
     /// </summary>
-    int MaxWorkGroupSize { get; }
+    public int MaxWorkGroupSize { get; }
 
     /// <summary>
     /// Gets the maximum work item dimensions.
     /// </summary>
-    int MaxWorkItemDimensions { get; }
+    public int MaxWorkItemDimensions { get; }
 
     /// <summary>
     /// Gets the maximum work item sizes per dimension.
     /// </summary>
-    long[] MaxWorkItemSizes { get; }
+    public long[] MaxWorkItemSizes { get; }
 
     /// <summary>
     /// Gets the number of compute units.
     /// </summary>
-    int ComputeUnits { get; }
+    public int ComputeUnits { get; }
 
     /// <summary>
     /// Gets the clock frequency in MHz.
     /// </summary>
-    int ClockFrequency { get; }
+    public int ClockFrequency { get; }
 
     /// <summary>
     /// Gets supported features.
     /// </summary>
-    DeviceFeatures SupportedFeatures { get; }
+    public DeviceFeatures SupportedFeatures { get; }
 
     /// <summary>
     /// Gets supported data types.
     /// </summary>
-    DataTypeSupport SupportedDataTypes { get; }
+    public DataTypeSupport SupportedDataTypes { get; }
 
     /// <summary>
     /// Checks if a specific feature is supported.
@@ -419,12 +422,12 @@ public interface IDeviceMemory : IAsyncDisposable
     /// <summary>
     /// Gets the device that owns this memory.
     /// </summary>
-    IComputeDevice Device { get; }
+    public IComputeDevice Device { get; }
 
     /// <summary>
     /// Gets the memory access mode.
     /// </summary>
-    MemoryAccess AccessMode { get; }
+    public MemoryAccess AccessMode { get; }
 
     /// <summary>
     /// Copies data from host to device memory.

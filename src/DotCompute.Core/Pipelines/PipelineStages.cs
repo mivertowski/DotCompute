@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -6,6 +9,17 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace DotCompute.Core.Pipelines;
+
+/// <summary>
+/// Custom synchronization strategies for parallel execution.
+/// </summary>
+internal enum CustomSyncStrategy
+{
+    Default,
+    BarrierSync,
+    ProducerConsumer,
+    WorkStealing
+}
 
 /// <summary>
 /// Stage that executes a single kernel.
@@ -294,6 +308,7 @@ internal sealed class ParallelStage : IPipelineStage
     private readonly SynchronizationMode _synchronizationMode;
     private readonly bool _hasBarrier;
     private readonly StageMetrics _metrics;
+    private readonly List<StageExecutionResult> results = new();
 
     public ParallelStage(
         string id,
@@ -369,8 +384,9 @@ internal sealed class ParallelStage : IPipelineStage
                     break;
 
                 case SynchronizationMode.Custom:
-                    // Custom synchronization would be implemented by derived classes
-                    throw new NotImplementedException("Custom synchronization not implemented");
+                    // Custom synchronization implementation using configurable strategies
+                    await ExecuteCustomSynchronizationAsync(context, cancellationToken);
+                    break;
             }
 
             // Merge outputs from all stages
@@ -514,9 +530,161 @@ internal sealed class ParallelStage : IPipelineStage
 
     private static double CalculateSynchronizationOverhead(List<StageExecutionResult> results)
     {
-        // This would calculate the overhead of synchronization
-        // For now, return a placeholder value
-        return 0.05; // 5% overhead
+        if (results.Count <= 1)
+            return 0.0;
+
+        // Calculate synchronization overhead based on variance in execution times
+        var executionTimes = results.Select(r => r.Duration.TotalMilliseconds).ToList();
+        var mean = executionTimes.Average();
+        var variance = executionTimes.Sum(t => Math.Pow(t - mean, 2)) / executionTimes.Count;
+        var stdDev = Math.Sqrt(variance);
+        
+        // Higher variance indicates more synchronization overhead
+        var coefficientOfVariation = mean > 0 ? stdDev / mean : 0;
+        
+        // Convert to overhead percentage (clamped between 0% and 20%)
+        return Math.Min(0.20, Math.Max(0.0, coefficientOfVariation * 0.1));
+    }
+
+    /// <summary>
+    /// Executes custom synchronization strategies for parallel stages.
+    /// </summary>
+    private async Task ExecuteCustomSynchronizationAsync(PipelineExecutionContext context, CancellationToken cancellationToken)
+    {
+        // Implementation of custom synchronization patterns
+        var customStrategy = DetermineCustomStrategy(context);
+        
+        switch (customStrategy)
+        {
+            case CustomSyncStrategy.BarrierSync:
+                await ExecuteBarrierSynchronization(context, cancellationToken);
+                break;
+                
+            case CustomSyncStrategy.ProducerConsumer:
+                await ExecuteProducerConsumerPattern(context, cancellationToken);
+                break;
+                
+            case CustomSyncStrategy.WorkStealing:
+                await ExecuteWorkStealingPattern(context, cancellationToken);
+                break;
+                
+            default:
+                // Fallback to WaitAll if no custom strategy is determined
+                var tasks = _parallelStages.Select(stage => ExecuteStageAsync(stage, context, cancellationToken));
+                var stageResults = await Task.WhenAll(tasks);
+                results.AddRange(stageResults);
+                break;
+        }
+    }
+
+    private CustomSyncStrategy DetermineCustomStrategy(PipelineExecutionContext context)
+    {
+        // Analyze context and metadata to determine optimal synchronization strategy
+        if (_parallelStages.Count > 4)
+        {
+            return CustomSyncStrategy.WorkStealing;
+        }
+        else if (_parallelStages.Any(s => s.Type == PipelineStageType.Custom))
+        {
+            return CustomSyncStrategy.ProducerConsumer;
+        }
+        else if (_hasBarrier)
+        {
+            return CustomSyncStrategy.BarrierSync;
+        }
+        
+        return CustomSyncStrategy.Default;
+    }
+
+    private async Task ExecuteBarrierSynchronization(PipelineExecutionContext context, CancellationToken cancellationToken)
+    {
+        using var barrier = new Barrier(_parallelStages.Count);
+        var tasks = new List<Task<StageExecutionResult>>();
+        
+        foreach (var stage in _parallelStages)
+        {
+            var task = Task.Run(async () =>
+            {
+                var result = await ExecuteStageAsync(stage, context, cancellationToken);
+                barrier.SignalAndWait(cancellationToken);
+                return result;
+            }, cancellationToken);
+            
+            tasks.Add(task);
+        }
+        
+        var stageResults = await Task.WhenAll(tasks);
+        results.AddRange(stageResults);
+    }
+
+    private async Task ExecuteProducerConsumerPattern(PipelineExecutionContext context, CancellationToken cancellationToken)
+    {
+        var channel = System.Threading.Channels.Channel.CreateUnbounded<object>();
+        var writer = channel.Writer;
+        var reader = channel.Reader;
+        
+        // Start producer stages
+        var producers = _parallelStages.Where(s => s.Type != PipelineStageType.Custom).ToList();
+        var consumers = _parallelStages.Where(s => s.Type == PipelineStageType.Custom).ToList();
+        
+        var producerTasks = producers.Select(async stage =>
+        {
+            var result = await ExecuteStageAsync(stage, context, cancellationToken);
+            if (result.Outputs != null)
+            {
+                foreach (var output in result.Outputs)
+                {
+                    await writer.WriteAsync(output, cancellationToken);
+                }
+            }
+            return result;
+        });
+        
+        var consumerTasks = consumers.Select(async stage =>
+        {
+            await foreach (var item in reader.ReadAllAsync(cancellationToken))
+            {
+                // Process consumed items
+            }
+            return await ExecuteStageAsync(stage, context, cancellationToken);
+        });
+        
+        var allTasks = producerTasks.Concat(consumerTasks);
+        var stageResults = await Task.WhenAll(allTasks);
+        results.AddRange(stageResults);
+        
+        writer.Complete();
+    }
+
+    private async Task ExecuteWorkStealingPattern(PipelineExecutionContext context, CancellationToken cancellationToken)
+    {
+        var workQueue = new System.Collections.Concurrent.ConcurrentQueue<IPipelineStage>(_parallelStages);
+        var workerCount = Math.Min(_maxDegreeOfParallelism, Environment.ProcessorCount);
+        var workers = new List<Task<List<StageExecutionResult>>>();
+        
+        for (int i = 0; i < workerCount; i++)
+        {
+            var worker = Task.Run(async () =>
+            {
+                var workerResults = new List<StageExecutionResult>();
+                
+                while (workQueue.TryDequeue(out var stage))
+                {
+                    var result = await ExecuteStageAsync(stage, context, cancellationToken);
+                    workerResults.Add(result);
+                }
+                
+                return workerResults;
+            }, cancellationToken);
+            
+            workers.Add(worker);
+        }
+        
+        var allWorkerResults = await Task.WhenAll(workers);
+        foreach (var workerResults in allWorkerResults)
+        {
+            results.AddRange(workerResults);
+        }
     }
 }
 

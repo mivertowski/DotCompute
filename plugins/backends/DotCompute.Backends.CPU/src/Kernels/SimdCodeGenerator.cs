@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
 using System;
 using System.Collections.Generic;
 using System.Numerics;
@@ -52,8 +55,8 @@ internal sealed class SimdCodeGenerator
         {
             512 when _simdCapabilities.SupportsAvx512 => new Avx512KernelExecutor(definition, executionPlan),
             256 when _simdCapabilities.SupportsAvx2 => new Avx2KernelExecutor(definition, executionPlan),
-            // TODO: Implement NeonKernelExecutor for ARM support
-            // 128 when _simdCapabilities.SupportedInstructionSets.Contains("NEON") => new NeonKernelExecutor(definition, executionPlan),
+            // ARM NEON support for cross-platform deployment
+            128 when _simdCapabilities.SupportsAdvSimd => new NeonKernelExecutor(definition, executionPlan),
             128 when _simdCapabilities.SupportsSse2 => new SseKernelExecutor(definition, executionPlan),
             _ => new ScalarKernelExecutor(definition, executionPlan)
         };
@@ -692,11 +695,9 @@ internal sealed class SseKernelExecutor : SimdKernelExecutor
     }
 }
 
-/* TODO: ARM NEON support - commenting out for now due to compilation issues
 /// <summary>
-/// ARM NEON kernel executor implementation.
+/// ARM NEON kernel executor implementation for cross-platform support.
 /// </summary>
-[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "CA1812:Avoid uninstantiated internal classes", Justification = "Used via reflection or factory pattern")]
 internal sealed class NeonKernelExecutor : SimdKernelExecutor
 {
     public NeonKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
@@ -903,7 +904,6 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
         };
     }
 }
-*/
 
 /// <summary>
 /// Scalar kernel executor implementation (fallback).

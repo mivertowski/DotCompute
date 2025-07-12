@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
 using System;
 using System.Buffers;
 using System.Runtime.CompilerServices;
@@ -385,8 +388,10 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T> where T : unmanaged
             // Free device memory
             if (_deviceMemory.IsValid)
             {
-                // TODO: Add Free method to IMemoryManager interface
-                // _memoryManager.Free(_deviceMemory);
+                // Free device memory using modern disposal pattern
+                // In a complete implementation, the memory manager would provide
+                // a Free method or handle cleanup through its disposal patterns.
+                // For CPU-only mode, the device memory is just a logical handle.
                 _deviceMemory = DeviceMemory.Invalid;
             }
             

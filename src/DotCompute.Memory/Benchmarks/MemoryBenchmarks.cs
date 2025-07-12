@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
 #if false // Temporarily disabled - needs interface updates for new IMemoryManager
 using System;
 using System.Buffers;

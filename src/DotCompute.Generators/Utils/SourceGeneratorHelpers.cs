@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -261,5 +264,7 @@ namespace DotCompute.Generators.Utils
         public bool HasArrayAccess { get; set; }
         public int ArithmeticOperationCount { get; set; }
         public bool IsVectorizable => VectorizableLoops > 0 && HasArrayAccess;
+        public bool IsArithmetic => ArithmeticOperationCount > 0;
+        public bool IsMemoryOperation => HasArrayAccess;
     }
 }

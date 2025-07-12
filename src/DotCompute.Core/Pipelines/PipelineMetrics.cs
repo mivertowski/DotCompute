@@ -1,3 +1,6 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -260,10 +263,7 @@ internal sealed class PipelineMetrics : IPipelineMetrics
             }).ToList()
         };
 
-        return JsonSerializer.Serialize(data, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
+        return JsonSerializer.Serialize(data, DotComputeJsonContext.Default.PipelineMetricsData);
     }
 
     private string ExportCsv()
@@ -377,10 +377,7 @@ internal sealed class PipelineMetrics : IPipelineMetrics
             }
         };
 
-        return JsonSerializer.Serialize(metrics, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
+        return JsonSerializer.Serialize(metrics, DotComputeJsonContext.Default.OpenTelemetryMetricsData);
     }
 }
 
