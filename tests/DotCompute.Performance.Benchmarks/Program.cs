@@ -48,14 +48,31 @@ class Program
             .AddColumn(BaselineRatioColumn.RatioMean)
             .AddColumn(RankColumn.Arabic);
 
+        Console.WriteLine("=== DotCompute Performance Benchmarks ===");
+        Console.WriteLine("Available benchmark categories:");
+        Console.WriteLine("- VectorOperationBenchmarks: SIMD and vectorization performance");
+        Console.WriteLine("- MatrixOperationBenchmarks: Matrix operations and linear algebra");
+        Console.WriteLine("- MemoryTransferBenchmarks: Data transfer and memory bandwidth");
+        Console.WriteLine("- KernelLaunchBenchmarks: Kernel compilation and execution overhead");
+        Console.WriteLine("- PipelineBenchmarks: End-to-end pipeline performance");
+        Console.WriteLine("- VectorizationBenchmarks: Legacy vectorization tests");
+        Console.WriteLine("");
+
         if (args.Length == 0)
         {
+            Console.WriteLine("Running ALL performance benchmarks...");
+            Console.WriteLine("This will take several minutes. Press Ctrl+C to cancel.");
+            Console.WriteLine("");
+            
             // Run all benchmarks
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly)
                 .RunAllJoined(config);
         }
         else
         {
+            Console.WriteLine($"Running specific benchmark: {string.Join(" ", args)}");
+            Console.WriteLine("");
+            
             // Run specific benchmark
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly)
                 .Run(args, config);

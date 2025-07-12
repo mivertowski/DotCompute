@@ -21,21 +21,6 @@
     <ProjectReference Include="..\..\plugins\backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <!-- Test framework that supports AOT -->
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="coverlet.collector">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="BenchmarkDotNet" />
-    <PackageReference Include="NSubstitute" />
-  </ItemGroup>
+  <!-- Test packages are provided by Directory.Build.props -->
 
 </Project>

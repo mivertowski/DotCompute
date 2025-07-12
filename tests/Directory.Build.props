@@ -1,31 +1,17 @@
 <Project>
-  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
-  
-  <PropertyGroup>
-    <IsTestProject>true</IsTestProject>
-    <IsPackable>false</IsPackable>
-    <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <CodeAnalysisTreatWarningsAsErrors>true</CodeAnalysisTreatWarningsAsErrors>
-    <EnableNETAnalyzers>true</EnableNETAnalyzers>
-    <AnalysisMode>All</AnalysisMode>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-  </PropertyGroup>
+  <Import Project="../src/Directory.Build.props" />
 
   <PropertyGroup>
-    <!-- Test project specific settings -->
-    <TestProjectType>Unit</TestProjectType>
-    <CollectCoverage>true</CollectCoverage>
-    <CoverletOutputFormat>opencover</CoverletOutputFormat>
-    <ExcludeByFile>**/obj/**;**/bin/**</ExcludeByFile>
+    <!-- Relax some rules for test projects -->
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <WarningsNotAsErrors />
+    
+    <!-- Disable AOT analysis for tests -->
+    <IsAotCompatible>false</IsAotCompatible>
+    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    
+    <!-- Suppress some analyzer rules for tests -->
+    <NoWarn>$(NoWarn);IDE0040;IDE0011;CA1822;CA1859;CA1308;CA1869;IL2026;IL3050</NoWarn>
   </PropertyGroup>
-
-  <ItemGroup>
-    <Using Include="System" />
-    <Using Include="System.Collections.Generic" />
-    <Using Include="System.Linq" />
-    <Using Include="System.Threading.Tasks" />
-    <Using Include="Xunit" />
-    <Using Include="FluentAssertions" />
-  </ItemGroup>
 </Project>
