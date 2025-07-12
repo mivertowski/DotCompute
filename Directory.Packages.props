@@ -22,6 +22,7 @@
     <PackageVersion Include="Microsoft.Extensions.ObjectPool" Version="9.0.0-preview.1.24080.9" />
     <PackageVersion Include="System.IO.Pipelines" Version="9.0.0-preview.1.24080.9" />
     <PackageVersion Include="System.Runtime.Intrinsics.Experimental" Version="9.0.0-preview.1.24080.9" />
+    <PackageVersion Include="System.Numerics.Vectors" Version="4.5.0" />
     <PackageVersion Include="System.Threading.Channels" Version="9.0.0-preview.1.24080.9" />
     
     <!-- Telemetry -->
@@ -43,6 +44,7 @@
     <PackageVersion Include="Microsoft.Toolkit.HighPerformance" Version="7.1.2" />
     <PackageVersion Include="System.Runtime.InteropServices" Version="4.3.0" />
     <PackageVersion Include="System.Memory" Version="4.5.5" />
+    <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="9.0.0-preview.1.24080.9" />
     <!-- <PackageVersion Include="Microsoft.NET.ILLink.Analyzers" Version="8.0.7" /> -->
     <!-- <PackageVersion Include="Microsoft.DotNet.ApiCompat" Version="8.0.7" /> -->
   </ItemGroup>
@@ -91,7 +93,6 @@
     <PackageVersion Include="BenchmarkDotNet.Annotations" Version="0.13.12" />
     
     <!-- Additional Memory and Vectorization -->
-    <PackageVersion Include="System.Numerics.Vectors" Version="4.5.0" />
     
     <!-- Code Quality -->
     <PackageVersion Include="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0-preview.24122.1" />

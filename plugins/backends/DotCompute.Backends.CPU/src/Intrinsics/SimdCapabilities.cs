@@ -9,7 +9,6 @@ namespace DotCompute.Backends.CPU.Intrinsics;
 /// <summary>
 /// Provides information about SIMD capabilities of the current CPU.
 /// </summary>
-[System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("AOT-safe SIMD detection")]
 public static class SimdCapabilities
 {
     /// <summary>
@@ -161,6 +160,11 @@ public sealed class SimdSummary
     public required bool IsHardwareAccelerated { get; init; }
     public required int PreferredVectorWidth { get; init; }
     public required IReadOnlySet<string> SupportedInstructionSets { get; init; }
+
+    // Helper properties for quick checks
+    public bool SupportsSse2 => SupportedInstructionSets.Contains("SSE2");
+    public bool SupportsAvx2 => SupportedInstructionSets.Contains("AVX2");
+    public bool SupportsAvx512 => SupportedInstructionSets.Contains("AVX512F");
 
     public override string ToString()
     {

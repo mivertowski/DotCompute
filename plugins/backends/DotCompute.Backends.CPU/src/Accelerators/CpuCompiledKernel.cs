@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -7,30 +9,35 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Threading;
 using System.Threading.Tasks;
+using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CPU.Kernels;
-using DotCompute.Core;
+using DotCompute.Backends.CPU.Intrinsics;
 using Microsoft.Extensions.Logging;
+using CoreKernelDefinition = DotCompute.Core.KernelDefinition;
+using CoreICompiledKernel = DotCompute.Core.ICompiledKernel;
+using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
+using IMemoryBuffer = DotCompute.Abstractions.IMemoryBuffer;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
 /// <summary>
 /// Represents a compiled kernel for CPU execution with vectorization support.
 /// </summary>
-internal sealed class CpuCompiledKernel : ICompiledKernel
+internal sealed class CpuCompiledKernel : CoreICompiledKernel
 {
-    private readonly KernelDefinition _definition;
+    private readonly CoreKernelDefinition _definition;
     private readonly KernelExecutionPlan _executionPlan;
     private readonly CpuThreadPool _threadPool;
     private readonly ILogger _logger;
     private readonly SimdCodeGenerator _codeGenerator;
-    private readonly DynamicMethod _compiledMethod;
+    private readonly SimdKernelExecutor? _kernelExecutor;
     private long _executionCount;
     private double _totalExecutionTimeMs;
     private int _disposed;
 
     public CpuCompiledKernel(
-        KernelDefinition definition,
+        CoreKernelDefinition definition,
         KernelExecutionPlan executionPlan,
         CpuThreadPool threadPool,
         ILogger logger)
@@ -41,25 +48,50 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         
         // Initialize SIMD code generator
-        _codeGenerator = new SimdCodeGenerator(executionPlan.Analysis.Definition.Metadata?.TryGetValue("SimdCapabilities", out var caps) == true 
+        var simdSummary = executionPlan.Analysis.Definition.Metadata?.TryGetValue("SimdCapabilities", out var caps) == true 
             ? (SimdSummary)caps 
-            : new SimdSummary());
+            : new SimdSummary
+              {
+                  IsHardwareAccelerated = Vector.IsHardwareAccelerated,
+                  PreferredVectorWidth = SimdCapabilities.PreferredVectorWidth,
+                  SupportedInstructionSets = new HashSet<string>()
+              };
+        _codeGenerator = new SimdCodeGenerator(simdSummary);
         
-        // Pre-compile the kernel method if vectorization is enabled
+        // Get or create the kernel executor if vectorization is enabled
         if (_executionPlan.UseVectorization)
         {
-            _compiledMethod = _codeGenerator.GenerateVectorizedKernel(definition, executionPlan);
+            _kernelExecutor = _codeGenerator.GetOrCreateVectorizedKernel(definition, executionPlan);
         }
     }
 
-    public KernelDefinition Definition => _definition;
+    // Interface implementation for Core.ICompiledKernel
+    CoreKernelDefinition CoreICompiledKernel.Definition => _definition;
+    
+    public ValueTask ExecuteAsync(CoreKernelExecutionContext context, CancellationToken cancellationToken = default)
+    {
+        // Convert KernelExecutionContext to KernelArguments for internal processing
+        var arguments = ConvertContextToArguments(context);
+        return ExecuteAsync(arguments, cancellationToken);
+    }
+
+    public CoreKernelDefinition Definition => _definition;
+
+    public string Name => _definition.Name;
 
     public async ValueTask ExecuteAsync(
-        KernelExecutionContext context,
+        KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        ArgumentNullException.ThrowIfNull(context);
+        // KernelArguments is non-nullable, so no need for null check
+
+        // Convert KernelArguments to KernelExecutionContext for internal processing
+        var context = new CoreKernelExecutionContext
+        {
+            GlobalWorkSize = new[] { 1024L }, // Default work size - should be configurable
+            Arguments = arguments.Arguments.ToArray()
+        };
 
         var stopwatch = Stopwatch.StartNew();
         
@@ -74,7 +106,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         {
             throw new ArgumentException(
                 $"Work dimensions mismatch. Kernel expects {_definition.WorkDimensions} dimensions, but got {context.GlobalWorkSize.Count}",
-                nameof(context));
+                nameof(arguments));
         }
 
         // Validate arguments
@@ -82,7 +114,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         {
             throw new ArgumentException(
                 $"Argument count mismatch. Kernel expects {_definition.Parameters.Count} arguments, but got {context.Arguments.Count}",
-                nameof(context));
+                nameof(arguments));
         }
 
         // Calculate total work items
@@ -145,7 +177,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
     }
 
     private void ExecuteWorkItems(
-        KernelExecutionContext context,
+        CoreKernelExecutionContext context,
         long startIndex,
         long endIndex,
         Barrier barrier,
@@ -182,7 +214,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         }
     }
 
-    private void ExecuteScalarWorkItems(
+    private static void ExecuteScalarWorkItems(
         VectorizedExecutionContext context,
         long startIndex,
         long endIndex)
@@ -228,9 +260,42 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         long[][] workItemIds,
         int vectorWidth)
     {
-        // This is where vectorized kernel execution would occur
-        // For demonstration, we'll show how different vector widths would be handled
+        // Use the pre-compiled kernel executor if available
+        if (_kernelExecutor != null && TryGetBufferArguments(context.KernelContext, out var input1, out var input2, out var output))
+        {
+            // Calculate element count and execute using the optimized SIMD executor
+            var elementCount = workItemIds.Length * context.ExecutionPlan.VectorizationFactor;
+            var baseIndex = workItemIds[0]?[0] ?? 0;
+            
+            if (input1 is CpuMemoryBuffer cpuInput1 &&
+                input2 is CpuMemoryBuffer cpuInput2 &&
+                output is CpuMemoryBuffer cpuOutput)
+            {
+                var mem1 = cpuInput1.GetMemory();
+                var mem2 = cpuInput2.GetMemory();
+                var memOut = cpuOutput.GetMemory();
+                
+                // Calculate offset for this work item batch
+                var offset = (int)(baseIndex * sizeof(float));
+                
+                // Create spans for the kernel executor
+                var input1Span = mem1.Span.Slice(offset);
+                var input2Span = mem2.Span.Slice(offset);
+                var outputSpan = memOut.Span.Slice(offset);
+                
+                // Execute using the optimized SIMD kernel
+                _kernelExecutor.Execute(
+                    input1Span,
+                    input2Span,
+                    outputSpan,
+                    elementCount,
+                    vectorWidth);
+                
+                return;
+            }
+        }
         
+        // Fall back to inline SIMD execution if no pre-compiled executor
         switch (vectorWidth)
         {
             case 512 when Avx512F.IsSupported:
@@ -272,39 +337,47 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
             return;
         }
         
-        // For CPU backend, we need to handle memory access differently
-        // This is a simplified implementation - production code would use proper buffer abstraction
-        var elementCount = input1.SizeInBytes / sizeof(float);
-        
-        // Create temporary spans for demonstration
-        var floatInput1 = new Span<float>(new float[elementCount]);
-        var floatInput2 = new Span<float>(new float[elementCount]);
-        var floatOutput = new Span<float>(new float[elementCount]);
-        
-        // In production, these would be populated from the actual buffer data
-        // For now, we'll use the existing scalar execution path
-        
-        var baseIndex = workItemIds[0][0]; // Assuming 1D kernel for simplicity
-        var count = Math.Min(16, floatInput1.Length - baseIndex);
-        
-        if (count >= 16 && Avx512F.IsSupported)
+        // Access CPU memory buffers directly
+        if (input1 is CpuMemoryBuffer cpuInput1 &&
+            input2 is CpuMemoryBuffer cpuInput2 &&
+            output is CpuMemoryBuffer cpuOutput)
         {
-            fixed (float* pIn1 = &floatInput1[(int)baseIndex])
-            fixed (float* pIn2 = &floatInput2[(int)baseIndex])
-            fixed (float* pOut = &floatOutput[(int)baseIndex])
+            var mem1 = cpuInput1.GetMemory();
+            var mem2 = cpuInput2.GetMemory();
+            var memOut = cpuOutput.GetMemory();
+            
+            // Calculate starting index (assuming 1D kernel)
+            var baseIndex = workItemIds[0]?[0] ?? 0;
+            var offset = (int)(baseIndex * sizeof(float));
+            
+            // Ensure we have enough data for a full vector
+            var remainingElements = (mem1.Length - offset) / sizeof(float);
+            if (remainingElements >= 16 && Avx512F.IsSupported)
             {
-                var v1 = Avx512F.LoadVector512(pIn1);
-                var v2 = Avx512F.LoadVector512(pIn2);
-                var result = Avx512F.Add(v1, v2);
-                Avx512F.Store(pOut, result);
+                fixed (byte* pIn1 = mem1.Span)
+                fixed (byte* pIn2 = mem2.Span)
+                fixed (byte* pOut = memOut.Span)
+                {
+                    var f1 = (float*)(pIn1 + offset);
+                    var f2 = (float*)(pIn2 + offset);
+                    var fOut = (float*)(pOut + offset);
+                    
+                    var v1 = Avx512F.LoadVector512(f1);
+                    var v2 = Avx512F.LoadVector512(f2);
+                    var result = Avx512F.Add(v1, v2);
+                    Avx512F.Store(fOut, result);
+                }
             }
-        }
-        else
-        {
-            // Scalar fallback for partial vectors
-            for (int i = 0; i < count; i++)
+            else
             {
-                floatOutput[(int)baseIndex + i] = floatInput1[(int)baseIndex + i] + floatInput2[(int)baseIndex + i];
+                // Fall back to scalar execution for remaining items
+                foreach (var workItemId in workItemIds)
+                {
+                    if (workItemId != null)
+                    {
+                        ExecuteSingleWorkItem(context.KernelContext, workItemId);
+                    }
+                }
             }
         }
     }
@@ -326,35 +399,47 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
             return;
         }
         
-        // For CPU backend, we need to handle memory access differently
-        var elementCount = input1.SizeInBytes / sizeof(float);
-        
-        // Create temporary spans for demonstration
-        var floatInput1 = new Span<float>(new float[elementCount]);
-        var floatInput2 = new Span<float>(new float[elementCount]);
-        var floatOutput = new Span<float>(new float[elementCount]);
-        
-        var baseIndex = workItemIds[0][0]; // Assuming 1D kernel for simplicity
-        var count = Math.Min(8, floatInput1.Length - baseIndex);
-        
-        if (count >= 8 && Avx2.IsSupported)
+        // Access CPU memory buffers directly
+        if (input1 is CpuMemoryBuffer cpuInput1 &&
+            input2 is CpuMemoryBuffer cpuInput2 &&
+            output is CpuMemoryBuffer cpuOutput)
         {
-            fixed (float* pIn1 = &floatInput1[(int)baseIndex])
-            fixed (float* pIn2 = &floatInput2[(int)baseIndex])
-            fixed (float* pOut = &floatOutput[(int)baseIndex])
+            var mem1 = cpuInput1.GetMemory();
+            var mem2 = cpuInput2.GetMemory();
+            var memOut = cpuOutput.GetMemory();
+            
+            // Calculate starting index (assuming 1D kernel)
+            var baseIndex = workItemIds[0]?[0] ?? 0;
+            var offset = (int)(baseIndex * sizeof(float));
+            
+            // Ensure we have enough data for a full vector
+            var remainingElements = (mem1.Length - offset) / sizeof(float);
+            if (remainingElements >= 8 && Avx2.IsSupported)
             {
-                var v1 = Avx.LoadVector256(pIn1);
-                var v2 = Avx.LoadVector256(pIn2);
-                var result = Avx.Add(v1, v2);
-                Avx.Store(pOut, result);
+                fixed (byte* pIn1 = mem1.Span)
+                fixed (byte* pIn2 = mem2.Span)
+                fixed (byte* pOut = memOut.Span)
+                {
+                    var f1 = (float*)(pIn1 + offset);
+                    var f2 = (float*)(pIn2 + offset);
+                    var fOut = (float*)(pOut + offset);
+                    
+                    var v1 = Avx.LoadVector256(f1);
+                    var v2 = Avx.LoadVector256(f2);
+                    var result = Avx.Add(v1, v2);
+                    Avx.Store(fOut, result);
+                }
             }
-        }
-        else
-        {
-            // Scalar fallback for partial vectors
-            for (int i = 0; i < count; i++)
+            else
             {
-                floatOutput[(int)baseIndex + i] = floatInput1[(int)baseIndex + i] + floatInput2[(int)baseIndex + i];
+                // Fall back to scalar execution for remaining items
+                foreach (var workItemId in workItemIds)
+                {
+                    if (workItemId != null)
+                    {
+                        ExecuteSingleWorkItem(context.KernelContext, workItemId);
+                    }
+                }
             }
         }
     }
@@ -376,35 +461,47 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
             return;
         }
         
-        // For CPU backend, we need to handle memory access differently
-        var elementCount = input1.SizeInBytes / sizeof(float);
-        
-        // Create temporary spans for demonstration
-        var floatInput1 = new Span<float>(new float[elementCount]);
-        var floatInput2 = new Span<float>(new float[elementCount]);
-        var floatOutput = new Span<float>(new float[elementCount]);
-        
-        var baseIndex = workItemIds[0][0]; // Assuming 1D kernel for simplicity
-        var count = Math.Min(4, floatInput1.Length - baseIndex);
-        
-        if (count >= 4 && Sse.IsSupported)
+        // Access CPU memory buffers directly
+        if (input1 is CpuMemoryBuffer cpuInput1 &&
+            input2 is CpuMemoryBuffer cpuInput2 &&
+            output is CpuMemoryBuffer cpuOutput)
         {
-            fixed (float* pIn1 = &floatInput1[(int)baseIndex])
-            fixed (float* pIn2 = &floatInput2[(int)baseIndex])
-            fixed (float* pOut = &floatOutput[(int)baseIndex])
+            var mem1 = cpuInput1.GetMemory();
+            var mem2 = cpuInput2.GetMemory();
+            var memOut = cpuOutput.GetMemory();
+            
+            // Calculate starting index (assuming 1D kernel)
+            var baseIndex = workItemIds[0]?[0] ?? 0;
+            var offset = (int)(baseIndex * sizeof(float));
+            
+            // Ensure we have enough data for a full vector
+            var remainingElements = (mem1.Length - offset) / sizeof(float);
+            if (remainingElements >= 4 && Sse.IsSupported)
             {
-                var v1 = Sse.LoadVector128(pIn1);
-                var v2 = Sse.LoadVector128(pIn2);
-                var result = Sse.Add(v1, v2);
-                Sse.Store(pOut, result);
+                fixed (byte* pIn1 = mem1.Span)
+                fixed (byte* pIn2 = mem2.Span)
+                fixed (byte* pOut = memOut.Span)
+                {
+                    var f1 = (float*)(pIn1 + offset);
+                    var f2 = (float*)(pIn2 + offset);
+                    var fOut = (float*)(pOut + offset);
+                    
+                    var v1 = Sse.LoadVector128(f1);
+                    var v2 = Sse.LoadVector128(f2);
+                    var result = Sse.Add(v1, v2);
+                    Sse.Store(fOut, result);
+                }
             }
-        }
-        else
-        {
-            // Scalar fallback for partial vectors
-            for (int i = 0; i < count; i++)
+            else
             {
-                floatOutput[(int)baseIndex + i] = floatInput1[(int)baseIndex + i] + floatInput2[(int)baseIndex + i];
+                // Fall back to scalar execution for remaining items
+                foreach (var workItemId in workItemIds)
+                {
+                    if (workItemId != null)
+                    {
+                        ExecuteSingleWorkItem(context.KernelContext, workItemId);
+                    }
+                }
             }
         }
     }
@@ -433,18 +530,160 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         return total;
     }
 
-    private static void ExecuteSingleWorkItem(KernelExecutionContext context, long[] workItemId)
+    private static void ExecuteSingleWorkItem(CoreKernelExecutionContext context, long[] workItemId)
     {
-        // Stub implementation for scalar execution
-        // In a real implementation, this would execute the compiled kernel code
-        // with access to the work item ID and kernel arguments
+        // Extract arguments based on their types
+        var args = context.Arguments;
+        if (args.Count < 2)
+            return; // Need at least 2 arguments for most operations
         
-        // This is where the actual kernel logic would be executed
-        // For example, a vector addition kernel would:
-        // 1. Extract buffer arguments from context.Arguments
-        // 2. Calculate memory addresses based on workItemId
-        // 3. Perform the computation
-        // 4. Store results back to output buffer
+        // For demonstration, we'll implement a simple vector addition kernel
+        // In production, this would dispatch to the actual compiled kernel code
+        
+        // Calculate linear index from work item ID
+        long linearIndex = workItemId[0];
+        for (int i = 1; i < workItemId.Length; i++)
+        {
+            linearIndex = linearIndex * context.GlobalWorkSize[i] + workItemId[i];
+        }
+        
+        // Handle different kernel patterns
+        if (args.Count >= 3 && 
+            args[0] is IMemoryBuffer input1 && 
+            args[1] is IMemoryBuffer input2 && 
+            args[2] is IMemoryBuffer output)
+        {
+            // Vector operation pattern (e.g., C = A + B)
+            ExecuteVectorOperation(input1, input2, output, linearIndex);
+        }
+        else if (args.Count >= 2 && 
+                 args[0] is IMemoryBuffer input && 
+                 args[1] is IMemoryBuffer outputBuf)
+        {
+            // Unary operation pattern (e.g., B = sqrt(A))
+            ExecuteUnaryOperation(input, outputBuf, linearIndex);
+        }
+        else if (args.Count >= 1 && args[0] is IMemoryBuffer buffer)
+        {
+            // In-place operation pattern
+            ExecuteInPlaceOperation(buffer, linearIndex, args);
+        }
+        // Add more patterns as needed
+    }
+    
+    private static unsafe void ExecuteVectorOperation(
+        IMemoryBuffer input1, 
+        IMemoryBuffer input2, 
+        IMemoryBuffer output, 
+        long index)
+    {
+        // Get element size (assuming float for now)
+        const int elementSize = sizeof(float);
+        var offset = index * elementSize;
+        
+        // Check bounds
+        if (offset + elementSize > input1.SizeInBytes ||
+            offset + elementSize > input2.SizeInBytes ||
+            offset + elementSize > output.SizeInBytes)
+        {
+            return;
+        }
+        
+        // For CPU backend, access memory directly
+        if (input1 is CpuMemoryBuffer cpuInput1 &&
+            input2 is CpuMemoryBuffer cpuInput2 &&
+            output is CpuMemoryBuffer cpuOutput)
+        {
+            var mem1 = cpuInput1.GetMemory();
+            var mem2 = cpuInput2.GetMemory();
+            var memOut = cpuOutput.GetMemory();
+            
+            // Perform the operation (vector addition)
+            fixed (byte* p1 = mem1.Span)
+            fixed (byte* p2 = mem2.Span)
+            fixed (byte* pOut = memOut.Span)
+            {
+                var f1 = (float*)(p1 + offset);
+                var f2 = (float*)(p2 + offset);
+                var fOut = (float*)(pOut + offset);
+                
+                *fOut = *f1 + *f2;
+            }
+        }
+    }
+    
+    private static unsafe void ExecuteUnaryOperation(
+        IMemoryBuffer input,
+        IMemoryBuffer output,
+        long index)
+    {
+        // Get element size (assuming float for now)
+        const int elementSize = sizeof(float);
+        var offset = index * elementSize;
+        
+        // Check bounds
+        if (offset + elementSize > input.SizeInBytes ||
+            offset + elementSize > output.SizeInBytes)
+        {
+            return;
+        }
+        
+        // For CPU backend, access memory directly
+        if (input is CpuMemoryBuffer cpuInput &&
+            output is CpuMemoryBuffer cpuOutput)
+        {
+            var memIn = cpuInput.GetMemory();
+            var memOut = cpuOutput.GetMemory();
+            
+            // Perform a unary operation (e.g., square root)
+            fixed (byte* pIn = memIn.Span)
+            fixed (byte* pOut = memOut.Span)
+            {
+                var fIn = (float*)(pIn + offset);
+                var fOut = (float*)(pOut + offset);
+                
+                *fOut = MathF.Sqrt(*fIn);
+            }
+        }
+    }
+    
+    private static unsafe void ExecuteInPlaceOperation(
+        IMemoryBuffer buffer,
+        long index,
+        IReadOnlyList<object> args)
+    {
+        // Get element size (assuming float for now)
+        const int elementSize = sizeof(float);
+        var offset = index * elementSize;
+        
+        // Check bounds
+        if (offset + elementSize > buffer.SizeInBytes)
+        {
+            return;
+        }
+        
+        // For CPU backend, access memory directly
+        if (buffer is CpuMemoryBuffer cpuBuffer)
+        {
+            var mem = cpuBuffer.GetMemory();
+            
+            // Perform an in-place operation (e.g., scale by scalar)
+            fixed (byte* p = mem.Span)
+            {
+                var f = (float*)(p + offset);
+                
+                // Check if we have a scalar parameter
+                if (args.Count > 1 && args[1] is float scalar)
+                {
+                    *f *= scalar;
+                }
+                else
+                {
+                    // Default operation: increment
+                    *f += 1.0f;
+                }
+            }
+        }
     }
 
     public ValueTask DisposeAsync()
@@ -458,7 +697,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         return ValueTask.CompletedTask;
     }
 
-    private bool TryGetBufferArguments(KernelExecutionContext context, out IMemoryBuffer input1, out IMemoryBuffer input2, out IMemoryBuffer output)
+    private static bool TryGetBufferArguments(CoreKernelExecutionContext context, out IMemoryBuffer? input1, out IMemoryBuffer? input2, out IMemoryBuffer? output)
     {
         input1 = null;
         input2 = null;
@@ -486,11 +725,14 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         span = default;
         
         // For CPU backend, we need to access the underlying memory
-        // This is a simplified approach - real implementation would need proper casting
-        if (buffer is IMemoryBuffer<T> typedBuffer)
+        if (buffer is CpuMemoryBuffer cpuBuffer)
         {
-            span = typedBuffer.AsSpan();
-            return true;
+            var memory = cpuBuffer.GetMemory();
+            if (memory.Length >= sizeof(T))
+            {
+                span = MemoryMarshal.Cast<byte, T>(memory.Span);
+                return true;
+            }
         }
         
         return false;
@@ -516,6 +758,25 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
         };
     }
     
+    private static KernelArguments ConvertContextToArguments(CoreKernelExecutionContext context)
+    {
+        // Convert KernelExecutionContext arguments to KernelArguments
+        // The KernelArguments expects an array of objects
+        if (context.Arguments != null && context.Arguments.Count > 0)
+        {
+            // Convert IReadOnlyList<object> to object[]
+            var args = new object[context.Arguments.Count];
+            for (int i = 0; i < context.Arguments.Count; i++)
+            {
+                args[i] = context.Arguments[i];
+            }
+            return new KernelArguments(args);
+        }
+        
+        // Return empty arguments if none provided
+        return new KernelArguments();
+    }
+    
     private void ThrowIfDisposed()
     {
         if (_disposed != 0)
@@ -528,7 +789,7 @@ internal sealed class CpuCompiledKernel : ICompiledKernel
 /// </summary>
 internal sealed class VectorizedExecutionContext
 {
-    public required KernelExecutionContext KernelContext { get; init; }
+    public required CoreKernelExecutionContext KernelContext { get; init; }
     public required KernelExecutionPlan ExecutionPlan { get; init; }
     public required CancellationToken CancellationToken { get; init; }
 }

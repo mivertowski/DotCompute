@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using DotCompute.Memory;
+using DotCompute.Backends.CPU.Accelerators;
 
 namespace DotCompute.Memory.Tests;
 
@@ -14,7 +15,7 @@ namespace DotCompute.Memory.Tests;
 [SimpleJob(warmupCount: 3, iterationCount: 10)]
 public class MemoryPerformanceBenchmarks
 {
-    private TestMemoryManager _memoryManager = null!;
+    private CpuMemoryManager _memoryManager = null!;
     private UnifiedMemoryManager _unifiedManager = null!;
     private MemoryPool<float> _floatPool = null!;
     private MemoryAllocator _allocator = null!;
@@ -25,7 +26,7 @@ public class MemoryPerformanceBenchmarks
     [GlobalSetup]
     public void Setup()
     {
-        _memoryManager = new TestMemoryManager();
+        _memoryManager = new CpuMemoryManager();
         _unifiedManager = new UnifiedMemoryManager(_memoryManager);
         _floatPool = _unifiedManager.GetPool<float>();
         _allocator = new MemoryAllocator();
@@ -55,48 +56,69 @@ public class MemoryPerformanceBenchmarks
     }
     
     [Benchmark]
-    public void HostToDeviceTransfer()
+    public async Task HostToDeviceTransfer()
     {
-        using var buffer = new UnifiedBuffer<float>(_memoryManager, BufferSize / sizeof(float));
-        
-        // Write to host
-        var span = buffer.AsSpan();
-        for (int i = 0; i < span.Length; i++)
+        var buffer = await _memoryManager.AllocateAsync(BufferSize);
+        try
         {
-            span[i] = i;
+            // Write to host
+            var hostData = new float[BufferSize / sizeof(float)];
+            for (int i = 0; i < hostData.Length; i++)
+            {
+                hostData[i] = i;
+            }
+            
+            // Transfer to device (simulated)
+            await buffer.CopyFromHostAsync<float>(hostData);
         }
-        
-        // Transfer to device
-        buffer.EnsureOnDevice();
+        finally
+        {
+            await buffer.DisposeAsync();
+        }
     }
     
     [Benchmark]
-    public void DeviceToHostTransfer()
+    public async Task DeviceToHostTransfer()
     {
-        using var buffer = new UnifiedBuffer<float>(_memoryManager, BufferSize / sizeof(float));
-        
-        // Ensure on device first
-        buffer.EnsureOnDevice();
-        buffer.MarkDeviceDirty();
-        
-        // Transfer to host
-        buffer.EnsureOnHost();
+        var buffer = await _memoryManager.AllocateAsync(BufferSize);
+        try
+        {
+            // Write data first
+            var hostData = new float[BufferSize / sizeof(float)];
+            for (int i = 0; i < hostData.Length; i++)
+            {
+                hostData[i] = i;
+            }
+            await buffer.CopyFromHostAsync<float>(hostData);
+            
+            // Transfer back from device
+            var resultData = new float[BufferSize / sizeof(float)];
+            await buffer.CopyToHostAsync<float>(resultData);
+        }
+        finally
+        {
+            await buffer.DisposeAsync();
+        }
     }
     
     [Benchmark]
-    public void BidirectionalTransfer()
+    public async Task BidirectionalTransfer()
     {
-        using var buffer = new UnifiedBuffer<float>(_memoryManager, BufferSize / sizeof(float));
-        
-        // Host to device
-        var span = buffer.AsSpan();
-        span[0] = 42.0f;
-        buffer.EnsureOnDevice();
-        
-        // Device to host
-        buffer.MarkDeviceDirty();
-        buffer.EnsureOnHost();
-        var result = buffer.AsReadOnlySpan()[0];
+        var buffer = await _memoryManager.AllocateAsync(BufferSize);
+        try
+        {
+            // Host to device
+            var hostData = new float[] { 42.0f };
+            await buffer.CopyFromHostAsync<float>(hostData);
+            
+            // Device to host
+            var resultData = new float[1];
+            await buffer.CopyToHostAsync<float>(resultData);
+        }
+        finally
+        {
+            await buffer.DisposeAsync();
+        }
     }
     
     [Benchmark]
@@ -178,7 +200,7 @@ public class MemoryPerformanceTests
     {
         Console.WriteLine("=== Memory System Throughput Test ===");
         
-        using var memoryManager = new TestMemoryManager();
+        using var memoryManager = new CpuMemoryManager();
         using var unifiedManager = new UnifiedMemoryManager(memoryManager);
         
         var sizes = new[] { 1024, 16384, 262144, 1048576 }; // 1KB, 16KB, 256KB, 1MB
@@ -219,7 +241,7 @@ public class MemoryPerformanceTests
     {
         Console.WriteLine("\n=== Memory Pool Efficiency Test ===");
         
-        using var memoryManager = new TestMemoryManager();
+        using var memoryManager = new CpuMemoryManager();
         using var unifiedManager = new UnifiedMemoryManager(memoryManager);
         var pool = unifiedManager.GetPool<int>();
         

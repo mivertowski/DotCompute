@@ -4,6 +4,7 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
 using DotCompute.Core;
+using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 
 namespace DotCompute.Backends.CPU.Kernels;

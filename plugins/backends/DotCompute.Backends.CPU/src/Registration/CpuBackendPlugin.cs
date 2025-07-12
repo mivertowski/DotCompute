@@ -1,8 +1,20 @@
+using System;
+using System.Threading;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
-using DotCompute.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using AbstractionsAcceleratorInfo = DotCompute.Abstractions.AcceleratorInfo;
+using AbstractionsKernelDefinition = DotCompute.Abstractions.KernelDefinition;
+using AbstractionsCompilationOptions = DotCompute.Abstractions.CompilationOptions;
+using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using AbstractionsIAccelerator = DotCompute.Abstractions.IAccelerator;
+using AbstractionsIMemoryManager = DotCompute.Abstractions.IMemoryManager;
+using CoreAcceleratorInfo = DotCompute.Core.AcceleratorInfo;
+using CoreKernelDefinition = DotCompute.Core.KernelDefinition;
+using CoreCompilationOptions = DotCompute.Core.CompilationOptions;
+using CoreICompiledKernel = DotCompute.Core.ICompiledKernel;
+using IAccelerator = DotCompute.Abstractions.IAccelerator;
 
 namespace DotCompute.Backends.CPU.Registration;
 
@@ -63,12 +75,12 @@ public static class CpuBackendPlugin
 /// <summary>
 /// Wrapper to provide named accelerator support.
 /// </summary>
-internal sealed class NamedAcceleratorWrapper : IAccelerator
+internal sealed class NamedAcceleratorWrapper : AbstractionsIAccelerator
 {
     private readonly string _name;
-    private readonly IAccelerator _accelerator;
+    private readonly AbstractionsIAccelerator _accelerator;
 
-    public NamedAcceleratorWrapper(string name, IAccelerator accelerator)
+    public NamedAcceleratorWrapper(string name, AbstractionsIAccelerator accelerator)
     {
         _name = name ?? throw new ArgumentNullException(nameof(name));
         _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
@@ -76,13 +88,13 @@ internal sealed class NamedAcceleratorWrapper : IAccelerator
 
     public string Name => _name;
 
-    public AcceleratorInfo Info => _accelerator.Info;
+    public AbstractionsAcceleratorInfo Info => _accelerator.Info;
 
-    public IMemoryManager Memory => _accelerator.Memory;
+    public AbstractionsIMemoryManager Memory => _accelerator.Memory;
 
-    public ValueTask<ICompiledKernel> CompileKernelAsync(
-        KernelDefinition definition,
-        CompilationOptions? options = default,
+    public ValueTask<AbstractionsICompiledKernel> CompileKernelAsync(
+        AbstractionsKernelDefinition definition,
+        AbstractionsCompilationOptions? options = default,
         CancellationToken cancellationToken = default)
     {
         return _accelerator.CompileKernelAsync(definition, options, cancellationToken);

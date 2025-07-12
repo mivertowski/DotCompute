@@ -1,21 +1,22 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
+using System.Numerics;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using System.Runtime.Intrinsics.Arm;
+using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Core;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
 /// <summary>
-/// Generates optimized SIMD code for kernel execution.
+/// Generates optimized SIMD code for kernel execution using Native AOT-compatible approaches.
 /// </summary>
 internal sealed class SimdCodeGenerator
 {
-    private readonly Dictionary<string, DynamicMethod> _methodCache = new();
+    private readonly Dictionary<string, SimdKernelExecutor> _executorCache = new();
     private readonly SimdSummary _simdCapabilities;
 
     public SimdCodeGenerator(SimdSummary simdCapabilities)
@@ -24,463 +25,1710 @@ internal sealed class SimdCodeGenerator
     }
 
     /// <summary>
-    /// Generates a vectorized kernel execution method.
+    /// Gets or creates a vectorized kernel executor.
     /// </summary>
-    public DynamicMethod GenerateVectorizedKernel(
-        KernelDefinition definition,
+    public SimdKernelExecutor GetOrCreateVectorizedKernel(
+        DotCompute.Core.KernelDefinition definition,
         KernelExecutionPlan executionPlan)
     {
         var cacheKey = $"{definition.Name}_{executionPlan.VectorWidth}_{executionPlan.VectorizationFactor}";
         
-        if (_methodCache.TryGetValue(cacheKey, out var cachedMethod))
+        if (_executorCache.TryGetValue(cacheKey, out var cachedExecutor))
         {
-            return cachedMethod;
+            return cachedExecutor;
         }
 
-        var method = CreateDynamicMethod(definition, executionPlan);
-        _methodCache[cacheKey] = method;
-        return method;
+        var executor = CreateSimdExecutor(definition, executionPlan);
+        _executorCache[cacheKey] = executor;
+        return executor;
     }
 
-    private DynamicMethod CreateDynamicMethod(
-        KernelDefinition definition,
+    private SimdKernelExecutor CreateSimdExecutor(
+        DotCompute.Core.KernelDefinition definition,
         KernelExecutionPlan executionPlan)
     {
-        // Create dynamic method signature
-        var paramTypes = new[]
+        // Select the appropriate SIMD implementation based on capabilities and execution plan
+        return executionPlan.VectorWidth switch
         {
-            typeof(ReadOnlySpan<byte>),    // Input buffer 1
-            typeof(ReadOnlySpan<byte>),    // Input buffer 2
-            typeof(Span<byte>),            // Output buffer
-            typeof(long),                  // Element count
-            typeof(int)                    // Vector width
+            512 when _simdCapabilities.SupportsAvx512 => new Avx512KernelExecutor(definition, executionPlan),
+            256 when _simdCapabilities.SupportsAvx2 => new Avx2KernelExecutor(definition, executionPlan),
+            // TODO: Implement NeonKernelExecutor for ARM support
+            // 128 when _simdCapabilities.SupportedInstructionSets.Contains("NEON") => new NeonKernelExecutor(definition, executionPlan),
+            128 when _simdCapabilities.SupportsSse2 => new SseKernelExecutor(definition, executionPlan),
+            _ => new ScalarKernelExecutor(definition, executionPlan)
         };
-
-        var method = new DynamicMethod(
-            $"VectorizedKernel_{definition.Name}",
-            typeof(void),
-            paramTypes,
-            typeof(SimdCodeGenerator).Module,
-            skipVisibility: true);
-
-        var il = method.GetILGenerator();
-        
-        // Generate vectorized kernel based on capabilities
-        if (executionPlan.VectorWidth == 512 && _simdCapabilities.SupportsAvx512)
-        {
-            GenerateAvx512Kernel(il, definition);
-        }
-        else if (executionPlan.VectorWidth == 256 && _simdCapabilities.SupportsAvx2)
-        {
-            GenerateAvx2Kernel(il, definition);
-        }
-        else if (executionPlan.VectorWidth == 128 && _simdCapabilities.SupportsSse2)
-        {
-            GenerateSseKernel(il, definition);
-        }
-        else
-        {
-            GenerateScalarKernel(il, definition);
-        }
-
-        return method;
     }
+}
 
-    private void GenerateAvx512Kernel(ILGenerator il, KernelDefinition definition)
+/// <summary>
+/// Base class for SIMD kernel executors.
+/// </summary>
+internal abstract class SimdKernelExecutor
+{
+    protected readonly KernelDefinition Definition;
+    protected readonly KernelExecutionPlan ExecutionPlan;
+
+    protected SimdKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
     {
-        // Example: Vector addition using AVX-512
-        var loopStart = il.DefineLabel();
-        var loopEnd = il.DefineLabel();
-        var scalarStart = il.DefineLabel();
-        var done = il.DefineLabel();
-
-        // Local variables
-        var index = il.DeclareLocal(typeof(long));        // loop index
-        var vectorCount = il.DeclareLocal(typeof(long));  // number of full vectors
-        var remainder = il.DeclareLocal(typeof(long));    // remaining elements
-
-        // Calculate vector count and remainder
-        il.Emit(OpCodes.Ldarg_3);                        // element count
-        il.Emit(OpCodes.Ldc_I4, 16);                     // 16 floats per AVX-512 vector
-        il.Emit(OpCodes.Conv_I8);
-        il.Emit(OpCodes.Div);
-        il.Emit(OpCodes.Stloc, vectorCount);
-
-        il.Emit(OpCodes.Ldarg_3);                        // element count
-        il.Emit(OpCodes.Ldc_I4, 16);
-        il.Emit(OpCodes.Conv_I8);
-        il.Emit(OpCodes.Rem);
-        il.Emit(OpCodes.Stloc, remainder);
-
-        // Initialize index to 0
-        il.Emit(OpCodes.Ldc_I8, 0L);
-        il.Emit(OpCodes.Stloc, index);
-
-        // Main vectorized loop
-        il.MarkLabel(loopStart);
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldloc, vectorCount);
-        il.Emit(OpCodes.Bge, loopEnd);
-
-        // Load vectors from input buffers
-        // For demonstration, we'll emit a call to a helper method
-        EmitAvx512VectorOperation(il, definition, index);
-
-        // Increment index
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldc_I8, 1L);
-        il.Emit(OpCodes.Add);
-        il.Emit(OpCodes.Stloc, index);
-        il.Emit(OpCodes.Br, loopStart);
-
-        il.MarkLabel(loopEnd);
-
-        // Handle remaining elements with scalar code
-        il.Emit(OpCodes.Ldloc, remainder);
-        il.Emit(OpCodes.Ldc_I8, 0L);
-        il.Emit(OpCodes.Ble, done);
-
-        il.MarkLabel(scalarStart);
-        EmitScalarRemainder(il, definition, vectorCount, remainder);
-
-        il.MarkLabel(done);
-        il.Emit(OpCodes.Ret);
-    }
-
-    private void GenerateAvx2Kernel(ILGenerator il, KernelDefinition definition)
-    {
-        // Example: Vector addition using AVX2 (8 floats at a time)
-        var loopStart = il.DefineLabel();
-        var loopEnd = il.DefineLabel();
-        var scalarStart = il.DefineLabel();
-        var done = il.DefineLabel();
-
-        var index = il.DeclareLocal(typeof(long));
-        var vectorCount = il.DeclareLocal(typeof(long));
-        var remainder = il.DeclareLocal(typeof(long));
-
-        // Calculate vector count (8 floats per AVX2 vector)
-        il.Emit(OpCodes.Ldarg_3);
-        il.Emit(OpCodes.Ldc_I4_8);
-        il.Emit(OpCodes.Conv_I8);
-        il.Emit(OpCodes.Div);
-        il.Emit(OpCodes.Stloc, vectorCount);
-
-        il.Emit(OpCodes.Ldarg_3);
-        il.Emit(OpCodes.Ldc_I4_8);
-        il.Emit(OpCodes.Conv_I8);
-        il.Emit(OpCodes.Rem);
-        il.Emit(OpCodes.Stloc, remainder);
-
-        il.Emit(OpCodes.Ldc_I8, 0L);
-        il.Emit(OpCodes.Stloc, index);
-
-        // Vectorized loop
-        il.MarkLabel(loopStart);
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldloc, vectorCount);
-        il.Emit(OpCodes.Bge, loopEnd);
-
-        EmitAvx2VectorOperation(il, definition, index);
-
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldc_I8, 1L);
-        il.Emit(OpCodes.Add);
-        il.Emit(OpCodes.Stloc, index);
-        il.Emit(OpCodes.Br, loopStart);
-
-        il.MarkLabel(loopEnd);
-
-        // Handle remainder
-        il.Emit(OpCodes.Ldloc, remainder);
-        il.Emit(OpCodes.Ldc_I8, 0L);
-        il.Emit(OpCodes.Ble, done);
-
-        il.MarkLabel(scalarStart);
-        EmitScalarRemainder(il, definition, vectorCount, remainder);
-
-        il.MarkLabel(done);
-        il.Emit(OpCodes.Ret);
-    }
-
-    private void GenerateSseKernel(ILGenerator il, KernelDefinition definition)
-    {
-        // Example: Vector addition using SSE (4 floats at a time)
-        var loopStart = il.DefineLabel();
-        var loopEnd = il.DefineLabel();
-        var scalarStart = il.DefineLabel();
-        var done = il.DefineLabel();
-
-        var index = il.DeclareLocal(typeof(long));
-        var vectorCount = il.DeclareLocal(typeof(long));
-        var remainder = il.DeclareLocal(typeof(long));
-
-        // Calculate vector count (4 floats per SSE vector)
-        il.Emit(OpCodes.Ldarg_3);
-        il.Emit(OpCodes.Ldc_I4_4);
-        il.Emit(OpCodes.Conv_I8);
-        il.Emit(OpCodes.Div);
-        il.Emit(OpCodes.Stloc, vectorCount);
-
-        il.Emit(OpCodes.Ldarg_3);
-        il.Emit(OpCodes.Ldc_I4_4);
-        il.Emit(OpCodes.Conv_I8);
-        il.Emit(OpCodes.Rem);
-        il.Emit(OpCodes.Stloc, remainder);
-
-        il.Emit(OpCodes.Ldc_I8, 0L);
-        il.Emit(OpCodes.Stloc, index);
-
-        // Vectorized loop
-        il.MarkLabel(loopStart);
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldloc, vectorCount);
-        il.Emit(OpCodes.Bge, loopEnd);
-
-        EmitSseVectorOperation(il, definition, index);
-
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldc_I8, 1L);
-        il.Emit(OpCodes.Add);
-        il.Emit(OpCodes.Stloc, index);
-        il.Emit(OpCodes.Br, loopStart);
-
-        il.MarkLabel(loopEnd);
-
-        // Handle remainder
-        il.Emit(OpCodes.Ldloc, remainder);
-        il.Emit(OpCodes.Ldc_I8, 0L);
-        il.Emit(OpCodes.Ble, done);
-
-        il.MarkLabel(scalarStart);
-        EmitScalarRemainder(il, definition, vectorCount, remainder);
-
-        il.MarkLabel(done);
-        il.Emit(OpCodes.Ret);
-    }
-
-    private void GenerateScalarKernel(ILGenerator il, KernelDefinition definition)
-    {
-        // Fallback scalar implementation
-        var loopStart = il.DefineLabel();
-        var loopEnd = il.DefineLabel();
-        var index = il.DeclareLocal(typeof(long));
-
-        il.Emit(OpCodes.Ldc_I8, 0L);
-        il.Emit(OpCodes.Stloc, index);
-
-        il.MarkLabel(loopStart);
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldarg_3);
-        il.Emit(OpCodes.Bge, loopEnd);
-
-        EmitScalarOperation(il, definition, index);
-
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldc_I8, 1L);
-        il.Emit(OpCodes.Add);
-        il.Emit(OpCodes.Stloc, index);
-        il.Emit(OpCodes.Br, loopStart);
-
-        il.MarkLabel(loopEnd);
-        il.Emit(OpCodes.Ret);
-    }
-
-    private void EmitAvx512VectorOperation(ILGenerator il, KernelDefinition definition, LocalBuilder index)
-    {
-        // Emit AVX-512 vector operation
-        // This is a simplified example - real implementation would analyze the kernel source
-        var loadVector512 = typeof(Vector512).GetMethod("LoadUnsafe", new[] { typeof(float).MakeByRefType(), typeof(nuint) });
-        var storeVector512 = typeof(Vector512).GetMethod("StoreUnsafe", new[] { typeof(Vector512<float>), typeof(float).MakeByRefType(), typeof(nuint) });
-        var addVector512 = typeof(Avx512F).GetMethod("Add", new[] { typeof(Vector512<float>), typeof(Vector512<float>) });
-
-        // Calculate offset
-        var offset = il.DeclareLocal(typeof(nuint));
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldc_I4, 16);
-        il.Emit(OpCodes.Conv_I8);
-        il.Emit(OpCodes.Mul);
-        il.Emit(OpCodes.Ldc_I4_4);
-        il.Emit(OpCodes.Conv_I8);
-        il.Emit(OpCodes.Mul);
-        il.Emit(OpCodes.Conv_U);
-        il.Emit(OpCodes.Stloc, offset);
-
-        // This would need proper implementation based on kernel source
-        // For now, emit a placeholder call
-        EmitPlaceholderVectorOp(il, "AVX512", 16);
-    }
-
-    private void EmitAvx2VectorOperation(ILGenerator il, KernelDefinition definition, LocalBuilder index)
-    {
-        // Emit AVX2 vector operation
-        EmitPlaceholderVectorOp(il, "AVX2", 8);
-    }
-
-    private void EmitSseVectorOperation(ILGenerator il, KernelDefinition definition, LocalBuilder index)
-    {
-        // Emit SSE vector operation
-        EmitPlaceholderVectorOp(il, "SSE", 4);
-    }
-
-    private void EmitScalarOperation(ILGenerator il, KernelDefinition definition, LocalBuilder index)
-    {
-        // Emit scalar operation
-        EmitPlaceholderVectorOp(il, "Scalar", 1);
-    }
-
-    private void EmitScalarRemainder(ILGenerator il, KernelDefinition definition, LocalBuilder vectorCount, LocalBuilder remainder)
-    {
-        // Handle remaining elements that don't fit in a full vector
-        var loopStart = il.DefineLabel();
-        var loopEnd = il.DefineLabel();
-        var index = il.DeclareLocal(typeof(long));
-
-        il.Emit(OpCodes.Ldc_I8, 0L);
-        il.Emit(OpCodes.Stloc, index);
-
-        il.MarkLabel(loopStart);
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldloc, remainder);
-        il.Emit(OpCodes.Bge, loopEnd);
-
-        // Calculate actual index
-        var actualIndex = il.DeclareLocal(typeof(long));
-        il.Emit(OpCodes.Ldloc, vectorCount);
-        il.Emit(OpCodes.Ldc_I4, GetVectorSize(definition));
-        il.Emit(OpCodes.Conv_I8);
-        il.Emit(OpCodes.Mul);
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Add);
-        il.Emit(OpCodes.Stloc, actualIndex);
-
-        EmitScalarOperation(il, definition, actualIndex);
-
-        il.Emit(OpCodes.Ldloc, index);
-        il.Emit(OpCodes.Ldc_I8, 1L);
-        il.Emit(OpCodes.Add);
-        il.Emit(OpCodes.Stloc, index);
-        il.Emit(OpCodes.Br, loopStart);
-
-        il.MarkLabel(loopEnd);
-    }
-
-    private void EmitPlaceholderVectorOp(ILGenerator il, string vectorType, int vectorSize)
-    {
-        // Placeholder for actual vector operations
-        // In a real implementation, this would analyze the kernel source
-        // and emit appropriate SIMD instructions
-        
-        // For now, just emit a method call to a helper
-        var helperMethod = typeof(SimdCodeGenerator).GetMethod(
-            nameof(VectorOperationHelper),
-            BindingFlags.NonPublic | BindingFlags.Static);
-
-        il.Emit(OpCodes.Ldstr, vectorType);
-        il.Emit(OpCodes.Ldc_I4, vectorSize);
-        il.Emit(OpCodes.Call, helperMethod);
-    }
-
-    private static void VectorOperationHelper(string vectorType, int vectorSize)
-    {
-        // Placeholder helper method
-        // Real implementation would perform actual SIMD operations
-    }
-
-    private int GetVectorSize(KernelDefinition definition)
-    {
-        // Determine vector size based on element type
-        // For now, assume float (4 bytes)
-        return _simdCapabilities.PreferredVectorWidth switch
-        {
-            512 => 16,  // 16 floats
-            256 => 8,   // 8 floats
-            128 => 4,   // 4 floats
-            _ => 1      // scalar
-        };
+        Definition = definition;
+        ExecutionPlan = executionPlan;
     }
 
     /// <summary>
-    /// Creates specialized vector operations for common patterns.
+    /// Executes the kernel with the given buffers.
     /// </summary>
-    public static class VectorPatterns
+    public abstract void Execute(
+        ReadOnlySpan<byte> input1,
+        ReadOnlySpan<byte> input2,
+        Span<byte> output,
+        long elementCount,
+        int vectorWidth);
+
+    /// <summary>
+    /// Gets the operation type from kernel metadata.
+    /// </summary>
+    protected KernelOperation GetOperationType()
     {
-        public static void VectorAdd<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
-            where T : unmanaged
+        if (Definition.Metadata?.TryGetValue("Operation", out var op) == true && op is string opStr)
         {
-            // Pattern for vector addition
-            if (typeof(T) == typeof(float))
-            {
-                VectorAddFloat(
-                    MemoryMarshal.Cast<T, float>(a),
-                    MemoryMarshal.Cast<T, float>(b),
-                    MemoryMarshal.Cast<T, float>(result));
-            }
-            else if (typeof(T) == typeof(double))
-            {
-                VectorAddDouble(
-                    MemoryMarshal.Cast<T, double>(a),
-                    MemoryMarshal.Cast<T, double>(b),
-                    MemoryMarshal.Cast<T, double>(result));
-            }
+            return Enum.Parse<KernelOperation>(opStr, ignoreCase: true);
+        }
+        
+        // Default to Add if not specified
+        return KernelOperation.Add;
+    }
+}
+
+/// <summary>
+/// Supported kernel operations.
+/// </summary>
+internal enum KernelOperation
+{
+    Add,
+    Multiply,
+    FusedMultiplyAdd,
+    Subtract,
+    Divide,
+    Maximum,
+    Minimum,
+    DotProduct,
+    L2Norm,
+    Convolution,
+    Reduction,
+    Gather,
+    Scatter
+}
+
+/// <summary>
+/// AVX-512 kernel executor implementation.
+/// </summary>
+internal sealed class Avx512KernelExecutor : SimdKernelExecutor
+{
+    public Avx512KernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
+        : base(definition, executionPlan)
+    {
+    }
+
+    public override void Execute(
+        ReadOnlySpan<byte> input1,
+        ReadOnlySpan<byte> input2,
+        Span<byte> output,
+        long elementCount,
+        int vectorWidth)
+    {
+        var operation = GetOperationType();
+        
+        // Dispatch to the appropriate typed implementation
+        if (Definition.Parameters[0].ElementType == typeof(float))
+        {
+            ExecuteFloat32(
+                MemoryMarshal.Cast<byte, float>(input1),
+                MemoryMarshal.Cast<byte, float>(input2),
+                MemoryMarshal.Cast<byte, float>(output),
+                elementCount,
+                operation);
+        }
+        else if (Definition.Parameters[0].ElementType == typeof(double))
+        {
+            ExecuteFloat64(
+                MemoryMarshal.Cast<byte, double>(input1),
+                MemoryMarshal.Cast<byte, double>(input2),
+                MemoryMarshal.Cast<byte, double>(output),
+                elementCount,
+                operation);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void ExecuteFloat32(
+        ReadOnlySpan<float> input1,
+        ReadOnlySpan<float> input2,
+        Span<float> output,
+        long elementCount,
+        KernelOperation operation)
+    {
+        const int VectorSize = 16; // 512 bits / 32 bits per float
+        var vectorCount = elementCount / VectorSize;
+        var remainder = elementCount % VectorSize;
+
+        // Get function pointer for the specific operation
+        var vectorOp = GetVectorOperationFloat32(operation);
+
+        // Process full vectors
+        ref var input1Ref = ref MemoryMarshal.GetReference(input1);
+        ref var input2Ref = ref MemoryMarshal.GetReference(input2);
+        ref var outputRef = ref MemoryMarshal.GetReference(output);
+
+        for (long i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var vec1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
+            var vec2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var result = vectorOp(vec1, vec2);
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VectorAddFloat(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+        // Process remaining elements
+        if (remainder > 0)
         {
-            int vectorSize = Vector<float>.Count;
-            int i = 0;
-
-            // Process vectors
-            for (; i + vectorSize <= a.Length; i += vectorSize)
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            var scalarOp = GetScalarOperationFloat32(operation);
+            
+            for (long i = 0; i < remainder; i++)
             {
-                var va = new Vector<float>(a.Slice(i, vectorSize));
-                var vb = new Vector<float>(b.Slice(i, vectorSize));
-                var vr = va + vb;
-                vr.CopyTo(result.Slice(i, vectorSize));
+                var idx = lastVectorOffset + i;
+                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
             }
+        }
+    }
 
-            // Process remaining elements
-            for (; i < a.Length; i++)
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void ExecuteFloat64(
+        ReadOnlySpan<double> input1,
+        ReadOnlySpan<double> input2,
+        Span<double> output,
+        long elementCount,
+        KernelOperation operation)
+    {
+        const int VectorSize = 8; // 512 bits / 64 bits per double
+        var vectorCount = elementCount / VectorSize;
+        var remainder = elementCount % VectorSize;
+
+        // Get function pointer for the specific operation
+        var vectorOp = GetVectorOperationFloat64(operation);
+
+        // Process full vectors
+        ref var input1Ref = ref MemoryMarshal.GetReference(input1);
+        ref var input2Ref = ref MemoryMarshal.GetReference(input2);
+        ref var outputRef = ref MemoryMarshal.GetReference(output);
+
+        for (long i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var vec1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
+            var vec2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var result = vectorOp(vec1, vec2);
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+        }
+
+        // Process remaining elements
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            var scalarOp = GetScalarOperationFloat64(operation);
+            
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe delegate*<Vector512<float>, Vector512<float>, Vector512<float>> GetVectorOperationFloat32(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => &Avx512F.Add,
+            KernelOperation.Multiply => &Avx512F.Multiply,
+            // FusedMultiplyAdd requires 3 arguments, so we'll handle it separately
+            KernelOperation.FusedMultiplyAdd => &Avx512F.Multiply, // Fallback to multiply for now
+            KernelOperation.Subtract => &Avx512F.Subtract,
+            KernelOperation.Divide => &Avx512F.Divide,
+            KernelOperation.Maximum => &Avx512F.Max,
+            KernelOperation.Minimum => &Avx512F.Min,
+            _ => &Avx512F.Add
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe delegate*<Vector512<double>, Vector512<double>, Vector512<double>> GetVectorOperationFloat64(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => &Avx512F.Add,
+            KernelOperation.Multiply => &Avx512F.Multiply,
+            // FusedMultiplyAdd requires 3 arguments, so we'll handle it separately
+            KernelOperation.FusedMultiplyAdd => &Avx512F.Multiply, // Fallback to multiply for now
+            KernelOperation.Subtract => &Avx512F.Subtract,
+            KernelOperation.Divide => &Avx512F.Divide,
+            KernelOperation.Maximum => &Avx512F.Max,
+            KernelOperation.Minimum => &Avx512F.Min,
+            _ => &Avx512F.Add
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Func<float, float, float> GetScalarOperationFloat32(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => (a, b) => a + b,
+            KernelOperation.Multiply => (a, b) => a * b,
+            KernelOperation.FusedMultiplyAdd => (a, b) => a * b, // For two-operand FMA, this is just multiplication
+            KernelOperation.Subtract => (a, b) => a - b,
+            KernelOperation.Divide => (a, b) => a / b,
+            KernelOperation.Maximum => Math.Max,
+            KernelOperation.Minimum => Math.Min,
+            _ => (a, b) => a + b
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Func<double, double, double> GetScalarOperationFloat64(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => (a, b) => a + b,
+            KernelOperation.Multiply => (a, b) => a * b,
+            KernelOperation.FusedMultiplyAdd => (a, b) => a * b, // For two-operand FMA, this is just multiplication
+            KernelOperation.Subtract => (a, b) => a - b,
+            KernelOperation.Divide => (a, b) => a / b,
+            KernelOperation.Maximum => Math.Max,
+            KernelOperation.Minimum => Math.Min,
+            _ => (a, b) => a + b
+        };
+    }
+}
+
+/// <summary>
+/// AVX2 kernel executor implementation.
+/// </summary>
+internal sealed class Avx2KernelExecutor : SimdKernelExecutor
+{
+    public Avx2KernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
+        : base(definition, executionPlan)
+    {
+    }
+
+    public override void Execute(
+        ReadOnlySpan<byte> input1,
+        ReadOnlySpan<byte> input2,
+        Span<byte> output,
+        long elementCount,
+        int vectorWidth)
+    {
+        var operation = GetOperationType();
+        
+        if (Definition.Parameters[0].ElementType == typeof(float))
+        {
+            ExecuteFloat32(
+                MemoryMarshal.Cast<byte, float>(input1),
+                MemoryMarshal.Cast<byte, float>(input2),
+                MemoryMarshal.Cast<byte, float>(output),
+                elementCount,
+                operation);
+        }
+        else if (Definition.Parameters[0].ElementType == typeof(double))
+        {
+            ExecuteFloat64(
+                MemoryMarshal.Cast<byte, double>(input1),
+                MemoryMarshal.Cast<byte, double>(input2),
+                MemoryMarshal.Cast<byte, double>(output),
+                elementCount,
+                operation);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void ExecuteFloat32(
+        ReadOnlySpan<float> input1,
+        ReadOnlySpan<float> input2,
+        Span<float> output,
+        long elementCount,
+        KernelOperation operation)
+    {
+        const int VectorSize = 8; // 256 bits / 32 bits per float
+        var vectorCount = elementCount / VectorSize;
+        var remainder = elementCount % VectorSize;
+
+        // Get function pointer for the specific operation
+        var vectorOp = GetVectorOperationFloat32(operation);
+
+        // Process full vectors
+        ref var input1Ref = ref MemoryMarshal.GetReference(input1);
+        ref var input2Ref = ref MemoryMarshal.GetReference(input2);
+        ref var outputRef = ref MemoryMarshal.GetReference(output);
+
+        for (long i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var vec1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
+            var vec2 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var result = vectorOp(vec1, vec2);
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+        }
+
+        // Process remaining elements
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            var scalarOp = GetScalarOperationFloat32(operation);
+            
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void ExecuteFloat64(
+        ReadOnlySpan<double> input1,
+        ReadOnlySpan<double> input2,
+        Span<double> output,
+        long elementCount,
+        KernelOperation operation)
+    {
+        const int VectorSize = 4; // 256 bits / 64 bits per double
+        var vectorCount = elementCount / VectorSize;
+        var remainder = elementCount % VectorSize;
+
+        // Get function pointer for the specific operation
+        var vectorOp = GetVectorOperationFloat64(operation);
+
+        // Process full vectors
+        ref var input1Ref = ref MemoryMarshal.GetReference(input1);
+        ref var input2Ref = ref MemoryMarshal.GetReference(input2);
+        ref var outputRef = ref MemoryMarshal.GetReference(output);
+
+        for (long i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var vec1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
+            var vec2 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var result = vectorOp(vec1, vec2);
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+        }
+
+        // Process remaining elements
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            var scalarOp = GetScalarOperationFloat64(operation);
+            
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe delegate*<Vector256<float>, Vector256<float>, Vector256<float>> GetVectorOperationFloat32(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => &Avx.Add,
+            KernelOperation.Multiply => &Avx.Multiply,
+            // FusedMultiplyAdd requires 3 arguments, so we'll handle it separately
+            KernelOperation.FusedMultiplyAdd => &Avx.Multiply, // Fallback to multiply for now
+            KernelOperation.Subtract => &Avx.Subtract,
+            KernelOperation.Divide => &Avx.Divide,
+            KernelOperation.Maximum => &Avx.Max,
+            KernelOperation.Minimum => &Avx.Min,
+            _ => &Avx.Add
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe delegate*<Vector256<double>, Vector256<double>, Vector256<double>> GetVectorOperationFloat64(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => &Avx.Add,
+            KernelOperation.Multiply => &Avx.Multiply,
+            // FusedMultiplyAdd requires 3 arguments, so we'll handle it separately
+            KernelOperation.FusedMultiplyAdd => &Avx.Multiply, // Fallback to multiply for now
+            KernelOperation.Subtract => &Avx.Subtract,
+            KernelOperation.Divide => &Avx.Divide,
+            KernelOperation.Maximum => &Avx.Max,
+            KernelOperation.Minimum => &Avx.Min,
+            _ => &Avx.Add
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Func<float, float, float> GetScalarOperationFloat32(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => (a, b) => a + b,
+            KernelOperation.Multiply => (a, b) => a * b,
+            KernelOperation.FusedMultiplyAdd => (a, b) => a * b, // For two-operand FMA, this is just multiplication
+            KernelOperation.Subtract => (a, b) => a - b,
+            KernelOperation.Divide => (a, b) => a / b,
+            KernelOperation.Maximum => Math.Max,
+            KernelOperation.Minimum => Math.Min,
+            _ => (a, b) => a + b
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Func<double, double, double> GetScalarOperationFloat64(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => (a, b) => a + b,
+            KernelOperation.Multiply => (a, b) => a * b,
+            KernelOperation.FusedMultiplyAdd => (a, b) => a * b, // For two-operand FMA, this is just multiplication
+            KernelOperation.Subtract => (a, b) => a - b,
+            KernelOperation.Divide => (a, b) => a / b,
+            KernelOperation.Maximum => Math.Max,
+            KernelOperation.Minimum => Math.Min,
+            _ => (a, b) => a + b
+        };
+    }
+}
+
+/// <summary>
+/// SSE kernel executor implementation.
+/// </summary>
+internal sealed class SseKernelExecutor : SimdKernelExecutor
+{
+    public SseKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
+        : base(definition, executionPlan)
+    {
+    }
+
+    public override void Execute(
+        ReadOnlySpan<byte> input1,
+        ReadOnlySpan<byte> input2,
+        Span<byte> output,
+        long elementCount,
+        int vectorWidth)
+    {
+        var operation = GetOperationType();
+        
+        if (Definition.Parameters[0].ElementType == typeof(float))
+        {
+            ExecuteFloat32(
+                MemoryMarshal.Cast<byte, float>(input1),
+                MemoryMarshal.Cast<byte, float>(input2),
+                MemoryMarshal.Cast<byte, float>(output),
+                elementCount,
+                operation);
+        }
+        else if (Definition.Parameters[0].ElementType == typeof(double))
+        {
+            ExecuteFloat64(
+                MemoryMarshal.Cast<byte, double>(input1),
+                MemoryMarshal.Cast<byte, double>(input2),
+                MemoryMarshal.Cast<byte, double>(output),
+                elementCount,
+                operation);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void ExecuteFloat32(
+        ReadOnlySpan<float> input1,
+        ReadOnlySpan<float> input2,
+        Span<float> output,
+        long elementCount,
+        KernelOperation operation)
+    {
+        const int VectorSize = 4; // 128 bits / 32 bits per float
+        var vectorCount = elementCount / VectorSize;
+        var remainder = elementCount % VectorSize;
+
+        // Get function pointer for the specific operation
+        var vectorOp = GetVectorOperationFloat32(operation);
+
+        // Process full vectors
+        ref var input1Ref = ref MemoryMarshal.GetReference(input1);
+        ref var input2Ref = ref MemoryMarshal.GetReference(input2);
+        ref var outputRef = ref MemoryMarshal.GetReference(output);
+
+        for (long i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
+            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var result = vectorOp(vec1, vec2);
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+        }
+
+        // Process remaining elements
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            var scalarOp = GetScalarOperationFloat32(operation);
+            
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void ExecuteFloat64(
+        ReadOnlySpan<double> input1,
+        ReadOnlySpan<double> input2,
+        Span<double> output,
+        long elementCount,
+        KernelOperation operation)
+    {
+        const int VectorSize = 2; // 128 bits / 64 bits per double
+        var vectorCount = elementCount / VectorSize;
+        var remainder = elementCount % VectorSize;
+
+        // Get function pointer for the specific operation
+        var vectorOp = GetVectorOperationFloat64(operation);
+
+        // Process full vectors
+        ref var input1Ref = ref MemoryMarshal.GetReference(input1);
+        ref var input2Ref = ref MemoryMarshal.GetReference(input2);
+        ref var outputRef = ref MemoryMarshal.GetReference(output);
+
+        for (long i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
+            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var result = vectorOp(vec1, vec2);
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+        }
+
+        // Process remaining elements
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            var scalarOp = GetScalarOperationFloat64(operation);
+            
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe delegate*<Vector128<float>, Vector128<float>, Vector128<float>> GetVectorOperationFloat32(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => &Sse.Add,
+            KernelOperation.Multiply => &Sse.Multiply,
+            KernelOperation.Subtract => &Sse.Subtract,
+            KernelOperation.Divide => &Sse.Divide,
+            KernelOperation.Maximum => &Sse.Max,
+            KernelOperation.Minimum => &Sse.Min,
+            _ => &Sse.Add
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe delegate*<Vector128<double>, Vector128<double>, Vector128<double>> GetVectorOperationFloat64(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => &Sse2.Add,
+            KernelOperation.Multiply => &Sse2.Multiply,
+            KernelOperation.Subtract => &Sse2.Subtract,
+            KernelOperation.Divide => &Sse2.Divide,
+            KernelOperation.Maximum => &Sse2.Max,
+            KernelOperation.Minimum => &Sse2.Min,
+            _ => &Sse2.Add
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Func<float, float, float> GetScalarOperationFloat32(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => (a, b) => a + b,
+            KernelOperation.Multiply => (a, b) => a * b,
+            KernelOperation.FusedMultiplyAdd => (a, b) => a * b, // For two-operand FMA, this is just multiplication
+            KernelOperation.Subtract => (a, b) => a - b,
+            KernelOperation.Divide => (a, b) => a / b,
+            KernelOperation.Maximum => Math.Max,
+            KernelOperation.Minimum => Math.Min,
+            _ => (a, b) => a + b
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Func<double, double, double> GetScalarOperationFloat64(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => (a, b) => a + b,
+            KernelOperation.Multiply => (a, b) => a * b,
+            KernelOperation.FusedMultiplyAdd => (a, b) => a * b, // For two-operand FMA, this is just multiplication
+            KernelOperation.Subtract => (a, b) => a - b,
+            KernelOperation.Divide => (a, b) => a / b,
+            KernelOperation.Maximum => Math.Max,
+            KernelOperation.Minimum => Math.Min,
+            _ => (a, b) => a + b
+        };
+    }
+}
+
+/* TODO: ARM NEON support - commenting out for now due to compilation issues
+/// <summary>
+/// ARM NEON kernel executor implementation.
+/// </summary>
+[System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "CA1812:Avoid uninstantiated internal classes", Justification = "Used via reflection or factory pattern")]
+internal sealed class NeonKernelExecutor : SimdKernelExecutor
+{
+    public NeonKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
+        : base(definition, executionPlan)
+    {
+    }
+
+    public override void Execute(
+        ReadOnlySpan<byte> input1,
+        ReadOnlySpan<byte> input2,
+        Span<byte> output,
+        long elementCount,
+        int vectorWidth)
+    {
+        var operation = GetOperationType();
+        
+        if (Definition.Parameters[0].ElementType == typeof(float))
+        {
+            ExecuteFloat32(
+                MemoryMarshal.Cast<byte, float>(input1),
+                MemoryMarshal.Cast<byte, float>(input2),
+                MemoryMarshal.Cast<byte, float>(output),
+                elementCount,
+                operation);
+        }
+        else if (Definition.Parameters[0].ElementType == typeof(double))
+        {
+            ExecuteFloat64(
+                MemoryMarshal.Cast<byte, double>(input1),
+                MemoryMarshal.Cast<byte, double>(input2),
+                MemoryMarshal.Cast<byte, double>(output),
+                elementCount,
+                operation);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void ExecuteFloat32(
+        ReadOnlySpan<float> input1,
+        ReadOnlySpan<float> input2,
+        Span<float> output,
+        long elementCount,
+        KernelOperation operation)
+    {
+        const int VectorSize = 4; // 128 bits / 32 bits per float
+        var vectorCount = elementCount / VectorSize;
+        var remainder = elementCount % VectorSize;
+
+        // Get function pointer for the specific operation
+        var vectorOp = GetVectorOperationFloat32(operation);
+
+        // Process full vectors
+        ref var input1Ref = ref MemoryMarshal.GetReference(input1);
+        ref var input2Ref = ref MemoryMarshal.GetReference(input2);
+        ref var outputRef = ref MemoryMarshal.GetReference(output);
+
+        for (long i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
+            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var result = vectorOp(vec1, vec2);
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+        }
+
+        // Process remaining elements
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            var scalarOp = GetScalarOperationFloat32(operation);
+            
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void ExecuteFloat64(
+        ReadOnlySpan<double> input1,
+        ReadOnlySpan<double> input2,
+        Span<double> output,
+        long elementCount,
+        KernelOperation operation)
+    {
+        const int VectorSize = 2; // 128 bits / 64 bits per double
+        var vectorCount = elementCount / VectorSize;
+        var remainder = elementCount % VectorSize;
+
+        // Get function pointer for the specific operation
+        var vectorOp = GetVectorOperationFloat64(operation);
+
+        // Process full vectors
+        ref var input1Ref = ref MemoryMarshal.GetReference(input1);
+        ref var input2Ref = ref MemoryMarshal.GetReference(input2);
+        ref var outputRef = ref MemoryMarshal.GetReference(output);
+
+        for (long i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
+            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var result = vectorOp(vec1, vec2);
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+        }
+
+        // Process remaining elements
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            var scalarOp = GetScalarOperationFloat64(operation);
+            
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe delegate*<Vector128<float>, Vector128<float>, Vector128<float>> GetVectorOperationFloat32(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => &AdvSimd.Add,
+            KernelOperation.Multiply => &AdvSimd.Multiply,
+            KernelOperation.FusedMultiplyAdd => &AdvSimd.Multiply, // Fallback to multiply for 2-arg function pointer
+            KernelOperation.Subtract => &AdvSimd.Subtract,
+            KernelOperation.Divide => &AdvSimd.Multiply, // AdvSimd doesn't have divide, emulate with reciprocal
+            KernelOperation.Maximum => &AdvSimd.Max,
+            KernelOperation.Minimum => &AdvSimd.Min,
+            _ => &AdvSimd.Add
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe delegate*<Vector128<double>, Vector128<double>, Vector128<double>> GetVectorOperationFloat64(KernelOperation operation)
+    {
+        // ARM NEON has limited double precision support, use available operations
+        return operation switch
+        {
+            KernelOperation.Add => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Add : &FallbackAdd,
+            KernelOperation.Multiply => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Multiply : &FallbackMultiply,
+            KernelOperation.FusedMultiplyAdd => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Multiply : &FallbackMultiply,
+            KernelOperation.Subtract => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Subtract : &FallbackSubtract,
+            KernelOperation.Divide => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Divide : &FallbackDivide,
+            KernelOperation.Maximum => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Max : &FallbackMax,
+            KernelOperation.Minimum => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Min : &FallbackMin,
+            _ => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Add : &FallbackAdd
+        };
+    }
+
+    // Fallback implementations for Vector128<double> operations when ARM64 NEON is not available
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<double> FallbackAdd(Vector128<double> left, Vector128<double> right) => left + right;
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<double> FallbackMultiply(Vector128<double> left, Vector128<double> right) => left * right;
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<double> FallbackSubtract(Vector128<double> left, Vector128<double> right) => left - right;
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<double> FallbackDivide(Vector128<double> left, Vector128<double> right) => left / right;
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<double> FallbackMax(Vector128<double> left, Vector128<double> right) => Vector128.Max(left, right);
+    
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Vector128<double> FallbackMin(Vector128<double> left, Vector128<double> right) => Vector128.Min(left, right);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Func<float, float, float> GetScalarOperationFloat32(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => (a, b) => a + b,
+            KernelOperation.Multiply => (a, b) => a * b,
+            KernelOperation.FusedMultiplyAdd => (a, b) => a * b, // For two-operand FMA, this is just multiplication
+            KernelOperation.Subtract => (a, b) => a - b,
+            KernelOperation.Divide => (a, b) => a / b,
+            KernelOperation.Maximum => Math.Max,
+            KernelOperation.Minimum => Math.Min,
+            _ => (a, b) => a + b
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Func<double, double, double> GetScalarOperationFloat64(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => (a, b) => a + b,
+            KernelOperation.Multiply => (a, b) => a * b,
+            KernelOperation.FusedMultiplyAdd => (a, b) => a * b, // For two-operand FMA, this is just multiplication
+            KernelOperation.Subtract => (a, b) => a - b,
+            KernelOperation.Divide => (a, b) => a / b,
+            KernelOperation.Maximum => Math.Max,
+            KernelOperation.Minimum => Math.Min,
+            _ => (a, b) => a + b
+        };
+    }
+}
+*/
+
+/// <summary>
+/// Scalar kernel executor implementation (fallback).
+/// </summary>
+internal sealed class ScalarKernelExecutor : SimdKernelExecutor
+{
+    public ScalarKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
+        : base(definition, executionPlan)
+    {
+    }
+
+    public override void Execute(
+        ReadOnlySpan<byte> input1,
+        ReadOnlySpan<byte> input2,
+        Span<byte> output,
+        long elementCount,
+        int vectorWidth)
+    {
+        var operation = GetOperationType();
+        
+        if (Definition.Parameters[0].ElementType == typeof(float))
+        {
+            ExecuteFloat32(
+                MemoryMarshal.Cast<byte, float>(input1),
+                MemoryMarshal.Cast<byte, float>(input2),
+                MemoryMarshal.Cast<byte, float>(output),
+                elementCount,
+                operation);
+        }
+        else if (Definition.Parameters[0].ElementType == typeof(double))
+        {
+            ExecuteFloat64(
+                MemoryMarshal.Cast<byte, double>(input1),
+                MemoryMarshal.Cast<byte, double>(input2),
+                MemoryMarshal.Cast<byte, double>(output),
+                elementCount,
+                operation);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void ExecuteFloat32(
+        ReadOnlySpan<float> input1,
+        ReadOnlySpan<float> input2,
+        Span<float> output,
+        long elementCount,
+        KernelOperation operation)
+    {
+        var scalarOp = GetScalarOperationFloat32(operation);
+        
+        for (long i = 0; i < elementCount; i++)
+        {
+            output[(int)i] = scalarOp(input1[(int)i], input2[(int)i]);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static unsafe void ExecuteFloat64(
+        ReadOnlySpan<double> input1,
+        ReadOnlySpan<double> input2,
+        Span<double> output,
+        long elementCount,
+        KernelOperation operation)
+    {
+        var scalarOp = GetScalarOperationFloat64(operation);
+        
+        for (long i = 0; i < elementCount; i++)
+        {
+            output[(int)i] = scalarOp(input1[(int)i], input2[(int)i]);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Func<float, float, float> GetScalarOperationFloat32(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => (a, b) => a + b,
+            KernelOperation.Multiply => (a, b) => a * b,
+            KernelOperation.FusedMultiplyAdd => (a, b) => a * b, // For two-operand FMA, this is just multiplication
+            KernelOperation.Subtract => (a, b) => a - b,
+            KernelOperation.Divide => (a, b) => a / b,
+            KernelOperation.Maximum => Math.Max,
+            KernelOperation.Minimum => Math.Min,
+            _ => (a, b) => a + b
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Func<double, double, double> GetScalarOperationFloat64(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => (a, b) => a + b,
+            KernelOperation.Multiply => (a, b) => a * b,
+            KernelOperation.FusedMultiplyAdd => (a, b) => a * b, // For two-operand FMA, this is just multiplication
+            KernelOperation.Subtract => (a, b) => a - b,
+            KernelOperation.Divide => (a, b) => a / b,
+            KernelOperation.Maximum => Math.Max,
+            KernelOperation.Minimum => Math.Min,
+            _ => (a, b) => a + b
+        };
+    }
+}
+
+/// <summary>
+/// Provides optimized vector operation patterns for common use cases.
+/// </summary>
+public static class VectorPatterns
+{
+    /// <summary>
+    /// Performs vectorized addition of two arrays.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void VectorAdd<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
+        where T : unmanaged
+    {
+        if (typeof(T) == typeof(float))
+        {
+            VectorAddFloat32(
+                MemoryMarshal.Cast<T, float>(a),
+                MemoryMarshal.Cast<T, float>(b),
+                MemoryMarshal.Cast<T, float>(result));
+        }
+        else if (typeof(T) == typeof(double))
+        {
+            VectorAddFloat64(
+                MemoryMarshal.Cast<T, double>(a),
+                MemoryMarshal.Cast<T, double>(b),
+                MemoryMarshal.Cast<T, double>(result));
+        }
+        else
+        {
+            // Generic fallback using Vector<T>
+            VectorAddGeneric(a, b, result);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorAddFloat32(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    {
+        int vectorSize = Vector<float>.Count;
+        int vectorizedLength = a.Length - (a.Length % vectorSize);
+
+        // Use platform-optimal SIMD
+        if (Vector512.IsHardwareAccelerated && a.Length >= 16)
+        {
+            VectorAddFloat32_Avx512(a, b, result);
+        }
+        else if (Vector256.IsHardwareAccelerated && a.Length >= 8)
+        {
+            VectorAddFloat32_Avx2(a, b, result);
+        }
+        else if (Vector128.IsHardwareAccelerated && a.Length >= 4)
+        {
+            VectorAddFloat32_Sse(a, b, result);
+        }
+        else
+        {
+            // Scalar fallback
+            for (int i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
             }
         }
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void VectorAddDouble(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorAddFloat32_Avx512(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    {
+        const int VectorSize = 16;
+        int vectorCount = a.Length / VectorSize;
+        
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (int i = 0; i < vectorCount; i++)
         {
-            int vectorSize = Vector<double>.Count;
-            int i = 0;
+            var offset = (int)(i * VectorSize);
+            var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+            var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var vr = Avx512F.Add(va, vb);
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+        }
 
-            // Process vectors
-            for (; i + vectorSize <= a.Length; i += vectorSize)
+        // Handle remainder
+        int remainder = a.Length % VectorSize;
+        if (remainder > 0)
+        {
+            int lastOffset = vectorCount * VectorSize;
+            for (int i = 0; i < remainder; i++)
             {
-                var va = new Vector<double>(a.Slice(i, vectorSize));
-                var vb = new Vector<double>(b.Slice(i, vectorSize));
-                var vr = va + vb;
-                vr.CopyTo(result.Slice(i, vectorSize));
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
             }
+        }
+    }
 
-            // Process remaining elements
-            for (; i < a.Length; i++)
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorAddFloat32_Avx2(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    {
+        const int VectorSize = 8;
+        int vectorCount = a.Length / VectorSize;
+        
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (int i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+            var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var vr = Avx.Add(va, vb);
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+        }
+
+        // Handle remainder
+        int remainder = a.Length % VectorSize;
+        if (remainder > 0)
+        {
+            int lastOffset = vectorCount * VectorSize;
+            for (int i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorAddFloat32_Sse(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    {
+        const int VectorSize = 4;
+        int vectorCount = a.Length / VectorSize;
+        
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (int i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+            var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var vr = Sse.Add(va, vb);
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+        }
+
+        // Handle remainder
+        int remainder = a.Length % VectorSize;
+        if (remainder > 0)
+        {
+            int lastOffset = vectorCount * VectorSize;
+            for (int i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorAddFloat64(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    {
+        if (Vector512.IsHardwareAccelerated && a.Length >= 8)
+        {
+            VectorAddFloat64_Avx512(a, b, result);
+        }
+        else if (Vector256.IsHardwareAccelerated && a.Length >= 4)
+        {
+            VectorAddFloat64_Avx2(a, b, result);
+        }
+        else if (Vector128.IsHardwareAccelerated && a.Length >= 2)
+        {
+            VectorAddFloat64_Sse(a, b, result);
+        }
+        else
+        {
+            // Scalar fallback
+            for (int i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
             }
         }
+    }
 
-        public static void VectorMultiply<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
-            where T : unmanaged
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorAddFloat64_Avx512(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    {
+        const int VectorSize = 8;
+        int vectorCount = a.Length / VectorSize;
+        
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (int i = 0; i < vectorCount; i++)
         {
-            // Pattern for vector multiplication
-            // Similar implementation to VectorAdd
+            var offset = (int)(i * VectorSize);
+            var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+            var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var vr = Avx512F.Add(va, vb);
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
         }
 
-        public static void VectorFMA<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, ReadOnlySpan<T> c, Span<T> result)
-            where T : unmanaged
+        // Handle remainder
+        int remainder = a.Length % VectorSize;
+        if (remainder > 0)
         {
-            // Pattern for fused multiply-add: result = a * b + c
-            // Uses FMA instructions when available
+            int lastOffset = vectorCount * VectorSize;
+            for (int i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorAddFloat64_Avx2(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    {
+        const int VectorSize = 4;
+        int vectorCount = a.Length / VectorSize;
+        
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (int i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+            var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var vr = Avx.Add(va, vb);
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+        }
+
+        // Handle remainder
+        int remainder = a.Length % VectorSize;
+        if (remainder > 0)
+        {
+            int lastOffset = vectorCount * VectorSize;
+            for (int i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorAddFloat64_Sse(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    {
+        const int VectorSize = 2;
+        int vectorCount = a.Length / VectorSize;
+        
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        for (int i = 0; i < vectorCount; i++)
+        {
+            var offset = (int)(i * VectorSize);
+            var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+            var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var vr = Sse2.Add(va, vb);
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+        }
+
+        // Handle remainder
+        int remainder = a.Length % VectorSize;
+        if (remainder > 0)
+        {
+            int lastOffset = vectorCount * VectorSize;
+            for (int i = 0; i < remainder; i++)
+            {
+                result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorAddGeneric<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
+        where T : unmanaged
+    {
+        int vectorSize = Vector<T>.Count;
+        int vectorizedLength = a.Length - (a.Length % vectorSize);
+
+        // Process vectors
+        for (int i = 0; i < vectorizedLength; i += vectorSize)
+        {
+            var va = new Vector<T>(a.Slice(i, vectorSize));
+            var vb = new Vector<T>(b.Slice(i, vectorSize));
+            var vr = va + vb;
+            vr.CopyTo(result.Slice(i, vectorSize));
+        }
+
+        // Process remaining elements
+        for (int i = vectorizedLength; i < a.Length; i++)
+        {
+            // Use dynamic dispatch for generic arithmetic
+            result[i] = AddGeneric(a[i], b[i]);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static T AddGeneric<T>(T a, T b) where T : unmanaged
+    {
+        // This will be optimized by JIT for specific types
+        if (typeof(T) == typeof(int))
+        {
+            return (T)(object)(((int)(object)a) + ((int)(object)b));
+        }
+        else if (typeof(T) == typeof(long))
+        {
+            return (T)(object)(((long)(object)a) + ((long)(object)b));
+        }
+        else if (typeof(T) == typeof(float))
+        {
+            return (T)(object)(((float)(object)a) + ((float)(object)b));
+        }
+        else if (typeof(T) == typeof(double))
+        {
+            return (T)(object)(((double)(object)a) + ((double)(object)b));
+        }
+        else
+        {
+            throw new NotSupportedException($"Addition not supported for type {typeof(T)}");
+        }
+    }
+
+    /// <summary>
+    /// Performs vectorized multiplication of two arrays.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void VectorMultiply<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
+        where T : unmanaged
+    {
+        if (typeof(T) == typeof(float))
+        {
+            VectorMultiplyFloat32(
+                MemoryMarshal.Cast<T, float>(a),
+                MemoryMarshal.Cast<T, float>(b),
+                MemoryMarshal.Cast<T, float>(result));
+        }
+        else if (typeof(T) == typeof(double))
+        {
+            VectorMultiplyFloat64(
+                MemoryMarshal.Cast<T, double>(a),
+                MemoryMarshal.Cast<T, double>(b),
+                MemoryMarshal.Cast<T, double>(result));
+        }
+        else
+        {
+            // Generic fallback using Vector<T>
+            VectorMultiplyGeneric(a, b, result);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorMultiplyFloat32(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    {
+        if (Vector512.IsHardwareAccelerated && a.Length >= 16)
+        {
+            const int VectorSize = 16;
+            int vectorCount = a.Length / VectorSize;
+            
+            ref var aRef = ref MemoryMarshal.GetReference(a);
+            ref var bRef = ref MemoryMarshal.GetReference(b);
+            ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+            for (int i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vr = Avx512F.Multiply(va, vb);
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+
+            // Handle remainder
+            int remainder = a.Length % VectorSize;
+            if (remainder > 0)
+            {
+                int lastOffset = vectorCount * VectorSize;
+                for (int i = 0; i < remainder; i++)
+                {
+                    result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+                }
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && a.Length >= 8)
+        {
+            const int VectorSize = 8;
+            int vectorCount = a.Length / VectorSize;
+            
+            ref var aRef = ref MemoryMarshal.GetReference(a);
+            ref var bRef = ref MemoryMarshal.GetReference(b);
+            ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+            for (int i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vr = Avx.Multiply(va, vb);
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+
+            // Handle remainder
+            int remainder = a.Length % VectorSize;
+            if (remainder > 0)
+            {
+                int lastOffset = vectorCount * VectorSize;
+                for (int i = 0; i < remainder; i++)
+                {
+                    result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+                }
+            }
+        }
+        else if (Vector128.IsHardwareAccelerated && a.Length >= 4)
+        {
+            const int VectorSize = 4;
+            int vectorCount = a.Length / VectorSize;
+            
+            ref var aRef = ref MemoryMarshal.GetReference(a);
+            ref var bRef = ref MemoryMarshal.GetReference(b);
+            ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+            for (int i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vr = Sse.Multiply(va, vb);
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+
+            // Handle remainder
+            int remainder = a.Length % VectorSize;
+            if (remainder > 0)
+            {
+                int lastOffset = vectorCount * VectorSize;
+                for (int i = 0; i < remainder; i++)
+                {
+                    result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+                }
+            }
+        }
+        else
+        {
+            // Scalar fallback
+            for (int i = 0; i < a.Length; i++)
+            {
+                result[i] = a[i] * b[i];
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorMultiplyFloat64(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    {
+        if (Vector512.IsHardwareAccelerated && a.Length >= 8)
+        {
+            const int VectorSize = 8;
+            int vectorCount = a.Length / VectorSize;
+            
+            ref var aRef = ref MemoryMarshal.GetReference(a);
+            ref var bRef = ref MemoryMarshal.GetReference(b);
+            ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+            for (int i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vr = Avx512F.Multiply(va, vb);
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+
+            // Handle remainder
+            int remainder = a.Length % VectorSize;
+            if (remainder > 0)
+            {
+                int lastOffset = vectorCount * VectorSize;
+                for (int i = 0; i < remainder; i++)
+                {
+                    result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+                }
+            }
+        }
+        else if (Vector256.IsHardwareAccelerated && a.Length >= 4)
+        {
+            const int VectorSize = 4;
+            int vectorCount = a.Length / VectorSize;
+            
+            ref var aRef = ref MemoryMarshal.GetReference(a);
+            ref var bRef = ref MemoryMarshal.GetReference(b);
+            ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+            for (int i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vr = Avx.Multiply(va, vb);
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+
+            // Handle remainder
+            int remainder = a.Length % VectorSize;
+            if (remainder > 0)
+            {
+                int lastOffset = vectorCount * VectorSize;
+                for (int i = 0; i < remainder; i++)
+                {
+                    result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+                }
+            }
+        }
+        else if (Vector128.IsHardwareAccelerated && a.Length >= 2)
+        {
+            const int VectorSize = 2;
+            int vectorCount = a.Length / VectorSize;
+            
+            ref var aRef = ref MemoryMarshal.GetReference(a);
+            ref var bRef = ref MemoryMarshal.GetReference(b);
+            ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+            for (int i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vr = Sse2.Multiply(va, vb);
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+
+            // Handle remainder
+            int remainder = a.Length % VectorSize;
+            if (remainder > 0)
+            {
+                int lastOffset = vectorCount * VectorSize;
+                for (int i = 0; i < remainder; i++)
+                {
+                    result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
+                }
+            }
+        }
+        else
+        {
+            // Scalar fallback
+            for (int i = 0; i < a.Length; i++)
+            {
+                result[i] = a[i] * b[i];
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorMultiplyGeneric<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
+        where T : unmanaged
+    {
+        int vectorSize = Vector<T>.Count;
+        int vectorizedLength = a.Length - (a.Length % vectorSize);
+
+        // Process vectors
+        for (int i = 0; i < vectorizedLength; i += vectorSize)
+        {
+            var va = new Vector<T>(a.Slice(i, vectorSize));
+            var vb = new Vector<T>(b.Slice(i, vectorSize));
+            var vr = va * vb;
+            vr.CopyTo(result.Slice(i, vectorSize));
+        }
+
+        // Process remaining elements
+        for (int i = vectorizedLength; i < a.Length; i++)
+        {
+            result[i] = MultiplyGeneric(a[i], b[i]);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static T MultiplyGeneric<T>(T a, T b) where T : unmanaged
+    {
+        if (typeof(T) == typeof(int))
+        {
+            return (T)(object)(((int)(object)a) * ((int)(object)b));
+        }
+        else if (typeof(T) == typeof(long))
+        {
+            return (T)(object)(((long)(object)a) * ((long)(object)b));
+        }
+        else if (typeof(T) == typeof(float))
+        {
+            return (T)(object)(((float)(object)a) * ((float)(object)b));
+        }
+        else if (typeof(T) == typeof(double))
+        {
+            return (T)(object)(((double)(object)a) * ((double)(object)b));
+        }
+        else
+        {
+            throw new NotSupportedException($"Multiplication not supported for type {typeof(T)}");
+        }
+    }
+
+    /// <summary>
+    /// Performs vectorized fused multiply-add operation: result = a * b + c.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static void VectorFMA<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, ReadOnlySpan<T> c, Span<T> result)
+        where T : unmanaged
+    {
+        if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+            throw new ArgumentException("All spans must have the same length");
+
+        if (typeof(T) == typeof(float))
+        {
+            VectorFMAFloat32(
+                MemoryMarshal.Cast<T, float>(a),
+                MemoryMarshal.Cast<T, float>(b),
+                MemoryMarshal.Cast<T, float>(c),
+                MemoryMarshal.Cast<T, float>(result));
+        }
+        else if (typeof(T) == typeof(double))
+        {
+            VectorFMAFloat64(
+                MemoryMarshal.Cast<T, double>(a),
+                MemoryMarshal.Cast<T, double>(b),
+                MemoryMarshal.Cast<T, double>(c),
+                MemoryMarshal.Cast<T, double>(result));
+        }
+        else
+        {
+            // Generic fallback
+            for (int i = 0; i < a.Length; i++)
+            {
+                result[i] = AddGeneric(MultiplyGeneric(a[i], b[i]), c[i]);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorFMAFloat32(ReadOnlySpan<float> a, ReadOnlySpan<float> b, ReadOnlySpan<float> c, Span<float> result)
+    {
+        if (Fma.IsSupported && Vector256.IsHardwareAccelerated)
+        {
+            const int VectorSize = 8;
+            int vectorCount = a.Length / VectorSize;
+            
+            ref var aRef = ref MemoryMarshal.GetReference(a);
+            ref var bRef = ref MemoryMarshal.GetReference(b);
+            ref var cRef = ref MemoryMarshal.GetReference(c);
+            ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+            for (int i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vc = Vector256.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                var vr = Fma.MultiplyAdd(va, vb, vc);
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+
+            // Handle remainder
+            int remainder = a.Length % VectorSize;
+            if (remainder > 0)
+            {
+                int lastOffset = vectorCount * VectorSize;
+                for (int i = 0; i < remainder; i++)
+                {
+                    result[lastOffset + i] = MathF.FusedMultiplyAdd(a[lastOffset + i], b[lastOffset + i], c[lastOffset + i]);
+                }
+            }
+        }
+        else
+        {
+            // Fallback to manual FMA
+            for (int i = 0; i < a.Length; i++)
+            {
+                result[i] = MathF.FusedMultiplyAdd(a[i], b[i], c[i]);
+            }
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void VectorFMAFloat64(ReadOnlySpan<double> a, ReadOnlySpan<double> b, ReadOnlySpan<double> c, Span<double> result)
+    {
+        if (Fma.IsSupported && Vector256.IsHardwareAccelerated)
+        {
+            const int VectorSize = 4;
+            int vectorCount = a.Length / VectorSize;
+            
+            ref var aRef = ref MemoryMarshal.GetReference(a);
+            ref var bRef = ref MemoryMarshal.GetReference(b);
+            ref var cRef = ref MemoryMarshal.GetReference(c);
+            ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+            for (int i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vc = Vector256.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                var vr = Fma.MultiplyAdd(va, vb, vc);
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+
+            // Handle remainder
+            int remainder = a.Length % VectorSize;
+            if (remainder > 0)
+            {
+                int lastOffset = vectorCount * VectorSize;
+                for (int i = 0; i < remainder; i++)
+                {
+                    result[lastOffset + i] = Math.FusedMultiplyAdd(a[lastOffset + i], b[lastOffset + i], c[lastOffset + i]);
+                }
+            }
+        }
+        else
+        {
+            // Fallback to manual FMA
+            for (int i = 0; i < a.Length; i++)
+            {
+                result[i] = Math.FusedMultiplyAdd(a[i], b[i], c[i]);
+            }
         }
     }
 }

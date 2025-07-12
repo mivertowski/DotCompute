@@ -385,7 +385,8 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T> where T : unmanaged
             // Free device memory
             if (_deviceMemory.IsValid)
             {
-                _memoryManager.Free(_deviceMemory);
+                // TODO: Add Free method to IMemoryManager interface
+                // _memoryManager.Free(_deviceMemory);
                 _deviceMemory = DeviceMemory.Invalid;
             }
             
@@ -412,7 +413,17 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T> where T : unmanaged
     {
         if (!_deviceMemory.IsValid)
         {
-            _deviceMemory = _memoryManager.Allocate(SizeInBytes);
+            // CPU-only implementation for Phase 2:
+            // Since we don't have actual device memory in Phase 2, we simulate it
+            // by creating a device memory handle that points to the host memory.
+            // This allows the buffer state machine to work correctly.
+            
+            // Create a device memory handle that represents our "device" allocation
+            // In Phase 2, this is just a logical construct since we're CPU-only
+            _deviceMemory = new DeviceMemory(
+                _pinnedHandle.AddrOfPinnedObject(),
+                SizeInBytes
+            );
         }
     }
     
@@ -429,8 +440,13 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T> where T : unmanaged
         if (_hostArray == null)
             throw new InvalidOperationException("Host array is not allocated");
         
-        var hostSpan = new ReadOnlySpan<T>(_hostArray, 0, Length);
-        _memoryManager.CopyToDevice(hostSpan, _deviceMemory);
+        // CPU-only implementation for Phase 2:
+        // In a CPU-only environment, "device" memory is actually just host memory.
+        // The transfer is a no-op since both host and device point to the same memory.
+        // This method exists to maintain the proper state machine transitions.
+        
+        // No actual copy needed - host and device share the same memory in CPU-only mode
+        // The state transition will be handled by the caller
     }
     
     private void TransferDeviceToHost()
@@ -438,8 +454,13 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T> where T : unmanaged
         if (_hostArray == null)
             throw new InvalidOperationException("Host array is not allocated");
         
-        var hostSpan = new Span<T>(_hostArray, 0, Length);
-        _memoryManager.CopyToHost(_deviceMemory, hostSpan);
+        // CPU-only implementation for Phase 2:
+        // In a CPU-only environment, "device" memory is actually just host memory.
+        // The transfer is a no-op since both host and device point to the same memory.
+        // This method exists to maintain the proper state machine transitions.
+        
+        // No actual copy needed - host and device share the same memory in CPU-only mode
+        // The state transition will be handled by the caller
     }
     
     #endregion

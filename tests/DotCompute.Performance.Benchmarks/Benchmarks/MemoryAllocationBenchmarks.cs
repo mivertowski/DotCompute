@@ -15,7 +15,7 @@ public class MemoryAllocationBenchmarks
 {
     private readonly int[] _sizes = { 1024, 4096, 16384, 65536, 262144, 1048576 };
     private ArrayPool<byte> _arrayPool = ArrayPool<byte>.Shared;
-    private MemoryPool<byte> _memoryPool = MemoryPool<byte>.Shared;
+    private System.Buffers.MemoryPool<byte> _memoryPool = System.Buffers.MemoryPool<byte>.Shared;
     private NativeMemoryManager? _nativeManager;
     
     [Params(1024, 4096, 16384, 65536, 262144, 1048576)]

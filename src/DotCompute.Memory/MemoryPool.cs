@@ -151,7 +151,7 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
             // Bucket is full, dispose the buffer
             buffer.Dispose();
             Interlocked.Decrement(ref _totalRentedBuffers);
-            Interlocked.Subtract(ref _totalAllocatedBytes, buffer.SizeInBytes);
+            Interlocked.Add(ref _totalAllocatedBytes, -buffer.SizeInBytes);
         }
     }
     
@@ -169,7 +169,7 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
                 while (bucket.TryDequeue(out var buffer))
                 {
                     buffer.Dispose();
-                    Interlocked.Subtract(ref _totalAllocatedBytes, buffer.SizeInBytes);
+                    Interlocked.Add(ref _totalAllocatedBytes, -buffer.SizeInBytes);
                 }
             }
             
@@ -270,7 +270,7 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
                     {
                         bytesReleased += buffer.SizeInBytes;
                         buffer.Dispose();
-                        Interlocked.Subtract(ref _totalAllocatedBytes, buffer.SizeInBytes);
+                        Interlocked.Add(ref _totalAllocatedBytes, -buffer.SizeInBytes);
                     }
                 }
             }
@@ -357,7 +357,7 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
                     if (bucket.TryDequeue(out var buffer))
                     {
                         buffer.Dispose();
-                        Interlocked.Subtract(ref _totalAllocatedBytes, buffer.SizeInBytes);
+                        Interlocked.Add(ref _totalAllocatedBytes, -buffer.SizeInBytes);
                     }
                 }
             }

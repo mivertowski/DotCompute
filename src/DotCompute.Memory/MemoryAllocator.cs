@@ -100,7 +100,7 @@ public sealed class MemoryAllocator : IDisposable
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
         ObjectDisposedException.ThrowIf(_disposed, this);
         
-        return AllocateAligned<T>(length, sizeof(nuint)); // Default to pointer alignment
+        return AllocateAligned<T>(length, IntPtr.Size); // Default to pointer alignment
     }
     
     /// <summary>
@@ -170,7 +170,7 @@ public sealed class MemoryAllocator : IDisposable
     
     internal void NotifyDeallocation(long sizeInBytes)
     {
-        Interlocked.Subtract(ref _totalAllocatedBytes, sizeInBytes);
+        Interlocked.Add(ref _totalAllocatedBytes, -sizeInBytes);
         Interlocked.Increment(ref _totalDeallocations);
     }
     
@@ -182,7 +182,7 @@ public sealed class MemoryAllocator : IDisposable
     {
         var ptr = Marshal.AllocHGlobal(size);
         if (ptr == IntPtr.Zero)
-            throw new OutOfMemoryException($"Failed to allocate {size} bytes of native memory.");
+            throw new InvalidOperationException($"Failed to allocate {size} bytes of native memory.");
         
         return ptr;
     }
@@ -215,7 +215,8 @@ internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanage
         
         unsafe
         {
-            Memory = new Memory<T>(alignedMemory.ToPointer(), length);
+            var span = new Span<T>(alignedMemory.ToPointer(), length);
+            Memory = new Memory<T>(span.ToArray());
         }
     }
     

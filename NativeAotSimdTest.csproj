@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net9.0</TargetFramework>
+    <PublishAot>true</PublishAot>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <Nullable>enable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    
+    <!-- Native AOT optimizations -->
+    <IlcOptimizationPreference>Speed</IlcOptimizationPreference>
+    <IlcGenerateStackTraceData>false</IlcGenerateStackTraceData>
+    <IlcInvariantGlobalization>true</IlcInvariantGlobalization>
+    
+    <!-- Enable SIMD optimizations -->
+    <EnablePreviewFeatures>true</EnablePreviewFeatures>
+    <RuntimeIdentifier>linux-x64</RuntimeIdentifier>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Include the necessary source files -->
+    <Compile Include="validate_aot_simd.cs" />
+    <Compile Include="plugins/backends/DotCompute.Backends.CPU/src/Kernels/SimdCodeGenerator.cs" />
+    <Compile Include="plugins/backends/DotCompute.Backends.CPU/src/Intrinsics/SimdSummary.cs" />
+    <Compile Include="plugins/backends/DotCompute.Backends.CPU/src/Intrinsics/SimdCapabilities.cs" />
+    <Compile Include="src/DotCompute.Core/KernelDefinition.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Numerics.Vectors" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="src/DotCompute.Memory/DotCompute.Memory.csproj" />
+    <ProjectReference Include="src/DotCompute.Abstractions/DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="src/DotCompute.Core/DotCompute.Core.csproj" />
+    <ProjectReference Include="plugins/backends/DotCompute.Backends.CPU/DotCompute.Backends.CPU.csproj" />
+  </ItemGroup>
+
+</Project>

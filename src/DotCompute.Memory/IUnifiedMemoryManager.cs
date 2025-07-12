@@ -21,7 +21,7 @@ public interface IUnifiedMemoryManager : IMemoryManager, IDisposable, IAsyncDisp
     /// <param name="options">Memory options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A unified buffer.</returns>
-    ValueTask<UnifiedBuffer<T>> CreateUnifiedBufferAsync<T>(
+    public ValueTask<UnifiedBuffer<T>> CreateUnifiedBufferAsync<T>(
         int length,
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged;
@@ -34,7 +34,7 @@ public interface IUnifiedMemoryManager : IMemoryManager, IDisposable, IAsyncDisp
     /// <param name="options">Memory options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A unified buffer.</returns>
-    ValueTask<UnifiedBuffer<T>> CreateUnifiedBufferFromAsync<T>(
+    public ValueTask<UnifiedBuffer<T>> CreateUnifiedBufferFromAsync<T>(
         ReadOnlyMemory<T> source,
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged;
@@ -44,39 +44,39 @@ public interface IUnifiedMemoryManager : IMemoryManager, IDisposable, IAsyncDisp
     /// </summary>
     /// <typeparam name="T">The element type.</typeparam>
     /// <returns>The memory pool.</returns>
-    MemoryPool<T> GetPool<T>() where T : unmanaged;
+    public MemoryPool<T> GetPool<T>() where T : unmanaged;
     
     /// <summary>
     /// Gets memory statistics and performance metrics.
     /// </summary>
     /// <returns>Memory statistics.</returns>
-    MemoryManagerStats GetStats();
+    public MemoryManagerStats GetStats();
     
     /// <summary>
     /// Handles memory pressure by releasing unused resources.
     /// </summary>
     /// <param name="pressure">The memory pressure level (0.0 to 1.0).</param>
     /// <returns>A task representing the cleanup operation.</returns>
-    ValueTask HandleMemoryPressureAsync(double pressure);
+    public ValueTask HandleMemoryPressureAsync(double pressure);
     
     /// <summary>
     /// Compacts all memory pools and releases unused memory.
     /// </summary>
     /// <returns>The number of bytes released.</returns>
-    ValueTask<long> CompactAsync();
+    public ValueTask<long> CompactAsync();
     
     /// <summary>
     /// Runs performance benchmarks.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Benchmark results.</returns>
-    ValueTask<MemoryBenchmarkResults> RunBenchmarksAsync(CancellationToken cancellationToken = default);
+    public ValueTask<MemoryBenchmarkResults> RunBenchmarksAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
 /// Memory manager statistics.
 /// </summary>
-public readonly struct MemoryManagerStats
+public readonly struct MemoryManagerStats : IEquatable<MemoryManagerStats>
 {
     /// <summary>
     /// Total allocated bytes across all pools.
@@ -134,4 +134,25 @@ public readonly struct MemoryManagerStats
     /// </summary>
     public double PoolEfficiency => TotalAllocations > 0 ? 
         (double)TotalReuses / TotalAllocations : 0.0;
+
+    public override bool Equals(object? obj) => obj is MemoryManagerStats other && Equals(other);
+    public bool Equals(MemoryManagerStats other)
+    {
+        return TotalAllocatedBytes == other.TotalAllocatedBytes &&
+               TotalRetainedBytes == other.TotalRetainedBytes &&
+               TotalAllocations == other.TotalAllocations &&
+               TotalReuses == other.TotalReuses &&
+               EfficiencyRatio.Equals(other.EfficiencyRatio) &&
+               AvailableDeviceMemory == other.AvailableDeviceMemory &&
+               TotalDeviceMemory == other.TotalDeviceMemory &&
+               ActiveUnifiedBuffers == other.ActiveUnifiedBuffers &&
+               ActiveMemoryPools == other.ActiveMemoryPools;
+    }
+    public override int GetHashCode() => HashCode.Combine(
+        HashCode.Combine(TotalAllocatedBytes, TotalRetainedBytes, TotalAllocations, TotalReuses),
+        HashCode.Combine(EfficiencyRatio, AvailableDeviceMemory, TotalDeviceMemory),
+        HashCode.Combine(ActiveUnifiedBuffers, ActiveMemoryPools));
+
+    public static bool operator ==(MemoryManagerStats left, MemoryManagerStats right) => left.Equals(right);
+    public static bool operator !=(MemoryManagerStats left, MemoryManagerStats right) => !left.Equals(right);
 }

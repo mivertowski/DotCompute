@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace DotCompute.Memory.Benchmarks;
 
@@ -124,7 +125,7 @@ public sealed class UnifiedBufferPerformanceResults
 /// <summary>
 /// Bandwidth measurement result.
 /// </summary>
-public readonly struct BandwidthMeasurement
+public readonly struct BandwidthMeasurement : IEquatable<BandwidthMeasurement>
 {
     public long TotalBytes { get; init; }
     public TimeSpan ElapsedTime { get; init; }
@@ -133,12 +134,24 @@ public readonly struct BandwidthMeasurement
     
     public double LatencyMs => ElapsedTime.TotalMilliseconds / IterationCount;
     public double ThroughputMBps => BandwidthGBps * 1024.0;
+
+    public override bool Equals(object? obj) => obj is BandwidthMeasurement other && Equals(other);
+    public bool Equals(BandwidthMeasurement other)
+    {
+        return TotalBytes == other.TotalBytes &&
+               ElapsedTime.Equals(other.ElapsedTime) &&
+               BandwidthGBps.Equals(other.BandwidthGBps) &&
+               IterationCount == other.IterationCount;
+    }
+    public override int GetHashCode() => HashCode.Combine(TotalBytes, ElapsedTime, BandwidthGBps, IterationCount);
+    public static bool operator ==(BandwidthMeasurement left, BandwidthMeasurement right) => left.Equals(right);
+    public static bool operator !=(BandwidthMeasurement left, BandwidthMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// Allocation measurement result.
 /// </summary>
-public readonly struct AllocationMeasurement
+public readonly struct AllocationMeasurement : IEquatable<AllocationMeasurement>
 {
     public TimeSpan AllocationTime { get; init; }
     public TimeSpan DeallocationTime { get; init; }
@@ -150,12 +163,29 @@ public readonly struct AllocationMeasurement
     public double AverageAllocationLatencyMs => AllocationTime.TotalMilliseconds / AllocationCount;
     public double AverageDeallocationLatencyMs => DeallocationTime.TotalMilliseconds / AllocationCount;
     public double TotalLatencyMs => AllocationTime.TotalMilliseconds + DeallocationTime.TotalMilliseconds;
+
+    public override bool Equals(object? obj) => obj is AllocationMeasurement other && Equals(other);
+    public bool Equals(AllocationMeasurement other)
+    {
+        return AllocationTime.Equals(other.AllocationTime) &&
+               DeallocationTime.Equals(other.DeallocationTime) &&
+               AllocationCount == other.AllocationCount &&
+               TotalBytes == other.TotalBytes &&
+               AllocationsPerSecond.Equals(other.AllocationsPerSecond) &&
+               DeallocationsPerSecond.Equals(other.DeallocationsPerSecond);
+    }
+    public override int GetHashCode() => HashCode.Combine(
+        HashCode.Combine(AllocationTime, DeallocationTime, AllocationCount),
+        HashCode.Combine(TotalBytes, AllocationsPerSecond, DeallocationsPerSecond));
+
+    public static bool operator ==(AllocationMeasurement left, AllocationMeasurement right) => left.Equals(right);
+    public static bool operator !=(AllocationMeasurement left, AllocationMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// Fragmentation measurement result.
 /// </summary>
-public readonly struct FragmentationMeasurement
+public readonly struct FragmentationMeasurement : IEquatable<FragmentationMeasurement>
 {
     public TimeSpan FragmentationSetupTime { get; init; }
     public TimeSpan FragmentedAllocationTime { get; init; }
@@ -164,12 +194,25 @@ public readonly struct FragmentationMeasurement
     
     public double FragmentationImpactRatio => FragmentedAllocationTime.TotalMilliseconds / FragmentationSetupTime.TotalMilliseconds;
     public double AllocationSuccessRate => SuccessfulAllocations / 50.0; // Expected 50 allocations
+
+    public override bool Equals(object? obj) => obj is FragmentationMeasurement other && Equals(other);
+    public bool Equals(FragmentationMeasurement other)
+    {
+        return FragmentationSetupTime.Equals(other.FragmentationSetupTime) &&
+               FragmentedAllocationTime.Equals(other.FragmentedAllocationTime) &&
+               SuccessfulAllocations == other.SuccessfulAllocations &&
+               FragmentationLevel.Equals(other.FragmentationLevel);
+    }
+    public override int GetHashCode() => HashCode.Combine(FragmentationSetupTime, FragmentedAllocationTime, SuccessfulAllocations, FragmentationLevel);
+
+    public static bool operator ==(FragmentationMeasurement left, FragmentationMeasurement right) => left.Equals(right);
+    public static bool operator !=(FragmentationMeasurement left, FragmentationMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// Concurrent allocation measurement result.
 /// </summary>
-public readonly struct ConcurrentAllocationMeasurement
+public readonly struct ConcurrentAllocationMeasurement : IEquatable<ConcurrentAllocationMeasurement>
 {
     public int ThreadCount { get; init; }
     public TimeSpan TotalTime { get; init; }
@@ -179,12 +222,25 @@ public readonly struct ConcurrentAllocationMeasurement
     
     public double ErrorRate => (double)TotalErrors / ThreadCount;
     public double ScalingEfficiency => AllocationsPerSecond / ThreadCount;
+
+    public override bool Equals(object? obj) => obj is ConcurrentAllocationMeasurement other && Equals(other);
+    public bool Equals(ConcurrentAllocationMeasurement other)
+    {
+        return ThreadCount == other.ThreadCount &&
+               TotalTime.Equals(other.TotalTime) &&
+               TotalAllocations == other.TotalAllocations &&
+               TotalErrors == other.TotalErrors &&
+               AllocationsPerSecond.Equals(other.AllocationsPerSecond);
+    }
+    public override int GetHashCode() => HashCode.Combine(ThreadCount, TotalTime, TotalAllocations, TotalErrors, AllocationsPerSecond);
+    public static bool operator ==(ConcurrentAllocationMeasurement left, ConcurrentAllocationMeasurement right) => left.Equals(right);
+    public static bool operator !=(ConcurrentAllocationMeasurement left, ConcurrentAllocationMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// Memory pressure measurement result.
 /// </summary>
-public readonly struct MemoryPressureMeasurement
+public readonly struct MemoryPressureMeasurement : IEquatable<MemoryPressureMeasurement>
 {
     public TimeSpan TimeToReachPressure { get; init; }
     public int AllocationsAtPressure { get; init; }
@@ -193,12 +249,18 @@ public readonly struct MemoryPressureMeasurement
     
     public double PressureBuilupRate => AllocationsAtPressure / TimeToReachPressure.TotalSeconds;
     public double MemoryUtilization => 1.0 - (double)AvailableMemoryAtPressure / (AvailableMemoryAtPressure + AllocationsAtPressure * 1024 * 1024);
+
+    public override bool Equals(object? obj) => obj is MemoryPressureMeasurement other && Equals(other);
+    public bool Equals(MemoryPressureMeasurement other) => TimeToReachPressure.Equals(other.TimeToReachPressure) && AllocationsAtPressure == other.AllocationsAtPressure && MemoryPressureLevel.Equals(other.MemoryPressureLevel) && AvailableMemoryAtPressure == other.AvailableMemoryAtPressure;
+    public override int GetHashCode() => HashCode.Combine(TimeToReachPressure, AllocationsAtPressure, MemoryPressureLevel, AvailableMemoryAtPressure);
+    public static bool operator ==(MemoryPressureMeasurement left, MemoryPressureMeasurement right) => left.Equals(right);
+    public static bool operator !=(MemoryPressureMeasurement left, MemoryPressureMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// Pool efficiency measurement result.
 /// </summary>
-public readonly struct PoolEfficiencyMeasurement
+public readonly struct PoolEfficiencyMeasurement : IEquatable<PoolEfficiencyMeasurement>
 {
     public TimeSpan AllocationTime { get; init; }
     public int AllocationCount { get; init; }
@@ -207,12 +269,18 @@ public readonly struct PoolEfficiencyMeasurement
     
     public double AllocationsPerSecond => AllocationCount / AllocationTime.TotalSeconds;
     public double AverageAllocationLatencyMs => AllocationTime.TotalMilliseconds / AllocationCount;
+
+    public override bool Equals(object? obj) => obj is PoolEfficiencyMeasurement other && Equals(other);
+    public bool Equals(PoolEfficiencyMeasurement other) => AllocationTime.Equals(other.AllocationTime) && AllocationCount == other.AllocationCount && EfficiencyRatio.Equals(other.EfficiencyRatio) && TotalRetainedBytes == other.TotalRetainedBytes;
+    public override int GetHashCode() => HashCode.Combine(AllocationTime, AllocationCount, EfficiencyRatio, TotalRetainedBytes);
+    public static bool operator ==(PoolEfficiencyMeasurement left, PoolEfficiencyMeasurement right) => left.Equals(right);
+    public static bool operator !=(PoolEfficiencyMeasurement left, PoolEfficiencyMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// Pool reuse measurement result.
 /// </summary>
-public readonly struct PoolReuseMeasurement
+public readonly struct PoolReuseMeasurement : IEquatable<PoolReuseMeasurement>
 {
     public TimeSpan ReuseTime { get; init; }
     public int ReuseCount { get; init; }
@@ -220,12 +288,24 @@ public readonly struct PoolReuseMeasurement
     public double ReusePerSecond { get; init; }
     
     public double ReuseLatencyMs => ReuseTime.TotalMilliseconds / ReuseCount;
+
+    public override bool Equals(object? obj) => obj is PoolReuseMeasurement other && Equals(other);
+    public bool Equals(PoolReuseMeasurement other)
+    {
+        return ReuseTime.Equals(other.ReuseTime) &&
+               ReuseCount == other.ReuseCount &&
+               ReuseRate.Equals(other.ReuseRate) &&
+               ReusePerSecond.Equals(other.ReusePerSecond);
+    }
+    public override int GetHashCode() => HashCode.Combine(ReuseTime, ReuseCount, ReuseRate, ReusePerSecond);
+    public static bool operator ==(PoolReuseMeasurement left, PoolReuseMeasurement right) => left.Equals(right);
+    public static bool operator !=(PoolReuseMeasurement left, PoolReuseMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// Pool memory overhead measurement result.
 /// </summary>
-public readonly struct PoolMemoryOverheadMeasurement
+public readonly struct PoolMemoryOverheadMeasurement : IEquatable<PoolMemoryOverheadMeasurement>
 {
     public long RetainedBytes { get; init; }
     public long AllocatedBytes { get; init; }
@@ -234,12 +314,18 @@ public readonly struct PoolMemoryOverheadMeasurement
     
     public double MemoryEfficiency => 1.0 - OverheadRatio;
     public double AverageRetainedPerBucket => (double)RetainedBytes / BucketCount;
+
+    public override bool Equals(object? obj) => obj is PoolMemoryOverheadMeasurement other && Equals(other);
+    public bool Equals(PoolMemoryOverheadMeasurement other) => RetainedBytes == other.RetainedBytes && AllocatedBytes == other.AllocatedBytes && OverheadRatio.Equals(other.OverheadRatio) && BucketCount == other.BucketCount;
+    public override int GetHashCode() => HashCode.Combine(RetainedBytes, AllocatedBytes, OverheadRatio, BucketCount);
+    public static bool operator ==(PoolMemoryOverheadMeasurement left, PoolMemoryOverheadMeasurement right) => left.Equals(right);
+    public static bool operator !=(PoolMemoryOverheadMeasurement left, PoolMemoryOverheadMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// Lazy synchronization measurement result.
 /// </summary>
-public readonly struct LazySyncMeasurement
+public readonly struct LazySyncMeasurement : IEquatable<LazySyncMeasurement>
 {
     public TimeSpan HostAllocationTime { get; init; }
     public TimeSpan DeviceAllocationTime { get; init; }
@@ -248,24 +334,42 @@ public readonly struct LazySyncMeasurement
     
     public TimeSpan TotalSetupTime => HostAllocationTime + DeviceAllocationTime;
     public double SyncOverheadRatio => LazySyncTime.TotalMilliseconds / TotalSetupTime.TotalMilliseconds;
+
+    public override bool Equals(object? obj) => obj is LazySyncMeasurement other && Equals(other);
+    public bool Equals(LazySyncMeasurement other)
+    {
+        return HostAllocationTime.Equals(other.HostAllocationTime) &&
+               DeviceAllocationTime.Equals(other.DeviceAllocationTime) &&
+               LazySyncTime.Equals(other.LazySyncTime) &&
+               SyncEfficiencyRatio.Equals(other.SyncEfficiencyRatio);
+    }
+    public override int GetHashCode() => HashCode.Combine(HostAllocationTime, DeviceAllocationTime, LazySyncTime, SyncEfficiencyRatio);
+    public static bool operator ==(LazySyncMeasurement left, LazySyncMeasurement right) => left.Equals(right);
+    public static bool operator !=(LazySyncMeasurement left, LazySyncMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// State transition measurement result.
 /// </summary>
-public readonly struct StateTransitionMeasurement
+public readonly struct StateTransitionMeasurement : IEquatable<StateTransitionMeasurement>
 {
-    public (BufferState From, BufferState To, TimeSpan Duration)[] Transitions { get; init; }
+    public IReadOnlyList<(BufferState From, BufferState To, TimeSpan Duration)> Transitions { get; init; }
     public TimeSpan AverageTransitionTime { get; init; }
     public int TotalTransitions { get; init; }
     
     public double TransitionEfficiency => 1.0 / AverageTransitionTime.TotalMilliseconds;
+
+    public override bool Equals(object? obj) => obj is StateTransitionMeasurement other && Equals(other);
+    public bool Equals(StateTransitionMeasurement other) => AverageTransitionTime.Equals(other.AverageTransitionTime) && TotalTransitions == other.TotalTransitions;
+    public override int GetHashCode() => HashCode.Combine(AverageTransitionTime, TotalTransitions);
+    public static bool operator ==(StateTransitionMeasurement left, StateTransitionMeasurement right) => left.Equals(right);
+    public static bool operator !=(StateTransitionMeasurement left, StateTransitionMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// Memory coherence measurement result.
 /// </summary>
-public readonly struct CoherenceMeasurement
+public readonly struct CoherenceMeasurement : IEquatable<CoherenceMeasurement>
 {
     public TimeSpan TotalCoherenceTime { get; init; }
     public int CoherenceOperations { get; init; }
@@ -273,12 +377,23 @@ public readonly struct CoherenceMeasurement
     
     public double CoherenceOperationsPerSecond => CoherenceOperations / TotalCoherenceTime.TotalSeconds;
     public double CoherenceEfficiency => 1.0 / AverageCoherenceTime.TotalMilliseconds;
+
+    public override bool Equals(object? obj) => obj is CoherenceMeasurement other && Equals(other);
+    public bool Equals(CoherenceMeasurement other)
+    {
+        return TotalCoherenceTime.Equals(other.TotalCoherenceTime) &&
+               CoherenceOperations == other.CoherenceOperations &&
+               AverageCoherenceTime.Equals(other.AverageCoherenceTime);
+    }
+    public override int GetHashCode() => HashCode.Combine(TotalCoherenceTime, CoherenceOperations, AverageCoherenceTime);
+    public static bool operator ==(CoherenceMeasurement left, CoherenceMeasurement right) => left.Equals(right);
+    public static bool operator !=(CoherenceMeasurement left, CoherenceMeasurement right) => !left.Equals(right);
 }
 
 /// <summary>
 /// Overall performance summary.
 /// </summary>
-public readonly struct PerformanceSummary
+public readonly struct PerformanceSummary : IEquatable<PerformanceSummary>
 {
     public double MaxBandwidthGBps { get; init; }
     public double MinAllocationLatencyMs { get; init; }
@@ -294,4 +409,16 @@ public readonly struct PerformanceSummary
         >= 50 => "D (Below Average)",
         _ => "F (Poor)"
     };
+
+    public override bool Equals(object? obj) => obj is PerformanceSummary other && Equals(other);
+    public bool Equals(PerformanceSummary other)
+    {
+        return MaxBandwidthGBps.Equals(other.MaxBandwidthGBps) &&
+               MinAllocationLatencyMs.Equals(other.MinAllocationLatencyMs) &&
+               PoolEfficiency.Equals(other.PoolEfficiency) &&
+               OverallScore.Equals(other.OverallScore);
+    }
+    public override int GetHashCode() => HashCode.Combine(MaxBandwidthGBps, MinAllocationLatencyMs, PoolEfficiency, OverallScore);
+    public static bool operator ==(PerformanceSummary left, PerformanceSummary right) => left.Equals(right);
+    public static bool operator !=(PerformanceSummary left, PerformanceSummary right) => !left.Equals(right);
 }

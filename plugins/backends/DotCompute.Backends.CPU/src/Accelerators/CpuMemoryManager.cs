@@ -1,6 +1,12 @@
 using System;
 using System.Buffers;
+using System.Collections.Generic;
+using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.X86;
+using System.Runtime.Intrinsics.Arm;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
@@ -10,7 +16,7 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// <summary>
 /// Memory manager for CPU-based compute.
 /// </summary>
-internal sealed class CpuMemoryManager : IMemoryManager, IDisposable
+public sealed class CpuMemoryManager : IMemoryManager, IDisposable
 {
     private readonly object _lock = new();
     private readonly List<WeakReference<CpuMemoryBuffer>> _buffers = new();
@@ -122,9 +128,8 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         }
         else
         {
-            // For very large allocations, we'd use native memory
-            // For now, throw an exception
-            throw new NotSupportedException($"Allocations larger than {maxArrayLength} bytes are not yet supported");
+            // Use native memory allocation for large buffers (>1GB)
+            _memoryOwner = new NativeMemoryOwner(sizeInBytes);
         }
     }
 
@@ -173,7 +178,16 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
 
         var destMemory = GetMemory().Slice((int)offset, bytesToCopy);
         var sourceSpan = MemoryMarshal.AsBytes(source.Span);
-        sourceSpan.CopyTo(destMemory.Span);
+        
+        // Use optimized SIMD copy for large transfers
+        if (bytesToCopy >= 64)
+        {
+            OptimizedMemoryCopy(sourceSpan, destMemory.Span);
+        }
+        else
+        {
+            sourceSpan.CopyTo(destMemory.Span);
+        }
 
         return ValueTask.CompletedTask;
     }
@@ -196,7 +210,16 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
 
         var sourceMemory = GetMemory().Slice((int)offset, bytesToCopy);
         var destSpan = MemoryMarshal.AsBytes(destination.Span);
-        sourceMemory.Span.CopyTo(destSpan);
+        
+        // Use optimized SIMD copy for large transfers
+        if (bytesToCopy >= 64)
+        {
+            OptimizedMemoryCopy(sourceMemory.Span, destSpan);
+        }
+        else
+        {
+            sourceMemory.Span.CopyTo(destSpan);
+        }
 
         return ValueTask.CompletedTask;
     }
@@ -209,6 +232,118 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
             throw new ArgumentOutOfRangeException();
 
         return new CpuMemoryBuffer(this, offset, length);
+    }
+
+    /// <summary>
+    /// Optimized memory copy using SIMD instructions for better performance.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void OptimizedMemoryCopy(ReadOnlySpan<byte> source, Span<byte> destination)
+    {
+        if (source.Length != destination.Length)
+            throw new ArgumentException("Source and destination must have the same length");
+
+        // Use the largest available SIMD width for copying
+        if (Vector512.IsHardwareAccelerated && source.Length >= 64)
+        {
+            MemoryCopyAvx512(source, destination);
+        }
+        else if (Vector256.IsHardwareAccelerated && source.Length >= 32)
+        {
+            MemoryCopyAvx2(source, destination);
+        }
+        else if (Vector128.IsHardwareAccelerated && source.Length >= 16)
+        {
+            MemoryCopyVector128(source, destination);
+        }
+        else
+        {
+            source.CopyTo(destination);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void MemoryCopyAvx512(ReadOnlySpan<byte> source, Span<byte> destination)
+    {
+        const int VectorSize = 64; // 512 bits = 64 bytes
+        int vectorCount = source.Length / VectorSize;
+        
+        ref var srcRef = ref MemoryMarshal.GetReference(source);
+        ref var dstRef = ref MemoryMarshal.GetReference(destination);
+        
+        // Copy 64 bytes at a time using AVX-512
+        for (int i = 0; i < vectorCount; i++)
+        {
+            var offset = i * VectorSize;
+            var data = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, offset));
+            data.StoreUnsafe(ref Unsafe.Add(ref dstRef, offset));
+        }
+        
+        // Handle remainder
+        int remainder = source.Length % VectorSize;
+        if (remainder > 0)
+        {
+            int lastOffset = vectorCount * VectorSize;
+            var remainingSource = source.Slice(lastOffset, remainder);
+            var remainingDest = destination.Slice(lastOffset, remainder);
+            remainingSource.CopyTo(remainingDest);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void MemoryCopyAvx2(ReadOnlySpan<byte> source, Span<byte> destination)
+    {
+        const int VectorSize = 32; // 256 bits = 32 bytes
+        int vectorCount = source.Length / VectorSize;
+        
+        ref var srcRef = ref MemoryMarshal.GetReference(source);
+        ref var dstRef = ref MemoryMarshal.GetReference(destination);
+        
+        // Copy 32 bytes at a time using AVX2
+        for (int i = 0; i < vectorCount; i++)
+        {
+            var offset = i * VectorSize;
+            var data = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, offset));
+            data.StoreUnsafe(ref Unsafe.Add(ref dstRef, offset));
+        }
+        
+        // Handle remainder
+        int remainder = source.Length % VectorSize;
+        if (remainder > 0)
+        {
+            int lastOffset = vectorCount * VectorSize;
+            var remainingSource = source.Slice(lastOffset, remainder);
+            var remainingDest = destination.Slice(lastOffset, remainder);
+            remainingSource.CopyTo(remainingDest);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void MemoryCopyVector128(ReadOnlySpan<byte> source, Span<byte> destination)
+    {
+        const int VectorSize = 16; // 128 bits = 16 bytes
+        int vectorCount = source.Length / VectorSize;
+        
+        ref var srcRef = ref MemoryMarshal.GetReference(source);
+        ref var dstRef = ref MemoryMarshal.GetReference(destination);
+        
+        // Copy 16 bytes at a time using SSE/NEON
+        for (int i = 0; i < vectorCount; i++)
+        {
+            var offset = i * VectorSize;
+            var data = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, offset));
+            data.StoreUnsafe(ref Unsafe.Add(ref dstRef, offset));
+        }
+        
+        // Handle remainder
+        int remainder = source.Length % VectorSize;
+        if (remainder > 0)
+        {
+            int lastOffset = vectorCount * VectorSize;
+            var remainingSource = source.Slice(lastOffset, remainder);
+            var remainingDest = destination.Slice(lastOffset, remainder);
+            remainingSource.CopyTo(remainingDest);
+        }
     }
 
     public ValueTask DisposeAsync()
@@ -235,4 +370,91 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         if (_disposed != 0)
             throw new ObjectDisposedException(nameof(CpuMemoryBuffer));
     }
+}
+
+/// <summary>
+/// Native memory owner for large allocations that exceed array limits.
+/// Uses NativeMemory for allocations larger than 1GB.
+/// </summary>
+internal sealed class NativeMemoryOwner : IMemoryOwner<byte>
+{
+    private unsafe byte* _ptr;
+    private readonly long _size;
+    private bool _disposed;
+
+    public unsafe NativeMemoryOwner(long size)
+    {
+        if (size <= 0)
+            throw new ArgumentOutOfRangeException(nameof(size));
+
+        _size = size;
+        _ptr = (byte*)NativeMemory.AlignedAlloc((nuint)size, 64); // 64-byte aligned for SIMD
+        
+        if (_ptr == null)
+            throw new InvalidOperationException($"Failed to allocate {size} bytes of native memory");
+    }
+
+    public Memory<byte> Memory
+    {
+        get
+        {
+            ThrowIfDisposed();
+            unsafe
+            {
+                // Create a Memory<byte> from native pointer
+                return new UnmanagedMemoryManager<byte>(_ptr, (int)Math.Min(_size, int.MaxValue)).Memory;
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            unsafe
+            {
+                if (_ptr != null)
+                {
+                    NativeMemory.AlignedFree(_ptr);
+                    _ptr = null;
+                }
+            }
+            _disposed = true;
+        }
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(NativeMemoryOwner));
+    }
+}
+
+/// <summary>
+/// Memory manager for unmanaged memory pointers.
+/// </summary>
+internal sealed unsafe class UnmanagedMemoryManager<T> : MemoryManager<T> where T : unmanaged
+{
+    private readonly T* _ptr;
+    private readonly int _length;
+
+    public UnmanagedMemoryManager(T* ptr, int length)
+    {
+        _ptr = ptr;
+        _length = length;
+    }
+
+    public override Span<T> GetSpan() => new(_ptr, _length);
+
+    public override MemoryHandle Pin(int elementIndex = 0)
+    {
+        if (elementIndex < 0 || elementIndex >= _length)
+            throw new ArgumentOutOfRangeException(nameof(elementIndex));
+
+        return new MemoryHandle(_ptr + elementIndex);
+    }
+
+    public override void Unpin() { }
+
+    protected override void Dispose(bool disposing) { }
 }

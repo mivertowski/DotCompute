@@ -14,10 +14,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Runtime", "src\D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Memory", "src\DotCompute.Memory\DotCompute.Memory.csproj", "{D4E5F6A7-B8C9-0123-4567-890123DEF012}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Generators", "src\DotCompute.Generators\DotCompute.Generators.csproj", "{E5F6A7B8-C9D0-1234-5678-901234EF0123}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Linq", "src\DotCompute.Linq\DotCompute.Linq.csproj", "{F6A7B8C9-D0E1-2345-6789-012345F01234}"
-EndProject
 
 # Plugin Projects
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugins", "plugins", "{C9D07D80-E4E5-5DA8-CF0A-FC9F9B1008C7}"
@@ -29,23 +25,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backends", "backends", "{D0
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.CPU", "plugins\backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj", "{A7B8C9D0-E1F2-3456-7890-123456A01234}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.CUDA", "plugins\backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj", "{B8C9D0E1-F2A3-4567-8901-234567B12345}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.Metal", "plugins\backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj", "{C9D0E1F2-A3B4-5678-9012-345678C23456}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.Vulkan", "plugins\backends\DotCompute.Backends.Vulkan\DotCompute.Backends.Vulkan.csproj", "{D0E1F2A3-B4C5-6789-0123-456789D34567}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.OpenCL", "plugins\backends\DotCompute.Backends.OpenCL\DotCompute.Backends.OpenCL.csproj", "{E1F2A3B4-C5D6-7890-1234-567890E45678}"
-EndProject
-
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "algorithms", "algorithms", "{E1F2A3B4-C5D6-7890-1234-567890E45678}"
-	ProjectSection(SolutionItems) = preProject
-		plugins\algorithms\Directory.Build.props = plugins\algorithms\Directory.Build.props
-	EndProjectSection
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Algorithms.LinearAlgebra", "plugins\algorithms\DotCompute.Algorithms.LinearAlgebra\DotCompute.Algorithms.LinearAlgebra.csproj", "{F2A3B4C5-D6E7-8901-2345-678901F56789}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Algorithms.FFT", "plugins\algorithms\DotCompute.Algorithms.FFT\DotCompute.Algorithms.FFT.csproj", "{A3B4C5D6-E7F8-9012-3456-789012A67890}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.CPU.Tests", "plugins\backends\DotCompute.Backends.CPU\tests\DotCompute.Backends.CPU.Tests.csproj", "{B8C9D0E1-F2A3-4567-8901-234567B12345}"
 EndProject
 
 # Test Projects
@@ -53,19 +33,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F2A3B4C5
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Core.Tests", "tests\DotCompute.Core.Tests\DotCompute.Core.Tests.csproj", "{B4C5D6E7-F8A9-0123-4567-890123B78901}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Generators.Tests", "tests\DotCompute.Generators.Tests\DotCompute.Generators.Tests.csproj", "{C5D6E7F8-A9B0-1234-5678-901234C89012}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Memory.Tests", "tests\DotCompute.Memory.Tests\DotCompute.Memory.Tests.csproj", "{C5D6E7F8-A9B0-1234-5678-901234C89012}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Integration.Tests", "tests\DotCompute.Integration.Tests\DotCompute.Integration.Tests.csproj", "{D6E7F8A9-B0C1-2345-6789-012345D90123}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Performance.Tests", "tests\DotCompute.Performance.Tests\DotCompute.Performance.Tests.csproj", "{E7F8A9B0-C1D2-3456-7890-123456E01234}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Performance.Benchmarks", "tests\DotCompute.Performance.Benchmarks\DotCompute.Performance.Benchmarks.csproj", "{D6E7F8A9-B0C1-2345-6789-012345D90123}"
 EndProject
 
 # Sample Projects
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "samples", "samples", "{A3B4C5D6-E7F8-9012-3456-789012A67890}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "GettingStarted", "samples\GettingStarted\GettingStarted.csproj", "{F8A9B0C1-D2E3-4567-8901-234567F12345}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "VectorOperations", "samples\VectorOperations\VectorOperations.csproj", "{A9B0C1D2-E3F4-5678-9012-345678A23456}"
 EndProject
 
 # Solution Items
@@ -93,6 +69,42 @@ Global
 		{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-2345-678901BCDEF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-2345-678901BCDEF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2C3D4E5-F6A7-8901-2345-678901BCDEF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2C3D4E5-F6A7-8901-2345-678901BCDEF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C3D4E5F6-A7B8-9012-3456-789012CDEF01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C3D4E5F6-A7B8-9012-3456-789012CDEF01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C3D4E5F6-A7B8-9012-3456-789012CDEF01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C3D4E5F6-A7B8-9012-3456-789012CDEF01}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D4E5F6A7-B8C9-0123-4567-890123DEF012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D4E5F6A7-B8C9-0123-4567-890123DEF012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D4E5F6A7-B8C9-0123-4567-890123DEF012}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D4E5F6A7-B8C9-0123-4567-890123DEF012}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A7B8C9D0-E1F2-3456-7890-123456A01234}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7B8C9D0-E1F2-3456-7890-123456A01234}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7B8C9D0-E1F2-3456-7890-123456A01234}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7B8C9D0-E1F2-3456-7890-123456A01234}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8C9D0E1-F2A3-4567-8901-234567B12345}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8C9D0E1-F2A3-4567-8901-234567B12345}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8C9D0E1-F2A3-4567-8901-234567B12345}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8C9D0E1-F2A3-4567-8901-234567B12345}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B4C5D6E7-F8A9-0123-4567-890123B78901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B4C5D6E7-F8A9-0123-4567-890123B78901}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B4C5D6E7-F8A9-0123-4567-890123B78901}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B4C5D6E7-F8A9-0123-4567-890123B78901}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C5D6E7F8-A9B0-1234-5678-901234C89012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C5D6E7F8-A9B0-1234-5678-901234C89012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C5D6E7F8-A9B0-1234-5678-901234C89012}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C5D6E7F8-A9B0-1234-5678-901234C89012}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D6E7F8A9-B0C1-2345-6789-012345D90123}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D6E7F8A9-B0C1-2345-6789-012345D90123}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D6E7F8A9-B0C1-2345-6789-012345D90123}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D6E7F8A9-B0C1-2345-6789-012345D90123}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F8A9B0C1-D2E3-4567-8901-234567F12345}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F8A9B0C1-D2E3-4567-8901-234567F12345}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F8A9B0C1-D2E3-4567-8901-234567F12345}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F8A9B0C1-D2E3-4567-8901-234567F12345}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -102,23 +114,13 @@ Global
 		{B2C3D4E5-F6A7-8901-2345-678901BCDEF0} = {B8C07D80-D3D4-4CF7-BE09-EB8F8A0997B6}
 		{C3D4E5F6-A7B8-9012-3456-789012CDEF01} = {B8C07D80-D3D4-4CF7-BE09-EB8F8A0997B6}
 		{D4E5F6A7-B8C9-0123-4567-890123DEF012} = {B8C07D80-D3D4-4CF7-BE09-EB8F8A0997B6}
-		{E5F6A7B8-C9D0-1234-5678-901234EF0123} = {B8C07D80-D3D4-4CF7-BE09-EB8F8A0997B6}
-		{F6A7B8C9-D0E1-2345-6789-012345F01234} = {B8C07D80-D3D4-4CF7-BE09-EB8F8A0997B6}
 		{D0E18E91-F5F6-6EB9-D01B-AD0F0C2119D8} = {C9D07D80-E4E5-5DA8-CF0A-FC9F9B1008C7}
 		{A7B8C9D0-E1F2-3456-7890-123456A01234} = {D0E18E91-F5F6-6EB9-D01B-AD0F0C2119D8}
 		{B8C9D0E1-F2A3-4567-8901-234567B12345} = {D0E18E91-F5F6-6EB9-D01B-AD0F0C2119D8}
-		{C9D0E1F2-A3B4-5678-9012-345678C23456} = {D0E18E91-F5F6-6EB9-D01B-AD0F0C2119D8}
-		{D0E1F2A3-B4C5-6789-0123-456789D34567} = {D0E18E91-F5F6-6EB9-D01B-AD0F0C2119D8}
-		{E1F2A3B4-C5D6-7890-1234-567890E45678} = {D0E18E91-F5F6-6EB9-D01B-AD0F0C2119D8}
-		{E1F2A3B4-C5D6-7890-1234-567890E45678} = {C9D07D80-E4E5-5DA8-CF0A-FC9F9B1008C7}
-		{F2A3B4C5-D6E7-8901-2345-678901F56789} = {E1F2A3B4-C5D6-7890-1234-567890E45678}
-		{A3B4C5D6-E7F8-9012-3456-789012A67890} = {E1F2A3B4-C5D6-7890-1234-567890E45678}
 		{B4C5D6E7-F8A9-0123-4567-890123B78901} = {F2A3B4C5-D6E7-8901-2345-678901F56789}
 		{C5D6E7F8-A9B0-1234-5678-901234C89012} = {F2A3B4C5-D6E7-8901-2345-678901F56789}
 		{D6E7F8A9-B0C1-2345-6789-012345D90123} = {F2A3B4C5-D6E7-8901-2345-678901F56789}
-		{E7F8A9B0-C1D2-3456-7890-123456E01234} = {F2A3B4C5-D6E7-8901-2345-678901F56789}
 		{F8A9B0C1-D2E3-4567-8901-234567F12345} = {A3B4C5D6-E7F8-9012-3456-789012A67890}
-		{A9B0C1D2-E3F4-5678-9012-345678A23456} = {A3B4C5D6-E7F8-9012-3456-789012A67890}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {C5D6E7F8-A9B0-1234-5678-901234C89012}

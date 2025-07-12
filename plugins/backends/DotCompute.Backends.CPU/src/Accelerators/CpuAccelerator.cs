@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Backends.CPU.Intrinsics;
@@ -8,6 +9,12 @@ using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using CoreAcceleratorInfo = DotCompute.Core.AcceleratorInfo;
+using CoreAcceleratorType = DotCompute.Core.AcceleratorType;
+using CoreKernelDefinition = DotCompute.Core.KernelDefinition;
+using CoreCompilationOptions = DotCompute.Core.CompilationOptions;
+using CoreICompiledKernel = DotCompute.Core.ICompiledKernel;
+using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -20,7 +27,7 @@ public sealed class CpuAccelerator : IAccelerator
     private readonly CpuAcceleratorOptions _options;
     private readonly CpuThreadPool _threadPool;
     private readonly CpuMemoryManager _memoryManager;
-    private readonly AcceleratorInfo _info;
+    private readonly CoreAcceleratorInfo _info;
     private int _disposed;
 
     public CpuAccelerator(
@@ -44,11 +51,11 @@ public sealed class CpuAccelerator : IAccelerator
             ["CacheLineSize"] = GetCacheLineSize()
         };
 
-        _info = new AcceleratorInfo
+        _info = new CoreAcceleratorInfo
         {
             Id = $"cpu-{Environment.MachineName}-{Environment.ProcessorCount}",
             Name = GetProcessorName(),
-            Type = AcceleratorType.Cpu,
+            Type = CoreAcceleratorType.Cpu,
             Vendor = GetProcessorVendor(),
             DriverVersion = Environment.Version.ToString(),
             MaxComputeUnits = Environment.ProcessorCount,
@@ -66,7 +73,18 @@ public sealed class CpuAccelerator : IAccelerator
     }
 
     /// <inheritdoc/>
-    public AcceleratorInfo Info => _info;
+    public AcceleratorInfo Info => new AcceleratorInfo
+    {
+        Id = _info.Id,
+        Name = _info.Name,
+        DeviceType = _info.Type.ToString(),
+        Vendor = _info.Vendor,
+        ComputeCapability = Version.Parse(_info.DriverVersion ?? "1.0.0.0"),
+        TotalMemory = _info.GlobalMemorySize,
+        ComputeUnits = _info.MaxComputeUnits,
+        MaxClockFrequency = 3000, // Default value for CPU
+        Capabilities = _info.Capabilities?.ToDictionary(kv => kv.Key, kv => kv.Value)
+    };
 
     /// <inheritdoc/>
     public IMemoryManager Memory => _memoryManager;
@@ -78,15 +96,19 @@ public sealed class CpuAccelerator : IAccelerator
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(definition);
-        options ??= CompilationOptions.Default;
+        options ??= new CompilationOptions();
 
         _logger.LogDebug("Compiling kernel '{KernelName}' for CPU with vectorization", definition.Name);
+
+        // Convert Abstractions types to Core types
+        var coreDefinition = ConvertToCoreKernelDefinition(definition);
+        var coreOptions = ConvertToCoreCompilationOptions(options);
 
         // Create kernel compilation context
         var compilationContext = new CpuKernelCompilationContext
         {
-            Definition = definition,
-            Options = options,
+            Definition = coreDefinition,
+            Options = coreOptions,
             SimdCapabilities = SimdCapabilities.GetSummary(),
             ThreadPool = _threadPool,
             Logger = _logger
@@ -94,12 +116,13 @@ public sealed class CpuAccelerator : IAccelerator
 
         // Compile the kernel with vectorization support
         var compiler = new CpuKernelCompiler();
-        var compiledKernel = await compiler.CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false);
+        var coreCompiledKernel = await compiler.CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false);
 
         _logger.LogDebug("Successfully compiled kernel '{KernelName}' with {VectorWidth}-bit vectorization", 
             definition.Name, SimdCapabilities.PreferredVectorWidth);
 
-        return compiledKernel;
+        // Wrap the Core compiled kernel to implement Abstractions.ICompiledKernel
+        return new CompiledKernelAdapter(coreCompiledKernel);
     }
 
     /// <inheritdoc/>
@@ -167,6 +190,69 @@ public sealed class CpuAccelerator : IAccelerator
     {
         // Most modern CPUs use 64-byte cache lines
         return 64;
+    }
+
+    private static CoreKernelDefinition ConvertToCoreKernelDefinition(KernelDefinition definition)
+    {
+        // Convert from Abstractions to Core types
+        var source = new DotCompute.Core.BytecodeKernelSource
+        {
+            Bytecode = definition.Code,
+            Format = "raw" // Default format
+        };
+        
+        return new CoreKernelDefinition
+        {
+            Name = definition.Name,
+            Source = source,
+            WorkDimensions = 1, // Default to 1D
+            Parameters = new List<DotCompute.Core.KernelParameter>(),
+            Metadata = definition.Metadata
+        };
+    }
+
+    private static CoreCompilationOptions ConvertToCoreCompilationOptions(CompilationOptions options)
+    {
+        return new CoreCompilationOptions
+        {
+            OptimizationLevel = (DotCompute.Core.OptimizationLevel)(int)options.OptimizationLevel,
+            EnableFastMath = false, // Conservative default
+            AdditionalFlags = options.AdditionalFlags?.ToList(),
+            Defines = null
+        };
+    }
+}
+
+/// <summary>
+/// Adapter that wraps a Core.ICompiledKernel to implement Abstractions.ICompiledKernel.
+/// </summary>
+internal sealed class CompiledKernelAdapter : ICompiledKernel
+{
+    private readonly CoreICompiledKernel _coreKernel;
+
+    public CompiledKernelAdapter(CoreICompiledKernel coreKernel)
+    {
+        _coreKernel = coreKernel ?? throw new ArgumentNullException(nameof(coreKernel));
+    }
+
+    public string Name => _coreKernel.Definition.Name;
+
+    public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+    {
+        // Convert KernelArguments to KernelExecutionContext
+        var context = new CoreKernelExecutionContext
+        {
+            GlobalWorkSize = new[] { 1024L }, // Default work size
+            LocalWorkSize = new[] { 64L },    // Default local work size
+            Arguments = new List<object>(arguments.Arguments.ToArray())
+        };
+
+        await _coreKernel.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        return _coreKernel.DisposeAsync();
     }
 }
 

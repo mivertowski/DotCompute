@@ -255,15 +255,28 @@ public sealed class CpuThreadPool : IAsyncDisposable
                 }
 
                 // No work available, wait for new work
-                var waitTask = globalReader.WaitToReadAsync(cancellationToken).AsTask();
                 try
                 {
-                    if (waitTask.Wait(100, cancellationToken))
+                    // Use timeout to avoid blocking forever
+                    using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                     {
-                        if (waitTask.Result && globalReader.TryRead(out workItem))
+                        cts.CancelAfter(100);
+                        
+                        var waitTask = globalReader.WaitToReadAsync(cts.Token).AsTask();
+                        try
                         {
-                            ExecuteWorkItem(workItem);
-                            consecutiveStealFailures = 0;
+                            // ConfigureAwait(false) and GetAwaiter().GetResult() to avoid deadlock
+                            var canRead = waitTask.ConfigureAwait(false).GetAwaiter().GetResult();
+                            if (canRead && globalReader.TryRead(out workItem))
+                            {
+                                ExecuteWorkItem(workItem);
+                                consecutiveStealFailures = 0;
+                            }
+                        }
+                        catch (OperationCanceledException) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+                        {
+                            // Timeout - continue loop
+                            continue;
                         }
                     }
                 }

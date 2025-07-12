@@ -4,52 +4,51 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using FluentAssertions;
-using NSubstitute;
 using DotCompute.Core;
 using DotCompute.Abstractions;
+using DotCompute.Backends.CPU.Accelerators;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DotCompute.Core.Tests;
 
 /// <summary>
-/// Tests for AcceleratorManager functionality.
+/// Tests for AcceleratorManager functionality using production implementations.
 /// </summary>
 public class AcceleratorManagerTests : IAsyncLifetime
 {
-    private readonly IAcceleratorManager _manager;
-    private readonly List<IAccelerator> _mockAccelerators;
+    private readonly ProductionAcceleratorManager _manager;
+    private readonly ILogger<ProductionAcceleratorManager> _logger;
 
     public AcceleratorManagerTests()
     {
-        _manager = Substitute.For<IAcceleratorManager>();
-        _mockAccelerators = new List<IAccelerator>();
+        _logger = LoggerFactory.Create(builder => builder.AddConsole())
+            .CreateLogger<ProductionAcceleratorManager>();
+        _manager = new ProductionAcceleratorManager(_logger);
     }
 
     [Fact]
-    public async Task GetDefaultAcceleratorAsync_ReturnsDefaultAccelerator()
+    public async Task GetDefaultAccelerator_ReturnsDefaultAccelerator()
     {
         // Arrange
-        var defaultAccelerator = CreateMockAccelerator("Default", AcceleratorType.CPU);
-        _manager.GetDefaultAcceleratorAsync().Returns(defaultAccelerator);
+        await _manager.InitializeAsync();
 
         // Act
-        var result = await _manager.GetDefaultAcceleratorAsync();
+        var result = _manager.Default;
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().BeSameAs(defaultAccelerator);
-        result.Info.Name.Should().Be("Default");
+        result.Info.Type.Should().Be(AcceleratorType.Cpu);
+        result.Info.Name.Should().NotBeNullOrEmpty();
     }
 
     [Fact]
-    public async Task GetDefaultAcceleratorAsync_WhenNoAccelerators_ThrowsException()
+    public void GetDefaultAccelerator_WhenNotInitialized_ThrowsException()
     {
-        // Arrange
-        _manager.GetDefaultAcceleratorAsync()
-            .Returns(Task.FromException<IAccelerator>(new InvalidOperationException("No accelerators available")));
+        // Arrange - Don't initialize the manager
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-            await _manager.GetDefaultAcceleratorAsync());
+        Assert.Throws<InvalidOperationException>(() => _manager.Default);
     }
 
     [Fact]

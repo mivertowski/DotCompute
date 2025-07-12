@@ -174,7 +174,7 @@ public class ThreadPoolBenchmarks
     }
 
     [Benchmark]
-    public async Task CustomThreadPool()
+    public async Task CustomThreadPoolBenchmark()
     {
         var customPool = new CustomThreadPool(ConcurrencyLevel);
         var tasks = new List<Task>();

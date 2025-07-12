@@ -37,6 +37,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotCompute.Memory\DotCompute.Memory.csproj" />
     <ProjectReference Include="..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\plugins\backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using DotCompute.Memory;
+using DotCompute.Backends.CPU.Accelerators;
 
 namespace DotCompute.Memory.Tests;
 
@@ -17,13 +18,13 @@ namespace DotCompute.Memory.Tests;
 public class MemoryStressTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
-    private readonly TestMemoryManager _memoryManager;
+    private readonly CpuMemoryManager _memoryManager;
     private readonly UnifiedMemoryManager _unifiedManager;
     
     public MemoryStressTests(ITestOutputHelper output)
     {
         _output = output;
-        _memoryManager = new TestMemoryManager();
+        _memoryManager = new CpuMemoryManager();
         _unifiedManager = new UnifiedMemoryManager(_memoryManager);
     }
     

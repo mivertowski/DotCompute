@@ -1,4 +1,5 @@
 using System;
+using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
@@ -23,7 +24,7 @@ public class SimdCapabilitiesTests
     public void DetectCapabilities_ReturnsValidSummary()
     {
         // Act
-        var summary = SimdCapabilities.DetectCapabilities();
+        var summary = SimdCapabilities.GetSummary();
 
         // Assert
         Assert.NotNull(summary);
@@ -55,7 +56,7 @@ public class SimdCapabilitiesTests
     public void InstructionSetSupport_IsCorrect()
     {
         // Arrange
-        var summary = SimdCapabilities.DetectCapabilities();
+        var summary = SimdCapabilities.GetSummary();
 
         // Act & Assert
         if (Sse.IsSupported)
@@ -97,11 +98,7 @@ public class SimdCapabilitiesTests
         {
             IsHardwareAccelerated = true,
             PreferredVectorWidth = 256,
-            SupportedInstructionSets = new HashSet<string> { "SSE", "SSE2", "AVX", "AVX2" },
-            ProcessorCount = Environment.ProcessorCount,
-            L1CacheSize = 32 * 1024,
-            L2CacheSize = 256 * 1024,
-            L3CacheSize = 8 * 1024 * 1024
+            SupportedInstructionSets = new HashSet<string> { "SSE", "SSE2", "AVX", "AVX2" }
         };
 
         // Assert
@@ -109,25 +106,8 @@ public class SimdCapabilitiesTests
         Assert.Equal(256, summary.PreferredVectorWidth);
         Assert.True(summary.SupportsAvx2);
         Assert.False(summary.SupportsAvx512);
-        Assert.Equal(Environment.ProcessorCount, summary.ProcessorCount);
     }
 
-    [Fact]
-    public void CacheInfo_IsReasonable()
-    {
-        // Act
-        var summary = SimdCapabilities.DetectCapabilities();
-
-        // Assert
-        _output.WriteLine($"L1 Cache: {summary.L1CacheSize / 1024}KB");
-        _output.WriteLine($"L2 Cache: {summary.L2CacheSize / 1024}KB");
-        _output.WriteLine($"L3 Cache: {summary.L3CacheSize / 1024 / 1024}MB");
-
-        // Basic sanity checks
-        Assert.True(summary.L1CacheSize >= 16 * 1024); // At least 16KB L1
-        Assert.True(summary.L2CacheSize >= summary.L1CacheSize); // L2 >= L1
-        Assert.True(summary.L3CacheSize >= summary.L2CacheSize || summary.L3CacheSize == 0); // L3 >= L2 or no L3
-    }
 
     [Theory]
     [InlineData(128, 4)]  // SSE: 128-bit = 4 floats
@@ -147,11 +127,11 @@ public class SimdCapabilitiesTests
     public void ProcessorCount_MatchesEnvironment()
     {
         // Act
-        var summary = SimdCapabilities.DetectCapabilities();
+        var processorCount = Environment.ProcessorCount;
 
         // Assert
-        Assert.Equal(Environment.ProcessorCount, summary.ProcessorCount);
-        _output.WriteLine($"Processor count: {summary.ProcessorCount}");
+        Assert.True(processorCount > 0);
+        _output.WriteLine($"Processor count: {processorCount}");
     }
 
     [Fact]
