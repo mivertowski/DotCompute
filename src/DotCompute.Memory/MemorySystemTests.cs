@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using DotCompute.Abstractions;
 
 namespace DotCompute.Memory;
@@ -22,24 +24,41 @@ internal static class MemorySystemTests
         private long _totalMemory = 1024 * 1024 * 1024; // 1GB
         private long _allocatedMemory = 0;
 
-        public IAccelerator Accelerator => throw new NotImplementedException();
-
-        public DeviceMemory Allocate(long sizeInBytes)
+        // Implement async interface methods
+        public ValueTask<IMemoryBuffer> AllocateAsync(
+            long sizeInBytes,
+            DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None,
+            CancellationToken cancellationToken = default)
         {
             if (_allocatedMemory + sizeInBytes > _totalMemory)
                 throw new OutOfMemoryException();
 
-            var ptr = Marshal.AllocHGlobal((int)sizeInBytes);
-            _allocations[ptr] = sizeInBytes;
+            var buffer = new MockMemoryBuffer(sizeInBytes, options);
             _allocatedMemory += sizeInBytes;
             
-            return new DeviceMemory(ptr, sizeInBytes);
+            return ValueTask.FromResult<IMemoryBuffer>(buffer);
         }
 
-        public DeviceMemory AllocateAligned(long sizeInBytes, int alignment)
+        public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
+            ReadOnlyMemory<T> source,
+            DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None,
+            CancellationToken cancellationToken = default) where T : unmanaged
         {
-            return Allocate(sizeInBytes); // Simplified for testing
+            var sizeInBytes = source.Length * Marshal.SizeOf<T>();
+            var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken);
+            await buffer.CopyFromHostAsync(source, 0, cancellationToken);
+            return buffer;
         }
+
+        public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+        {
+            if (buffer is not MockMemoryBuffer mockBuffer)
+                throw new ArgumentException("Buffer must be a mock memory buffer", nameof(buffer));
+            return mockBuffer.CreateView(offset, length);
+        }
+
+        // Legacy sync methods for backward compatibility
+        // Legacy sync methods removed due to interface conflicts
 
         public void Free(DeviceMemory memory)
         {
@@ -122,6 +141,69 @@ internal static class MemorySystemTests
             }
             _allocations.Clear();
             _allocatedMemory = 0;
+        }
+    }
+
+    /// <summary>
+    /// Mock memory buffer for testing.
+    /// </summary>
+    private class MockMemoryBuffer : IMemoryBuffer
+    {
+        private readonly byte[] _data;
+        private readonly long _offset;
+        private readonly long _length;
+        private bool _disposed;
+
+        public MockMemoryBuffer(long sizeInBytes, DotCompute.Abstractions.MemoryOptions options, long offset = 0, long? length = null)
+        {
+            SizeInBytes = length ?? sizeInBytes;
+            Options = options;
+            _offset = offset;
+            _length = length ?? sizeInBytes;
+            _data = new byte[sizeInBytes];
+        }
+
+        public long SizeInBytes { get; }
+        public DotCompute.Abstractions.MemoryOptions Options { get; }
+
+        public ValueTask CopyFromHostAsync<T>(
+            ReadOnlyMemory<T> source,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(MockMemoryBuffer));
+            
+            var sourceSpan = MemoryMarshal.AsBytes(source.Span);
+            var destSpan = _data.AsSpan((int)(_offset + offset), sourceSpan.Length);
+            sourceSpan.CopyTo(destSpan);
+            
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask CopyToHostAsync<T>(
+            Memory<T> destination,
+            long offset = 0,
+            CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(MockMemoryBuffer));
+            
+            var destSpan = MemoryMarshal.AsBytes(destination.Span);
+            var sourceSpan = _data.AsSpan((int)(_offset + offset), destSpan.Length);
+            sourceSpan.CopyTo(destSpan);
+            
+            return ValueTask.CompletedTask;
+        }
+
+        public MockMemoryBuffer CreateView(long offset, long length)
+        {
+            if (_disposed) throw new ObjectDisposedException(nameof(MockMemoryBuffer));
+            return new MockMemoryBuffer(_data.Length, Options, _offset + offset, length);
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            _disposed = true;
+            return ValueTask.CompletedTask;
         }
     }
 

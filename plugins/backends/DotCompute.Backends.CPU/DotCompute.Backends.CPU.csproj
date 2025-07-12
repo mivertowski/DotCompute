@@ -28,6 +28,12 @@
     <EnableHardwareIntrinsics>true</EnableHardwareIntrinsics>
   </PropertyGroup>
 
+  <!-- Exclude test files from main project -->
+  <ItemGroup>
+    <Compile Remove="tests/**" />
+    <None Include="tests/**" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
     <ProjectReference Include="..\..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />

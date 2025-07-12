@@ -26,9 +26,9 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     private bool _isDisposed;
     
     /// <summary>
-    /// Gets the underlying accelerator.
+    /// Gets the underlying accelerator - not available in unified manager.
     /// </summary>
-    public IAccelerator Accelerator => _baseMemoryManager.Accelerator;
+    // Note: Removed accelerator property as it's not available in the new interface
     
     /// <summary>
     /// Initializes a new instance of the UnifiedMemoryManager.
@@ -140,8 +140,8 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
             TotalAllocations = Volatile.Read(ref _totalAllocations),
             TotalReuses = totalReuses,
             EfficiencyRatio = _totalAllocations > 0 ? (double)totalReuses / _totalAllocations : 0.0,
-            AvailableDeviceMemory = _baseMemoryManager.GetAvailableMemory(),
-            TotalDeviceMemory = _baseMemoryManager.GetTotalMemory(),
+            AvailableDeviceMemory = 0, // TODO: Need to find another way to get this info
+            TotalDeviceMemory = 0, // TODO: Need to find another way to get this info  
             ActiveUnifiedBuffers = _activeBuffers.Count,
             ActiveMemoryPools = activePoolCount
         };
@@ -230,71 +230,32 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     
     #region IMemoryManager Implementation (Abstractions)
     
-    public DeviceMemory Allocate(long sizeInBytes)
+    // Async interface implementation
+    public ValueTask<IMemoryBuffer> AllocateAsync(
+        long sizeInBytes,
+        DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None,
+        CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        return _baseMemoryManager.Allocate(sizeInBytes);
+        return _baseMemoryManager.AllocateAsync(sizeInBytes, options, cancellationToken);
     }
-    
-    public DeviceMemory AllocateAligned(long sizeInBytes, int alignment)
+
+    public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
+        ReadOnlyMemory<T> source,
+        DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None,
+        CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
-        return _baseMemoryManager.AllocateAligned(sizeInBytes, alignment);
+        return _baseMemoryManager.AllocateAndCopyAsync(source, options, cancellationToken);
     }
-    
-    public void Free(DeviceMemory memory)
-    {
-        if (!_isDisposed)
-        {
-            _baseMemoryManager.Free(memory);
-        }
-    }
-    
-    public void CopyToDevice<T>(ReadOnlySpan<T> source, DeviceMemory destination) where T : unmanaged
+
+    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
         ThrowIfDisposed();
-        _baseMemoryManager.CopyToDevice(source, destination);
+        return _baseMemoryManager.CreateView(buffer, offset, length);
     }
-    
-    public void CopyToHost<T>(DeviceMemory source, Span<T> destination) where T : unmanaged
-    {
-        ThrowIfDisposed();
-        _baseMemoryManager.CopyToHost(source, destination);
-    }
-    
-    public void CopyDeviceToDevice(DeviceMemory source, DeviceMemory destination, long sizeInBytes)
-    {
-        ThrowIfDisposed();
-        _baseMemoryManager.CopyDeviceToDevice(source, destination, sizeInBytes);
-    }
-    
-    public void CopyToDeviceWithContext<T>(ReadOnlyMemory<T> source, DeviceMemory destination, AcceleratorContext context) where T : unmanaged
-    {
-        ThrowIfDisposed();
-        _baseMemoryManager.CopyToDeviceWithContext(source, destination, context);
-    }
-    
-    public void CopyToHostWithContext<T>(DeviceMemory source, Memory<T> destination, AcceleratorContext context) where T : unmanaged
-    {
-        ThrowIfDisposed();
-        _baseMemoryManager.CopyToHostWithContext(source, destination, context);
-    }
-    
-    public long GetAvailableMemory()
-    {
-        return _isDisposed ? 0 : _baseMemoryManager.GetAvailableMemory();
-    }
-    
-    public long GetTotalMemory()
-    {
-        return _isDisposed ? 0 : _baseMemoryManager.GetTotalMemory();
-    }
-    
-    public IMemoryOwner<T> AllocatePinnedHost<T>(int length) where T : unmanaged
-    {
-        ThrowIfDisposed();
-        return _baseMemoryManager.AllocatePinnedHost<T>(length);
-    }
+
+    // Note: Legacy sync methods removed as they are not part of the new IMemoryManager interface
     
     #endregion
     
@@ -346,8 +307,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
             _pools.Clear();
             _activeBuffers.Clear();
             
-            // Dispose base memory manager
-            _baseMemoryManager?.Dispose();
+            // Note: base memory manager disposal handled by DI container or caller
             
             _isDisposed = true;
         }

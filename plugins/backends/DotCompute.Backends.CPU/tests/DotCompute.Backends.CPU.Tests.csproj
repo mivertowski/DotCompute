@@ -17,23 +17,14 @@
     <TieredCompilationQuickJit>false</TieredCompilationQuickJit>
   </PropertyGroup>
 
+  <!-- Package references are managed automatically by Directory.Build.props for .Tests projects -->
+  <!-- Additional packages needed for this specific test project -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="coverlet.collector">
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
     <PackageReference Include="BenchmarkDotNet" />
-    <PackageReference Include="FluentAssertions" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\src\DotCompute.Backends.CPU.csproj" />
+    <ProjectReference Include="..\DotCompute.Backends.CPU.csproj" />
     <ProjectReference Include="..\..\..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
     <ProjectReference Include="..\..\..\..\src\DotCompute.Memory\DotCompute.Memory.csproj" />
   </ItemGroup>
