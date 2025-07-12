@@ -26,6 +26,7 @@
   <ItemGroup>
     <InternalsVisibleTo Include="DotCompute.Core.Tests" />
     <InternalsVisibleTo Include="DotCompute.Backends.CPU" />
+    <InternalsVisibleTo Include="DotCompute.Plugins" />
   </ItemGroup>
 
 </Project>
