@@ -3,6 +3,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace DotCompute.Backends.CUDA.Native;
 
@@ -143,6 +144,23 @@ public static class CudaRuntime
                 ? $"CUDA error: {GetErrorString(error)}"
                 : $"CUDA error during {operation}: {GetErrorString(error)}";
             throw new CudaException(message, error);
+        }
+    }
+
+    /// <summary>
+    /// Check if CUDA is supported on this system
+    /// </summary>
+    public static bool IsCudaSupported()
+    {
+        try
+        {
+            // Try to get device count - this will fail if CUDA is not available
+            var result = cudaGetDeviceCount(out int deviceCount);
+            return result == CudaError.Success && deviceCount > 0;
+        }
+        catch
+        {
+            return false;
         }
     }
 }
@@ -367,5 +385,173 @@ public class CudaException : Exception
     public CudaException(string message, CudaError errorCode) : base(message)
     {
         ErrorCode = errorCode;
+    }
+}
+
+/// <summary>
+/// P/Invoke wrapper for NVRTC (NVIDIA Runtime Compilation) API
+/// </summary>
+public static class NvrtcRuntime
+{
+    private const string NVRTC_LIBRARY = "nvrtc";
+
+    // NVRTC Core Functions
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcVersion(out int major, out int minor);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcGetSupportedArchs(out int[] supportedArchs);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcCreateProgram(
+        out IntPtr prog,
+        [MarshalAs(UnmanagedType.LPStr)] string src,
+        [MarshalAs(UnmanagedType.LPStr)] string? name,
+        int numHeaders,
+        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[]? headers,
+        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[]? includeNames);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcDestroyProgram(ref IntPtr prog);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcCompileProgram(
+        IntPtr prog,
+        int numOptions,
+        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[]? options);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcGetPTXSize(IntPtr prog, out IntPtr ptxSizeRet);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcGetPTX(IntPtr prog, [Out] StringBuilder ptx);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcGetCUBINSize(IntPtr prog, out IntPtr cubinSizeRet);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcGetCUBIN(IntPtr prog, [Out] byte[] cubin);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcGetProgramLogSize(IntPtr prog, out IntPtr logSizeRet);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, [Out] StringBuilder log);
+
+    [DllImport(NVRTC_LIBRARY)]
+    public static extern IntPtr nvrtcGetErrorString(NvrtcResult result);
+
+    // Helper Methods
+    public static string GetErrorString(NvrtcResult result)
+    {
+        var ptr = nvrtcGetErrorString(result);
+        return Marshal.PtrToStringAnsi(ptr) ?? result.ToString();
+    }
+
+    public static void CheckResult(NvrtcResult result, string operation = "")
+    {
+        if (result != NvrtcResult.Success)
+        {
+            var message = string.IsNullOrEmpty(operation)
+                ? $"NVRTC error: {GetErrorString(result)}"
+                : $"NVRTC error during {operation}: {GetErrorString(result)}";
+            throw new NvrtcException(message, result);
+        }
+    }
+}
+
+/// <summary>
+/// NVRTC result codes
+/// </summary>
+public enum NvrtcResult
+{
+    Success = 0,
+    OutOfMemory = 1,
+    ProgramCreationFailure = 2,
+    InvalidInput = 3,
+    InvalidProgram = 4,
+    InvalidOption = 5,
+    Compilation = 6,
+    BuiltinOperationFailure = 7,
+    NoLoweredNamesBeforeCompilation = 8,
+    NoNameExpressionsAfterCompilation = 9,
+    CompilationFailure = 10,
+    InternalError = 11
+}
+
+/// <summary>
+/// NVRTC compilation exception
+/// </summary>
+public class NvrtcException : Exception
+{
+    public NvrtcResult ResultCode { get; }
+
+    public NvrtcException(string message, NvrtcResult resultCode) : base(message)
+    {
+        ResultCode = resultCode;
+    }
+
+    public NvrtcException(string message, NvrtcResult resultCode, Exception innerException) : base(message, innerException)
+    {
+        ResultCode = resultCode;
+    }
+}
+
+/// <summary>
+/// CUDA compute capability helper
+/// </summary>
+public static class ComputeCapability
+{
+    public static string GetArchString(int major, int minor)
+    {
+        return $"compute_{major}{minor}";
+    }
+
+    public static string GetCodeString(int major, int minor)
+    {
+        return $"sm_{major}{minor}";
+    }
+
+    public static (int major, int minor) ParseFromDevice(int deviceId)
+    {
+        var props = new CudaDeviceProperties();
+        var result = CudaRuntime.cudaGetDeviceProperties(ref props, deviceId);
+        CudaRuntime.CheckError(result, "getting device properties");
+        return (props.Major, props.Minor);
+    }
+
+    // Common compute capabilities
+    public static class Common
+    {
+        public static readonly (int major, int minor) Kepler = (3, 5);
+        public static readonly (int major, int minor) Maxwell = (5, 0);
+        public static readonly (int major, int minor) Pascal = (6, 0);
+        public static readonly (int major, int minor) Volta = (7, 0);
+        public static readonly (int major, int minor) Turing = (7, 5);
+        public static readonly (int major, int minor) Ampere = (8, 0);
+        public static readonly (int major, int minor) Ada = (8, 9);
+        public static readonly (int major, int minor) Hopper = (9, 0);
+    }
+}
+
+/// <summary>
+/// Compilation exception for kernel compilation failures
+/// </summary>
+public class KernelCompilationException : Exception
+{
+    public string? CompilerLog { get; }
+
+    public KernelCompilationException(string message) : base(message) { }
+
+    public KernelCompilationException(string message, Exception innerException) : base(message, innerException) { }
+
+    public KernelCompilationException(string message, string? compilerLog) : base(message)
+    {
+        CompilerLog = compilerLog;
+    }
+
+    public KernelCompilationException(string message, string? compilerLog, Exception innerException) : base(message, innerException)
+    {
+        CompilerLog = compilerLog;
     }
 }

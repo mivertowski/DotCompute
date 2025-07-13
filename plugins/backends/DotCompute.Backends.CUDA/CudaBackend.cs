@@ -59,16 +59,164 @@ public class CudaBackend : IDisposable
 
         try
         {
-            // This would discover available CUDA devices
             _logger.LogInformation("Discovering CUDA devices...");
             
-            // For now, just log that discovery would happen here
-            _logger.LogInformation("CUDA device discovery completed");
+            // 1. Enumerate CUDA devices using cuDeviceGet
+            var deviceCountResult = CudaRuntime.cudaGetDeviceCount(out int deviceCount);
+            if (deviceCountResult != CudaError.Success)
+            {
+                _logger.LogError("Failed to get CUDA device count: {Error}", CudaRuntime.GetErrorString(deviceCountResult));
+                return;
+            }
+
+            if (deviceCount == 0)
+            {
+                _logger.LogInformation("No CUDA devices found");
+                return;
+            }
+
+            _logger.LogInformation("Found {DeviceCount} CUDA device(s)", deviceCount);
+
+            // 2. Query device properties for each device
+            for (int deviceId = 0; deviceId < deviceCount; deviceId++)
+            {
+                try
+                {
+                    if (ValidateDeviceAccessibility(deviceId))
+                    {
+                        var accelerator = CreateAccelerator(deviceId);
+                        if (accelerator != null)
+                        {
+                            _accelerators.Add(accelerator);
+                            LogDeviceCapabilities(accelerator);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(ex, "Failed to initialize CUDA device {DeviceId}", deviceId);
+                }
+            }
+
+            _logger.LogInformation("CUDA device discovery completed - {AcceleratorCount} accelerators available", _accelerators.Count);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to discover CUDA accelerators");
         }
+    }
+
+    private bool ValidateDeviceAccessibility(int deviceId)
+    {
+        try
+        {
+            // 3. Check CUDA runtime version compatibility
+            var runtimeVersionResult = CudaRuntime.cudaRuntimeGetVersion(out int runtimeVersion);
+            if (runtimeVersionResult != CudaError.Success)
+            {
+                _logger.LogWarning("Could not determine CUDA runtime version for device {DeviceId}", deviceId);
+                return false;
+            }
+
+            var driverVersionResult = CudaRuntime.cudaDriverGetVersion(out int driverVersion);
+            if (driverVersionResult != CudaError.Success)
+            {
+                _logger.LogWarning("Could not determine CUDA driver version for device {DeviceId}", deviceId);
+                return false;
+            }
+
+            // Check minimum version requirements (CUDA 11.0+)
+            if (runtimeVersion < 11000 || driverVersion < 11000)
+            {
+                _logger.LogWarning("CUDA device {DeviceId} requires CUDA 11.0 or higher. Runtime: {Runtime}, Driver: {Driver}",
+                    deviceId, runtimeVersion, driverVersion);
+                return false;
+            }
+
+            // 4. Validate device accessibility
+            var setDeviceResult = CudaRuntime.cudaSetDevice(deviceId);
+            if (setDeviceResult != CudaError.Success)
+            {
+                _logger.LogWarning("Cannot access CUDA device {DeviceId}: {Error}", 
+                    deviceId, CudaRuntime.GetErrorString(setDeviceResult));
+                return false;
+            }
+
+            // Test basic device operation
+            var syncResult = CudaRuntime.cudaDeviceSynchronize();
+            if (syncResult != CudaError.Success)
+            {
+                _logger.LogWarning("CUDA device {DeviceId} failed synchronization test: {Error}", 
+                    deviceId, CudaRuntime.GetErrorString(syncResult));
+                return false;
+            }
+
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Error validating CUDA device {DeviceId} accessibility", deviceId);
+            return false;
+        }
+    }
+
+    private CudaAccelerator? CreateAccelerator(int deviceId)
+    {
+        try
+        {
+            var deviceProps = new CudaDeviceProperties();
+            var result = CudaRuntime.cudaGetDeviceProperties(ref deviceProps, deviceId);
+            
+            if (result != CudaError.Success)
+            {
+                _logger.LogError("Failed to get properties for CUDA device {DeviceId}: {Error}", 
+                    deviceId, CudaRuntime.GetErrorString(result));
+                return null;
+            }
+
+            // Check compute capability (require 5.0+)
+            if (deviceProps.Major < 5)
+            {
+                _logger.LogInformation("Skipping CUDA device {DeviceId} ({Name}) - compute capability {Major}.{Minor} is below minimum 5.0",
+                    deviceId, deviceProps.Name, deviceProps.Major, deviceProps.Minor);
+                return null;
+            }
+
+            return new CudaAccelerator(deviceId, _logger);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create accelerator for CUDA device {DeviceId}", deviceId);
+            return null;
+        }
+    }
+
+    private void LogDeviceCapabilities(CudaAccelerator accelerator)
+    {
+        var info = accelerator.Info;
+        var capabilities = info.Capabilities;
+        
+        _logger.LogInformation("CUDA Device: {Name} (ID: {Id})", info.Name, info.Id);
+        _logger.LogInformation("  Compute Capability: {ComputeCapability}", info.ComputeCapability);
+        _logger.LogInformation("  Total Memory: {TotalMemory:N0} bytes ({MemoryGB:F1} GB)", 
+            info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024));
+        _logger.LogInformation("  Multiprocessors: {ComputeUnits}", info.ComputeUnits);
+        _logger.LogInformation("  Clock Rate: {ClockRate} MHz", info.MaxClockFrequency);
+        
+        if (capabilities.TryGetValue("SharedMemoryPerBlock", out var sharedMem))
+            _logger.LogInformation("  Shared Memory per Block: {SharedMem:N0} bytes", sharedMem);
+        
+        if (capabilities.TryGetValue("MaxThreadsPerBlock", out var maxThreads))
+            _logger.LogInformation("  Max Threads per Block: {MaxThreads}", maxThreads);
+            
+        if (capabilities.TryGetValue("WarpSize", out var warpSize))
+            _logger.LogInformation("  Warp Size: {WarpSize}", warpSize);
+            
+        if (capabilities.TryGetValue("ECCEnabled", out var ecc) && (bool)ecc)
+            _logger.LogInformation("  ECC Memory: Enabled");
+            
+        if (capabilities.TryGetValue("UnifiedAddressing", out var unified) && (bool)unified)
+            _logger.LogInformation("  Unified Virtual Addressing: Supported");
     }
 
     public void Dispose()

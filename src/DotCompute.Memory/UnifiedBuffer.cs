@@ -19,6 +19,7 @@ namespace DotCompute.Memory;
 public sealed class UnifiedBuffer<T> : IMemoryBuffer<T> where T : unmanaged
 {
     private readonly IMemoryManager _memoryManager;
+    private readonly SemaphoreSlim _asyncLock = new(1, 1);
     private readonly object _lock = new();
     
     private GCHandle _pinnedHandle;
@@ -218,26 +219,84 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T> where T : unmanaged
     /// Asynchronously ensures the buffer is available on the host.
     /// </summary>
     /// <param name="context">The accelerator context to use for the async operation.</param>
-    public async ValueTask EnsureOnHostAsync(AcceleratorContext context = default)
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    public async ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         
-        // For simplicity, we'll use the synchronous version for now
-        // In a real implementation, you'd use async operations
-        await Task.Run(() => EnsureOnHost());
+        await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            switch (_state)
+            {
+                case BufferState.Uninitialized:
+                    _state = BufferState.HostOnly;
+                    break;
+                
+                case BufferState.HostOnly:
+                case BufferState.Synchronized:
+                case BufferState.HostDirty:
+                    // Already on host
+                    break;
+                
+                case BufferState.DeviceOnly:
+                case BufferState.DeviceDirty:
+                    // Transfer from device to host
+                    await TransferDeviceToHostAsync(context, cancellationToken).ConfigureAwait(false);
+                    _state = BufferState.Synchronized;
+                    break;
+                
+                default:
+                    throw new InvalidOperationException($"Invalid buffer state: {_state}");
+            }
+        }
+        finally
+        {
+            _asyncLock.Release();
+        }
     }
     
     /// <summary>
     /// Asynchronously ensures the buffer is available on the device.
     /// </summary>
     /// <param name="context">The accelerator context to use for the async operation.</param>
-    public async ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default)
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    public async ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         
-        // For simplicity, we'll use the synchronous version for now
-        // In a real implementation, you'd use async operations
-        await Task.Run(() => EnsureOnDevice());
+        await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            switch (_state)
+            {
+                case BufferState.Uninitialized:
+                    await AllocateDeviceMemoryAsync(context, cancellationToken).ConfigureAwait(false);
+                    _state = BufferState.DeviceOnly;
+                    break;
+                
+                case BufferState.DeviceOnly:
+                case BufferState.Synchronized:
+                case BufferState.DeviceDirty:
+                    // Already on device
+                    break;
+                
+                case BufferState.HostOnly:
+                case BufferState.HostDirty:
+                    // Transfer from host to device
+                    await EnsureDeviceAllocatedAsync(context, cancellationToken).ConfigureAwait(false);
+                    await TransferHostToDeviceAsync(context, cancellationToken).ConfigureAwait(false);
+                    _state = BufferState.Synchronized;
+                    break;
+                
+                default:
+                    throw new InvalidOperationException($"Invalid buffer state: {_state}");
+            }
+        }
+        finally
+        {
+            _asyncLock.Release();
+        }
     }
     
     /// <summary>
@@ -314,13 +373,49 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T> where T : unmanaged
     /// Asynchronously synchronizes the buffer state between host and device.
     /// </summary>
     /// <param name="context">The accelerator context to use for the async operation.</param>
-    public async ValueTask SynchronizeAsync(AcceleratorContext context = default)
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    public async ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         
-        // For simplicity, we'll use the synchronous version for now
-        // In a real implementation, you'd use async operations
-        await Task.Run(() => Synchronize());
+        await _asyncLock.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            switch (_state)
+            {
+                case BufferState.HostDirty:
+                    await EnsureDeviceAllocatedAsync(context, cancellationToken).ConfigureAwait(false);
+                    await TransferHostToDeviceAsync(context, cancellationToken).ConfigureAwait(false);
+                    _state = BufferState.Synchronized;
+                    break;
+                
+                case BufferState.DeviceDirty:
+                    await TransferDeviceToHostAsync(context, cancellationToken).ConfigureAwait(false);
+                    _state = BufferState.Synchronized;
+                    break;
+                
+                case BufferState.Synchronized:
+                    // Already synchronized
+                    break;
+                
+                default:
+                    throw new InvalidOperationException($"Cannot synchronize from state: {_state}");
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Handle cancellation gracefully - don't change state
+            throw;
+        }
+        catch (Exception ex)
+        {
+            // Handle other exceptions - buffer state may be inconsistent
+            throw new InvalidOperationException($"Failed to synchronize buffer: {ex.Message}", ex);
+        }
+        finally
+        {
+            _asyncLock.Release();
+        }
     }
     
     /// <summary>
@@ -403,6 +498,9 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T> where T : unmanaged
             
             _hostArray = null;
             _state = BufferState.Uninitialized;
+            
+            // Dispose async lock
+            _asyncLock.Dispose();
         }
     }
     
@@ -466,6 +564,139 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T> where T : unmanaged
         
         // No actual copy needed - host and device share the same memory in CPU-only mode
         // The state transition will be handled by the caller
+    }
+    
+    /// <summary>
+    /// Asynchronously transfers data from host to device memory.
+    /// </summary>
+    /// <param name="context">The accelerator context to use for the transfer.</param>
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    private async ValueTask TransferHostToDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken)
+    {
+        if (_hostArray == null)
+            throw new InvalidOperationException("Host array is not allocated");
+        
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        try
+        {
+            // CPU-only implementation for Phase 2:
+            // In a CPU-only environment, "device" memory is actually just host memory.
+            // For real device implementations, this would be an async DMA transfer.
+            // We simulate async behavior to maintain proper async patterns.
+            
+            // Simulate async transfer with yielding control
+            await Task.Yield();
+            
+            // In a real GPU implementation, this would be:
+            // await _memoryManager.CopyToDeviceAsync(_hostArray.AsMemory(), _deviceMemory, cancellationToken);
+            
+            // Check cancellation after "transfer"
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+        catch (OperationCanceledException)
+        {
+            // Re-throw cancellation exceptions
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to transfer data from host to device: {ex.Message}", ex);
+        }
+    }
+    
+    /// <summary>
+    /// Asynchronously transfers data from device to host memory.
+    /// </summary>
+    /// <param name="context">The accelerator context to use for the transfer.</param>
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    private async ValueTask TransferDeviceToHostAsync(AcceleratorContext context, CancellationToken cancellationToken)
+    {
+        if (_hostArray == null)
+            throw new InvalidOperationException("Host array is not allocated");
+        
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        try
+        {
+            // CPU-only implementation for Phase 2:
+            // In a CPU-only environment, "device" memory is actually just host memory.
+            // For real device implementations, this would be an async DMA transfer.
+            // We simulate async behavior to maintain proper async patterns.
+            
+            // Simulate async transfer with yielding control
+            await Task.Yield();
+            
+            // In a real GPU implementation, this would be:
+            // await _memoryManager.CopyFromDeviceAsync(_deviceMemory, _hostArray.AsMemory(), cancellationToken);
+            
+            // Check cancellation after "transfer"
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+        catch (OperationCanceledException)
+        {
+            // Re-throw cancellation exceptions
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to transfer data from device to host: {ex.Message}", ex);
+        }
+    }
+    
+    /// <summary>
+    /// Asynchronously allocates device memory.
+    /// </summary>
+    /// <param name="context">The accelerator context to use for allocation.</param>
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    private async ValueTask AllocateDeviceMemoryAsync(AcceleratorContext context, CancellationToken cancellationToken)
+    {
+        if (_deviceMemory.IsValid)
+            return;
+        
+        cancellationToken.ThrowIfCancellationRequested();
+        
+        try
+        {
+            // Simulate async allocation
+            await Task.Yield();
+            
+            // CPU-only implementation for Phase 2:
+            // Since we don't have actual device memory in Phase 2, we simulate it
+            // by creating a device memory handle that points to the host memory.
+            // This allows the buffer state machine to work correctly.
+            
+            // Create a device memory handle that represents our "device" allocation
+            // In Phase 2, this is just a logical construct since we're CPU-only
+            _deviceMemory = new DeviceMemory(
+                _pinnedHandle.AddrOfPinnedObject(),
+                SizeInBytes
+            );
+            
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+        catch (OperationCanceledException)
+        {
+            // Re-throw cancellation exceptions
+            throw;
+        }
+        catch (Exception ex)
+        {
+            throw new InvalidOperationException($"Failed to allocate device memory: {ex.Message}", ex);
+        }
+    }
+    
+    /// <summary>
+    /// Asynchronously ensures device memory is allocated.
+    /// </summary>
+    /// <param name="context">The accelerator context to use for allocation.</param>
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    private async ValueTask EnsureDeviceAllocatedAsync(AcceleratorContext context, CancellationToken cancellationToken)
+    {
+        if (!_deviceMemory.IsValid)
+        {
+            await AllocateDeviceMemoryAsync(context, cancellationToken).ConfigureAwait(false);
+        }
     }
     
     #endregion

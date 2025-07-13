@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-#if false // Temporarily disabled - needs interface updates for new IMemoryManager
+#if BENCHMARKS
+// Production Memory Benchmarks - Updated for new IMemoryManager interface
 using System;
 using System.Buffers;
 using System.Diagnostics;
@@ -202,15 +203,53 @@ public static class MemoryBenchmarks
         int elementCount,
         CancellationToken cancellationToken) where T : unmanaged
     {
-        // Temporarily return placeholder - need to update for new IMemoryManager interface
-        await Task.Delay(1, cancellationToken);
-        return new BandwidthMeasurement
+        // Allocate host data array
+        var hostData = new T[elementCount];
+        var random = new Random(42);
+        
+        // Fill with test data for consistent benchmarking
+        for (int i = 0; i < elementCount; i++)
         {
-            TotalBytes = elementCount * Unsafe.SizeOf<T>(),
-            ElapsedTime = TimeSpan.FromMilliseconds(1),
-            BandwidthGBps = 1.0,
-            IterationCount = 1
-        };
+            hostData[i] = Unsafe.As<int, T>(ref Unsafe.AsRef(i % 1000));
+        }
+        
+        // Allocate device buffer
+        var deviceBuffer = await memoryManager.AllocateAsync(
+            elementCount * Unsafe.SizeOf<T>(), 
+            MemoryOptions.None, 
+            cancellationToken);
+        
+        try
+        {
+            // Warmup iterations to prime caches and drivers
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                await deviceBuffer.CopyFromHostAsync(hostData.AsMemory(), 0, cancellationToken);
+            }
+            
+            // Benchmark actual transfer performance
+            var stopwatch = Stopwatch.StartNew();
+            for (int i = 0; i < BenchmarkIterations; i++)
+            {
+                await deviceBuffer.CopyFromHostAsync(hostData.AsMemory(), 0, cancellationToken);
+            }
+            stopwatch.Stop();
+            
+            var totalBytes = (long)elementCount * Unsafe.SizeOf<T>() * BenchmarkIterations;
+            var bandwidthGBps = totalBytes / (1024.0 * 1024.0 * 1024.0) / stopwatch.Elapsed.TotalSeconds;
+            
+            return new BandwidthMeasurement
+            {
+                TotalBytes = totalBytes,
+                ElapsedTime = stopwatch.Elapsed,
+                BandwidthGBps = bandwidthGBps,
+                IterationCount = BenchmarkIterations
+            };
+        }
+        finally
+        {
+            await deviceBuffer.DisposeAsync();
+        }
         
         // Original code disabled due to interface changes:
         /*
@@ -256,15 +295,46 @@ public static class MemoryBenchmarks
         int elementCount,
         CancellationToken cancellationToken) where T : unmanaged
     {
-        // Temporarily return placeholder - need to update for new IMemoryManager interface
-        await Task.Delay(1, cancellationToken);
-        return new BandwidthMeasurement
+        // Allocate host data array
+        var hostData = new T[elementCount];
+        
+        // Allocate device buffer and populate with test data
+        var deviceBuffer = await memoryManager.AllocateAndCopyAsync(
+            new T[elementCount].AsMemory(), 
+            MemoryOptions.None, 
+            cancellationToken);
+        
+        try
         {
-            TotalBytes = elementCount * Unsafe.SizeOf<T>(),
-            ElapsedTime = TimeSpan.FromMilliseconds(1),
-            BandwidthGBps = 1.0,
-            IterationCount = 1
-        };
+            // Warmup iterations
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                await deviceBuffer.CopyToHostAsync(hostData.AsMemory(), 0, cancellationToken);
+            }
+            
+            // Benchmark device to host transfer
+            var stopwatch = Stopwatch.StartNew();
+            for (int i = 0; i < BenchmarkIterations; i++)
+            {
+                await deviceBuffer.CopyToHostAsync(hostData.AsMemory(), 0, cancellationToken);
+            }
+            stopwatch.Stop();
+            
+            var totalBytes = (long)elementCount * Unsafe.SizeOf<T>() * BenchmarkIterations;
+            var bandwidthGBps = totalBytes / (1024.0 * 1024.0 * 1024.0) / stopwatch.Elapsed.TotalSeconds;
+            
+            return new BandwidthMeasurement
+            {
+                TotalBytes = totalBytes,
+                ElapsedTime = stopwatch.Elapsed,
+                BandwidthGBps = bandwidthGBps,
+                IterationCount = BenchmarkIterations
+            };
+        }
+        finally
+        {
+            await deviceBuffer.DisposeAsync();
+        }
         
         /*
         var hostData = new T[elementCount];
@@ -309,15 +379,51 @@ public static class MemoryBenchmarks
         long sizeInBytes,
         CancellationToken cancellationToken)
     {
-        // Temporarily return placeholder - need to update for new IMemoryManager interface
-        await Task.Delay(1, cancellationToken);
-        return new BandwidthMeasurement
+        // Test device-to-device transfer by creating two buffers
+        var sourceBuffer = await memoryManager.AllocateAsync(sizeInBytes, MemoryOptions.None, cancellationToken);
+        var destBuffer = await memoryManager.AllocateAsync(sizeInBytes, MemoryOptions.None, cancellationToken);
+        
+        try
         {
-            TotalBytes = sizeInBytes,
-            ElapsedTime = TimeSpan.FromMilliseconds(1),
-            BandwidthGBps = 1.0,
-            IterationCount = 1
-        };
+            // Initialize source buffer with test data
+            var testData = new byte[sizeInBytes];
+            new Random(42).NextBytes(testData);
+            await sourceBuffer.CopyFromHostAsync(MemoryMarshal.Cast<byte, float>(testData), 0, cancellationToken);
+            
+            // Warmup - simulate device-to-device copy via host memory (actual device copy would need driver support)
+            var tempBuffer = new float[sizeInBytes / sizeof(float)];
+            for (int i = 0; i < WarmupIterations; i++)
+            {
+                await sourceBuffer.CopyToHostAsync(tempBuffer.AsMemory(), 0, cancellationToken);
+                await destBuffer.CopyFromHostAsync(tempBuffer.AsMemory(), 0, cancellationToken);
+            }
+            
+            // Benchmark device-to-device transfer
+            var stopwatch = Stopwatch.StartNew();
+            for (int i = 0; i < BenchmarkIterations; i++)
+            {
+                // Simulate device-to-device copy (in real implementation this would be optimized)
+                await sourceBuffer.CopyToHostAsync(tempBuffer.AsMemory(), 0, cancellationToken);
+                await destBuffer.CopyFromHostAsync(tempBuffer.AsMemory(), 0, cancellationToken);
+            }
+            stopwatch.Stop();
+            
+            var totalBytes = sizeInBytes * BenchmarkIterations;
+            var bandwidthGBps = totalBytes / (1024.0 * 1024.0 * 1024.0) / stopwatch.Elapsed.TotalSeconds;
+            
+            return new BandwidthMeasurement
+            {
+                TotalBytes = totalBytes,
+                ElapsedTime = stopwatch.Elapsed,
+                BandwidthGBps = bandwidthGBps,
+                IterationCount = BenchmarkIterations
+            };
+        }
+        finally
+        {
+            await sourceBuffer.DisposeAsync();
+            await destBuffer.DisposeAsync();
+        }
     }
     
     private static async Task<AllocationMeasurement> MeasureAllocationOverheadAsync(
@@ -326,30 +432,30 @@ public static class MemoryBenchmarks
         int allocationCount,
         CancellationToken cancellationToken)
     {
-        var allocations = new DeviceMemory[allocationCount];
+        var allocations = new IMemoryBuffer[allocationCount];
         
         try
         {
-            // Warmup
+            // Warmup allocations
             for (int i = 0; i < WarmupIterations; i++)
             {
-                var warmupMemory = memoryManager.Allocate(sizeInBytes);
-                memoryManager.Free(warmupMemory);
+                var warmupMemory = await memoryManager.AllocateAsync(sizeInBytes, MemoryOptions.None, cancellationToken);
+                await warmupMemory.DisposeAsync();
             }
             
-            // Benchmark allocation
+            // Benchmark allocation performance
             var stopwatch = Stopwatch.StartNew();
             for (int i = 0; i < allocationCount; i++)
             {
-                allocations[i] = memoryManager.Allocate(sizeInBytes);
+                allocations[i] = await memoryManager.AllocateAsync(sizeInBytes, MemoryOptions.None, cancellationToken);
             }
             var allocationTime = stopwatch.Elapsed;
             
-            // Benchmark deallocation
+            // Benchmark deallocation performance
             stopwatch.Restart();
             for (int i = 0; i < allocationCount; i++)
             {
-                memoryManager.Free(allocations[i]);
+                await allocations[i].DisposeAsync();
             }
             var deallocationTime = stopwatch.Elapsed;
             
@@ -368,8 +474,8 @@ public static class MemoryBenchmarks
             // Cleanup on error
             foreach (var allocation in allocations)
             {
-                if (allocation.IsValid)
-                    memoryManager.Free(allocation);
+                if (allocation != null)
+                    await allocation.DisposeAsync();
             }
             throw;
         }
@@ -380,59 +486,75 @@ public static class MemoryBenchmarks
         CancellationToken cancellationToken)
     {
         var random = new Random(42); // Fixed seed for reproducibility
-        var allocations = new List<DeviceMemory>();
+        var allocations = new List<IMemoryBuffer>();
+        var setupStopwatch = Stopwatch.StartNew();
         
         try
         {
-            // Create fragmented memory pattern
+            // Create fragmented memory pattern with varied allocation sizes
             for (int i = 0; i < 100; i++)
             {
                 var size = random.Next(1024, 64 * 1024);
-                allocations.Add(memoryManager.Allocate(size));
+                allocations.Add(await memoryManager.AllocateAsync(size, MemoryOptions.None, cancellationToken));
             }
             
-            // Free every other allocation to create fragmentation
+            // Free every other allocation to create memory fragmentation
             for (int i = 1; i < allocations.Count; i += 2)
             {
-                memoryManager.Free(allocations[i]);
-                allocations[i] = DeviceMemory.Invalid;
+                await allocations[i].DisposeAsync();
+                allocations[i] = null!;
             }
             
-            // Measure allocation performance in fragmented state
+            setupStopwatch.Stop();
+            
+            // Measure allocation performance in fragmented memory state
             var stopwatch = Stopwatch.StartNew();
-            var fragmentedAllocations = new List<DeviceMemory>();
+            var fragmentedAllocations = new List<IMemoryBuffer>();
             
             for (int i = 0; i < 50; i++)
             {
                 var size = random.Next(1024, 32 * 1024);
                 try
                 {
-                    fragmentedAllocations.Add(memoryManager.Allocate(size));
+                    fragmentedAllocations.Add(await memoryManager.AllocateAsync(size, MemoryOptions.None, cancellationToken));
                 }
                 catch (OutOfMemoryException)
                 {
-                    // Expected in fragmented scenario
+                    // Expected in highly fragmented scenario
+                    break;
+                }
+                catch (InvalidOperationException)
+                {
+                    // May occur due to fragmentation
                     break;
                 }
             }
             
             stopwatch.Stop();
             
-            return new FragmentationMeasurement
+            var result = new FragmentationMeasurement
             {
-                FragmentationSetupTime = TimeSpan.FromMilliseconds(100), // Placeholder
+                FragmentationSetupTime = setupStopwatch.Elapsed,
                 FragmentedAllocationTime = stopwatch.Elapsed,
                 SuccessfulAllocations = fragmentedAllocations.Count,
-                FragmentationLevel = 0.5 // 50% fragmentation
+                FragmentationLevel = 0.5 // 50% fragmentation level
             };
+            
+            // Clean up fragmented allocations
+            foreach (var allocation in fragmentedAllocations)
+            {
+                await allocation.DisposeAsync();
+            }
+            
+            return result;
         }
         finally
         {
-            // Cleanup
+            // Cleanup all remaining allocations
             foreach (var allocation in allocations)
             {
-                if (allocation.IsValid)
-                    memoryManager.Free(allocation);
+                if (allocation != null)
+                    await allocation.DisposeAsync();
             }
         }
     }
@@ -451,9 +573,9 @@ public static class MemoryBenchmarks
         for (int t = 0; t < threadCount; t++)
         {
             var threadIndex = t;
-            tasks[t] = Task.Run(() =>
+            tasks[t] = Task.Run(async () =>
             {
-                var allocations = new DeviceMemory[allocationsPerThread];
+                var allocations = new IMemoryBuffer[allocationsPerThread];
                 
                 // Wait for all threads to be ready
                 barrier.SignalAndWait();

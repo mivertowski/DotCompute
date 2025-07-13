@@ -111,6 +111,9 @@ internal static partial class MetalNative
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_CompileLibrary", StringMarshalling = StringMarshalling.Utf8)]
     public static partial IntPtr CompileLibrary(IntPtr device, string source, IntPtr options, ref IntPtr error);
 
+    [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_CreateLibraryWithSource", StringMarshalling = StringMarshalling.Utf8)]
+    public static partial IntPtr CreateLibraryWithSource(IntPtr device, string source);
+
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_ReleaseLibrary")]
     public static partial void ReleaseLibrary(IntPtr library);
 
@@ -126,6 +129,12 @@ internal static partial class MetalNative
 
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_CreateComputePipelineState")]
     public static partial IntPtr CreateComputePipelineState(IntPtr device, IntPtr function, ref IntPtr error);
+
+    [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_CreateComputePipelineState")]
+    public static partial IntPtr CreateComputePipelineState(IntPtr device, IntPtr function);
+
+    [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_ReleaseComputePipelineState")]
+    public static partial void ReleaseComputePipelineState(IntPtr pipelineState);
 
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_ReleasePipelineState")]
     public static partial void ReleasePipelineState(IntPtr pipelineState);

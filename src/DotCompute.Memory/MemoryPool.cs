@@ -437,16 +437,16 @@ internal sealed class PooledMemoryBuffer<T> : IMemoryBuffer<T> where T : unmanag
         _buffer.EnsureOnDevice();
     }
     
-    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default)
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.EnsureOnHostAsync(context);
+        return _buffer.EnsureOnHostAsync(context, cancellationToken);
     }
     
-    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default)
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.EnsureOnDeviceAsync(context);
+        return _buffer.EnsureOnDeviceAsync(context, cancellationToken);
     }
     
     public void MarkHostDirty()
@@ -467,10 +467,10 @@ internal sealed class PooledMemoryBuffer<T> : IMemoryBuffer<T> where T : unmanag
         _buffer.Synchronize();
     }
     
-    public ValueTask SynchronizeAsync(AcceleratorContext context = default)
+    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.SynchronizeAsync(context);
+        return _buffer.SynchronizeAsync(context, cancellationToken);
     }
     
     public Memory<T> GetMemory()

@@ -90,13 +90,15 @@ public interface IMemoryBuffer<T> : IDisposable where T : unmanaged
     /// Asynchronously ensures the buffer is available on the host.
     /// </summary>
     /// <param name="context">The accelerator context to use for the async operation.</param>
-    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default);
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Asynchronously ensures the buffer is available on the device.
     /// </summary>
     /// <param name="context">The accelerator context to use for the async operation.</param>
-    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default);
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Marks the buffer as modified on the host.
@@ -117,7 +119,8 @@ public interface IMemoryBuffer<T> : IDisposable where T : unmanaged
     /// Asynchronously synchronizes the buffer state between host and device.
     /// </summary>
     /// <param name="context">The accelerator context to use for the async operation.</param>
-    public ValueTask SynchronizeAsync(AcceleratorContext context = default);
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default);
     
     /// <summary>
     /// Gets the underlying memory buffer. Required by CPU backend.

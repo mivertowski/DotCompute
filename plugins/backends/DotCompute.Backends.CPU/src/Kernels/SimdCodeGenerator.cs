@@ -144,21 +144,74 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
         // Dispatch to the appropriate typed implementation
         if (Definition.Parameters[0].ElementType == typeof(float))
         {
-            ExecuteFloat32(
-                MemoryMarshal.Cast<byte, float>(input1),
-                MemoryMarshal.Cast<byte, float>(input2),
-                MemoryMarshal.Cast<byte, float>(output),
-                elementCount,
-                operation);
+            if (operation == KernelOperation.FusedMultiplyAdd && input1.Length == input2.Length)
+            {
+                // For 2-operand FMA, treat as a*b+0 (multiply)
+                ExecuteFloat32(
+                    MemoryMarshal.Cast<byte, float>(input1),
+                    MemoryMarshal.Cast<byte, float>(input2),
+                    MemoryMarshal.Cast<byte, float>(output),
+                    elementCount,
+                    KernelOperation.Multiply);
+            }
+            else
+            {
+                ExecuteFloat32(
+                    MemoryMarshal.Cast<byte, float>(input1),
+                    MemoryMarshal.Cast<byte, float>(input2),
+                    MemoryMarshal.Cast<byte, float>(output),
+                    elementCount,
+                    operation);
+            }
         }
         else if (Definition.Parameters[0].ElementType == typeof(double))
         {
-            ExecuteFloat64(
+            if (operation == KernelOperation.FusedMultiplyAdd && input1.Length == input2.Length)
+            {
+                // For 2-operand FMA, treat as a*b+0 (multiply)
+                ExecuteFloat64(
+                    MemoryMarshal.Cast<byte, double>(input1),
+                    MemoryMarshal.Cast<byte, double>(input2),
+                    MemoryMarshal.Cast<byte, double>(output),
+                    elementCount,
+                    KernelOperation.Multiply);
+            }
+            else
+            {
+                ExecuteFloat64(
+                    MemoryMarshal.Cast<byte, double>(input1),
+                    MemoryMarshal.Cast<byte, double>(input2),
+                    MemoryMarshal.Cast<byte, double>(output),
+                    elementCount,
+                    operation);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Executes 3-operand FMA operation: result = a * b + c using AVX-512 FMA instructions.
+    /// </summary>
+    public void ExecuteFMA(
+        ReadOnlySpan<byte> input1,
+        ReadOnlySpan<byte> input2,
+        ReadOnlySpan<byte> input3,
+        Span<byte> output)
+    {
+        if (Definition.Parameters[0].ElementType == typeof(float))
+        {
+            ExecuteFloat32FMA(
+                MemoryMarshal.Cast<byte, float>(input1),
+                MemoryMarshal.Cast<byte, float>(input2),
+                MemoryMarshal.Cast<byte, float>(input3),
+                MemoryMarshal.Cast<byte, float>(output));
+        }
+        else if (Definition.Parameters[0].ElementType == typeof(double))
+        {
+            ExecuteFloat64FMA(
                 MemoryMarshal.Cast<byte, double>(input1),
                 MemoryMarshal.Cast<byte, double>(input2),
-                MemoryMarshal.Cast<byte, double>(output),
-                elementCount,
-                operation);
+                MemoryMarshal.Cast<byte, double>(input3),
+                MemoryMarshal.Cast<byte, double>(output));
         }
     }
 
@@ -182,13 +235,26 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
         ref var input2Ref = ref MemoryMarshal.GetReference(input2);
         ref var outputRef = ref MemoryMarshal.GetReference(output);
 
-        for (long i = 0; i < vectorCount; i++)
+        if (vectorOp != null)
         {
-            var offset = (int)(i * VectorSize);
-            var vec1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
-            var vec2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
-            var result = vectorOp(vec1, vec2);
-            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var vec1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
+                var vec2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+                var result = vectorOp(vec1, vec2);
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+            }
+        }
+        else
+        {
+            // Handle special cases like FMA that need different treatment
+            var scalarOp = GetScalarOperationFloat32(operation);
+            for (long i = 0; i < elementCount; i++)
+            {
+                output[(int)i] = scalarOp(input1[(int)i], input2[(int)i]);
+            }
+            return;
         }
 
         // Process remaining elements
@@ -225,13 +291,26 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
         ref var input2Ref = ref MemoryMarshal.GetReference(input2);
         ref var outputRef = ref MemoryMarshal.GetReference(output);
 
-        for (long i = 0; i < vectorCount; i++)
+        if (vectorOp != null)
         {
-            var offset = (int)(i * VectorSize);
-            var vec1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
-            var vec2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
-            var result = vectorOp(vec1, vec2);
-            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var vec1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
+                var vec2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+                var result = vectorOp(vec1, vec2);
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+            }
+        }
+        else
+        {
+            // Handle special cases like FMA that need different treatment
+            var scalarOp = GetScalarOperationFloat64(operation);
+            for (long i = 0; i < elementCount; i++)
+            {
+                output[(int)i] = scalarOp(input1[(int)i], input2[(int)i]);
+            }
+            return;
         }
 
         // Process remaining elements
@@ -255,8 +334,8 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
         {
             KernelOperation.Add => &Avx512F.Add,
             KernelOperation.Multiply => &Avx512F.Multiply,
-            // FusedMultiplyAdd requires 3 arguments, so we'll handle it separately
-            KernelOperation.FusedMultiplyAdd => &Avx512F.Multiply, // Fallback to multiply for now
+            // FusedMultiplyAdd handled separately - requires 3 operands
+            KernelOperation.FusedMultiplyAdd => null,
             KernelOperation.Subtract => &Avx512F.Subtract,
             KernelOperation.Divide => &Avx512F.Divide,
             KernelOperation.Maximum => &Avx512F.Max,
@@ -272,8 +351,8 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
         {
             KernelOperation.Add => &Avx512F.Add,
             KernelOperation.Multiply => &Avx512F.Multiply,
-            // FusedMultiplyAdd requires 3 arguments, so we'll handle it separately
-            KernelOperation.FusedMultiplyAdd => &Avx512F.Multiply, // Fallback to multiply for now
+            // FusedMultiplyAdd handled separately - requires 3 operands
+            KernelOperation.FusedMultiplyAdd => null,
             KernelOperation.Subtract => &Avx512F.Subtract,
             KernelOperation.Divide => &Avx512F.Divide,
             KernelOperation.Maximum => &Avx512F.Max,
@@ -312,6 +391,118 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
             KernelOperation.Minimum => Math.Min,
             _ => (a, b) => a + b
         };
+    }
+
+    /// <summary>
+    /// Executes 3-operand FMA operation: result = a * b + c using AVX-512 FMA instructions.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe void ExecuteFloat32FMA(
+        ReadOnlySpan<float> a,
+        ReadOnlySpan<float> b, 
+        ReadOnlySpan<float> c,
+        Span<float> result)
+    {
+        if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+            throw new ArgumentException("All spans must have the same length");
+
+        const int VectorSize = 16; // 512 bits / 32 bits per float
+        var vectorCount = a.Length / VectorSize;
+        var remainder = a.Length % VectorSize;
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var cRef = ref MemoryMarshal.GetReference(c);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        // Use AVX-512 FMA instructions for maximum performance
+        if (Avx512F.IsSupported)
+        {
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var vecA = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vecB = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vecC = Vector512.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                
+                // True FMA: result = a * b + c with single rounding
+                var fmaResult = Avx512F.FusedMultiplyAdd(vecA, vecB, vecC);
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+        }
+        else
+        {
+            // Fallback to scalar if AVX-512 not available
+            vectorCount = 0;
+            remainder = a.Length;
+        }
+
+        // Handle remainder with scalar FMA
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                result[idx] = MathF.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Executes 3-operand FMA operation: result = a * b + c using AVX-512 FMA instructions.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe void ExecuteFloat64FMA(
+        ReadOnlySpan<double> a,
+        ReadOnlySpan<double> b,
+        ReadOnlySpan<double> c,
+        Span<double> result)
+    {
+        if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+            throw new ArgumentException("All spans must have the same length");
+
+        const int VectorSize = 8; // 512 bits / 64 bits per double
+        var vectorCount = a.Length / VectorSize;
+        var remainder = a.Length % VectorSize;
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var cRef = ref MemoryMarshal.GetReference(c);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        // Use AVX-512 FMA instructions for maximum performance
+        if (Avx512F.IsSupported)
+        {
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var vecA = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vecB = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vecC = Vector512.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                
+                // True FMA: result = a * b + c with single rounding
+                var fmaResult = Avx512F.FusedMultiplyAdd(vecA, vecB, vecC);
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+        }
+        else
+        {
+            // Fallback to scalar if AVX-512 not available
+            vectorCount = 0;
+            remainder = a.Length;
+        }
+
+        // Handle remainder with scalar FMA
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                result[idx] = Math.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+            }
+        }
     }
 }
 
@@ -447,8 +638,8 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
         {
             KernelOperation.Add => &Avx.Add,
             KernelOperation.Multiply => &Avx.Multiply,
-            // FusedMultiplyAdd requires 3 arguments, so we'll handle it separately
-            KernelOperation.FusedMultiplyAdd => &Avx.Multiply, // Fallback to multiply for now
+            // FusedMultiplyAdd handled separately with proper FMA instructions
+            KernelOperation.FusedMultiplyAdd => null, // Use specialized 3-argument FMA method
             KernelOperation.Subtract => &Avx.Subtract,
             KernelOperation.Divide => &Avx.Divide,
             KernelOperation.Maximum => &Avx.Max,
@@ -464,8 +655,8 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
         {
             KernelOperation.Add => &Avx.Add,
             KernelOperation.Multiply => &Avx.Multiply,
-            // FusedMultiplyAdd requires 3 arguments, so we'll handle it separately
-            KernelOperation.FusedMultiplyAdd => &Avx.Multiply, // Fallback to multiply for now
+            // FusedMultiplyAdd handled separately with proper FMA instructions
+            KernelOperation.FusedMultiplyAdd => null, // Use specialized 3-argument FMA method
             KernelOperation.Subtract => &Avx.Subtract,
             KernelOperation.Divide => &Avx.Divide,
             KernelOperation.Maximum => &Avx.Max,
@@ -504,6 +695,118 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
             KernelOperation.Minimum => Math.Min,
             _ => (a, b) => a + b
         };
+    }
+
+    /// <summary>
+    /// Executes 3-operand FMA operation: result = a * b + c using AVX2 FMA instructions.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe void ExecuteFloat32FMA(
+        ReadOnlySpan<float> a,
+        ReadOnlySpan<float> b,
+        ReadOnlySpan<float> c,
+        Span<float> result)
+    {
+        if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+            throw new ArgumentException("All spans must have the same length");
+
+        const int VectorSize = 8; // 256 bits / 32 bits per float
+        var vectorCount = a.Length / VectorSize;
+        var remainder = a.Length % VectorSize;
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var cRef = ref MemoryMarshal.GetReference(c);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        // Use AVX2 FMA instructions for maximum performance
+        if (Fma.IsSupported && Avx2.IsSupported)
+        {
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var vecA = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vecB = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vecC = Vector256.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                
+                // True FMA: result = a * b + c with single rounding
+                var fmaResult = Fma.MultiplyAdd(vecA, vecB, vecC);
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+        }
+        else
+        {
+            // Fallback to scalar if FMA/AVX2 not available
+            vectorCount = 0;
+            remainder = a.Length;
+        }
+
+        // Handle remainder with scalar FMA
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                result[idx] = MathF.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Executes 3-operand FMA operation: result = a * b + c using AVX2 FMA instructions.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe void ExecuteFloat64FMA(
+        ReadOnlySpan<double> a,
+        ReadOnlySpan<double> b,
+        ReadOnlySpan<double> c,
+        Span<double> result)
+    {
+        if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+            throw new ArgumentException("All spans must have the same length");
+
+        const int VectorSize = 4; // 256 bits / 64 bits per double
+        var vectorCount = a.Length / VectorSize;
+        var remainder = a.Length % VectorSize;
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var cRef = ref MemoryMarshal.GetReference(c);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        // Use AVX2 FMA instructions for maximum performance
+        if (Fma.IsSupported && Avx2.IsSupported)
+        {
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var vecA = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vecB = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vecC = Vector256.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                
+                // True FMA: result = a * b + c with single rounding
+                var fmaResult = Fma.MultiplyAdd(vecA, vecB, vecC);
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+        }
+        else
+        {
+            // Fallback to scalar if FMA/AVX2 not available
+            vectorCount = 0;
+            remainder = a.Length;
+        }
+
+        // Handle remainder with scalar FMA
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                result[idx] = Math.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+            }
+        }
     }
 }
 
@@ -827,7 +1130,8 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
         {
             KernelOperation.Add => &AdvSimd.Add,
             KernelOperation.Multiply => &AdvSimd.Multiply,
-            KernelOperation.FusedMultiplyAdd => &AdvSimd.Multiply, // Fallback to multiply for 2-arg function pointer
+            // FusedMultiplyAdd uses ARM NEON FMLA instructions - handled separately
+            KernelOperation.FusedMultiplyAdd => null, // Use specialized 3-argument FMLA method
             KernelOperation.Subtract => &AdvSimd.Subtract,
             KernelOperation.Divide => &AdvSimd.Multiply, // AdvSimd doesn't have divide, emulate with reciprocal
             KernelOperation.Maximum => &AdvSimd.Max,
@@ -844,7 +1148,8 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
         {
             KernelOperation.Add => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Add : &FallbackAdd,
             KernelOperation.Multiply => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Multiply : &FallbackMultiply,
-            KernelOperation.FusedMultiplyAdd => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Multiply : &FallbackMultiply,
+            // FusedMultiplyAdd uses ARM NEON FMLA instructions - handled separately
+            KernelOperation.FusedMultiplyAdd => null,
             KernelOperation.Subtract => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Subtract : &FallbackSubtract,
             KernelOperation.Divide => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Divide : &FallbackDivide,
             KernelOperation.Maximum => AdvSimd.Arm64.IsSupported ? &AdvSimd.Arm64.Max : &FallbackMax,
@@ -902,6 +1207,118 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
             KernelOperation.Minimum => Math.Min,
             _ => (a, b) => a + b
         };
+    }
+
+    /// <summary>
+    /// Executes 3-operand FMA operation: result = a * b + c using ARM NEON FMLA instructions.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe void ExecuteFloat32FMA(
+        ReadOnlySpan<float> a,
+        ReadOnlySpan<float> b,
+        ReadOnlySpan<float> c,
+        Span<float> result)
+    {
+        if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+            throw new ArgumentException("All spans must have the same length");
+
+        const int VectorSize = 4; // 128 bits / 32 bits per float
+        var vectorCount = a.Length / VectorSize;
+        var remainder = a.Length % VectorSize;
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var cRef = ref MemoryMarshal.GetReference(c);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        // Use ARM NEON FMLA instructions for maximum performance
+        if (AdvSimd.IsSupported)
+        {
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var vecA = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vecB = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vecC = Vector128.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                
+                // ARM NEON FMLA: result = a * b + c with single rounding
+                var fmaResult = AdvSimd.FusedMultiplyAdd(vecC, vecA, vecB); // Note: ARM order is (accumulator, multiplicand, multiplier)
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+        }
+        else
+        {
+            // Fallback to scalar if ARM NEON not available
+            vectorCount = 0;
+            remainder = a.Length;
+        }
+
+        // Handle remainder with scalar FMA
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                result[idx] = MathF.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Executes 3-operand FMA operation: result = a * b + c using ARM NEON FMLA instructions.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    public static unsafe void ExecuteFloat64FMA(
+        ReadOnlySpan<double> a,
+        ReadOnlySpan<double> b,
+        ReadOnlySpan<double> c,
+        Span<double> result)
+    {
+        if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+            throw new ArgumentException("All spans must have the same length");
+
+        const int VectorSize = 2; // 128 bits / 64 bits per double
+        var vectorCount = a.Length / VectorSize;
+        var remainder = a.Length % VectorSize;
+
+        ref var aRef = ref MemoryMarshal.GetReference(a);
+        ref var bRef = ref MemoryMarshal.GetReference(b);
+        ref var cRef = ref MemoryMarshal.GetReference(c);
+        ref var resultRef = ref MemoryMarshal.GetReference(result);
+
+        // Use ARM NEON FMLA instructions for maximum performance (ARM64 only for double)
+        if (AdvSimd.Arm64.IsSupported)
+        {
+            for (long i = 0; i < vectorCount; i++)
+            {
+                var offset = (int)(i * VectorSize);
+                var vecA = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+                var vecB = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var vecC = Vector128.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                
+                // ARM NEON FMLA: result = a * b + c with single rounding
+                var fmaResult = AdvSimd.Arm64.FusedMultiplyAdd(vecC, vecA, vecB); // Note: ARM order is (accumulator, multiplicand, multiplier)
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            }
+        }
+        else
+        {
+            // Fallback to scalar if ARM64 NEON not available
+            vectorCount = 0;
+            remainder = a.Length;
+        }
+
+        // Handle remainder with scalar FMA
+        if (remainder > 0)
+        {
+            var lastVectorOffset = (int)(vectorCount * VectorSize);
+            for (long i = 0; i < remainder; i++)
+            {
+                var idx = lastVectorOffset + i;
+                result[idx] = Math.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+            }
+        }
     }
 }
 
