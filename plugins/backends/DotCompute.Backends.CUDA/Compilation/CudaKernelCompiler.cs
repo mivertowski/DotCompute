@@ -254,14 +254,73 @@ public class CudaKernelCompiler : IDisposable
     {
         var builder = new StringBuilder();
 
-        // Add standard CUDA headers
-        builder.AppendLine("// Auto-generated CUDA kernel");
-        builder.AppendLine("#include <cuda_runtime.h>");
-        builder.AppendLine("#include <device_launch_parameters.h>");
+        // Add header with compilation metadata
+        builder.AppendLine($"// Auto-generated CUDA kernel: {source.Name}");
+        builder.AppendLine($"// Generated on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        builder.AppendLine($"// Optimization level: {options?.OptimizationLevel ?? OptimizationLevel.Default}");
         builder.AppendLine();
 
-        // Add any custom includes via additional flags
-        // (Include paths would be passed as -I flags to nvcc)
+        // Add essential CUDA headers
+        builder.AppendLine("#include <cuda_runtime.h>");
+        builder.AppendLine("#include <device_launch_parameters.h>");
+        
+        // Add performance-oriented headers
+        if (options?.OptimizationLevel == OptimizationLevel.Maximum)
+        {
+            builder.AppendLine("#include <cuda_fp16.h>");  // Half precision support
+            builder.AppendLine("#include <cooperative_groups.h>");  // Cooperative groups
+        }
+        
+        // Add mathematical libraries if needed
+        if (source.Code.Contains("sin") || source.Code.Contains("cos") || source.Code.Contains("exp"))
+        {
+            builder.AppendLine("#include <math_functions.h>");
+        }
+        
+        builder.AppendLine();
+        
+        // Add performance macros
+        builder.AppendLine("// Performance optimization macros");
+        if (options?.OptimizationLevel == OptimizationLevel.Maximum)
+        {
+            builder.AppendLine("#define FORCE_INLINE __forceinline__");
+            builder.AppendLine("#define RESTRICT __restrict__");
+        }
+        else
+        {
+            builder.AppendLine("#define FORCE_INLINE inline");
+            builder.AppendLine("#define RESTRICT");
+        }
+        
+        // Add debug macros
+        if (options?.EnableDebugInfo == true)
+        {
+            builder.AppendLine("#define DEBUG_KERNEL 1");
+            builder.AppendLine("#define KERNEL_ASSERT(x) assert(x)");
+        }
+        else
+        {
+            builder.AppendLine("#define DEBUG_KERNEL 0");
+            builder.AppendLine("#define KERNEL_ASSERT(x)");
+        }
+        
+        builder.AppendLine();
+        
+        // Add compute capability specific optimizations
+        var (major, minor) = GetTargetComputeCapability();
+        builder.AppendLine($"// Target compute capability: {major}.{minor}");
+        
+        if (major >= 7) // Volta and newer
+        {
+            builder.AppendLine("#define VOLTA_OPTIMIZATIONS 1");
+        }
+        
+        if (major >= 8) // Ampere and newer
+        {
+            builder.AppendLine("#define AMPERE_OPTIMIZATIONS 1");
+        }
+        
+        builder.AppendLine();
 
         // Add the kernel source code
         switch (source.Language)
@@ -272,7 +331,8 @@ public class CudaKernelCompiler : IDisposable
                 
             case KernelLanguage.OpenCL:
                 // Convert OpenCL to CUDA syntax
-                builder.Append(ConvertOpenClToCuda(source.Code));
+                var convertedCode = ConvertOpenClToCuda(source.Code);
+                builder.Append(convertedCode);
                 break;
                 
             default:

@@ -2064,40 +2064,22 @@ public static class VectorPatterns
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void VectorFMAFloat32(ReadOnlySpan<float> a, ReadOnlySpan<float> b, ReadOnlySpan<float> c, Span<float> result)
     {
-        if (Fma.IsSupported && Vector256.IsHardwareAccelerated)
+        // Use the best available FMA implementation
+        if (Avx512F.IsSupported && a.Length >= 16)
         {
-            const int VectorSize = 8;
-            int vectorCount = a.Length / VectorSize;
-            
-            ref var aRef = ref MemoryMarshal.GetReference(a);
-            ref var bRef = ref MemoryMarshal.GetReference(b);
-            ref var cRef = ref MemoryMarshal.GetReference(c);
-            ref var resultRef = ref MemoryMarshal.GetReference(result);
-
-            for (int i = 0; i < vectorCount; i++)
-            {
-                var offset = (int)(i * VectorSize);
-                var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-                var vc = Vector256.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
-                var vr = Fma.MultiplyAdd(va, vb, vc);
-                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
-            }
-
-            // Handle remainder
-            int remainder = a.Length % VectorSize;
-            if (remainder > 0)
-            {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
-                {
-                    result[lastOffset + i] = MathF.FusedMultiplyAdd(a[lastOffset + i], b[lastOffset + i], c[lastOffset + i]);
-                }
-            }
+            Avx512KernelExecutor.ExecuteFloat32FMA(a, b, c, result);
+        }
+        else if (Fma.IsSupported && Vector256.IsHardwareAccelerated && a.Length >= 8)
+        {
+            Avx2KernelExecutor.ExecuteFloat32FMA(a, b, c, result);
+        }
+        else if (AdvSimd.IsSupported && a.Length >= 4)
+        {
+            NeonKernelExecutor.ExecuteFloat32FMA(a, b, c, result);
         }
         else
         {
-            // Fallback to manual FMA
+            // Fallback to scalar FMA
             for (int i = 0; i < a.Length; i++)
             {
                 result[i] = MathF.FusedMultiplyAdd(a[i], b[i], c[i]);
@@ -2108,40 +2090,22 @@ public static class VectorPatterns
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void VectorFMAFloat64(ReadOnlySpan<double> a, ReadOnlySpan<double> b, ReadOnlySpan<double> c, Span<double> result)
     {
-        if (Fma.IsSupported && Vector256.IsHardwareAccelerated)
+        // Use the best available FMA implementation
+        if (Avx512F.IsSupported && a.Length >= 8)
         {
-            const int VectorSize = 4;
-            int vectorCount = a.Length / VectorSize;
-            
-            ref var aRef = ref MemoryMarshal.GetReference(a);
-            ref var bRef = ref MemoryMarshal.GetReference(b);
-            ref var cRef = ref MemoryMarshal.GetReference(c);
-            ref var resultRef = ref MemoryMarshal.GetReference(result);
-
-            for (int i = 0; i < vectorCount; i++)
-            {
-                var offset = (int)(i * VectorSize);
-                var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-                var vc = Vector256.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
-                var vr = Fma.MultiplyAdd(va, vb, vc);
-                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
-            }
-
-            // Handle remainder
-            int remainder = a.Length % VectorSize;
-            if (remainder > 0)
-            {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
-                {
-                    result[lastOffset + i] = Math.FusedMultiplyAdd(a[lastOffset + i], b[lastOffset + i], c[lastOffset + i]);
-                }
-            }
+            Avx512KernelExecutor.ExecuteFloat64FMA(a, b, c, result);
+        }
+        else if (Fma.IsSupported && Vector256.IsHardwareAccelerated && a.Length >= 4)
+        {
+            Avx2KernelExecutor.ExecuteFloat64FMA(a, b, c, result);
+        }
+        else if (AdvSimd.Arm64.IsSupported && a.Length >= 2)
+        {
+            NeonKernelExecutor.ExecuteFloat64FMA(a, b, c, result);
         }
         else
         {
-            // Fallback to manual FMA
+            // Fallback to scalar FMA
             for (int i = 0; i < a.Length; i++)
             {
                 result[i] = Math.FusedMultiplyAdd(a[i], b[i], c[i]);
