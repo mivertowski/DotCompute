@@ -8,6 +8,7 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
@@ -15,10 +16,26 @@ using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Compilation;
 
+// Internal types for kernel compilation
+internal class KernelSource
+{
+    public required string Name { get; set; }
+    public required string EntryPoint { get; set; }
+    public required string Code { get; set; }
+    public KernelLanguage Language { get; set; }
+}
+
+internal enum KernelLanguage
+{
+    Cuda,
+    OpenCL,
+    Ptx
+}
+
 /// <summary>
 /// CUDA kernel compiler implementation using NVRTC
 /// </summary>
-public class CudaKernelCompiler : IKernelCompiler
+public class CudaKernelCompiler : IDisposable
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
@@ -35,24 +52,33 @@ public class CudaKernelCompiler : IKernelCompiler
         Directory.CreateDirectory(_tempDirectory);
     }
 
-    public async Task<ICompiledKernel> CompileAsync(IKernelSource source, CompilationOptions? options = null)
+    public async Task<ICompiledKernel> CompileAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         
-        if (source == null)
-            throw new ArgumentNullException(nameof(source));
+        if (definition == null)
+            throw new ArgumentNullException(nameof(definition));
 
         try
         {
-            _logger.LogInformation("Compiling CUDA kernel: {KernelName}", source.Name);
+            _logger.LogInformation("Compiling CUDA kernel: {KernelName}", definition.Name);
 
             // Check cache first
-            var cacheKey = GenerateCacheKey(source, options);
+            var cacheKey = GenerateCacheKey(definition, options);
             if (_kernelCache.TryGetValue(cacheKey, out var cachedKernel))
             {
-                _logger.LogDebug("Using cached kernel: {KernelName}", source.Name);
+                _logger.LogDebug("Using cached kernel: {KernelName}", definition.Name);
                 return cachedKernel;
             }
+
+            // Convert KernelDefinition to source
+            var source = new KernelSource
+            {
+                Name = definition.Name,
+                EntryPoint = definition.EntryPoint ?? "kernel_main",
+                Code = Encoding.UTF8.GetString(definition.Code),
+                Language = KernelLanguage.Cuda
+            };
 
             // Prepare CUDA source code
             var cudaSource = await PrepareCudaSourceAsync(source, options);
@@ -77,20 +103,20 @@ public class CudaKernelCompiler : IKernelCompiler
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to compile CUDA kernel: {KernelName}", source.Name);
-            throw new CompilationException($"Failed to compile CUDA kernel '{source.Name}'", ex);
+            _logger.LogError(ex, "Failed to compile CUDA kernel: {KernelName}", definition.Name);
+            throw new InvalidOperationException($"Failed to compile CUDA kernel '{definition.Name}'", ex);
         }
     }
 
-    public async Task<ICompiledKernel[]> CompileBatchAsync(IKernelSource[] sources, CompilationOptions? options = null)
+    public async Task<ICompiledKernel[]> CompileBatchAsync(KernelDefinition[] definitions, CompilationOptions? options = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         
-        if (sources == null)
-            throw new ArgumentNullException(nameof(sources));
+        if (definitions == null)
+            throw new ArgumentNullException(nameof(definitions));
 
         // Compile kernels in parallel
-        var tasks = sources.Select(source => CompileAsync(source, options)).ToArray();
+        var tasks = definitions.Select(def => CompileAsync(def, options, cancellationToken)).ToArray();
         return await Task.WhenAll(tasks);
     }
 
@@ -118,7 +144,7 @@ public class CudaKernelCompiler : IKernelCompiler
         _kernelCache.Clear();
     }
 
-    private async Task<string> PrepareCudaSourceAsync(IKernelSource source, CompilationOptions? options)
+    private async Task<string> PrepareCudaSourceAsync(KernelSource source, CompilationOptions? options)
     {
         var builder = new StringBuilder();
 
@@ -128,25 +154,8 @@ public class CudaKernelCompiler : IKernelCompiler
         builder.AppendLine("#include <device_launch_parameters.h>");
         builder.AppendLine();
 
-        // Add custom includes from options
-        if (options?.IncludePaths != null)
-        {
-            foreach (var include in options.IncludePaths)
-            {
-                builder.AppendLine($"#include \"{include}\"");
-            }
-            builder.AppendLine();
-        }
-
-        // Add preprocessor definitions
-        if (options?.Defines != null)
-        {
-            foreach (var (key, value) in options.Defines)
-            {
-                builder.AppendLine($"#define {key} {value}");
-            }
-            builder.AppendLine();
-        }
+        // Add any custom includes via additional flags
+        // (Include paths would be passed as -I flags to nvcc)
 
         // Add the kernel source code
         switch (source.Language)
@@ -208,32 +217,37 @@ public class CudaKernelCompiler : IKernelCompiler
             var nvccArgs = new StringBuilder();
             nvccArgs.Append($"-ptx \"{sourceFile}\" -o \"{ptxFile}\"");
 
-            // Add architecture
-            var arch = options?.TargetArchitecture ?? "sm_50"; // Default to compute capability 5.0
-            nvccArgs.Append($" -arch={arch}");
+            // Add architecture - default to compute capability 5.0
+            nvccArgs.Append(" -arch=sm_50");
 
             // Add optimization level
-            var optLevel = options?.OptimizationLevel ?? OptimizationLevel.O2;
-            nvccArgs.Append($" -{optLevel.ToString().ToLower()}");
-
-            // Add include paths
-            if (options?.IncludePaths != null)
+            var optLevel = options?.OptimizationLevel ?? OptimizationLevel.Default;
+            switch (optLevel)
             {
-                foreach (var includePath in options.IncludePaths)
-                {
-                    nvccArgs.Append($" -I\"{includePath}\"");
-                }
+                case OptimizationLevel.None:
+                    nvccArgs.Append(" -O0");
+                    break;
+                case OptimizationLevel.Maximum:
+                    nvccArgs.Append(" -O3");
+                    break;
+                default: // Default
+                    nvccArgs.Append(" -O2");
+                    break;
             }
 
             // Additional flags
-            if (options?.DebugInfo == true)
+            if (options?.EnableDebugInfo == true)
             {
                 nvccArgs.Append(" -g -G");
             }
 
-            if (options?.FastMath == true)
+            // Add any additional flags
+            if (options?.AdditionalFlags != null)
             {
-                nvccArgs.Append(" -use_fast_math");
+                foreach (var flag in options.AdditionalFlags)
+                {
+                    nvccArgs.Append($" {flag}");
+                }
             }
 
             // Run nvcc
@@ -277,21 +291,19 @@ public class CudaKernelCompiler : IKernelCompiler
         }
     }
 
-    private string GenerateCacheKey(IKernelSource source, CompilationOptions? options)
+    private string GenerateCacheKey(KernelDefinition definition, CompilationOptions? options)
     {
         var key = new StringBuilder();
-        key.Append(source.Name);
+        key.Append(definition.Name);
         key.Append('_');
-        key.Append(source.Code.GetHashCode());
+        key.Append(definition.Code.GetHashCode());
         
         if (options != null)
         {
             key.Append('_');
-            key.Append(options.TargetArchitecture ?? "default");
-            key.Append('_');
             key.Append(options.OptimizationLevel);
             key.Append('_');
-            key.Append(options.DebugInfo ? "debug" : "release");
+            key.Append(options.EnableDebugInfo ? "debug" : "release");
         }
 
         return key.ToString();

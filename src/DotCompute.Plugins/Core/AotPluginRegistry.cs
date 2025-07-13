@@ -46,7 +46,7 @@ public sealed class AotPluginRegistry : IDisposable
             _logger.LogDebug("Creating CPU backend plugin");
             
             // Create a minimal CPU backend plugin implementation for AOT compatibility
-            return new CpuBackendPlugin();
+            return new AotCpuBackendPlugin();
         };
 
         // Register CUDA backend (when available)
@@ -57,7 +57,7 @@ public sealed class AotPluginRegistry : IDisposable
             // Check if CUDA is available at runtime
             if (IsCudaAvailable())
             {
-                return new CudaBackendPlugin();
+                return new AotCudaBackendPlugin();
             }
             else
             {
@@ -74,7 +74,7 @@ public sealed class AotPluginRegistry : IDisposable
             // Metal is only available on macOS/iOS
             if (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
             {
-                return new MetalBackendPlugin();
+                return new AotMetalBackendPlugin();
             }
             else
             {
@@ -383,7 +383,7 @@ public static class AotPluginHelpers
 /// <summary>
 /// Minimal CPU backend plugin implementation for AOT compatibility.
 /// </summary>
-internal sealed class CpuBackendPlugin : IBackendPlugin
+internal sealed class AotCpuBackendPlugin : IBackendPlugin
 {
     private readonly object _lock = new();
 #pragma warning disable IDE0044 // Make field readonly - these fields are intentionally mutable as they track plugin state
@@ -473,7 +473,7 @@ internal sealed class CpuBackendPlugin : IBackendPlugin
 /// <summary>
 /// Minimal CUDA backend plugin implementation for AOT compatibility.
 /// </summary>
-internal sealed class CudaBackendPlugin : IBackendPlugin
+internal sealed class AotCudaBackendPlugin : IBackendPlugin
 {
     private readonly object _lock = new();
 #pragma warning disable IDE0044 // Make field readonly - these fields are intentionally mutable as they track plugin state
@@ -596,7 +596,7 @@ internal sealed class CudaBackendPlugin : IBackendPlugin
 /// <summary>
 /// Minimal Metal backend plugin implementation for AOT compatibility.
 /// </summary>
-internal sealed class MetalBackendPlugin : IBackendPlugin
+internal sealed class AotMetalBackendPlugin : IBackendPlugin
 {
     private readonly object _lock = new();
 #pragma warning disable IDE0044 // Make field readonly - these fields are intentionally mutable as they track plugin state

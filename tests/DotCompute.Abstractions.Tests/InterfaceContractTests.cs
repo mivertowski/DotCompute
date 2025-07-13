@@ -1,3 +1,6 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using FluentAssertions;
 using DotCompute.Abstractions;
@@ -51,11 +54,11 @@ public class InterfaceContractTests
     public void IBufferContract_ShouldDefineMemoryOperations()
     {
         // Arrange
-        var bufferType = typeof(IBuffer);
+        var bufferType = typeof(IBuffer<>);
 
         // Act & Assert
-        bufferType.Should().BeInterface("IBuffer should be an interface");
-        bufferType.Should().BeAssignableTo<IDisposable>("Should implement IDisposable");
+        bufferType.Should().BeInterface("IBuffer<T> should be an interface");
+        bufferType.IsGenericTypeDefinition.Should().BeTrue("Should be a generic type definition");
     }
 
     [Fact]
@@ -88,13 +91,14 @@ public class InterfaceContractTests
     public void DeviceMemoryStruct_ShouldHaveValidProperties()
     {
         // Arrange & Act
-        var defaultMemory = new DeviceMemory();
-        var customMemory = new DeviceMemory { Size = 1024, Alignment = 16 };
+        var defaultMemory = DeviceMemory.Invalid;
+        var customMemory = new DeviceMemory(new IntPtr(0x1000), 1024);
 
         // Assert
+        defaultMemory.IsValid.Should().BeFalse("Default invalid memory should not be valid");
         defaultMemory.Size.Should().Be(0, "Default size should be zero");
         customMemory.Size.Should().Be(1024, "Custom size should be set");
-        customMemory.Alignment.Should().Be(16, "Custom alignment should be set");
+        customMemory.IsValid.Should().BeTrue("Custom memory with valid handle should be valid");
     }
 
     [Fact]
@@ -110,14 +114,14 @@ public class InterfaceContractTests
     }
 
     [Fact]
-    public void AcceleratorContextShouldManageResourceLifecycle()
+    public void AcceleratorStreamShouldManageResourceLifecycle()
     {
         // Arrange
-        var contextType = typeof(AcceleratorContext);
+        var streamType = typeof(AcceleratorStream);
 
         // Act & Assert
-        contextType.Should().BeClass("AcceleratorContext should be a class");
-        contextType.Should().BeAssignableTo<IDisposable>("Should implement IDisposable");
+        streamType.Should().BeClass("AcceleratorStream should be a class");
+        streamType.Should().BeAssignableTo<IAsyncDisposable>("Should implement IAsyncDisposable");
     }
 }
 
@@ -131,15 +135,21 @@ public class MockImplementationTests
     {
         // Arrange
         var mockAccelerator = new Mock<IAccelerator>();
-        mockAccelerator.Setup(x => x.Type).Returns(AcceleratorType.CPU);
-        mockAccelerator.Setup(x => x.Name).Returns("Test CPU");
+        var mockInfo = new AcceleratorInfo 
+        { 
+            Id = "test-cpu",
+            Name = "Test CPU",
+            DeviceType = "CPU",
+            Vendor = "Test"
+        };
+        mockAccelerator.Setup(x => x.Info).Returns(mockInfo);
 
         // Act
         var accelerator = mockAccelerator.Object;
 
         // Assert
-        accelerator.Type.Should().Be(AcceleratorType.CPU);
-        accelerator.Name.Should().Be("Test CPU");
+        accelerator.Info.DeviceType.Should().Be("CPU");
+        accelerator.Info.Name.Should().Be("Test CPU");
     }
 
     [Fact]
@@ -147,9 +157,9 @@ public class MockImplementationTests
     {
         // Arrange
         var mockManager = new Mock<IMemoryManager>();
-        var expectedBuffer = new Mock<IBuffer>().Object;
+        var expectedBuffer = new Mock<IMemoryBuffer>().Object;
         
-        mockManager.Setup(x => x.AllocateAsync(It.IsAny<long>()))
+        mockManager.Setup(x => x.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                   .ReturnsAsync(expectedBuffer);
 
         // Act
@@ -157,7 +167,7 @@ public class MockImplementationTests
 
         // Assert
         manager.Should().NotBeNull();
-        mockManager.Verify(x => x.AllocateAsync(It.IsAny<long>()), Times.Never);
+        mockManager.Verify(x => x.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -165,10 +175,10 @@ public class MockImplementationTests
     {
         // Arrange
         var mockManager = new Mock<IMemoryManager>();
-        var mockBuffer = new Mock<IBuffer>();
-        mockBuffer.Setup(x => x.Size).Returns(1024);
+        var mockBuffer = new Mock<IMemoryBuffer>();
+        mockBuffer.Setup(x => x.SizeInBytes).Returns(1024);
         
-        mockManager.Setup(x => x.AllocateAsync(1024))
+        mockManager.Setup(x => x.AllocateAsync(1024, It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                   .ReturnsAsync(mockBuffer.Object);
 
         // Act
@@ -176,7 +186,7 @@ public class MockImplementationTests
 
         // Assert
         buffer.Should().NotBeNull();
-        buffer.Size.Should().Be(1024);
+        buffer.SizeInBytes.Should().Be(1024);
     }
 
     [Fact]
@@ -184,16 +194,19 @@ public class MockImplementationTests
     {
         // Arrange
         var mockCompiler = new Mock<IKernelCompiler>();
-        var mockKernel = new Mock<IKernel>();
+        var mockKernel = new Mock<ICompiledKernel>();
         
-        mockCompiler.Setup(x => x.CompileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        mockCompiler.Setup(x => x.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions?>(), It.IsAny<CancellationToken>()))
                    .ReturnsAsync(mockKernel.Object);
+        mockCompiler.Setup(x => x.Name).Returns("Test Compiler");
+        mockCompiler.Setup(x => x.SupportedSourceTypes).Returns(new[] { KernelSourceType.CUDA });
 
         // Act
         var compiler = mockCompiler.Object;
 
         // Assert
         compiler.Should().NotBeNull();
+        compiler.Name.Should().Be("Test Compiler");
     }
 
     [Fact]
@@ -201,18 +214,25 @@ public class MockImplementationTests
     {
         // Arrange
         var mockCompiler = new Mock<IKernelCompiler>();
-        var mockKernel = new Mock<IKernel>();
-        var source = "kernel void test() {}";
+        var mockKernel = new Mock<ICompiledKernel>();
+        mockKernel.Setup(x => x.Name).Returns("test");
         
-        mockCompiler.Setup(x => x.CompileAsync(source, It.IsAny<CancellationToken>()))
+        var definition = new KernelDefinition 
+        { 
+            Name = "test",
+            Code = System.Text.Encoding.UTF8.GetBytes("kernel void test() {}")
+        };
+        
+        mockCompiler.Setup(x => x.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions?>(), It.IsAny<CancellationToken>()))
                    .ReturnsAsync(mockKernel.Object);
 
         // Act
-        var kernel = await mockCompiler.Object.CompileAsync(source, CancellationToken.None);
+        var kernel = await mockCompiler.Object.CompileAsync(definition, null, CancellationToken.None);
 
         // Assert
         kernel.Should().NotBeNull();
-        mockCompiler.Verify(x => x.CompileAsync(source, It.IsAny<CancellationToken>()), Times.Once);
+        kernel.Name.Should().Be("test");
+        mockCompiler.Verify(x => x.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions?>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 }
 
@@ -222,64 +242,69 @@ public class MockImplementationTests
 public class AbstractionsErrorHandlingTests
 {
     [Fact]
-    public void AcceleratorTypeInvalidCast_ShouldThrowException()
+    public void AcceleratorTypeInvalidValue_ShouldStillWork()
+    {
+        // Arrange
+        var invalidType = (AcceleratorType)999;
+        
+        // Act
+        var result = invalidType.ToString();
+
+        // Assert
+        result.Should().Be("999", "Invalid enum values should convert to their numeric string representation");
+    }
+
+    [Fact]
+    public void DeviceMemoryNegativeSize_ShouldThrowException()
     {
         // Arrange & Act & Assert
-        Assert.Throws<InvalidCastException>(() =>
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
         {
-            var invalidType = (AcceleratorType)999;
-            var result = invalidType.ToString();
+            var memory = new DeviceMemory(IntPtr.Zero, -1);
         });
     }
 
     [Fact]
-    public void DeviceMemoryNegativeSize_ShouldBeHandled()
+    public void DeviceMemoryZeroSize_ShouldBeValid()
     {
         // Arrange & Act
-        var memory = new DeviceMemory { Size = -1 };
+        var memory = new DeviceMemory(IntPtr.Zero, 0);
 
         // Assert
-        memory.Size.Should().Be(-1, "Negative size should be preserved for validation");
-    }
-
-    [Fact]
-    public void DeviceMemoryZeroAlignment_ShouldBeHandled()
-    {
-        // Arrange & Act
-        var memory = new DeviceMemory { Alignment = 0 };
-
-        // Assert
-        memory.Alignment.Should().Be(0, "Zero alignment should be preserved for validation");
+        memory.Size.Should().Be(0, "Zero size should be allowed");
+        memory.IsValid.Should().BeFalse("Zero size with null handle should not be valid");
     }
 
     [Theory]
     [InlineData(long.MaxValue)]
-    [InlineData(long.MinValue)]
     [InlineData(0)]
+    [InlineData(1)]
     public void DeviceMemoryExtremeValues_ShouldBeHandled(long size)
     {
         // Arrange & Act
-        var memory = new DeviceMemory { Size = size };
+        var memory = new DeviceMemory(new IntPtr(0x1000), size);
 
         // Assert
-        memory.Size.Should().Be(size, "Extreme values should be preserved");
+        memory.Size.Should().Be(size, "Valid size values should be preserved");
+        memory.IsValid.Should().Be(size > 0, "Only positive sizes with valid handles should be valid");
     }
 
     [Fact]
-    public void MockBufferDisposal_ShouldBeTracked()
+    public async Task MockBufferDisposal_ShouldBeTracked()
     {
         // Arrange
-        var mockBuffer = new Mock<IBuffer>();
+        var mockBuffer = new Mock<IMemoryBuffer>();
         var disposed = false;
-        mockBuffer.Setup(x => x.Dispose()).Callback(() => disposed = true);
+        mockBuffer.Setup(x => x.DisposeAsync()).Callback(() => disposed = true)
+                 .Returns(ValueTask.CompletedTask);
 
         // Act
         var buffer = mockBuffer.Object;
-        buffer.Dispose();
+        await buffer.DisposeAsync();
 
         // Assert
-        disposed.Should().BeTrue("Dispose should be called");
-        mockBuffer.Verify(x => x.Dispose(), Times.Once);
+        disposed.Should().BeTrue("DisposeAsync should be called");
+        mockBuffer.Verify(x => x.DisposeAsync(), Times.Once);
     }
 
     [Fact]
@@ -301,17 +326,18 @@ public class AbstractionsErrorHandlingTests
     }
 
     [Fact]
-    public void AcceleratorContextMultipleDisposal_ShouldBeIdempotent()
+    public async Task AcceleratorStreamMultipleDisposal_ShouldBeIdempotent()
     {
         // Arrange
-        var mockContext = new Mock<AcceleratorContext>();
+        var mockStream = new Mock<AcceleratorStream>();
         var disposeCount = 0;
-        mockContext.Setup(x => x.Dispose()).Callback(() => disposeCount++);
+        mockStream.Setup(x => x.DisposeAsync()).Callback(() => disposeCount++)
+                 .Returns(ValueTask.CompletedTask);
 
         // Act
-        var context = mockContext.Object;
-        context.Dispose();
-        context.Dispose(); // Multiple disposal
+        var stream = mockStream.Object;
+        await stream.DisposeAsync();
+        await stream.DisposeAsync(); // Multiple disposal
 
         // Assert
         disposeCount.Should().Be(2, "Multiple dispose calls should be tracked");

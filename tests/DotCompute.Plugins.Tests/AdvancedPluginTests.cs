@@ -1,3 +1,6 @@
+using System;
+using System.Threading;
+using System.Threading.Tasks;
 using Xunit;
 using FluentAssertions;
 using DotCompute.Plugins.Core;
@@ -6,6 +9,7 @@ using DotCompute.Plugins.Attributes;
 using DotCompute.Plugins.Configuration;
 using DotCompute.Plugins.Exceptions;
 using DotCompute.Plugins.Examples;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -588,88 +592,117 @@ public class PluginPerformanceTests
 /// </summary>
 internal class TestBackendPlugin : BackendPluginBase
 {
-    public TestBackendPlugin(string name) : base(name) { }
+    private readonly string _id;
+    private readonly string _name;
 
-    public override string Version => "1.0.0";
+    public TestBackendPlugin(string name)
+    {
+        _id = $"test-{name.ToLower()}";
+        _name = name;
+    }
+
+    public override string Id => _id;
+    public override string Name => _name;
+    public override Version Version => new Version(1, 0, 0);
     public override string Description => "Test backend plugin";
-
-    protected override Task OnLoadAsync()
-    {
-        return Task.CompletedTask;
-    }
-
-    protected override Task OnUnloadAsync()
-    {
-        return Task.CompletedTask;
-    }
+    public override string Author => "Test Author";
+    public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.HotReloadable;
 }
 
 internal class InvalidTestPlugin : IBackendPlugin
 {
+    public string Id => "";
     public string Name => "";  // Invalid empty name
-    public string Version => "1.0.0";
+    public Version Version => new Version(1, 0, 0);
     public string Description => "Invalid test plugin";
-    public bool IsLoaded => false;
+    public string Author => "Test Author";
+    public PluginCapabilities Capabilities => PluginCapabilities.None;
+    public PluginState State => PluginState.Unknown;
+    public PluginHealth Health => PluginHealth.Unknown;
 
-    public Task LoadAsync()
-    {
-        throw new InvalidOperationException("This plugin always fails to load");
-    }
+    public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+    public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+    public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
 
-    public Task UnloadAsync()
+    public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
+    public Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        throw new InvalidOperationException("This plugin always fails to initialize");
     }
-
-    public void Dispose()
-    {
-        // Test implementation
-    }
+    public Task StartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public PluginValidationResult Validate() => new PluginValidationResult { IsValid = false, Errors = { "Invalid plugin" } };
+    public string GetConfigurationSchema() => "{}";
+    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public PluginMetrics GetMetrics() => new PluginMetrics();
+    public void Dispose() { }
 }
 
 internal class FaultyTestPlugin : IBackendPlugin
 {
+    public string Id => "faulty-plugin";
     public string Name => "FaultyPlugin";
-    public string Version => "1.0.0";
+    public Version Version => new Version(1, 0, 0);
     public string Description => "Faulty test plugin";
-    public bool IsLoaded => false;
+    public string Author => "Test Author";
+    public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend;
+    public PluginState State => PluginState.Failed;
+    public PluginHealth Health => PluginHealth.Critical;
 
-    public Task LoadAsync()
-    {
-        throw new InvalidOperationException("Simulated load failure");
-    }
+    public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+    public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+    public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
 
-    public Task UnloadAsync()
+    public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
+    public Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
-        return Task.CompletedTask;
+        throw new InvalidOperationException("Simulated initialization failure");
     }
-
-    public void Dispose()
-    {
-        // Test implementation
-    }
+    public Task StartAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public Task StopAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public PluginValidationResult Validate() => new PluginValidationResult { IsValid = true };
+    public string GetConfigurationSchema() => "{}";
+    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public PluginMetrics GetMetrics() => new PluginMetrics();
+    public void Dispose() { }
 }
 
 internal class SlowLoadingTestPlugin : IBackendPlugin
 {
+    public string Id => "slow-plugin";
     public string Name => "SlowPlugin";
-    public string Version => "1.0.0";
+    public Version Version => new Version(1, 0, 0);
     public string Description => "Slow loading test plugin";
-    public bool IsLoaded => false;
+    public string Author => "Test Author";
+    public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend;
+    public PluginState State { get; private set; } = PluginState.Unknown;
+    public PluginHealth Health => PluginHealth.Healthy;
 
-    public async Task LoadAsync()
+    public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+    public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+    public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+
+    public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
+    public async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
     {
-        // Simulate slow loading
-        await Task.Delay(1000);
+        State = PluginState.Initializing;
+        // Simulate slow initialization
+        await Task.Delay(1000, cancellationToken);
+        State = PluginState.Initialized;
     }
-
-    public Task UnloadAsync()
+    public Task StartAsync(CancellationToken cancellationToken = default)
     {
+        State = PluginState.Running;
         return Task.CompletedTask;
     }
-
-    public void Dispose()
+    public Task StopAsync(CancellationToken cancellationToken = default)
     {
-        // Test implementation
+        State = PluginState.Stopped;
+        return Task.CompletedTask;
     }
+    public PluginValidationResult Validate() => new PluginValidationResult { IsValid = true };
+    public string GetConfigurationSchema() => "{}";
+    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public PluginMetrics GetMetrics() => new PluginMetrics();
+    public void Dispose() { }
 }

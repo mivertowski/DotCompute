@@ -19,6 +19,10 @@ internal static partial class MetalNative
 
     #region Device Management
 
+    [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_IsMetalSupported")]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    public static partial bool IsMetalSupported();
+
     [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_CreateSystemDefaultDevice")]
     public static partial IntPtr CreateSystemDefaultDevice();
 

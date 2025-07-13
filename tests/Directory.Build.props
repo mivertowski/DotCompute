@@ -1,17 +1,17 @@
 <Project>
-  <Import Project="../src/Directory.Build.props" />
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <!-- Relax some rules for test projects -->
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <WarningsAsErrors />
-    <WarningsNotAsErrors />
+    <!-- Common test project settings -->
+    <IsTestProject>true</IsTestProject>
+    <IsPackable>false</IsPackable>
     
-    <!-- Disable AOT analysis for tests -->
-    <IsAotCompatible>false</IsAotCompatible>
-    <EnableAotAnalyzer>false</EnableAotAnalyzer>
+    <!-- Suppress warnings that are common in test projects -->
+    <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CA1001</NoWarn>
     
-    <!-- Suppress some analyzer rules for tests -->
-    <NoWarn>$(NoWarn);IDE0040;IDE0011;CA1822;CA1859;CA1308;CA1869;IL2026;IL3050</NoWarn>
+    <!-- CA1707: Identifiers should not contain underscores (test method naming) -->
+    <!-- CA1515: Make internal types that are not accessed outside the assembly internal -->
+    <!-- CA1819: Properties should not return arrays (test data) -->
+    <!-- CA1001: Types that own disposable fields should be disposable (test fixtures) -->
   </PropertyGroup>
 </Project>

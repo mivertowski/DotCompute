@@ -12,7 +12,7 @@ namespace DotCompute.Backends.Metal;
 /// <summary>
 /// Main entry point for Metal compute backend
 /// </summary>
-public class MetalBackend : IDisposable
+public sealed class MetalBackend : IDisposable
 {
     private readonly ILogger<MetalBackend> _logger;
     private readonly List<MetalAccelerator> _accelerators = new();
@@ -79,14 +79,18 @@ public class MetalBackend : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         foreach (var accelerator in _accelerators)
         {
-            accelerator?.Dispose();
+            accelerator?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
         
         _accelerators.Clear();
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }

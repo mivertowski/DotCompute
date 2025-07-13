@@ -9,7 +9,7 @@ namespace DotCompute.TestUtilities.FluentAssertions
     /// FluentAssertions extensions for Type assertions
     /// Provides BeInterface() and BeClass() methods for type validation
     /// </summary>
-    public static class TypeAssertionsExtensions
+    internal static class TypeAssertionsExtensions
     {
         /// <summary>
         /// Asserts that the subject type is an interface.

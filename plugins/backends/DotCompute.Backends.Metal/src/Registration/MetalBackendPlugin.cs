@@ -12,6 +12,8 @@ using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Backends.Metal.Registration;
 
@@ -39,6 +41,8 @@ public sealed class MetalBackendPlugin : BackendPluginBase
     public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
 
     /// <inheritdoc/>
+    [UnconditionalSuppressMessage("AOT", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "Configuration options are preserved")]
+    [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "Configuration options are preserved")]
     public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         base.ConfigureServices(services, configuration);
@@ -49,7 +53,7 @@ public sealed class MetalBackendPlugin : BackendPluginBase
             throw new PlatformNotSupportedException("Metal backend is only supported on macOS and iOS platforms.");
         }
         
-        // Configure Metal backend options
+        // Configure Metal backend options  
         services.Configure<MetalAcceleratorOptions>(configuration.GetSection("MetalBackend:Accelerator"));
         
         // Register the Metal accelerator
@@ -66,21 +70,30 @@ public sealed class MetalBackendPlugin : BackendPluginBase
     /// <inheritdoc/>
     protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        Logger?.LogInformation("Initializing Metal backend plugin");
+        if (Logger is ILogger<MetalBackendPlugin> typedLogger)
+        {
+            typedLogger.LogInformation("Initializing Metal backend plugin");
+        }
         await base.OnInitializeAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
     protected override async Task OnStartAsync(CancellationToken cancellationToken)
     {
-        Logger?.LogInformation("Starting Metal backend plugin");
+        if (Logger is ILogger<MetalBackendPlugin> typedLogger)
+        {
+            typedLogger.LogInformation("Starting Metal backend plugin");
+        }
         await base.OnStartAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
     protected override async Task OnStopAsync(CancellationToken cancellationToken)
     {
-        Logger?.LogInformation("Stopping Metal backend plugin");
+        if (Logger is ILogger<MetalBackendPlugin> typedLogger)
+        {
+            typedLogger.LogInformation("Stopping Metal backend plugin");
+        }
         await base.OnStopAsync(cancellationToken).ConfigureAwait(false);
     }
 

@@ -9,7 +9,7 @@ using Xunit;
 using FluentAssertions;
 using DotCompute.Core;
 using DotCompute.Abstractions;
-using DotCompute.Backends.CPU.Accelerators;
+using DotCompute.Core.Accelerators;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -41,7 +41,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
 
         // Assert
         result.Should().NotBeNull();
-        result.Info.Type.Should().Be(AcceleratorType.Cpu);
+        result.Info.DeviceType.Should().Be("CPU");
         result.Info.Name.Should().NotBeNullOrEmpty();
     }
 

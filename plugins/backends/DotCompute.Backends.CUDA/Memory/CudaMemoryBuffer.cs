@@ -20,11 +20,11 @@ public class CudaMemoryBuffer : IMemoryBuffer
     private bool _disposed;
 
     public long SizeInBytes { get; }
-    public MemoryFlags Flags { get; }
+    public MemoryOptions Options { get; }
     public bool IsDisposed => _disposed;
     public IntPtr DevicePointer => _devicePointer;
 
-    public CudaMemoryBuffer(CudaContext context, long sizeInBytes, MemoryFlags flags, ILogger logger)
+    public CudaMemoryBuffer(CudaContext context, long sizeInBytes, MemoryOptions options, ILogger logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -35,7 +35,7 @@ public class CudaMemoryBuffer : IMemoryBuffer
         }
 
         SizeInBytes = sizeInBytes;
-        Flags = flags;
+        Options = options;
 
         AllocateDeviceMemory();
     }
@@ -56,8 +56,8 @@ public class CudaMemoryBuffer : IMemoryBuffer
             _logger.LogDebug("Allocated {Size} bytes at device pointer {Pointer:X}", 
                 SizeInBytes, _devicePointer.ToInt64());
 
-            // Initialize memory to zero if requested
-            if (Flags.HasFlag(MemoryFlags.ZeroInitialized))
+            // Initialize memory to zero by default
+            if (true) // Always zero-initialize for safety
             {
                 result = CudaRuntime.cudaMemset(_devicePointer, 0, (ulong)SizeInBytes);
                 
@@ -109,11 +109,111 @@ public class CudaMemoryBuffer : IMemoryBuffer
         return new CudaMemoryBufferView(this, offset, length, _logger);
     }
 
+    public async ValueTask CopyFromHostAsync<T>(
+        ReadOnlyMemory<T> source,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        
+        if (offset < 0)
+            throw new ArgumentException("Offset cannot be negative", nameof(offset));
+            
+        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var bytesToCopy = source.Length * elementSize;
+        
+        if (offset + bytesToCopy > SizeInBytes)
+            throw new ArgumentException("Copy would exceed buffer bounds");
+
+        // Pin source memory
+        using var handle = source.Pin();
+        unsafe
+        {
+            var srcPtr = new IntPtr(handle.Pointer);
+            var dstPtr = new IntPtr(_devicePointer.ToInt64() + offset);
+            
+            await Task.Run(() =>
+            {
+                _context.MakeCurrent();
+                var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (ulong)bytesToCopy, CudaMemcpyKind.HostToDevice);
+                CudaRuntime.CheckError(result, "Memory copy from host");
+            }, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    public async ValueTask CopyToHostAsync<T>(
+        Memory<T> destination,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        
+        if (offset < 0)
+            throw new ArgumentException("Offset cannot be negative", nameof(offset));
+            
+        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var bytesToCopy = destination.Length * elementSize;
+        
+        if (offset + bytesToCopy > SizeInBytes)
+            throw new ArgumentException("Copy would exceed buffer bounds");
+
+        // Pin destination memory
+        using var handle = destination.Pin();
+        unsafe
+        {
+            var srcPtr = new IntPtr(_devicePointer.ToInt64() + offset);
+            var dstPtr = new IntPtr(handle.Pointer);
+            
+            await Task.Run(() =>
+            {
+                _context.MakeCurrent();
+                var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (ulong)bytesToCopy, CudaMemcpyKind.DeviceToHost);
+                CudaRuntime.CheckError(result, "Memory copy to host");
+            }, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
     private void ThrowIfDisposed()
     {
         if (_disposed)
         {
             throw new ObjectDisposedException(nameof(CudaMemoryBuffer));
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+
+        try
+        {
+            if (_devicePointer != IntPtr.Zero)
+            {
+                await Task.Run(() =>
+                {
+                    _context.MakeCurrent();
+                    var result = CudaRuntime.cudaFree(_devicePointer);
+                    
+                    if (result != CudaError.Success)
+                    {
+                        _logger.LogWarning("Failed to free CUDA memory: {Error}", 
+                            CudaRuntime.GetErrorString(result));
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Freed {Size} bytes at device pointer {Pointer:X}", 
+                            SizeInBytes, _devicePointer.ToInt64());
+                    }
+
+                    _devicePointer = IntPtr.Zero;
+                }).ConfigureAwait(false);
+            }
+
+            _disposed = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during CUDA buffer disposal");
         }
     }
 
@@ -161,7 +261,7 @@ internal class CudaMemoryBufferView : IMemoryBuffer
     private readonly ILogger _logger;
 
     public long SizeInBytes { get; }
-    public MemoryFlags Flags => _parent.Flags;
+    public MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
 
     internal IntPtr DevicePointer => new IntPtr(_parent.DevicePointer.ToInt64() + _offset);
@@ -196,6 +296,48 @@ internal class CudaMemoryBufferView : IMemoryBuffer
             throw new ArgumentException("Slice would exceed buffer bounds");
 
         return new CudaMemoryBufferView(_parent, _offset + offset, length, _logger);
+    }
+
+    public async ValueTask CopyFromHostAsync<T>(
+        ReadOnlyMemory<T> source,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        if (offset < 0)
+            throw new ArgumentException("Offset cannot be negative", nameof(offset));
+            
+        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var bytesToCopy = source.Length * elementSize;
+        
+        if (offset + bytesToCopy > SizeInBytes)
+            throw new ArgumentException("Copy would exceed buffer bounds");
+
+        // Delegate to parent with adjusted offset
+        await _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async ValueTask CopyToHostAsync<T>(
+        Memory<T> destination,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        if (offset < 0)
+            throw new ArgumentException("Offset cannot be negative", nameof(offset));
+            
+        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var bytesToCopy = destination.Length * elementSize;
+        
+        if (offset + bytesToCopy > SizeInBytes)
+            throw new ArgumentException("Copy would exceed buffer bounds");
+
+        // Delegate to parent with adjusted offset
+        await _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken).ConfigureAwait(false);
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        // Views don't own the memory, so nothing to dispose
+        return ValueTask.CompletedTask;
     }
 
     public void Dispose()

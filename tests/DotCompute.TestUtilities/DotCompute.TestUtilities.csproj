@@ -9,9 +9,6 @@
     <RootNamespace>DotCompute.TestUtilities</RootNamespace>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="xunit" />
-  </ItemGroup>
+  <!-- Test packages are automatically included via Directory.Build.targets -->
 
 </Project>

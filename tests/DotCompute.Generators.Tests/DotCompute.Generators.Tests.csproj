@@ -9,6 +9,10 @@
     <EnableDefaultItems>true</EnableDefaultItems>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- Suppress warnings for test naming conventions -->
+    <NoWarn>$(NoWarn);CA1707;CA1515</NoWarn>
+    <!-- Prevent duplicate assembly attributes -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>

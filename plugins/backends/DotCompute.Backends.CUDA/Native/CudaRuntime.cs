@@ -111,6 +111,13 @@ public static class CudaRuntime
         IntPtr kernelParams,
         IntPtr extra);
 
+    // Version Information
+    [DllImport(CUDA_LIBRARY)]
+    public static extern CudaError cudaRuntimeGetVersion(out int runtimeVersion);
+
+    [DllImport(CUDA_LIBRARY)]
+    public static extern CudaError cudaDriverGetVersion(out int driverVersion);
+
     // Error Handling
     [DllImport(CUDA_LIBRARY)]
     public static extern IntPtr cudaGetErrorString(CudaError error);
