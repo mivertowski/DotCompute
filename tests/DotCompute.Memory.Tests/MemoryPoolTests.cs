@@ -27,7 +27,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void Constructor_WithValidParameters_InitializesCorrectly()
+    public void ConstructorWithValidParameters_InitializesCorrectly()
     {
         // Arrange & Act
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -42,7 +42,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void Constructor_WithNullMemoryManager_DoesNotThrow()
+    public void ConstructorWithNullMemoryManager_DoesNotThrow()
     {
         // Arrange & Act
         using var pool = new MemoryPool<float>(null);
@@ -57,7 +57,7 @@ public class MemoryPoolTests
     [InlineData(64)]
     [InlineData(1024)]
     [InlineData(65536)]
-    public void Rent_WithValidSize_ReturnsCorrectBuffer(int size)
+    public void RentWithValidSize_ReturnsCorrectBuffer(int size)
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -72,7 +72,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void Rent_WithNegativeSize_ThrowsArgumentOutOfRangeException()
+    public void RentWithNegativeSize_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -82,7 +82,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void Rent_WithZeroSize_ReturnsEmptyBuffer()
+    public void RentWithZeroSize_ReturnsEmptyBuffer()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -96,7 +96,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void Rent_PowerOf2BucketAllocation_AllocatesCorrectSize()
+    public void RentPowerOf2BucketAllocation_AllocatesCorrectSize()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -113,7 +113,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void RentAndReturn_BufferReuse_IncreasesReuseCount()
+    public void RentAndReturnBufferReuse_IncreasesReuseCount()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -139,7 +139,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void TryRent_WithValidSize_ReturnsTrue()
+    public void TryRentWithValidSize_ReturnsTrue()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -156,7 +156,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void TryRent_WithNegativeSize_ReturnsFalse()
+    public void TryRentWithNegativeSize_ReturnsFalse()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -170,7 +170,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void TryRent_FromEmptyPool_ReturnsFalse()
+    public void TryRentFromEmptyPool_ReturnsFalse()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -184,7 +184,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void TryRent_FromPopulatedPool_ReturnsTrue()
+    public void TryRentFromPopulatedPool_ReturnsTrue()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -207,7 +207,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void Clear_RemovesAllRetainedBuffers()
+    public void ClearRemovesAllRetainedBuffers()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -230,7 +230,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void Compact_ReleasesMemory()
+    public void CompactReleasesMemory()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -253,7 +253,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void HandleMemoryPressure_WithLowPressure_NoEffect()
+    public void HandleMemoryPressureWithLowPressure_NoEffect()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -275,7 +275,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void HandleMemoryPressure_WithHighPressure_ReleasesMemory()
+    public void HandleMemoryPressureWithHighPressure_ReleasesMemory()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -297,7 +297,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void HandleMemoryPressure_WithInvalidPressure_ThrowsArgumentOutOfRangeException()
+    public void HandleMemoryPressureWithInvalidPressure_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -308,7 +308,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void GetPerformanceStats_ReturnsValidStats()
+    public void GetPerformanceStatsReturnsValidStats()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -333,7 +333,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void ConcurrentRentAndReturn_IsThreadSafe()
+    public void ConcurrentRentAndReturnIsThreadSafe()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -364,7 +364,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void MultipleSizes_UseDifferentBuckets()
+    public void MultipleSizesUseDifferentBuckets()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -390,7 +390,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void PooledMemoryOwner_Dispose_ReturnsToPool()
+    public void PooledMemoryOwnerDispose_ReturnsToPool()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -409,7 +409,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void MaxBufferSize_IsReasonable()
+    public void MaxBufferSizeIsReasonable()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -420,7 +420,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void Rent_ExceedsMaxBufferSize_StillWorks()
+    public void RentExceedsMaxBufferSize_StillWorks()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -435,7 +435,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void BucketSizeCalculation_FollowsPowerOf2()
+    public void BucketSizeCalculationFollowsPowerOf2()
     {
         // Arrange
         using var pool = new MemoryPool<float>(_memoryManager);
@@ -452,7 +452,7 @@ public class MemoryPoolTests
     }
     
     [Fact]
-    public void Dispose_ClearsAllResources()
+    public void DisposeClearsAllResources()
     {
         // Arrange
         var pool = new MemoryPool<float>(_memoryManager);

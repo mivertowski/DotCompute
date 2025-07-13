@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Compute;
+using DotCompute.Core;
 using DotCompute.Integration.Tests.Fixtures;
 using FluentAssertions;
 using System.CodeDom.Compiler;
@@ -21,12 +21,12 @@ public class SourceGeneratorIntegrationTests
     }
 
     [Fact]
-    public async Task Source_Generator_Should_Create_Executable_Kernels()
+    public async Task SourceGenerator_Should_Create_Executable_Kernels()
     {
         // Arrange - Create a simple compute class that should trigger source generation
         var sourceCode = @"
 using DotCompute.Core.Attributes;
-using DotCompute.Core.Compute;
+using DotCompute.Core;
 
 namespace Generated;
 
@@ -56,7 +56,7 @@ public partial class TestComputeClass
 
         // Simulate source generation (in real scenario, this would be done by the compiler)
         var generatedCode = @"
-using DotCompute.Core.Compute;
+using DotCompute.Core;
 using DotCompute.Core.Memory;
 
 namespace Generated;
@@ -182,12 +182,12 @@ public partial class TestComputeClass
     }
 
     [Fact]
-    public async Task Generated_Code_Should_Handle_Complex_Data_Types()
+    public async Task GeneratedCode_Should_Handle_Complex_Data_Types()
     {
         // Test source generation with complex data types
         var sourceCode = @"
 using DotCompute.Core.Attributes;
-using DotCompute.Core.Compute;
+using DotCompute.Core;
 
 namespace Generated;
 
@@ -216,7 +216,7 @@ public partial class ComplexComputeClass
 }";
 
         var generatedCode = @"
-using DotCompute.Core.Compute;
+using DotCompute.Core;
 using DotCompute.Core.Memory;
 
 namespace Generated;

@@ -19,7 +19,7 @@ namespace DotCompute.Core.Tests;
 public class ServiceRegistrationTests
 {
     [Fact]
-    public void AddDotCompute_RegistersRequiredServices()
+    public void AddDotComputeRegistersRequiredServices()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -36,7 +36,7 @@ public class ServiceRegistrationTests
     }
 
     [Fact]
-    public void AddDotCompute_WithConfiguration_AppliesConfiguration()
+    public void AddDotComputeWithConfiguration_AppliesConfiguration()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -56,7 +56,7 @@ public class ServiceRegistrationTests
     }
 
     [Fact]
-    public void AddDotCompute_RegistersSingletonServices()
+    public void AddDotComputeRegistersSingletonServices()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -80,7 +80,7 @@ public class ServiceRegistrationTests
     }
 
     [Fact]
-    public void AddDotCompute_CalledMultipleTimes_DoesNotDuplicateRegistrations()
+    public void AddDotComputeCalledMultipleTimes_DoesNotDuplicateRegistrations()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -97,7 +97,7 @@ public class ServiceRegistrationTests
     }
 
     [Fact]
-    public void ServiceProvider_CanResolveAllRegisteredServices()
+    public void ServiceProviderCanResolveAllRegisteredServices()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -120,7 +120,7 @@ public class ServiceRegistrationTests
     }
 
     [Fact]
-    public void AddDotCompute_WithLogging_IntegratesWithLogging()
+    public void AddDotComputeWithLogging_IntegratesWithLogging()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -136,7 +136,7 @@ public class ServiceRegistrationTests
     }
 
     [Fact]
-    public void AddDotCompute_RegistersOptions()
+    public void AddDotComputeRegistersOptions()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -160,7 +160,7 @@ public class ServiceRegistrationTests
     }
 
     [Fact]
-    public void AddDotCompute_WithCustomServices_AllowsOverrides()
+    public void AddDotComputeWithCustomServices_AllowsOverrides()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -180,10 +180,49 @@ public class ServiceRegistrationTests
 
     private class TestAcceleratorManager : IAcceleratorManager
     {
-        public Task<IAccelerator> GetDefaultAcceleratorAsync() => throw new NotImplementedException();
-        public Task<IAccelerator> GetAcceleratorAsync(string name) => throw new NotImplementedException();
-        public Task<IReadOnlyList<IAccelerator>> GetAvailableAcceleratorsAsync() => throw new NotImplementedException();
-        public void RegisterAccelerator(string name, IAccelerator accelerator) => throw new NotImplementedException();
+        private readonly Dictionary<string, IAccelerator> _accelerators = new();
+        private readonly List<IAccelerator> _availableAccelerators = new();
+        private IAccelerator? _defaultAccelerator;
+
+        public Task<IAccelerator> GetDefaultAcceleratorAsync()
+        {
+            if (_defaultAccelerator != null)
+                return Task.FromResult(_defaultAccelerator);
+            
+            // Return first available accelerator or null
+            var firstAccelerator = _availableAccelerators.FirstOrDefault();
+            return Task.FromResult(firstAccelerator ?? throw new InvalidOperationException("No default accelerator available"));
+        }
+
+        public Task<IAccelerator> GetAcceleratorAsync(string name)
+        {
+            if (_accelerators.TryGetValue(name, out var accelerator))
+                return Task.FromResult(accelerator);
+            
+            throw new ArgumentException($"Accelerator '{name}' not found", nameof(name));
+        }
+
+        public Task<IReadOnlyList<IAccelerator>> GetAvailableAcceleratorsAsync()
+        {
+            return Task.FromResult<IReadOnlyList<IAccelerator>>(_availableAccelerators.AsReadOnly());
+        }
+
+        public void RegisterAccelerator(string name, IAccelerator accelerator)
+        {
+            ArgumentException.ThrowIfNullOrEmpty(name);
+            ArgumentNullException.ThrowIfNull(accelerator);
+
+            _accelerators[name] = accelerator;
+            
+            if (!_availableAccelerators.Contains(accelerator))
+            {
+                _availableAccelerators.Add(accelerator);
+                
+                // Set as default if this is the first one
+                _defaultAccelerator ??= accelerator;
+            }
+        }
+
         public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }

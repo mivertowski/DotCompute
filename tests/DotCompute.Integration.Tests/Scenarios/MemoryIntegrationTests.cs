@@ -20,7 +20,7 @@ public class MemoryIntegrationTests
     }
 
     [Fact]
-    public async Task UnifiedBuffer_Should_Handle_Basic_Operations()
+    public async Task UnifiedBufferShould_Handle_Basic_Operations()
     {
         // Arrange
         var testData = TestDataGenerator.GenerateRandomFloats(1000);
@@ -44,7 +44,7 @@ public class MemoryIntegrationTests
     }
 
     [Fact]
-    public async Task Memory_Manager_Should_Handle_Multiple_Buffer_Types()
+    public async Task MemoryManager_Should_Handle_Multiple_Buffer_Types()
     {
         // Test different data types
         var floatData = TestDataGenerator.GenerateRandomFloats(100);
@@ -72,7 +72,7 @@ public class MemoryIntegrationTests
     }
 
     [Fact]
-    public async Task Memory_Manager_Should_Handle_Large_Allocations()
+    public async Task MemoryManager_Should_Handle_Large_Allocations()
     {
         // Test with larger data sets to verify memory management
         const int largeSize = 1_000_000; // 1M elements
@@ -96,7 +96,7 @@ public class MemoryIntegrationTests
     }
 
     [Fact]
-    public async Task Memory_Manager_Should_Provide_Statistics()
+    public async Task MemoryManager_Should_Provide_Statistics()
     {
         // Arrange - Create several buffers
         var buffers = new List<UnifiedBuffer<float>>();
@@ -130,7 +130,7 @@ public class MemoryIntegrationTests
     }
 
     [Fact]
-    public async Task Memory_Manager_Should_Handle_Concurrent_Operations()
+    public async Task MemoryManager_Should_Handle_Concurrent_Operations()
     {
         // Test concurrent buffer creation and operations
         const int concurrentCount = 10;
@@ -164,7 +164,7 @@ public class MemoryIntegrationTests
     }
 
     [Fact]
-    public async Task Memory_Manager_Should_Handle_Memory_Pressure()
+    public async Task MemoryManager_Should_Handle_Memory_Pressure()
     {
         // Create initial buffers
         var initialBuffers = new List<UnifiedBuffer<float>>();
@@ -199,7 +199,7 @@ public class MemoryIntegrationTests
     }
 
     [Fact]
-    public async Task Memory_Manager_Should_Support_Compaction()
+    public async Task MemoryManager_Should_Support_Compaction()
     {
         // Create and dispose several buffers to create fragmentation
         for (int i = 0; i < 10; i++)
@@ -227,7 +227,7 @@ public class MemoryIntegrationTests
     }
 
     [Fact]
-    public async Task Memory_Pools_Should_Be_Accessible()
+    public async Task MemoryPools_Should_Be_Accessible()
     {
         // Test that memory pools can be accessed for different types
         var floatPool = _fixture.MemoryManager.GetPool<float>();
@@ -239,7 +239,7 @@ public class MemoryIntegrationTests
     }
 
     [Fact]
-    public async Task Benchmark_Should_Run_Successfully()
+    public async Task BenchmarkShould_Run_Successfully()
     {
         // Run memory benchmarks
         var benchmarkResults = await _fixture.MemoryManager.RunBenchmarksAsync();

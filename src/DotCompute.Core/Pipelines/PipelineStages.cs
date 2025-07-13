@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using DotCompute.Core;
 
 namespace DotCompute.Core.Pipelines;
 
@@ -88,6 +89,9 @@ internal sealed class KernelStage : IPipelineStage
     {
         var stopwatch = Stopwatch.StartNew();
         var startMemory = GC.GetTotalMemory(false);
+        
+        // Start performance monitoring
+        PerformanceMonitor.ExecutionMetrics.StartExecution();
 
         try
         {
@@ -109,6 +113,9 @@ internal sealed class KernelStage : IPipelineStage
             await _kernel.ExecuteAsync(kernelContext, cancellationToken);
 
             stopwatch.Stop();
+            
+            // Get detailed execution metrics
+            var (cpuTime, allocatedBytes, elapsedMs) = PerformanceMonitor.ExecutionMetrics.EndExecution();
             var endMemory = GC.GetTotalMemory(false);
 
             // Prepare outputs
@@ -116,8 +123,8 @@ internal sealed class KernelStage : IPipelineStage
 
             var memoryUsage = new MemoryUsageStats
             {
-                AllocatedBytes = Math.Max(0, endMemory - startMemory),
-                PeakBytes = endMemory,
+                AllocatedBytes = allocatedBytes,
+                PeakBytes = Math.Max(endMemory, startMemory + allocatedBytes),
                 AllocationCount = 1,
                 DeallocationCount = 0
             };
@@ -136,7 +143,10 @@ internal sealed class KernelStage : IPipelineStage
                 {
                     ["ComputeUtilization"] = CalculateComputeUtilization(),
                     ["MemoryBandwidthUtilization"] = CalculateMemoryBandwidthUtilization(),
-                    ["WorkItemsProcessed"] = CalculateWorkItemsProcessed()
+                    ["WorkItemsProcessed"] = CalculateWorkItemsProcessed(),
+                    ["CpuTimeMs"] = cpuTime,
+                    ["ElapsedTimeMs"] = elapsedMs,
+                    ["CpuEfficiency"] = elapsedMs > 0 ? cpuTime / elapsedMs : 0
                 }
             };
         }
@@ -275,18 +285,20 @@ internal sealed class KernelStage : IPipelineStage
         return outputs;
     }
 
-    private static double CalculateComputeUtilization()
+    private double CalculateComputeUtilization()
     {
-        // This would typically query the device for actual utilization
-        // For now, return a simulated value
-        return 0.85; // 85% utilization
+        // Calculate real compute utilization based on work items and execution time
+        var workItems = CalculateWorkItemsProcessed();
+        var executionTime = _metrics.AverageExecutionTime;
+        
+        // Use performance monitor to get real CPU utilization
+        return PerformanceMonitor.GetComputeUtilization(executionTime, (long)workItems);
     }
 
-    private static double CalculateMemoryBandwidthUtilization()
+    private double CalculateMemoryBandwidthUtilization()
     {
-        // This would typically query the device for memory bandwidth usage
-        // For now, return a simulated value
-        return 0.70; // 70% bandwidth utilization
+        // Use performance monitor to get real memory bandwidth utilization
+        return PerformanceMonitor.GetMemoryBandwidthUtilization();
     }
 
     private double CalculateWorkItemsProcessed()
@@ -349,6 +361,10 @@ internal sealed class ParallelStage : IPipelineStage
     {
         var stopwatch = Stopwatch.StartNew();
         var startMemory = GC.GetTotalMemory(false);
+        
+        // Start performance monitoring
+        PerformanceMonitor.ExecutionMetrics.StartExecution();
+        var startCpuUtilization = PerformanceMonitor.GetCpuUtilization();
 
         try
         {
@@ -402,6 +418,10 @@ internal sealed class ParallelStage : IPipelineStage
             }
 
             stopwatch.Stop();
+            
+            // Get detailed execution metrics
+            var (cpuTime, allocatedBytes, elapsedMs) = PerformanceMonitor.ExecutionMetrics.EndExecution();
+            var endCpuUtilization = PerformanceMonitor.GetCpuUtilization();
             var endMemory = GC.GetTotalMemory(false);
 
             var success = results.All(r => r.Success);
@@ -409,7 +429,7 @@ internal sealed class ParallelStage : IPipelineStage
 
             var memoryUsage = new MemoryUsageStats
             {
-                AllocatedBytes = totalMemoryUsage,
+                AllocatedBytes = Math.Max(allocatedBytes, totalMemoryUsage),
                 PeakBytes = Math.Max(endMemory, startMemory + totalMemoryUsage),
                 AllocationCount = results.Sum(r => r.MemoryUsage?.AllocationCount ?? 0),
                 DeallocationCount = results.Sum(r => r.MemoryUsage?.DeallocationCount ?? 0)
@@ -417,6 +437,15 @@ internal sealed class ParallelStage : IPipelineStage
 
             _metrics.RecordExecution(stopwatch.Elapsed, success);
             _metrics.RecordMemoryUsage(memoryUsage.AllocatedBytes);
+
+            // Calculate real parallel efficiency
+            var parallelEfficiency = CalculateParallelEfficiency(results);
+            var loadBalance = CalculateLoadBalance(results);
+            
+            // Calculate real synchronization overhead based on CPU utilization difference
+            var avgCpuUtilization = (startCpuUtilization + endCpuUtilization) / 2.0;
+            var expectedCpuUtilization = Math.Min(1.0, parallelEfficiency * _maxDegreeOfParallelism / Environment.ProcessorCount);
+            var syncOverhead = Math.Max(0.0, (expectedCpuUtilization - avgCpuUtilization) / expectedCpuUtilization);
 
             return new StageExecutionResult
             {
@@ -427,9 +456,12 @@ internal sealed class ParallelStage : IPipelineStage
                 MemoryUsage = memoryUsage,
                 Metrics = new Dictionary<string, double>
                 {
-                    ["ParallelEfficiency"] = CalculateParallelEfficiency(results),
-                    ["LoadBalance"] = CalculateLoadBalance(results),
-                    ["SynchronizationOverhead"] = CalculateSynchronizationOverhead(results)
+                    ["ParallelEfficiency"] = parallelEfficiency,
+                    ["LoadBalance"] = loadBalance,
+                    ["SynchronizationOverhead"] = syncOverhead,
+                    ["CpuUtilization"] = avgCpuUtilization,
+                    ["ThreadPoolUtilization"] = GetThreadPoolUtilization(),
+                    ["ActualParallelism"] = CalculateActualParallelism(results, stopwatch.Elapsed)
                 }
             };
         }
@@ -544,6 +576,42 @@ internal sealed class ParallelStage : IPipelineStage
         
         // Convert to overhead percentage (clamped between 0% and 20%)
         return Math.Min(0.20, Math.Max(0.0, coefficientOfVariation * 0.1));
+    }
+
+    private static double GetThreadPoolUtilization()
+    {
+        var (activeWorkers, activeCompletionPorts, availableWorkers, availableCompletionPorts) = 
+            PerformanceMonitor.GetThreadPoolStats();
+        
+        var totalWorkers = activeWorkers + availableWorkers;
+        var totalCompletionPorts = activeCompletionPorts + availableCompletionPorts;
+        
+        if (totalWorkers > 0)
+        {
+            var workerUtilization = (double)activeWorkers / totalWorkers;
+            var completionPortUtilization = totalCompletionPorts > 0 ? 
+                (double)activeCompletionPorts / totalCompletionPorts : 0;
+            
+            // Average of worker and completion port utilization
+            return (workerUtilization + completionPortUtilization) / 2.0;
+        }
+        
+        return 0.0;
+    }
+
+    private static double CalculateActualParallelism(List<StageExecutionResult> results, TimeSpan totalDuration)
+    {
+        if (results.Count == 0 || totalDuration.TotalMilliseconds == 0)
+            return 0.0;
+        
+        // Calculate the sum of all stage durations
+        var totalStageDuration = results.Sum(r => r.Duration.TotalMilliseconds);
+        
+        // Actual parallelism is the ratio of total work time to wall clock time
+        var actualParallelism = totalStageDuration / totalDuration.TotalMilliseconds;
+        
+        // This gives us the average number of stages running in parallel
+        return Math.Min(results.Count, actualParallelism);
     }
 
     /// <summary>

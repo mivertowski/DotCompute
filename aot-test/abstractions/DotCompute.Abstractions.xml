@@ -1,0 +1,1133 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>DotCompute.Abstractions</name>
+    </assembly>
+    <members>
+        <member name="T:DotCompute.Abstractions.AcceleratorContext">
+            <summary>
+            Represents an accelerator context for managing device state.
+            This is a value type for AOT compatibility and zero allocations.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorContext.Handle">
+            <summary>
+            Gets the context handle.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorContext.DeviceId">
+            <summary>
+            Gets the device ID associated with this context.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorContext.IsValid">
+            <summary>
+            Gets whether this is a valid context.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorContext.#ctor(System.IntPtr,System.Int32)">
+            <summary>
+            Creates a new accelerator context.
+            </summary>
+            <param name="handle">The context handle.</param>
+            <param name="deviceId">The device ID.</param>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorContext.Invalid">
+            <summary>
+            Creates an invalid context.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.AcceleratorStream">
+            <summary>
+            Represents an execution stream on an accelerator for asynchronous command submission.
+            Streams allow overlapping of computation and data transfers.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorStream.Id">
+            <summary>
+            Gets the unique identifier for this stream.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorStream.Accelerator">
+            <summary>
+            Gets the accelerator this stream belongs to.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorStream.IsDefault">
+            <summary>
+            Gets whether this stream is the default stream for the accelerator.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorStream.Handle">
+            <summary>
+            Gets the native handle for this stream.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorStream.SupportsAsync">
+            <summary>
+            Gets whether this stream supports asynchronous operations.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorStream.LaunchKernelAsync(DotCompute.Abstractions.ICompiledKernel,DotCompute.Abstractions.Dim3,DotCompute.Abstractions.Dim3,System.Object[])">
+            <summary>
+            Enqueues a kernel launch on this stream.
+            </summary>
+            <param name="kernel">The compiled kernel to launch.</param>
+            <param name="gridDim">The grid dimensions.</param>
+            <param name="blockDim">The block dimensions.</param>
+            <param name="arguments">The kernel arguments.</param>
+            <returns>A task representing the kernel execution.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorStream.CopyAsync``1(DotCompute.Abstractions.IMemoryBuffer,DotCompute.Abstractions.IMemoryBuffer,System.Int32)">
+            <summary>
+            Enqueues a memory copy operation on this stream.
+            </summary>
+            <typeparam name="T">The element type.</typeparam>
+            <param name="source">The source buffer.</param>
+            <param name="destination">The destination buffer.</param>
+            <param name="count">The number of elements to copy.</param>
+            <returns>A task representing the copy operation.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorStream.FillAsync``1(DotCompute.Abstractions.IMemoryBuffer,``0,System.Int32)">
+            <summary>
+            Enqueues a memory fill operation on this stream.
+            </summary>
+            <typeparam name="T">The element type.</typeparam>
+            <param name="buffer">The buffer to fill.</param>
+            <param name="value">The value to fill with.</param>
+            <param name="count">The number of elements to fill.</param>
+            <returns>A task representing the fill operation.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorStream.SynchronizeAsync(System.Threading.CancellationToken)">
+            <summary>
+            Synchronizes this stream, waiting for all enqueued operations to complete.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A task representing the synchronization.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorStream.CreateEvent">
+            <summary>
+            Creates an event that can be used for synchronization.
+            </summary>
+            <returns>A new accelerator event.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorStream.RecordEventAsync(DotCompute.Abstractions.AcceleratorEvent)">
+            <summary>
+            Records an event on this stream.
+            </summary>
+            <param name="event">The event to record.</param>
+            <returns>A task representing the record operation.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorStream.WaitForEventAsync(DotCompute.Abstractions.AcceleratorEvent)">
+            <summary>
+            Waits for an event on this stream.
+            </summary>
+            <param name="event">The event to wait for.</param>
+            <returns>A task representing the wait operation.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorStream.AddCallbackAsync(System.Action)">
+            <summary>
+            Adds a callback to be called when all currently enqueued operations complete.
+            </summary>
+            <param name="callback">The callback to invoke.</param>
+            <returns>A task representing the callback scheduling.</returns>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorStream.IsCompleted">
+            <summary>
+            Gets whether this stream has completed all enqueued operations.
+            </summary>
+            <returns>True if all operations are complete, false otherwise.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorStream.DisposeAsync">
+            <summary>
+            Disposes of this stream asynchronously.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.AcceleratorEvent">
+            <summary>
+            Represents an event for stream synchronization.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorEvent.Handle">
+            <summary>
+            Gets the native handle for this event.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorEvent.IsRecorded">
+            <summary>
+            Gets whether this event has been recorded.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorEvent.IsCompleted">
+            <summary>
+            Gets whether this event has completed.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorEvent.Wait(System.TimeSpan)">
+            <summary>
+            Synchronously waits for this event to complete.
+            </summary>
+            <param name="timeout">The maximum time to wait.</param>
+            <returns>True if the event completed within the timeout, false otherwise.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorEvent.WaitAsync(System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously waits for this event to complete.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A task that completes when the event is signaled.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorEvent.GetElapsedTime(DotCompute.Abstractions.AcceleratorEvent)">
+            <summary>
+            Gets the elapsed time between this event and another event.
+            </summary>
+            <param name="startEvent">The start event.</param>
+            <returns>The elapsed time, or null if not available.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.AcceleratorEvent.Dispose">
+            <summary>
+            Disposes of this event.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.AcceleratorType">
+            <summary>
+            Defines the type of accelerator device.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.AcceleratorType.CPU">
+            <summary>
+            CPU-based computation.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.AcceleratorType.CUDA">
+            <summary>
+            NVIDIA CUDA GPU.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.AcceleratorType.ROCm">
+            <summary>
+            AMD ROCm GPU.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.AcceleratorType.OneAPI">
+            <summary>
+            Intel oneAPI GPU.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.AcceleratorType.Metal">
+            <summary>
+            Apple Metal GPU.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.AcceleratorType.OpenCL">
+            <summary>
+            OpenCL-compatible device.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.AcceleratorType.DirectML">
+            <summary>
+            DirectML-compatible device.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.AcceleratorType.Custom">
+            <summary>
+            Custom or unknown accelerator type.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.DeviceMemory">
+            <summary>
+            Represents a handle to device memory.
+            This is a value type for AOT compatibility and zero allocations.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.DeviceMemory.Handle">
+            <summary>
+            Gets the device memory pointer.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.DeviceMemory.Size">
+            <summary>
+            Gets the size of the memory allocation in bytes.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.DeviceMemory.IsValid">
+            <summary>
+            Gets whether this is a valid device memory handle.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.DeviceMemory.#ctor(System.IntPtr,System.Int64)">
+            <summary>
+            Creates a new device memory handle.
+            </summary>
+            <param name="handle">The device memory pointer.</param>
+            <param name="size">The size of the allocation in bytes.</param>
+        </member>
+        <member name="P:DotCompute.Abstractions.DeviceMemory.Invalid">
+            <summary>
+            Creates an invalid device memory handle.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.IAccelerator">
+            <summary>
+            Represents a compute accelerator device.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IAccelerator.Info">
+            <summary>Gets device information.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IAccelerator.Memory">
+            <summary>Gets memory manager for this accelerator.</summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAccelerator.CompileKernelAsync(DotCompute.Abstractions.KernelDefinition,DotCompute.Abstractions.CompilationOptions,System.Threading.CancellationToken)">
+            <summary>Compiles a kernel for execution.</summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAccelerator.SynchronizeAsync(System.Threading.CancellationToken)">
+            <summary>Synchronizes all pending operations.</summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.AcceleratorInfo">
+            <summary>
+            Represents information about an accelerator device.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorInfo.Id">
+            <summary>Gets or sets the unique identifier for this device.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorInfo.Name">
+            <summary>Gets or sets the friendly name of this device.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorInfo.DeviceType">
+            <summary>Gets or sets the device type (e.g., "CPU", "GPU", "TPU").</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorInfo.Vendor">
+            <summary>Gets or sets the vendor name.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorInfo.ComputeCapability">
+            <summary>Gets or sets the compute capability or version.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorInfo.TotalMemory">
+            <summary>Gets or sets the total device memory in bytes.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorInfo.ComputeUnits">
+            <summary>Gets or sets the number of compute units.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorInfo.MaxClockFrequency">
+            <summary>Gets or sets the maximum clock frequency in MHz.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorInfo.Capabilities">
+            <summary>Gets or sets device-specific capabilities.</summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.ICompiledKernel">
+            <summary>
+            Represents a compiled kernel ready for execution.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.ICompiledKernel.Name">
+            <summary>Gets the kernel name.</summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.ICompiledKernel.ExecuteAsync(DotCompute.Abstractions.KernelArguments,System.Threading.CancellationToken)">
+            <summary>Executes the kernel with given arguments.</summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.CompilationOptions">
+            <summary>
+            Represents kernel compilation options.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompilationOptions.OptimizationLevel">
+            <summary>Gets or sets optimization level.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompilationOptions.EnableDebugInfo">
+            <summary>Gets or sets whether to enable debug information.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompilationOptions.AdditionalFlags">
+            <summary>Gets or sets additional compiler flags.</summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.OptimizationLevel">
+            <summary>
+            Optimization levels for kernel compilation.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.OptimizationLevel.None">
+            <summary>No optimization.</summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.OptimizationLevel.Default">
+            <summary>Default optimization level.</summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.OptimizationLevel.Maximum">
+            <summary>Maximum optimization.</summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.KernelDefinition">
+            <summary>
+            Represents a kernel definition.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelDefinition.Name">
+            <summary>Gets or sets the kernel name.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelDefinition.Code">
+            <summary>Gets or sets the kernel source code or bytecode.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelDefinition.EntryPoint">
+            <summary>Gets or sets the kernel entry point.</summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelDefinition.Metadata">
+            <summary>Gets or sets kernel metadata.</summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.CompiledKernel">
+            <summary>
+            Represents a compiled kernel ready for execution.
+            This is a value type for AOT compatibility and performance.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompiledKernel.Id">
+            <summary>
+            Gets the unique identifier for this kernel.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompiledKernel.NativeHandle">
+            <summary>
+            Gets the native handle to the compiled kernel code.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompiledKernel.SharedMemorySize">
+            <summary>
+            Gets the kernel's required shared memory size in bytes.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompiledKernel.Configuration">
+            <summary>
+            Gets the kernel's thread configuration.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.CompiledKernel.Equals(DotCompute.Abstractions.CompiledKernel)">
+            <summary>
+            Determines whether this instance is equal to another CompiledKernel.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.CompiledKernel.Equals(System.Object)">
+            <summary>
+            Determines whether this instance is equal to another object.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.CompiledKernel.GetHashCode">
+            <summary>
+            Returns the hash code for this instance.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.CompiledKernel.op_Equality(DotCompute.Abstractions.CompiledKernel,DotCompute.Abstractions.CompiledKernel)">
+            <summary>
+            Determines whether two CompiledKernel instances are equal.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.CompiledKernel.op_Inequality(DotCompute.Abstractions.CompiledKernel,DotCompute.Abstractions.CompiledKernel)">
+            <summary>
+            Determines whether two CompiledKernel instances are not equal.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.KernelConfiguration">
+            <summary>
+            Represents kernel execution configuration.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelConfiguration.GridDimensions">
+            <summary>
+            Gets the number of thread blocks in each dimension.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelConfiguration.BlockDimensions">
+            <summary>
+            Gets the number of threads per block in each dimension.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.KernelConfiguration.Equals(DotCompute.Abstractions.KernelConfiguration)">
+            <summary>
+            Determines whether this instance is equal to another KernelConfiguration.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.KernelConfiguration.Equals(System.Object)">
+            <summary>
+            Determines whether this instance is equal to another object.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.KernelConfiguration.GetHashCode">
+            <summary>
+            Returns the hash code for this instance.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.KernelConfiguration.op_Equality(DotCompute.Abstractions.KernelConfiguration,DotCompute.Abstractions.KernelConfiguration)">
+            <summary>
+            Determines whether two KernelConfiguration instances are equal.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.KernelConfiguration.op_Inequality(DotCompute.Abstractions.KernelConfiguration,DotCompute.Abstractions.KernelConfiguration)">
+            <summary>
+            Determines whether two KernelConfiguration instances are not equal.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.Dim3">
+            <summary>
+            Represents 3D dimensions for kernel configuration.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.Dim3.FromInt32(System.Int32)">
+            <summary>
+            Creates a Dim3 from an integer value.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.Dim3.FromValueTuple(System.ValueTuple{System.Int32,System.Int32})">
+            <summary>
+            Creates a Dim3 from a value tuple with x and y components.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.Dim3.FromValueTuple(System.ValueTuple{System.Int32,System.Int32,System.Int32})">
+            <summary>
+            Creates a Dim3 from a value tuple with x, y, and z components.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.Dim3.Equals(DotCompute.Abstractions.Dim3)">
+            <summary>
+            Determines whether this instance is equal to another Dim3.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.Dim3.Equals(System.Object)">
+            <summary>
+            Determines whether this instance is equal to another object.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.Dim3.GetHashCode">
+            <summary>
+            Returns the hash code for this instance.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.Dim3.op_Equality(DotCompute.Abstractions.Dim3,DotCompute.Abstractions.Dim3)">
+            <summary>
+            Determines whether two Dim3 instances are equal.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.Dim3.op_Inequality(DotCompute.Abstractions.Dim3,DotCompute.Abstractions.Dim3)">
+            <summary>
+            Determines whether two Dim3 instances are not equal.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.KernelArguments">
+            <summary>
+            Represents arguments to pass to a kernel.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelArguments.Arguments">
+            <summary>
+            Gets the arguments as a read-only span.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.KernelArguments.Equals(DotCompute.Abstractions.KernelArguments)">
+            <summary>
+            Determines whether this instance is equal to another KernelArguments.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.KernelArguments.Equals(System.Object)">
+            <summary>
+            Determines whether this instance is equal to another object.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.KernelArguments.GetHashCode">
+            <summary>
+            Returns the hash code for this instance.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.KernelArguments.op_Equality(DotCompute.Abstractions.KernelArguments,DotCompute.Abstractions.KernelArguments)">
+            <summary>
+            Determines whether two KernelArguments instances are equal.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.KernelArguments.op_Inequality(DotCompute.Abstractions.KernelArguments,DotCompute.Abstractions.KernelArguments)">
+            <summary>
+            Determines whether two KernelArguments instances are not equal.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.AcceleratorFeature">
+            <summary>
+            Defines accelerator features that may or may not be supported.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.IAcceleratorManager">
+            <summary>
+            Manages accelerator devices and their lifecycle.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IAcceleratorManager.Default">
+            <summary>
+            Gets the default accelerator instance.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IAcceleratorManager.AvailableAccelerators">
+            <summary>
+            Gets all available accelerators.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IAcceleratorManager.Count">
+            <summary>
+            Gets the number of available accelerators.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAcceleratorManager.InitializeAsync(System.Threading.CancellationToken)">
+            <summary>
+            Discovers and initializes all available accelerators.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A task representing the async operation.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAcceleratorManager.GetAccelerator(System.Int32)">
+            <summary>
+            Gets an accelerator by index.
+            </summary>
+            <param name="index">The index of the accelerator.</param>
+            <returns>The accelerator at the specified index.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAcceleratorManager.GetAcceleratorById(System.String)">
+            <summary>
+            Gets an accelerator by its unique identifier.
+            </summary>
+            <param name="id">The unique identifier of the accelerator.</param>
+            <returns>The accelerator with the specified ID, or null if not found.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAcceleratorManager.GetAcceleratorsByType(DotCompute.Abstractions.AcceleratorType)">
+            <summary>
+            Gets accelerators of a specific type.
+            </summary>
+            <param name="type">The type of accelerators to get.</param>
+            <returns>A list of accelerators of the specified type.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAcceleratorManager.SelectBest(DotCompute.Abstractions.AcceleratorSelectionCriteria)">
+            <summary>
+            Selects the best accelerator based on the given criteria.
+            </summary>
+            <param name="criteria">The selection criteria.</param>
+            <returns>The best matching accelerator, or null if none match.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAcceleratorManager.CreateContext(DotCompute.Abstractions.IAccelerator)">
+            <summary>
+            Creates a new accelerator context for the specified accelerator.
+            </summary>
+            <param name="accelerator">The accelerator to create a context for.</param>
+            <returns>A new accelerator context.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAcceleratorManager.RegisterProvider(DotCompute.Abstractions.IAcceleratorProvider)">
+            <summary>
+            Registers a custom accelerator provider.
+            </summary>
+            <param name="provider">The accelerator provider to register.</param>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAcceleratorManager.RefreshAsync(System.Threading.CancellationToken)">
+            <summary>
+            Refreshes the list of available accelerators.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A task representing the async operation.</returns>
+        </member>
+        <member name="T:DotCompute.Abstractions.AcceleratorSelectionCriteria">
+            <summary>
+            Criteria for selecting an accelerator.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorSelectionCriteria.MinimumMemory">
+            <summary>
+            Gets or sets the minimum required memory in bytes.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorSelectionCriteria.PreferredType">
+            <summary>
+            Gets or sets the preferred accelerator type.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorSelectionCriteria.RequiredFeatures">
+            <summary>
+            Gets or sets the required features.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorSelectionCriteria.MinimumComputeCapability">
+            <summary>
+            Gets or sets the minimum compute capability.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorSelectionCriteria.PreferDedicated">
+            <summary>
+            Gets or sets whether to prefer dedicated over integrated devices.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.AcceleratorSelectionCriteria.CustomScorer">
+            <summary>
+            Gets or sets a custom scoring function for ranking accelerators.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.IAcceleratorProvider">
+            <summary>
+            Provides accelerator instances.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IAcceleratorProvider.Name">
+            <summary>
+            Gets the name of this provider.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IAcceleratorProvider.SupportedTypes">
+            <summary>
+            Gets the types of accelerators this provider can create.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAcceleratorProvider.DiscoverAsync(System.Threading.CancellationToken)">
+            <summary>
+            Discovers available accelerators.
+            </summary>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A list of discovered accelerators.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IAcceleratorProvider.CreateAsync(DotCompute.Abstractions.AcceleratorInfo,System.Threading.CancellationToken)">
+            <summary>
+            Creates an accelerator instance.
+            </summary>
+            <param name="info">The accelerator information.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The created accelerator instance.</returns>
+        </member>
+        <member name="T:DotCompute.Abstractions.IBuffer`1">
+            <summary>
+            Represents a generic buffer that can be used for accelerator computations.
+            This interface extends IMemoryBuffer with additional functionality.
+            </summary>
+            <typeparam name="T">The element type.</typeparam>
+        </member>
+        <member name="P:DotCompute.Abstractions.IBuffer`1.Accelerator">
+            <summary>
+            Gets the accelerator this buffer is associated with.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IBuffer`1.Slice(System.Int32,System.Int32)">
+            <summary>
+            Creates a slice of this buffer.
+            </summary>
+            <param name="offset">The offset in elements.</param>
+            <param name="length">The length of the slice in elements.</param>
+            <returns>A slice of this buffer.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IBuffer`1.AsType``1">
+            <summary>
+            Creates a view of this buffer with a different element type.
+            </summary>
+            <typeparam name="TNew">The new element type.</typeparam>
+            <returns>A view of this buffer as the new type.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IBuffer`1.CopyToAsync(DotCompute.Abstractions.IBuffer{`0},System.Threading.CancellationToken)">
+            <summary>
+            Copies data from this buffer to another buffer.
+            </summary>
+            <param name="destination">The destination buffer.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A task representing the copy operation.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IBuffer`1.CopyToAsync(System.Int32,DotCompute.Abstractions.IBuffer{`0},System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Copies data from this buffer to another buffer with specified ranges.
+            </summary>
+            <param name="sourceOffset">The offset in this buffer.</param>
+            <param name="destination">The destination buffer.</param>
+            <param name="destinationOffset">The offset in the destination buffer.</param>
+            <param name="count">The number of elements to copy.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A task representing the copy operation.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IBuffer`1.FillAsync(`0,System.Threading.CancellationToken)">
+            <summary>
+            Fills this buffer with a specified value.
+            </summary>
+            <param name="value">The value to fill with.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A task representing the fill operation.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IBuffer`1.FillAsync(`0,System.Int32,System.Int32,System.Threading.CancellationToken)">
+            <summary>
+            Fills a portion of this buffer with a specified value.
+            </summary>
+            <param name="value">The value to fill with.</param>
+            <param name="offset">The offset to start filling at.</param>
+            <param name="count">The number of elements to fill.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A task representing the fill operation.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IBuffer`1.Map(DotCompute.Abstractions.MapMode)">
+            <summary>
+            Maps this buffer to host memory for direct access.
+            </summary>
+            <param name="mode">The mapping mode.</param>
+            <returns>A mapped memory region.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IBuffer`1.MapRange(System.Int32,System.Int32,DotCompute.Abstractions.MapMode)">
+            <summary>
+            Maps a portion of this buffer to host memory for direct access.
+            </summary>
+            <param name="offset">The offset to start mapping at.</param>
+            <param name="length">The number of elements to map.</param>
+            <param name="mode">The mapping mode.</param>
+            <returns>A mapped memory region.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IBuffer`1.MapAsync(DotCompute.Abstractions.MapMode,System.Threading.CancellationToken)">
+            <summary>
+            Asynchronously maps this buffer to host memory.
+            </summary>
+            <param name="mode">The mapping mode.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>A task that returns the mapped memory region.</returns>
+        </member>
+        <member name="T:DotCompute.Abstractions.MappedMemory`1">
+            <summary>
+            Represents a mapped memory region.
+            </summary>
+            <typeparam name="T">The element type.</typeparam>
+        </member>
+        <member name="P:DotCompute.Abstractions.MappedMemory`1.Memory">
+            <summary>
+            Gets the mapped memory.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.MappedMemory`1.Mode">
+            <summary>
+            Gets the mapping mode.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.MappedMemory`1.Span">
+            <summary>
+            Gets a span to the mapped memory.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.MappedMemory`1.Dispose">
+            <summary>
+            Unmaps the memory region.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.MapMode">
+            <summary>
+            Specifies the mapping mode for buffer access.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MapMode.Read">
+            <summary>
+            Map for reading only.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MapMode.Write">
+            <summary>
+            Map for writing only.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MapMode.ReadWrite">
+            <summary>
+            Map for both reading and writing.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MapMode.Discard">
+            <summary>
+            Discard the previous contents of the buffer.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MapMode.NoWait">
+            <summary>
+            Map without blocking (may return invalid mapping).
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.IKernel">
+            <summary>
+            Represents a compute kernel that can be compiled and executed on an accelerator.
+            Implementations should be structs for AOT compatibility and performance.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IKernel.Name">
+            <summary>
+            Gets the unique name of this kernel.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IKernel.Source">
+            <summary>
+            Gets the source code or IL representation of the kernel.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IKernel.EntryPoint">
+            <summary>
+            Gets the entry point method name for the kernel.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IKernel.RequiredSharedMemory">
+            <summary>
+            Gets the required shared memory size in bytes.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.KernelParameter">
+            <summary>
+            Represents a kernel parameter.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelParameter.Name">
+            <summary>
+            Gets the parameter name.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelParameter.Type">
+            <summary>
+            Gets the parameter type.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelParameter.IsInput">
+            <summary>
+            Gets whether this is an input parameter.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelParameter.IsOutput">
+            <summary>
+            Gets whether this is an output parameter.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.KernelParameter.Index">
+            <summary>
+            Gets the parameter index.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.IKernelCompiler">
+            <summary>
+            Defines the interface for compiling kernels from source code or expressions.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IKernelCompiler.Name">
+            <summary>
+            Gets the name of the compiler.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IKernelCompiler.SupportedSourceTypes">
+            <summary>
+            Gets the supported kernel source types.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IKernelCompiler.CompileAsync(DotCompute.Abstractions.KernelDefinition,DotCompute.Abstractions.CompilationOptions,System.Threading.CancellationToken)">
+            <summary>
+            Compiles a kernel from the given definition.
+            </summary>
+            <param name="definition">The kernel definition to compile.</param>
+            <param name="options">Optional compilation options.</param>
+            <param name="cancellationToken">Cancellation token.</param>
+            <returns>The compiled kernel.</returns>
+        </member>
+        <member name="M:DotCompute.Abstractions.IKernelCompiler.Validate(DotCompute.Abstractions.KernelDefinition)">
+            <summary>
+            Validates whether a kernel definition can be compiled.
+            </summary>
+            <param name="definition">The kernel definition to validate.</param>
+            <returns>A validation result indicating whether compilation is possible.</returns>
+        </member>
+        <member name="T:DotCompute.Abstractions.CompilerSpecificOptions">
+            <summary>
+            Base class for compiler-specific options.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompilerSpecificOptions.CompilerName">
+            <summary>
+            Gets the compiler name this options object is for.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.ValidationResult">
+            <summary>
+            Represents a validation result.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.ValidationResult.IsValid">
+            <summary>
+            Gets whether the validation passed.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.ValidationResult.ErrorMessage">
+            <summary>
+            Gets the error message if validation failed.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.ValidationResult.Warnings">
+            <summary>
+            Gets any warnings from validation.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.ValidationResult.Success">
+            <summary>
+            Creates a successful validation result.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.ValidationResult.SuccessWithWarnings(System.String[])">
+            <summary>
+            Creates a successful validation result with warnings.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.ValidationResult.Failure(System.String)">
+            <summary>
+            Creates a failed validation result.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.ValidationResult.FailureWithWarnings(System.String,System.String[])">
+            <summary>
+            Creates a failed validation result with warnings.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.KernelSourceType">
+            <summary>
+            Defines the source type of a kernel.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.KernelSourceType.ExpressionTree">
+            <summary>
+            C# expression tree.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.KernelSourceType.CUDA">
+            <summary>
+            CUDA C/C++ source code.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.KernelSourceType.OpenCL">
+            <summary>
+            OpenCL C source code.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.KernelSourceType.HLSL">
+            <summary>
+            HLSL shader code.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.KernelSourceType.SPIRV">
+            <summary>
+            SPIR-V bytecode.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.KernelSourceType.Metal">
+            <summary>
+            Metal shader language.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.KernelSourceType.HIP">
+            <summary>
+            ROCm HIP source code.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.KernelSourceType.SYCL">
+            <summary>
+            SYCL/DPC++ source code.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.KernelSourceType.Binary">
+            <summary>
+            Pre-compiled binary.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.CompilationMetadata">
+            <summary>
+            Metadata about a kernel compilation.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompilationMetadata.CompilationTime">
+            <summary>
+            Gets the time taken to compile.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompilationMetadata.CodeSize">
+            <summary>
+            Gets the size of the compiled code in bytes.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompilationMetadata.RegistersPerThread">
+            <summary>
+            Gets the register usage per thread.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompilationMetadata.SharedMemoryPerBlock">
+            <summary>
+            Gets the shared memory usage per block.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.CompilationMetadata.OptimizationNotes">
+            <summary>
+            Gets any optimization notes from the compiler.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.IMemoryManager">
+            <summary>
+            Manages memory allocation and transfer for an accelerator.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IMemoryManager.AllocateAsync(System.Int64,DotCompute.Abstractions.MemoryOptions,System.Threading.CancellationToken)">
+            <summary>
+            Allocates memory on the accelerator.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IMemoryManager.AllocateAndCopyAsync``1(System.ReadOnlyMemory{``0},DotCompute.Abstractions.MemoryOptions,System.Threading.CancellationToken)">
+            <summary>
+            Allocates memory and copies data from host.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IMemoryManager.CreateView(DotCompute.Abstractions.IMemoryBuffer,System.Int64,System.Int64)">
+            <summary>
+            Creates a view over existing memory.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.IMemoryBuffer">
+            <summary>
+            Represents a memory buffer on an accelerator.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IMemoryBuffer.SizeInBytes">
+            <summary>
+            Gets the size of the buffer in bytes.
+            </summary>
+        </member>
+        <member name="P:DotCompute.Abstractions.IMemoryBuffer.Options">
+            <summary>
+            Gets the memory flags.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IMemoryBuffer.CopyFromHostAsync``1(System.ReadOnlyMemory{``0},System.Int64,System.Threading.CancellationToken)">
+            <summary>
+            Copies data from host memory to this buffer.
+            </summary>
+        </member>
+        <member name="M:DotCompute.Abstractions.IMemoryBuffer.CopyToHostAsync``1(System.Memory{``0},System.Int64,System.Threading.CancellationToken)">
+            <summary>
+            Copies data from this buffer to host memory.
+            </summary>
+        </member>
+        <member name="T:DotCompute.Abstractions.MemoryOptions">
+            <summary>
+            Memory allocation flags.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MemoryOptions.None">
+            <summary>
+            No special flags.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MemoryOptions.ReadOnly">
+            <summary>
+            Memory is read-only.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MemoryOptions.WriteOnly">
+            <summary>
+            Memory is write-only.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MemoryOptions.HostVisible">
+            <summary>
+            Memory should be allocated in host-visible memory if possible.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MemoryOptions.Cached">
+            <summary>
+            Memory should be cached if possible.
+            </summary>
+        </member>
+        <member name="F:DotCompute.Abstractions.MemoryOptions.Atomic">
+            <summary>
+            Memory will be used for atomic operations.
+            </summary>
+        </member>
+    </members>
+</doc>

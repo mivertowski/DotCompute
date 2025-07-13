@@ -253,7 +253,7 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine();
             source.AppendLine($"namespace {method.Namespace}.Generated");
             source.AppendLine("{");
-            source.AppendLine($"    public static class {method.Name}CpuKernel");
+            source.AppendLine($"    public static unsafe class {method.Name}CpuKernel");
             source.AppendLine("    {");
 
             // Generate SIMD version
@@ -280,7 +280,7 @@ namespace DotCompute.Generators.Kernel
         private static void GenerateSIMDMethod(StringBuilder source, KernelMethodInfo method)
         {
             source.AppendLine($"        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
-            source.AppendLine($"        public static void ExecuteSIMD({string.Join(", ", method.Parameters.Select(p => $"{p.Type} {p.Name}"))})");
+            source.AppendLine($"        public static unsafe void ExecuteSIMD({string.Join(", ", method.Parameters.Select(p => $"{p.Type} {p.Name}"))})");
             source.AppendLine("        {");
             source.AppendLine($"            var vectorSize = Vector{method.VectorSize * 8}<float>.Count;");
             source.AppendLine("            var vectorCount = length / vectorSize;");
@@ -298,7 +298,7 @@ namespace DotCompute.Generators.Kernel
         private static void GenerateScalarMethod(StringBuilder source, KernelMethodInfo method)
         {
             source.AppendLine($"        [MethodImpl(MethodImplOptions.AggressiveInlining)]");
-            source.AppendLine($"        public static void ExecuteScalar({string.Join(", ", method.Parameters.Select(p => $"{p.Type} {p.Name}"))})");
+            source.AppendLine($"        public static unsafe void ExecuteScalar({string.Join(", ", method.Parameters.Select(p => $"{p.Type} {p.Name}"))})");
             source.AppendLine("        {");
             source.AppendLine("            // Extract and process the method body for scalar execution");
             GenerateScalarMethodBody(source, method);
@@ -308,7 +308,7 @@ namespace DotCompute.Generators.Kernel
 
         private static void GenerateParallelMethod(StringBuilder source, KernelMethodInfo method)
         {
-            source.AppendLine($"        public static void ExecuteParallel({string.Join(", ", method.Parameters.Select(p => $"{p.Type} {p.Name}"))})");
+            source.AppendLine($"        public static unsafe void ExecuteParallel({string.Join(", ", method.Parameters.Select(p => $"{p.Type} {p.Name}"))})");
             source.AppendLine("        {");
             source.AppendLine("            var partitioner = Partitioner.Create(0, length);");
             source.AppendLine("            Parallel.ForEach(partitioner, range =>");

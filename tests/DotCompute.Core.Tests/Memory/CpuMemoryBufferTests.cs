@@ -25,7 +25,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task GetMemory_WithValidBuffer_ReturnsCorrectMemory()
+    public async Task GetMemoryWithValidBuffer_ReturnsCorrectMemory()
     {
         // Arrange
         const long size = 1024;
@@ -43,7 +43,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task CopyFromHostAsync_WithValidData_CopiesCorrectly()
+    public async Task CopyFromHostAsyncWithValidData_CopiesCorrectly()
     {
         // Arrange
         var sourceData = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
@@ -66,7 +66,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task CopyToHostAsync_WithValidBuffer_CopiesCorrectly()
+    public async Task CopyToHostAsyncWithValidBuffer_CopiesCorrectly()
     {
         // Arrange
         var sourceData = Enumerable.Range(0, 256).Select(i => (byte)i).ToArray();
@@ -91,7 +91,7 @@ public class CpuMemoryBufferTests : IDisposable
     [InlineData(typeof(long), 8)]
     [InlineData(typeof(float), 4)]
     [InlineData(typeof(double), 8)]
-    public async Task CopyOperations_WithDifferentTypes_WorkCorrectly(Type elementType, int elementSize)
+    public async Task CopyOperationsWithDifferentTypes_WorkCorrectly(Type elementType, int elementSize)
     {
         // Arrange
         const int elementCount = 100;
@@ -135,7 +135,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task CopyFromHostAsync_WithOffset_CopiesAtCorrectPosition()
+    public async Task CopyFromHostAsyncWithOffset_CopiesAtCorrectPosition()
     {
         // Arrange
         const int bufferSize = 1024;
@@ -167,7 +167,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task CopyToHostAsync_WithOffset_CopiesFromCorrectPosition()
+    public async Task CopyToHostAsyncWithOffset_CopiesFromCorrectPosition()
     {
         // Arrange
         const int bufferSize = 1024;
@@ -189,7 +189,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task CopyFromHostAsync_WithInvalidOffset_ThrowsArgumentOutOfRangeException()
+    public async Task CopyFromHostAsyncWithInvalidOffset_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
         const int bufferSize = 1024;
@@ -208,7 +208,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task CopyToHostAsync_WithInvalidOffset_ThrowsArgumentOutOfRangeException()
+    public async Task CopyToHostAsyncWithInvalidOffset_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
         const int bufferSize = 1024;
@@ -227,7 +227,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task BufferView_WithValidRange_CreatesCorrectView()
+    public async Task BufferViewWithValidRange_CreatesCorrectView()
     {
         // Arrange
         const int bufferSize = 1024;
@@ -257,7 +257,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task BufferView_ModifyingView_AffectsOriginalBuffer()
+    public async Task BufferViewModifyingView_AffectsOriginalBuffer()
     {
         // Arrange
         const int bufferSize = 1024;
@@ -302,7 +302,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task DisposedBuffer_ThrowsObjectDisposedException()
+    public async Task DisposedBufferThrowsObjectDisposedException()
     {
         // Arrange
         var buffer = await _memoryManager.AllocateAsync(1024);
@@ -319,7 +319,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task ReadOnlyBuffer_ThrowsInvalidOperationException()
+    public async Task ReadOnlyBufferThrowsInvalidOperationException()
     {
         // Arrange
         var buffer = await _memoryManager.AllocateAsync(1024, MemoryFlags.ReadOnly);
@@ -334,7 +334,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task WriteOnlyBuffer_ThrowsInvalidOperationException()
+    public async Task WriteOnlyBufferThrowsInvalidOperationException()
     {
         // Arrange
         var buffer = await _memoryManager.AllocateAsync(1024, MemoryFlags.WriteOnly);
@@ -349,7 +349,7 @@ public class CpuMemoryBufferTests : IDisposable
     }
 
     [Fact]
-    public async Task LargeBuffer_AboveArrayPoolLimit_ThrowsNotSupportedException()
+    public async Task LargeBufferAboveArrayPoolLimit_ThrowsNotSupportedException()
     {
         // Arrange
         var largeSize = (long)int.MaxValue + 1;

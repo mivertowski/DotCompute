@@ -33,7 +33,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public void AcceleratorInfo_ShouldBePopulatedCorrectly()
+    public void AcceleratorInfoShouldBePopulatedCorrectly()
     {
         // Act
         var info = _accelerator.Info;
@@ -55,7 +55,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public void AcceleratorCapabilities_ShouldIncludeSimdInfo()
+    public void AcceleratorCapabilitiesShouldIncludeSimdInfo()
     {
         // Act
         var capabilities = _accelerator.Info.Capabilities;
@@ -76,7 +76,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public void MemoryManager_ShouldBeAccessible()
+    public void MemoryManagerShouldBeAccessible()
     {
         // Act
         var memoryManager = _accelerator.Memory;
@@ -87,7 +87,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task MemoryManager_BasicOperations_ShouldWork()
+    public async Task MemoryManagerBasicOperations_ShouldWork()
     {
         // Arrange
         var memoryManager = _accelerator.Memory;
@@ -117,7 +117,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CompileKernelAsync_WithValidDefinition_ShouldSucceed()
+    public async Task CompileKernelAsyncWithValidDefinition_ShouldSucceed()
     {
         // Arrange
         var kernelDefinition = new KernelDefinition
@@ -137,7 +137,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CompileKernelAsync_WithNullDefinition_ShouldThrowArgumentNullException()
+    public async Task CompileKernelAsyncWithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -145,7 +145,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CompileKernelAsync_WithOptions_ShouldUseOptions()
+    public async Task CompileKernelAsyncWithOptions_ShouldUseOptions()
     {
         // Arrange
         var kernelDefinition = new KernelDefinition
@@ -171,14 +171,14 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task SynchronizeAsync_ShouldCompleteSuccessfully()
+    public async Task SynchronizeAsyncShouldCompleteSuccessfully()
     {
         // Act & Assert - Should not throw
         await _accelerator.SynchronizeAsync();
     }
 
     [Fact]
-    public async Task SynchronizeAsync_WithCancellation_ShouldRespectCancellation()
+    public async Task SynchronizeAsyncWithCancellation_ShouldRespectCancellation()
     {
         // Arrange
         using var cts = new System.Threading.CancellationTokenSource();
@@ -189,7 +189,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task MultipleKernelCompilations_ShouldAllSucceed()
+    public async Task MultipleKernelCompilationsShouldAllSucceed()
     {
         // Arrange
         var kernelDefinitions = new[]
@@ -225,7 +225,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ConcurrentOperations_ShouldBeThreadSafe()
+    public async Task ConcurrentOperationsShouldBeThreadSafe()
     {
         // Arrange
         const int operationCount = 20;
@@ -282,7 +282,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task AcceleratorInfo_ShouldReflectCurrentSystem()
+    public async Task AcceleratorInfoShouldReflectCurrentSystem()
     {
         // Act
         var info = _accelerator.Info;
@@ -303,7 +303,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task LargeKernelCompilation_ShouldHandleCorrectly()
+    public async Task LargeKernelCompilationShouldHandleCorrectly()
     {
         // Arrange
         var largeSource = new string('x', 100000); // 100KB source
@@ -325,7 +325,7 @@ public class ProductionAcceleratorTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task MemoryOperations_WithDifferentFlags_ShouldWork()
+    public async Task MemoryOperationsWithDifferentFlags_ShouldWork()
     {
         // Test different memory flags
         var memoryFlags = new[]

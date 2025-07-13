@@ -2,6 +2,10 @@ using Xunit;
 using FluentAssertions;
 using DotCompute.Runtime;
 using DotCompute.Abstractions;
+using DotCompute.Core;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace DotCompute.Runtime.Tests;
 
@@ -11,35 +15,156 @@ namespace DotCompute.Runtime.Tests;
 /// </summary>
 public class RuntimeServiceTests
 {
-    [Fact]
-    public void RuntimeService_ShouldInitialize_Successfully()
+    private readonly IServiceProvider _serviceProvider;
+    private readonly Mock<ILogger<AcceleratorRuntime>> _loggerMock;
+    private readonly Mock<IAcceleratorManager> _acceleratorManagerMock;
+
+    public RuntimeServiceTests()
     {
-        // Arrange & Act & Assert
-        // This will be populated once we examine the actual Runtime module content
-        true.Should().BeTrue("Placeholder test - runtime module analysis needed");
+        var services = new ServiceCollection();
+        _loggerMock = new Mock<ILogger<AcceleratorRuntime>>();
+        _acceleratorManagerMock = new Mock<IAcceleratorManager>();
+        
+        services.AddSingleton(_loggerMock.Object);
+        services.AddSingleton(_acceleratorManagerMock.Object);
+        _serviceProvider = services.BuildServiceProvider();
     }
 
     [Fact]
-    public void RuntimeService_WhenDisposed_ShouldCleanupResources()
+    public async Task RuntimeServiceShouldInitialize_Successfully()
     {
-        // Arrange & Act & Assert
-        // This will test proper resource cleanup
-        true.Should().BeTrue("Placeholder test - runtime module analysis needed");
+        // Arrange
+        var mockAccelerators = new List<IAccelerator>
+        {
+            CreateMockAccelerator("CPU", AcceleratorType.CPU),
+            CreateMockAccelerator("GPU", AcceleratorType.CUDA)
+        };
+        
+        _acceleratorManagerMock
+            .Setup(m => m.GetAvailableAcceleratorsAsync())
+            .ReturnsAsync(mockAccelerators);
+        
+        var runtime = new AcceleratorRuntime(_serviceProvider, _loggerMock.Object);
+
+        // Act
+        await runtime.InitializeAsync();
+        var accelerators = runtime.GetAccelerators();
+
+        // Assert
+        accelerators.Should().HaveCount(2);
+        accelerators[0].Name.Should().Be("CPU");
+        accelerators[1].Name.Should().Be("GPU");
+        
+        _loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Runtime initialized successfully")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
     }
 
     [Fact]
-    public void RuntimeService_WithInvalidConfiguration_ShouldThrowException()
+    public void RuntimeServiceWhenDisposed_ShouldCleanupResources()
     {
-        // Arrange & Act & Assert
-        // This will test error handling scenarios
-        true.Should().BeTrue("Placeholder test - runtime module analysis needed");
+        // Arrange
+        var mockAccelerator1 = new Mock<IAccelerator>();
+        var mockAccelerator2 = new Mock<IAccelerator>();
+        
+        _acceleratorManagerMock
+            .Setup(m => m.GetAvailableAcceleratorsAsync())
+            .ReturnsAsync(new List<IAccelerator> { mockAccelerator1.Object, mockAccelerator2.Object });
+        
+        var runtime = new AcceleratorRuntime(_serviceProvider, _loggerMock.Object);
+        runtime.InitializeAsync().Wait();
+
+        // Act
+        runtime.Dispose();
+        runtime.Dispose(); // Second dispose should be idempotent
+
+        // Assert
+        mockAccelerator1.Verify(a => a.Dispose(), Times.Once);
+        mockAccelerator2.Verify(a => a.Dispose(), Times.Once);
+        runtime.GetAccelerators().Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task RuntimeServiceWithNoAccelerators_ShouldLogWarning()
+    {
+        // Arrange
+        _acceleratorManagerMock
+            .Setup(m => m.GetAvailableAcceleratorsAsync())
+            .ReturnsAsync(new List<IAccelerator>());
+        
+        var runtime = new AcceleratorRuntime(_serviceProvider, _loggerMock.Object);
+
+        // Act
+        await runtime.InitializeAsync();
+
+        // Assert
+        _loggerMock.Verify(
+            l => l.Log(
+                LogLevel.Warning,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("No accelerators discovered")),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
+
+    [Fact]
+    public void GetAcceleratorByType_ShouldReturnCorrectAccelerator()
+    {
+        // Arrange
+        var cpuAccelerator = CreateMockAccelerator("CPU", AcceleratorType.CPU);
+        var gpuAccelerator = CreateMockAccelerator("GPU", AcceleratorType.CUDA);
+        
+        _acceleratorManagerMock
+            .Setup(m => m.GetAvailableAcceleratorsAsync())
+            .ReturnsAsync(new List<IAccelerator> { cpuAccelerator, gpuAccelerator });
+        
+        var runtime = new AcceleratorRuntime(_serviceProvider, _loggerMock.Object);
+        runtime.InitializeAsync().Wait();
+
+        // Act
+        var foundCpu = runtime.GetAccelerator(AcceleratorType.CPU);
+        var foundGpu = runtime.GetAccelerator(AcceleratorType.CUDA);
+        var notFound = runtime.GetAccelerator(AcceleratorType.Metal);
+
+        // Assert
+        foundCpu.Should().BeSameAs(cpuAccelerator);
+        foundGpu.Should().BeSameAs(gpuAccelerator);
+        notFound.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task InitializeAsync_WhenAcceleratorManagerThrows_ShouldLogError()
+    {
+        // Arrange
+        _acceleratorManagerMock
+            .Setup(m => m.GetAvailableAcceleratorsAsync())
+            .ThrowsAsync(new InvalidOperationException("Test exception"));
+        
+        var runtime = new AcceleratorRuntime(_serviceProvider, _loggerMock.Object);
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() => runtime.InitializeAsync());
+    }
+
+    private IAccelerator CreateMockAccelerator(string name, AcceleratorType type)
+    {
+        var mock = new Mock<IAccelerator>();
+        mock.Setup(a => a.Name).Returns(name);
+        mock.Setup(a => a.Type).Returns(type);
+        return mock.Object;
     }
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public void RuntimeService_WithInvalidInput_ShouldValidateParameters(string? invalidInput)
+    public void RuntimeServiceWithInvalidInput_ShouldValidateParameters(string? invalidInput)
     {
         // Arrange & Act & Assert
         // This will test parameter validation
@@ -47,7 +172,7 @@ public class RuntimeServiceTests
     }
 
     [Fact]
-    public async Task RuntimeService_AsyncOperations_ShouldHandleCancellation()
+    public async Task RuntimeServiceAsyncOperations_ShouldHandleCancellation()
     {
         // Arrange
         using var cts = new CancellationTokenSource();
@@ -62,7 +187,7 @@ public class RuntimeServiceTests
     }
 
     [Fact]
-    public void RuntimeService_ConcurrentAccess_ShouldBeThreadSafe()
+    public void RuntimeServiceConcurrentAccess_ShouldBeThreadSafe()
     {
         // Arrange
         const int threadCount = 10;
@@ -100,7 +225,7 @@ public class RuntimeServiceTests
     }
 
     [Fact]
-    public void RuntimeService_PerformanceTest_ShouldMeetRequirements()
+    public void RuntimeServicePerformanceTest_ShouldMeetRequirements()
     {
         // Arrange
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -119,7 +244,7 @@ public class RuntimeServiceTests
     }
 
     [Fact]
-    public void RuntimeService_MemoryUsage_ShouldNotLeak()
+    public void RuntimeServiceMemoryUsage_ShouldNotLeak()
     {
         // Arrange
         var initialMemory = GC.GetTotalMemory(true);
@@ -149,7 +274,7 @@ public class RuntimeServiceTests
 public class RuntimeServiceEdgeCaseTests
 {
     [Fact]
-    public void RuntimeService_WithExtremeParameters_ShouldHandleGracefully()
+    public void RuntimeServiceWithExtremeParameters_ShouldHandleGracefully()
     {
         // Test with extreme values
         var extremeValues = new[]
@@ -169,7 +294,7 @@ public class RuntimeServiceEdgeCaseTests
     }
 
     [Fact]
-    public void RuntimeService_OutOfMemoryScenario_ShouldRecoverGracefully()
+    public void RuntimeServiceOutOfMemoryScenario_ShouldRecoverGracefully()
     {
         // Arrange & Act & Assert
         try
@@ -193,7 +318,7 @@ public class RuntimeServiceEdgeCaseTests
     }
 
     [Fact]
-    public async Task RuntimeService_TimeoutScenarios_ShouldHandleTimeout()
+    public async Task RuntimeServiceTimeoutScenarios_ShouldHandleTimeout()
     {
         // Arrange
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
@@ -208,7 +333,7 @@ public class RuntimeServiceEdgeCaseTests
     }
 
     [Fact]
-    public void RuntimeService_InvalidStateTransitions_ShouldValidateState()
+    public void RuntimeServiceInvalidStateTransitions_ShouldValidateState()
     {
         // Arrange
         var states = new[] { "Initial", "Running", "Stopped", "Error" };

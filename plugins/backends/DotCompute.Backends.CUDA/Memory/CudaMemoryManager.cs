@@ -4,8 +4,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using DotCompute.Core.Abstractions;
-using DotCompute.Core.Abstractions.Memory;
+using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 

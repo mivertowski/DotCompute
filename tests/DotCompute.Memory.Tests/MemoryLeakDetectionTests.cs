@@ -31,7 +31,7 @@ public class MemoryLeakDetectionTests : IDisposable
     }
     
     [Fact]
-    public async Task UnifiedBuffer_DisposedBuffers_ShouldBeGarbageCollected()
+    public async Task UnifiedBufferDisposedBuffers_ShouldBeGarbageCollected()
     {
         // Arrange
         var initialMemory = GC.GetTotalMemory(false);
@@ -69,7 +69,7 @@ public class MemoryLeakDetectionTests : IDisposable
     }
     
     [Fact]
-    public async Task MemoryPool_ReturnedBuffers_ShouldBeReused()
+    public async Task MemoryPoolReturnedBuffers_ShouldBeReused()
     {
         // Arrange
         var pool = _unifiedManager.GetPool<int>();
@@ -92,7 +92,7 @@ public class MemoryLeakDetectionTests : IDisposable
     }
     
     [Fact]
-    public async Task UnifiedMemoryManager_HandleMemoryPressure_ShouldReleaseUnusedBuffers()
+    public async Task UnifiedMemoryManagerHandleMemoryPressure_ShouldReleaseUnusedBuffers()
     {
         // Arrange
         var pool = _unifiedManager.GetPool<double>();
@@ -127,7 +127,7 @@ public class MemoryLeakDetectionTests : IDisposable
     }
     
     [Fact]
-    public async Task DeviceMemory_AllocationAndDeallocation_ShouldNotLeak()
+    public async Task DeviceMemoryAllocationAndDeallocation_ShouldNotLeak()
     {
         // Arrange
         var initialAllocatedBytes = _memoryManager.TotalAllocatedBytes;
@@ -156,7 +156,7 @@ public class MemoryLeakDetectionTests : IDisposable
     }
     
     [Fact]
-    public async Task MemoryAllocator_AlignedAllocations_ShouldBeFreedProperly()
+    public async Task MemoryAllocatorAlignedAllocations_ShouldBeFreedProperly()
     {
         // Arrange
         var allocator = new MemoryAllocator();
@@ -186,7 +186,7 @@ public class MemoryLeakDetectionTests : IDisposable
     }
     
     [Fact]
-    public async Task ConcurrentOperations_ShouldNotLeakMemory()
+    public async Task ConcurrentOperationsShouldNotLeakMemory()
     {
         // Arrange
         var tasks = new List<Task>();
@@ -233,7 +233,7 @@ public class MemoryLeakDetectionTests : IDisposable
     }
     
     [Fact]
-    public async Task WeakReferences_ShouldDetectLeaks()
+    public async Task WeakReferencesShouldDetectLeaks()
     {
         // Arrange
         var leakyList = new List<UnifiedBuffer<int>>();

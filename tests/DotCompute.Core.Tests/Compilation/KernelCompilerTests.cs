@@ -27,7 +27,7 @@ public class KernelCompilerTests
     }
 
     [Fact]
-    public async Task CompileAsync_WithSimpleKernel_ReturnsCompiledKernel()
+    public async Task CompileAsyncWithSimpleKernel_ReturnsCompiledKernel()
     {
         // Arrange
         Action<int[], int[], int[], int> kernel = (a, b, c, length) =>
@@ -56,7 +56,7 @@ public class KernelCompilerTests
     }
 
     [Fact]
-    public async Task CompileAsync_WithCompilationOptions_UsesProvidedOptions()
+    public async Task CompileAsyncWithCompilationOptions_UsesProvidedOptions()
     {
         // Arrange
         Action<float[], float> kernel = (data, scalar) =>
@@ -87,7 +87,7 @@ public class KernelCompilerTests
     }
 
     [Fact]
-    public async Task CompileAsync_WithNullKernel_ThrowsArgumentNullException()
+    public async Task CompileAsyncWithNullKernel_ThrowsArgumentNullException()
     {
         // Arrange
         Action<int[]>? kernel = null;
@@ -101,7 +101,7 @@ public class KernelCompilerTests
     }
 
     [Fact]
-    public async Task CompileAsync_WithNullAccelerator_ThrowsArgumentNullException()
+    public async Task CompileAsyncWithNullAccelerator_ThrowsArgumentNullException()
     {
         // Arrange
         Action<int[]> kernel = data => { };
@@ -115,7 +115,7 @@ public class KernelCompilerTests
     }
 
     [Fact]
-    public async Task CompileAsync_WithUnsupportedKernel_ThrowsCompilationException()
+    public async Task CompileAsyncWithUnsupportedKernel_ThrowsCompilationException()
     {
         // Arrange
         Action<object> kernel = obj => { }; // Unsupported parameter type
@@ -132,7 +132,7 @@ public class KernelCompilerTests
     }
 
     [Fact]
-    public async Task CompileAsync_CachesCompiledKernels()
+    public async Task CompileAsyncCachesCompiledKernels()
     {
         // Arrange
         Action<int[]> kernel = data => { };
@@ -153,7 +153,7 @@ public class KernelCompilerTests
     [InlineData(OptimizationLevel.None)]
     [InlineData(OptimizationLevel.Basic)]
     [InlineData(OptimizationLevel.Aggressive)]
-    public async Task CompileAsync_WithDifferentOptimizationLevels_CompilesSeparately(OptimizationLevel level)
+    public async Task CompileAsyncWithDifferentOptimizationLevels_CompilesSeparately(OptimizationLevel level)
     {
         // Arrange
         Action<float[]> kernel = data => { };
@@ -173,7 +173,7 @@ public class KernelCompilerTests
     }
 
     [Fact]
-    public async Task CompileAsync_WithComplexKernelSignature_HandlesCorrectly()
+    public async Task CompileAsyncWithComplexKernelSignature_HandlesCorrectly()
     {
         // Arrange
         Action<int[], float[], double, int, bool> kernel = (ints, floats, scale, count, flag) => { };

@@ -25,7 +25,7 @@ public class MemorySystemTests : IDisposable
     }
 
     [Fact]
-    public async Task MemorySystem_CompleteWorkflow_WithMonitoring()
+    public async Task MemorySystemCompleteWorkflow_WithMonitoring()
     {
         // Arrange
         using var monitor = new MemoryMonitor("CompleteWorkflow");
@@ -60,7 +60,7 @@ public class MemorySystemTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryPerformance_BenchmarkAllOperations()
+    public async Task MemoryPerformanceBenchmarkAllOperations()
     {
         // Arrange
         var benchmark = new MemoryPerformanceBenchmark();
@@ -92,7 +92,7 @@ public class MemorySystemTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryRegression_DetectPerformanceChanges()
+    public async Task MemoryRegressionDetectPerformanceChanges()
     {
         // Arrange
         var benchmark = new MemoryPerformanceBenchmark();
@@ -133,7 +133,7 @@ public class MemorySystemTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryLeak_DetectionWithUtilities()
+    public async Task MemoryLeakDetectionWithUtilities()
     {
         // Arrange
         using var monitor = new MemoryMonitor("MemoryLeakDetection");
@@ -161,7 +161,7 @@ public class MemorySystemTests : IDisposable
     }
 
     [Fact]
-    public async Task DataIntegrity_LargeDataSets_MaintainsAccuracy()
+    public async Task DataIntegrityLargeDataSets_MaintainsAccuracy()
     {
         // Arrange
         const int arraySize = 1024 * 1024; // 1M elements
@@ -197,7 +197,7 @@ public class MemorySystemTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryAlignment_DifferentSizes_WorksCorrectly()
+    public async Task MemoryAlignmentDifferentSizes_WorksCorrectly()
     {
         // Arrange
         var testSizes = new long[] { 1, 3, 7, 15, 31, 63, 127, 255, 511, 1023, 2047 };
@@ -233,7 +233,7 @@ public class MemorySystemTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryViews_ComplexOperations_MaintainConsistency()
+    public async Task MemoryViewsComplexOperations_MaintainConsistency()
     {
         // Arrange
         const int totalSize = 1024 * 1024;
@@ -286,7 +286,7 @@ public class MemorySystemTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryReporting_HistoricalData_TracksProgress()
+    public async Task MemoryReportingHistoricalData_TracksProgress()
     {
         // Arrange
         const string testName = "HistoricalTracking";
@@ -314,7 +314,7 @@ public class MemorySystemTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryUtilities_EdgeCases_HandleGracefully()
+    public async Task MemoryUtilitiesEdgeCases_HandleGracefully()
     {
         // Test with zero-length arrays
         var emptyBytes = TestDataGenerator.GenerateRandomBytes(0);

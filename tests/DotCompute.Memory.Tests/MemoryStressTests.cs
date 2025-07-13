@@ -32,13 +32,13 @@ public class MemoryStressTests : IDisposable
     }
     
     [Fact(Skip = "Long-running stress test - enable manually")]
-    public async Task StressTest_24Hour_MemoryStability()
+    public async Task StressTest24Hour_MemoryStability()
     {
         await RunStressTest(TimeSpan.FromHours(24));
     }
     
     [Fact]
-    public async Task StressTest_5Minute_MemoryStability()
+    public async Task StressTest5Minute_MemoryStability()
     {
         await RunStressTest(TimeSpan.FromMinutes(5));
     }

@@ -255,21 +255,76 @@ public static class AdvancedSimdKernels
                 var offset = v * VectorSize;
                 var va = Avx512F.LoadVector512(a + offset);
                 var vb = Avx512F.LoadVector512(b + offset);
-                // Note: 64-bit multiply requires special handling
-                var vr = va; // Placeholder - would need proper 64-bit multiply implementation
+                // AVX-512DQ has native 64-bit multiply
+                var vr = Avx512DQ.MultiplyLow(va, vb);
                 Avx512F.Store(result + offset, vr);
             }
             i = vectorCount * VectorSize;
         }
-        // AVX2 path (4 longs per operation) - Note: No native 64-bit multiply in AVX2
+        // AVX2 path (4 longs per operation) - Decompose 64-bit multiply
         else if (Avx2.IsSupported)
         {
-            // Fall through to scalar for now - could implement with decomposition
+            const int VectorSize = 4;
+            long vectorCount = elementCount / VectorSize;
+
+            for (long v = 0; v < vectorCount; v++)
+            {
+                var offset = v * VectorSize;
+                
+                // Load 64-bit values
+                var va = Avx2.LoadVector256(a + offset);
+                var vb = Avx2.LoadVector256(b + offset);
+                
+                // Decompose 64-bit multiply into 32-bit operations
+                // Split each 64-bit value into high and low 32-bit parts
+                var aLo = Avx2.And(va, Vector256.Create(0xFFFFFFFFL));
+                var aHi = Avx2.ShiftRightLogical(va, 32);
+                var bLo = Avx2.And(vb, Vector256.Create(0xFFFFFFFFL));
+                var bHi = Avx2.ShiftRightLogical(vb, 32);
+                
+                // Compute partial products
+                var loLo = Avx2.Multiply(aLo.AsUInt32(), bLo.AsUInt32()); // Low 32 bits of each result
+                var loHi = Avx2.Multiply(aLo.AsUInt32(), bHi.AsUInt32());
+                var hiLo = Avx2.Multiply(aHi.AsUInt32(), bLo.AsUInt32());
+                
+                // Combine partial products
+                // Result = loLo + ((loHi + hiLo) << 32)
+                var middle = Avx2.Add(loHi, hiLo);
+                var middleShifted = Avx2.ShiftLeftLogical(middle, 32);
+                var vr = Avx2.Add(loLo.AsInt64(), middleShifted.AsInt64());
+                
+                Avx2.Store(result + offset, vr);
+            }
+            i = vectorCount * VectorSize;
         }
-        // ARM NEON path (2 longs per operation) - Note: Limited 64-bit support
+        // ARM NEON path (2 longs per operation)
         else if (AdvSimd.Arm64.IsSupported)
         {
-            // ARM64 has some 64-bit ops, but multiplication is complex
+            const int VectorSize = 2;
+            long vectorCount = elementCount / VectorSize;
+
+            for (long v = 0; v < vectorCount; v++)
+            {
+                var offset = v * VectorSize;
+                
+                // Load 64-bit values
+                var va = AdvSimd.LoadVector128(a + offset);
+                var vb = AdvSimd.LoadVector128(b + offset);
+                
+                // ARM64 NEON doesn't have direct 64-bit multiply either
+                // Use scalar multiplication for each element
+                var a0 = va.GetElement(0);
+                var a1 = va.GetElement(1);
+                var b0 = vb.GetElement(0);
+                var b1 = vb.GetElement(1);
+                
+                var r0 = a0 * b0;
+                var r1 = a1 * b1;
+                
+                var vr = Vector128.Create(r0, r1);
+                AdvSimd.Store(result + offset, vr);
+            }
+            i = vectorCount * VectorSize;
         }
 
         // Scalar remainder (and fallback for unsupported SIMD)

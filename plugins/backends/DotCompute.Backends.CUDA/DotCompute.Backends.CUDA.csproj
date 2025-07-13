@@ -18,11 +18,15 @@
       <Private>false</Private>
       <ExcludeAssets>runtime</ExcludeAssets>
     </ProjectReference>
+    <ProjectReference Include="..\..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\DotCompute.Plugins\DotCompute.Plugins.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="System.Runtime.InteropServices" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
 
   <!-- Copy native CUDA wrapper to output -->

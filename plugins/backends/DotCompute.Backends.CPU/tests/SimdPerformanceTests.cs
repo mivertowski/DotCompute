@@ -28,7 +28,7 @@ public class SimdPerformanceTests
     }
 
     [Fact]
-    public void VectorAddition_ShowsSimdSpeedup()
+    public void VectorAdditionShowsSimdSpeedup()
     {
         const int elementCount = 1_000_000;
         var a = new float[elementCount];
@@ -64,7 +64,7 @@ public class SimdPerformanceTests
     }
 
     [Fact]
-    public void MatrixMultiply_ShowsSimdSpeedup()
+    public void MatrixMultiplyShowsSimdSpeedup()
     {
         const int size = 256;
         var a = new float[size * size];
@@ -97,7 +97,7 @@ public class SimdPerformanceTests
     }
 
     [Fact]
-    public void DotProduct_ShowsSimdSpeedup()
+    public void DotProductShowsSimdSpeedup()
     {
         const int elementCount = 1_000_000;
         var a = new float[elementCount];

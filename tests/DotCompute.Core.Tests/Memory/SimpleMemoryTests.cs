@@ -15,7 +15,7 @@ namespace DotCompute.Core.Tests.Memory;
 public class SimpleMemoryTests
 {
     [Fact]
-    public void MemoryFlags_HasCorrectValues()
+    public void MemoryFlagsHasCorrectValues()
     {
         // Assert
         MemoryFlags.None.Should().Be(0);
@@ -27,7 +27,7 @@ public class SimpleMemoryTests
     }
 
     [Fact]
-    public void MemoryFlags_SupportsCombination()
+    public void MemoryFlagsSupportsCombination()
     {
         // Act
         var combined = MemoryFlags.ReadOnly | MemoryFlags.Cached;
@@ -40,7 +40,7 @@ public class SimpleMemoryTests
     }
 
     [Fact]
-    public void MemoryOptions_HasCorrectValues()
+    public void MemoryOptionsHasCorrectValues()
     {
         // Assert
         MemoryOptions.None.Should().Be(0);
@@ -52,7 +52,7 @@ public class SimpleMemoryTests
     }
 
     [Fact]
-    public void MemoryOptions_SupportsCombination()
+    public void MemoryOptionsSupportsCombination()
     {
         // Act
         var combined = MemoryOptions.ReadOnly | MemoryOptions.Cached;
@@ -65,7 +65,7 @@ public class SimpleMemoryTests
     }
 
     [Fact]
-    public void MemoryFlags_And_MemoryOptions_AreCompatible()
+    public void MemoryFlagsAnd_MemoryOptions_AreCompatible()
     {
         // Both enums should have the same underlying values
         ((int)MemoryFlags.ReadOnly).Should().Be((int)MemoryOptions.ReadOnly);
@@ -82,7 +82,7 @@ public class SimpleMemoryTests
     [InlineData(MemoryFlags.HostVisible, false, false, true, false, false)]
     [InlineData(MemoryFlags.Cached, false, false, false, true, false)]
     [InlineData(MemoryFlags.Atomic, false, false, false, false, true)]
-    public void MemoryFlags_IndividualFlags_Work(MemoryFlags flags, bool readOnly, bool writeOnly, bool hostVisible, bool cached, bool atomic)
+    public void MemoryFlagsIndividualFlags_Work(MemoryFlags flags, bool readOnly, bool writeOnly, bool hostVisible, bool cached, bool atomic)
     {
         // Assert
         flags.HasFlag(MemoryFlags.ReadOnly).Should().Be(readOnly);
@@ -93,7 +93,7 @@ public class SimpleMemoryTests
     }
 
     [Fact]
-    public void MemoryFlags_ComplexCombination_Works()
+    public void MemoryFlagsComplexCombination_Works()
     {
         // Arrange
         var flags = MemoryFlags.ReadOnly | MemoryFlags.HostVisible | MemoryFlags.Cached;

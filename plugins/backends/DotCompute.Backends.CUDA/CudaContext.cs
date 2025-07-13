@@ -4,7 +4,7 @@
 using System;
 using System.Runtime.InteropServices;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Core.Abstractions;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Backends.CUDA;
 

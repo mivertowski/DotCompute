@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using DotCompute.Core;
 
 namespace DotCompute.Core.Pipelines;
 
@@ -430,8 +431,8 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
                     AllocationCount = 10,
                     DeallocationCount = 8
                 },
-                ComputeUtilization = 0.85,
-                MemoryBandwidthUtilization = 0.70,
+                ComputeUtilization = PerformanceMonitor.GetCpuUtilization(),
+                MemoryBandwidthUtilization = PerformanceMonitor.GetMemoryBandwidthUtilization(),
                 StageExecutionTimes = new Dictionary<string, TimeSpan>(),
                 DataTransferTimes = new Dictionary<string, TimeSpan>()
             },

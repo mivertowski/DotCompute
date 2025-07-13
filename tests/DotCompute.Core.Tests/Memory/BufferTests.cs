@@ -31,7 +31,7 @@ public class BufferTests
     [InlineData(1)]
     [InlineData(1024)]
     [InlineData(1024 * 1024)]
-    public void Allocate_WithValidSize_CreatesBuffer(int size)
+    public void AllocateWithValidSize_CreatesBuffer(int size)
     {
         // Arrange
         var buffer = Substitute.For<IBuffer<int>>();
@@ -53,7 +53,7 @@ public class BufferTests
     [InlineData(0)]
     [InlineData(-1)]
     [InlineData(-100)]
-    public void Allocate_WithInvalidSize_ThrowsArgumentException(int size)
+    public void AllocateWithInvalidSize_ThrowsArgumentException(int size)
     {
         // Arrange
         _memoryManager.Allocate<int>(size)
@@ -65,7 +65,7 @@ public class BufferTests
     }
 
     [Fact]
-    public async Task CopyFromAsync_WithValidData_CopiesSuccessfully()
+    public async Task CopyFromAsyncWithValidData_CopiesSuccessfully()
     {
         // Arrange
         var data = TestDataGenerator.GenerateIntArray(1024);
@@ -83,7 +83,7 @@ public class BufferTests
     }
 
     [Fact]
-    public async Task CopyToAsync_WithValidBuffer_CopiesSuccessfully()
+    public async Task CopyToAsyncWithValidBuffer_CopiesSuccessfully()
     {
         // Arrange
         var size = 1024;
@@ -102,7 +102,7 @@ public class BufferTests
     }
 
     [Fact]
-    public async Task CopyFromAsync_WithMismatchedSize_ThrowsArgumentException()
+    public async Task CopyFromAsyncWithMismatchedSize_ThrowsArgumentException()
     {
         // Arrange
         var buffer = Substitute.For<IBuffer<int>>();
@@ -120,7 +120,7 @@ public class BufferTests
     }
 
     [Fact]
-    public async Task Clear_ResetsBufferToZero()
+    public async Task ClearResetsBufferToZero()
     {
         // Arrange
         var buffer = Substitute.For<IBuffer<float>>();
@@ -138,7 +138,7 @@ public class BufferTests
 
     [Theory]
     [MemberData(nameof(GetDifferentTypes))]
-    public void Allocate_WithDifferentTypes_AllocatesCorrectSize(Type elementType, int expectedElementSize)
+    public void AllocateWithDifferentTypes_AllocatesCorrectSize(Type elementType, int expectedElementSize)
     {
         // Arrange
         var size = 100;
@@ -154,7 +154,7 @@ public class BufferTests
     }
 
     [Fact]
-    public async Task BufferSlice_WithValidRange_CreatesView()
+    public async Task BufferSliceWithValidRange_CreatesView()
     {
         // Arrange
         var buffer = Substitute.For<IBuffer<double>>();
@@ -180,7 +180,7 @@ public class BufferTests
     [InlineData(0, -10)]
     [InlineData(100, 1000)]
     [InlineData(1000, 1)]
-    public void BufferSlice_WithInvalidRange_ThrowsArgumentException(int offset, int length)
+    public void BufferSliceWithInvalidRange_ThrowsArgumentException(int offset, int length)
     {
         // Arrange
         var buffer = Substitute.For<IBuffer<int>>();
@@ -197,7 +197,7 @@ public class BufferTests
     }
 
     [Fact]
-    public async Task DisposeAsync_ReleasesMemory()
+    public async Task DisposeAsyncReleasesMemory()
     {
         // Arrange
         var buffer = Substitute.For<IBuffer<int>>();
@@ -213,7 +213,7 @@ public class BufferTests
     }
 
     [Fact]
-    public async Task MultipleBufferOperations_WorkCorrectly()
+    public async Task MultipleBufferOperationsWorkCorrectly()
     {
         // Arrange
         var size = 512;

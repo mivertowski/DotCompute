@@ -14,7 +14,7 @@ namespace DotCompute.Generators.Utils
     /// <summary>
     /// Helper methods for source generation.
     /// </summary>
-    internal static class SourceGeneratorHelpers
+    public static class SourceGeneratorHelpers
     {
         /// <summary>
         /// Creates a standard file header for generated code.
@@ -257,7 +257,7 @@ namespace DotCompute.Generators.Utils
     /// <summary>
     /// Information about vectorization opportunities.
     /// </summary>
-    internal class VectorizationInfo
+    public class VectorizationInfo
     {
         public int LoopCount { get; set; }
         public int VectorizableLoops { get; set; }

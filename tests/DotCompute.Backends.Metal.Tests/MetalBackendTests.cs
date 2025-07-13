@@ -6,7 +6,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotCompute.Backends.Metal;
-using DotCompute.Core.Abstractions;
+using DotCompute.Abstractions;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -33,7 +33,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [Fact]
-    public void IsAvailable_ReturnsCorrectStatus()
+    public void IsAvailableReturnsCorrectStatus()
     {
         // Act
         var available = MetalBackend.IsAvailable();
@@ -52,7 +52,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [Fact]
-    public void GetDeviceInfo_ReturnsDeviceInformation()
+    public void GetDeviceInfoReturnsDeviceInformation()
     {
         // Act
         var deviceInfo = _backend.GetDeviceInfo();
@@ -70,7 +70,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public void AllocateBuffer_ValidSize_AllocatesSuccessfully()
+    public void AllocateBufferValidSize_AllocatesSuccessfully()
     {
         // Arrange
         const long size = 1024 * 1024; // 1MB
@@ -85,7 +85,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [Fact]
-    public void AllocateBuffer_InvalidSize_ThrowsException()
+    public void AllocateBufferInvalidSize_ThrowsException()
     {
         // Act & Assert
         var action = () => _backend.AllocateBuffer(-1);
@@ -96,7 +96,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public async Task CopyToBufferAsync_ValidData_CopiesSuccessfully()
+    public async Task CopyToBufferAsyncValidData_CopiesSuccessfully()
     {
         // Arrange
         var data = Enumerable.Range(0, 1000).Select(i => (float)i).ToArray();
@@ -113,7 +113,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public async Task CopyFromBufferAsync_ValidBuffer_CopiesSuccessfully()
+    public async Task CopyFromBufferAsyncValidBuffer_CopiesSuccessfully()
     {
         // Arrange
         var data = Enumerable.Range(0, 100).Select(i => (float)i).ToArray();
@@ -129,7 +129,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public async Task ExecuteComputeShaderAsync_SimpleShader_ExecutesSuccessfully()
+    public async Task ExecuteComputeShaderAsyncSimpleShader_ExecutesSuccessfully()
     {
         // Arrange
         const int size = 1024;
@@ -169,7 +169,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public void CompileFunction_InvalidShader_ThrowsException()
+    public void CompileFunctionInvalidShader_ThrowsException()
     {
         // Act & Assert
         var action = () => _backend.CompileFunction("invalid metal code", "kernel");
@@ -177,7 +177,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public void CreateCommandQueue_CreatesValidQueue()
+    public void CreateCommandQueueCreatesValidQueue()
     {
         // Act
         var queue = _backend.CreateCommandQueue();
@@ -188,7 +188,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public async Task CommitAndWait_WaitsForCompletion()
+    public async Task CommitAndWaitWaitsForCompletion()
     {
         // Arrange
         var data = new float[1000];
@@ -203,7 +203,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public void AllocateBuffer_LargeAllocation_HandlesCorrectly()
+    public void AllocateBufferLargeAllocation_HandlesCorrectly()
     {
         // Arrange
         var deviceInfo = _backend.GetDeviceInfo();
@@ -218,7 +218,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public void AllocateBuffer_ExceedsAvailable_ThrowsException()
+    public void AllocateBufferExceedsAvailable_ThrowsException()
     {
         // Arrange
         var deviceInfo = _backend.GetDeviceInfo();
@@ -230,7 +230,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public async Task MultipleCommandQueues_ExecuteConcurrently()
+    public async Task MultipleCommandQueuesExecuteConcurrently()
     {
         // Arrange
         const int queueCount = 4;
@@ -270,7 +270,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public void GetMemoryInfo_ReturnsValidInfo()
+    public void GetMemoryInfoReturnsValidInfo()
     {
         // Act
         var (used, total) = _backend.GetMemoryInfo();
@@ -282,7 +282,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_DisposesResources()
+    public void DisposeDisposesResources()
     {
         // Arrange
         var backend = new MetalBackend(_loggerMock.Object);
@@ -297,7 +297,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public async Task ErrorHandling_InvalidShaderExecution_ThrowsException()
+    public async Task ErrorHandlingInvalidShaderExecution_ThrowsException()
     {
         // Arrange
         var shader = @"
@@ -317,7 +317,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public void SetThreadgroupMemoryLength_ValidSize_SetsSuccessfully()
+    public void SetThreadgroupMemoryLengthValidSize_SetsSuccessfully()
     {
         // Arrange
         var shader = @"
@@ -334,7 +334,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public async Task TextureOperations_2DTexture_WorksCorrectly()
+    public async Task TextureOperations2DTexture_WorksCorrectly()
     {
         // Arrange
         const int width = 256;
@@ -358,7 +358,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public void CreateLibrary_FromSource_CompilesSuccessfully()
+    public void CreateLibraryFromSource_CompilesSuccessfully()
     {
         // Arrange
         var source = @"
@@ -383,7 +383,7 @@ public class MetalBackendTests : IDisposable
     }
 
     [SkippableMetalFact]
-    public async Task ParallelExecution_MultipleShaders_ExecutesCorrectly()
+    public async Task ParallelExecutionMultipleShaders_ExecutesCorrectly()
     {
         // Arrange
         const int dataSize = 1000;

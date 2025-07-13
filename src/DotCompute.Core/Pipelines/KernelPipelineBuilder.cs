@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using DotCompute.Core;
 
 namespace DotCompute.Core.Pipelines;
 

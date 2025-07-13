@@ -33,7 +33,7 @@ public class AdvancedSimdPerformanceTests
     #region FMA (Fused Multiply-Add) Performance Tests - CRITICAL
 
     [Fact]
-    public void FmaFloat32_ShowsCriticalPerformanceGain()
+    public void FmaFloat32ShowsCriticalPerformanceGain()
     {
         const int elementCount = 1_000_000;
         var a = new float[elementCount];
@@ -97,7 +97,7 @@ public class AdvancedSimdPerformanceTests
     }
 
     [Fact]
-    public void FmaFloat64_ShowsCriticalDoubleSpeedup()
+    public void FmaFloat64ShowsCriticalDoubleSpeedup()
     {
         const int elementCount = 500_000;
         var a = new double[elementCount];
@@ -142,7 +142,7 @@ public class AdvancedSimdPerformanceTests
     #region Integer SIMD Performance Tests - CRITICAL
 
     [Fact]
-    public void IntegerSimd_ShowsCriticalPathPerformance()
+    public void IntegerSimdShowsCriticalPathPerformance()
     {
         const int elementCount = 2_000_000;
         var a = new int[elementCount];
@@ -200,7 +200,7 @@ public class AdvancedSimdPerformanceTests
     }
 
     [Fact]
-    public void Int16Simd_ShowsImageProcessingPerformance()
+    public void Int16SimdShowsImageProcessingPerformance()
     {
         const int elementCount = 4_000_000; // Typical for large images
         var a = new short[elementCount];
@@ -238,7 +238,7 @@ public class AdvancedSimdPerformanceTests
     #region ARM NEON Enhanced Performance Tests - HIGH PRIORITY
 
     [Fact]
-    public void ArmNeonAdvanced_ShowsCrossplatformExcellence()
+    public void ArmNeonAdvancedShowsCrossplatformExcellence()
     {
         const int elementCount = 1_000_000;
         var a = new float[elementCount];
@@ -297,7 +297,7 @@ public class AdvancedSimdPerformanceTests
     #region Advanced Operations Performance Tests - HIGH PRIORITY
 
     [Fact]
-    public void GatherScatter_ShowsAdvancedSimdCapabilities()
+    public void GatherScatterShowsAdvancedSimdCapabilities()
     {
         const int elementCount = 100_000;
         var data = new float[elementCount * 2]; // Double size for scatter space
@@ -359,7 +359,7 @@ public class AdvancedSimdPerformanceTests
     }
 
     [Fact]
-    public void ConditionalSelect_ShowsMaskingPerformance()
+    public void ConditionalSelectShowsMaskingPerformance()
     {
         const int elementCount = 1_000_000;
         var condition = new float[elementCount];
@@ -411,7 +411,7 @@ public class AdvancedSimdPerformanceTests
     }
 
     [Fact]
-    public void HorizontalReduction_ShowsOptimalPerformance()
+    public void HorizontalReductionShowsOptimalPerformance()
     {
         const int elementCount = 10_000_000;
         var data = new float[elementCount];
@@ -460,7 +460,7 @@ public class AdvancedSimdPerformanceTests
     #region Matrix Multiplication Performance Tests - HIGH PRIORITY
 
     [Fact]
-    public void OptimizedMatrixMultiply_ShowsLinearAlgebraPerformance()
+    public void OptimizedMatrixMultiplyShowsLinearAlgebraPerformance()
     {
         const int size = 256; // Reasonable size for testing
         var a = new float[size * size];
@@ -513,7 +513,7 @@ public class AdvancedSimdPerformanceTests
     #region Performance Validation and Roadmap Completion Tests
 
     [Fact]
-    public void PerformanceRoadmapTargets_AreAchieved()
+    public void PerformanceRoadmapTargetsAreAchieved()
     {
         _output.WriteLine("=== SIMD Roadmap Performance Validation ===");
         

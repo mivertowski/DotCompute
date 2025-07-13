@@ -55,7 +55,7 @@ public interface IComputeDevice : IAsyncDisposable
     /// </summary>
     public ValueTask<IDeviceMemory> AllocateMemoryAsync(
         long sizeInBytes,
-        MemoryAccess access,
+        Memory.MemoryAccess access,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -427,7 +427,7 @@ public interface IDeviceMemory : IAsyncDisposable
     /// <summary>
     /// Gets the memory access mode.
     /// </summary>
-    public MemoryAccess AccessMode { get; }
+    public Memory.MemoryAccess AccessMode { get; }
 
     /// <summary>
     /// Copies data from host to device memory.

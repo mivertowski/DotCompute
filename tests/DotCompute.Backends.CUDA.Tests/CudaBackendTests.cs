@@ -5,8 +5,8 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using DotCompute.Core.Abstractions.Compilation;
-using DotCompute.Core.Abstractions.Execution;
+using DotCompute.Abstractions;
+using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Console;
 

@@ -40,7 +40,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void LoadPlugin_ValidPlugin_LoadsSuccessfully()
+    public void LoadPluginValidPlugin_LoadsSuccessfully()
     {
         // Arrange
         var pluginPath = CreateMockPluginAssembly();
@@ -55,7 +55,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void LoadPlugin_InvalidPath_ThrowsFileNotFoundException()
+    public void LoadPluginInvalidPath_ThrowsFileNotFoundException()
     {
         // Arrange
         var invalidPath = Path.Combine(_testPluginDir, "nonexistent.dll");
@@ -66,7 +66,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void LoadPlugin_NullPath_ThrowsArgumentNullException()
+    public void LoadPluginNullPath_ThrowsArgumentNullException()
     {
         // Act & Assert
         var action = () => _loader.LoadPlugin(null!);
@@ -74,7 +74,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void LoadPlugin_InvalidAssembly_ThrowsPluginLoadException()
+    public void LoadPluginInvalidAssembly_ThrowsPluginLoadException()
     {
         // Arrange
         var invalidFile = Path.Combine(_testPluginDir, "invalid.dll");
@@ -86,7 +86,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void LoadPluginsFromDirectory_ValidDirectory_LoadsAllPlugins()
+    public void LoadPluginsFromDirectoryValidDirectory_LoadsAllPlugins()
     {
         // Arrange
         CreateMockPluginAssembly("Plugin1.dll");
@@ -103,7 +103,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void LoadPluginsFromDirectory_EmptyDirectory_ReturnsEmpty()
+    public void LoadPluginsFromDirectoryEmptyDirectory_ReturnsEmpty()
     {
         // Arrange
         var emptyDir = Path.Combine(_testPluginDir, "empty");
@@ -117,7 +117,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void LoadPluginsFromDirectory_InvalidDirectory_ThrowsDirectoryNotFoundException()
+    public void LoadPluginsFromDirectoryInvalidDirectory_ThrowsDirectoryNotFoundException()
     {
         // Arrange
         var invalidDir = Path.Combine(_testPluginDir, "nonexistent");
@@ -128,7 +128,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void GetLoadedPlugins_AfterLoadingPlugins_ReturnsAllLoaded()
+    public void GetLoadedPluginsAfterLoadingPlugins_ReturnsAllLoaded()
     {
         // Arrange
         CreateMockPluginAssembly("Plugin1.dll");
@@ -143,7 +143,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void UnloadPlugin_ValidPlugin_UnloadsSuccessfully()
+    public void UnloadPluginValidPlugin_UnloadsSuccessfully()
     {
         // Arrange
         var pluginPath = CreateMockPluginAssembly();
@@ -159,7 +159,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void UnloadPlugin_InvalidId_ReturnsFalse()
+    public void UnloadPluginInvalidId_ReturnsFalse()
     {
         // Act
         var result = _loader.UnloadPlugin(Guid.NewGuid());
@@ -169,7 +169,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void ReloadPlugin_ValidPlugin_ReloadsWithNewVersion()
+    public void ReloadPluginValidPlugin_ReloadsWithNewVersion()
     {
         // Arrange
         var pluginPath = CreateMockPluginAssembly();
@@ -189,7 +189,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_UnloadsAllPlugins()
+    public void DisposeUnloadsAllPlugins()
     {
         // Arrange
         CreateMockPluginAssembly("Plugin1.dll");
@@ -204,7 +204,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void LoadPlugin_PluginWithDependencies_ResolvesCorrectly()
+    public void LoadPluginPluginWithDependencies_ResolvesCorrectly()
     {
         // This test would require creating assemblies with dependencies
         // For now, we'll test the dependency resolution logic
@@ -224,7 +224,7 @@ public class PluginLoaderTests : IDisposable
     }
 
     [Fact]
-    public void LoadPlugin_MultipleVersionsOfSamePlugin_IsolatesCorrectly()
+    public void LoadPluginMultipleVersionsOfSamePlugin_IsolatesCorrectly()
     {
         // Arrange
         var plugin1Path = CreateMockPluginAssembly("Plugin_v1.dll");

@@ -40,7 +40,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public async Task WatchDirectory_FileCreated_TriggersReload()
+    public async Task WatchDirectoryFileCreated_TriggersReload()
     {
         // Arrange
         var tcs = new TaskCompletionSource<bool>();
@@ -62,7 +62,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public async Task WatchDirectory_FileModified_TriggersReload()
+    public async Task WatchDirectoryFileModified_TriggersReload()
     {
         // Arrange
         var pluginPath = Path.Combine(_testDir, "plugin.dll");
@@ -84,7 +84,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public async Task WatchDirectory_FileDeleted_TriggersUnload()
+    public async Task WatchDirectoryFileDeleted_TriggersUnload()
     {
         // Arrange
         var pluginPath = Path.Combine(_testDir, "plugin.dll");
@@ -114,7 +114,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public async Task WatchDirectory_RapidChanges_DebouncesCorrectly()
+    public async Task WatchDirectoryRapidChanges_DebouncesCorrectly()
     {
         // Arrange
         var pluginPath = Path.Combine(_testDir, "plugin.dll");
@@ -143,7 +143,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public void WatchDirectory_InvalidDirectory_ThrowsException()
+    public void WatchDirectoryInvalidDirectory_ThrowsException()
     {
         // Arrange
         var invalidDir = Path.Combine(_testDir, "nonexistent");
@@ -154,7 +154,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public void StopWatching_StopsFileMonitoring()
+    public void StopWatchingStopsFileMonitoring()
     {
         // Arrange
         _hotReloadManager.WatchDirectory(_testDir);
@@ -172,7 +172,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public async Task WatchDirectory_NonDllFile_IgnoresChange()
+    public async Task WatchDirectoryNonDllFile_IgnoresChange()
     {
         // Arrange
         var textFilePath = Path.Combine(_testDir, "readme.txt");
@@ -193,7 +193,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public async Task WatchDirectory_SubdirectoryChanges_MonitorsRecursively()
+    public async Task WatchDirectorySubdirectoryChanges_MonitorsRecursively()
     {
         // Arrange
         var subDir = Path.Combine(_testDir, "plugins");
@@ -216,7 +216,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public void EnableHotReload_MultipleCalls_HandlesCorrectly()
+    public void EnableHotReloadMultipleCalls_HandlesCorrectly()
     {
         // Act & Assert - Should not throw
         _hotReloadManager.EnableHotReload(true);
@@ -225,7 +225,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public async Task WatchDirectory_PluginLoadFails_LogsError()
+    public async Task WatchDirectoryPluginLoadFails_LogsError()
     {
         // Arrange
         var pluginPath = Path.Combine(_testDir, "plugin.dll");
@@ -251,7 +251,7 @@ public class HotReloadTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_CleansUpResources()
+    public void DisposeCleansUpResources()
     {
         // Arrange
         _hotReloadManager.WatchDirectory(_testDir);

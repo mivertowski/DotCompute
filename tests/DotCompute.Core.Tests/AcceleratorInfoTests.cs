@@ -15,7 +15,7 @@ namespace DotCompute.Core.Tests;
 public class AcceleratorInfoTests
 {
     [Fact]
-    public void Constructor_WithValidParameters_CreatesInstance()
+    public void ConstructorWithValidParameters_CreatesInstance()
     {
         // Arrange
         var name = "Test Accelerator";
@@ -59,7 +59,7 @@ public class AcceleratorInfoTests
     [InlineData("name", "", "1.0")]
     [InlineData("name", "vendor", null)]
     [InlineData("name", "vendor", "")]
-    public void Constructor_WithNullOrEmptyStrings_ThrowsArgumentException(
+    public void ConstructorWithNullOrEmptyStrings_ThrowsArgumentException(
         string name, string vendor, string driverVersion)
     {
         // Act & Assert
@@ -81,7 +81,7 @@ public class AcceleratorInfoTests
     [InlineData(0)]
     [InlineData(-1)]
     [InlineData(-100)]
-    public void Constructor_WithInvalidComputeCapability_ThrowsArgumentException(double capability)
+    public void ConstructorWithInvalidComputeCapability_ThrowsArgumentException(double capability)
     {
         // Act & Assert
         var act = () => new AcceleratorInfo(
@@ -102,7 +102,7 @@ public class AcceleratorInfoTests
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]
-    public void Constructor_WithInvalidMaxThreadsPerBlock_ThrowsArgumentException(int maxThreads)
+    public void ConstructorWithInvalidMaxThreadsPerBlock_ThrowsArgumentException(int maxThreads)
     {
         // Act & Assert
         var act = () => new AcceleratorInfo(
@@ -123,7 +123,7 @@ public class AcceleratorInfoTests
     [Theory]
     [InlineData(-1)]
     [InlineData(-1024)]
-    public void Constructor_WithNegativeSharedMemory_ThrowsArgumentException(int sharedMemory)
+    public void ConstructorWithNegativeSharedMemory_ThrowsArgumentException(int sharedMemory)
     {
         // Act & Assert
         var act = () => new AcceleratorInfo(
@@ -145,7 +145,7 @@ public class AcceleratorInfoTests
     [InlineData(0, 0)]
     [InlineData(-1, -1)]
     [InlineData(1024, 2048)]
-    public void Constructor_WithInvalidMemorySizes_ThrowsArgumentException(long totalMemory, long availableMemory)
+    public void ConstructorWithInvalidMemorySizes_ThrowsArgumentException(long totalMemory, long availableMemory)
     {
         // Act & Assert
         var act = () => new AcceleratorInfo(
@@ -163,7 +163,7 @@ public class AcceleratorInfoTests
     }
 
     [Fact]
-    public void Equals_WithSameValues_ReturnsTrue()
+    public void EqualsWithSameValues_ReturnsTrue()
     {
         // Arrange
         var info1 = CreateTestInfo();
@@ -177,7 +177,7 @@ public class AcceleratorInfoTests
     }
 
     [Fact]
-    public void Equals_WithDifferentValues_ReturnsFalse()
+    public void EqualsWithDifferentValues_ReturnsFalse()
     {
         // Arrange
         var info1 = CreateTestInfo();
@@ -191,7 +191,7 @@ public class AcceleratorInfoTests
     }
 
     [Fact]
-    public void GetHashCode_WithSameValues_ReturnsSameHash()
+    public void GetHashCodeWithSameValues_ReturnsSameHash()
     {
         // Arrange
         var info1 = CreateTestInfo();
@@ -202,7 +202,7 @@ public class AcceleratorInfoTests
     }
 
     [Fact]
-    public void ToString_ReturnsReadableRepresentation()
+    public void ToStringReturnsReadableRepresentation()
     {
         // Arrange
         var info = CreateTestInfo();

@@ -27,7 +27,7 @@ public class MemoryStressTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryLeakDetection_ManyAllocationsAndDeallocations_NoMemoryLeaks()
+    public async Task MemoryLeakDetectionManyAllocationsAndDeallocations_NoMemoryLeaks()
     {
         // Arrange
         const int iterations = 1000;
@@ -53,7 +53,7 @@ public class MemoryStressTests : IDisposable
     }
 
     [Fact]
-    public async Task HighFrequencyAllocations_RapidAllocateAndDispose_PerformsWell()
+    public async Task HighFrequencyAllocationsRapidAllocateAndDispose_PerformsWell()
     {
         // Arrange
         const int iterations = 5000;
@@ -75,7 +75,7 @@ public class MemoryStressTests : IDisposable
     }
 
     [Fact]
-    public async Task ConcurrentAllocations_MultipleThreads_ThreadSafe()
+    public async Task ConcurrentAllocationsMultipleThreads_ThreadSafe()
     {
         // Arrange
         const int threadCount = 10;
@@ -132,7 +132,7 @@ public class MemoryStressTests : IDisposable
     }
 
     [Fact]
-    public async Task ConcurrentBufferOperations_MultipleThreadsOnSameBuffer_ThreadSafe()
+    public async Task ConcurrentBufferOperationsMultipleThreadsOnSameBuffer_ThreadSafe()
     {
         // Arrange
         const int threadCount = 5;
@@ -190,7 +190,7 @@ public class MemoryStressTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryPressure_LargeNumberOfActiveBuffers_HandlesGracefully()
+    public async Task MemoryPressureLargeNumberOfActiveBuffers_HandlesGracefully()
     {
         // Arrange
         const int bufferCount = 1000;
@@ -229,7 +229,7 @@ public class MemoryStressTests : IDisposable
     }
 
     [Fact]
-    public async Task FragmentationTest_MixedSizeAllocations_HandlesFragmentation()
+    public async Task FragmentationTestMixedSizeAllocations_HandlesFragmentation()
     {
         // Arrange
         var buffers = new List<IMemoryBuffer>();
@@ -286,7 +286,7 @@ public class MemoryStressTests : IDisposable
     }
 
     [Fact]
-    public async Task ViewOperations_ManyViewsOnSameBuffer_PerformsWell()
+    public async Task ViewOperationsManyViewsOnSameBuffer_PerformsWell()
     {
         // Arrange
         const long bufferSize = 1024 * 1024;
@@ -330,7 +330,7 @@ public class MemoryStressTests : IDisposable
     }
 
     [Fact]
-    public async Task LongRunningOperations_ExtendedMemoryUsage_RemainsStable()
+    public async Task LongRunningOperationsExtendedMemoryUsage_RemainsStable()
     {
         // Arrange
         const int iterations = 100;
@@ -373,7 +373,7 @@ public class MemoryStressTests : IDisposable
     }
 
     [Fact]
-    public async Task RapidViewCreationAndDisposal_PerformanceTest()
+    public async Task RapidViewCreationAndDisposalPerformanceTest()
     {
         // Arrange
         const long bufferSize = 1024 * 1024;

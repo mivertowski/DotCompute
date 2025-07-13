@@ -31,7 +31,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public async Task InitializeAsync_ValidPlugin_InitializesSuccessfully()
+    public async Task InitializeAsyncValidPlugin_InitializesSuccessfully()
     {
         // Arrange
         var mockPlugin = CreateMockPlugin();
@@ -47,7 +47,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public async Task LoadPluginAsync_ValidPath_LoadsPlugin()
+    public async Task LoadPluginAsyncValidPath_LoadsPlugin()
     {
         // Arrange
         var mockPlugin = CreateMockPlugin();
@@ -62,7 +62,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public async Task LoadPluginAsync_LoaderThrows_ReturnsFalse()
+    public async Task LoadPluginAsyncLoaderThrows_ReturnsFalse()
     {
         // Arrange
         _loaderMock.Setup(l => l.LoadPlugin(It.IsAny<string>())).Throws<PluginLoadException>();
@@ -83,7 +83,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public async Task UnloadPluginAsync_ValidPlugin_UnloadsSuccessfully()
+    public async Task UnloadPluginAsyncValidPlugin_UnloadsSuccessfully()
     {
         // Arrange
         var mockPlugin = CreateMockPlugin();
@@ -103,7 +103,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public async Task UnloadPluginAsync_InvalidId_ReturnsFalse()
+    public async Task UnloadPluginAsyncInvalidId_ReturnsFalse()
     {
         // Act
         var result = await _manager.UnloadPluginAsync(Guid.NewGuid());
@@ -113,7 +113,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public void GetPlugin_ByType_ReturnsCorrectPlugin()
+    public void GetPluginByType_ReturnsCorrectPlugin()
     {
         // Arrange
         var mockPlugin = CreateMockPlugin();
@@ -129,7 +129,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public void GetPlugin_TypeNotFound_ReturnsNull()
+    public void GetPluginTypeNotFound_ReturnsNull()
     {
         // Act
         var plugin = _manager.GetPlugin<INonExistentPlugin>();
@@ -139,7 +139,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public void GetPluginById_ValidId_ReturnsPlugin()
+    public void GetPluginByIdValidId_ReturnsPlugin()
     {
         // Arrange
         var mockPlugin = CreateMockPlugin();
@@ -157,7 +157,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public void GetLoadedPlugins_ReturnsAllPlugins()
+    public void GetLoadedPluginsReturnsAllPlugins()
     {
         // Arrange
         var plugin1 = CreateMockPlugin();
@@ -180,7 +180,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public async Task ReloadPluginAsync_ValidPlugin_ReloadsSuccessfully()
+    public async Task ReloadPluginAsyncValidPlugin_ReloadsSuccessfully()
     {
         // Arrange
         var oldPlugin = CreateMockPlugin();
@@ -207,7 +207,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public async Task ShutdownAsync_UnloadsAllPlugins()
+    public async Task ShutdownAsyncUnloadsAllPlugins()
     {
         // Arrange
         var plugin1 = CreateMockPlugin();
@@ -230,7 +230,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public void RegisterService_ValidService_RegistersSuccessfully()
+    public void RegisterServiceValidService_RegistersSuccessfully()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -246,14 +246,14 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public async Task LoadPluginAsync_PluginWithDependencies_ResolvesCorrectly()
+    public async Task LoadPluginAsyncPluginWithDependencies_ResolvesCorrectly()
     {
         // Arrange
         var mockPlugin = CreateMockPlugin();
         var dependency = new TestService();
         
         _loaderMock.Setup(l => l.LoadPlugin(It.IsAny<string>())).Returns(mockPlugin.Object);
-        _serviceProviderMock.Setup(sp => sp.GetService(typeof(ITestService))).Returns(dependency);
+        _serviceProviderMock.Setup(sp => sp.GetService<ITestService>()).Returns(dependency);
 
         // Act
         await _manager.LoadPluginAsync("test.dll");
@@ -264,7 +264,7 @@ public class PluginManagerTests
     }
 
     [Fact]
-    public async Task InitializeAsync_PluginThrowsException_HandlesGracefully()
+    public async Task InitializeAsyncPluginThrowsException_HandlesGracefully()
     {
         // Arrange
         var mockPlugin = CreateMockPlugin();

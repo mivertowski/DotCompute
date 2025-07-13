@@ -31,7 +31,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetDefaultAccelerator_ReturnsDefaultAccelerator()
+    public async Task GetDefaultAcceleratorReturnsDefaultAccelerator()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -46,7 +46,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public void GetDefaultAccelerator_WhenNotInitialized_ThrowsException()
+    public void GetDefaultAcceleratorWhenNotInitialized_ThrowsException()
     {
         // Arrange - Don't initialize the manager
 
@@ -55,7 +55,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetAcceleratorAsync_WithValidName_ReturnsAccelerator()
+    public async Task GetAcceleratorAsyncWithValidName_ReturnsAccelerator()
     {
         // Arrange
         var cpuAccelerator = CreateMockAccelerator("CPU", AcceleratorType.CPU);
@@ -71,7 +71,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetAcceleratorAsync_WithInvalidName_ThrowsException()
+    public async Task GetAcceleratorAsyncWithInvalidName_ThrowsException()
     {
         // Arrange
         _manager.GetAcceleratorAsync("NonExistent")
@@ -88,7 +88,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    public async Task GetAcceleratorAsync_WithNullOrEmptyName_ThrowsArgumentException(string name)
+    public async Task GetAcceleratorAsyncWithNullOrEmptyName_ThrowsArgumentException(string name)
     {
         // Arrange
         _manager.GetAcceleratorAsync(name)
@@ -100,7 +100,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetAvailableAcceleratorsAsync_ReturnsAllAccelerators()
+    public async Task GetAvailableAcceleratorsAsyncReturnsAllAccelerators()
     {
         // Arrange
         var accelerators = new[]
@@ -125,7 +125,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetAvailableAcceleratorsAsync_WhenEmpty_ReturnsEmptyList()
+    public async Task GetAvailableAcceleratorsAsyncWhenEmpty_ReturnsEmptyList()
     {
         // Arrange
         _manager.GetAvailableAcceleratorsAsync()
@@ -140,7 +140,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public void RegisterAccelerator_WithValidAccelerator_Succeeds()
+    public void RegisterAcceleratorWithValidAccelerator_Succeeds()
     {
         // Arrange
         var accelerator = CreateMockAccelerator("Custom", AcceleratorType.CPU);
@@ -153,7 +153,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public void RegisterAccelerator_WithNullAccelerator_ThrowsArgumentNullException()
+    public void RegisterAcceleratorWithNullAccelerator_ThrowsArgumentNullException()
     {
         // Arrange
         _manager.When(m => m.RegisterAccelerator(Arg.Any<string>(), null!))
@@ -165,7 +165,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public void RegisterAccelerator_WithDuplicateName_ThrowsArgumentException()
+    public void RegisterAcceleratorWithDuplicateName_ThrowsArgumentException()
     {
         // Arrange
         var accelerator1 = CreateMockAccelerator("GPU", AcceleratorType.CUDA);
@@ -183,7 +183,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetAvailableAcceleratorsAsync_FiltersByType()
+    public async Task GetAvailableAcceleratorsAsyncFiltersByType()
     {
         // This test demonstrates how filtering might work in a real implementation
         var accelerators = new[]
@@ -207,7 +207,7 @@ public class AcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task DisposeAsync_DisposesAllAccelerators()
+    public async Task DisposeAsyncDisposesAllAccelerators()
     {
         // Arrange
         var accelerators = new[]

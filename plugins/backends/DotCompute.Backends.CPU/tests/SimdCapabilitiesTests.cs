@@ -24,7 +24,7 @@ public class SimdCapabilitiesTests
     }
 
     [Fact]
-    public void DetectCapabilities_ReturnsValidSummary()
+    public void DetectCapabilitiesReturnsValidSummary()
     {
         // Act
         var summary = SimdCapabilities.GetSummary();
@@ -40,7 +40,7 @@ public class SimdCapabilitiesTests
     }
 
     [Fact]
-    public void VectorSizes_AreConsistent()
+    public void VectorSizesAreConsistent()
     {
         // Act
         var vectorSizeBits = Vector<float>.Count * sizeof(float) * 8;
@@ -56,7 +56,7 @@ public class SimdCapabilitiesTests
     }
 
     [Fact]
-    public void InstructionSetSupport_IsCorrect()
+    public void InstructionSetSupportIsCorrect()
     {
         // Arrange
         var summary = SimdCapabilities.GetSummary();
@@ -94,7 +94,7 @@ public class SimdCapabilitiesTests
     }
 
     [Fact]
-    public void SimdSummary_PropertiesWork()
+    public void SimdSummaryPropertiesWork()
     {
         // Arrange
         var summary = new SimdSummary
@@ -116,7 +116,7 @@ public class SimdCapabilitiesTests
     [InlineData(128, 4)]  // SSE: 128-bit = 4 floats
     [InlineData(256, 8)]  // AVX2: 256-bit = 8 floats
     [InlineData(512, 16)] // AVX512: 512-bit = 16 floats
-    public void VectorWidth_CorrespondsToFloatCount(int vectorWidth, int expectedFloatCount)
+    public void VectorWidthCorrespondsToFloatCount(int vectorWidth, int expectedFloatCount)
     {
         // Act
         var floatCount = vectorWidth / (sizeof(float) * 8);
@@ -127,7 +127,7 @@ public class SimdCapabilitiesTests
     }
 
     [Fact]
-    public void ProcessorCount_MatchesEnvironment()
+    public void ProcessorCountMatchesEnvironment()
     {
         // Act
         var processorCount = Environment.ProcessorCount;
@@ -138,7 +138,7 @@ public class SimdCapabilitiesTests
     }
 
     [Fact]
-    public void SimdOperations_ProduceCorrectResults()
+    public void SimdOperationsProduceCorrectResults()
     {
         // Test basic SIMD operations to ensure they work correctly
         const int count = 8;

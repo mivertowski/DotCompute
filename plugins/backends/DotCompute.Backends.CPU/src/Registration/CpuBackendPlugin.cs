@@ -3,8 +3,12 @@
 
 using System;
 using System.Threading;
+using System.Threading.Tasks;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
+using DotCompute.Plugins.Core;
+using DotCompute.Plugins.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using AbstractionsAcceleratorInfo = DotCompute.Abstractions.AcceleratorInfo;
@@ -22,9 +26,161 @@ using IAccelerator = DotCompute.Abstractions.IAccelerator;
 namespace DotCompute.Backends.CPU.Registration;
 
 /// <summary>
-/// Plugin registration for the CPU backend.
+/// Plugin implementation for the CPU backend.
 /// </summary>
-public static class CpuBackendPlugin
+public sealed class CpuBackendPlugin : BackendPluginBase
+{
+    /// <inheritdoc/>
+    public override string Id => "dotcompute.backends.cpu";
+
+    /// <inheritdoc/>
+    public override string Name => "DotCompute CPU Backend";
+
+    /// <inheritdoc/>
+    public override Version Version => new(1, 0, 0);
+
+    /// <inheritdoc/>
+    public override string Description => "High-performance CPU backend with SIMD vectorization support";
+
+    /// <inheritdoc/>
+    public override string Author => "Michael Ivertowski";
+
+    /// <inheritdoc/>
+    public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable | PluginCapabilities.HotReloadable;
+
+    /// <inheritdoc/>
+    public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+    {
+        base.ConfigureServices(services, configuration);
+        
+        // Configure CPU backend options
+        services.Configure<CpuAcceleratorOptions>(configuration.GetSection("CpuBackend:Accelerator"));
+        services.Configure<CpuThreadPoolOptions>(configuration.GetSection("CpuBackend:ThreadPool"));
+        
+        // Register the CPU accelerator
+        services.TryAddSingleton<CpuAccelerator>();
+        
+        // Register as IAccelerator with a factory that includes the backend name
+        services.AddSingleton<IAccelerator>(provider =>
+        {
+            var accelerator = provider.GetRequiredService<CpuAccelerator>();
+            return new NamedAcceleratorWrapper("cpu", accelerator);
+        });
+    }
+
+    /// <inheritdoc/>
+    protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
+    {
+        Logger?.LogInformation("Initializing CPU backend plugin");
+        await base.OnInitializeAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    protected override async Task OnStartAsync(CancellationToken cancellationToken)
+    {
+        Logger?.LogInformation("Starting CPU backend plugin");
+        await base.OnStartAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    protected override async Task OnStopAsync(CancellationToken cancellationToken)
+    {
+        Logger?.LogInformation("Stopping CPU backend plugin");
+        await base.OnStopAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    protected override void OnValidate(PluginValidationResult result)
+    {
+        base.OnValidate(result);
+        
+        // Validate CPU availability
+        if (Environment.ProcessorCount <= 0)
+        {
+            result.IsValid = false;
+            result.Errors.Add("No CPU cores detected");
+        }
+        
+        // Check SIMD support
+        try
+        {
+            var simdInfo = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.GetSummary();
+            if (simdInfo.SupportedInstructionSets.Count == 0)
+            {
+                result.Warnings.Add("No SIMD instruction sets detected - performance may be reduced");
+            }
+        }
+        catch (Exception ex)
+        {
+            result.Warnings.Add($"Failed to detect SIMD capabilities: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public override string GetConfigurationSchema()
+    {
+        return @"
+{
+  ""$schema"": ""http://json-schema.org/draft-07/schema#"",
+  ""type"": ""object"",
+  ""properties"": {
+    ""CpuBackend"": {
+      ""type"": ""object"",
+      ""properties"": {
+        ""Accelerator"": {
+          ""type"": ""object"",
+          ""properties"": {
+            ""MaxWorkGroupSize"": { ""type"": ""integer"", ""minimum"": 1, ""maximum"": 65536, ""default"": 1024 },
+            ""MaxMemoryAllocation"": { ""type"": ""integer"", ""minimum"": 1048576, ""default"": 2147483648 },
+            ""EnableAutoVectorization"": { ""type"": ""boolean"", ""default"": true },
+            ""EnableNumaAwareAllocation"": { ""type"": ""boolean"", ""default"": true },
+            ""MinVectorizationWorkSize"": { ""type"": ""integer"", ""minimum"": 1, ""default"": 256 },
+            ""EnableLoopUnrolling"": { ""type"": ""boolean"", ""default"": true },
+            ""TargetVectorWidth"": { ""type"": ""integer"", ""minimum"": 0, ""default"": 0 }
+          }
+        },
+        ""ThreadPool"": {
+          ""type"": ""object"",
+          ""properties"": {
+            ""WorkerThreadCount"": { ""type"": ""integer"", ""minimum"": 1, ""default"": 0 },
+            ""EnableWorkStealing"": { ""type"": ""boolean"", ""default"": true },
+            ""EnableThreadAffinity"": { ""type"": ""boolean"", ""default"": false }
+          }
+        }
+      }
+    }
+  }
+}";
+    }
+
+    /// <inheritdoc/>
+    protected override void OnUpdateMetrics(PluginMetrics metrics)
+    {
+        base.OnUpdateMetrics(metrics);
+        
+        // Add CPU-specific metrics
+        metrics.CustomMetrics["ProcessorCount"] = Environment.ProcessorCount;
+        metrics.CustomMetrics["WorkingSet"] = Environment.WorkingSet;
+        metrics.CustomMetrics["Is64BitProcess"] = Environment.Is64BitProcess;
+        
+        // Get SIMD capabilities
+        try
+        {
+            var simdInfo = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.GetSummary();
+            metrics.CustomMetrics["SimdVectorWidth"] = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.PreferredVectorWidth;
+            metrics.CustomMetrics["SimdInstructionSets"] = simdInfo.SupportedInstructionSets.Count;
+        }
+        catch
+        {
+            // Ignore errors in metrics collection
+        }
+    }
+}
+
+/// <summary>
+/// Static extension methods for service registration (backward compatibility).
+/// </summary>
+public static class CpuBackendPluginExtensions
 {
     /// <summary>
     /// Adds the CPU backend to the service collection.

@@ -128,7 +128,7 @@ public sealed class KernelParameter
     /// <summary>
     /// Gets the access mode for buffer parameters.
     /// </summary>
-    public MemoryAccess Access { get; init; } = MemoryAccess.ReadWrite;
+    public Memory.MemoryAccess Access { get; init; } = Memory.MemoryAccess.ReadWrite;
 }
 
 /// <summary>
@@ -157,26 +157,6 @@ public enum KernelParameterType
     Sampler
 }
 
-/// <summary>
-/// Memory access mode.
-/// </summary>
-public enum MemoryAccess
-{
-    /// <summary>
-    /// Read-only access.
-    /// </summary>
-    ReadOnly,
-
-    /// <summary>
-    /// Write-only access.
-    /// </summary>
-    WriteOnly,
-
-    /// <summary>
-    /// Read-write access.
-    /// </summary>
-    ReadWrite
-}
 
 /// <summary>
 /// Compilation options for kernels.
@@ -241,14 +221,39 @@ public enum OptimizationLevel
 public interface ICompiledKernel : IAsyncDisposable
 {
     /// <summary>
-    /// Gets the kernel definition.
+    /// Gets the kernel identifier.
     /// </summary>
-    public KernelDefinition Definition { get; }
+    string Id { get; }
 
     /// <summary>
-    /// Executes the kernel.
+    /// Gets the kernel name.
     /// </summary>
-    public ValueTask ExecuteAsync(
+    string Name { get; }
+
+    /// <summary>
+    /// Gets the kernel source.
+    /// </summary>
+    string Source { get; }
+
+    /// <summary>
+    /// Gets the entry point function name.
+    /// </summary>
+    string EntryPoint { get; }
+
+    /// <summary>
+    /// Gets the kernel definition.
+    /// </summary>
+    KernelDefinition Definition { get; }
+
+    /// <summary>
+    /// Gets whether the kernel is valid and ready for execution.
+    /// </summary>
+    bool IsValid { get; }
+
+    /// <summary>
+    /// Executes the kernel with the given context.
+    /// </summary>
+    ValueTask ExecuteAsync(
         KernelExecutionContext context,
         CancellationToken cancellationToken = default);
 }
@@ -274,7 +279,7 @@ public sealed class KernelExecutionContext
     public required IReadOnlyList<object> Arguments { get; init; }
 
     /// <summary>
-    /// Gets or sets execution flags.
+    /// Gets or sets execution options.
     /// </summary>
     public KernelExecutionOption Options { get; init; }
 }

@@ -13,7 +13,7 @@ namespace DotCompute.Core.Tests;
 public class ErrorHandlingTests
 {
     [Fact]
-    public void AcceleratorInfo_WithNullName_ShouldThrowArgumentException()
+    public void AcceleratorInfoWithNullName_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => 
@@ -21,7 +21,7 @@ public class ErrorHandlingTests
     }
 
     [Fact]
-    public void AcceleratorInfo_WithEmptyName_ShouldThrowArgumentException()
+    public void AcceleratorInfoWithEmptyName_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => 
@@ -29,7 +29,7 @@ public class ErrorHandlingTests
     }
 
     [Fact]
-    public void AcceleratorInfo_WithWhitespaceName_ShouldThrowArgumentException()
+    public void AcceleratorInfoWithWhitespaceName_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => 
@@ -37,7 +37,7 @@ public class ErrorHandlingTests
     }
 
     [Fact]
-    public void AcceleratorInfo_WithNullVersion_ShouldThrowArgumentException()
+    public void AcceleratorInfoWithNullVersion_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => 
@@ -45,7 +45,7 @@ public class ErrorHandlingTests
     }
 
     [Fact]
-    public void AcceleratorInfo_WithNegativeMemorySize_ShouldThrowArgumentOutOfRangeException()
+    public void AcceleratorInfoWithNegativeMemorySize_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -56,7 +56,7 @@ public class ErrorHandlingTests
     [InlineData(long.MaxValue)]
     [InlineData(long.MaxValue - 1)]
     [InlineData(1024L * 1024L * 1024L * 1024L)] // 1TB
-    public void AcceleratorInfo_WithExtremeMemorySizes_ShouldHandleGracefully(long memorySize)
+    public void AcceleratorInfoWithExtremeMemorySizes_ShouldHandleGracefully(long memorySize)
     {
         // Arrange & Act
         var info = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", memorySize);
@@ -67,7 +67,7 @@ public class ErrorHandlingTests
     }
 
     [Fact]
-    public void AcceleratorInfo_Equality_WithNullComparison_ShouldReturnFalse()
+    public void AcceleratorInfoEquality_WithNullComparison_ShouldReturnFalse()
     {
         // Arrange
         var info = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024);
@@ -79,7 +79,7 @@ public class ErrorHandlingTests
     }
 
     [Fact]
-    public void AcceleratorInfo_GetHashCode_WithSameValues_ShouldBeEqual()
+    public void AcceleratorInfoGetHashCode_WithSameValues_ShouldBeEqual()
     {
         // Arrange
         var info1 = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024);
@@ -90,7 +90,7 @@ public class ErrorHandlingTests
     }
 
     [Fact]
-    public void AcceleratorInfo_GetHashCode_WithDifferentValues_ShouldBeDifferent()
+    public void AcceleratorInfoGetHashCode_WithDifferentValues_ShouldBeDifferent()
     {
         // Arrange
         var info1 = new AcceleratorInfo(AcceleratorType.CPU, "Test1", "1.0", 1024);
@@ -101,7 +101,7 @@ public class ErrorHandlingTests
     }
 
     [Fact]
-    public void AcceleratorInfo_ToString_ShouldContainAllProperties()
+    public void AcceleratorInfoToString_ShouldContainAllProperties()
     {
         // Arrange
         var info = new AcceleratorInfo(AcceleratorType.GPU, "TestGPU", "2.1", 2048);
@@ -123,21 +123,21 @@ public class ErrorHandlingTests
 public class PipelineErrorHandlingTests
 {
     [Fact]
-    public void KernelPipeline_WithNullStages_ShouldThrowArgumentNullException()
+    public void KernelPipelineWithNullStages_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => new KernelPipeline(null!));
     }
 
     [Fact]
-    public void KernelPipeline_WithEmptyStages_ShouldThrowArgumentException()
+    public void KernelPipelineWithEmptyStages_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => new KernelPipeline(Array.Empty<IPipelineStage>()));
     }
 
     [Fact]
-    public async Task KernelPipeline_ExecuteAsync_WithCancellation_ShouldThrowOperationCanceledException()
+    public async Task KernelPipelineExecuteAsync_WithCancellation_ShouldThrowOperationCanceledException()
     {
         // Arrange
         var stages = new IPipelineStage[] { new TestPipelineStage() };
@@ -151,7 +151,7 @@ public class PipelineErrorHandlingTests
     }
 
     [Fact]
-    public async Task KernelPipeline_ExecuteAsync_WithNullInput_ShouldThrowArgumentNullException()
+    public async Task KernelPipelineExecuteAsync_WithNullInput_ShouldThrowArgumentNullException()
     {
         // Arrange
         var stages = new IPipelineStage[] { new TestPipelineStage() };
@@ -163,7 +163,7 @@ public class PipelineErrorHandlingTests
     }
 
     [Fact]
-    public void PipelineMetrics_WithNegativeValues_ShouldThrowArgumentOutOfRangeException()
+    public void PipelineMetricsWithNegativeValues_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -171,7 +171,7 @@ public class PipelineErrorHandlingTests
     }
 
     [Fact]
-    public void PipelineMetrics_ExportPrometheus_WithInvalidMetrics_ShouldHandleGracefully()
+    public void PipelineMetricsExportPrometheus_WithInvalidMetrics_ShouldHandleGracefully()
     {
         // Arrange
         var metrics = new PipelineMetrics
@@ -189,7 +189,7 @@ public class PipelineErrorHandlingTests
     }
 
     [Fact]
-    public void PipelineMetrics_ExportJson_WithExtremeValues_ShouldSerialize()
+    public void PipelineMetricsExportJson_WithExtremeValues_ShouldSerialize()
     {
         // Arrange
         var metrics = new PipelineMetrics
@@ -208,7 +208,7 @@ public class PipelineErrorHandlingTests
     }
 
     [Fact]
-    public void PipelineOptimizer_CreateOptimizedPipeline_WithNullStages_ShouldThrowArgumentNullException()
+    public void PipelineOptimizerCreateOptimizedPipeline_WithNullStages_ShouldThrowArgumentNullException()
     {
         // Arrange
         var optimizer = new PipelineOptimizer();
@@ -219,7 +219,7 @@ public class PipelineErrorHandlingTests
     }
 
     [Fact]
-    public void PipelineOptimizer_CreateOptimizedPipeline_WithSingleStage_ShouldReturnOptimized()
+    public void PipelineOptimizerCreateOptimizedPipeline_WithSingleStage_ShouldReturnOptimized()
     {
         // Arrange
         var optimizer = new PipelineOptimizer();
@@ -234,7 +234,7 @@ public class PipelineErrorHandlingTests
     }
 
     [Fact]
-    public void PipelineOptimizer_CreateParallelStage_WithNullOperations_ShouldThrowArgumentNullException()
+    public void PipelineOptimizerCreateParallelStage_WithNullOperations_ShouldThrowArgumentNullException()
     {
         // Arrange
         var optimizer = new PipelineOptimizer();
@@ -245,7 +245,7 @@ public class PipelineErrorHandlingTests
     }
 
     [Fact]
-    public void PipelineErrors_InvalidStageConfiguration_ShouldBeHandled()
+    public void PipelineErrorsInvalidStageConfiguration_ShouldBeHandled()
     {
         // Arrange & Act
         var error = new PipelineErrors.InvalidStageConfiguration("Test stage", "Test error");
@@ -258,7 +258,7 @@ public class PipelineErrorHandlingTests
     }
 
     [Fact]
-    public void PipelineErrors_StageExecutionFailure_WithInnerException_ShouldPreserveStack()
+    public void PipelineErrorsStageExecutionFailure_WithInnerException_ShouldPreserveStack()
     {
         // Arrange
         var innerException = new InvalidOperationException("Inner error");
@@ -279,7 +279,7 @@ public class PipelineErrorHandlingTests
 public class ResourceManagementErrorTests
 {
     [Fact]
-    public void KernelDefinition_WithNullSource_ShouldThrowArgumentNullException()
+    public void KernelDefinitionWithNullSource_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => 
@@ -287,7 +287,7 @@ public class ResourceManagementErrorTests
     }
 
     [Fact]
-    public void KernelDefinition_WithNullOptions_ShouldThrowArgumentNullException()
+    public void KernelDefinitionWithNullOptions_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => 
@@ -295,7 +295,7 @@ public class ResourceManagementErrorTests
     }
 
     [Fact]
-    public void KernelDefinition_WithEmptyName_ShouldThrowArgumentException()
+    public void KernelDefinitionWithEmptyName_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => 
@@ -303,35 +303,35 @@ public class ResourceManagementErrorTests
     }
 
     [Fact]
-    public void TextKernelSource_WithNullSource_ShouldThrowArgumentNullException()
+    public void TextKernelSourceWithNullSource_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => new TextKernelSource(null!));
     }
 
     [Fact]
-    public void TextKernelSource_WithEmptySource_ShouldThrowArgumentException()
+    public void TextKernelSourceWithEmptySource_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => new TextKernelSource(""));
     }
 
     [Fact]
-    public void BytecodeKernelSource_WithNullBytecode_ShouldThrowArgumentNullException()
+    public void BytecodeKernelSourceWithNullBytecode_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => new BytecodeKernelSource(null!));
     }
 
     [Fact]
-    public void BytecodeKernelSource_WithEmptyBytecode_ShouldThrowArgumentException()
+    public void BytecodeKernelSourceWithEmptyBytecode_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => new BytecodeKernelSource(Array.Empty<byte>()));
     }
 
     [Fact]
-    public void CompilationOptions_WithNullDefines_ShouldHandleGracefully()
+    public void CompilationOptionsWithNullDefines_ShouldHandleGracefully()
     {
         // Arrange & Act
         var options = new CompilationOptions { Defines = null };
@@ -342,7 +342,7 @@ public class ResourceManagementErrorTests
     }
 
     [Fact]
-    public void CompilationOptions_WithEmptyDefines_ShouldHandleGracefully()
+    public void CompilationOptionsWithEmptyDefines_ShouldHandleGracefully()
     {
         // Arrange & Act
         var options = new CompilationOptions { Defines = new Dictionary<string, string>() };
@@ -356,7 +356,7 @@ public class ResourceManagementErrorTests
     [InlineData(OptimizationLevel.None)]
     [InlineData(OptimizationLevel.Basic)]
     [InlineData(OptimizationLevel.Aggressive)]
-    public void CompilationOptions_WithAllOptimizationLevels_ShouldBeSupported(OptimizationLevel level)
+    public void CompilationOptionsWithAllOptimizationLevels_ShouldBeSupported(OptimizationLevel level)
     {
         // Arrange & Act
         var options = new CompilationOptions { OptimizationLevel = level };
@@ -392,7 +392,7 @@ internal class TestPipelineStage : IPipelineStage
 public class ConcurrencyTests
 {
     [Fact]
-    public void AcceleratorInfo_ConcurrentAccess_ShouldBeThreadSafe()
+    public void AcceleratorInfoConcurrentAccess_ShouldBeThreadSafe()
     {
         // Arrange
         var info = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024);
@@ -429,7 +429,7 @@ public class ConcurrencyTests
     }
 
     [Fact]
-    public async Task KernelPipeline_ConcurrentExecution_ShouldHandleMultipleRequests()
+    public async Task KernelPipelineConcurrentExecution_ShouldHandleMultipleRequests()
     {
         // Arrange
         var stages = new IPipelineStage[] { new TestPipelineStage() };
@@ -455,7 +455,7 @@ public class ConcurrencyTests
     }
 
     [Fact]
-    public void PipelineMetrics_ConcurrentUpdates_ShouldBeSafe()
+    public void PipelineMetricsConcurrentUpdates_ShouldBeSafe()
     {
         // Arrange
         var metrics = new PipelineMetrics();
@@ -508,7 +508,7 @@ public class ConcurrencyTests
 public class PerformanceTests
 {
     [Fact]
-    public void AcceleratorInfo_Creation_ShouldBePerformant()
+    public void AcceleratorInfoCreation_ShouldBePerformant()
     {
         // Arrange
         const int iterations = 10000;
@@ -529,7 +529,7 @@ public class PerformanceTests
     }
 
     [Fact]
-    public async Task KernelPipeline_HighVolumeExecution_ShouldMaintainPerformance()
+    public async Task KernelPipelineHighVolumeExecution_ShouldMaintainPerformance()
     {
         // Arrange
         var stages = new IPipelineStage[] { new TestPipelineStage() };
@@ -551,7 +551,7 @@ public class PerformanceTests
     }
 
     [Fact]
-    public void PipelineMetrics_SerializationPerformance_ShouldBeAcceptable()
+    public void PipelineMetricsSerializationPerformance_ShouldBeAcceptable()
     {
         // Arrange
         var metrics = new PipelineMetrics

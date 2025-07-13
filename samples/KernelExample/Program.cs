@@ -102,7 +102,7 @@ namespace KernelExample
         /// The source generator will create optimized implementations for this method.
         /// </summary>
         [Kernel(
-            Backends = KernelBackends.CPU | KernelBackends.CUDA,
+            Backends = KernelBackends.CPU,
             VectorSize = 8,
             IsParallel = true,
             Optimizations = OptimizationHints.AggressiveInlining | OptimizationHints.Vectorize)]
@@ -118,7 +118,7 @@ namespace KernelExample
         /// Performs multiply-add operation: result = a * b + c
         /// </summary>
         [Kernel(
-            Backends = KernelBackends.All,
+            Backends = KernelBackends.CPU,
             VectorSize = 8,
             IsParallel = true,
             MemoryPattern = MemoryAccessPattern.Sequential)]
@@ -134,7 +134,7 @@ namespace KernelExample
         /// Computes dot product of two vectors.
         /// </summary>
         [Kernel(
-            Backends = KernelBackends.CPU | KernelBackends.CUDA,
+            Backends = KernelBackends.CPU,
             VectorSize = 8,
             Optimizations = OptimizationHints.All)]
         public static float DotProduct(float* a, float* b, int length)
@@ -151,7 +151,7 @@ namespace KernelExample
         /// Applies ReLU activation function.
         /// </summary>
         [Kernel(
-            Backends = KernelBackends.All,
+            Backends = KernelBackends.CPU,
             VectorSize = 16,
             IsParallel = true)]
         public static void ReLU(float* input, float* output, int length)

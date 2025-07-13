@@ -32,7 +32,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task InitializeAsync_ShouldDiscoverCpuAccelerator()
+    public async Task InitializeAsyncShouldDiscoverCpuAccelerator()
     {
         // Act
         await _manager.InitializeAsync();
@@ -44,7 +44,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetDefaultAcceleratorAsync_ShouldReturnCpuAccelerator()
+    public async Task GetDefaultAcceleratorAsyncShouldReturnCpuAccelerator()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -61,7 +61,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetAcceleratorById_WithValidId_ShouldReturnAccelerator()
+    public async Task GetAcceleratorByIdWithValidId_ShouldReturnAccelerator()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -76,7 +76,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetAcceleratorById_WithInvalidId_ShouldReturnNull()
+    public async Task GetAcceleratorByIdWithInvalidId_ShouldReturnNull()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -89,7 +89,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task GetAcceleratorsByType_ShouldReturnCpuAccelerators()
+    public async Task GetAcceleratorsByTypeShouldReturnCpuAccelerators()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -104,7 +104,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task SelectBest_WithCpuPreference_ShouldReturnCpuAccelerator()
+    public async Task SelectBestWithCpuPreference_ShouldReturnCpuAccelerator()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -124,7 +124,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task SelectBest_WithImpossibleRequirements_ShouldReturnNull()
+    public async Task SelectBestWithImpossibleRequirements_ShouldReturnNull()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -142,7 +142,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task CreateContext_ShouldCreateValidContext()
+    public async Task CreateContextShouldCreateValidContext()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -157,7 +157,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task RefreshAsync_ShouldRediscoverAccelerators()
+    public async Task RefreshAsyncShouldRediscoverAccelerators()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -172,7 +172,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task RegisterProvider_ShouldAddNewProvider()
+    public async Task RegisterProviderShouldAddNewProvider()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -188,7 +188,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ConcurrentAccess_ShouldBeThreadSafe()
+    public async Task ConcurrentAccessShouldBeThreadSafe()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -217,7 +217,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task AcceleratorMemoryManager_ShouldWorkCorrectly()
+    public async Task AcceleratorMemoryManagerShouldWorkCorrectly()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -247,7 +247,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task AcceleratorCapabilities_ShouldBePopulated()
+    public async Task AcceleratorCapabilitiesShouldBePopulated()
     {
         // Arrange
         await _manager.InitializeAsync();
@@ -266,7 +266,7 @@ public class ProductionAcceleratorManagerTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task KernelCompilation_ShouldWork()
+    public async Task KernelCompilationShouldWork()
     {
         // Arrange
         await _manager.InitializeAsync();

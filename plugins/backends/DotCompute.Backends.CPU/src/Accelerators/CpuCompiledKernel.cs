@@ -21,6 +21,8 @@ using CoreKernelDefinition = DotCompute.Core.KernelDefinition;
 using CoreICompiledKernel = DotCompute.Core.ICompiledKernel;
 using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 using IMemoryBuffer = DotCompute.Abstractions.IMemoryBuffer;
+using TextKernelSource = DotCompute.Core.TextKernelSource;
+using BytecodeKernelSource = DotCompute.Core.BytecodeKernelSource;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -35,6 +37,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     private readonly ILogger _logger;
     private readonly SimdCodeGenerator _codeGenerator;
     private readonly SimdKernelExecutor? _kernelExecutor;
+    private Delegate? _compiledDelegate;
     private long _executionCount;
     private double _totalExecutionTimeMs;
     private int _disposed;
@@ -81,6 +84,27 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     public CoreKernelDefinition Definition => _definition;
 
     public string Name => _definition.Name;
+
+    public string Id => $"{_definition.Name}_{_definition.GetHashCode():X8}";
+
+    public string Source => _definition.Source switch
+    {
+        TextKernelSource textSource => textSource.Code,
+        BytecodeKernelSource => "[Bytecode]",
+        _ => "[Unknown]"
+    };
+
+    public string EntryPoint => _definition.Name;
+
+    public bool IsValid => _disposed == 0;
+
+    /// <summary>
+    /// Sets the compiled delegate for direct kernel execution.
+    /// </summary>
+    public void SetCompiledDelegate(Delegate compiledDelegate)
+    {
+        _compiledDelegate = compiledDelegate ?? throw new ArgumentNullException(nameof(compiledDelegate));
+    }
 
     public async ValueTask ExecuteAsync(
         KernelArguments arguments,
@@ -217,7 +241,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         }
     }
 
-    private static void ExecuteScalarWorkItems(
+    private void ExecuteScalarWorkItems(
         VectorizedExecutionContext context,
         long startIndex,
         long endIndex)
@@ -533,7 +557,33 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         return total;
     }
 
-    private static void ExecuteSingleWorkItem(CoreKernelExecutionContext context, long[] workItemId)
+    private void ExecuteSingleWorkItem(CoreKernelExecutionContext context, long[] workItemId)
+    {
+        // If we have a compiled delegate, use it
+        if (_compiledDelegate != null)
+        {
+            try
+            {
+                // Prepare arguments for the delegate
+                var delegateArgs = new object[context.Arguments.Count + 1];
+                context.Arguments.CopyTo(delegateArgs, 0);
+                delegateArgs[delegateArgs.Length - 1] = workItemId;
+                
+                // Invoke the compiled kernel
+                _compiledDelegate.DynamicInvoke(delegateArgs);
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Failed to execute compiled delegate, falling back to default implementation");
+            }
+        }
+        
+        // Default implementation
+        ExecuteSingleWorkItemDefault(context, workItemId);
+    }
+    
+    private static void ExecuteSingleWorkItemDefault(CoreKernelExecutionContext context, long[] workItemId)
     {
         // Extract arguments based on their types
         var args = context.Arguments;

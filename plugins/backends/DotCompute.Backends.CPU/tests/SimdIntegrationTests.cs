@@ -27,7 +27,7 @@ public class SimdIntegrationTests
     }
 
     [Fact]
-    public void SimdCapabilities_AreDetectedCorrectly()
+    public void SimdCapabilitiesAreDetectedCorrectly()
     {
         var capabilities = SimdCapabilities.GetSummary();
         
@@ -52,7 +52,7 @@ public class SimdIntegrationTests
     }
 
     [Fact]
-    public void FmaImplementation_WorksWithExistingInfrastructure()
+    public void FmaImplementationWorksWithExistingInfrastructure()
     {
         const int size = 1000;
         var a = new float[size];
@@ -92,7 +92,7 @@ public class SimdIntegrationTests
     }
 
     [Fact]
-    public void IntegerSimd_IntegratesWithCpuBackend()
+    public void IntegerSimdIntegratesWithCpuBackend()
     {
         const int size = 2000;
         var a = new int[size];
@@ -129,7 +129,7 @@ public class SimdIntegrationTests
     }
 
     [Fact]
-    public void ArmNeonSupport_WorksOnArmPlatforms()
+    public void ArmNeonSupportWorksOnArmPlatforms()
     {
         if (RuntimeInformation.ProcessArchitecture != Architecture.Arm64)
         {
@@ -189,7 +189,7 @@ public class SimdIntegrationTests
     }
 
     [Fact]
-    public void GatherScatterOperations_WorkWithModernHardware()
+    public void GatherScatterOperationsWorkWithModernHardware()
     {
         if (!Avx2.IsSupported)
         {
@@ -257,7 +257,7 @@ public class SimdIntegrationTests
     }
 
     [Fact]
-    public void ConditionalSelection_PerformsBranchlessOperations()
+    public void ConditionalSelectionPerformsBranchlessOperations()
     {
         const int size = 1000;
         var condition = new float[size];
@@ -297,7 +297,7 @@ public class SimdIntegrationTests
     }
 
     [Fact]
-    public void MatrixMultiplication_AchievesLinearAlgebraPerformance()
+    public void MatrixMultiplicationAchievesLinearAlgebraPerformance()
     {
         const int size = 64; // Small matrix for validation
         var a = new float[size * size];
@@ -346,7 +346,7 @@ public class SimdIntegrationTests
     }
 
     [Fact]
-    public void HorizontalReduction_ProducesCorrectResults()
+    public void HorizontalReductionProducesCorrectResults()
     {
         const int size = 10000;
         var data = new float[size];
@@ -380,7 +380,7 @@ public class SimdIntegrationTests
     }
 
     [Fact]
-    public void SimdRoadmapCompletion_MeetsAllTargets()
+    public void SimdRoadmapCompletionMeetsAllTargets()
     {
         _output.WriteLine("=== SIMD Roadmap Completion Validation ===");
 

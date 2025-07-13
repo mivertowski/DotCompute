@@ -37,6 +37,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
     <ProjectReference Include="..\..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\DotCompute.Plugins\DotCompute.Plugins.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,6 +45,8 @@
     <PackageReference Include="System.Threading.Channels" />
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
   </ItemGroup>
 
 </Project>

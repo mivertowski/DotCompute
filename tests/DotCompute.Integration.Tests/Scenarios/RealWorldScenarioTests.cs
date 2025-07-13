@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Compute;
-using DotCompute.Core.Memory;
+using DotCompute.Core;
+using DotCompute.Memory;
 using DotCompute.Integration.Tests.Fixtures;
 using FluentAssertions;
 using SixLabors.ImageSharp;
@@ -22,7 +22,7 @@ public class RealWorldScenarioTests
     }
 
     [Fact]
-    public async Task Image_Processing_Pipeline_Should_Work_End_To_End()
+    public async Task ImageProcessing_Pipeline_Should_Work_End_To_End()
     {
         // Arrange - Create a simple test image
         const int width = 256;
@@ -141,7 +141,7 @@ public class RealWorldScenarioTests
     }
 
     [Fact]
-    public async Task Scientific_Computing_Monte_Carlo_Simulation()
+    public async Task ScientificComputing_Monte_Carlo_Simulation()
     {
         // Monte Carlo estimation of π using random points in a unit circle
         const int numSamples = 1000000;
@@ -231,7 +231,7 @@ public class RealWorldScenarioTests
     }
 
     [Fact]
-    public async Task Machine_Learning_Matrix_Operations_Pipeline()
+    public async Task MachineLearning_Matrix_Operations_Pipeline()
     {
         // Simulate a simple neural network forward pass with matrix operations
         const int inputSize = 784;   // 28x28 image
@@ -380,7 +380,7 @@ public class RealWorldScenarioTests
     }
 
     [Fact]
-    public async Task Cross_Platform_Compatibility_Test()
+    public async Task CrossPlatform_Compatibility_Test()
     {
         // Test the same computation across different backends and verify consistency
         const string testKernel = @"

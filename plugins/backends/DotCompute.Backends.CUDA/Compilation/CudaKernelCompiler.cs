@@ -9,8 +9,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using DotCompute.Core.Abstractions;
-using DotCompute.Core.Abstractions.Compilation;
+using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 

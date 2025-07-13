@@ -5,7 +5,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using DotCompute.Backends.CUDA;
-using DotCompute.Core.Abstractions;
+using DotCompute.Abstractions;
 using FluentAssertions;
 using Xunit;
 
@@ -28,7 +28,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public void CudaDeviceMemory_Creation_ValidatesParameters()
+    public void CudaDeviceMemoryCreation_ValidatesParameters()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 
@@ -44,7 +44,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public void CudaDeviceMemory_Properties_ReturnCorrectValues()
+    public void CudaDeviceMemoryProperties_ReturnCorrectValues()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 
@@ -58,7 +58,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public void CudaDeviceMemory_Dispose_DisposesCorrectly()
+    public void CudaDeviceMemoryDispose_DisposesCorrectly()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 
@@ -78,7 +78,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public async Task MemoryOperations_AfterDispose_ThrowException()
+    public async Task MemoryOperationsAfterDispose_ThrowException()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 
@@ -96,7 +96,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public async Task CopyOperations_DifferentDataTypes_WorkCorrectly()
+    public async Task CopyOperationsDifferentDataTypes_WorkCorrectly()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 
@@ -133,7 +133,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public async Task MemoryCopy_PartialCopy_WorksCorrectly()
+    public async Task MemoryCopyPartialCopy_WorksCorrectly()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 
@@ -164,7 +164,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public async Task MemoryCopy_WithOffset_WorksCorrectly()
+    public async Task MemoryCopyWithOffset_WorksCorrectly()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 
@@ -193,7 +193,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public void MemoryAllocation_Alignment_IsCorrect()
+    public void MemoryAllocationAlignment_IsCorrect()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 
@@ -215,7 +215,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public async Task ConcurrentMemoryOperations_WorkCorrectly()
+    public async Task ConcurrentMemoryOperationsWorkCorrectly()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 
@@ -252,7 +252,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public void MemoryPressure_AllocationAndDeallocation_HandlesCorrectly()
+    public void MemoryPressureAllocationAndDeallocation_HandlesCorrectly()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 
@@ -307,7 +307,7 @@ public class CudaMemoryTests : IDisposable
     }
 
     [SkippableFact]
-    public async Task ZeroCopy_PinnedMemory_WorksCorrectly()
+    public async Task ZeroCopyPinnedMemory_WorksCorrectly()
     {
         Skip.IfNot(_isCudaAvailable, "CUDA not available");
 

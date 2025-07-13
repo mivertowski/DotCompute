@@ -4,17 +4,182 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
+using DotCompute.Plugins.Core;
+using DotCompute.Plugins.Interfaces;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace DotCompute.Backends.Metal.Registration;
 
 /// <summary>
-/// Plugin registration for the Metal backend.
+/// Plugin implementation for the Metal backend.
 /// </summary>
-public static class MetalBackendPlugin
+public sealed class MetalBackendPlugin : BackendPluginBase
+{
+    /// <inheritdoc/>
+    public override string Id => "dotcompute.backends.metal";
+
+    /// <inheritdoc/>
+    public override string Name => "DotCompute Metal Backend";
+
+    /// <inheritdoc/>
+    public override Version Version => new(1, 0, 0);
+
+    /// <inheritdoc/>
+    public override string Description => "Apple Metal GPU backend for macOS and iOS platforms";
+
+    /// <inheritdoc/>
+    public override string Author => "Michael Ivertowski";
+
+    /// <inheritdoc/>
+    public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
+
+    /// <inheritdoc/>
+    public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+    {
+        base.ConfigureServices(services, configuration);
+        
+        // Check platform support
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            throw new PlatformNotSupportedException("Metal backend is only supported on macOS and iOS platforms.");
+        }
+        
+        // Configure Metal backend options
+        services.Configure<MetalAcceleratorOptions>(configuration.GetSection("MetalBackend:Accelerator"));
+        
+        // Register the Metal accelerator
+        services.TryAddSingleton<MetalAccelerator>();
+        
+        // Register as IAccelerator with a factory that includes the backend name
+        services.AddSingleton<IAccelerator>(provider =>
+        {
+            var accelerator = provider.GetRequiredService<MetalAccelerator>();
+            return new NamedAcceleratorWrapper("metal", accelerator);
+        });
+    }
+
+    /// <inheritdoc/>
+    protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
+    {
+        Logger?.LogInformation("Initializing Metal backend plugin");
+        await base.OnInitializeAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    protected override async Task OnStartAsync(CancellationToken cancellationToken)
+    {
+        Logger?.LogInformation("Starting Metal backend plugin");
+        await base.OnStartAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    protected override async Task OnStopAsync(CancellationToken cancellationToken)
+    {
+        Logger?.LogInformation("Stopping Metal backend plugin");
+        await base.OnStopAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <inheritdoc/>
+    protected override void OnValidate(PluginValidationResult result)
+    {
+        base.OnValidate(result);
+        
+        // Validate platform support
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            result.IsValid = false;
+            result.Errors.Add("Metal backend requires macOS or iOS platform");
+        }
+        
+        // Check Metal device availability
+        try
+        {
+            var device = DotCompute.Backends.Metal.Native.MetalNative.CreateSystemDefaultDevice();
+            if (device == IntPtr.Zero)
+            {
+                result.IsValid = false;
+                result.Errors.Add("No Metal-capable devices found");
+            }
+            else
+            {
+                DotCompute.Backends.Metal.Native.MetalNative.ReleaseDevice(device);
+            }
+        }
+        catch (Exception ex)
+        {
+            result.IsValid = false;
+            result.Errors.Add($"Failed to initialize Metal device: {ex.Message}");
+        }
+    }
+
+    /// <inheritdoc/>
+    public override string GetConfigurationSchema()
+    {
+        return @"
+{
+  ""$schema"": ""http://json-schema.org/draft-07/schema#"",
+  ""type"": ""object"",
+  ""properties"": {
+    ""MetalBackend"": {
+      ""type"": ""object"",
+      ""properties"": {
+        ""Accelerator"": {
+          ""type"": ""object"",
+          ""properties"": {
+            ""MaxMemoryAllocation"": { ""type"": ""integer"", ""minimum"": 1048576, ""default"": 4294967296 },
+            ""MaxThreadgroupSize"": { ""type"": ""integer"", ""minimum"": 1, ""maximum"": 1024, ""default"": 1024 },
+            ""PreferIntegratedGpu"": { ""type"": ""boolean"", ""default"": false },
+            ""EnableMetalPerformanceShaders"": { ""type"": ""boolean"", ""default"": true },
+            ""EnableGpuFamilySpecialization"": { ""type"": ""boolean"", ""default"": true },
+            ""CommandBufferCacheSize"": { ""type"": ""integer"", ""minimum"": 1, ""maximum"": 256, ""default"": 16 }
+          }
+        }
+      }
+    }
+  }
+}";
+    }
+
+    /// <inheritdoc/>
+    protected override void OnUpdateMetrics(PluginMetrics metrics)
+    {
+        base.OnUpdateMetrics(metrics);
+        
+        // Add Metal-specific metrics
+        metrics.CustomMetrics["Platform"] = "macOS";
+        metrics.CustomMetrics["Architecture"] = RuntimeInformation.ProcessArchitecture.ToString();
+        
+        // Get Metal device information if available
+        try
+        {
+            var device = DotCompute.Backends.Metal.Native.MetalNative.CreateSystemDefaultDevice();
+            if (device != IntPtr.Zero)
+            {
+                var deviceInfo = DotCompute.Backends.Metal.Native.MetalNative.GetDeviceInfo(device);
+                metrics.CustomMetrics["MetalDeviceRegistryID"] = deviceInfo.RegistryID;
+                metrics.CustomMetrics["MetalDeviceHasUnifiedMemory"] = deviceInfo.HasUnifiedMemory;
+                metrics.CustomMetrics["MetalDeviceIsLowPower"] = deviceInfo.IsLowPower;
+                metrics.CustomMetrics["MetalDeviceMaxThreadgroupSize"] = deviceInfo.MaxThreadgroupSize;
+                
+                DotCompute.Backends.Metal.Native.MetalNative.ReleaseDevice(device);
+            }
+        }
+        catch
+        {
+            // Ignore errors in metrics collection
+        }
+    }
+}
+
+/// <summary>
+/// Static extension methods for service registration (backward compatibility).
+/// </summary>
+public static class MetalBackendPluginExtensions
 {
     /// <summary>
     /// Adds the Metal backend to the service collection.

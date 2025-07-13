@@ -19,7 +19,7 @@ public class SimplePipelineTests
     }
 
     [Fact]
-    public async Task Simple_Data_Processing_Pipeline_Should_Work()
+    public async Task SimpleData_Processing_Pipeline_Should_Work()
     {
         // Arrange - Create test data for a simple processing pipeline
         var inputData = TestDataGenerator.GenerateSequentialFloats(1000, 1.0f, 1.0f);
@@ -52,7 +52,7 @@ public class SimplePipelineTests
     }
 
     [Fact]
-    public async Task Multi_Stage_Pipeline_Should_Coordinate_Properly()
+    public async Task MultiStage_Pipeline_Should_Coordinate_Properly()
     {
         // Test a multi-stage pipeline with different operations
         var stages = new[]
@@ -92,7 +92,7 @@ public class SimplePipelineTests
     }
 
     [Fact]
-    public async Task Error_Handling_In_Pipeline_Should_Be_Robust()
+    public async Task ErrorHandling_In_Pipeline_Should_Be_Robust()
     {
         // Test error handling scenarios
         var testData = TestDataGenerator.GenerateRandomFloats(100);
@@ -116,7 +116,7 @@ public class SimplePipelineTests
     }
 
     [Fact]
-    public async Task Large_Dataset_Pipeline_Should_Handle_Memory_Efficiently()
+    public async Task LargeDataset_Pipeline_Should_Handle_Memory_Efficiently()
     {
         // Test with larger dataset to verify memory efficiency
         const int largeSize = 100_000;
@@ -151,7 +151,7 @@ public class SimplePipelineTests
     }
 
     [Fact]
-    public async Task Concurrent_Pipeline_Execution_Should_Work()
+    public async Task ConcurrentPipeline_Execution_Should_Work()
     {
         // Test multiple pipelines running concurrently
         const int pipelineCount = 5;
@@ -191,7 +191,7 @@ public class SimplePipelineTests
     }
 
     [Fact]
-    public async Task Resource_Cleanup_Should_Work_Properly()
+    public async Task ResourceCleanup_Should_Work_Properly()
     {
         var statsBefore = _fixture.MemoryManager.GetStats();
 

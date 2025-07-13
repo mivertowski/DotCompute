@@ -26,7 +26,7 @@ public class CpuMemoryManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task AllocateAsync_WithValidSize_CreatesBuffer()
+    public async Task AllocateAsyncWithValidSize_CreatesBuffer()
     {
         // Arrange
         const long size = 1024;
@@ -45,7 +45,7 @@ public class CpuMemoryManagerTests : IDisposable
     [InlineData(1024)]
     [InlineData(1024 * 1024)]
     [InlineData(16 * 1024 * 1024)]
-    public async Task AllocateAsync_WithVariousSizes_CreatesCorrectBuffer(long size)
+    public async Task AllocateAsyncWithVariousSizes_CreatesCorrectBuffer(long size)
     {
         // Act
         var buffer = await _memoryManager.AllocateAsync(size);
@@ -63,7 +63,7 @@ public class CpuMemoryManagerTests : IDisposable
     [InlineData(0)]
     [InlineData(-1)]
     [InlineData(-1000)]
-    public async Task AllocateAsync_WithInvalidSize_ThrowsArgumentOutOfRangeException(long size)
+    public async Task AllocateAsyncWithInvalidSize_ThrowsArgumentOutOfRangeException(long size)
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
@@ -77,7 +77,7 @@ public class CpuMemoryManagerTests : IDisposable
     [InlineData(MemoryFlags.HostVisible)]
     [InlineData(MemoryFlags.Cached)]
     [InlineData(MemoryFlags.Atomic)]
-    public async Task AllocateAsync_WithMemoryFlags_SetsCorrectFlags(MemoryFlags flags)
+    public async Task AllocateAsyncWithMemoryFlags_SetsCorrectFlags(MemoryFlags flags)
     {
         // Arrange
         const long size = 1024;
@@ -94,7 +94,7 @@ public class CpuMemoryManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task AllocateAndCopyAsync_WithValidData_CopiesDataCorrectly()
+    public async Task AllocateAndCopyAsyncWithValidData_CopiesDataCorrectly()
     {
         // Arrange
         var sourceData = new int[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
@@ -117,7 +117,7 @@ public class CpuMemoryManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateView_WithValidRange_CreatesCorrectView()
+    public async Task CreateViewWithValidRange_CreatesCorrectView()
     {
         // Arrange
         const long bufferSize = 1024;
@@ -143,7 +143,7 @@ public class CpuMemoryManagerTests : IDisposable
     [InlineData(0, -1)]
     [InlineData(1000, 100)]
     [InlineData(500, 600)]
-    public async Task CreateView_WithInvalidRange_ThrowsArgumentOutOfRangeException(long offset, long length)
+    public async Task CreateViewWithInvalidRange_ThrowsArgumentOutOfRangeException(long offset, long length)
     {
         // Arrange
         const long bufferSize = 1024;
@@ -158,7 +158,7 @@ public class CpuMemoryManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task TotalAllocatedBytes_TracksAllocationCorrectly()
+    public async Task TotalAllocatedBytesTracksAllocationCorrectly()
     {
         // Arrange
         const long size1 = 1024;
@@ -187,7 +187,7 @@ public class CpuMemoryManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task MultipleAllocations_DifferentSizes_AllSucceed()
+    public async Task MultipleAllocationsDifferentSizes_AllSucceed()
     {
         // Arrange
         var sizes = new long[] { 64, 128, 256, 512, 1024, 2048, 4096, 8192 };
@@ -216,7 +216,7 @@ public class CpuMemoryManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task DisposeManager_WithActiveBuffers_DisposesAllBuffers()
+    public async Task DisposeManagerWithActiveBuffers_DisposesAllBuffers()
     {
         // Arrange
         var buffer1 = await _memoryManager.AllocateAsync(1024);
@@ -234,7 +234,7 @@ public class CpuMemoryManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task DisposedManager_ThrowsObjectDisposedException()
+    public async Task DisposedManagerThrowsObjectDisposedException()
     {
         // Arrange
         _memoryManager.Dispose();
@@ -245,7 +245,7 @@ public class CpuMemoryManagerTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateView_WithInvalidBuffer_ThrowsArgumentException()
+    public async Task CreateViewWithInvalidBuffer_ThrowsArgumentException()
     {
         // Arrange
         var buffer = await _memoryManager.AllocateAsync(1024);

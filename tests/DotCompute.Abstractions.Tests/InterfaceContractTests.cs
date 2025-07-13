@@ -1,6 +1,7 @@
 using Xunit;
 using FluentAssertions;
 using DotCompute.Abstractions;
+using DotCompute.TestUtilities.FluentAssertions;
 using Moq;
 
 namespace DotCompute.Abstractions.Tests;
@@ -13,19 +14,19 @@ namespace DotCompute.Abstractions.Tests;
 public class InterfaceContractTests
 {
     [Fact]
-    public void IAccelerator_Contract_ShouldDefineRequiredMembers()
+    public void IAcceleratorContract_ShouldDefineRequiredMembers()
     {
         // Arrange
         var acceleratorType = typeof(IAccelerator);
 
         // Act & Assert
         acceleratorType.Should().BeInterface("IAccelerator should be an interface");
-        acceleratorType.Should().HaveProperty("Type", "Should have Type property");
-        acceleratorType.Should().HaveProperty("Name", "Should have Name property");
+        acceleratorType.Should().HaveProperty("Info", "Should have Info property");
+        acceleratorType.Should().HaveProperty("Memory", "Should have Memory property");
     }
 
     [Fact]
-    public void IMemoryManager_Contract_ShouldDefineRequiredMembers()
+    public void IMemoryManagerContract_ShouldDefineRequiredMembers()
     {
         // Arrange
         var memoryManagerType = typeof(IMemoryManager);
@@ -37,7 +38,7 @@ public class InterfaceContractTests
     }
 
     [Fact]
-    public void IKernelCompiler_Contract_ShouldDefineCompilationMethods()
+    public void IKernelCompilerContract_ShouldDefineCompilationMethods()
     {
         // Arrange
         var compilerType = typeof(IKernelCompiler);
@@ -47,7 +48,7 @@ public class InterfaceContractTests
     }
 
     [Fact]
-    public void IBuffer_Contract_ShouldDefineMemoryOperations()
+    public void IBufferContract_ShouldDefineMemoryOperations()
     {
         // Arrange
         var bufferType = typeof(IBuffer);
@@ -58,7 +59,7 @@ public class InterfaceContractTests
     }
 
     [Fact]
-    public void AcceleratorType_Enum_ShouldHaveValidValues()
+    public void AcceleratorTypeEnum_ShouldHaveValidValues()
     {
         // Arrange & Act
         var acceleratorTypes = Enum.GetValues<AcceleratorType>();
@@ -73,7 +74,7 @@ public class InterfaceContractTests
     [InlineData(AcceleratorType.CPU)]
     [InlineData(AcceleratorType.CUDA)]
     [InlineData(AcceleratorType.Metal)]
-    public void AcceleratorType_ValidValues_ShouldBeSupported(AcceleratorType type)
+    public void AcceleratorTypeValidValues_ShouldBeSupported(AcceleratorType type)
     {
         // Arrange & Act
         var typeString = type.ToString();
@@ -84,7 +85,7 @@ public class InterfaceContractTests
     }
 
     [Fact]
-    public void DeviceMemory_Struct_ShouldHaveValidProperties()
+    public void DeviceMemoryStruct_ShouldHaveValidProperties()
     {
         // Arrange & Act
         var defaultMemory = new DeviceMemory();
@@ -97,7 +98,7 @@ public class InterfaceContractTests
     }
 
     [Fact]
-    public void AcceleratorStream_ShouldSupportAsyncOperations()
+    public void AcceleratorStreamShouldSupportAsyncOperations()
     {
         // Arrange
         var streamType = typeof(AcceleratorStream);
@@ -109,7 +110,7 @@ public class InterfaceContractTests
     }
 
     [Fact]
-    public void AcceleratorContext_ShouldManageResourceLifecycle()
+    public void AcceleratorContextShouldManageResourceLifecycle()
     {
         // Arrange
         var contextType = typeof(AcceleratorContext);
@@ -126,7 +127,7 @@ public class InterfaceContractTests
 public class MockImplementationTests
 {
     [Fact]
-    public void MockAccelerator_ShouldImplementInterface()
+    public void MockAcceleratorShouldImplementInterface()
     {
         // Arrange
         var mockAccelerator = new Mock<IAccelerator>();
@@ -142,7 +143,7 @@ public class MockImplementationTests
     }
 
     [Fact]
-    public void MockMemoryManager_ShouldImplementInterface()
+    public void MockMemoryManagerShouldImplementInterface()
     {
         // Arrange
         var mockManager = new Mock<IMemoryManager>();
@@ -160,7 +161,7 @@ public class MockImplementationTests
     }
 
     [Fact]
-    public async Task MockMemoryManager_AllocateAsync_ShouldReturnBuffer()
+    public async Task MockMemoryManagerAllocateAsync_ShouldReturnBuffer()
     {
         // Arrange
         var mockManager = new Mock<IMemoryManager>();
@@ -179,7 +180,7 @@ public class MockImplementationTests
     }
 
     [Fact]
-    public void MockKernelCompiler_ShouldImplementInterface()
+    public void MockKernelCompilerShouldImplementInterface()
     {
         // Arrange
         var mockCompiler = new Mock<IKernelCompiler>();
@@ -196,7 +197,7 @@ public class MockImplementationTests
     }
 
     [Fact]
-    public async Task MockKernelCompiler_CompileAsync_ShouldReturnKernel()
+    public async Task MockKernelCompilerCompileAsync_ShouldReturnKernel()
     {
         // Arrange
         var mockCompiler = new Mock<IKernelCompiler>();
@@ -221,7 +222,7 @@ public class MockImplementationTests
 public class AbstractionsErrorHandlingTests
 {
     [Fact]
-    public void AcceleratorType_InvalidCast_ShouldThrowException()
+    public void AcceleratorTypeInvalidCast_ShouldThrowException()
     {
         // Arrange & Act & Assert
         Assert.Throws<InvalidCastException>(() =>
@@ -232,7 +233,7 @@ public class AbstractionsErrorHandlingTests
     }
 
     [Fact]
-    public void DeviceMemory_NegativeSize_ShouldBeHandled()
+    public void DeviceMemoryNegativeSize_ShouldBeHandled()
     {
         // Arrange & Act
         var memory = new DeviceMemory { Size = -1 };
@@ -242,7 +243,7 @@ public class AbstractionsErrorHandlingTests
     }
 
     [Fact]
-    public void DeviceMemory_ZeroAlignment_ShouldBeHandled()
+    public void DeviceMemoryZeroAlignment_ShouldBeHandled()
     {
         // Arrange & Act
         var memory = new DeviceMemory { Alignment = 0 };
@@ -255,7 +256,7 @@ public class AbstractionsErrorHandlingTests
     [InlineData(long.MaxValue)]
     [InlineData(long.MinValue)]
     [InlineData(0)]
-    public void DeviceMemory_ExtremeValues_ShouldBeHandled(long size)
+    public void DeviceMemoryExtremeValues_ShouldBeHandled(long size)
     {
         // Arrange & Act
         var memory = new DeviceMemory { Size = size };
@@ -265,7 +266,7 @@ public class AbstractionsErrorHandlingTests
     }
 
     [Fact]
-    public void MockBuffer_Disposal_ShouldBeTracked()
+    public void MockBufferDisposal_ShouldBeTracked()
     {
         // Arrange
         var mockBuffer = new Mock<IBuffer>();
@@ -282,7 +283,7 @@ public class AbstractionsErrorHandlingTests
     }
 
     [Fact]
-    public async Task MockAsyncDisposable_DisposalAsync_ShouldBeTracked()
+    public async Task MockAsyncDisposableDisposalAsync_ShouldBeTracked()
     {
         // Arrange
         var mockStream = new Mock<AcceleratorStream>();
@@ -300,7 +301,7 @@ public class AbstractionsErrorHandlingTests
     }
 
     [Fact]
-    public void AcceleratorContext_MultipleDisposal_ShouldBeIdempotent()
+    public void AcceleratorContextMultipleDisposal_ShouldBeIdempotent()
     {
         // Arrange
         var mockContext = new Mock<AcceleratorContext>();

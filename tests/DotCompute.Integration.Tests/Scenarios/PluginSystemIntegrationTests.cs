@@ -1,7 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Core.Compute;
+using DotCompute.Core;
 using DotCompute.Integration.Tests.Fixtures;
 using DotCompute.Plugins;
 using FluentAssertions;
@@ -21,11 +21,11 @@ public class PluginSystemIntegrationTests
     }
 
     [Fact]
-    public async Task Plugin_Should_Load_And_Execute_With_CPU_Backend()
+    public async Task PluginShould_Load_And_Execute_With_CPU_Backend()
     {
         // Arrange - Create a simple plugin assembly in memory
         var pluginCode = @"
-using DotCompute.Core.Compute;
+using DotCompute.Core;
 using DotCompute.Core.Plugins;
 
 namespace TestPlugin;
@@ -107,14 +107,14 @@ public class TestComputePlugin : IComputePlugin
     }
 
     [Fact]
-    public async Task Plugin_Hot_Reload_Should_Work_With_Running_Kernels()
+    public async Task PluginHot_Reload_Should_Work_With_Running_Kernels()
     {
         // Arrange - Create initial plugin
         var pluginDir = Path.Combine(Path.GetTempPath(), "DotComputeHotReloadTest");
         Directory.CreateDirectory(pluginDir);
 
         var initialPluginCode = @"
-using DotCompute.Core.Compute;
+using DotCompute.Core;
 using DotCompute.Core.Plugins;
 
 namespace HotReloadPlugin;
@@ -202,7 +202,7 @@ public class HotReloadComputePlugin : IComputePlugin
     }
 
     [Fact]
-    public async Task Multiple_Plugins_Should_Coexist_And_Share_Resources()
+    public async Task MultiplePlugins_Should_Coexist_And_Share_Resources()
     {
         // Test that multiple plugins can be loaded and work together
         var pluginDirs = new List<string>();
@@ -215,7 +215,7 @@ public class HotReloadComputePlugin : IComputePlugin
             pluginDirs.Add(pluginADir);
 
             var mathPluginCode = @"
-using DotCompute.Core.Compute;
+using DotCompute.Core;
 using DotCompute.Core.Plugins;
 
 namespace MathPlugin;
@@ -250,7 +250,7 @@ public class MathComputePlugin : IComputePlugin
             pluginDirs.Add(pluginBDir);
 
             var arrayPluginCode = @"
-using DotCompute.Core.Compute;
+using DotCompute.Core;
 using DotCompute.Core.Plugins;
 
 namespace ArrayPlugin;

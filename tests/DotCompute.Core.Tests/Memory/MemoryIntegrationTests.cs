@@ -26,7 +26,7 @@ public class MemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task EndToEndKernelExecution_WithMemoryOperations_WorksCorrectly()
+    public async Task EndToEndKernelExecutionWithMemoryOperations_WorksCorrectly()
     {
         // Arrange
         const int dataSize = 1024;
@@ -71,7 +71,7 @@ public class MemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task MultiBufferOperations_ComplexDataFlow_WorksCorrectly()
+    public async Task MultiBufferOperationsComplexDataFlow_WorksCorrectly()
     {
         // Arrange
         const int vectorSize = 512;
@@ -128,7 +128,7 @@ public class MemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryViews_InKernelOperations_WorkCorrectly()
+    public async Task MemoryViewsInKernelOperations_WorkCorrectly()
     {
         // Arrange
         const int totalSize = 2048;
@@ -202,7 +202,7 @@ public class MemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryReuse_AcrossMultipleKernels_WorksCorrectly()
+    public async Task MemoryReuseAcrossMultipleKernels_WorksCorrectly()
     {
         // Arrange
         const int dataSize = 1024;
@@ -275,7 +275,7 @@ public class MemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task BufferPooling_HighFrequencyAllocations_OptimizesPerformance()
+    public async Task BufferPoolingHighFrequencyAllocations_OptimizesPerformance()
     {
         // Arrange
         const int iterations = 1000;
@@ -315,7 +315,7 @@ public class MemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryCoherence_MultipleViews_MaintainsConsistency()
+    public async Task MemoryCoherenceMultipleViews_MaintainsConsistency()
     {
         // Arrange
         const int bufferSize = 1024;
@@ -361,7 +361,7 @@ public class MemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task ErrorRecovery_AfterMemoryExhaustion_RecoversGracefully()
+    public async Task ErrorRecoveryAfterMemoryExhaustion_RecoversGracefully()
     {
         // Arrange
         const long largeBufferSize = 1024 * 1024 * 1024; // 1GB

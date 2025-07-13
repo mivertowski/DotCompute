@@ -18,21 +18,21 @@ namespace DotCompute.Plugins.Tests;
 public class AdvancedPluginTests
 {
     [Fact]
-    public void PluginAttribute_WithNullName_ShouldThrowArgumentNullException()
+    public void PluginAttributeWithNullName_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => new PluginAttribute(null!));
     }
 
     [Fact]
-    public void PluginAttribute_WithEmptyName_ShouldThrowArgumentException()
+    public void PluginAttributeWithEmptyName_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => new PluginAttribute(""));
     }
 
     [Fact]
-    public void PluginAttribute_WithWhitespaceName_ShouldThrowArgumentException()
+    public void PluginAttributeWithWhitespaceName_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => new PluginAttribute("   "));
@@ -43,7 +43,7 @@ public class AdvancedPluginTests
     [InlineData("Plugin.With.Dots")]
     [InlineData("Plugin_With_Underscores")]
     [InlineData("PluginWith123Numbers")]
-    public void PluginAttribute_WithValidNames_ShouldAccept(string validName)
+    public void PluginAttributeWithValidNames_ShouldAccept(string validName)
     {
         // Arrange & Act
         var attribute = new PluginAttribute(validName);
@@ -53,7 +53,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void PluginAttribute_Properties_ShouldBeSettable()
+    public void PluginAttributeProperties_ShouldBeSettable()
     {
         // Arrange
         var attribute = new PluginAttribute("TestPlugin");
@@ -72,7 +72,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void PluginAttribute_WithNegativeLoadPriority_ShouldThrowArgumentOutOfRangeException()
+    public void PluginAttributeWithNegativeLoadPriority_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
         var attribute = new PluginAttribute("TestPlugin");
@@ -82,14 +82,14 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void PluginSystem_WithNullConfiguration_ShouldThrowArgumentNullException()
+    public void PluginSystemWithNullConfiguration_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => new PluginSystem(null!));
     }
 
     [Fact]
-    public void PluginSystem_WithValidConfiguration_ShouldInitialize()
+    public void PluginSystemWithValidConfiguration_ShouldInitialize()
     {
         // Arrange
         var options = new PluginOptions
@@ -107,7 +107,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public async Task PluginSystem_Initialize_ShouldLoadAvailablePlugins()
+    public async Task PluginSystemInitialize_ShouldLoadAvailablePlugins()
     {
         // Arrange
         var options = new PluginOptions
@@ -126,7 +126,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public async Task PluginSystem_LoadPlugin_WithNullPlugin_ShouldThrowArgumentNullException()
+    public async Task PluginSystemLoadPlugin_WithNullPlugin_ShouldThrowArgumentNullException()
     {
         // Arrange
         var options = new PluginOptions();
@@ -138,7 +138,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public async Task PluginSystem_LoadPlugin_WithInvalidPlugin_ShouldThrowPluginLoadException()
+    public async Task PluginSystemLoadPlugin_WithInvalidPlugin_ShouldThrowPluginLoadException()
     {
         // Arrange
         var options = new PluginOptions();
@@ -151,7 +151,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public async Task PluginSystem_UnloadPlugin_WithNullPluginName_ShouldThrowArgumentNullException()
+    public async Task PluginSystemUnloadPlugin_WithNullPluginName_ShouldThrowArgumentNullException()
     {
         // Arrange
         var options = new PluginOptions();
@@ -163,7 +163,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public async Task PluginSystem_UnloadPlugin_WithNonExistentPlugin_ShouldThrowPluginNotFoundException()
+    public async Task PluginSystemUnloadPlugin_WithNonExistentPlugin_ShouldThrowPluginNotFoundException()
     {
         // Arrange
         var options = new PluginOptions();
@@ -175,14 +175,14 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void BackendPluginBase_WithNullName_ShouldThrowArgumentNullException()
+    public void BackendPluginBaseWithNullName_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => new TestBackendPlugin(null!));
     }
 
     [Fact]
-    public void BackendPluginBase_WithValidName_ShouldInitialize()
+    public void BackendPluginBaseWithValidName_ShouldInitialize()
     {
         // Arrange & Act
         var plugin = new TestBackendPlugin("TestBackend");
@@ -193,7 +193,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public async Task BackendPluginBase_LoadAsync_ShouldSetLoadedState()
+    public async Task BackendPluginBaseLoadAsync_ShouldSetLoadedState()
     {
         // Arrange
         var plugin = new TestBackendPlugin("TestBackend");
@@ -206,7 +206,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public async Task BackendPluginBase_UnloadAsync_ShouldClearLoadedState()
+    public async Task BackendPluginBaseUnloadAsync_ShouldClearLoadedState()
     {
         // Arrange
         var plugin = new TestBackendPlugin("TestBackend");
@@ -220,7 +220,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void PluginOptions_DefaultValues_ShouldBeValid()
+    public void PluginOptionsDefaultValues_ShouldBeValid()
     {
         // Arrange & Act
         var options = new PluginOptions();
@@ -233,7 +233,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void PluginOptions_WithNullDirectories_ShouldThrowArgumentNullException()
+    public void PluginOptionsWithNullDirectories_ShouldThrowArgumentNullException()
     {
         // Arrange
         var options = new PluginOptions();
@@ -243,7 +243,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void PluginOptions_WithNegativeTimeout_ShouldThrowArgumentOutOfRangeException()
+    public void PluginOptionsWithNegativeTimeout_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
         var options = new PluginOptions();
@@ -254,7 +254,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void PluginOptions_WithZeroMaxConcurrentLoads_ShouldThrowArgumentOutOfRangeException()
+    public void PluginOptionsWithZeroMaxConcurrentLoads_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
         var options = new PluginOptions();
@@ -264,7 +264,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void PluginLoadException_WithMessage_ShouldSetMessage()
+    public void PluginLoadExceptionWithMessage_ShouldSetMessage()
     {
         // Arrange
         var message = "Test plugin load error";
@@ -278,7 +278,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void PluginLoadException_WithMessageAndInnerException_ShouldSetBoth()
+    public void PluginLoadExceptionWithMessageAndInnerException_ShouldSetBoth()
     {
         // Arrange
         var message = "Test plugin load error";
@@ -293,7 +293,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void PluginNotFoundException_WithPluginName_ShouldFormatMessage()
+    public void PluginNotFoundExceptionWithPluginName_ShouldFormatMessage()
     {
         // Arrange
         var pluginName = "NonExistentPlugin";
@@ -307,7 +307,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void SimplePlugin_Example_ShouldImplementInterface()
+    public void SimplePluginExample_ShouldImplementInterface()
     {
         // Arrange & Act
         var plugin = new SimplePlugin();
@@ -319,7 +319,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public async Task SimplePlugin_LoadUnloadCycle_ShouldWorkCorrectly()
+    public async Task SimplePluginLoadUnloadCycle_ShouldWorkCorrectly()
     {
         // Arrange
         var plugin = new SimplePlugin();
@@ -335,7 +335,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void ServiceCollectionExtensions_AddPluginSystem_ShouldRegisterServices()
+    public void ServiceCollectionExtensionsAddPluginSystem_ShouldRegisterServices()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -351,7 +351,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void ServiceCollectionExtensions_AddPluginSystem_WithNullServices_ShouldThrowArgumentNullException()
+    public void ServiceCollectionExtensionsAddPluginSystem_WithNullServices_ShouldThrowArgumentNullException()
     {
         // Arrange
         IServiceCollection services = null!;
@@ -362,7 +362,7 @@ public class AdvancedPluginTests
     }
 
     [Fact]
-    public void ServiceCollectionExtensions_AddPluginSystem_WithNullOptions_ShouldThrowArgumentNullException()
+    public void ServiceCollectionExtensionsAddPluginSystem_WithNullOptions_ShouldThrowArgumentNullException()
     {
         // Arrange
         var services = new ServiceCollection();
@@ -378,7 +378,7 @@ public class AdvancedPluginTests
 public class PluginErrorHandlingTests
 {
     [Fact]
-    public async Task PluginSystem_LoadPlugin_WithExceptionInLoad_ShouldWrapInPluginLoadException()
+    public async Task PluginSystemLoadPlugin_WithExceptionInLoad_ShouldWrapInPluginLoadException()
     {
         // Arrange
         var options = new PluginOptions();
@@ -393,7 +393,7 @@ public class PluginErrorHandlingTests
     }
 
     [Fact]
-    public async Task PluginSystem_ConcurrentLoading_ShouldHandleRaceConditions()
+    public async Task PluginSystemConcurrentLoading_ShouldHandleRaceConditions()
     {
         // Arrange
         var options = new PluginOptions { MaxConcurrentLoads = 2 };
@@ -412,7 +412,7 @@ public class PluginErrorHandlingTests
     }
 
     [Fact]
-    public async Task PluginSystem_LoadTimeout_ShouldThrowTimeoutException()
+    public async Task PluginSystemLoadTimeout_ShouldThrowTimeoutException()
     {
         // Arrange
         var options = new PluginOptions 
@@ -428,7 +428,7 @@ public class PluginErrorHandlingTests
     }
 
     [Fact]
-    public void PluginSystem_Disposal_ShouldUnloadAllPlugins()
+    public void PluginSystemDisposal_ShouldUnloadAllPlugins()
     {
         // Arrange
         var options = new PluginOptions();
@@ -442,7 +442,7 @@ public class PluginErrorHandlingTests
     }
 
     [Fact]
-    public void PluginSystem_DoubleDisposal_ShouldBeIdempotent()
+    public void PluginSystemDoubleDisposal_ShouldBeIdempotent()
     {
         // Arrange
         var options = new PluginOptions();
@@ -456,7 +456,7 @@ public class PluginErrorHandlingTests
     }
 
     [Fact]
-    public async Task PluginSystem_OperationAfterDisposal_ShouldThrowObjectDisposedException()
+    public async Task PluginSystemOperationAfterDisposal_ShouldThrowObjectDisposedException()
     {
         // Arrange
         var options = new PluginOptions();
@@ -469,7 +469,7 @@ public class PluginErrorHandlingTests
     }
 
     [Fact]
-    public void BackendPluginBase_DoubleLoad_ShouldBeIdempotent()
+    public void BackendPluginBaseDoubleLoad_ShouldBeIdempotent()
     {
         // Arrange
         var plugin = new TestBackendPlugin("TestPlugin");
@@ -483,7 +483,7 @@ public class PluginErrorHandlingTests
     }
 
     [Fact]
-    public void BackendPluginBase_UnloadBeforeLoad_ShouldNotThrow()
+    public void BackendPluginBaseUnloadBeforeLoad_ShouldNotThrow()
     {
         // Arrange
         var plugin = new TestBackendPlugin("TestPlugin");
@@ -500,7 +500,7 @@ public class PluginErrorHandlingTests
 public class PluginPerformanceTests
 {
     [Fact]
-    public async Task PluginSystem_LoadManyPlugins_ShouldCompleteInReasonableTime()
+    public async Task PluginSystemLoadManyPlugins_ShouldCompleteInReasonableTime()
     {
         // Arrange
         var options = new PluginOptions { MaxConcurrentLoads = 10 };
@@ -525,7 +525,7 @@ public class PluginPerformanceTests
     }
 
     [Fact]
-    public async Task PluginSystem_ConcurrentLoadUnload_ShouldMaintainConsistency()
+    public async Task PluginSystemConcurrentLoadUnload_ShouldMaintainConsistency()
     {
         // Arrange
         var options = new PluginOptions { MaxConcurrentLoads = 5 };
@@ -556,7 +556,7 @@ public class PluginPerformanceTests
     }
 
     [Fact]
-    public void PluginAttribute_MassCreation_ShouldBePerformant()
+    public void PluginAttributeMassCreation_ShouldBePerformant()
     {
         // Arrange
         const int attributeCount = 10000;

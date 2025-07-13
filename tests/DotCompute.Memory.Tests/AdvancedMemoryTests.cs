@@ -12,7 +12,7 @@ namespace DotCompute.Memory.Tests;
 public class AdvancedMemoryTests
 {
     [Fact]
-    public void UnifiedBuffer_WithZeroSize_ShouldThrowArgumentOutOfRangeException()
+    public void UnifiedBufferWithZeroSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -20,7 +20,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void UnifiedBuffer_WithNegativeSize_ShouldThrowArgumentOutOfRangeException()
+    public void UnifiedBufferWithNegativeSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -28,7 +28,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void UnifiedBuffer_WithExtremeSize_ShouldHandleGracefully()
+    public void UnifiedBufferWithExtremeSize_ShouldHandleGracefully()
     {
         // Arrange & Act
         try
@@ -47,7 +47,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void UnifiedBuffer_Disposal_ShouldBeIdempotent()
+    public void UnifiedBufferDisposal_ShouldBeIdempotent()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(100);
@@ -60,7 +60,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void UnifiedBuffer_AccessAfterDisposal_ShouldThrowObjectDisposedException()
+    public void UnifiedBufferAccessAfterDisposal_ShouldThrowObjectDisposedException()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(100);
@@ -71,7 +71,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public async Task UnifiedBuffer_EnsureOnHostAsync_WithNullContext_ShouldThrowArgumentNullException()
+    public async Task UnifiedBufferEnsureOnHostAsync_WithNullContext_ShouldThrowArgumentNullException()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(100);
@@ -82,7 +82,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public async Task UnifiedBuffer_EnsureOnDeviceAsync_WithNullContext_ShouldThrowArgumentNullException()
+    public async Task UnifiedBufferEnsureOnDeviceAsync_WithNullContext_ShouldThrowArgumentNullException()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(100);
@@ -93,7 +93,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public async Task UnifiedBuffer_SynchronizeAsync_WithNullContext_ShouldThrowArgumentNullException()
+    public async Task UnifiedBufferSynchronizeAsync_WithNullContext_ShouldThrowArgumentNullException()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(100);
@@ -104,7 +104,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public async Task UnifiedBuffer_OperationsWithCancellation_ShouldThrowOperationCanceledException()
+    public async Task UnifiedBufferOperationsWithCancellation_ShouldThrowOperationCanceledException()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(100);
@@ -126,7 +126,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void MemoryPool_WithZeroCapacity_ShouldThrowArgumentOutOfRangeException()
+    public void MemoryPoolWithZeroCapacity_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -134,7 +134,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void MemoryPool_WithNegativeCapacity_ShouldThrowArgumentOutOfRangeException()
+    public void MemoryPoolWithNegativeCapacity_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -142,7 +142,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public async Task MemoryPool_RentAsync_ExceedingCapacity_ShouldHandleGracefully()
+    public async Task MemoryPoolRentAsync_ExceedingCapacity_ShouldHandleGracefully()
     {
         // Arrange
         var pool = new MemoryPool<int>(10);
@@ -175,7 +175,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void MemoryPool_ReturnNullBuffer_ShouldThrowArgumentNullException()
+    public void MemoryPoolReturnNullBuffer_ShouldThrowArgumentNullException()
     {
         // Arrange
         var pool = new MemoryPool<int>(10);
@@ -185,7 +185,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void MemoryPool_ReturnBufferTwice_ShouldThrowInvalidOperationException()
+    public void MemoryPoolReturnBufferTwice_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var pool = new MemoryPool<int>(10);
@@ -199,7 +199,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void UnifiedMemoryManager_WithNullAccelerators_ShouldThrowArgumentNullException()
+    public void UnifiedMemoryManagerWithNullAccelerators_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentNullException>(() => 
@@ -207,7 +207,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void UnifiedMemoryManager_WithEmptyAccelerators_ShouldThrowArgumentException()
+    public void UnifiedMemoryManagerWithEmptyAccelerators_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => 
@@ -215,7 +215,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public async Task UnifiedMemoryManager_AllocateAsync_WithZeroSize_ShouldThrowArgumentOutOfRangeException()
+    public async Task UnifiedMemoryManagerAllocateAsync_WithZeroSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
         var accelerators = new[] { new TestAccelerator() };
@@ -227,7 +227,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public async Task UnifiedMemoryManager_AllocateAsync_WithNegativeSize_ShouldThrowArgumentOutOfRangeException()
+    public async Task UnifiedMemoryManagerAllocateAsync_WithNegativeSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
         var accelerators = new[] { new TestAccelerator() };
@@ -239,7 +239,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public async Task UnifiedMemoryManager_OptimizeMemoryLayout_WithHighFragmentation_ShouldImproveLayout()
+    public async Task UnifiedMemoryManagerOptimizeMemoryLayout_WithHighFragmentation_ShouldImproveLayout()
     {
         // Arrange
         var accelerators = new[] { new TestAccelerator() };
@@ -269,7 +269,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void MemoryAllocator_WithInvalidAlignment_ShouldThrowArgumentException()
+    public void MemoryAllocatorWithInvalidAlignment_ShouldThrowArgumentException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentException>(() => 
@@ -277,7 +277,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void MemoryAllocator_WithZeroAlignment_ShouldThrowArgumentOutOfRangeException()
+    public void MemoryAllocatorWithZeroAlignment_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange & Act & Assert
         Assert.Throws<ArgumentOutOfRangeException>(() => 
@@ -285,7 +285,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void MemoryAllocator_AllocateWithInvalidSize_ShouldThrowArgumentOutOfRangeException()
+    public void MemoryAllocatorAllocateWithInvalidSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
         var allocator = new MemoryAllocator(1024, 8);
@@ -296,7 +296,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void MemoryAllocator_AllocateExceedingCapacity_ShouldThrowOutOfMemoryException()
+    public void MemoryAllocatorAllocateExceedingCapacity_ShouldThrowOutOfMemoryException()
     {
         // Arrange
         var allocator = new MemoryAllocator(100, 8); // Small capacity
@@ -306,7 +306,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void UnsafeMemoryOperations_CopyWithNullSource_ShouldThrowArgumentNullException()
+    public void UnsafeMemoryOperationsCopyWithNullSource_ShouldThrowArgumentNullException()
     {
         // Arrange
         var destination = new byte[100];
@@ -317,7 +317,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void UnsafeMemoryOperations_CopyWithNullDestination_ShouldThrowArgumentNullException()
+    public void UnsafeMemoryOperationsCopyWithNullDestination_ShouldThrowArgumentNullException()
     {
         // Arrange
         var source = new byte[100];
@@ -328,7 +328,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void UnsafeMemoryOperations_CopyWithNegativeLength_ShouldThrowArgumentOutOfRangeException()
+    public void UnsafeMemoryOperationsCopyWithNegativeLength_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
         var source = new byte[100];
@@ -340,7 +340,7 @@ public class AdvancedMemoryTests
     }
 
     [Fact]
-    public void UnsafeMemoryOperations_CopyExceedingBufferSize_ShouldThrowArgumentException()
+    public void UnsafeMemoryOperationsCopyExceedingBufferSize_ShouldThrowArgumentException()
     {
         // Arrange
         var source = new byte[50];
@@ -358,7 +358,7 @@ public class AdvancedMemoryTests
 public class MemoryStressTests
 {
     [Fact]
-    public async Task UnifiedMemoryManager_HighVolumeAllocations_ShouldHandleGracefully()
+    public async Task UnifiedMemoryManagerHighVolumeAllocations_ShouldHandleGracefully()
     {
         // Arrange
         var accelerators = new[] { new TestAccelerator() };
@@ -398,7 +398,7 @@ public class MemoryStressTests
     }
 
     [Fact]
-    public async Task MemoryPool_ConcurrentRentReturn_ShouldBeThreadSafe()
+    public async Task MemoryPoolConcurrentRentReturn_ShouldBeThreadSafe()
     {
         // Arrange
         var pool = new MemoryPool<int>(100);
@@ -438,7 +438,7 @@ public class MemoryStressTests
     }
 
     [Fact]
-    public void MemoryAllocator_FragmentationStressTest_ShouldHandleGracefully()
+    public void MemoryAllocatorFragmentationStressTest_ShouldHandleGracefully()
     {
         // Arrange
         var allocator = new MemoryAllocator(10240, 8); // 10KB
@@ -490,7 +490,7 @@ public class MemoryStressTests
     }
 
     [Fact]
-    public async Task UnifiedBuffer_ConcurrentAccess_ShouldBeThreadSafe()
+    public async Task UnifiedBufferConcurrentAccess_ShouldBeThreadSafe()
     {
         // Arrange
         var buffer = new UnifiedBuffer<int>(1000);
@@ -571,7 +571,7 @@ internal class TestAcceleratorContext : AcceleratorContext
 public class MemoryBenchmarkTests
 {
     [Fact]
-    public void MemoryBenchmarks_RunAllBenchmarks_ShouldCompleteWithinTimeLimit()
+    public void MemoryBenchmarksRunAllBenchmarks_ShouldCompleteWithinTimeLimit()
     {
         // Arrange
         var benchmarks = new MemoryBenchmarks();
@@ -596,7 +596,7 @@ public class MemoryBenchmarkTests
     }
 
     [Fact]
-    public void MemoryBenchmarkResults_Serialization_ShouldPreserveData()
+    public void MemoryBenchmarkResultsSerialization_ShouldPreserveData()
     {
         // Arrange
         var results = new MemoryBenchmarkResults
@@ -623,7 +623,7 @@ public class MemoryBenchmarkTests
     }
 
     [Fact]
-    public void MemoryBenchmarkResults_WithExtremeValues_ShouldHandleGracefully()
+    public void MemoryBenchmarkResultsWithExtremeValues_ShouldHandleGracefully()
     {
         // Arrange & Act
         var results = new MemoryBenchmarkResults

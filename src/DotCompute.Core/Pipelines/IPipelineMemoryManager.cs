@@ -108,7 +108,7 @@ public interface IPipelineMemory<T> : IAsyncDisposable where T : unmanaged
     /// <summary>
     /// Gets the memory access mode.
     /// </summary>
-    MemoryAccess AccessMode { get; }
+    Memory.MemoryAccess AccessMode { get; }
 
     /// <summary>
     /// Gets the device where memory is allocated.
@@ -210,8 +210,17 @@ public readonly struct MemoryLock<T> : IDisposable where T : unmanaged
         if (_mode == MemoryLockMode.ReadOnly)
             throw new InvalidOperationException("Cannot get writable span for read-only lock.");
         
-        // Implementation would depend on the specific memory backend
-        throw new NotImplementedException("GetSpan requires specific memory implementation.");
+        // Try to get span from memory if it supports direct access
+        if (_memory is IPipelineMemoryWithDirectAccess<T> directAccessMemory)
+        {
+            return directAccessMemory.GetSpan();
+        }
+        
+        // For memory types that don't support direct access (e.g., GPU memory),
+        // we need to fail gracefully
+        throw new NotSupportedException(
+            $"Direct span access is not supported for memory type '{_memory.GetType().Name}'. " +
+            "Use CopyToAsync/CopyFromAsync for data transfer instead.");
     }
 
     /// <summary>
@@ -219,8 +228,17 @@ public readonly struct MemoryLock<T> : IDisposable where T : unmanaged
     /// </summary>
     public ReadOnlySpan<T> GetReadOnlySpan()
     {
-        // Implementation would depend on the specific memory backend
-        throw new NotImplementedException("GetReadOnlySpan requires specific memory implementation.");
+        // Try to get read-only span from memory if it supports direct access
+        if (_memory is IPipelineMemoryWithDirectAccess<T> directAccessMemory)
+        {
+            return directAccessMemory.GetReadOnlySpan();
+        }
+        
+        // For memory types that don't support direct access (e.g., GPU memory),
+        // we need to fail gracefully
+        throw new NotSupportedException(
+            $"Direct span access is not supported for memory type '{_memory.GetType().Name}'. " +
+            "Use CopyToAsync for data retrieval instead.");
     }
 
     public void Dispose()
@@ -392,4 +410,27 @@ public enum PoolRetentionPolicy
     /// Adaptive based on usage patterns.
     /// </summary>
     Adaptive
+}
+
+/// <summary>
+/// Interface for pipeline memory implementations that support direct span access.
+/// This is typically only supported for host (CPU) memory, not GPU memory.
+/// </summary>
+public interface IPipelineMemoryWithDirectAccess<T> : IPipelineMemory<T> where T : unmanaged
+{
+    /// <summary>
+    /// Gets a direct span to the underlying memory for read-write access.
+    /// </summary>
+    /// <remarks>
+    /// This method should only be called when holding an appropriate memory lock.
+    /// </remarks>
+    Span<T> GetSpan();
+    
+    /// <summary>
+    /// Gets a direct read-only span to the underlying memory.
+    /// </summary>
+    /// <remarks>
+    /// This method should only be called when holding an appropriate memory lock.
+    /// </remarks>
+    ReadOnlySpan<T> GetReadOnlySpan();
 }

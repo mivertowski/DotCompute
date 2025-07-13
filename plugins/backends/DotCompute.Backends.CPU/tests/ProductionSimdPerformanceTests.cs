@@ -26,7 +26,7 @@ public class ProductionSimdPerformanceTests
     }
 
     [Fact]
-    public void SimdCapabilities_ShouldReflectActualHardware()
+    public void SimdCapabilitiesShouldReflectActualHardware()
     {
         // Act
         var summary = SimdCapabilities.GetSummary();
@@ -64,7 +64,7 @@ public class ProductionSimdPerformanceTests
     [InlineData(4096)]
     [InlineData(16384)]
     [InlineData(65536)]
-    public void VectorizedFloatAddition_ShouldOutperformScalar(int arraySize)
+    public void VectorizedFloatAdditionShouldOutperformScalar(int arraySize)
     {
         // Arrange
         var a = new float[arraySize];
@@ -120,7 +120,7 @@ public class ProductionSimdPerformanceTests
     [InlineData(1024)]
     [InlineData(4096)]
     [InlineData(16384)]
-    public void VectorizedMatrixMultiplication_ShouldBeAccurate(int size)
+    public void VectorizedMatrixMultiplicationShouldBeAccurate(int size)
     {
         // Arrange
         var matrixA = CreateRandomMatrix(size, size);
@@ -152,7 +152,7 @@ public class ProductionSimdPerformanceTests
     }
 
     [Fact]
-    public void SimdReductionOperations_ShouldBeAccurate()
+    public void SimdReductionOperationsShouldBeAccurate()
     {
         // Arrange
         const int arraySize = 10000;
@@ -184,7 +184,7 @@ public class ProductionSimdPerformanceTests
     }
 
     [Fact]
-    public void SpecificInstructionSetTests_ShouldValidateCapabilities()
+    public void SpecificInstructionSetTestsShouldValidateCapabilities()
     {
         if (Sse.IsSupported)
         {
@@ -222,7 +222,7 @@ public class ProductionSimdPerformanceTests
     [InlineData(128)]
     [InlineData(256)]
     [InlineData(512)]
-    public void AlignedMemoryAccess_ShouldPerformBetter(int alignment)
+    public void AlignedMemoryAccessShouldPerformBetter(int alignment)
     {
         const int arraySize = 16384;
         const int iterations = 1000;
@@ -264,7 +264,7 @@ public class ProductionSimdPerformanceTests
     }
 
     [Fact]
-    public void CacheLineOptimization_ShouldImprovePerformance()
+    public void CacheLineOptimizationShouldImprovePerformance()
     {
         const int arraySize = 1024 * 1024; // 1M elements
         const int cacheLineSize = 64; // bytes

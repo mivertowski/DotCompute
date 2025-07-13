@@ -5,10 +5,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using DotCompute.Core.Abstractions;
-using DotCompute.Core.Abstractions.Backends;
-using DotCompute.Core.Abstractions.Memory;
-using DotCompute.Core.Abstractions.Compilation;
+using System.Threading;
+using System.Threading.Tasks;
+using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Compilation;
@@ -25,14 +24,15 @@ public class CudaAccelerator : IAccelerator
     private readonly CudaContext _context;
     private readonly CudaMemoryManager _memoryManager;
     private readonly CudaKernelCompiler _kernelCompiler;
-    private readonly Dictionary<string, ComputeCapability> _capabilities;
+    private readonly AcceleratorInfo _info;
     private readonly int _deviceId;
     private bool _disposed;
 
-    public string Name => $"CUDA Device {_deviceId}";
-    public AcceleratorType Type => AcceleratorType.Cuda;
-    public IMemoryManager MemoryManager => _memoryManager;
-    public IKernelCompiler KernelCompiler => _kernelCompiler;
+    /// <inheritdoc/>
+    public AcceleratorInfo Info => _info;
+
+    /// <inheritdoc/>
+    public IMemoryManager Memory => _memoryManager;
 
     public CudaAccelerator(int deviceId = 0, ILogger<CudaAccelerator>? logger = null)
     {
@@ -52,48 +52,68 @@ public class CudaAccelerator : IAccelerator
             // Create kernel compiler
             _kernelCompiler = new CudaKernelCompiler(_context, _logger);
             
-            // Query device capabilities
-            _capabilities = QueryDeviceCapabilities();
+            // Build accelerator info
+            _info = BuildAcceleratorInfo();
             
-            _logger.LogInformation("CUDA accelerator initialized successfully. Device: {DeviceName}, Compute Capability: {ComputeCapability}",
-                _capabilities["DeviceName"].Value,
-                $"{_capabilities["ComputeCapabilityMajor"].Value}.{_capabilities["ComputeCapabilityMinor"].Value}");
+            _logger.LogInformation("CUDA accelerator initialized successfully. Device: {DeviceName}",
+                _info.Name);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to initialize CUDA accelerator");
-            throw new AcceleratorException("Failed to initialize CUDA accelerator", ex);
+            throw new InvalidOperationException("Failed to initialize CUDA accelerator", ex);
         }
     }
 
-    public IEnumerable<ComputeCapability> GetCapabilities()
+    /// <inheritdoc/>
+    public async ValueTask<ICompiledKernel> CompileKernelAsync(
+        KernelDefinition definition,
+        CompilationOptions? options = null,
+        CancellationToken cancellationToken = default)
     {
-        return _capabilities.Values;
+        ArgumentNullException.ThrowIfNull(definition);
+        options ??= new CompilationOptions();
+
+        _logger.LogDebug("Compiling kernel '{KernelName}' for CUDA device {DeviceId}", definition.Name, _deviceId);
+
+        try
+        {
+            var compiledKernel = await _kernelCompiler.CompileAsync(definition, options, cancellationToken).ConfigureAwait(false);
+            _logger.LogDebug("Successfully compiled kernel '{KernelName}'", definition.Name);
+            return compiledKernel;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to compile kernel '{KernelName}'", definition.Name);
+            throw;
+        }
     }
 
-    public bool SupportsCapability(string capability)
-    {
-        return _capabilities.ContainsKey(capability);
-    }
-
-    public void Synchronize()
+    /// <inheritdoc/>
+    public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
         
         try
         {
-            _logger.LogDebug("Synchronizing CUDA device");
-            var result = CudaRuntime.cudaDeviceSynchronize();
+            _logger.LogTrace("Synchronizing CUDA device {DeviceId}", _deviceId);
             
-            if (result != CudaError.Success)
+            // Run synchronization on a background thread to avoid blocking
+            await Task.Run(() =>
             {
-                throw new AcceleratorException($"CUDA synchronization failed: {result}");
-            }
+                var result = CudaRuntime.cudaDeviceSynchronize();
+                if (result != CudaError.Success)
+                {
+                    throw new InvalidOperationException($"CUDA synchronization failed: {CudaRuntime.GetErrorString(result)}");
+                }
+            }, cancellationToken).ConfigureAwait(false);
+            
+            _logger.LogTrace("CUDA device {DeviceId} synchronized", _deviceId);
         }
-        catch (Exception ex) when (!(ex is AcceleratorException))
+        catch (Exception ex)
         {
-            _logger.LogError(ex, "Unexpected error during CUDA synchronization");
-            throw new AcceleratorException("Failed to synchronize CUDA device", ex);
+            _logger.LogError(ex, "Failed to synchronize CUDA device {DeviceId}", _deviceId);
+            throw;
         }
     }
 
@@ -113,23 +133,21 @@ public class CudaAccelerator : IAccelerator
             
             if (result != CudaError.Success)
             {
-                throw new AcceleratorException($"CUDA device reset failed: {result}");
+                throw new InvalidOperationException($"CUDA device reset failed: {CudaRuntime.GetErrorString(result)}");
             }
             
             // Reinitialize context
             _context.Reinitialize();
         }
-        catch (Exception ex) when (!(ex is AcceleratorException))
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Unexpected error during CUDA device reset");
-            throw new AcceleratorException("Failed to reset CUDA device", ex);
+            throw new InvalidOperationException("Failed to reset CUDA device", ex);
         }
     }
 
-    private Dictionary<string, ComputeCapability> QueryDeviceCapabilities()
+    private AcceleratorInfo BuildAcceleratorInfo()
     {
-        var capabilities = new Dictionary<string, ComputeCapability>();
-        
         try
         {
             var deviceProps = new CudaDeviceProperties();
@@ -137,54 +155,48 @@ public class CudaAccelerator : IAccelerator
             
             if (result != CudaError.Success)
             {
-                throw new AcceleratorException($"Failed to query device properties: {result}");
+                throw new InvalidOperationException($"Failed to query device properties: {CudaRuntime.GetErrorString(result)}");
             }
             
-            // Basic device info
-            capabilities["DeviceName"] = new ComputeCapability("DeviceName", deviceProps.Name);
-            capabilities["ComputeCapabilityMajor"] = new ComputeCapability("ComputeCapabilityMajor", deviceProps.Major);
-            capabilities["ComputeCapabilityMinor"] = new ComputeCapability("ComputeCapabilityMinor", deviceProps.Minor);
+            var capabilities = new Dictionary<string, object>
+            {
+                ["ComputeCapabilityMajor"] = deviceProps.Major,
+                ["ComputeCapabilityMinor"] = deviceProps.Minor,
+                ["SharedMemoryPerBlock"] = deviceProps.SharedMemPerBlock,
+                ["ConstantMemory"] = deviceProps.TotalConstMem,
+                ["L2CacheSize"] = deviceProps.L2CacheSize,
+                ["MultiprocessorCount"] = deviceProps.MultiProcessorCount,
+                ["MaxThreadsPerBlock"] = deviceProps.MaxThreadsPerBlock,
+                ["MaxThreadsPerMultiprocessor"] = deviceProps.MaxThreadsPerMultiProcessor,
+                ["WarpSize"] = deviceProps.WarpSize,
+                ["AsyncEngineCount"] = deviceProps.AsyncEngineCount,
+                ["UnifiedAddressing"] = deviceProps.UnifiedAddressing > 0,
+                ["ManagedMemory"] = deviceProps.ManagedMemory > 0,
+                ["ConcurrentKernels"] = deviceProps.ConcurrentKernels > 0,
+                ["ECCEnabled"] = deviceProps.ECCEnabled > 0,
+                ["ClockRate"] = deviceProps.ClockRate,
+                ["MemoryClockRate"] = deviceProps.MemoryClockRate,
+                ["MemoryBusWidth"] = deviceProps.MemoryBusWidth,
+                ["MemoryBandwidth"] = 2.0 * deviceProps.MemoryClockRate * (deviceProps.MemoryBusWidth / 8) / 1.0e6
+            };
             
-            // Memory info
-            capabilities["TotalGlobalMemory"] = new ComputeCapability("TotalGlobalMemory", deviceProps.TotalGlobalMem);
-            capabilities["SharedMemoryPerBlock"] = new ComputeCapability("SharedMemoryPerBlock", deviceProps.SharedMemPerBlock);
-            capabilities["ConstantMemory"] = new ComputeCapability("ConstantMemory", deviceProps.TotalConstMem);
-            capabilities["L2CacheSize"] = new ComputeCapability("L2CacheSize", deviceProps.L2CacheSize);
-            
-            // Compute info
-            capabilities["MultiprocessorCount"] = new ComputeCapability("MultiprocessorCount", deviceProps.MultiProcessorCount);
-            capabilities["MaxThreadsPerBlock"] = new ComputeCapability("MaxThreadsPerBlock", deviceProps.MaxThreadsPerBlock);
-            capabilities["MaxThreadsPerMultiprocessor"] = new ComputeCapability("MaxThreadsPerMultiprocessor", deviceProps.MaxThreadsPerMultiProcessor);
-            capabilities["WarpSize"] = new ComputeCapability("WarpSize", deviceProps.WarpSize);
-            capabilities["MaxGridSizeX"] = new ComputeCapability("MaxGridSizeX", deviceProps.MaxGridSize[0]);
-            capabilities["MaxGridSizeY"] = new ComputeCapability("MaxGridSizeY", deviceProps.MaxGridSize[1]);
-            capabilities["MaxGridSizeZ"] = new ComputeCapability("MaxGridSizeZ", deviceProps.MaxGridSize[2]);
-            capabilities["MaxBlockSizeX"] = new ComputeCapability("MaxBlockSizeX", deviceProps.MaxThreadsDim[0]);
-            capabilities["MaxBlockSizeY"] = new ComputeCapability("MaxBlockSizeY", deviceProps.MaxThreadsDim[1]);
-            capabilities["MaxBlockSizeZ"] = new ComputeCapability("MaxBlockSizeZ", deviceProps.MaxThreadsDim[2]);
-            
-            // Features
-            capabilities["AsyncEngineCount"] = new ComputeCapability("AsyncEngineCount", deviceProps.AsyncEngineCount);
-            capabilities["UnifiedAddressing"] = new ComputeCapability("UnifiedAddressing", deviceProps.UnifiedAddressing);
-            capabilities["ManagedMemory"] = new ComputeCapability("ManagedMemory", deviceProps.ManagedMemory);
-            capabilities["ConcurrentKernels"] = new ComputeCapability("ConcurrentKernels", deviceProps.ConcurrentKernels);
-            capabilities["ECCEnabled"] = new ComputeCapability("ECCEnabled", deviceProps.ECCEnabled);
-            
-            // Performance
-            capabilities["ClockRate"] = new ComputeCapability("ClockRate", deviceProps.ClockRate);
-            capabilities["MemoryClockRate"] = new ComputeCapability("MemoryClockRate", deviceProps.MemoryClockRate);
-            capabilities["MemoryBusWidth"] = new ComputeCapability("MemoryBusWidth", deviceProps.MemoryBusWidth);
-            
-            // Compute the memory bandwidth in GB/s
-            var memoryBandwidth = 2.0 * deviceProps.MemoryClockRate * (deviceProps.MemoryBusWidth / 8) / 1.0e6;
-            capabilities["MemoryBandwidth"] = new ComputeCapability("MemoryBandwidth", memoryBandwidth);
-            
-            return capabilities;
+            return new AcceleratorInfo
+            {
+                Id = $"cuda-{_deviceId}",
+                Name = deviceProps.Name,
+                DeviceType = "CUDA",
+                Vendor = "NVIDIA",
+                ComputeCapability = new Version(deviceProps.Major, deviceProps.Minor),
+                TotalMemory = (long)deviceProps.TotalGlobalMem,
+                ComputeUnits = deviceProps.MultiProcessorCount,
+                MaxClockFrequency = deviceProps.ClockRate / 1000, // Convert kHz to MHz
+                Capabilities = capabilities
+            };
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to query device capabilities");
-            throw new AcceleratorException("Failed to query CUDA device capabilities", ex);
+            _logger.LogError(ex, "Failed to build accelerator info");
+            throw new InvalidOperationException("Failed to build CUDA accelerator info", ex);
         }
     }
 
@@ -196,13 +208,17 @@ public class CudaAccelerator : IAccelerator
         }
     }
 
-    public void Dispose()
+    /// <inheritdoc/>
+    public async ValueTask DisposeAsync()
     {
         if (_disposed) return;
         
         try
         {
             _logger.LogInformation("Disposing CUDA accelerator");
+            
+            // Synchronize before disposal
+            await SynchronizeAsync().ConfigureAwait(false);
             
             // Dispose managed resources
             _kernelCompiler?.Dispose();

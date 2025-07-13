@@ -13,17 +13,17 @@ namespace DotCompute.Generators.Backend
     /// <summary>
     /// Generates optimized CPU code with SIMD support.
     /// </summary>
-    internal class CpuCodeGenerator
+    public class CpuCodeGenerator
     {
         private readonly string _methodName;
-        private readonly List<(string name, string type, bool isBuffer)> _parameters;
+        private readonly IReadOnlyList<(string name, string type, bool isBuffer)> _parameters;
         private readonly MethodDeclarationSyntax _methodSyntax;
         private readonly VectorizationInfo _vectorizationInfo;
         private readonly int _vectorSize;
 
         public CpuCodeGenerator(
             string methodName,
-            List<(string name, string type, bool isBuffer)> parameters,
+            IReadOnlyList<(string name, string type, bool isBuffer)> parameters,
             MethodDeclarationSyntax methodSyntax,
             int vectorSize = 8)
         {

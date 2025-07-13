@@ -28,7 +28,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryAllocation_UnderMemoryPressure_ShouldHandleGracefully()
+    public async Task MemoryAllocationUnderMemoryPressure_ShouldHandleGracefully()
     {
         // Arrange
         const long largeBufferSize = 512 * 1024 * 1024; // 512MB
@@ -82,7 +82,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task ConcurrentMemoryOperations_HighContention_ShouldBeThreadSafe()
+    public async Task ConcurrentMemoryOperationsHighContention_ShouldBeThreadSafe()
     {
         // Arrange
         const int threadCount = 20;
@@ -203,7 +203,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     [InlineData(-1)]
     [InlineData(-1000)]
     [InlineData(long.MinValue)]
-    public async Task AllocateAsync_WithInvalidSizes_ShouldThrowArgumentOutOfRangeException(long invalidSize)
+    public async Task AllocateAsyncWithInvalidSizes_ShouldThrowArgumentOutOfRangeException(long invalidSize)
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
@@ -211,7 +211,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task CreateView_WithInvalidParameters_ShouldThrowAppropriateExceptions()
+    public async Task CreateViewWithInvalidParameters_ShouldThrowAppropriateExceptions()
     {
         // Arrange
         var buffer = await _memoryManager.AllocateAsync(1024);
@@ -243,7 +243,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task DisposedBuffer_ShouldThrowObjectDisposedException()
+    public async Task DisposedBufferShouldThrowObjectDisposedException()
     {
         // Arrange
         var buffer = await _memoryManager.AllocateAsync(1024);
@@ -262,7 +262,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryManager_WhenDisposed_ShouldThrowObjectDisposedException()
+    public async Task MemoryManagerWhenDisposed_ShouldThrowObjectDisposedException()
     {
         // Arrange
         var memoryManager = new CpuMemoryManager();
@@ -274,7 +274,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task LargeBufferOperations_ShouldHandleCorrectly()
+    public async Task LargeBufferOperationsShouldHandleCorrectly()
     {
         // Arrange
         const long largeSize = 256 * 1024 * 1024; // 256MB
@@ -320,7 +320,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryAlignment_ShouldBeRespected()
+    public async Task MemoryAlignmentShouldBeRespected()
     {
         // Arrange & Act
         var buffers = new List<IMemoryBuffer>();
@@ -356,7 +356,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task ExtremeCopyOperations_ShouldHandleEdgeCases()
+    public async Task ExtremeCopyOperationsShouldHandleEdgeCases()
     {
         // Arrange
         var buffer = await _memoryManager.AllocateAsync(10000);
@@ -388,7 +388,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryFragmentation_UnderVariedWorkload_ShouldMaintainPerformance()
+    public async Task MemoryFragmentationUnderVariedWorkload_ShouldMaintainPerformance()
     {
         // Arrange
         const int iterations = 1000;
@@ -434,7 +434,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task TypedMemoryOperations_ShouldHandleAllPrimitiveTypes()
+    public async Task TypedMemoryOperationsShouldHandleAllPrimitiveTypes()
     {
         // Test different primitive types
         await TestTypedOperations<byte>(new byte[] { 1, 2, 3, 255 });
@@ -469,7 +469,7 @@ public class ProductionMemoryIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task MemoryLeakDetection_AfterIntensiveOperations_ShouldShowNoLeaks()
+    public async Task MemoryLeakDetectionAfterIntensiveOperations_ShouldShowNoLeaks()
     {
         // Arrange
         var initialMemory = _memoryManager.TotalAllocatedBytes;

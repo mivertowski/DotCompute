@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using DotCompute.Core.Abstractions;
+using DotCompute.Abstractions;
 using DotCompute.Plugins;
 using DotCompute.Plugins.Abstractions;
 using FluentAssertions;
@@ -46,7 +46,7 @@ public class PipelineIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Pipeline_LoadComputePlugin_IntegratesWithBackend()
+    public async Task PipelineLoadComputePlugin_IntegratesWithBackend()
     {
         // Arrange
         var computePlugin = CreateMockComputePlugin();
@@ -70,7 +70,7 @@ public class PipelineIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Pipeline_ChainMultiplePlugins_ExecutesInOrder()
+    public async Task PipelineChainMultiplePlugins_ExecutesInOrder()
     {
         // Arrange
         var preprocessPlugin = CreateMockPreprocessPlugin();
@@ -105,7 +105,7 @@ public class PipelineIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Pipeline_PluginThrowsException_HandlesCleanluy()
+    public async Task PipelinePluginThrowsException_HandlesCleanluy()
     {
         // Arrange
         var faultyPlugin = CreateMockComputePlugin();
@@ -130,7 +130,7 @@ public class PipelineIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Pipeline_OptimizationPlugin_AppliesOptimizations()
+    public async Task PipelineOptimizationPlugin_AppliesOptimizations()
     {
         // Arrange
         var optimizationPlugin = CreateMockOptimizationPlugin();
@@ -162,7 +162,7 @@ public class PipelineIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Pipeline_HotReload_UpdatesRunningPipeline()
+    public async Task PipelineHotReload_UpdatesRunningPipeline()
     {
         // Arrange
         var oldPlugin = CreateMockComputePlugin();
@@ -197,7 +197,7 @@ public class PipelineIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Pipeline_ConcurrentExecution_HandlesCorrectly()
+    public async Task PipelineConcurrentExecution_HandlesCorrectly()
     {
         // Arrange
         var computePlugin = CreateMockComputePlugin();
@@ -228,7 +228,7 @@ public class PipelineIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Pipeline_ResourceManagement_CleansUpCorrectly()
+    public async Task PipelineResourceManagement_CleansUpCorrectly()
     {
         // Arrange
         var computePlugin = CreateMockComputePlugin();
@@ -258,7 +258,7 @@ public class PipelineIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Pipeline_ErrorRecovery_ContinuesAfterError()
+    public async Task PipelineErrorRecovery_ContinuesAfterError()
     {
         // Arrange
         var unreliablePlugin = CreateMockComputePlugin();
@@ -294,7 +294,7 @@ public class PipelineIntegrationTests : IDisposable
     }
 
     [Fact]
-    public async Task Pipeline_PerformanceMonitoring_TracksMetrics()
+    public async Task PipelinePerformanceMonitoring_TracksMetrics()
     {
         // Arrange
         var computePlugin = CreateMockComputePlugin();

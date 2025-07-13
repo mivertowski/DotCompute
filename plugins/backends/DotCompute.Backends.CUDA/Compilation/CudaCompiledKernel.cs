@@ -5,9 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using DotCompute.Core.Abstractions;
-using DotCompute.Core.Abstractions.Compilation;
-using DotCompute.Core.Abstractions.Execution;
+using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
