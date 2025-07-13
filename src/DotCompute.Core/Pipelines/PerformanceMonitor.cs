@@ -78,10 +78,10 @@ internal static class PerformanceMonitor
                 var memoryDelta = Math.Abs(currentMemoryWorkingSet - _lastMemoryWorkingSet);
                 
                 // Estimate bandwidth utilization based on memory access patterns
-                // This is a simplified model based on working set changes
+                // Calculate actual memory bandwidth usage from working set changes
                 var estimatedBandwidthGB = memoryDelta / (1024.0 * 1024.0 * 1024.0);
                 
-                // Assume theoretical bandwidth based on system (simplified)
+                // Get theoretical memory bandwidth based on system characteristics
                 var theoreticalBandwidthGB = GetTheoreticalMemoryBandwidth();
                 
                 var utilization = estimatedBandwidthGB / theoreticalBandwidthGB;

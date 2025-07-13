@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 
@@ -383,31 +384,162 @@ public sealed class CpuThreadPool : IAsyncDisposable
     
     private void SetThreadAffinity(int threadIndex)
     {
-        // Platform-specific thread affinity implementation
         try
         {
             // Set thread priority as a hint for better scheduling
             Thread.CurrentThread.Priority = _options.ThreadPriority;
             
-            // On Windows, you would use SetThreadAffinityMask
-            // On Linux, you would use pthread_setaffinity_np
-            // For now, we'll use processor affinity hints
+            // Get NUMA topology for intelligent affinity assignment
+            var topology = NumaInfo.Topology;
+            var affinityInfo = CalculateOptimalAffinity(threadIndex, topology);
+            
+            // Apply NUMA-aware thread affinity
             if (OperatingSystem.IsWindows())
             {
-                // Windows-specific affinity would go here
-                // SetThreadAffinityMask(GetCurrentThread(), (UIntPtr)(1UL << (threadIndex % Environment.ProcessorCount)));
+                SetThreadAffinityWindows(affinityInfo);
             }
             else if (OperatingSystem.IsLinux())
             {
-                // Linux-specific affinity would go here
-                // pthread_setaffinity_np equivalent
+                SetThreadAffinityLinux(affinityInfo);
             }
         }
         catch
         {
-            // Ignore affinity setting errors
+            // Ignore affinity setting errors - not critical for functionality
         }
     }
+    
+    private NumaThreadAffinityInfo CalculateOptimalAffinity(int threadIndex, NumaTopology topology)
+    {
+        // Distribute threads across NUMA nodes for optimal performance
+        var totalThreads = _threads.Length;
+        var threadsPerNode = Math.Max(1, totalThreads / topology.NodeCount);
+        var targetNodeId = threadIndex / threadsPerNode;
+        
+        // Ensure we don't exceed available nodes
+        if (targetNodeId >= topology.NodeCount)
+        {
+            targetNodeId = threadIndex % topology.NodeCount;
+        }
+        
+        var targetNode = topology.Nodes[targetNodeId];
+        var cpusInNode = targetNode.GetCpuList().ToArray();
+        
+        // Select specific CPU within the node
+        var cpuIndex = threadIndex % Math.Max(1, cpusInNode.Length);
+        var targetCpu = cpusInNode.Length > 0 ? cpusInNode[cpuIndex] : threadIndex % Environment.ProcessorCount;
+        
+        return new NumaThreadAffinityInfo
+        {
+            ThreadIndex = threadIndex,
+            NodeId = targetNodeId,
+            CpuId = targetCpu,
+            ProcessorMask = 1UL << targetCpu,
+            Group = targetNode.Group
+        };
+    }
+    
+    private void SetThreadAffinityWindows(NumaThreadAffinityInfo affinityInfo)
+    {
+        try
+        {
+            // Use SetThreadAffinityMask for Windows
+            var mask = new UIntPtr(affinityInfo.ProcessorMask);
+            SetThreadAffinityMask(GetCurrentThread(), mask);
+            
+            // Set ideal processor for additional scheduling hints
+            SetThreadIdealProcessor(GetCurrentThread(), (uint)affinityInfo.CpuId);
+        }
+        catch
+        {
+            // Fallback: just set priority
+        }
+    }
+    
+    private void SetThreadAffinityLinux(NumaThreadAffinityInfo affinityInfo)
+    {
+        try
+        {
+            // Use pthread_setaffinity_np for Linux
+            var cpuSet = new cpu_set_t();
+            CPU_ZERO(ref cpuSet);
+            CPU_SET(affinityInfo.CpuId, ref cpuSet);
+            
+            pthread_setaffinity_np(pthread_self(), Marshal.SizeOf<cpu_set_t>(), ref cpuSet);
+        }
+        catch
+        {
+            // Fallback: attempt to use taskset-style affinity if available
+            try
+            {
+                var mask = affinityInfo.ProcessorMask;
+                sched_setaffinity(0, IntPtr.Size, ref mask);
+            }
+            catch
+            {
+                // Give up on affinity setting
+            }
+        }
+    }
+    
+    #region Windows Thread Affinity API
+    
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentThread();
+    
+    [DllImport("kernel32.dll")]
+    private static extern UIntPtr SetThreadAffinityMask(IntPtr hThread, UIntPtr dwThreadAffinityMask);
+    
+    [DllImport("kernel32.dll")]
+    private static extern uint SetThreadIdealProcessor(IntPtr hThread, uint dwIdealProcessor);
+    
+    #endregion
+    
+    #region Linux Thread Affinity API
+    
+    [StructLayout(LayoutKind.Sequential)]
+    private struct cpu_set_t
+    {
+        private const int CPU_SETSIZE = 1024;
+        private const int NCPUBITS = 8 * sizeof(ulong);
+        
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = CPU_SETSIZE / NCPUBITS)]
+        public ulong[] __bits;
+        
+        public cpu_set_t()
+        {
+            __bits = new ulong[CPU_SETSIZE / NCPUBITS];
+        }
+    }
+    
+    private static void CPU_ZERO(ref cpu_set_t set)
+    {
+        set.__bits = new ulong[set.__bits.Length];
+    }
+    
+    private static void CPU_SET(int cpu, ref cpu_set_t set)
+    {
+        if (cpu >= 0 && cpu < 1024)
+        {
+            int index = cpu / 64;
+            int bit = cpu % 64;
+            if (index < set.__bits.Length)
+            {
+                set.__bits[index] |= 1UL << bit;
+            }
+        }
+    }
+    
+    [DllImport("pthread", EntryPoint = "pthread_self")]
+    private static extern IntPtr pthread_self();
+    
+    [DllImport("pthread", EntryPoint = "pthread_setaffinity_np")]
+    private static extern int pthread_setaffinity_np(IntPtr thread, int cpusetsize, ref cpu_set_t cpuset);
+    
+    [DllImport("c", EntryPoint = "sched_setaffinity")]
+    private static extern int sched_setaffinity(int pid, int cpusetsize, ref ulong mask);
+    
+    #endregion
     
     /// <summary>
     /// Gets statistics about the thread pool.
@@ -490,4 +622,35 @@ public sealed class ThreadPoolStatistics
     public double AverageLocalQueueSize => LocalQueueCounts.Length > 0 ? LocalQueueCounts.Average() : 0;
     public int MaxLocalQueueSize => LocalQueueCounts.Length > 0 ? LocalQueueCounts.Max() : 0;
     public int MinLocalQueueSize => LocalQueueCounts.Length > 0 ? LocalQueueCounts.Min() : 0;
+}
+
+/// <summary>
+/// Information about NUMA-aware thread affinity assignment.
+/// </summary>
+internal sealed class NumaThreadAffinityInfo
+{
+    /// <summary>
+    /// Gets the thread index.
+    /// </summary>
+    public required int ThreadIndex { get; init; }
+    
+    /// <summary>
+    /// Gets the NUMA node ID this thread is assigned to.
+    /// </summary>
+    public required int NodeId { get; init; }
+    
+    /// <summary>
+    /// Gets the specific CPU ID this thread is assigned to.
+    /// </summary>
+    public required int CpuId { get; init; }
+    
+    /// <summary>
+    /// Gets the processor affinity mask.
+    /// </summary>
+    public required ulong ProcessorMask { get; init; }
+    
+    /// <summary>
+    /// Gets the processor group (Windows only).
+    /// </summary>
+    public required ushort Group { get; init; }
 }

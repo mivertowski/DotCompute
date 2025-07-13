@@ -1133,7 +1133,7 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
             // FusedMultiplyAdd uses ARM NEON FMLA instructions - handled separately
             KernelOperation.FusedMultiplyAdd => null, // Use specialized 3-argument FMLA method
             KernelOperation.Subtract => &AdvSimd.Subtract,
-            KernelOperation.Divide => &AdvSimd.Multiply, // AdvSimd doesn't have divide, emulate with reciprocal
+            KernelOperation.Divide => null, // AdvSimd doesn't have divide, use scalar fallback
             KernelOperation.Maximum => &AdvSimd.Max,
             KernelOperation.Minimum => &AdvSimd.Min,
             _ => &AdvSimd.Add

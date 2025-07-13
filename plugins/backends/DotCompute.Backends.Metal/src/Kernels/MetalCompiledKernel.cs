@@ -199,32 +199,74 @@ public sealed class MetalCompiledKernel : ICompiledKernel
 
     private (MetalSize gridSize, MetalSize threadgroupSize) CalculateDispatchDimensions(KernelArguments arguments)
     {
-        // Look for dimension information in the arguments
-        // This is a simplified implementation - in production we'd have a more robust way
-        // to pass execution configuration
-        var threadgroupSize = new MetalSize
-        {
-            width = (nuint)_threadExecutionWidth.x,
-            height = 1,
-            depth = 1
-        };
+        // Calculate optimal dispatch dimensions based on kernel arguments and device capabilities
+        var threadgroupSize = CalculateOptimalThreadgroupSize();
+        var gridSize = CalculateOptimalGridSize(arguments, threadgroupSize);
 
-        // Default grid size - this should be configurable
-        var gridSize = new MetalSize
-        {
-            width = 256,
-            height = 1,
-            depth = 1
-        };
-
-        // Adjust threadgroup size based on kernel characteristics
-        var totalThreads = threadgroupSize.width * threadgroupSize.height * threadgroupSize.depth;
-        if (totalThreads > (nuint)_maxTotalThreadsPerThreadgroup)
-        {
-            threadgroupSize.width = (nuint)_maxTotalThreadsPerThreadgroup;
-        }
+        _logger.LogTrace(
+            "Calculated dispatch dimensions - Grid: ({GridX}, {GridY}, {GridZ}), Threadgroup: ({ThreadX}, {ThreadY}, {ThreadZ})",
+            gridSize.width, gridSize.height, gridSize.depth,
+            threadgroupSize.width, threadgroupSize.height, threadgroupSize.depth);
 
         return (gridSize, threadgroupSize);
+    }
+
+    private MetalSize CalculateOptimalThreadgroupSize()
+    {
+        // Use thread execution width as a baseline for optimal threadgroup size
+        var width = Math.Min(_threadExecutionWidth.x, _maxTotalThreadsPerThreadgroup);
+        var height = 1;
+        var depth = 1;
+
+        // For larger work, consider 2D threadgroups if beneficial
+        if (_maxTotalThreadsPerThreadgroup >= 64)
+        {
+            if (width > 32)
+            {
+                height = Math.Min(width / 32, 4);
+                width = width / height;
+            }
+        }
+
+        return new MetalSize
+        {
+            width = (nuint)width,
+            height = (nuint)height,
+            depth = (nuint)depth
+        };
+    }
+
+    private MetalSize CalculateOptimalGridSize(KernelArguments arguments, MetalSize threadgroupSize)
+    {
+        // Look for dimension information in kernel arguments
+        var workDimensions = ExtractWorkDimensionsFromArguments(arguments);
+        
+        var gridWidth = Math.Max(1, (int)Math.Ceiling((double)workDimensions.x / threadgroupSize.width));
+        var gridHeight = Math.Max(1, (int)Math.Ceiling((double)workDimensions.y / threadgroupSize.height));
+        var gridDepth = Math.Max(1, (int)Math.Ceiling((double)workDimensions.z / threadgroupSize.depth));
+
+        return new MetalSize
+        {
+            width = (nuint)gridWidth,
+            height = (nuint)gridHeight,
+            depth = (nuint)gridDepth
+        };
+    }
+
+    private (long x, long y, long z) ExtractWorkDimensionsFromArguments(KernelArguments arguments)
+    {
+        // Look for Dim3 arguments that specify work dimensions
+        foreach (var arg in arguments.Arguments)
+        {
+            if (arg is Dim3 dim3)
+            {
+                return (dim3.X, dim3.Y, dim3.Z);
+            }
+        }
+
+        // Default work dimensions based on kernel metadata
+        var defaultWorkSize = _metadata.EstimatedWorkSize ?? 1024;
+        return (defaultWorkSize, 1, 1);
     }
 
     private static int GetScalarSize(object value)
@@ -291,4 +333,40 @@ public sealed class MetalCompiledKernel : ICompiledKernel
             MetalNative.ReleasePipelineState(_pipelineState);
         }
     }
+}
+
+/// <summary>
+/// Metadata associated with compiled Metal kernels.
+/// </summary>
+public class CompilationMetadata
+{
+    /// <summary>
+    /// Gets or sets the estimated work size for the kernel.
+    /// </summary>
+    public long? EstimatedWorkSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the compilation time in milliseconds.
+    /// </summary>
+    public double CompilationTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the kernel supports thread divergence.
+    /// </summary>
+    public bool SupportsThreadDivergence { get; set; }
+
+    /// <summary>
+    /// Gets or sets the memory usage characteristics.
+    /// </summary>
+    public Dictionary<string, object> MemoryUsage { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets any compiler warnings generated during compilation.
+    /// </summary>
+    public List<string> Warnings { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets additional metadata properties.
+    /// </summary>
+    public Dictionary<string, object> Properties { get; set; } = new();
 }

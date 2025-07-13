@@ -170,9 +170,70 @@ public sealed class CpuAccelerator : IAccelerator
 
     private static long GetTotalPhysicalMemory()
     {
-        // This is a simplified implementation
-        // In reality, you'd use platform-specific APIs
-        return GC.GetTotalMemory(false) * 10; // Rough estimate
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return GetWindowsPhysicalMemory();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return GetLinuxPhysicalMemory();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetMacOSPhysicalMemory();
+            }
+            else
+            {
+                // Unknown platform - use conservative estimate
+                return Math.Max(GC.GetTotalMemory(false) * 8, 2L * 1024 * 1024 * 1024);
+            }
+        }
+        catch
+        {
+            // If platform detection fails, return reasonable default
+            return 4L * 1024 * 1024 * 1024; // 4GB
+        }
+    }
+
+    private static long GetWindowsPhysicalMemory()
+    {
+        // For production, would use GlobalMemoryStatusEx Win32 API
+        // Using managed approximation for now
+        var process = System.Diagnostics.Process.GetCurrentProcess();
+        return Math.Max(process.WorkingSet64 * 8, 4L * 1024 * 1024 * 1024);
+    }
+
+    private static long GetLinuxPhysicalMemory()
+    {
+        try
+        {
+            if (System.IO.File.Exists("/proc/meminfo"))
+            {
+                var lines = System.IO.File.ReadAllLines("/proc/meminfo");
+                var totalLine = lines.FirstOrDefault(l => l.StartsWith("MemTotal:"));
+                if (totalLine != null)
+                {
+                    var parts = totalLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
+                    {
+                        return kb * 1024; // Convert KB to bytes
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Fall through to default
+        }
+        return 8L * 1024 * 1024 * 1024; // 8GB default
+    }
+
+    private static long GetMacOSPhysicalMemory()
+    {
+        // For production, would use sysctl hw.memsize
+        return 8L * 1024 * 1024 * 1024; // 8GB default for macOS
     }
 
     private static long GetCacheSize()
@@ -184,9 +245,7 @@ public sealed class CpuAccelerator : IAccelerator
 
     private static int GetNumaNodeCount()
     {
-        // Simplified - assumes single NUMA node
-        // Real implementation would query the system
-        return 1;
+        return NumaInfo.Topology.NodeCount;
     }
 
     private static int GetCacheLineSize()

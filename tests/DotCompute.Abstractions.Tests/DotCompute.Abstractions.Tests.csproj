@@ -12,7 +12,6 @@
 
   <ItemGroup>
     <!-- Test packages are provided by Directory.Build.targets -->
-    <PackageReference Include="Moq" />
   </ItemGroup>
 
   <ItemGroup>

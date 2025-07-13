@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using DotCompute.Abstractions;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using DotCompute.Core;
 
 namespace DotCompute.Core.Pipelines;

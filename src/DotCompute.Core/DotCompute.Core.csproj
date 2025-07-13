@@ -27,6 +27,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="../DotCompute.Abstractions/DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="../DotCompute.Memory/DotCompute.Memory.csproj" />
+  </ItemGroup>
+
+
+  <ItemGroup>
     <InternalsVisibleTo Include="DotCompute.Core.Tests" />
     <InternalsVisibleTo Include="DotCompute.Backends.CPU" />
     <InternalsVisibleTo Include="DotCompute.Plugins" />

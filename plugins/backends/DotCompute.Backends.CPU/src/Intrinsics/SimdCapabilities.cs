@@ -168,6 +168,7 @@ public sealed class SimdSummary
     public bool SupportsSse2 => SupportedInstructionSets.Contains("SSE2");
     public bool SupportsAvx2 => SupportedInstructionSets.Contains("AVX2");
     public bool SupportsAvx512 => SupportedInstructionSets.Contains("AVX512F");
+    public bool SupportsAdvSimd => SupportedInstructionSets.Contains("NEON");
 
     public override string ToString()
     {

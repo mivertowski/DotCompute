@@ -13,20 +13,34 @@ using System.Runtime.Intrinsics.Arm;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Backends.CPU.Threading;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
 /// <summary>
-/// Memory manager for CPU-based compute.
+/// NUMA-aware memory manager for CPU-based compute with advanced allocation strategies.
 /// </summary>
 public sealed class CpuMemoryManager : IMemoryManager, IDisposable
 {
     private readonly object _lock = new();
     private readonly List<WeakReference<CpuMemoryBuffer>> _buffers = new();
+    private readonly NumaTopology _topology;
+    private readonly NumaMemoryPolicy _defaultPolicy;
     private long _totalAllocated;
     private int _disposed;
 
+    public CpuMemoryManager(NumaMemoryPolicy? defaultPolicy = null)
+    {
+        _topology = NumaInfo.Topology;
+        _defaultPolicy = defaultPolicy ?? CreateDefaultPolicy();
+    }
+
     public long TotalAllocatedBytes => Interlocked.Read(ref _totalAllocated);
+
+    /// <summary>
+    /// Gets NUMA topology information.
+    /// </summary>
+    public NumaTopology Topology => _topology;
 
     public ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,
@@ -37,6 +51,33 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this);
+        
+        lock (_lock)
+        {
+            _buffers.Add(new WeakReference<CpuMemoryBuffer>(buffer));
+        }
+
+        Interlocked.Add(ref _totalAllocated, sizeInBytes);
+        
+        return ValueTask.FromResult<IMemoryBuffer>(buffer);
+    }
+
+    /// <summary>
+    /// Allocates memory with NUMA-aware placement.
+    /// </summary>
+    public ValueTask<IMemoryBuffer> AllocateAsync(
+        long sizeInBytes,
+        MemoryOptions options = MemoryOptions.None,
+        NumaMemoryPolicy? policy = null,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
+
+        policy ??= _defaultPolicy;
+        var preferredNode = DetermineOptimalNode(policy, sizeInBytes);
+        
+        var buffer = new CpuMemoryBuffer(sizeInBytes, options, this, preferredNode, policy);
         
         lock (_lock)
         {
@@ -76,6 +117,71 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         Interlocked.Add(ref _totalAllocated, -sizeInBytes);
     }
 
+    /// <summary>
+    /// Creates a memory policy for the current thread's CPU affinity.
+    /// </summary>
+    public NumaMemoryPolicy CreatePolicyForCurrentThread()
+    {
+        var currentCpu = GetCurrentProcessorNumber();
+        var preferredNode = _topology.GetNodeForProcessor(currentCpu);
+        
+        return new NumaMemoryPolicy
+        {
+            Strategy = NumaAllocationStrategy.LocalPreferred,
+            PreferredNodes = new[] { preferredNode },
+            FallbackStrategy = NumaFallbackStrategy.ClosestFirst
+        };
+    }
+
+    /// <summary>
+    /// Creates a memory policy for specific processor affinity.
+    /// </summary>
+    public NumaMemoryPolicy CreatePolicyForProcessors(IEnumerable<int> processorIds)
+    {
+        var processors = processorIds.ToArray();
+        var optimalNode = _topology.GetOptimalNodeForProcessors(processors);
+        
+        return new NumaMemoryPolicy
+        {
+            Strategy = NumaAllocationStrategy.LocalPreferred,
+            PreferredNodes = new[] { optimalNode },
+            FallbackStrategy = NumaFallbackStrategy.ClosestFirst
+        };
+    }
+
+    /// <summary>
+    /// Gets memory usage statistics per NUMA node.
+    /// </summary>
+    public NumaMemoryStatistics GetNumaStatistics()
+    {
+        var nodeStats = new Dictionary<int, NumaNodeStatistics>();
+        
+        lock (_lock)
+        {
+            foreach (var weakRef in _buffers)
+            {
+                if (weakRef.TryGetTarget(out var buffer))
+                {
+                    var nodeId = buffer.PreferredNode;
+                    if (!nodeStats.TryGetValue(nodeId, out var stats))
+                    {
+                        stats = new NumaNodeStatistics { NodeId = nodeId };
+                        nodeStats[nodeId] = stats;
+                    }
+                    
+                    stats.AllocatedBytes += buffer.SizeInBytes;
+                    stats.BufferCount++;
+                }
+            }
+        }
+        
+        return new NumaMemoryStatistics
+        {
+            TotalAllocatedBytes = TotalAllocatedBytes,
+            NodeStatistics = nodeStats.Values.ToArray()
+        };
+    }
+
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
@@ -95,6 +201,114 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         }
     }
 
+    private NumaMemoryPolicy CreateDefaultPolicy()
+    {
+        return new NumaMemoryPolicy
+        {
+            Strategy = _topology.NodeCount > 1 ? NumaAllocationStrategy.LocalPreferred : NumaAllocationStrategy.FirstFit,
+            PreferredNodes = Array.Empty<int>(),
+            FallbackStrategy = NumaFallbackStrategy.ClosestFirst
+        };
+    }
+
+    private int DetermineOptimalNode(NumaMemoryPolicy policy, long sizeInBytes)
+    {
+        return policy.Strategy switch
+        {
+            NumaAllocationStrategy.LocalPreferred => GetLocalPreferredNode(policy),
+            NumaAllocationStrategy.FirstFit => GetFirstFitNode(sizeInBytes),
+            NumaAllocationStrategy.BestFit => GetBestFitNode(sizeInBytes),
+            NumaAllocationStrategy.Interleaved => GetInterleavedNode(policy),
+            NumaAllocationStrategy.Explicit => GetExplicitNode(policy),
+            _ => 0
+        };
+    }
+
+    private int GetLocalPreferredNode(NumaMemoryPolicy policy)
+    {
+        if (policy.PreferredNodes.Any())
+        {
+            return policy.PreferredNodes[0];
+        }
+        
+        var currentCpu = GetCurrentProcessorNumber();
+        return _topology.GetNodeForProcessor(currentCpu);
+    }
+
+    private int GetFirstFitNode(long sizeInBytes)
+    {
+        // Simple first-fit allocation
+        return 0;
+    }
+
+    private int GetBestFitNode(long sizeInBytes)
+    {
+        // Select node with most available memory
+        return _topology.GetNodesByAvailableMemory().FirstOrDefault();
+    }
+
+    private int GetInterleavedNode(NumaMemoryPolicy policy)
+    {
+        // Round-robin across specified nodes or all nodes
+        var nodes = policy.PreferredNodes.Any() ? policy.PreferredNodes : Enumerable.Range(0, _topology.NodeCount);
+        var nodeArray = nodes.ToArray();
+        
+        // Use thread ID for deterministic but distributed allocation
+        var threadId = Environment.CurrentManagedThreadId;
+        return nodeArray[threadId % nodeArray.Length];
+    }
+
+    private int GetExplicitNode(NumaMemoryPolicy policy)
+    {
+        return policy.PreferredNodes.FirstOrDefault();
+    }
+
+    private static int GetCurrentProcessorNumber()
+    {
+        // Platform-specific implementation to get current processor
+        if (OperatingSystem.IsWindows())
+        {
+            return (int)(GetCurrentProcessorNumberWin32() % Environment.ProcessorCount);
+        }
+        else if (OperatingSystem.IsLinux())
+        {
+            return GetCurrentProcessorNumberLinux();
+        }
+        
+        return 0; // Fallback
+    }
+
+    [DllImport("kernel32.dll")]
+    private static extern uint GetCurrentProcessorNumber();
+    
+    private static uint GetCurrentProcessorNumberWin32()
+    {
+        try
+        {
+            return GetCurrentProcessorNumber();
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static int GetCurrentProcessorNumberLinux()
+    {
+        try
+        {
+            // Use sched_getcpu() if available
+            return sched_getcpu();
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    [DllImport("c", EntryPoint = "sched_getcpu")]
+    private static extern int sched_getcpu();
+
     private void ThrowIfDisposed()
     {
         if (_disposed != 0)
@@ -103,7 +317,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
 }
 
 /// <summary>
-/// CPU memory buffer implementation.
+/// NUMA-aware CPU memory buffer implementation.
 /// </summary>
 internal sealed class CpuMemoryBuffer : IMemoryBuffer
 {
@@ -113,27 +327,27 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     private readonly MemoryOptions _options;
     private readonly long _viewOffset;
     private readonly long _viewLength;
+    private readonly int _preferredNode;
+    private readonly NumaMemoryPolicy _policy;
     private int _disposed;
 
     public CpuMemoryBuffer(long sizeInBytes, MemoryOptions options, CpuMemoryManager manager)
+        : this(sizeInBytes, options, manager, 0, manager._defaultPolicy)
+    {
+    }
+
+    public CpuMemoryBuffer(long sizeInBytes, MemoryOptions options, CpuMemoryManager manager, int preferredNode, NumaMemoryPolicy policy)
     {
         _sizeInBytes = sizeInBytes;
         _options = options;
         _manager = manager;
         _viewOffset = 0;
         _viewLength = sizeInBytes;
+        _preferredNode = preferredNode;
+        _policy = policy;
 
-        // Use ArrayPool for smaller allocations, native memory for larger ones
-        const int maxArrayLength = 1024 * 1024 * 1024; // 1GB limit
-        if (sizeInBytes <= maxArrayLength)
-        {
-            _memoryOwner = MemoryPool<byte>.Shared.Rent((int)sizeInBytes);
-        }
-        else
-        {
-            // Use native memory allocation for large buffers (>1GB)
-            _memoryOwner = new NativeMemoryOwner(sizeInBytes);
-        }
+        // Use NUMA-aware memory allocation
+        _memoryOwner = AllocateNumaAwareMemory(sizeInBytes, preferredNode, policy);
     }
 
     private CpuMemoryBuffer(CpuMemoryBuffer parent, long offset, long length)
@@ -144,11 +358,23 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         _manager = parent._manager;
         _viewOffset = parent._viewOffset + offset;
         _viewLength = length;
+        _preferredNode = parent._preferredNode;
+        _policy = parent._policy;
     }
 
     public long SizeInBytes => _viewLength;
 
     public MemoryOptions Options => _options;
+
+    /// <summary>
+    /// Gets the NUMA node this buffer is allocated on.
+    /// </summary>
+    public int PreferredNode => _preferredNode;
+
+    /// <summary>
+    /// Gets the memory policy used for this buffer.
+    /// </summary>
+    public NumaMemoryPolicy Policy => _policy;
 
     public Memory<byte> GetMemory()
     {
@@ -182,10 +408,10 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         var destMemory = GetMemory().Slice((int)offset, bytesToCopy);
         var sourceSpan = MemoryMarshal.AsBytes(source.Span);
         
-        // Use optimized SIMD copy for large transfers
+        // Use optimized NUMA-aware memory copy
         if (bytesToCopy >= 64)
         {
-            OptimizedMemoryCopy(sourceSpan, destMemory.Span);
+            OptimizedNumaMemoryCopy(sourceSpan, destMemory.Span, _preferredNode);
         }
         else
         {
@@ -214,10 +440,10 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         var sourceMemory = GetMemory().Slice((int)offset, bytesToCopy);
         var destSpan = MemoryMarshal.AsBytes(destination.Span);
         
-        // Use optimized SIMD copy for large transfers
+        // Use optimized NUMA-aware memory copy
         if (bytesToCopy >= 64)
         {
-            OptimizedMemoryCopy(sourceMemory.Span, destSpan);
+            OptimizedNumaMemoryCopy(sourceMemory.Span, destSpan, _preferredNode);
         }
         else
         {
@@ -238,13 +464,44 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     }
 
     /// <summary>
-    /// Optimized memory copy using SIMD instructions for better performance.
+    /// Allocates NUMA-aware memory using platform-specific methods.
+    /// </summary>
+    private static IMemoryOwner<byte> AllocateNumaAwareMemory(long sizeInBytes, int preferredNode, NumaMemoryPolicy policy)
+    {
+        // For large allocations, use NUMA-aware native memory
+        const int largeAllocationThreshold = 64 * 1024; // 64KB threshold
+        
+        if (sizeInBytes >= largeAllocationThreshold && NumaInfo.IsNumaSystem)
+        {
+            return new NumaAwareMemoryOwner(sizeInBytes, preferredNode, policy);
+        }
+        
+        // For smaller allocations, use regular pooled memory
+        const int maxArrayLength = 1024 * 1024 * 1024; // 1GB limit
+        if (sizeInBytes <= maxArrayLength)
+        {
+            return MemoryPool<byte>.Shared.Rent((int)sizeInBytes);
+        }
+        else
+        {
+            return new NativeMemoryOwner(sizeInBytes);
+        }
+    }
+
+    /// <summary>
+    /// NUMA-aware optimized memory copy with prefetching and streaming hints.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void OptimizedMemoryCopy(ReadOnlySpan<byte> source, Span<byte> destination)
+    private static void OptimizedNumaMemoryCopy(ReadOnlySpan<byte> source, Span<byte> destination, int preferredNode)
     {
         if (source.Length != destination.Length)
             throw new ArgumentException("Source and destination must have the same length");
+
+        // Add NUMA-aware prefetching for large transfers
+        if (source.Length >= 1024 * 1024) // 1MB threshold
+        {
+            PrefetchForNumaTransfer(source, destination, preferredNode);
+        }
 
         // Use the largest available SIMD width for copying
         if (Vector512.IsHardwareAccelerated && source.Length >= 64)
@@ -263,6 +520,55 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         {
             source.CopyTo(destination);
         }
+    }
+
+    /// <summary>
+    /// Prefetches memory for NUMA-aware transfers.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static void PrefetchForNumaTransfer(ReadOnlySpan<byte> source, Span<byte> destination, int preferredNode)
+    {
+        // Prefetch data in cache-line sized chunks
+        const int prefetchDistance = 64; // Cache line size
+        const int maxPrefetchLines = 8;  // Prefetch up to 8 cache lines ahead
+        
+        unsafe
+        {
+            fixed (byte* srcPtr = source)
+            fixed (byte* dstPtr = destination)
+            {
+                var length = Math.Min(source.Length, destination.Length);
+                var prefetchLines = Math.Min(maxPrefetchLines, (length + prefetchDistance - 1) / prefetchDistance);
+                
+                for (int i = 0; i < prefetchLines; i++)
+                {
+                    var offset = i * prefetchDistance;
+                    if (offset < length)
+                    {
+                        // Prefetch for reading
+                        if (Sse.IsSupported)
+                        {
+                            Sse.Prefetch0(srcPtr + offset);
+                        }
+                        
+                        // Prefetch for writing
+                        if (Sse.IsSupported)
+                        {
+                            Sse.Prefetch0(dstPtr + offset);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// Optimized memory copy using SIMD instructions for better performance.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+    private static void OptimizedMemoryCopy(ReadOnlySpan<byte> source, Span<byte> destination)
+    {
+        OptimizedNumaMemoryCopy(source, destination, 0);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -460,4 +766,304 @@ internal sealed unsafe class UnmanagedMemoryManager<T> : MemoryManager<T> where 
     public override void Unpin() { }
 
     protected override void Dispose(bool disposing) { }
+}
+
+/// <summary>
+/// NUMA-aware memory owner that allocates memory on specific NUMA nodes.
+/// </summary>
+internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
+{
+    private unsafe byte* _ptr;
+    private readonly long _size;
+    private readonly int _preferredNode;
+    private readonly NumaMemoryPolicy _policy;
+    private bool _disposed;
+
+    public unsafe NumaAwareMemoryOwner(long size, int preferredNode, NumaMemoryPolicy policy)
+    {
+        if (size <= 0)
+            throw new ArgumentOutOfRangeException(nameof(size));
+
+        _size = size;
+        _preferredNode = preferredNode;
+        _policy = policy;
+
+        // Allocate memory using NUMA-aware allocation
+        _ptr = AllocateNumaMemory(size, preferredNode, policy);
+        
+        if (_ptr == null)
+            throw new InvalidOperationException($"Failed to allocate {size} bytes on NUMA node {preferredNode}");
+
+        // Perform first-touch allocation to ensure pages are allocated on the correct node
+        PerformFirstTouchAllocation();
+    }
+
+    public Memory<byte> Memory
+    {
+        get
+        {
+            ThrowIfDisposed();
+            unsafe
+            {
+                return new UnmanagedMemoryManager<byte>(_ptr, (int)Math.Min(_size, int.MaxValue)).Memory;
+            }
+        }
+    }
+
+    private unsafe byte* AllocateNumaMemory(long size, int preferredNode, NumaMemoryPolicy policy)
+    {
+        // Try platform-specific NUMA allocation
+        if (OperatingSystem.IsWindows())
+        {
+            return AllocateNumaMemoryWindows(size, preferredNode);
+        }
+        else if (OperatingSystem.IsLinux())
+        {
+            return AllocateNumaMemoryLinux(size, preferredNode, policy);
+        }
+        
+        // Fallback to regular aligned allocation
+        return (byte*)NativeMemory.AlignedAlloc((nuint)size, 64);
+    }
+
+    private unsafe byte* AllocateNumaMemoryWindows(long size, int preferredNode)
+    {
+        try
+        {
+            // Use VirtualAllocExNuma for Windows NUMA allocation
+            var ptr = VirtualAllocExNuma(
+                GetCurrentProcess(),
+                IntPtr.Zero,
+                (nuint)size,
+                MEM_COMMIT | MEM_RESERVE,
+                PAGE_READWRITE,
+                (uint)preferredNode);
+            
+            return (byte*)ptr;
+        }
+        catch
+        {
+            // Fallback to regular allocation
+            return (byte*)NativeMemory.AlignedAlloc((nuint)size, 64);
+        }
+    }
+
+    private unsafe byte* AllocateNumaMemoryLinux(long size, int preferredNode, NumaMemoryPolicy policy)
+    {
+        try
+        {
+            // Use numa_alloc_onnode for Linux NUMA allocation
+            var ptr = numa_alloc_onnode((nuint)size, preferredNode);
+            if (ptr != null)
+            {
+                return (byte*)ptr;
+            }
+        }
+        catch
+        {
+            // Fallback to regular allocation
+        }
+        
+        return (byte*)NativeMemory.AlignedAlloc((nuint)size, 64);
+    }
+
+    private unsafe void PerformFirstTouchAllocation()
+    {
+        // Touch each page to ensure it's allocated on the correct NUMA node
+        const int pageSize = 4096; // Standard page size
+        var pages = (int)((_size + pageSize - 1) / pageSize);
+        
+        for (int i = 0; i < pages; i++)
+        {
+            var offset = i * pageSize;
+            if (offset < _size)
+            {
+                _ptr[offset] = 0; // Touch the page
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            unsafe
+            {
+                if (_ptr != null)
+                {
+                    if (OperatingSystem.IsWindows())
+                    {
+                        VirtualFree((IntPtr)_ptr, 0, MEM_RELEASE);
+                    }
+                    else if (OperatingSystem.IsLinux())
+                    {
+                        try
+                        {
+                            numa_free(_ptr, (nuint)_size);
+                        }
+                        catch
+                        {
+                            NativeMemory.AlignedFree(_ptr);
+                        }
+                    }
+                    else
+                    {
+                        NativeMemory.AlignedFree(_ptr);
+                    }
+                    _ptr = null;
+                }
+            }
+            _disposed = true;
+        }
+    }
+
+    private void ThrowIfDisposed()
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(NumaAwareMemoryOwner));
+    }
+
+    #region Windows NUMA API
+
+    private const uint MEM_COMMIT = 0x1000;
+    private const uint MEM_RESERVE = 0x2000;
+    private const uint MEM_RELEASE = 0x8000;
+    private const uint PAGE_READWRITE = 0x04;
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr VirtualAllocExNuma(
+        IntPtr hProcess,
+        IntPtr lpAddress,
+        nuint dwSize,
+        uint flAllocationType,
+        uint flProtect,
+        uint nndPreferred);
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    private static extern bool VirtualFree(IntPtr lpAddress, nuint dwSize, uint dwFreeType);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentProcess();
+
+    #endregion
+
+    #region Linux NUMA API
+
+    [DllImport("numa", EntryPoint = "numa_alloc_onnode")]
+    private static extern unsafe void* numa_alloc_onnode(nuint size, int node);
+
+    [DllImport("numa", EntryPoint = "numa_free")]
+    private static extern unsafe void numa_free(void* ptr, nuint size);
+
+    #endregion
+}
+
+/// <summary>
+/// NUMA memory allocation policy.
+/// </summary>
+public sealed class NumaMemoryPolicy
+{
+    /// <summary>
+    /// Gets or sets the allocation strategy.
+    /// </summary>
+    public required NumaAllocationStrategy Strategy { get; init; }
+
+    /// <summary>
+    /// Gets or sets the preferred NUMA nodes for allocation.
+    /// </summary>
+    public required int[] PreferredNodes { get; init; }
+
+    /// <summary>
+    /// Gets or sets the fallback strategy when preferred nodes are unavailable.
+    /// </summary>
+    public required NumaFallbackStrategy FallbackStrategy { get; init; }
+}
+
+/// <summary>
+/// NUMA allocation strategies.
+/// </summary>
+public enum NumaAllocationStrategy
+{
+    /// <summary>
+    /// Prefer local node, fallback to other nodes.
+    /// </summary>
+    LocalPreferred,
+
+    /// <summary>
+    /// Use first-fit allocation.
+    /// </summary>
+    FirstFit,
+
+    /// <summary>
+    /// Use best-fit allocation based on available memory.
+    /// </summary>
+    BestFit,
+
+    /// <summary>
+    /// Interleave allocation across multiple nodes.
+    /// </summary>
+    Interleaved,
+
+    /// <summary>
+    /// Allocate only on explicitly specified nodes.
+    /// </summary>
+    Explicit
+}
+
+/// <summary>
+/// NUMA fallback strategies.
+/// </summary>
+public enum NumaFallbackStrategy
+{
+    /// <summary>
+    /// Try closest nodes first based on NUMA distance.
+    /// </summary>
+    ClosestFirst,
+
+    /// <summary>
+    /// Try any available node.
+    /// </summary>
+    AnyNode,
+
+    /// <summary>
+    /// Fail if preferred nodes are unavailable.
+    /// </summary>
+    Strict
+}
+
+/// <summary>
+/// NUMA memory usage statistics.
+/// </summary>
+public sealed class NumaMemoryStatistics
+{
+    /// <summary>
+    /// Gets the total allocated bytes across all nodes.
+    /// </summary>
+    public required long TotalAllocatedBytes { get; init; }
+
+    /// <summary>
+    /// Gets per-node statistics.
+    /// </summary>
+    public required NumaNodeStatistics[] NodeStatistics { get; init; }
+}
+
+/// <summary>
+/// Memory statistics for a specific NUMA node.
+/// </summary>
+public sealed class NumaNodeStatistics
+{
+    /// <summary>
+    /// Gets the node ID.
+    /// </summary>
+    public required int NodeId { get; init; }
+
+    /// <summary>
+    /// Gets the allocated bytes on this node.
+    /// </summary>
+    public long AllocatedBytes { get; set; }
+
+    /// <summary>
+    /// Gets the number of buffers allocated on this node.
+    /// </summary>
+    public int BufferCount { get; set; }
 }

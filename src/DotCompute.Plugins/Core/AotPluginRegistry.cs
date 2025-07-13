@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using System.Linq;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -582,9 +584,64 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
     {
         try
         {
-            // This is a simplified check - real implementation would call CUDA runtime
-            return Environment.Is64BitOperatingSystem && 
-                   (OperatingSystem.IsWindows() || OperatingSystem.IsLinux());
+            // Check platform compatibility first
+            if (!Environment.Is64BitOperatingSystem || 
+                !(OperatingSystem.IsWindows() || OperatingSystem.IsLinux()))
+            {
+                return false;
+            }
+
+            // Check for NVIDIA GPU presence through system queries
+            if (OperatingSystem.IsWindows())
+            {
+                return CheckWindowsCudaAvailability();
+            }
+            else if (OperatingSystem.IsLinux())
+            {
+                return CheckLinuxCudaAvailability();
+            }
+            
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool CheckWindowsCudaAvailability()
+    {
+        try
+        {
+            // Check for NVIDIA driver in Windows registry or system files
+            // For production, would use WMI or registry queries
+            var systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
+            var nvmlPath = Path.Combine(systemDirectory, "nvml.dll");
+            var cudartPath = Path.Combine(systemDirectory, "cudart64_*.dll");
+            
+            return File.Exists(nvmlPath) || Directory.GetFiles(systemDirectory, "cudart64_*.dll").Length > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool CheckLinuxCudaAvailability()
+    {
+        try
+        {
+            // Check for CUDA libraries in standard locations
+            var cudaPaths = new[]
+            {
+                "/usr/lib/x86_64-linux-gnu/libcuda.so",
+                "/usr/lib64/libcuda.so",
+                "/usr/local/cuda/lib64/libcudart.so"
+            };
+
+            return cudaPaths.Any(File.Exists) || 
+                   Directory.Exists("/proc/driver/nvidia") ||
+                   File.Exists("/dev/nvidia0");
         }
         catch
         {

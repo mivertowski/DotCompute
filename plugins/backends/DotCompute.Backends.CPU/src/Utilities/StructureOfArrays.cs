@@ -400,21 +400,15 @@ public static class StructureOfArrays
                 col2 = Sse.MoveLowToHigh(tmp1, tmp3);  // [02, 12, 22, 32]
                 col3 = Sse.MoveHighToLow(tmp3, tmp1);  // [03, 13, 23, 33]
             }
-            /* TODO: ARM NEON support - commenting out for now due to compilation issues
             else if (AdvSimd.IsSupported)
             {
-                // Use NEON transpose with correct instruction names
-                var zip1_01 = AdvSimd.Arm64.Zip1(row0, row1);   // [00, 10, 01, 11]
-                var zip2_01 = AdvSimd.Arm64.Zip2(row0, row1);   // [02, 12, 03, 13]
-                var zip1_23 = AdvSimd.Arm64.Zip1(row2, row3);   // [20, 30, 21, 31]
-                var zip2_23 = AdvSimd.Arm64.Zip2(row2, row3);   // [22, 32, 23, 33]
-                
-                col0 = AdvSimd.Arm64.Zip1(zip1_01.AsUInt64(), zip1_23.AsUInt64()).AsSingle();
-                col1 = AdvSimd.Arm64.Zip2(zip1_01.AsUInt64(), zip1_23.AsUInt64()).AsSingle();
-                col2 = AdvSimd.Arm64.Zip1(zip2_01.AsUInt64(), zip2_23.AsUInt64()).AsSingle();
-                col3 = AdvSimd.Arm64.Zip2(zip2_01.AsUInt64(), zip2_23.AsUInt64()).AsSingle();
+                // Use ARM NEON transpose with compatible operations
+                // Manual transpose using element access for maximum compatibility
+                col0 = Vector128.Create(row0.GetElement(0), row1.GetElement(0), row2.GetElement(0), row3.GetElement(0));
+                col1 = Vector128.Create(row0.GetElement(1), row1.GetElement(1), row2.GetElement(1), row3.GetElement(1));
+                col2 = Vector128.Create(row0.GetElement(2), row1.GetElement(2), row2.GetElement(2), row3.GetElement(2));
+                col3 = Vector128.Create(row0.GetElement(3), row1.GetElement(3), row2.GetElement(3), row3.GetElement(3));
             }
-            */
             else
             {
                 // Generic fallback

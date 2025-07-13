@@ -24,8 +24,8 @@ public class InterfaceContractTests
 
         // Act & Assert
         acceleratorType.Should().BeInterface("IAccelerator should be an interface");
-        acceleratorType.Should().HaveProperty("Info", "Should have Info property");
-        acceleratorType.Should().HaveProperty("Memory", "Should have Memory property");
+        acceleratorType.Should().HaveProperty(typeof(AcceleratorInfo), "Info", "Should have Info property");
+        acceleratorType.Should().HaveProperty(typeof(IMemoryManager), "Memory", "Should have Memory property");
     }
 
     [Fact]

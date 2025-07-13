@@ -5,6 +5,10 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Core;
+using DotCompute.Abstractions;
+using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using OptimizationLevel = DotCompute.Abstractions.OptimizationLevel;
 
 namespace DotCompute.Core.Compute;
 

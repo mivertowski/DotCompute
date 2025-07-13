@@ -10,7 +10,6 @@
 
   <ItemGroup>
     <!-- Test packages are provided by Directory.Build.targets -->
-    <PackageReference Include="Moq" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
   </ItemGroup>
