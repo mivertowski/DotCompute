@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat code coverage" uri="datacollector://Microsoft/CodeCoverage/2.0">
+        <Configuration>
+          <Format>json,cobertura,lcov,teamcity,opencover</Format>
+          <Include>
+            <Assembly>DotCompute.Core</Assembly>
+            <Assembly>DotCompute.Abstractions</Assembly>
+            <Assembly>DotCompute.Memory</Assembly>
+            <Assembly>DotCompute.Plugins</Assembly>
+            <Assembly>DotCompute.Generators</Assembly>
+            <Assembly>DotCompute.Backends.CPU</Assembly>
+            <Assembly>DotCompute.Backends.CUDA</Assembly>
+            <Assembly>DotCompute.Backends.Metal</Assembly>
+          </Include>
+          <Exclude>
+            <Directory>**/bin/**</Directory>
+            <Directory>**/obj/**</Directory>
+            <File>**/*.AssemblyInfo.cs</File>
+            <File>**/*.g.cs</File>
+            <File>**/*.g.i.cs</File>
+            <File>**/*.designer.cs</File>
+            <File>**/*.Generated.cs</File>
+            <File>**/Program.cs</File>
+            <File>**/GlobalUsings.cs</File>
+          </Exclude>
+          <ExcludeByAttribute>
+            <ExcludeByAttribute>GeneratedCodeAttribute</ExcludeByAttribute>
+            <ExcludeByAttribute>ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+            <ExcludeByAttribute>CompilerGeneratedAttribute</ExcludeByAttribute>
+          </ExcludeByAttribute>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

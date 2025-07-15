@@ -242,13 +242,12 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
             var maxThreadsPerThreadgroup = MetalNative.GetMaxTotalThreadsPerThreadgroup(pipelineState);
             var threadExecutionWidth = MetalNative.GetThreadExecutionWidth(pipelineState);
 
-            var metadata = new CompilationMetadata(
-                compilationTime,
-                0, // Metal doesn't expose code size
-                0, // Metal doesn't expose register usage
-                0, // Metal doesn't expose shared memory usage
-                new[] { $"Max threads per threadgroup: {maxThreadsPerThreadgroup}" }
-            );
+            var metadata = new CompilationMetadata
+            {
+                CompilationTimeMs = compilationTime.TotalMilliseconds,
+                MemoryUsage = { ["MaxThreadsPerThreadgroup"] = maxThreadsPerThreadgroup },
+                Warnings = { $"Max threads per threadgroup: {maxThreadsPerThreadgroup}" }
+            };
 
             return new MetalCompiledKernel(
                 definition,

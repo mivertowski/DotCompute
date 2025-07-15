@@ -8,11 +8,13 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 using Microsoft.Extensions.Logging;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using KernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using KernelArguments = DotCompute.Abstractions.KernelArguments;
+using System.Diagnostics;
 
 namespace DotCompute.Core.Accelerators;
 
@@ -36,24 +38,20 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
     {
         _logger.LogInformation("Discovering CPU accelerators");
 
-        var cpuInfo = new AcceleratorInfo
-        {
-            Id = "cpu-0",
-            Name = GetProcessorName(),
-            DeviceType = "CPU",
-            Vendor = GetProcessorVendor(),
-            ComputeCapability = GetProcessorCapability(),
-            TotalMemory = GetAvailableMemory(),
-            ComputeUnits = Environment.ProcessorCount,
-            MaxClockFrequency = 0, // Would require platform-specific code to get
-            Capabilities = new Dictionary<string, object>
-            {
-                ["Architecture"] = RuntimeInformation.ProcessArchitecture.ToString(),
-                ["IsHardwareAccelerated"] = System.Numerics.Vector.IsHardwareAccelerated,
-                ["VectorWidth"] = System.Numerics.Vector<float>.Count * sizeof(float)
-            }
-        };
+        var cpuInfo = new AcceleratorInfo(
+            AcceleratorType.CPU,
+            GetProcessorName(),
+            "N/A", // driver version
+            GetAvailableMemory(), // memory size
+            Environment.ProcessorCount, // compute units
+            0, // max clock frequency
+            GetProcessorCapability(), // compute capability
+            GetAvailableMemory() / 4, // max shared memory per block
+            true // is unified memory
+        );
 
+        // TODO: Implement proper CpuAccelerator creation through DI
+        // For now, create a CPU accelerator with the discovered info
         var accelerator = new CpuAccelerator(cpuInfo, _logger);
         return ValueTask.FromResult<IEnumerable<IAccelerator>>(new[] { accelerator });
     }
@@ -121,15 +119,111 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
             }
             else
             {
-                // Fallback: use GC total memory as approximation
-                return Math.Max(GC.GetTotalMemory(false) * 8, 1024L * 1024 * 1024); // At least 1GB
+                // Fallback: use conservative estimate
+                return GetFallbackMemory();
             }
         }
         catch
         {
             // If platform-specific detection fails, return conservative estimate
-            return 2L * 1024 * 1024 * 1024; // 2GB fallback
+            return GetFallbackMemory();
         }
+    }
+
+    private static long GetWindowsAvailableMemory()
+    {
+        try
+        {
+            using var process = new Process();
+            process.StartInfo.FileName = "wmic";
+            process.StartInfo.Arguments = "OS get TotalVisibleMemorySize /value";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.CreateNoWindow = true;
+            
+            process.Start();
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            
+            var lines = output.Split('\n');
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("TotalVisibleMemorySize"))
+                {
+                    var parts = line.Split('=');
+                    if (parts.Length == 2 && long.TryParse(parts[1].Trim(), out var kb))
+                    {
+                        return kb * 1024; // Convert KB to bytes
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Fall through to default
+        }
+        return GetFallbackMemory();
+    }
+
+    private static long GetLinuxAvailableMemory()
+    {
+        try
+        {
+            if (System.IO.File.Exists("/proc/meminfo"))
+            {
+                var lines = System.IO.File.ReadAllLines("/proc/meminfo");
+                var availableLine = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:"));
+                if (availableLine != null)
+                {
+                    var parts = availableLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
+                    {
+                        return kb * 1024; // Convert KB to bytes
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Fall through to default
+        }
+        return GetFallbackMemory();
+    }
+
+    private static long GetMacOSAvailableMemory()
+    {
+        try
+        {
+            using var process = new Process();
+            process.StartInfo.FileName = "sysctl";
+            process.StartInfo.Arguments = "hw.memsize";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.CreateNoWindow = true;
+            
+            process.Start();
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            
+            var parts = output.Split(':');
+            if (parts.Length == 2 && long.TryParse(parts[1].Trim(), out var bytes))
+            {
+                return bytes;
+            }
+        }
+        catch
+        {
+            // Fall through to default
+        }
+        return GetFallbackMemory();
+    }
+
+    private static long GetFallbackMemory()
+    {
+        // Conservative fallback based on available managed memory
+        var managedMemory = GC.GetTotalMemory(false);
+        // Assume we can use 8x the managed heap size or at least 2GB
+        return Math.Max(managedMemory * 8, 2L * 1024 * 1024 * 1024);
     }
 }
 
@@ -206,6 +300,46 @@ internal class CpuAccelerator : IAccelerator
             _logger.LogError(ex, "Failed to compile CPU kernel: {KernelName}", definition.Name);
             throw new InvalidOperationException($"Kernel compilation failed: {ex.Message}", ex);
         }
+    }
+
+    private async ValueTask<ICompiledKernel> CompileCSharpKernelAsync(
+        CpuKernelCompilationContext context,
+        CancellationToken cancellationToken)
+    {
+        // For C# kernels, we could use Roslyn or expression trees
+        // This is a production implementation that creates an executable function
+        await Task.Yield(); // Simulate compilation work
+
+        Action<KernelExecutionContext> compiledFunction = execContext =>
+        {
+            // Execute the kernel logic
+            // In a real implementation, this would be generated from the kernel source
+            var workSize = execContext.WorkDimensions?.FirstOrDefault() ?? 1;
+            for (long i = 0; i < workSize; i++)
+            {
+                if (execContext.CancellationToken.IsCancellationRequested)
+                    break;
+                // Kernel execution logic would go here
+            }
+        };
+
+        return new CpuCompiledKernel(context.Definition.Name, context.Definition, compiledFunction);
+    }
+
+    private async ValueTask<ICompiledKernel> CompileNativeKernelAsync(
+        CpuKernelCompilationContext context,
+        CancellationToken cancellationToken)
+    {
+        // For native kernels, we would compile to machine code
+        await Task.Yield(); // Simulate compilation work
+
+        Action<KernelExecutionContext> compiledFunction = execContext =>
+        {
+            // Execute native kernel
+            // This would invoke compiled native code
+        };
+
+        return new CpuCompiledKernel(context.Definition.Name, context.Definition, compiledFunction);
     }
 
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
@@ -332,7 +466,16 @@ internal class CpuMemoryBuffer : IMemoryBuffer
 
     public void Dispose()
     {
-        _disposed = true;
+        if (!_disposed)
+        {
+            // Clear the data array to help GC
+            if (_data != null && _data.Length > 0)
+            {
+                Array.Clear(_data, 0, _data.Length);
+            }
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
     }
 }
 
@@ -456,86 +599,6 @@ internal class CpuCompiledKernel : ICompiledKernel
         _disposed = true;
         return ValueTask.CompletedTask;
     }
-
-    private async ValueTask<ICompiledKernel> CompileCSharpKernelAsync(
-        CpuKernelCompilationContext context,
-        CancellationToken cancellationToken)
-    {
-        // For C# kernels, we could use Roslyn or expression trees
-        // This is a production implementation that creates an executable function
-        await Task.Yield(); // Simulate compilation work
-
-        Action<KernelExecutionContext> compiledFunction = execContext =>
-        {
-            // Execute the kernel logic
-            // In a real implementation, this would be generated from the kernel source
-            var workSize = execContext.WorkDimensions?.FirstOrDefault() ?? 1;
-            for (long i = 0; i < workSize; i++)
-            {
-                if (execContext.CancellationToken.IsCancellationRequested)
-                    break;
-                // Kernel execution logic would go here
-            }
-        };
-
-        return new CpuCompiledKernel(context.Definition.Name, context.Definition, compiledFunction);
-    }
-
-    private async ValueTask<ICompiledKernel> CompileNativeKernelAsync(
-        CpuKernelCompilationContext context,
-        CancellationToken cancellationToken)
-    {
-        // For native kernels, we would compile to machine code
-        await Task.Yield(); // Simulate compilation work
-
-        Action<KernelExecutionContext> compiledFunction = execContext =>
-        {
-            // Execute native kernel
-            // This would invoke compiled native code
-        };
-
-        return new CpuCompiledKernel(context.Definition.Name, context.Definition, compiledFunction);
-    }
-
-    private static long GetWindowsAvailableMemory()
-    {
-        // Use Windows API to get available physical memory
-        // For production, this would use GlobalMemoryStatusEx
-        var managedMemory = GC.GetTotalMemory(false);
-        return Math.Max(managedMemory * 16, 4L * 1024 * 1024 * 1024); // At least 4GB
-    }
-
-    private static long GetLinuxAvailableMemory()
-    {
-        try
-        {
-            // Read /proc/meminfo for MemAvailable
-            if (System.IO.File.Exists("/proc/meminfo"))
-            {
-                var lines = System.IO.File.ReadAllLines("/proc/meminfo");
-                var availableLine = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:"));
-                if (availableLine != null)
-                {
-                    var parts = availableLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
-                    {
-                        return kb * 1024; // Convert KB to bytes
-                    }
-                }
-            }
-        }
-        catch
-        {
-            // Fall through to default
-        }
-        return 4L * 1024 * 1024 * 1024; // 4GB default
-    }
-
-    private static long GetMacOSAvailableMemory()
-    {
-        // For production, would use sysctl to get hw.memsize
-        return 8L * 1024 * 1024 * 1024; // 8GB default for macOS
-    }
 }
 
 /// <summary>
@@ -548,16 +611,4 @@ internal class CpuKernelCompilationContext
     public string TargetArchitecture { get; set; } = "x64";
     public bool SimdSupport { get; set; }
     public OptimizationLevel OptimizationLevel { get; set; }
-}
-
-/// <summary>
-/// Kernel execution context for CPU kernels.
-/// </summary>
-internal class KernelExecutionContext
-{
-    public string Name { get; set; } = string.Empty;
-    public object[] Arguments { get; set; } = Array.Empty<object>();
-    public long[] WorkDimensions { get; set; } = Array.Empty<long>();
-    public long[] LocalWorkSize { get; set; } = Array.Empty<long>();
-    public CancellationToken CancellationToken { get; set; }
 }

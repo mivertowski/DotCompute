@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
@@ -9,6 +10,7 @@ using System.Runtime.Intrinsics.Arm;
 using DotCompute.Core;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
+using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -388,16 +390,19 @@ public static class CpuKernelExecutor
     /// Executes a vectorized kernel with automatic SIMD selection.
     /// </summary>
     public static void ExecuteVectorizedKernel<T>(
-        KernelExecutionContext context,
+        CoreKernelExecutionContext context,
         VectorizedKernelDelegate<T> kernelDelegate) where T : unmanaged
     {
         // Extract buffer arguments
         var buffers = new List<IMemoryBuffer>();
-        foreach (var arg in context.Arguments)
+        if (context.Arguments != null)
         {
+            foreach (var arg in context.Arguments)
+            {
             if (arg is IMemoryBuffer buffer)
             {
                 buffers.Add(buffer);
+                }
             }
         }
         
@@ -407,7 +412,15 @@ public static class CpuKernelExecutor
         }
         
         // Calculate work distribution
-        var totalWorkItems = context.GlobalWorkSize.Aggregate(1L, (acc, size) => acc * size);
+        // Calculate total work items from work dimensions
+        var totalWorkItems = 1L;
+        if (context.WorkDimensions != null)
+        {
+            foreach (var dim in context.WorkDimensions)
+            {
+                totalWorkItems *= dim;
+            }
+        }
         unsafe
         {
             var elementsPerWorkItem = buffers[0].SizeInBytes / sizeof(T);

@@ -11,16 +11,13 @@ using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using AbstractionsAcceleratorInfo = DotCompute.Abstractions.AcceleratorInfo;
 using AbstractionsKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using AbstractionsCompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using AbstractionsIAccelerator = DotCompute.Abstractions.IAccelerator;
 using AbstractionsIMemoryManager = DotCompute.Abstractions.IMemoryManager;
-using CoreAcceleratorInfo = DotCompute.Core.AcceleratorInfo;
-using CoreKernelDefinition = DotCompute.Core.KernelDefinition;
-using CoreCompilationOptions = DotCompute.Core.CompilationOptions;
-using CoreICompiledKernel = DotCompute.Core.ICompiledKernel;
 using IAccelerator = DotCompute.Abstractions.IAccelerator;
 
 namespace DotCompute.Backends.CPU.Registration;
@@ -54,8 +51,12 @@ public sealed class CpuBackendPlugin : BackendPluginBase
         base.ConfigureServices(services, configuration);
         
         // Configure CPU backend options
-        services.Configure<CpuAcceleratorOptions>(configuration.GetSection("CpuBackend:Accelerator"));
-        services.Configure<CpuThreadPoolOptions>(configuration.GetSection("CpuBackend:ThreadPool"));
+        #pragma warning disable IL2026, IL3050 // Suppress AOT and trimming warnings for configuration binding
+        services.Configure<CpuAcceleratorOptions>(options => 
+            configuration.GetSection("CpuBackend:Accelerator").Bind(options));
+        services.Configure<CpuThreadPoolOptions>(options => 
+            configuration.GetSection("CpuBackend:ThreadPool").Bind(options));
+        #pragma warning restore IL2026, IL3050
         
         // Register the CPU accelerator
         services.TryAddSingleton<CpuAccelerator>();

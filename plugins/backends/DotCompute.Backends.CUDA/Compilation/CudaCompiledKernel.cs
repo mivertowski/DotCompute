@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
@@ -16,7 +17,7 @@ namespace DotCompute.Backends.CUDA.Compilation;
 /// <summary>
 /// Represents a compiled CUDA kernel ready for execution
 /// </summary>
-public class CudaCompiledKernel : ICompiledKernel
+public class CudaCompiledKernel : ICompiledKernel, IDisposable
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
@@ -202,6 +203,28 @@ public class CudaCompiledKernel : ICompiledKernel
                 }).ConfigureAwait(false);
             }
 
+            _disposed = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during CUDA compiled kernel disposal");
+        }
+    }
+    
+    public void Dispose()
+    {
+        if (_disposed) return;
+        
+        try
+        {
+            if (_module != IntPtr.Zero)
+            {
+                _context.MakeCurrent();
+                CudaRuntime.cuModuleUnload(_module);
+                _module = IntPtr.Zero;
+                _function = IntPtr.Zero;
+            }
+            
             _disposed = true;
         }
         catch (Exception ex)

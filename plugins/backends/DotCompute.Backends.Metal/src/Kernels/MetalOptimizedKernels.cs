@@ -31,17 +31,29 @@ kernel void vectorAdd(
     }
 }";
 
-        return new KernelDefinition
+        var kernelSource = new TextKernelSource(
+            code: code,
+            name: "vectorAdd",
+            language: KernelLanguage.Metal,
+            entryPoint: "vectorAdd",
+            dependencies: Array.Empty<string>()
+        );
+        
+        var compilationOptions = new CompilationOptions
         {
-            Name = "vectorAdd",
-            Code = Encoding.UTF8.GetBytes(code),
-            EntryPoint = "vectorAdd",
-            Metadata = new Dictionary<string, object>
-            {
-                ["paramCount"] = 4,
-                ["operation"] = "VectorAdd"
-            }
+            OptimizationLevel = OptimizationLevel.Default,
+            EnableDebugInfo = false
         };
+        
+        var definition = new KernelDefinition("vectorAdd", kernelSource, compilationOptions);
+        
+        if (definition.Metadata != null)
+        {
+            definition.Metadata["paramCount"] = 4;
+            definition.Metadata["operation"] = "VectorAdd";
+        }
+        
+        return definition;
     }
 
     /// <summary>
@@ -78,18 +90,30 @@ kernel void matrixMultiply(
     matrixC[row * N + col] = sum;
 }";
 
-        return new KernelDefinition
+        var kernelSource = new TextKernelSource(
+            code: code,
+            name: "matrixMultiply",
+            language: KernelLanguage.Metal,
+            entryPoint: "matrixMultiply",
+            dependencies: Array.Empty<string>()
+        );
+        
+        var compilationOptions = new CompilationOptions
         {
-            Name = "matrixMultiply",
-            Code = Encoding.UTF8.GetBytes(code),
-            EntryPoint = "matrixMultiply",
-            Metadata = new Dictionary<string, object>
-            {
-                ["paramCount"] = 6,
-                ["operation"] = "MatrixMultiply",
-                ["requiresTiling"] = true
-            }
+            OptimizationLevel = OptimizationLevel.Default,
+            EnableDebugInfo = false
         };
+        
+        var definition = new KernelDefinition("matrixMultiply", kernelSource, compilationOptions);
+        
+        if (definition.Metadata != null)
+        {
+            definition.Metadata["paramCount"] = 6;
+            definition.Metadata["operation"] = "MatrixMultiply";
+            definition.Metadata["requiresTiling"] = true;
+        }
+        
+        return definition;
     }
 
     /// <summary>
@@ -140,17 +164,30 @@ kernel void reduction{operation}(
     }}
 }}";
 
-        return new KernelDefinition
+        var kernelName = $"reduction{operation}";
+        var kernelSource = new TextKernelSource(
+            code: code,
+            name: kernelName,
+            language: KernelLanguage.Metal,
+            entryPoint: kernelName,
+            dependencies: Array.Empty<string>()
+        );
+        
+        var compilationOptions = new CompilationOptions
         {
-            Name = $"reduction{operation}",
-            Code = Encoding.UTF8.GetBytes(code),
-            EntryPoint = $"reduction{operation}",
-            Metadata = new Dictionary<string, object>
-            {
-                ["operation"] = operation.ToString(),
-                ["requiresSharedMemory"] = true
-            }
+            OptimizationLevel = OptimizationLevel.Default,
+            EnableDebugInfo = false
         };
+        
+        var definition = new KernelDefinition(kernelName, kernelSource, compilationOptions);
+        
+        if (definition.Metadata != null)
+        {
+            definition.Metadata["operation"] = operation.ToString();
+            definition.Metadata["requiresSharedMemory"] = true;
+        }
+        
+        return definition;
     }
 
     /// <summary>
@@ -209,17 +246,29 @@ kernel void convolution2D(
     output[gid.y * params.outputWidth + gid.x] = sum + params.bias;
 }";
 
-        return new KernelDefinition
+        var kernelSource = new TextKernelSource(
+            code: code,
+            name: "convolution2D",
+            language: KernelLanguage.Metal,
+            entryPoint: "convolution2D",
+            dependencies: Array.Empty<string>()
+        );
+        
+        var compilationOptions = new CompilationOptions
         {
-            Name = "convolution2D",
-            Code = Encoding.UTF8.GetBytes(code),
-            EntryPoint = "convolution2D",
-            Metadata = new Dictionary<string, object>
-            {
-                ["operation"] = "Convolution2D",
-                ["requiresStructParam"] = true
-            }
+            OptimizationLevel = OptimizationLevel.Default,
+            EnableDebugInfo = false
         };
+        
+        var definition = new KernelDefinition("convolution2D", kernelSource, compilationOptions);
+        
+        if (definition.Metadata != null)
+        {
+            definition.Metadata["operation"] = "Convolution2D";
+            definition.Metadata["requiresStructParam"] = true;
+        }
+        
+        return definition;
     }
 
     /// <summary>
@@ -254,16 +303,29 @@ kernel void activation{activation}(
     {activationCode}
 }}";
 
-        return new KernelDefinition
+        var kernelName = $"activation{activation}";
+        var kernelSource = new TextKernelSource(
+            code: code,
+            name: kernelName,
+            language: KernelLanguage.Metal,
+            entryPoint: kernelName,
+            dependencies: Array.Empty<string>()
+        );
+        
+        var compilationOptions = new CompilationOptions
         {
-            Name = $"activation{activation}",
-            Code = Encoding.UTF8.GetBytes(code),
-            EntryPoint = $"activation{activation}",
-            Metadata = new Dictionary<string, object>
-            {
-                ["activation"] = activation.ToString()
-            }
+            OptimizationLevel = OptimizationLevel.Default,
+            EnableDebugInfo = false
         };
+        
+        var definition = new KernelDefinition(kernelName, kernelSource, compilationOptions);
+        
+        if (definition.Metadata != null)
+        {
+            definition.Metadata["activation"] = activation.ToString();
+        }
+        
+        return definition;
     }
 
     /// <summary>
@@ -288,16 +350,28 @@ kernel void {operation}(
     }}
 }}";
 
-        return new KernelDefinition
+        var kernelSource = new TextKernelSource(
+            code: code,
+            name: operation,
+            language: KernelLanguage.Metal,
+            entryPoint: operation,
+            dependencies: Array.Empty<string>()
+        );
+        
+        var compilationOptions = new CompilationOptions
         {
-            Name = operation,
-            Code = Encoding.UTF8.GetBytes(code),
-            EntryPoint = operation,
-            Metadata = new Dictionary<string, object>
-            {
-                ["operation"] = operation
-            }
+            OptimizationLevel = OptimizationLevel.Default,
+            EnableDebugInfo = false
         };
+        
+        var definition = new KernelDefinition(operation, kernelSource, compilationOptions);
+        
+        if (definition.Metadata != null)
+        {
+            definition.Metadata["operation"] = operation;
+        }
+        
+        return definition;
     }
 }
 

@@ -116,14 +116,14 @@ public class CudaKernelCompiler : IDisposable
             if (_kernelCache.TryGetValue(cacheKey, out var cachedKernel))
             {
                 // Update cache access statistics
-                if (_cacheMetadata.TryGetValue(cacheKey, out var metadata))
+                if (_cacheMetadata.TryGetValue(cacheKey, out var cacheMetadata))
                 {
-                    metadata.LastAccessed = DateTime.UtcNow;
-                    metadata.AccessCount++;
+                    cacheMetadata.LastAccessed = DateTime.UtcNow;
+                    cacheMetadata.AccessCount++;
                 }
                 
                 _logger.LogDebug("Using cached kernel: {KernelName} (accessed {AccessCount} times)", 
-                    definition.Name, metadata?.AccessCount ?? 0);
+                    definition.Name, cacheMetadata?.AccessCount ?? 0);
                 return cachedKernel;
             }
 

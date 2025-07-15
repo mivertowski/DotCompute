@@ -12,17 +12,19 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Backends.CUDA;
 
 /// <summary>
 /// CUDA accelerator implementation for GPU compute operations
 /// </summary>
-public class CudaAccelerator : IAccelerator
+public class CudaAccelerator : IAccelerator, IDisposable
 {
     private readonly ILogger<CudaAccelerator> _logger;
     private readonly CudaContext _context;
     private readonly CudaMemoryManager _memoryManager;
+    private readonly CudaAsyncMemoryManagerAdapter _memoryAdapter;
     private readonly CudaKernelCompiler _kernelCompiler;
     private readonly AcceleratorInfo _info;
     private readonly int _deviceId;
@@ -32,7 +34,7 @@ public class CudaAccelerator : IAccelerator
     public AcceleratorInfo Info => _info;
 
     /// <inheritdoc/>
-    public IMemoryManager Memory => _memoryManager;
+    public IMemoryManager Memory => _memoryAdapter;
 
     public CudaAccelerator(int deviceId = 0, ILogger<CudaAccelerator>? logger = null)
     {
@@ -48,6 +50,7 @@ public class CudaAccelerator : IAccelerator
             
             // Create memory manager
             _memoryManager = new CudaMemoryManager(_context, _logger);
+        _memoryAdapter = new CudaAsyncMemoryManagerAdapter(_memoryManager);
             
             // Create kernel compiler
             _kernelCompiler = new CudaKernelCompiler(_context, _logger);
@@ -180,16 +183,18 @@ public class CudaAccelerator : IAccelerator
                 ["MemoryBandwidth"] = 2.0 * deviceProps.MemoryClockRate * (deviceProps.MemoryBusWidth / 8) / 1.0e6
             };
             
-            return new AcceleratorInfo
+            return new AcceleratorInfo(
+                type: AcceleratorType.CUDA,
+                name: deviceProps.Name,
+                driverVersion: $"{deviceProps.Major}.{deviceProps.Minor}",
+                memorySize: (long)deviceProps.TotalGlobalMem,
+                computeUnits: deviceProps.MultiProcessorCount,
+                maxClockFrequency: deviceProps.ClockRate / 1000, // Convert kHz to MHz
+                computeCapability: new Version(deviceProps.Major, deviceProps.Minor),
+                maxSharedMemoryPerBlock: (long)deviceProps.SharedMemPerBlock,
+                isUnifiedMemory: false
+            )
             {
-                Id = $"cuda-{_deviceId}",
-                Name = deviceProps.Name,
-                DeviceType = "CUDA",
-                Vendor = "NVIDIA",
-                ComputeCapability = new Version(deviceProps.Major, deviceProps.Minor),
-                TotalMemory = (long)deviceProps.TotalGlobalMem,
-                ComputeUnits = deviceProps.MultiProcessorCount,
-                MaxClockFrequency = deviceProps.ClockRate / 1000, // Convert kHz to MHz
                 Capabilities = capabilities
             };
         }
@@ -219,6 +224,33 @@ public class CudaAccelerator : IAccelerator
             
             // Synchronize before disposal
             await SynchronizeAsync().ConfigureAwait(false);
+            
+            // Dispose managed resources
+            _kernelCompiler?.Dispose();
+            _memoryManager?.Dispose();
+            _context?.Dispose();
+            
+            _disposed = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during CUDA accelerator disposal");
+        }
+    }
+
+    /// <summary>
+    /// Synchronous dispose method for IDisposable compatibility
+    /// </summary>
+    public void Dispose()
+    {
+        if (_disposed) return;
+        
+        try
+        {
+            _logger.LogInformation("Disposing CUDA accelerator");
+            
+            // Synchronize before disposal
+            _context?.Synchronize();
             
             // Dispose managed resources
             _kernelCompiler?.Dispose();

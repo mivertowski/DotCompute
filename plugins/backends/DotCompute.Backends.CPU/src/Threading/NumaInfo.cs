@@ -14,7 +14,7 @@ namespace DotCompute.Backends.CPU.Threading;
 /// <summary>
 /// Provides information about NUMA (Non-Uniform Memory Access) topology.
 /// </summary>
-public static class NumaInfo
+public static partial class NumaInfo
 {
     private static readonly Lazy<NumaTopology> _topology = new(DiscoverTopology);
     
@@ -60,11 +60,12 @@ public static class NumaInfo
         }
     }
     
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static NumaTopology DiscoverWindowsTopology()
     {
         try
         {
-            // Use Windows NUMA API for production-grade topology discovery
+            // Use Windows NUMA API for comprehensive topology discovery
             return DiscoverWindowsTopologyNative();
         }
         catch (Exception ex)
@@ -75,12 +76,17 @@ public static class NumaInfo
         }
     }
     
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static NumaTopology DiscoverWindowsTopologyNative()
     {
         var nodes = new List<NumaNode>();
         var nodeCount = GetNumaHighestNodeNumber() + 1;
         var processorCount = Environment.ProcessorCount;
-        var distanceMatrix = new int[nodeCount, nodeCount];
+        var distanceMatrix = new int[nodeCount][];
+        for (int i = 0; i < nodeCount; i++)
+        {
+            distanceMatrix[i] = new int[nodeCount];
+        }
         
         for (int nodeId = 0; nodeId < nodeCount; nodeId++)
         {
@@ -103,7 +109,7 @@ public static class NumaInfo
             // Build distance matrix
             for (int otherNodeId = 0; otherNodeId < nodeCount; otherNodeId++)
             {
-                distanceMatrix[nodeId, otherNodeId] = GetNumaNodeDistance(nodeId, otherNodeId);
+                distanceMatrix[nodeId][otherNodeId] = GetNumaNodeDistance(nodeId, otherNodeId);
             }
         }
         
@@ -118,6 +124,7 @@ public static class NumaInfo
         };
     }
     
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static NumaTopology DiscoverWindowsTopologyWmi()
     {
         var nodes = new List<NumaNode>();
@@ -174,6 +181,7 @@ public static class NumaInfo
         };
     }
     
+    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static NumaTopology DiscoverLinuxTopology()
     {
         try
@@ -189,6 +197,7 @@ public static class NumaInfo
         }
     }
     
+    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static NumaTopology DiscoverLinuxTopologyAdvanced()
     {
         var processorCount = Environment.ProcessorCount;
@@ -198,7 +207,11 @@ public static class NumaInfo
         if (TryLoadLibnuma())
         {
             var nodeCount = numa_max_node() + 1;
-            var distanceMatrix = new int[nodeCount, nodeCount];
+            var distanceMatrix = new int[nodeCount][];
+        for (int i = 0; i < nodeCount; i++)
+        {
+            distanceMatrix[i] = new int[nodeCount];
+        }
             
             for (int nodeId = 0; nodeId < nodeCount; nodeId++)
             {
@@ -224,7 +237,7 @@ public static class NumaInfo
                 // Build distance matrix using libnuma
                 for (int otherNodeId = 0; otherNodeId < nodeCount; otherNodeId++)
                 {
-                    distanceMatrix[nodeId, otherNodeId] = numa_distance(nodeId, otherNodeId);
+                    distanceMatrix[nodeId][otherNodeId] = numa_distance(nodeId, otherNodeId);
                 }
             }
             
@@ -245,6 +258,7 @@ public static class NumaInfo
         return DiscoverLinuxTopologySysfs();
     }
     
+    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static NumaTopology DiscoverLinuxTopologySysfs()
     {
         var processorCount = Environment.ProcessorCount;
@@ -260,7 +274,11 @@ public static class NumaInfo
                 
                 var nodes = new List<NumaNode>();
                 var nodeCount = nodeDirs.Length;
-                var distanceMatrix = new int[nodeCount, nodeCount];
+                var distanceMatrix = new int[nodeCount][];
+        for (int i = 0; i < nodeCount; i++)
+        {
+            distanceMatrix[i] = new int[nodeCount];
+        }
                 
                 for (int i = 0; i < nodeDirs.Length; i++)
                 {
@@ -298,7 +316,7 @@ public static class NumaInfo
                         {
                             if (int.TryParse(distances[j], out var distance))
                             {
-                                distanceMatrix[i, j] = distance;
+                                distanceMatrix[i][j] = distance;
                             }
                         }
                     }
@@ -400,23 +418,29 @@ public static class NumaInfo
     }
     
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern bool GetNumaNodeProcessorMaskEx(ushort Node, out GROUP_AFFINITY ProcessorMask);
     
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern bool GetNumaHighestNodeNumber(out uint HighestNodeNumber);
     
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static int GetNumaHighestNodeNumber()
     {
         return GetNumaHighestNodeNumber(out var highest) ? (int)highest : 0;
     }
     
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern bool GetNumaNodeProcessorMask(byte Node, out ulong ProcessorMask);
     
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern bool GetNumaAvailableMemoryNodeEx(ushort Node, out ulong AvailableBytes);
     
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern bool GetSystemInfo(out SYSTEM_INFO lpSystemInfo);
     
     [StructLayout(LayoutKind.Sequential)]
@@ -439,12 +463,15 @@ public static class NumaInfo
     
     #region Linux libnuma Integration
     
-    private static bool _libnumaLoaded = false;
-    private static bool _libnumaAvailable = false;
+    private static bool _libnumaLoaded;
+    private static bool _libnumaAvailable;
     
     private static bool TryLoadLibnuma()
     {
-        if (_libnumaLoaded) return _libnumaAvailable;
+        if (_libnumaLoaded) 
+        {
+            return _libnumaAvailable;
+        }
         
         try
         {
@@ -464,12 +491,15 @@ public static class NumaInfo
     }
     
     [DllImport("numa", EntryPoint = "numa_available")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int numa_available();
     
     [DllImport("numa", EntryPoint = "numa_max_node")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int numa_max_node();
     
     [DllImport("numa", EntryPoint = "numa_distance")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int numa_distance(int from, int to);
     
     private static bool numa_node_to_cpus(int node, out ulong cpuMask, out int cpuCount)
@@ -520,7 +550,7 @@ public static class NumaInfo
                     CacheCoherencyDomain = 0
                 }
             },
-            DistanceMatrix = new int[,] { { 10 } },
+            DistanceMatrix = new int[][] { new int[] { 10 } },
             CacheLineSize = 64,
             PageSize = 4096,
             SupportsMemoryBinding = false,
@@ -528,14 +558,15 @@ public static class NumaInfo
         };
     }
     
-    private static int[,] EstimateDistanceMatrix(int nodeCount)
+    private static int[][] EstimateDistanceMatrix(int nodeCount)
     {
-        var matrix = new int[nodeCount, nodeCount];
+        var matrix = new int[nodeCount][];
         for (int i = 0; i < nodeCount; i++)
         {
+            matrix[i] = new int[nodeCount];
             for (int j = 0; j < nodeCount; j++)
             {
-                matrix[i, j] = i == j ? 10 : 20; // Standard NUMA distances
+                matrix[i][j] = i == j ? 10 : 20; // Standard NUMA distances
             }
         }
         return matrix;
@@ -553,6 +584,7 @@ public static class NumaInfo
         return count;
     }
     
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static ulong GetProcessorMaskFromWmi(System.Management.ManagementObject node)
     {
         // Extract processor mask from WMI object
@@ -571,6 +603,7 @@ public static class NumaInfo
         return 0;
     }
     
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static long GetMemorySizeFromWmi(System.Management.ManagementObject node)
     {
         try
@@ -637,7 +670,7 @@ public static class NumaInfo
                 {
                     if (line.StartsWith($"Node {nodeId} MemTotal:"))
                     {
-                        var match = Regex.Match(line, @"(\d+)\s*kB");
+                        var match = MemorySizeRegex().Match(line);
                         if (match.Success && long.TryParse(match.Groups[1].Value, out var kb))
                         {
                             return kb * 1024; // Convert KB to bytes
@@ -666,7 +699,7 @@ public static class NumaInfo
     private static HugePagesInfo GetLinuxHugePagesSysfs(string nodeDir)
     {
         var hugePagesDir = Path.Combine(nodeDir, "hugepages");
-        var hugePagesInfo = new HugePagesInfo { SupportedSizes = new List<HugePageSize>() };
+        var supportedSizes = new List<HugePageSize>();
         
         try
         {
@@ -676,7 +709,7 @@ public static class NumaInfo
                 foreach (var sizeDir in sizeDirectories)
                 {
                     var sizeName = Path.GetFileName(sizeDir);
-                    var match = Regex.Match(sizeName, @"hugepages-(\d+)kB");
+                    var match = HugePagesRegex().Match(sizeName);
                     if (match.Success && int.TryParse(match.Groups[1].Value, out var sizeKb))
                     {
                         var freeFile = Path.Combine(sizeDir, "free_hugepages");
@@ -685,7 +718,7 @@ public static class NumaInfo
                         var freePages = File.Exists(freeFile) ? ReadIntFromFile(freeFile) : 0;
                         var totalPages = File.Exists(totalFile) ? ReadIntFromFile(totalFile) : 0;
                         
-                        hugePagesInfo.SupportedSizes.Add(new HugePageSize
+                        supportedSizes.Add(new HugePageSize
                         {
                             SizeInBytes = sizeKb * 1024L,
                             FreePages = freePages,
@@ -700,7 +733,7 @@ public static class NumaInfo
             // Ignore errors
         }
         
-        return hugePagesInfo;
+        return new HugePagesInfo { SupportedSizes = supportedSizes };
     }
     
     private static CacheHierarchy GetLinuxCacheInfo(int nodeId)
@@ -710,7 +743,7 @@ public static class NumaInfo
     
     private static CacheHierarchy GetLinuxCacheInfoSysfs(int nodeId)
     {
-        var cacheInfo = new CacheHierarchy { Levels = new List<CacheLevel>() };
+        var levels = new List<CacheLevel>();
         
         try
         {
@@ -731,7 +764,7 @@ public static class NumaInfo
                             var level = ReadCacheLevel(indexDir);
                             if (level != null)
                             {
-                                cacheInfo.Levels.Add(level);
+                                levels.Add(level);
                             }
                         }
                     }
@@ -743,7 +776,7 @@ public static class NumaInfo
             // Ignore errors
         }
         
-        return cacheInfo;
+        return new CacheHierarchy { Levels = levels };
     }
     
     private static int GetLinuxCacheLineSize()
@@ -844,7 +877,7 @@ public static class NumaInfo
                 var type = File.ReadAllText(typeFile).Trim();
                 
                 // Parse size (e.g., "32K", "256K", "8M")
-                var sizeMatch = Regex.Match(sizeStr, @"(\d+)([KMG]?)");
+                var sizeMatch = CacheSizeRegex().Match(sizeStr);
                 if (sizeMatch.Success && int.TryParse(sizeMatch.Groups[1].Value, out var size))
                 {
                     var multiplier = sizeMatch.Groups[2].Value switch
@@ -898,7 +931,7 @@ public sealed class NumaTopology
     /// <summary>
     /// Gets the NUMA distance matrix (relative latency between nodes).
     /// </summary>
-    public int[,]? DistanceMatrix { get; init; }
+    public int[][]? DistanceMatrix { get; init; }
     
     /// <summary>
     /// Gets the cache line size in bytes.
@@ -965,7 +998,7 @@ public sealed class NumaTopology
             return fromNode == toNode ? 10 : 20; // Default distances
         }
         
-        return DistanceMatrix[fromNode, toNode];
+        return DistanceMatrix[fromNode][toNode];
     }
     
     /// <summary>
@@ -981,7 +1014,7 @@ public sealed class NumaTopology
         {
             if (i != nodeId)
             {
-                distances.Add((i, DistanceMatrix[nodeId, i]));
+                distances.Add((i, DistanceMatrix[nodeId][i]));
             }
         }
         
@@ -1085,13 +1118,16 @@ public sealed class NumaNode
     /// <summary>
     /// Gets the list of CPU IDs in this node.
     /// </summary>
-    public IEnumerable<int> GetCpuList()
+    public IEnumerable<int> CpuList
     {
-        for (int i = 0; i < 64; i++)
+        get
         {
-            if ((ProcessorMask & (1UL << i)) != 0)
+            for (int i = 0; i < 64; i++)
             {
-                yield return i;
+                if ((ProcessorMask & (1UL << i)) != 0)
+                {
+                    yield return i;
+                }
             }
         }
     }
@@ -1113,7 +1149,7 @@ public sealed class HugePagesInfo
     /// <summary>
     /// Gets the supported huge page sizes.
     /// </summary>
-    public required List<HugePageSize> SupportedSizes { get; init; }
+    public required IReadOnlyList<HugePageSize> SupportedSizes { get; init; }
     
     /// <summary>
     /// Gets whether huge pages are supported on this node.
@@ -1165,7 +1201,7 @@ public sealed class CacheHierarchy
     /// <summary>
     /// Gets the cache levels.
     /// </summary>
-    public required List<CacheLevel> Levels { get; init; }
+    public required IReadOnlyList<CacheLevel> Levels { get; init; }
     
     /// <summary>
     /// Gets a specific cache level.
@@ -1205,4 +1241,17 @@ public sealed class CacheLevel
     /// Gets the cache line size in bytes.
     /// </summary>
     public required int LineSize { get; init; }
+}
+
+// Add GeneratedRegex methods at the end for AOT compatibility
+public static partial class NumaInfo
+{
+    [GeneratedRegex(@"(\d+)\s*kB")]
+    private static partial Regex MemorySizeRegex();
+    
+    [GeneratedRegex(@"hugepages-(\d+)kB")]
+    private static partial Regex HugePagesRegex();
+    
+    [GeneratedRegex(@"(\d+)([KMG]?)")]
+    private static partial Regex CacheSizeRegex();
 }

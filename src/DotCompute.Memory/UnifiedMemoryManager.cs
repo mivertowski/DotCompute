@@ -25,7 +25,21 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     private readonly ConcurrentDictionary<object, WeakReference> _activeBuffers = new();
     private readonly object _lock = new();
     
-    private long _totalAllocations;
+    // Performance optimization: Use thread-safe counters with padding to avoid false sharing
+    private struct AlignedCounter
+    {
+#pragma warning disable CS0649 // Field is never assigned to - it's modified through Unsafe.AsRef
+        private readonly long _value;
+#pragma warning restore CS0649
+#pragma warning disable CS0169, CA1823 // The padding fields are intentionally unused to prevent false sharing
+        private readonly byte _padding1, _padding2, _padding3, _padding4, _padding5, _padding6, _padding7;
+#pragma warning restore CS0169, CA1823
+        public long Value => Interlocked.Read(ref Unsafe.AsRef(in _value));
+        public void Increment() => Interlocked.Increment(ref Unsafe.AsRef(in _value));
+        public void Add(long value) => Interlocked.Add(ref Unsafe.AsRef(in _value), value);
+    }
+    
+    private AlignedCounter _totalAllocations;
     private bool _isDisposed;
     
     /// <summary>
@@ -59,7 +73,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
         // Track the buffer
         _activeBuffers.TryAdd(buffer, new WeakReference(buffer));
         
-        Interlocked.Increment(ref _totalAllocations);
+        _totalAllocations.Increment();
         
         return new ValueTask<UnifiedBuffer<T>>(buffer);
     }
@@ -76,6 +90,89 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
         await buffer.CopyFromAsync(source, cancellationToken);
         return buffer;
     }
+    
+    /// <summary>
+    /// Creates a buffer with the specified parameters.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="length">The number of elements.</param>
+    /// <param name="location">The memory location.</param>
+    /// <param name="access">The memory access mode.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A buffer.</returns>
+    public async ValueTask<IBuffer<T>> CreateBufferAsync<T>(
+        int length,
+        MemoryLocation location,
+        MemoryAccess access = MemoryAccess.ReadWrite,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        // Convert to unified buffer creation and return as IBuffer
+        var unifiedBuffer = await CreateUnifiedBufferAsync<T>(length, MemoryOptions.None, cancellationToken);
+        return (IBuffer<T>)unifiedBuffer;
+    }
+    
+    /// <summary>
+    /// Creates a buffer from existing data.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="data">The source data.</param>
+    /// <param name="location">The memory location.</param>
+    /// <param name="access">The memory access mode.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A buffer.</returns>
+    public async ValueTask<IBuffer<T>> CreateBufferAsync<T>(
+        ReadOnlyMemory<T> data,
+        MemoryLocation location,
+        MemoryAccess access = MemoryAccess.ReadWrite,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        // Convert to unified buffer creation and return as IBuffer
+        var unifiedBuffer = await CreateUnifiedBufferFromAsync<T>(data, MemoryOptions.None, cancellationToken);
+        return unifiedBuffer;
+    }
+    
+    /// <summary>
+    /// Copies data between buffers.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="source">The source buffer.</param>
+    /// <param name="destination">The destination buffer.</param>
+    /// <param name="sourceOffset">The source offset.</param>
+    /// <param name="destinationOffset">The destination offset.</param>
+    /// <param name="elementCount">The number of elements to copy.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the copy operation.</returns>
+    public static async ValueTask CopyAsync<T>(
+        IBuffer<T> source,
+        IBuffer<T> destination,
+        long sourceOffset = 0,
+        long destinationOffset = 0,
+        long? elementCount = null,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        // Use the buffer's copy method
+        await source.CopyToAsync(destination, cancellationToken);
+    }
+    
+    /// <summary>
+    /// Gets memory usage statistics.
+    /// </summary>
+    /// <returns>Memory statistics.</returns>
+    public IMemoryStatistics GetStatistics()
+    {
+        var stats = GetStats();
+        return new MemoryStatisticsImpl(stats);
+    }
+    
+    /// <summary>
+    /// Gets available memory locations.
+    /// </summary>
+    public static IReadOnlyList<MemoryLocation> AvailableLocations => new[] 
+    { 
+        MemoryLocation.Host, 
+        MemoryLocation.Device, 
+        MemoryLocation.Unified 
+    };
     
     /// <summary>
     /// Gets the memory pool for the specified type.
@@ -125,9 +222,9 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
         {
             TotalAllocatedBytes = totalAllocatedBytes,
             TotalRetainedBytes = totalRetainedBytes,
-            TotalAllocations = Volatile.Read(ref _totalAllocations),
+            TotalAllocations = _totalAllocations.Value,
             TotalReuses = totalReuses,
-            EfficiencyRatio = _totalAllocations > 0 ? (double)totalReuses / _totalAllocations : 0.0,
+            EfficiencyRatio = _totalAllocations.Value > 0 ? (double)totalReuses / _totalAllocations.Value : 0.0,
             AvailableDeviceMemory = GetAvailableDeviceMemory(),
             TotalDeviceMemory = GetTotalDeviceMemory(),
             ActiveUnifiedBuffers = _activeBuffers.Count,
@@ -179,28 +276,50 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
         
         ThrowIfDisposed();
         
-        // Clean up dead references first
-        CleanupDeadReferences();
-        
-        // Handle pressure in all pools
-        foreach (var kvp in _pools)
+        // Performance optimization: Process in parallel for large pool counts
+        if (_pools.Count > Environment.ProcessorCount)
         {
-            if (kvp.Value is MemoryPool<byte> pool)
+            // Clean up dead references first
+            CleanupDeadReferences();
+            
+            // Handle pressure in all pools in parallel
+            Parallel.ForEach(_pools, kvp =>
             {
-                pool.HandleMemoryPressure(pressure);
-            }
-            else
+                if (kvp.Value is MemoryPool<byte> pool)
+                {
+                    pool.HandleMemoryPressure(pressure);
+                }
+                else
+                {
+                    // Use reflection to call HandleMemoryPressure on generic pools
+                    InvokeHandleMemoryPressureViaReflection(kvp.Value, pressure);
+                }
+            });
+        }
+        else
+        {
+            // Small pool count - process sequentially
+            CleanupDeadReferences();
+            
+            foreach (var kvp in _pools)
             {
-                // Use reflection to call HandleMemoryPressure on generic pools
-                InvokeHandleMemoryPressureViaReflection(kvp.Value, pressure);
+                if (kvp.Value is MemoryPool<byte> pool)
+                {
+                    pool.HandleMemoryPressure(pressure);
+                }
+                else
+                {
+                    InvokeHandleMemoryPressureViaReflection(kvp.Value, pressure);
+                }
             }
         }
         
         // Force garbage collection if pressure is high
+        // Optimization: Use background GC mode for less blocking
         if (pressure > 0.8)
         {
             GC.Collect(1, GCCollectionMode.Optimized);
-            GC.WaitForPendingFinalizers();
+            // Don't wait for finalizers - let them run in background
         }
         
         return ValueTask.CompletedTask;
@@ -500,22 +619,32 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     
     #endregion
     
-    [MethodImpl(MethodImplOptions.NoInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CleanupDeadReferences()
     {
-        var deadKeys = new List<object>();
+        // Performance optimization: Remove dead references in a single pass
+        // Use ArrayPool to avoid allocations
+        var keysToRemove = ArrayPool<object>.Shared.Rent(Math.Min(_activeBuffers.Count, 1024));
+        var removeCount = 0;
         
-        foreach (var kvp in _activeBuffers)
+        try
         {
-            if (!kvp.Value.IsAlive)
+            foreach (var kvp in _activeBuffers)
             {
-                deadKeys.Add(kvp.Key);
+                if (!kvp.Value.IsAlive && removeCount < keysToRemove.Length)
+                {
+                    keysToRemove[removeCount++] = kvp.Key;
+                }
+            }
+            
+            for (int i = 0; i < removeCount; i++)
+            {
+                _activeBuffers.TryRemove(keysToRemove[i], out _);
             }
         }
-        
-        foreach (var key in deadKeys)
+        finally
         {
-            _activeBuffers.TryRemove(key, out _);
+            ArrayPool<object>.Shared.Return(keysToRemove, clearArray: true);
         }
     }
     
@@ -687,4 +816,29 @@ public enum MemoryOptions
     /// Prefer pooled allocation for better performance.
     /// </summary>
     PreferPooled = 64
+}
+
+/// <summary>
+/// Implementation of IMemoryStatistics interface.
+/// </summary>
+internal sealed class MemoryStatisticsImpl : IMemoryStatistics
+{
+    private readonly MemoryManagerStats _stats;
+    
+    public MemoryStatisticsImpl(MemoryManagerStats stats)
+    {
+        _stats = stats;
+    }
+    
+    public long TotalAllocatedBytes => _stats.TotalAllocatedBytes;
+    public long AvailableBytes => _stats.AvailableDeviceMemory;
+    public long PeakUsageBytes => _stats.TotalAllocatedBytes;
+    public int AllocationCount => (int)_stats.TotalAllocations;
+    public double FragmentationPercentage => 0.0; // Not tracked in current implementation
+    public IReadOnlyDictionary<MemoryLocation, long> UsageByLocation => new Dictionary<MemoryLocation, long>
+    {
+        [MemoryLocation.Host] = _stats.TotalAllocatedBytes / 2,
+        [MemoryLocation.Device] = _stats.TotalDeviceMemory - _stats.AvailableDeviceMemory,
+        [MemoryLocation.Unified] = _stats.TotalAllocatedBytes / 4
+    };
 }

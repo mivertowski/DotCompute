@@ -49,6 +49,7 @@
     <PackageVersion Include="System.Runtime.InteropServices" Version="4.3.0" />
     <PackageVersion Include="System.Memory" Version="4.5.5" />
     <PackageVersion Include="System.Diagnostics.PerformanceCounter" Version="9.0.0-preview.1.24080.9" />
+    <PackageVersion Include="System.Management" Version="8.0.0" />
     <!-- <PackageVersion Include="Microsoft.NET.ILLink.Analyzers" Version="8.0.7" /> -->
     <!-- <PackageVersion Include="Microsoft.DotNet.ApiCompat" Version="8.0.7" /> -->
   </ItemGroup>
@@ -91,11 +92,13 @@
     <PackageVersion Include="Verify.Xunit" Version="23.5.2" />
     <PackageVersion Include="Microsoft.AspNetCore.TestHost" Version="9.0.0-preview.1.24081.5" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.SourceGenerators.Testing.XUnit" Version="1.1.2" />
+    <PackageVersion Include="Xunit.SkippableFact" Version="1.4.13" />
     <!-- Override transitive dependencies for CodeAnalysis compatibility -->
     <PackageVersion Include="Microsoft.CodeAnalysis.Common" Version="4.9.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="4.9.2" />
     <PackageVersion Include="Microsoft.CodeAnalysis.CSharp.Workspaces" Version="4.9.2" />
     <PackageVersion Include="Moq" Version="4.20.69" />
+    <!-- <PackageVersion Include="Microsoft.Extensions.Logging.Testing" Version="8.0.0" /> - Package not available in stable versions -->
     
     <!-- Benchmarking -->
     <PackageVersion Include="BenchmarkDotNet" Version="0.13.12" />

@@ -313,4 +313,45 @@ namespace DotCompute.Plugins.Exceptions
             info.AddValue(nameof(InvalidValue), InvalidValue);
         }
     }
+
+    /// <summary>
+    /// Exception thrown when a plugin cannot be found.
+    /// </summary>
+    [Serializable]
+    public class PluginNotFoundException : PluginException
+    {
+        public string? PluginName { get; }
+
+        public PluginNotFoundException() { }
+
+        public PluginNotFoundException(string message) : base(message) { }
+
+        public PluginNotFoundException(string message, Exception innerException) 
+            : base(message, innerException) { }
+
+        public PluginNotFoundException(string message, string pluginId) 
+            : base(message, pluginId) { }
+
+        public PluginNotFoundException(string message, string pluginId, Exception innerException) 
+            : base(message, pluginId, innerException) { }
+
+        public PluginNotFoundException(string message, string pluginId, string pluginName) 
+            : base(message, pluginId) 
+        {
+            PluginName = pluginName;
+        }
+
+        protected PluginNotFoundException(SerializationInfo info, StreamingContext context) 
+            : base(info, context) 
+        {
+            PluginName = info.GetString(nameof(PluginName));
+        }
+
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            base.GetObjectData(info, context);
+            info.AddValue(nameof(PluginName), PluginName);
+        }
+    }
 }

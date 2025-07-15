@@ -12,7 +12,7 @@ namespace DotCompute.Backends.CUDA.Memory;
 /// <summary>
 /// CUDA memory buffer implementation
 /// </summary>
-public class CudaMemoryBuffer : IMemoryBuffer
+public class CudaMemoryBuffer : ISyncMemoryBuffer
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
@@ -92,7 +92,7 @@ public class CudaMemoryBuffer : IMemoryBuffer
         throw new NotSupportedException("Direct span access to CUDA device memory is not supported. Use memory copy operations instead.");
     }
 
-    public IMemoryBuffer Slice(long offset, long length)
+    public ISyncMemoryBuffer Slice(long offset, long length)
     {
         ThrowIfDisposed();
         
@@ -127,18 +127,20 @@ public class CudaMemoryBuffer : IMemoryBuffer
 
         // Pin source memory
         using var handle = source.Pin();
+        IntPtr srcPtr;
+        IntPtr dstPtr;
         unsafe
         {
-            var srcPtr = new IntPtr(handle.Pointer);
-            var dstPtr = new IntPtr(_devicePointer.ToInt64() + offset);
-            
-            await Task.Run(() =>
-            {
-                _context.MakeCurrent();
-                var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (ulong)bytesToCopy, CudaMemcpyKind.HostToDevice);
-                CudaRuntime.CheckError(result, "Memory copy from host");
-            }, cancellationToken).ConfigureAwait(false);
+            srcPtr = new IntPtr(handle.Pointer);
+            dstPtr = new IntPtr(_devicePointer.ToInt64() + offset);
         }
+        
+        await Task.Run(() =>
+        {
+            _context.MakeCurrent();
+            var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (ulong)bytesToCopy, CudaMemcpyKind.HostToDevice);
+            CudaRuntime.CheckError(result, "Memory copy from host");
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     public async ValueTask CopyToHostAsync<T>(
@@ -159,18 +161,20 @@ public class CudaMemoryBuffer : IMemoryBuffer
 
         // Pin destination memory
         using var handle = destination.Pin();
+        IntPtr srcPtr;
+        IntPtr dstPtr;
         unsafe
         {
-            var srcPtr = new IntPtr(_devicePointer.ToInt64() + offset);
-            var dstPtr = new IntPtr(handle.Pointer);
-            
-            await Task.Run(() =>
-            {
-                _context.MakeCurrent();
-                var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (ulong)bytesToCopy, CudaMemcpyKind.DeviceToHost);
-                CudaRuntime.CheckError(result, "Memory copy to host");
-            }, cancellationToken).ConfigureAwait(false);
+            srcPtr = new IntPtr(_devicePointer.ToInt64() + offset);
+            dstPtr = new IntPtr(handle.Pointer);
         }
+        
+        await Task.Run(() =>
+        {
+            _context.MakeCurrent();
+            var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (ulong)bytesToCopy, CudaMemcpyKind.DeviceToHost);
+            CudaRuntime.CheckError(result, "Memory copy to host");
+        }, cancellationToken).ConfigureAwait(false);
     }
 
     private void ThrowIfDisposed()
@@ -254,7 +258,7 @@ public class CudaMemoryBuffer : IMemoryBuffer
 /// <summary>
 /// A view into a CUDA memory buffer (for slicing)
 /// </summary>
-internal class CudaMemoryBufferView : IMemoryBuffer
+internal class CudaMemoryBufferView : ISyncMemoryBuffer
 {
     private readonly CudaMemoryBuffer _parent;
     private readonly long _offset;
@@ -284,7 +288,7 @@ internal class CudaMemoryBufferView : IMemoryBuffer
         throw new NotSupportedException("Direct span access to CUDA device memory is not supported. Use memory copy operations instead.");
     }
 
-    public IMemoryBuffer Slice(long offset, long length)
+    public ISyncMemoryBuffer Slice(long offset, long length)
     {
         if (offset < 0)
             throw new ArgumentException("Offset cannot be negative", nameof(offset));

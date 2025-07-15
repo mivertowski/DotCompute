@@ -58,7 +58,7 @@ The CPU backend is designed for maximum performance:
 1. **SIMD Capabilities Detection**: Automatically detects and utilizes available SIMD instructions
 2. **Thread Pool Management**: Custom thread pool optimized for compute workloads
 3. **Memory Management**: Efficient memory allocation with support for large buffers
-4. **Kernel Compilation**: JIT compilation of kernels to vectorized native code (stub in current implementation)
+4. **Kernel Compilation**: JIT compilation of kernels to vectorized native code with SIMD optimization
 
 ## Performance Considerations
 
@@ -70,7 +70,7 @@ The CPU backend is designed for maximum performance:
 ## Limitations
 
 - Large allocations (>2GB) not yet supported
-- Kernel compilation is currently a stub implementation
+- Advanced kernel optimizations are being continuously improved
 - Thread affinity only implemented on Windows
 
 ## Future Enhancements

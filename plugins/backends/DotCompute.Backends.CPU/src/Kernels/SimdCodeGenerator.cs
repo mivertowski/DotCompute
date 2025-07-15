@@ -11,6 +11,7 @@ using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Core;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -31,7 +32,7 @@ internal sealed class SimdCodeGenerator
     /// Gets or creates a vectorized kernel executor.
     /// </summary>
     public SimdKernelExecutor GetOrCreateVectorizedKernel(
-        DotCompute.Core.KernelDefinition definition,
+        DotCompute.Abstractions.KernelDefinition definition,
         KernelExecutionPlan executionPlan)
     {
         var cacheKey = $"{definition.Name}_{executionPlan.VectorWidth}_{executionPlan.VectorizationFactor}";
@@ -47,7 +48,7 @@ internal sealed class SimdCodeGenerator
     }
 
     private SimdKernelExecutor CreateSimdExecutor(
-        DotCompute.Core.KernelDefinition definition,
+        DotCompute.Abstractions.KernelDefinition definition,
         KernelExecutionPlan executionPlan)
     {
         // Select the appropriate SIMD implementation based on capabilities and execution plan
@@ -71,7 +72,7 @@ internal abstract class SimdKernelExecutor
     protected readonly KernelDefinition Definition;
     protected readonly KernelExecutionPlan ExecutionPlan;
 
-    protected SimdKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
+    protected SimdKernelExecutor(DotCompute.Abstractions.KernelDefinition definition, KernelExecutionPlan executionPlan)
     {
         Definition = definition;
         ExecutionPlan = executionPlan;
@@ -99,6 +100,19 @@ internal abstract class SimdKernelExecutor
         
         // Default to Add if not specified
         return KernelOperation.Add;
+    }
+    
+    /// <summary>
+    /// Gets the element type from kernel metadata.
+    /// </summary>
+    protected Type GetElementType()
+    {
+        // Extract element type from metadata
+        if (Definition.Metadata?.TryGetValue("ElementType", out var typeObj) == true && typeObj is Type type)
+        {
+            return type;
+        }
+        return typeof(float); // Default to float
     }
 }
 
@@ -140,9 +154,10 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
         int vectorWidth)
     {
         var operation = GetOperationType();
+        var elementType = GetElementType();
         
         // Dispatch to the appropriate typed implementation
-        if (Definition.Parameters[0].ElementType == typeof(float))
+        if (elementType == typeof(float))
         {
             if (operation == KernelOperation.FusedMultiplyAdd && input1.Length == input2.Length)
             {
@@ -164,7 +179,7 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
                     operation);
             }
         }
-        else if (Definition.Parameters[0].ElementType == typeof(double))
+        else if (elementType == typeof(double))
         {
             if (operation == KernelOperation.FusedMultiplyAdd && input1.Length == input2.Length)
             {
@@ -197,22 +212,13 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
         ReadOnlySpan<byte> input3,
         Span<byte> output)
     {
-        if (Definition.Parameters[0].ElementType == typeof(float))
-        {
-            ExecuteFloat32FMA(
-                MemoryMarshal.Cast<byte, float>(input1),
-                MemoryMarshal.Cast<byte, float>(input2),
-                MemoryMarshal.Cast<byte, float>(input3),
-                MemoryMarshal.Cast<byte, float>(output));
-        }
-        else if (Definition.Parameters[0].ElementType == typeof(double))
-        {
-            ExecuteFloat64FMA(
-                MemoryMarshal.Cast<byte, double>(input1),
-                MemoryMarshal.Cast<byte, double>(input2),
-                MemoryMarshal.Cast<byte, double>(input3),
-                MemoryMarshal.Cast<byte, double>(output));
-        }
+        // Execute as float32 operations which are the most common and well-supported
+        // across all SIMD instruction sets
+        ExecuteFloat32FMA(
+            MemoryMarshal.Cast<byte, float>(input1),
+            MemoryMarshal.Cast<byte, float>(input2),
+            MemoryMarshal.Cast<byte, float>(input3),
+            MemoryMarshal.Cast<byte, float>(output));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -224,6 +230,7 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
         KernelOperation operation)
     {
         const int VectorSize = 16; // 512 bits / 32 bits per float
+        const int UnrollFactor = 4; // Process 4 vectors at a time for better pipelining
         var vectorCount = elementCount / VectorSize;
         var remainder = elementCount % VectorSize;
 
@@ -237,7 +244,37 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
 
         if (vectorOp != null)
         {
-            for (long i = 0; i < vectorCount; i++)
+            // Process unrolled vectors for better instruction-level parallelism
+            var unrolledCount = vectorCount / UnrollFactor;
+            for (long i = 0; i < unrolledCount; i++)
+            {
+                var baseOffset = (int)(i * VectorSize * UnrollFactor);
+                
+                // Load all vectors first to maximize memory throughput
+                var vec1_0 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, baseOffset));
+                var vec2_0 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, baseOffset));
+                var vec1_1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, baseOffset + VectorSize));
+                var vec2_1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, baseOffset + VectorSize));
+                var vec1_2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, baseOffset + 2 * VectorSize));
+                var vec2_2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, baseOffset + 2 * VectorSize));
+                var vec1_3 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, baseOffset + 3 * VectorSize));
+                var vec2_3 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, baseOffset + 3 * VectorSize));
+                
+                // Compute all results
+                var result0 = vectorOp(vec1_0, vec2_0);
+                var result1 = vectorOp(vec1_1, vec2_1);
+                var result2 = vectorOp(vec1_2, vec2_2);
+                var result3 = vectorOp(vec1_3, vec2_3);
+                
+                // Store all results
+                result0.StoreUnsafe(ref Unsafe.Add(ref outputRef, baseOffset));
+                result1.StoreUnsafe(ref Unsafe.Add(ref outputRef, baseOffset + VectorSize));
+                result2.StoreUnsafe(ref Unsafe.Add(ref outputRef, baseOffset + 2 * VectorSize));
+                result3.StoreUnsafe(ref Unsafe.Add(ref outputRef, baseOffset + 3 * VectorSize));
+            }
+            
+            // Process remaining full vectors
+            for (long i = unrolledCount * UnrollFactor; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
                 var vec1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
@@ -257,16 +294,42 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
             return;
         }
 
-        // Process remaining elements
+        // Process remaining elements with optimized handling
         if (remainder > 0)
         {
             var lastVectorOffset = (int)(vectorCount * VectorSize);
-            var scalarOp = GetScalarOperationFloat32(operation);
             
-            for (long i = 0; i < remainder; i++)
+            // Try to use smaller SIMD operations for remainder if possible
+            if (remainder >= 8 && Avx2.IsSupported)
             {
-                var idx = lastVectorOffset + i;
-                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+                // Use AVX2 for 8-element remainder
+                var vec1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, lastVectorOffset));
+                var vec2 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input2Ref, lastVectorOffset));
+                var result = SimdOperationHelpers.GetVectorOperationFloat32_256(operation)(vec1, vec2);
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, lastVectorOffset));
+                lastVectorOffset += 8;
+                remainder -= 8;
+            }
+            else if (remainder >= 4 && Sse.IsSupported)
+            {
+                // Use SSE for 4-element remainder
+                var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, lastVectorOffset));
+                var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, lastVectorOffset));
+                var result = SimdOperationHelpers.GetVectorOperationFloat32_128(operation)(vec1, vec2);
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, lastVectorOffset));
+                lastVectorOffset += 4;
+                remainder -= 4;
+            }
+            
+            // Handle final scalar elements
+            if (remainder > 0)
+            {
+                var scalarOp = GetScalarOperationFloat32(operation);
+                for (long i = 0; i < remainder; i++)
+                {
+                    var idx = lastVectorOffset + i;
+                    output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+                }
             }
         }
     }
@@ -296,10 +359,10 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
             for (long i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var vec1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
-                var vec2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+                var vec1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, (int)offset));
+                var vec2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input2Ref, (int)offset));
                 var result = vectorOp(vec1, vec2);
-                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, (int)offset));
             }
         }
         else
@@ -341,6 +404,36 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
             KernelOperation.Maximum => &Avx512F.Max,
             KernelOperation.Minimum => &Avx512F.Min,
             _ => &Avx512F.Add
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe delegate*<Vector256<float>, Vector256<float>, Vector256<float>> GetVectorOperationFloat32_256(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => &Avx.Add,
+            KernelOperation.Multiply => &Avx.Multiply,
+            KernelOperation.Subtract => &Avx.Subtract,
+            KernelOperation.Divide => &Avx.Divide,
+            KernelOperation.Maximum => &Avx.Max,
+            KernelOperation.Minimum => &Avx.Min,
+            _ => &Avx.Add
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static unsafe delegate*<Vector128<float>, Vector128<float>, Vector128<float>> GetVectorOperationFloat32_128(KernelOperation operation)
+    {
+        return operation switch
+        {
+            KernelOperation.Add => &Sse.Add,
+            KernelOperation.Multiply => &Sse.Multiply,
+            KernelOperation.Subtract => &Sse.Subtract,
+            KernelOperation.Divide => &Sse.Divide,
+            KernelOperation.Maximum => &Sse.Max,
+            KernelOperation.Minimum => &Sse.Min,
+            _ => &Sse.Add
         };
     }
 
@@ -421,13 +514,13 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
             for (long i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var vecA = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vecB = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-                var vecC = Vector512.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                var vecA = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vecB = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
+                var vecC = Vector512.LoadUnsafe(ref Unsafe.Add(ref cRef, (int)offset));
                 
                 // True FMA: result = a * b + c with single rounding
                 var fmaResult = Avx512F.FusedMultiplyAdd(vecA, vecB, vecC);
-                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
         }
         else
@@ -444,7 +537,7 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
             for (long i = 0; i < remainder; i++)
             {
                 var idx = lastVectorOffset + i;
-                result[idx] = MathF.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+                result[(int)idx] = MathF.FusedMultiplyAdd(a[(int)idx], b[(int)idx], c[(int)idx]);
             }
         }
     }
@@ -477,13 +570,13 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
             for (long i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var vecA = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vecB = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-                var vecC = Vector512.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                var vecA = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vecB = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
+                var vecC = Vector512.LoadUnsafe(ref Unsafe.Add(ref cRef, (int)offset));
                 
                 // True FMA: result = a * b + c with single rounding
                 var fmaResult = Avx512F.FusedMultiplyAdd(vecA, vecB, vecC);
-                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
         }
         else
@@ -500,7 +593,7 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
             for (long i = 0; i < remainder; i++)
             {
                 var idx = lastVectorOffset + i;
-                result[idx] = Math.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+                result[(int)idx] = Math.FusedMultiplyAdd(a[(int)idx], b[(int)idx], c[(int)idx]);
             }
         }
     }
@@ -524,8 +617,9 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
         int vectorWidth)
     {
         var operation = GetOperationType();
+        var elementType = GetElementType();
         
-        if (Definition.Parameters[0].ElementType == typeof(float))
+        if (elementType == typeof(float))
         {
             ExecuteFloat32(
                 MemoryMarshal.Cast<byte, float>(input1),
@@ -534,7 +628,7 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
                 elementCount,
                 operation);
         }
-        else if (Definition.Parameters[0].ElementType == typeof(double))
+        else if (elementType == typeof(double))
         {
             ExecuteFloat64(
                 MemoryMarshal.Cast<byte, double>(input1),
@@ -554,6 +648,7 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
         KernelOperation operation)
     {
         const int VectorSize = 8; // 256 bits / 32 bits per float
+        const int UnrollFactor = 2; // Process 2 vectors at a time for better pipelining
         var vectorCount = elementCount / VectorSize;
         var remainder = elementCount % VectorSize;
 
@@ -565,7 +660,29 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
         ref var input2Ref = ref MemoryMarshal.GetReference(input2);
         ref var outputRef = ref MemoryMarshal.GetReference(output);
 
-        for (long i = 0; i < vectorCount; i++)
+        // Process unrolled vectors for better instruction-level parallelism
+        var unrolledCount = vectorCount / UnrollFactor;
+        for (long i = 0; i < unrolledCount; i++)
+        {
+            var baseOffset = (int)(i * VectorSize * UnrollFactor);
+            
+            // Load both vector pairs
+            var vec1_0 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, baseOffset));
+            var vec2_0 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input2Ref, baseOffset));
+            var vec1_1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, baseOffset + VectorSize));
+            var vec2_1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input2Ref, baseOffset + VectorSize));
+            
+            // Compute both results
+            var result0 = vectorOp(vec1_0, vec2_0);
+            var result1 = vectorOp(vec1_1, vec2_1);
+            
+            // Store both results
+            result0.StoreUnsafe(ref Unsafe.Add(ref outputRef, baseOffset));
+            result1.StoreUnsafe(ref Unsafe.Add(ref outputRef, baseOffset + VectorSize));
+        }
+        
+        // Process remaining full vectors
+        for (long i = unrolledCount * UnrollFactor; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
             var vec1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
@@ -574,16 +691,42 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
             result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
         }
 
-        // Process remaining elements
+        // Process remaining elements with optimized handling
         if (remainder > 0)
         {
             var lastVectorOffset = (int)(vectorCount * VectorSize);
-            var scalarOp = GetScalarOperationFloat32(operation);
             
-            for (long i = 0; i < remainder; i++)
+            // Try to use smaller SIMD operations for remainder if possible
+            if (remainder >= 8 && Avx2.IsSupported)
             {
-                var idx = lastVectorOffset + i;
-                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+                // Use AVX2 for 8-element remainder
+                var vec1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, lastVectorOffset));
+                var vec2 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input2Ref, lastVectorOffset));
+                var result = SimdOperationHelpers.GetVectorOperationFloat32_256(operation)(vec1, vec2);
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, lastVectorOffset));
+                lastVectorOffset += 8;
+                remainder -= 8;
+            }
+            else if (remainder >= 4 && Sse.IsSupported)
+            {
+                // Use SSE for 4-element remainder
+                var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, lastVectorOffset));
+                var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, lastVectorOffset));
+                var result = SimdOperationHelpers.GetVectorOperationFloat32_128(operation)(vec1, vec2);
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, lastVectorOffset));
+                lastVectorOffset += 4;
+                remainder -= 4;
+            }
+            
+            // Handle final scalar elements
+            if (remainder > 0)
+            {
+                var scalarOp = GetScalarOperationFloat32(operation);
+                for (long i = 0; i < remainder; i++)
+                {
+                    var idx = lastVectorOffset + i;
+                    output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+                }
             }
         }
     }
@@ -611,10 +754,10 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
         for (long i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var vec1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
-            var vec2 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var vec1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, (int)offset));
+            var vec2 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input2Ref, (int)offset));
             var result = vectorOp(vec1, vec2);
-            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, (int)offset));
         }
 
         // Process remaining elements
@@ -725,13 +868,13 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
             for (long i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var vecA = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vecB = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-                var vecC = Vector256.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                var vecA = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vecB = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
+                var vecC = Vector256.LoadUnsafe(ref Unsafe.Add(ref cRef, (int)offset));
                 
                 // True FMA: result = a * b + c with single rounding
                 var fmaResult = Fma.MultiplyAdd(vecA, vecB, vecC);
-                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
         }
         else
@@ -748,7 +891,7 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
             for (long i = 0; i < remainder; i++)
             {
                 var idx = lastVectorOffset + i;
-                result[idx] = MathF.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+                result[(int)idx] = MathF.FusedMultiplyAdd(a[(int)idx], b[(int)idx], c[(int)idx]);
             }
         }
     }
@@ -781,13 +924,13 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
             for (long i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var vecA = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vecB = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-                var vecC = Vector256.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                var vecA = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vecB = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
+                var vecC = Vector256.LoadUnsafe(ref Unsafe.Add(ref cRef, (int)offset));
                 
                 // True FMA: result = a * b + c with single rounding
                 var fmaResult = Fma.MultiplyAdd(vecA, vecB, vecC);
-                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
         }
         else
@@ -804,7 +947,7 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
             for (long i = 0; i < remainder; i++)
             {
                 var idx = lastVectorOffset + i;
-                result[idx] = Math.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+                result[(int)idx] = Math.FusedMultiplyAdd(a[(int)idx], b[(int)idx], c[(int)idx]);
             }
         }
     }
@@ -828,8 +971,9 @@ internal sealed class SseKernelExecutor : SimdKernelExecutor
         int vectorWidth)
     {
         var operation = GetOperationType();
+        var elementType = GetElementType();
         
-        if (Definition.Parameters[0].ElementType == typeof(float))
+        if (elementType == typeof(float))
         {
             ExecuteFloat32(
                 MemoryMarshal.Cast<byte, float>(input1),
@@ -838,7 +982,7 @@ internal sealed class SseKernelExecutor : SimdKernelExecutor
                 elementCount,
                 operation);
         }
-        else if (Definition.Parameters[0].ElementType == typeof(double))
+        else if (elementType == typeof(double))
         {
             ExecuteFloat64(
                 MemoryMarshal.Cast<byte, double>(input1),
@@ -872,22 +1016,48 @@ internal sealed class SseKernelExecutor : SimdKernelExecutor
         for (long i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
-            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, (int)offset));
+            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, (int)offset));
             var result = vectorOp(vec1, vec2);
-            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, (int)offset));
         }
 
-        // Process remaining elements
+        // Process remaining elements with optimized handling
         if (remainder > 0)
         {
             var lastVectorOffset = (int)(vectorCount * VectorSize);
-            var scalarOp = GetScalarOperationFloat32(operation);
             
-            for (long i = 0; i < remainder; i++)
+            // Try to use smaller SIMD operations for remainder if possible
+            if (remainder >= 8 && Avx2.IsSupported)
             {
-                var idx = lastVectorOffset + i;
-                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+                // Use AVX2 for 8-element remainder
+                var vec1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, lastVectorOffset));
+                var vec2 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input2Ref, lastVectorOffset));
+                var result = SimdOperationHelpers.GetVectorOperationFloat32_256(operation)(vec1, vec2);
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, lastVectorOffset));
+                lastVectorOffset += 8;
+                remainder -= 8;
+            }
+            else if (remainder >= 4 && Sse.IsSupported)
+            {
+                // Use SSE for 4-element remainder
+                var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, lastVectorOffset));
+                var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, lastVectorOffset));
+                var result = SimdOperationHelpers.GetVectorOperationFloat32_128(operation)(vec1, vec2);
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, lastVectorOffset));
+                lastVectorOffset += 4;
+                remainder -= 4;
+            }
+            
+            // Handle final scalar elements
+            if (remainder > 0)
+            {
+                var scalarOp = GetScalarOperationFloat32(operation);
+                for (long i = 0; i < remainder; i++)
+                {
+                    var idx = lastVectorOffset + i;
+                    output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+                }
             }
         }
     }
@@ -915,10 +1085,10 @@ internal sealed class SseKernelExecutor : SimdKernelExecutor
         for (long i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
-            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, (int)offset));
+            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, (int)offset));
             var result = vectorOp(vec1, vec2);
-            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, (int)offset));
         }
 
         // Process remaining elements
@@ -1016,8 +1186,9 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
         int vectorWidth)
     {
         var operation = GetOperationType();
+        var elementType = GetElementType();
         
-        if (Definition.Parameters[0].ElementType == typeof(float))
+        if (elementType == typeof(float))
         {
             ExecuteFloat32(
                 MemoryMarshal.Cast<byte, float>(input1),
@@ -1026,7 +1197,7 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
                 elementCount,
                 operation);
         }
-        else if (Definition.Parameters[0].ElementType == typeof(double))
+        else if (elementType == typeof(double))
         {
             ExecuteFloat64(
                 MemoryMarshal.Cast<byte, double>(input1),
@@ -1060,22 +1231,48 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
         for (long i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
-            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, (int)offset));
+            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, (int)offset));
             var result = vectorOp(vec1, vec2);
-            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, (int)offset));
         }
 
-        // Process remaining elements
+        // Process remaining elements with optimized handling
         if (remainder > 0)
         {
             var lastVectorOffset = (int)(vectorCount * VectorSize);
-            var scalarOp = GetScalarOperationFloat32(operation);
             
-            for (long i = 0; i < remainder; i++)
+            // Try to use smaller SIMD operations for remainder if possible
+            if (remainder >= 8 && Avx2.IsSupported)
             {
-                var idx = lastVectorOffset + i;
-                output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+                // Use AVX2 for 8-element remainder
+                var vec1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, lastVectorOffset));
+                var vec2 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input2Ref, lastVectorOffset));
+                var result = SimdOperationHelpers.GetVectorOperationFloat32_256(operation)(vec1, vec2);
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, lastVectorOffset));
+                lastVectorOffset += 8;
+                remainder -= 8;
+            }
+            else if (remainder >= 4 && Sse.IsSupported)
+            {
+                // Use SSE for 4-element remainder
+                var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, lastVectorOffset));
+                var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, lastVectorOffset));
+                var result = SimdOperationHelpers.GetVectorOperationFloat32_128(operation)(vec1, vec2);
+                result.StoreUnsafe(ref Unsafe.Add(ref outputRef, lastVectorOffset));
+                lastVectorOffset += 4;
+                remainder -= 4;
+            }
+            
+            // Handle final scalar elements
+            if (remainder > 0)
+            {
+                var scalarOp = GetScalarOperationFloat32(operation);
+                for (long i = 0; i < remainder; i++)
+                {
+                    var idx = lastVectorOffset + i;
+                    output[(int)idx] = scalarOp(input1[(int)idx], input2[(int)idx]);
+                }
             }
         }
     }
@@ -1103,10 +1300,10 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
         for (long i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
-            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, offset));
+            var vec1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input1Ref, (int)offset));
+            var vec2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref input2Ref, (int)offset));
             var result = vectorOp(vec1, vec2);
-            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, offset));
+            result.StoreUnsafe(ref Unsafe.Add(ref outputRef, (int)offset));
         }
 
         // Process remaining elements
@@ -1237,13 +1434,13 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
             for (long i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var vecA = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vecB = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-                var vecC = Vector128.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                var vecA = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vecB = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
+                var vecC = Vector128.LoadUnsafe(ref Unsafe.Add(ref cRef, (int)offset));
                 
                 // ARM NEON FMLA: result = a * b + c with single rounding
                 var fmaResult = AdvSimd.FusedMultiplyAdd(vecC, vecA, vecB); // Note: ARM order is (accumulator, multiplicand, multiplier)
-                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
         }
         else
@@ -1260,7 +1457,7 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
             for (long i = 0; i < remainder; i++)
             {
                 var idx = lastVectorOffset + i;
-                result[idx] = MathF.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+                result[(int)idx] = MathF.FusedMultiplyAdd(a[(int)idx], b[(int)idx], c[(int)idx]);
             }
         }
     }
@@ -1293,13 +1490,13 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
             for (long i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var vecA = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vecB = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-                var vecC = Vector128.LoadUnsafe(ref Unsafe.Add(ref cRef, offset));
+                var vecA = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vecB = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
+                var vecC = Vector128.LoadUnsafe(ref Unsafe.Add(ref cRef, (int)offset));
                 
                 // ARM NEON FMLA: result = a * b + c with single rounding
                 var fmaResult = AdvSimd.Arm64.FusedMultiplyAdd(vecC, vecA, vecB); // Note: ARM order is (accumulator, multiplicand, multiplier)
-                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                fmaResult.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
         }
         else
@@ -1316,7 +1513,7 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
             for (long i = 0; i < remainder; i++)
             {
                 var idx = lastVectorOffset + i;
-                result[idx] = Math.FusedMultiplyAdd(a[idx], b[idx], c[idx]);
+                result[(int)idx] = Math.FusedMultiplyAdd(a[(int)idx], b[(int)idx], c[(int)idx]);
             }
         }
     }
@@ -1340,8 +1537,9 @@ internal sealed class ScalarKernelExecutor : SimdKernelExecutor
         int vectorWidth)
     {
         var operation = GetOperationType();
+        var elementType = GetElementType();
         
-        if (Definition.Parameters[0].ElementType == typeof(float))
+        if (elementType == typeof(float))
         {
             ExecuteFloat32(
                 MemoryMarshal.Cast<byte, float>(input1),
@@ -1350,7 +1548,7 @@ internal sealed class ScalarKernelExecutor : SimdKernelExecutor
                 elementCount,
                 operation);
         }
-        else if (Definition.Parameters[0].ElementType == typeof(double))
+        else if (elementType == typeof(double))
         {
             ExecuteFloat64(
                 MemoryMarshal.Cast<byte, double>(input1),
@@ -1501,10 +1699,10 @@ public static class VectorPatterns
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-            var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+            var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
             var vr = Avx512F.Add(va, vb);
-            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
         }
 
         // Handle remainder
@@ -1532,10 +1730,10 @@ public static class VectorPatterns
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-            var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+            var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
             var vr = Avx.Add(va, vb);
-            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
         }
 
         // Handle remainder
@@ -1563,10 +1761,10 @@ public static class VectorPatterns
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-            var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+            var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
             var vr = Sse.Add(va, vb);
-            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
         }
 
         // Handle remainder
@@ -1619,10 +1817,10 @@ public static class VectorPatterns
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-            var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+            var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
             var vr = Avx512F.Add(va, vb);
-            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
         }
 
         // Handle remainder
@@ -1650,10 +1848,10 @@ public static class VectorPatterns
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-            var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+            var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
             var vr = Avx.Add(va, vb);
-            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
         }
 
         // Handle remainder
@@ -1681,10 +1879,10 @@ public static class VectorPatterns
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
-            var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-            var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+            var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+            var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
             var vr = Sse2.Add(va, vb);
-            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+            vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
         }
 
         // Handle remainder
@@ -1792,10 +1990,10 @@ public static class VectorPatterns
             for (int i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
                 var vr = Avx512F.Multiply(va, vb);
-                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
 
             // Handle remainder
@@ -1821,10 +2019,10 @@ public static class VectorPatterns
             for (int i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
                 var vr = Avx.Multiply(va, vb);
-                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
 
             // Handle remainder
@@ -1850,10 +2048,10 @@ public static class VectorPatterns
             for (int i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
                 var vr = Sse.Multiply(va, vb);
-                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
 
             // Handle remainder
@@ -1892,10 +2090,10 @@ public static class VectorPatterns
             for (int i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
                 var vr = Avx512F.Multiply(va, vb);
-                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
 
             // Handle remainder
@@ -1921,10 +2119,10 @@ public static class VectorPatterns
             for (int i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
                 var vr = Avx.Multiply(va, vb);
-                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
 
             // Handle remainder
@@ -1950,10 +2148,10 @@ public static class VectorPatterns
             for (int i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
-                var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-                var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+                var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
+                var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, (int)offset));
                 var vr = Sse2.Multiply(va, vb);
-                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
+                vr.StoreUnsafe(ref Unsafe.Add(ref resultRef, (int)offset));
             }
 
             // Handle remainder

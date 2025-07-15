@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -10,7 +11,9 @@ using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Plugins.Interfaces;
+using DotCompute.Plugins.Exceptions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Plugins.Core
 {
@@ -23,11 +26,92 @@ namespace DotCompute.Plugins.Core
         private readonly Dictionary<string, LoadedPlugin> _plugins;
         private readonly object _lock = new();
         private bool _disposed;
+        private bool _isInitialized;
 
         public PluginSystem(ILogger<PluginSystem> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _plugins = new Dictionary<string, LoadedPlugin>();
+        }
+
+        public PluginSystem(Configuration.PluginOptions options, ILogger<PluginSystem>? logger = null)
+        {
+            _logger = logger ?? new NullLogger<PluginSystem>();
+            _plugins = new Dictionary<string, LoadedPlugin>();
+        }
+
+        /// <summary>
+        /// Gets whether the plugin system is initialized.
+        /// </summary>
+        public bool IsInitialized => _isInitialized;
+
+        /// <summary>
+        /// Initializes the plugin system.
+        /// </summary>
+        public Task InitializeAsync(CancellationToken cancellationToken = default)
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(PluginSystem));
+
+            _isInitialized = true;
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Loads a plugin from assembly path.
+        /// </summary>
+        public async Task<IBackendPlugin?> LoadPluginAsync(string assemblyPath, CancellationToken cancellationToken = default)
+        {
+            // Auto-discover the plugin type from the assembly
+            var pluginType = await DiscoverPluginTypeAsync(assemblyPath);
+            if (pluginType != null)
+            {
+                return await LoadPluginAsync(assemblyPath, pluginType, cancellationToken);
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Loads a plugin instance directly.
+        /// </summary>
+        public async Task<IBackendPlugin?> LoadPluginAsync(IBackendPlugin plugin, CancellationToken cancellationToken = default)
+        {
+            if (_disposed)
+                throw new ObjectDisposedException(nameof(PluginSystem));
+
+            ArgumentNullException.ThrowIfNull(plugin);
+
+            try
+            {
+                _logger?.LogInformation("Loading plugin {Id} ({Name})", plugin.Id, plugin.Name);
+
+                // Validate the plugin first
+                var validationResult = plugin.Validate();
+                if (!validationResult.IsValid)
+                {
+                    throw new PluginLoadException($"Plugin validation failed: {string.Join(", ", validationResult.Errors)}", plugin.Id, "");
+                }
+
+                // Store loaded plugin info
+                lock (_lock)
+                {
+                    _plugins[plugin.Id] = new LoadedPlugin
+                    {
+                        Plugin = plugin,
+                        LoadContext = null!, // Not applicable for direct plugin loading
+                        Assembly = plugin.GetType().Assembly,
+                        LoadTime = DateTime.UtcNow
+                    };
+                }
+
+                _logger?.LogInformation("Successfully loaded plugin {Id} ({Name})", plugin.Id, plugin.Name);
+                return plugin;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to load plugin {Id}", plugin.Id);
+                throw new PluginLoadException($"Failed to load plugin {plugin.Id}", plugin.Id, "", ex);
+            }
         }
 
         /// <summary>
@@ -63,8 +147,8 @@ namespace DotCompute.Plugins.Core
                     return null;
                 }
 
-                // Create instance
-                var instance = Activator.CreateInstance(pluginType) as IBackendPlugin;
+                // Create instance - use factory method for AOT compatibility
+                var instance = CreatePluginInstance(pluginType);
                 if (instance == null)
                 {
                     _logger.LogError("Failed to create instance of {Type}", pluginTypeName);
@@ -164,6 +248,61 @@ namespace DotCompute.Plugins.Core
                 .Where(t => !t.IsAbstract && 
                            !t.IsInterface && 
                            typeof(IBackendPlugin).IsAssignableFrom(t));
+        }
+
+        /// <summary>
+        /// Discovers the first plugin type in an assembly.
+        /// </summary>
+        private async Task<string?> DiscoverPluginTypeAsync(string assemblyPath)
+        {
+            try
+            {
+                // Create temporary load context
+                var context = new PluginAssemblyLoadContext(assemblyPath);
+                var assembly = context.LoadFromAssemblyPath(assemblyPath);
+                
+                var pluginTypes = DiscoverPluginTypes(assembly);
+                var firstType = pluginTypes.FirstOrDefault();
+                
+                return firstType?.FullName;
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, "Failed to discover plugin type in assembly {Path}", assemblyPath);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Creates a plugin instance using AOT-compatible factory method.
+        /// Falls back to Activator.CreateInstance if dynamic code is available.
+        /// </summary>
+        private static IBackendPlugin? CreatePluginInstance([DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicParameterlessConstructor)] Type pluginType)
+        {
+            // For AOT compatibility, prefer factory methods or constructors with known signatures
+            try
+            {
+                // Try to find a parameterless constructor
+                var constructor = pluginType.GetConstructor(Type.EmptyTypes);
+                if (constructor != null)
+                {
+                    // Use constructor directly for better AOT compatibility
+                    return constructor.Invoke(null) as IBackendPlugin;
+                }
+
+                // Fall back to Activator.CreateInstance if dynamic code is available
+                if (System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled)
+                {
+                    return Activator.CreateInstance(pluginType) as IBackendPlugin;
+                }
+
+                // For full AOT, we would need pre-registered factories
+                return null;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public void Dispose()

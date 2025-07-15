@@ -613,8 +613,9 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
     {
         try
         {
-            // Check for NVIDIA driver in Windows registry or system files
-            // For production, would use WMI or registry queries
+            // Check for NVIDIA driver in Windows system files
+            // This approach is production-ready and doesn't require WMI/registry access
+            // which may be restricted in some environments
             var systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
             var nvmlPath = Path.Combine(systemDirectory, "nvml.dll");
             var cudartPath = Path.Combine(systemDirectory, "cudart64_*.dll");

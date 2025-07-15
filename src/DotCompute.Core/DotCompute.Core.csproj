@@ -28,7 +28,6 @@
 
   <ItemGroup>
     <ProjectReference Include="../DotCompute.Abstractions/DotCompute.Abstractions.csproj" />
-    <ProjectReference Include="../DotCompute.Memory/DotCompute.Memory.csproj" />
   </ItemGroup>
 
 

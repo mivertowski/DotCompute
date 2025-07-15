@@ -4,6 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Backends.CPU.Intrinsics;
@@ -12,11 +14,11 @@ using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using CoreAcceleratorInfo = DotCompute.Core.AcceleratorInfo;
-using CoreAcceleratorType = DotCompute.Core.AcceleratorType;
-using CoreKernelDefinition = DotCompute.Core.KernelDefinition;
-using CoreCompilationOptions = DotCompute.Core.CompilationOptions;
-using CoreICompiledKernel = DotCompute.Core.ICompiledKernel;
+using CoreAcceleratorInfo = DotCompute.Abstractions.AcceleratorInfo;
+using CoreAcceleratorType = DotCompute.Abstractions.AcceleratorType;
+using CoreKernelDefinition = DotCompute.Abstractions.KernelDefinition;
+using CoreCompilationOptions = DotCompute.Abstractions.CompilationOptions;
+using CoreICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 
 namespace DotCompute.Backends.CPU.Accelerators;
@@ -54,40 +56,28 @@ public sealed class CpuAccelerator : IAccelerator
             ["CacheLineSize"] = GetCacheLineSize()
         };
 
-        _info = new CoreAcceleratorInfo
+        _info = new CoreAcceleratorInfo(
+            CoreAcceleratorType.CPU,
+            GetProcessorName(),
+            Environment.Version.ToString(),
+            GetTotalPhysicalMemory(),
+            Environment.ProcessorCount,
+            3000, // Default value for CPU
+            Environment.Version,
+            GetTotalPhysicalMemory() / 4, // max shared memory per block
+            true // is unified memory
+        )
         {
-            Id = $"cpu-{Environment.MachineName}-{Environment.ProcessorCount}",
-            Name = GetProcessorName(),
-            Type = CoreAcceleratorType.Cpu,
-            Vendor = GetProcessorVendor(),
-            DriverVersion = Environment.Version.ToString(),
-            MaxComputeUnits = Environment.ProcessorCount,
-            MaxWorkGroupSize = _options.MaxWorkGroupSize,
-            MaxMemoryAllocation = _options.MaxMemoryAllocation,
-            GlobalMemorySize = GetTotalPhysicalMemory(),
-            LocalMemorySize = GetCacheSize(),
-            SupportsDoublePrecision = true,
             Capabilities = capabilities
         };
 
         _logger.LogInformation(
             "Initialized CPU accelerator: {Name} with {Cores} cores, {SimdInfo}",
-            _info.Name, _info.MaxComputeUnits, simdInfo);
+            _info.Name, _info.ComputeUnits, simdInfo);
     }
 
     /// <inheritdoc/>
-    public AcceleratorInfo Info => new AcceleratorInfo
-    {
-        Id = _info.Id,
-        Name = _info.Name,
-        DeviceType = _info.Type.ToString(),
-        Vendor = _info.Vendor,
-        ComputeCapability = Version.Parse(_info.DriverVersion ?? "1.0.0.0"),
-        TotalMemory = _info.GlobalMemorySize,
-        ComputeUnits = _info.MaxComputeUnits,
-        MaxClockFrequency = 3000, // Default value for CPU
-        Capabilities = _info.Capabilities?.ToDictionary(kv => kv.Key, kv => kv.Value)
-    };
+    public AcceleratorInfo Info => _info;
 
     /// <inheritdoc/>
     public IMemoryManager Memory => _memoryManager;
@@ -118,8 +108,10 @@ public sealed class CpuAccelerator : IAccelerator
         };
 
         // Compile the kernel with vectorization support
-        var compiler = new CpuKernelCompiler();
-        var coreCompiledKernel = await compiler.CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false);
+        // Use AOT-compatible compiler when dynamic code compilation is not available
+        var coreCompiledKernel = System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled
+            ? await new CpuKernelCompiler().CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false)
+            : await new AotCpuKernelCompiler().CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false);
 
         _logger.LogDebug("Successfully compiled kernel '{KernelName}' with {VectorWidth}-bit vectorization", 
             definition.Name, SimdCapabilities.PreferredVectorWidth);
@@ -149,9 +141,11 @@ public sealed class CpuAccelerator : IAccelerator
 
     private static string GetProcessorName()
     {
-        // In a real implementation, this would query the actual CPU name
-        // For now, return a generic name based on the architecture
-        return Environment.Is64BitProcess ? "Generic x64 CPU" : "Generic x86 CPU";
+        // Return a descriptive name based on the architecture and processor count
+        // This provides useful information without requiring platform-specific APIs
+        var arch = Environment.Is64BitProcess ? "x64" : "x86";
+        var cores = Environment.ProcessorCount;
+        return $"{arch} CPU ({cores} cores)";
     }
 
     private static string GetProcessorVendor()
@@ -172,15 +166,15 @@ public sealed class CpuAccelerator : IAccelerator
     {
         try
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
                 return GetWindowsPhysicalMemory();
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux))
             {
                 return GetLinuxPhysicalMemory();
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            else if (System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX))
             {
                 return GetMacOSPhysicalMemory();
             }
@@ -197,14 +191,23 @@ public sealed class CpuAccelerator : IAccelerator
         }
     }
 
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static long GetWindowsPhysicalMemory()
     {
-        // For production, would use GlobalMemoryStatusEx Win32 API
-        // Using managed approximation for now
+        // Use GC memory information which provides reliable memory statistics
+        // This approach works across all Windows versions without P/Invoke
+        var gcMemoryInfo = GC.GetGCMemoryInfo();
+        if (gcMemoryInfo.TotalAvailableMemoryBytes > 0)
+        {
+            return gcMemoryInfo.TotalAvailableMemoryBytes;
+        }
+        
+        // Fallback to process-based estimation
         var process = System.Diagnostics.Process.GetCurrentProcess();
         return Math.Max(process.WorkingSet64 * 8, 4L * 1024 * 1024 * 1024);
     }
 
+    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static long GetLinuxPhysicalMemory()
     {
         try
@@ -215,7 +218,7 @@ public sealed class CpuAccelerator : IAccelerator
                 var totalLine = lines.FirstOrDefault(l => l.StartsWith("MemTotal:"));
                 if (totalLine != null)
                 {
-                    var parts = totalLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var parts = totalLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
                     {
                         return kb * 1024; // Convert KB to bytes
@@ -230,10 +233,18 @@ public sealed class CpuAccelerator : IAccelerator
         return 8L * 1024 * 1024 * 1024; // 8GB default
     }
 
+    [System.Runtime.Versioning.SupportedOSPlatform("osx")]
     private static long GetMacOSPhysicalMemory()
     {
-        // For production, would use sysctl hw.memsize
-        return 8L * 1024 * 1024 * 1024; // 8GB default for macOS
+        // Use GC memory information which works across all platforms
+        var gcMemoryInfo = GC.GetGCMemoryInfo();
+        if (gcMemoryInfo.TotalAvailableMemoryBytes > 0)
+        {
+            return gcMemoryInfo.TotalAvailableMemoryBytes;
+        }
+        
+        // Fallback to reasonable default for macOS systems
+        return 8L * 1024 * 1024 * 1024; // 8GB default
     }
 
     private static long GetCacheSize()
@@ -257,30 +268,47 @@ public sealed class CpuAccelerator : IAccelerator
     private static CoreKernelDefinition ConvertToCoreKernelDefinition(KernelDefinition definition)
     {
         // Convert from Abstractions to Core types
-        var source = new DotCompute.Core.BytecodeKernelSource
+        // Since we're using Abstractions now, we can use the definition directly
+        var source = definition.Code;
+        
+        var sourceCode = System.Text.Encoding.UTF8.GetString(source);
+        var kernelSource = new TextKernelSource(
+            code: sourceCode,
+            name: definition.Name,
+            language: KernelLanguage.CSharpIL,
+            entryPoint: definition.EntryPoint ?? "main",
+            dependencies: Array.Empty<string>()
+        );
+        
+        var compilationOptions = new CompilationOptions
         {
-            Bytecode = definition.Code,
-            Format = "raw" // Default format
+            OptimizationLevel = OptimizationLevel.Default,
+            EnableDebugInfo = false,
+            AdditionalFlags = null,
+            Defines = null
         };
         
-        return new CoreKernelDefinition
+        var coreDefinition = new CoreKernelDefinition(definition.Name, kernelSource, compilationOptions);
+        
+        // Override metadata with original information
+        if (coreDefinition.Metadata != null && definition.Metadata != null)
         {
-            Name = definition.Name,
-            Source = source,
-            WorkDimensions = 1, // Default to 1D
-            Parameters = new List<DotCompute.Core.KernelParameter>(),
-            Metadata = definition.Metadata
-        };
+            foreach (var kvp in definition.Metadata)
+            {
+                coreDefinition.Metadata[kvp.Key] = kvp.Value;
+            }
+        }
+        
+        return coreDefinition;
     }
 
     private static CoreCompilationOptions ConvertToCoreCompilationOptions(CompilationOptions options)
     {
         return new CoreCompilationOptions
         {
-            OptimizationLevel = (DotCompute.Core.OptimizationLevel)(int)options.OptimizationLevel,
-            EnableFastMath = false, // Conservative default
-            AdditionalFlags = options.AdditionalFlags?.ToList(),
-            Defines = null
+            OptimizationLevel = options.OptimizationLevel,
+            EnableDebugInfo = options.EnableDebugInfo,
+            AdditionalFlags = options.AdditionalFlags
         };
     }
 }
@@ -297,19 +325,12 @@ internal sealed class CompiledKernelAdapter : ICompiledKernel
         _coreKernel = coreKernel ?? throw new ArgumentNullException(nameof(coreKernel));
     }
 
-    public string Name => _coreKernel.Definition.Name;
+    public string Name => _coreKernel.Name;
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        // Convert KernelArguments to KernelExecutionContext
-        var context = new CoreKernelExecutionContext
-        {
-            GlobalWorkSize = new[] { 1024L }, // Default work size
-            LocalWorkSize = new[] { 64L },    // Default local work size
-            Arguments = new List<object>(arguments.Arguments.ToArray())
-        };
-
-        await _coreKernel.ExecuteAsync(context, cancellationToken).ConfigureAwait(false);
+        // Direct pass-through to the core kernel (both use KernelArguments)
+        await _coreKernel.ExecuteAsync(arguments, cancellationToken).ConfigureAwait(false);
     }
 
     public ValueTask DisposeAsync()

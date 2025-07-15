@@ -148,9 +148,14 @@ public class DefaultAcceleratorManager : IAcceleratorManager
         if (!_accelerators.Contains(accelerator))
             throw new ArgumentException("Accelerator is not managed by this manager", nameof(accelerator));
             
-        // For CPU accelerators, use a dummy handle since we don't have real device contexts
+        // For CPU accelerators, create a context with the thread ID as the handle
         var deviceId = int.Parse(accelerator.Info.Id.Split('-').LastOrDefault() ?? "0");
-        return new AcceleratorContext(new IntPtr(1), deviceId);
+        
+        // Use the current thread ID as the device context handle for CPU
+        // This provides a unique, valid handle for each context
+        var contextHandle = new IntPtr(Environment.CurrentManagedThreadId);
+        
+        return new AcceleratorContext(contextHandle, deviceId);
     }
 
     public void RegisterProvider(IAcceleratorProvider provider)

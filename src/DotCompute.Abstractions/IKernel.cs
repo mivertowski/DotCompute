@@ -65,12 +65,18 @@ public sealed class KernelParameter
     /// </summary>
     public int Index { get; }
     
-    public KernelParameter(string name, Type type, int index, bool isInput = true, bool isOutput = false)
+    /// <summary>
+    /// Gets whether this is a constant parameter that should never be null.
+    /// </summary>
+    public bool IsConstant { get; }
+    
+    public KernelParameter(string name, Type type, int index, bool isInput = true, bool isOutput = false, bool isConstant = false)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
         Type = type ?? throw new ArgumentNullException(nameof(type));
         Index = index;
         IsInput = isInput;
         IsOutput = isOutput;
+        IsConstant = isConstant;
     }
 }

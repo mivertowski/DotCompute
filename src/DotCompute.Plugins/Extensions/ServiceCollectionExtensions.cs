@@ -47,5 +47,31 @@ namespace DotCompute.Plugins.Extensions
             services.AddSingleton<PluginSystem>();
             return services;
         }
+
+        /// <summary>
+        /// Adds plugin system with plugin options instance.
+        /// </summary>
+        public static IServiceCollection AddPluginSystem(
+            this IServiceCollection services,
+            PluginOptions options)
+        {
+            ArgumentNullException.ThrowIfNull(options);
+            
+            services.Configure<PluginOptions>(opts =>
+            {
+                opts.PluginsDirectory = options.PluginsDirectory;
+                opts.EnableHotReload = options.EnableHotReload;
+                opts.IsolatePlugins = options.IsolatePlugins;
+                opts.SharedAssemblies = options.SharedAssemblies;
+                opts.Plugins = options.Plugins;
+                opts.MaxConcurrentLoads = options.MaxConcurrentLoads;
+                opts.LoadTimeout = options.LoadTimeout;
+                opts.PluginDirectories = options.PluginDirectories;
+                opts.IsInitialized = options.IsInitialized;
+            });
+            
+            services.AddSingleton<PluginSystem>();
+            return services;
+        }
     }
 }

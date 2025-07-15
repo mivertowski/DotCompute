@@ -66,6 +66,86 @@ internal sealed class KernelStage : IPipelineStage
         _metrics = new StageMetrics(id);
     }
 
+    /// <summary>
+    /// Builds kernel parameters from input mappings, direct inputs, and parameter overrides.
+    /// </summary>
+    /// <param name="context">The pipeline execution context containing input values.</param>
+    /// <returns>A list of parameters in the correct order for kernel execution.</returns>
+    private List<object> BuildKernelParameters(PipelineExecutionContext context)
+    {
+        var parameters = new List<object>();
+        
+        // Build parameter list based on mappings and context
+        // Since we don't have KernelDefinition.Parameters yet, we'll use the mappings
+        // The order will be determined by the order in which parameters are added
+        
+        // First, add parameters from input mappings
+        foreach (var (paramName, contextKey) in _inputMappings)
+        {
+            if (context.Inputs.TryGetValue(contextKey, out var value))
+            {
+                parameters.Add(value);
+            }
+            else if (_parameters.TryGetValue(paramName, out var paramValue))
+            {
+                parameters.Add(paramValue);
+            }
+            else
+            {
+                throw new InvalidOperationException($"No value found for parameter '{paramName}' (mapped from '{contextKey}')");
+            }
+        }
+        
+        // Then add any parameters that aren't in input mappings but are in _parameters
+        foreach (var (paramName, paramValue) in _parameters)
+        {
+            if (!_inputMappings.ContainsKey(paramName))
+            {
+                parameters.Add(paramValue);
+            }
+        }
+        
+        return parameters;
+    }
+
+    /// <summary>
+    /// Gets the index of a parameter by name.
+    /// </summary>
+    /// <param name="paramName">The name of the parameter.</param>
+    /// <returns>The zero-based index of the parameter, or -1 if not found.</returns>
+    private int GetParameterIndex(string paramName)
+    {
+        // Since we don't have KernelDefinition.Parameters, we'll use the order
+        // established by BuildKernelParameters method
+        
+        int index = 0;
+        
+        // Check input mappings first (these come first in BuildKernelParameters)
+        foreach (var (mappingParam, _) in _inputMappings)
+        {
+            if (mappingParam == paramName)
+            {
+                return index;
+            }
+            index++;
+        }
+        
+        // Then check parameters that aren't in input mappings
+        foreach (var (param, _) in _parameters)
+        {
+            if (!_inputMappings.ContainsKey(param))
+            {
+                if (param == paramName)
+                {
+                    return index;
+                }
+                index++;
+            }
+        }
+        
+        return -1; // Not found
+    }
+
     /// <inheritdoc/>
     public string Id { get; }
 
@@ -103,16 +183,16 @@ internal sealed class KernelStage : IPipelineStage
             // Create execution context
             var kernelContext = new KernelExecutionContext
             {
-                GlobalWorkSize = _globalWorkSize ?? new[] { 1L },
+                Name = _kernel.Name,
+                WorkDimensions = _globalWorkSize ?? new[] { 1L },
                 LocalWorkSize = _localWorkSize != null ? _localWorkSize : null,
-                Arguments = arguments,
-                Options = context.Options.EnableProfiling 
-                    ? KernelExecutionOption.EnableProfiling 
-                    : KernelExecutionOption.None
+                Arguments = arguments.ToArray(),
+                CancellationToken = cancellationToken
             };
 
-            // Execute kernel
-            await _kernel.ExecuteAsync(kernelContext, cancellationToken);
+            // Execute kernel - convert to KernelArguments
+            var kernelArgs = new KernelArguments(kernelContext.Arguments ?? Array.Empty<object>());
+            await _kernel.ExecuteAsync(kernelArgs, cancellationToken);
 
             stopwatch.Stop();
             
@@ -203,8 +283,9 @@ internal sealed class KernelStage : IPipelineStage
         }
 
         // Validate parameter mappings
-        var kernelParams = _kernel?.Definition.Parameters ?? new List<KernelParameter>();
-        var paramNames = kernelParams.Select(p => p.Name).ToHashSet();
+        // Since KernelDefinition is not yet available in the interface, we validate based on
+        // the mappings and parameters provided. This ensures consistency even without metadata.
+        var paramNames = new HashSet<string>(_inputMappings.Keys.Union(_parameters.Keys));
 
         foreach (var mapping in _inputMappings)
         {
@@ -227,41 +308,8 @@ internal sealed class KernelStage : IPipelineStage
 
     private List<object> PrepareArguments(PipelineExecutionContext context)
     {
-        var arguments = new List<object>();
-        var kernelParams = _kernel.Definition.Parameters;
-
-        foreach (var param in kernelParams)
-        {
-            object? value = null;
-
-            // Check parameter overrides first
-            if (_parameters.TryGetValue(param.Name, out var paramValue))
-            {
-                value = paramValue;
-            }
-            // Check input mappings
-            else if (_inputMappings.TryGetValue(param.Name, out var contextKey))
-            {
-                if (context.Inputs.TryGetValue(contextKey, out var contextValue))
-                {
-                    value = contextValue;
-                }
-            }
-            // Check direct context values
-            else if (context.Inputs.TryGetValue(param.Name, out var directValue))
-            {
-                value = directValue;
-            }
-
-            if (value == null && !param.IsConstant)
-            {
-                throw new InvalidOperationException($"No value provided for required parameter '{param.Name}'");
-            }
-
-            arguments.Add(value!);
-        }
-
-        return arguments;
+        // Use the new BuildKernelParameters method
+        return BuildKernelParameters(context);
     }
 
     private Dictionary<string, object> PrepareOutputs(PipelineExecutionContext context, List<object> arguments)
@@ -273,14 +321,12 @@ internal sealed class KernelStage : IPipelineStage
             var paramName = mapping.Key;
             var contextKey = mapping.Value;
 
-            // Find parameter index
-            var paramIndex = _kernel.Definition.Parameters
-                .Select((p, i) => new { Parameter = p, Index = i })
-                .FirstOrDefault(x => x.Parameter.Name == paramName)?.Index;
+            // Use the new GetParameterIndex helper method
+            var paramIndex = GetParameterIndex(paramName);
 
-            if (paramIndex.HasValue && paramIndex.Value < arguments.Count)
+            if (paramIndex >= 0 && paramIndex < arguments.Count)
             {
-                outputs[contextKey] = arguments[paramIndex.Value];
+                outputs[contextKey] = arguments[paramIndex];
             }
         }
 
@@ -382,22 +428,40 @@ internal sealed class ParallelStage : IPipelineStage
             switch (_synchronizationMode)
             {
                 case SynchronizationMode.WaitAll:
-                    var tasks = _parallelStages.Select(stage => ExecuteStageAsync(stage, context, cancellationToken));
+                    // Performance optimization: Use pre-allocated array for better performance
+                    var tasks = new Task<StageExecutionResult>[_parallelStages.Count];
+                    for (int i = 0; i < _parallelStages.Count; i++)
+                    {
+                        var stage = _parallelStages[i];
+                        tasks[i] = ExecuteStageAsync(stage, context, cancellationToken);
+                    }
                     var stageResults = await Task.WhenAll(tasks);
                     results.AddRange(stageResults);
                     break;
 
                 case SynchronizationMode.WaitAny:
-                    var anyTask = Task.WhenAny(_parallelStages.Select(stage => ExecuteStageAsync(stage, context, cancellationToken)));
-                    var completedResult = await await anyTask;
+                    var anyTasks = _parallelStages.Select(stage => ExecuteStageAsync(stage, context, cancellationToken)).ToArray();
+                    var completedTask = await Task.WhenAny(anyTasks);
+                    var completedResult = await completedTask;
                     results.Add(completedResult);
                     break;
 
                 case SynchronizationMode.FireAndForget:
-                    // Start all tasks but don't wait
+                    // Performance optimization: Use ThreadPool directly for fire-and-forget
                     foreach (var stage in _parallelStages)
                     {
-                        _ = Task.Run(async () => await ExecuteStageAsync(stage, context, cancellationToken), cancellationToken);
+                        var capturedStage = stage;
+                        ThreadPool.QueueUserWorkItem(async _ => 
+                        {
+                            try
+                            {
+                                await ExecuteStageAsync(capturedStage, context, cancellationToken);
+                            }
+                            catch
+                            {
+                                // Fire and forget - ignore errors
+                            }
+                        });
                     }
                     break;
 

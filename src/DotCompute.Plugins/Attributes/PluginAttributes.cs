@@ -57,6 +57,20 @@ namespace DotCompute.Plugins.Attributes
         public int Priority { get; set; } = 0;
 
         /// <summary>
+        /// Gets or sets the load priority for backward compatibility.
+        /// </summary>
+        public int LoadPriority 
+        { 
+            get => Priority; 
+            set 
+            { 
+                if (value < 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), "LoadPriority must be non-negative.");
+                Priority = value; 
+            } 
+        }
+
+        /// <summary>
         /// Initializes a new instance of the PluginAttribute class.
         /// </summary>
         /// <param name="id">The unique identifier for the plugin.</param>
@@ -65,6 +79,21 @@ namespace DotCompute.Plugins.Attributes
         {
             Id = id ?? throw new ArgumentNullException(nameof(id));
             Name = name ?? throw new ArgumentNullException(nameof(name));
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the PluginAttribute class with just a name.
+        /// </summary>
+        /// <param name="name">The display name of the plugin (also used as ID).</param>
+        public PluginAttribute(string name)
+        {
+            if (string.IsNullOrEmpty(name))
+                throw new ArgumentException("Plugin name cannot be null or empty.", nameof(name));
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Plugin name cannot be whitespace.", nameof(name));
+            
+            Id = name;
+            Name = name;
         }
     }
 

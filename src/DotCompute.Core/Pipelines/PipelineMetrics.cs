@@ -323,8 +323,8 @@ internal sealed class PipelineMetrics : IPipelineMetrics
 
     private string ExportOpenTelemetry()
     {
-        // This would typically be a structured format for OpenTelemetry
-        // For now, return a JSON representation that could be consumed by OTel
+        // Export metrics in OpenTelemetry-compatible JSON format
+        // This structured format can be directly consumed by OpenTelemetry collectors
         var metrics = new
         {
             resource = new

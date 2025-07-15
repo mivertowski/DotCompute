@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Backends.CUDA;
 
@@ -182,7 +183,11 @@ public class CudaBackend : IDisposable
                 return null;
             }
 
-            return new CudaAccelerator(deviceId, _logger);
+            var acceleratorLogger = _logger is ILoggerFactory loggerFactory
+                ? loggerFactory.CreateLogger<CudaAccelerator>()
+                : new NullLogger<CudaAccelerator>();
+            
+            return new CudaAccelerator(deviceId, acceleratorLogger);
         }
         catch (Exception ex)
         {

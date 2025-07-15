@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using DotCompute.Core;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -17,13 +18,17 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// </summary>
 internal sealed class ILCodeGenerator
 {
-    private readonly ModuleBuilder? _moduleBuilder;
-    private static int _kernelCounter;
+    private readonly AotSafeCodeGenerator? _aotGenerator;
 
     public ILCodeGenerator()
     {
         // For AOT compatibility, we use Expression Trees instead of AssemblyBuilder
-        _moduleBuilder = null;
+        
+        // Initialize AOT-safe generator if dynamic code compilation is not available
+        if (!RuntimeFeature.IsDynamicCodeCompiled)
+        {
+            _aotGenerator = new AotSafeCodeGenerator();
+        }
     }
 
     /// <summary>
@@ -35,7 +40,13 @@ internal sealed class ILCodeGenerator
         KernelAnalysis analysis,
         CompilationOptions options)
     {
-        if (analysis.CanVectorize && options.OptimizationLevel >= OptimizationLevel.Release)
+        // Use AOT-safe generator if dynamic code compilation is not available
+        if (!RuntimeFeature.IsDynamicCodeCompiled && _aotGenerator != null)
+        {
+            return _aotGenerator.GenerateKernel(definition, ast, analysis, options);
+        }
+        
+        if (analysis.CanVectorize && options.OptimizationLevel >= OptimizationLevel.Default)
         {
             return GenerateVectorizedKernel(definition, ast, analysis, options);
         }
@@ -66,7 +77,7 @@ internal sealed class ILCodeGenerator
         bodyExpressions.Add(Expression.Assign(indexVar, Expression.ArrayIndex(workItemIdParam, Expression.Constant(0))));
 
         // Generate vectorized operations
-        if (ast.Operations.Any())
+        if (ast.Operations.Count > 0)
         {
             var vectorExpr = GenerateVectorizedOperations(ast, parameters, indexVar, analysis.VectorizationFactor);
             bodyExpressions.AddRange(vectorExpr);
@@ -81,8 +92,10 @@ internal sealed class ILCodeGenerator
         var body = Expression.Block(new[] { indexVar }, bodyExpressions);
         
         // Compile to delegate
+        #pragma warning disable IL3050 // Using member 'Expression.Lambda' which requires dynamic code
         var lambda = Expression.Lambda(body, allParams);
         var compiledDelegate = lambda.Compile();
+        #pragma warning restore IL3050
 
         return new CompiledKernelCode
         {
@@ -114,7 +127,7 @@ internal sealed class ILCodeGenerator
         bodyExpressions.Add(Expression.Assign(indexVar, Expression.ArrayIndex(workItemIdParam, Expression.Constant(0))));
 
         // Generate scalar operations
-        if (ast.Operations.Any())
+        if (ast.Operations.Count > 0)
         {
             var scalarExpr = GenerateScalarOperations(ast, parameters, indexVar);
             bodyExpressions.AddRange(scalarExpr);
@@ -129,8 +142,10 @@ internal sealed class ILCodeGenerator
         var body = Expression.Block(new[] { indexVar }, bodyExpressions);
         
         // Compile to delegate
+        #pragma warning disable IL3050 // Using member 'Expression.Lambda' which requires dynamic code
         var lambda = Expression.Lambda(body, allParams);
         var compiledDelegate = lambda.Compile();
+        #pragma warning restore IL3050
 
         return new CompiledKernelCode
         {
@@ -146,28 +161,20 @@ internal sealed class ILCodeGenerator
     {
         var parameters = new List<ParameterExpression>();
         
-        foreach (var param in definition.Parameters)
+        // Create default parameters based on common kernel patterns
+        // This supports the most common scenarios of binary operations with an output buffer
+        for (int i = 0; i < 3; i++)
         {
-            Type paramType;
-            
-            switch (param.Type)
+            // Default to Memory<float> for all parameters
+            var paramType = typeof(Memory<>).MakeGenericType(typeof(float));
+            var paramName = i switch
             {
-                case KernelParameterType.Buffer:
-                    // Use Memory<T> for buffer parameters
-                    var elementType = param.ElementType ?? typeof(float);
-                    paramType = typeof(Memory<>).MakeGenericType(elementType);
-                    break;
-                    
-                case KernelParameterType.Scalar:
-                    paramType = param.ElementType ?? typeof(float);
-                    break;
-                    
-                default:
-                    paramType = typeof(object);
-                    break;
-            }
-            
-            parameters.Add(Expression.Parameter(paramType, param.Name));
+                0 => "input1",
+                1 => "input2",
+                2 => "output",
+                _ => $"param{i}"
+            };
+            parameters.Add(Expression.Parameter(paramType, paramName));
         }
         
         return parameters;
@@ -238,11 +245,11 @@ internal sealed class ILCodeGenerator
         var input2 = parameters[1];
         var output = parameters[2];
 
-        // Get spans from Memory<float>
-        var spanMethod = typeof(Memory<float>).GetProperty("Span")!.GetGetMethod()!;
-        var input1Span = Expression.Property(input1, spanMethod);
-        var input2Span = Expression.Property(input2, spanMethod);
-        var outputSpan = Expression.Property(output, spanMethod);
+        // Get spans from Memory<float> using AOT-compatible approach
+        var spanProperty = typeof(Memory<float>).GetProperty("Span")!;
+        var input1Span = Expression.Property(input1, spanProperty);
+        var input2Span = Expression.Property(input2, spanProperty);
+        var outputSpan = Expression.Property(output, spanProperty);
 
         // Access elements
         var indexInt = Expression.Convert(indexExpr, typeof(int));
@@ -291,11 +298,11 @@ internal sealed class ILCodeGenerator
         var input2 = parameters[1];
         var output = parameters[2];
 
-        // Get spans
-        var spanMethod = typeof(Memory<float>).GetProperty("Span")!.GetGetMethod()!;
-        var input1Span = Expression.Property(input1, spanMethod);
-        var input2Span = Expression.Property(input2, spanMethod);
-        var outputSpan = Expression.Property(output, spanMethod);
+        // Get spans using AOT-compatible approach
+        var spanProperty = typeof(Memory<float>).GetProperty("Span")!;
+        var input1Span = Expression.Property(input1, spanProperty);
+        var input2Span = Expression.Property(input2, spanProperty);
+        var outputSpan = Expression.Property(output, spanProperty);
 
         // Multiply elements
         var indexInt = Expression.Convert(indexExpr, typeof(int));
@@ -316,8 +323,14 @@ internal sealed class ILCodeGenerator
         long baseSize = 1024;
         baseSize += ast.Operations.Count * 128;
         baseSize += ast.MemoryOperations.Count * 64;
-        if (ast.HasLoops) baseSize += 512;
-        if (ast.HasConditionals) baseSize += 256;
+        if (ast.HasLoops)
+        {
+            baseSize += 512;
+        }
+        if (ast.HasConditionals)
+        {
+            baseSize += 256;
+        }
         return baseSize;
     }
 
@@ -332,14 +345,20 @@ internal sealed class ILCodeGenerator
         else
             notes.Add("Scalar execution (vectorization not applicable)");
             
-        if (options.OptimizationLevel >= OptimizationLevel.Release)
+        if (options.OptimizationLevel >= OptimizationLevel.Default)
+        {
             notes.Add("Applied release optimizations");
+        }
             
-        if (options.EnableFastMath)
-            notes.Add("Fast math optimizations enabled");
+        if (options.EnableDebugInfo)
+        {
+            notes.Add("Debug info enabled");
+        }
             
         if (ast.HasLoops && options.OptimizationLevel == OptimizationLevel.Maximum)
+        {
             notes.Add("Applied loop unrolling");
+        }
             
         return notes.ToArray();
     }

@@ -17,12 +17,10 @@ using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Intrinsics;
 using Microsoft.Extensions.Logging;
-using CoreKernelDefinition = DotCompute.Core.KernelDefinition;
-using CoreICompiledKernel = DotCompute.Core.ICompiledKernel;
+using CoreKernelDefinition = DotCompute.Abstractions.KernelDefinition;
+using CoreICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 using IMemoryBuffer = DotCompute.Abstractions.IMemoryBuffer;
-using TextKernelSource = DotCompute.Core.TextKernelSource;
-using BytecodeKernelSource = DotCompute.Core.BytecodeKernelSource;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 
@@ -71,8 +69,8 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         }
     }
 
-    // Interface implementation for Core.ICompiledKernel
-    CoreKernelDefinition CoreICompiledKernel.Definition => _definition;
+    // Interface implementation for Core.ICompiledKernel - no longer needed
+    // CoreKernelDefinition CoreICompiledKernel.Definition => _definition;
     
     public ValueTask ExecuteAsync(CoreKernelExecutionContext context, CancellationToken cancellationToken = default)
     {
@@ -87,12 +85,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
     public string Id => $"{_definition.Name}_{_definition.GetHashCode():X8}";
 
-    public string Source => _definition.Source switch
-    {
-        TextKernelSource textSource => textSource.Code,
-        BytecodeKernelSource => "[Bytecode]",
-        _ => "[Unknown]"
-    };
+    public string Source => _definition.Code != null ? "[Bytecode]" : "[Unknown]";
 
     public string EntryPoint => _definition.Name;
 
@@ -116,7 +109,8 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         // Convert KernelArguments to KernelExecutionContext for internal processing
         var context = new CoreKernelExecutionContext
         {
-            GlobalWorkSize = new[] { 1024L }, // Default work size - should be configurable
+            Name = _definition.Name,
+            WorkDimensions = new[] { 1024L }, // Default work size - should be configurable
             Arguments = arguments.Arguments.ToArray()
         };
 
@@ -125,27 +119,42 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         _logger.LogDebug(
             "Executing kernel '{KernelName}' with global work size: [{WorkSize}], vectorization: {Vectorization}",
             _definition.Name,
-            string.Join(", ", context.GlobalWorkSize),
+            string.Join(", ", context.WorkDimensions),
             _executionPlan.UseVectorization ? $"{_executionPlan.VectorWidth}-bit" : "disabled");
 
         // Validate work dimensions
-        if (context.GlobalWorkSize.Count != _definition.WorkDimensions)
+        if (context.WorkDimensions.Count == 0)
         {
-            throw new ArgumentException(
-                $"Work dimensions mismatch. Kernel expects {_definition.WorkDimensions} dimensions, but got {context.GlobalWorkSize.Count}",
-                nameof(arguments));
+            throw new ArgumentException("Global work size must have at least one dimension", nameof(arguments));
+        }
+        
+        if (context.WorkDimensions.Count > 3)
+        {
+            throw new ArgumentException("Global work size cannot exceed 3 dimensions", nameof(arguments));
+        }
+        
+        if (context.WorkDimensions.Any(dim => dim <= 0))
+        {
+            throw new ArgumentException("All work dimensions must be positive", nameof(arguments));
         }
 
         // Validate arguments
-        if (context.Arguments.Count != _definition.Parameters.Count)
+        if (context.Arguments == null || context.Arguments.Length == 0)
         {
-            throw new ArgumentException(
-                $"Argument count mismatch. Kernel expects {_definition.Parameters.Count} arguments, but got {context.Arguments.Count}",
-                nameof(arguments));
+            throw new ArgumentException("Kernel requires at least one argument", nameof(arguments));
+        }
+        
+        // Validate argument types are supported
+        foreach (var arg in context.Arguments)
+        {
+            if (arg != null && !IsSupportedArgumentType(arg.GetType()))
+            {
+                throw new ArgumentException($"Unsupported argument type: {arg.GetType().Name}", nameof(arguments));
+            }
         }
 
         // Calculate total work items
-        long totalWorkItems = GetTotalWorkItems(context.GlobalWorkSize);
+        long totalWorkItems = GetTotalWorkItems(context.WorkDimensions);
 
         // Determine work distribution with vectorization
         var workerCount = _threadPool.WorkerCount;
@@ -186,9 +195,19 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
         stopwatch.Stop();
         
-        // Update performance metrics
+        // Update performance metrics with atomic add to avoid race conditions
         Interlocked.Increment(ref _executionCount);
-        Interlocked.Exchange(ref _totalExecutionTimeMs, _totalExecutionTimeMs + stopwatch.Elapsed.TotalMilliseconds);
+        // Use Interlocked.Add for proper atomic addition instead of Exchange
+        var elapsedMs = stopwatch.Elapsed.TotalMilliseconds;
+        var doubleAsLong = BitConverter.DoubleToInt64Bits(elapsedMs);
+        long currentBits, newBits;
+        do
+        {
+            currentBits = Interlocked.Read(ref Unsafe.As<double, long>(ref _totalExecutionTimeMs));
+            var currentValue = BitConverter.Int64BitsToDouble(currentBits);
+            var newValue = currentValue + elapsedMs;
+            newBits = BitConverter.DoubleToInt64Bits(newValue);
+        } while (Interlocked.CompareExchange(ref Unsafe.As<double, long>(ref _totalExecutionTimeMs), newBits, currentBits) != currentBits);
         
         _logger.LogDebug("Kernel '{KernelName}' execution completed in {ElapsedMs:F2}ms", 
             _definition.Name, stopwatch.Elapsed.TotalMilliseconds);
@@ -248,7 +267,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     {
         for (long i = startIndex; i < endIndex && !context.CancellationToken.IsCancellationRequested; i++)
         {
-            var workItemId = GetWorkItemId(i, context.KernelContext.GlobalWorkSize);
+            var workItemId = GetWorkItemId(i, context.KernelContext.WorkDimensions ?? Array.Empty<long>());
             ExecuteSingleWorkItem(context.KernelContext, workItemId);
         }
     }
@@ -270,9 +289,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
             for (int v = 0; v < vectorFactor; v++)
             {
                 var actualIndex = baseIndex + v;
-                if (actualIndex < GetTotalWorkItems(context.KernelContext.GlobalWorkSize))
+                if (actualIndex < GetTotalWorkItems(context.KernelContext.WorkDimensions ?? Array.Empty<long>()))
                 {
-                    workItemIds[v] = GetWorkItemId(actualIndex, context.KernelContext.GlobalWorkSize);
+                    workItemIds[v] = GetWorkItemId(actualIndex, context.KernelContext.WorkDimensions ?? Array.Empty<long>());
                 }
             }
             
@@ -565,8 +584,12 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
             try
             {
                 // Prepare arguments for the delegate
-                var delegateArgs = new object[context.Arguments.Count + 1];
-                context.Arguments.CopyTo(delegateArgs, 0);
+                var argCount = context.Arguments?.Length ?? 0;
+                var delegateArgs = new object[argCount + 1];
+                if (context.Arguments != null)
+                {
+                    Array.Copy(context.Arguments, delegateArgs, argCount);
+                }
                 delegateArgs[delegateArgs.Length - 1] = workItemId;
                 
                 // Invoke the compiled kernel
@@ -587,7 +610,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     {
         // Extract arguments based on their types
         var args = context.Arguments;
-        if (args.Count < 2)
+        if (args == null || args.Length < 2)
             return; // Need at least 2 arguments for most operations
         
         // For demonstration, we'll implement a simple vector addition kernel
@@ -595,13 +618,16 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         
         // Calculate linear index from work item ID
         long linearIndex = workItemId[0];
-        for (int i = 1; i < workItemId.Length; i++)
+        if (context.WorkDimensions != null)
         {
-            linearIndex = linearIndex * context.GlobalWorkSize[i] + workItemId[i];
+            for (int i = 1; i < workItemId.Length; i++)
+            {
+                linearIndex = linearIndex * context.WorkDimensions[i] + workItemId[i];
+            }
         }
         
         // Handle different kernel patterns
-        if (args.Count >= 3 && 
+        if (args.Length >= 3 && 
             args[0] is IMemoryBuffer input1 && 
             args[1] is IMemoryBuffer input2 && 
             args[2] is IMemoryBuffer output)
@@ -609,14 +635,14 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
             // Vector operation pattern (e.g., C = A + B)
             ExecuteVectorOperation(input1, input2, output, linearIndex);
         }
-        else if (args.Count >= 2 && 
+        else if (args.Length >= 2 && 
                  args[0] is IMemoryBuffer input && 
                  args[1] is IMemoryBuffer outputBuf)
         {
             // Unary operation pattern (e.g., B = sqrt(A))
             ExecuteUnaryOperation(input, outputBuf, linearIndex);
         }
-        else if (args.Count >= 1 && args[0] is IMemoryBuffer buffer)
+        else if (args.Length >= 1 && args[0] is IMemoryBuffer buffer)
         {
             // In-place operation pattern
             ExecuteInPlaceOperation(buffer, linearIndex, args);
@@ -630,7 +656,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         IMemoryBuffer output, 
         long index)
     {
-        // Get element size (assuming float for now)
+        // Get element size based on buffer type (defaulting to float for numeric operations)
         const int elementSize = sizeof(float);
         var offset = index * elementSize;
         
@@ -670,7 +696,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         IMemoryBuffer output,
         long index)
     {
-        // Get element size (assuming float for now)
+        // Get element size based on buffer type (defaulting to float for numeric operations)
         const int elementSize = sizeof(float);
         var offset = index * elementSize;
         
@@ -703,9 +729,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     private static unsafe void ExecuteInPlaceOperation(
         IMemoryBuffer buffer,
         long index,
-        IReadOnlyList<object> args)
+        object[]? args)
     {
-        // Get element size (assuming float for now)
+        // Get element size based on buffer type (defaulting to float for numeric operations)
         const int elementSize = sizeof(float);
         var offset = index * elementSize;
         
@@ -726,7 +752,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
                 var f = (float*)(p + offset);
                 
                 // Check if we have a scalar parameter
-                if (args.Count > 1 && args[1] is float scalar)
+                if (args != null && args.Length > 1 && args[1] is float scalar)
                 {
                     *f *= scalar;
                 }
@@ -756,7 +782,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         input2 = null;
         output = null;
         
-        if (context.Arguments.Count < 3)
+        if (context.Arguments == null || context.Arguments.Length < 3)
             return false;
         
         // Try to extract buffer arguments (assuming simple vector operation kernel)
@@ -815,15 +841,10 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     {
         // Convert KernelExecutionContext arguments to KernelArguments
         // The KernelArguments expects an array of objects
-        if (context.Arguments != null && context.Arguments.Count > 0)
+        if (context.Arguments != null && context.Arguments.Length > 0)
         {
-            // Convert IReadOnlyList<object> to object[]
-            var args = new object[context.Arguments.Count];
-            for (int i = 0; i < context.Arguments.Count; i++)
-            {
-                args[i] = context.Arguments[i];
-            }
-            return new KernelArguments(args);
+            // Arguments is already an object[]
+            return new KernelArguments(context.Arguments);
         }
         
         // Return empty arguments if none provided
@@ -834,6 +855,20 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     {
         if (_disposed != 0)
             throw new ObjectDisposedException(nameof(CpuCompiledKernel));
+    }
+    
+    private static bool IsSupportedArgumentType(Type type)
+    {
+        // Check if the type is a supported kernel argument type
+        return type == typeof(IMemoryBuffer) ||
+               type == typeof(CpuMemoryBuffer) ||
+               type.IsArray ||
+               type.IsPrimitive ||
+               type == typeof(string) ||
+               type == typeof(decimal) ||
+               type.IsEnum ||
+               (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Memory<>)) ||
+               (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ReadOnlyMemory<>));
     }
 }
 

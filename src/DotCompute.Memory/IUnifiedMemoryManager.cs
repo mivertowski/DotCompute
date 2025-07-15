@@ -6,6 +6,7 @@ using System.Buffers;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+// Memory types are now in DotCompute.Abstractions
 using DotCompute.Memory.Benchmarks;
 
 namespace DotCompute.Memory;
@@ -40,6 +41,21 @@ public interface IUnifiedMemoryManager : IMemoryManager, IDisposable, IAsyncDisp
     public ValueTask<UnifiedBuffer<T>> CreateUnifiedBufferFromAsync<T>(
         ReadOnlyMemory<T> source,
         MemoryOptions options = MemoryOptions.None,
+        CancellationToken cancellationToken = default) where T : unmanaged;
+    
+    /// <summary>
+    /// Creates a buffer with the specified parameters.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="length">The number of elements.</param>
+    /// <param name="location">The memory location.</param>
+    /// <param name="access">The memory access mode.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A buffer.</returns>
+    public ValueTask<IBuffer<T>> CreateBufferAsync<T>(
+        int length,
+        MemoryLocation location,
+        MemoryAccess access = MemoryAccess.ReadWrite,
         CancellationToken cancellationToken = default) where T : unmanaged;
     
     /// <summary>
@@ -158,4 +174,62 @@ public readonly struct MemoryManagerStats : IEquatable<MemoryManagerStats>
 
     public static bool operator ==(MemoryManagerStats left, MemoryManagerStats right) => left.Equals(right);
     public static bool operator !=(MemoryManagerStats left, MemoryManagerStats right) => !left.Equals(right);
+}
+
+/// <summary>
+/// Memory locations for unified memory management.
+/// </summary>
+public enum UnifiedMemoryLocation
+{
+    /// <summary>
+    /// Host (CPU) memory.
+    /// </summary>
+    Host,
+
+    /// <summary>
+    /// Device (GPU) memory.
+    /// </summary>
+    Device,
+
+    /// <summary>
+    /// Pinned host memory for faster transfers.
+    /// </summary>
+    HostPinned,
+
+    /// <summary>
+    /// Unified memory accessible by both host and device.
+    /// </summary>
+    Unified,
+
+    /// <summary>
+    /// Managed memory with automatic migration.
+    /// </summary>
+    Managed
+}
+
+/// <summary>
+/// Memory access modes for unified memory management.
+/// </summary>
+[Flags]
+public enum UnifiedMemoryAccess
+{
+    /// <summary>
+    /// Read-only access.
+    /// </summary>
+    ReadOnly = 1,
+
+    /// <summary>
+    /// Write-only access.
+    /// </summary>
+    WriteOnly = 2,
+
+    /// <summary>
+    /// Read-write access.
+    /// </summary>
+    ReadWrite = ReadOnly | WriteOnly,
+
+    /// <summary>
+    /// Host access for debugging.
+    /// </summary>
+    HostAccess = 4
 }

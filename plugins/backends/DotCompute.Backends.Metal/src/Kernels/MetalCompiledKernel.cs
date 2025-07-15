@@ -356,17 +356,17 @@ public class CompilationMetadata
     public bool SupportsThreadDivergence { get; set; }
 
     /// <summary>
-    /// Gets or sets the memory usage characteristics.
+    /// Gets the memory usage characteristics.
     /// </summary>
-    public Dictionary<string, object> MemoryUsage { get; set; } = new();
+    public IDictionary<string, object> MemoryUsage { get; } = new Dictionary<string, object>();
 
     /// <summary>
-    /// Gets or sets any compiler warnings generated during compilation.
+    /// Gets any compiler warnings generated during compilation.
     /// </summary>
-    public List<string> Warnings { get; set; } = new();
+    public IList<string> Warnings { get; } = new List<string>();
 
     /// <summary>
-    /// Gets or sets additional metadata properties.
+    /// Gets additional metadata properties.
     /// </summary>
-    public Dictionary<string, object> Properties { get; set; } = new();
+    public IDictionary<string, object> Properties { get; } = new Dictionary<string, object>();
 }

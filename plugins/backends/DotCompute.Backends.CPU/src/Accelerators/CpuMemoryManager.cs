@@ -201,7 +201,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         }
     }
 
-    private NumaMemoryPolicy CreateDefaultPolicy()
+    internal NumaMemoryPolicy CreateDefaultPolicy()
     {
         return new NumaMemoryPolicy
         {
@@ -226,7 +226,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
 
     private int GetLocalPreferredNode(NumaMemoryPolicy policy)
     {
-        if (policy.PreferredNodes.Any())
+        if (policy.PreferredNodes.Length > 0)
         {
             return policy.PreferredNodes[0];
         }
@@ -250,7 +250,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     private int GetInterleavedNode(NumaMemoryPolicy policy)
     {
         // Round-robin across specified nodes or all nodes
-        var nodes = policy.PreferredNodes.Any() ? policy.PreferredNodes : Enumerable.Range(0, _topology.NodeCount);
+        var nodes = policy.PreferredNodes.Length > 0 ? policy.PreferredNodes : Enumerable.Range(0, _topology.NodeCount);
         var nodeArray = nodes.ToArray();
         
         // Use thread ID for deterministic but distributed allocation
@@ -278,14 +278,16 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return 0; // Fallback
     }
 
-    [DllImport("kernel32.dll")]
-    private static extern uint GetCurrentProcessorNumber();
+    [DllImport("kernel32.dll", EntryPoint = "GetCurrentProcessorNumber")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+    private static extern uint GetCurrentProcessorNumberWin32Api();
     
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static uint GetCurrentProcessorNumberWin32()
     {
         try
         {
-            return GetCurrentProcessorNumber();
+            return GetCurrentProcessorNumberWin32Api();
         }
         catch
         {
@@ -293,6 +295,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         }
     }
 
+    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private static int GetCurrentProcessorNumberLinux()
     {
         try
@@ -307,6 +310,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     }
 
     [DllImport("c", EntryPoint = "sched_getcpu")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int sched_getcpu();
 
     private void ThrowIfDisposed()
@@ -332,7 +336,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     private int _disposed;
 
     public CpuMemoryBuffer(long sizeInBytes, MemoryOptions options, CpuMemoryManager manager)
-        : this(sizeInBytes, options, manager, 0, manager._defaultPolicy)
+        : this(sizeInBytes, options, manager, 0, manager.CreateDefaultPolicy())
     {
     }
 
@@ -497,22 +501,32 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         if (source.Length != destination.Length)
             throw new ArgumentException("Source and destination must have the same length");
 
+        // Performance optimization: Use different strategies based on size
+        var length = source.Length;
+        
+        // For very small copies, just use the built-in copy
+        if (length < 256)
+        {
+            source.CopyTo(destination);
+            return;
+        }
+        
         // Add NUMA-aware prefetching for large transfers
-        if (source.Length >= 1024 * 1024) // 1MB threshold
+        if (length >= 256 * 1024) // 256KB threshold (reduced for better cache utilization)
         {
             PrefetchForNumaTransfer(source, destination, preferredNode);
         }
 
         // Use the largest available SIMD width for copying
-        if (Vector512.IsHardwareAccelerated && source.Length >= 64)
+        if (Vector512.IsHardwareAccelerated && length >= 64)
         {
             MemoryCopyAvx512(source, destination);
         }
-        else if (Vector256.IsHardwareAccelerated && source.Length >= 32)
+        else if (Vector256.IsHardwareAccelerated && length >= 32)
         {
             MemoryCopyAvx2(source, destination);
         }
-        else if (Vector128.IsHardwareAccelerated && source.Length >= 16)
+        else if (Vector128.IsHardwareAccelerated && length >= 16)
         {
             MemoryCopyVector128(source, destination);
         }
@@ -580,22 +594,58 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         ref var srcRef = ref MemoryMarshal.GetReference(source);
         ref var dstRef = ref MemoryMarshal.GetReference(destination);
         
-        // Copy 64 bytes at a time using AVX-512
-        for (int i = 0; i < vectorCount; i++)
+        // Performance optimization: Unroll loop for better throughput
+        int unrolledCount = vectorCount / 4;
+        int remainingVectors = vectorCount % 4;
+        
+        // Process 4 vectors at a time (256 bytes)
+        for (int i = 0; i < unrolledCount; i++)
         {
-            var offset = i * VectorSize;
+            var baseOffset = i * VectorSize * 4;
+            
+            // Load all 4 vectors
+            var data0 = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset));
+            var data1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset + VectorSize));
+            var data2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset + VectorSize * 2));
+            var data3 = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset + VectorSize * 3));
+            
+            // Store all 4 vectors
+            data0.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset));
+            data1.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset + VectorSize));
+            data2.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset + VectorSize * 2));
+            data3.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset + VectorSize * 3));
+        }
+        
+        // Process remaining vectors
+        var remainingOffset = unrolledCount * VectorSize * 4;
+        for (int i = 0; i < remainingVectors; i++)
+        {
+            var offset = remainingOffset + i * VectorSize;
             var data = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, offset));
             data.StoreUnsafe(ref Unsafe.Add(ref dstRef, offset));
         }
         
-        // Handle remainder
+        // Handle remainder bytes
         int remainder = source.Length % VectorSize;
         if (remainder > 0)
         {
             int lastOffset = vectorCount * VectorSize;
             var remainingSource = source.Slice(lastOffset, remainder);
             var remainingDest = destination.Slice(lastOffset, remainder);
-            remainingSource.CopyTo(remainingDest);
+            
+            // Use AVX2 or SSE for remainder if possible
+            if (remainder >= 32 && Vector256.IsHardwareAccelerated)
+            {
+                MemoryCopyAvx2(remainingSource, remainingDest);
+            }
+            else if (remainder >= 16 && Vector128.IsHardwareAccelerated)
+            {
+                MemoryCopyVector128(remainingSource, remainingDest);
+            }
+            else
+            {
+                remainingSource.CopyTo(remainingDest);
+            }
         }
     }
 
@@ -608,10 +658,26 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         ref var srcRef = ref MemoryMarshal.GetReference(source);
         ref var dstRef = ref MemoryMarshal.GetReference(destination);
         
-        // Copy 32 bytes at a time using AVX2
-        for (int i = 0; i < vectorCount; i++)
+        // Performance optimization: Unroll by 2 for AVX2
+        int unrolledCount = vectorCount / 2;
+        int remainingVectors = vectorCount % 2;
+        
+        // Process 2 vectors at a time (64 bytes)
+        for (int i = 0; i < unrolledCount; i++)
         {
-            var offset = i * VectorSize;
+            var baseOffset = i * VectorSize * 2;
+            
+            var data0 = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset));
+            var data1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset + VectorSize));
+            
+            data0.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset));
+            data1.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset + VectorSize));
+        }
+        
+        // Process remaining vector
+        if (remainingVectors > 0)
+        {
+            var offset = unrolledCount * VectorSize * 2;
             var data = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, offset));
             data.StoreUnsafe(ref Unsafe.Add(ref dstRef, offset));
         }
@@ -623,7 +689,15 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
             int lastOffset = vectorCount * VectorSize;
             var remainingSource = source.Slice(lastOffset, remainder);
             var remainingDest = destination.Slice(lastOffset, remainder);
-            remainingSource.CopyTo(remainingDest);
+            
+            if (remainder >= 16 && Vector128.IsHardwareAccelerated)
+            {
+                MemoryCopyVector128(remainingSource, remainingDest);
+            }
+            else
+            {
+                remainingSource.CopyTo(remainingDest);
+            }
         }
     }
 
@@ -826,6 +900,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
         return (byte*)NativeMemory.AlignedAlloc((nuint)size, 64);
     }
 
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private unsafe byte* AllocateNumaMemoryWindows(long size, int preferredNode)
     {
         try
@@ -848,6 +923,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
         }
     }
 
+    [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private unsafe byte* AllocateNumaMemoryLinux(long size, int preferredNode, NumaMemoryPolicy policy)
     {
         try
@@ -893,7 +969,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
                 {
                     if (OperatingSystem.IsWindows())
                     {
-                        VirtualFree((IntPtr)_ptr, 0, MEM_RELEASE);
+                        _ = VirtualFree((IntPtr)_ptr, 0, MEM_RELEASE);
                     }
                     else if (OperatingSystem.IsLinux())
                     {
@@ -931,6 +1007,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
     private const uint PAGE_READWRITE = 0x04;
 
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern IntPtr VirtualAllocExNuma(
         IntPtr hProcess,
         IntPtr lpAddress,
@@ -940,9 +1017,11 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
         uint nndPreferred);
 
     [DllImport("kernel32.dll", SetLastError = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern bool VirtualFree(IntPtr lpAddress, nuint dwSize, uint dwFreeType);
 
     [DllImport("kernel32.dll")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern IntPtr GetCurrentProcess();
 
     #endregion
@@ -950,9 +1029,11 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
     #region Linux NUMA API
 
     [DllImport("numa", EntryPoint = "numa_alloc_onnode")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern unsafe void* numa_alloc_onnode(nuint size, int node);
 
     [DllImport("numa", EntryPoint = "numa_free")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern unsafe void numa_free(void* ptr, nuint size);
 
     #endregion

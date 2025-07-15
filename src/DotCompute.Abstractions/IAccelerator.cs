@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -45,17 +46,119 @@ public class AcceleratorInfo
     /// <summary>Gets or sets the vendor name.</summary>
     public required string Vendor { get; init; }
     
+    /// <summary>Gets or sets the device type for legacy compatibility.</summary>
+    public string Type => DeviceType;
+    
+    /// <summary>Gets or sets the driver version.</summary>
+    public string? DriverVersion { get; init; }
+    
+    /// <summary>
+    /// Legacy constructor for backward compatibility with tests.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
+    public AcceleratorInfo(AcceleratorType type, string name, string driverVersion, long memorySize)
+    {
+        Id = $"{type}_{name}";
+        Name = name;
+        DeviceType = type.ToString();
+        Vendor = "Unknown";
+        DriverVersion = driverVersion;
+        TotalMemory = memorySize;
+        AvailableMemory = memorySize;
+        MaxSharedMemoryPerBlock = memorySize / 4;
+        MaxMemoryAllocationSize = memorySize;
+        LocalMemorySize = memorySize / 8;
+        IsUnifiedMemory = type == AcceleratorType.CPU;
+        MaxThreadsPerBlock = 1024; // Default value for legacy compatibility
+    }
+    
+    /// <summary>
+    /// Constructor for tests with full parameters.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
+    public AcceleratorInfo(string name, string vendor, string driverVersion, AcceleratorType type, 
+                          double computeCapability, int maxThreadsPerBlock, int maxSharedMemory, 
+                          long totalMemory, long availableMemory)
+    {
+        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
+        if (string.IsNullOrEmpty(vendor)) throw new ArgumentException("Vendor cannot be null or empty", nameof(vendor));
+        if (string.IsNullOrEmpty(driverVersion)) throw new ArgumentException("DriverVersion cannot be null or empty", nameof(driverVersion));
+        if (computeCapability <= 0) throw new ArgumentOutOfRangeException(nameof(computeCapability), "ComputeCapability must be positive");
+        if (maxThreadsPerBlock <= 0) throw new ArgumentOutOfRangeException(nameof(maxThreadsPerBlock), "MaxThreadsPerBlock must be positive");
+        if (maxSharedMemory < 0) throw new ArgumentOutOfRangeException(nameof(maxSharedMemory), "MaxSharedMemory cannot be negative");
+        if (totalMemory <= 0 || availableMemory <= 0 || availableMemory > totalMemory) throw new ArgumentException("Invalid memory sizes");
+        
+        Id = $"{type}_{name}";
+        Name = name;
+        DeviceType = type.ToString();
+        Vendor = vendor;
+        DriverVersion = driverVersion;
+        TotalMemory = totalMemory;
+        AvailableMemory = availableMemory;
+        MaxSharedMemoryPerBlock = maxSharedMemory;
+        MaxMemoryAllocationSize = totalMemory;
+        LocalMemorySize = totalMemory / 8;
+        IsUnifiedMemory = type == AcceleratorType.CPU;
+        MaxThreadsPerBlock = maxThreadsPerBlock;
+        ComputeCapability = new Version((int)computeCapability, (int)((computeCapability % 1) * 10));
+    }
+    
+    /// <summary>
+    /// Extended constructor for tests.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
+    public AcceleratorInfo(AcceleratorType type, string name, string driverVersion, long memorySize, 
+                          int computeUnits, int maxClockFrequency, Version? computeCapability, 
+                          long maxSharedMemoryPerBlock, bool isUnifiedMemory)
+    {
+        Id = $"{type}_{name}";
+        Name = name;
+        DeviceType = type.ToString();
+        Vendor = "Unknown";
+        DriverVersion = driverVersion;
+        TotalMemory = memorySize;
+        AvailableMemory = memorySize;
+        MaxSharedMemoryPerBlock = maxSharedMemoryPerBlock;
+        MaxMemoryAllocationSize = memorySize;
+        LocalMemorySize = memorySize / 8;
+        IsUnifiedMemory = isUnifiedMemory;
+        ComputeUnits = computeUnits;
+        MaxClockFrequency = maxClockFrequency;
+        ComputeCapability = computeCapability;
+    }
+    
     /// <summary>Gets or sets the compute capability or version.</summary>
     public Version? ComputeCapability { get; init; }
     
     /// <summary>Gets or sets the total device memory in bytes.</summary>
     public long TotalMemory { get; init; }
     
+    /// <summary>Gets or sets the total device memory in bytes (alias for TotalMemory).</summary>
+    public long MemorySize => TotalMemory;
+    
+    /// <summary>Gets or sets the available device memory in bytes.</summary>
+    public long AvailableMemory { get; init; }
+    
+    /// <summary>Gets or sets the maximum shared memory per block in bytes.</summary>
+    public long MaxSharedMemoryPerBlock { get; init; }
+    
+    /// <summary>Gets or sets the maximum memory allocation size in bytes.</summary>
+    public long MaxMemoryAllocationSize { get; init; }
+    
+    /// <summary>Gets or sets the local memory size in bytes.</summary>
+    public long LocalMemorySize { get; init; }
+    
+    /// <summary>Gets or sets whether the device uses unified memory.</summary>
+    public bool IsUnifiedMemory { get; init; }
+    
     /// <summary>Gets or sets the number of compute units.</summary>
     public int ComputeUnits { get; init; }
     
     /// <summary>Gets or sets the maximum clock frequency in MHz.</summary>
     public int MaxClockFrequency { get; init; }
+    
+    /// <summary>Gets or sets the maximum threads per block.</summary>
+    public int MaxThreadsPerBlock { get; init; }
     
     /// <summary>Gets or sets device-specific capabilities.</summary>
     public Dictionary<string, object>? Capabilities { get; init; }
@@ -88,6 +191,15 @@ public class CompilationOptions
     
     /// <summary>Gets or sets additional compiler flags.</summary>
     public string[]? AdditionalFlags { get; init; }
+    
+    /// <summary>Gets or sets preprocessor defines.</summary>
+    public Dictionary<string, string>? Defines { get; init; }
+    
+    /// <summary>Gets or sets whether to enable fast math optimizations.</summary>
+    public bool FastMath { get; init; }
+    
+    /// <summary>Gets or sets whether to enable loop unrolling.</summary>
+    public bool UnrollLoops { get; init; }
 }
 
 /// <summary>
@@ -121,6 +233,30 @@ public class KernelDefinition
     
     /// <summary>Gets or sets kernel metadata.</summary>
     public Dictionary<string, object>? Metadata { get; init; }
+    
+    /// <summary>
+    /// Initializes a new instance of the KernelDefinition class.
+    /// </summary>
+    /// <param name="name">The kernel name.</param>
+    /// <param name="source">The kernel source.</param>
+    /// <param name="options">The compilation options.</param>
+    [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
+    public KernelDefinition(string name, IKernelSource source, CompilationOptions options)
+    {
+        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
+        if (source == null) throw new ArgumentNullException(nameof(source));
+        if (options == null) throw new ArgumentNullException(nameof(options));
+        
+        Name = name;
+        Code = System.Text.Encoding.UTF8.GetBytes(source.Code);
+        EntryPoint = source.EntryPoint;
+        Metadata = new Dictionary<string, object>
+        {
+            ["Language"] = source.Language.ToString(),
+            ["Dependencies"] = source.Dependencies,
+            ["CompilationOptions"] = options
+        };
+    }
 }
 
 /// <summary>
@@ -340,7 +476,7 @@ public readonly struct Dim3 : IEquatable<Dim3>
 /// <summary>
 /// Represents arguments to pass to a kernel.
 /// </summary>
-public readonly struct KernelArguments : IEquatable<KernelArguments>
+public struct KernelArguments : IEquatable<KernelArguments>
 {
     private readonly object[] _args;
     
@@ -353,6 +489,45 @@ public readonly struct KernelArguments : IEquatable<KernelArguments>
     /// Gets the arguments as a read-only span.
     /// </summary>
     public readonly ReadOnlySpan<object> Arguments => _args;
+    
+    /// <summary>
+    /// Sets an argument at the specified index.
+    /// </summary>
+    /// <param name="index">The index of the argument.</param>
+    /// <param name="value">The value to set.</param>
+    public void Set(int index, object value)
+    {
+        if (_args == null) throw new InvalidOperationException("KernelArguments not initialized with proper capacity");
+        if (index < 0 || index >= _args.Length) throw new ArgumentOutOfRangeException(nameof(index));
+        _args[index] = value;
+    }
+    
+    /// <summary>
+    /// Gets an argument at the specified index.
+    /// </summary>
+    /// <param name="index">The index of the argument.</param>
+    /// <returns>The argument at the specified index.</returns>
+    public object Get(int index)
+    {
+        if (_args == null) throw new InvalidOperationException("KernelArguments not initialized");
+        if (index < 0 || index >= _args.Length) throw new ArgumentOutOfRangeException(nameof(index));
+        return _args[index];
+    }
+    
+    /// <summary>
+    /// Creates a new KernelArguments with the specified capacity.
+    /// </summary>
+    /// <param name="capacity">The number of arguments to allocate space for.</param>
+    /// <returns>A new KernelArguments instance.</returns>
+    public static KernelArguments Create(int capacity)
+    {
+        return new KernelArguments(new object[capacity]);
+    }
+    
+    /// <summary>
+    /// Gets the number of arguments.
+    /// </summary>
+    public int Length => _args?.Length ?? 0;
     
     /// <summary>
     /// Determines whether this instance is equal to another KernelArguments.

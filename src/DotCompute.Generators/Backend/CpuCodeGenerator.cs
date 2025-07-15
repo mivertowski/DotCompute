@@ -303,6 +303,11 @@ namespace DotCompute.Generators.Backend
         /// </summary>
         private string TransformMethodBodyForScalar(string methodBody)
         {
+            if (string.IsNullOrEmpty(methodBody))
+            {
+                return string.Empty;
+            }
+            
             var transformedBody = methodBody
                 .Replace("{", "")
                 .Replace("}", "")

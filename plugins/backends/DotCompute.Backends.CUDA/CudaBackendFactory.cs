@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -65,16 +66,17 @@ public class CudaBackendFactory : IBackendFactory
             yield break;
         }
 
+        var createdAccelerators = new List<IAccelerator>();
+        
         try
         {
             var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
             CudaRuntime.CheckError(result, "Get device count");
 
             _logger.LogInformation("Creating {DeviceCount} CUDA accelerator(s)", deviceCount);
-
+            
             for (int deviceId = 0; deviceId < deviceCount; deviceId++)
             {
-                IAccelerator? accelerator = null;
                 try
                 {
                     // Create logger for this specific device
@@ -82,19 +84,23 @@ public class CudaBackendFactory : IBackendFactory
                         ? loggerFactory.CreateLogger<CudaAccelerator>()
                         : new NullLogger<CudaAccelerator>();
 
-                    accelerator = new CudaAccelerator(deviceId, deviceLogger);
-                    yield return accelerator;
+                    var accelerator = new CudaAccelerator(deviceId, deviceLogger);
+                    createdAccelerators.Add(accelerator);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to create CUDA accelerator for device {DeviceId}", deviceId);
-                    accelerator?.Dispose();
                 }
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to enumerate CUDA devices");
+        }
+        
+        foreach (var accelerator in createdAccelerators)
+        {
+            yield return accelerator;
         }
     }
 

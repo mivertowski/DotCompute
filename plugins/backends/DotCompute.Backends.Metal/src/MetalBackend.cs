@@ -6,6 +6,7 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 
 namespace DotCompute.Backends.Metal;
 
@@ -15,12 +16,14 @@ namespace DotCompute.Backends.Metal;
 public sealed class MetalBackend : IDisposable
 {
     private readonly ILogger<MetalBackend> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly List<MetalAccelerator> _accelerators = new();
     private bool _disposed;
 
-    public MetalBackend(ILogger<MetalBackend> logger)
+    public MetalBackend(ILogger<MetalBackend> logger, ILoggerFactory loggerFactory)
     {
         _logger = logger;
+        _loggerFactory = loggerFactory;
         DiscoverAccelerators();
     }
 
@@ -54,6 +57,118 @@ public sealed class MetalBackend : IDisposable
     /// Get default Metal accelerator
     /// </summary>
     public MetalAccelerator? GetDefaultAccelerator() => _accelerators.FirstOrDefault();
+
+    /// <summary>
+    /// Get device information for the default Metal device
+    /// </summary>
+    internal MetalDeviceInfo GetDeviceInfo()
+    {
+        var accelerator = GetDefaultAccelerator();
+        if (accelerator == null)
+        {
+            throw new InvalidOperationException("No Metal accelerator available");
+        }
+
+        var info = accelerator.Info;
+        return new MetalDeviceInfo
+        {
+            Name = Marshal.StringToHGlobalAnsi(info.Name),
+            RegistryID = (ulong)info.Id.GetHashCode(),
+            MaxThreadgroupSize = info.Capabilities?.TryGetValue("MaxThreadgroupSize", out var maxThreadgroup) == true ? (ulong)maxThreadgroup : 1024,
+            MaxBufferLength = (ulong)info.TotalMemory,
+            SupportedFamilies = Marshal.StringToHGlobalAnsi(info.Capabilities?.TryGetValue("SupportsFamily", out var families) == true ? families.ToString() : "Common")
+        };
+    }
+
+    /// <summary>
+    /// Allocate a buffer on the Metal device
+    /// </summary>
+    public async Task<IMemoryBuffer> AllocateBufferAsync<T>(int size) where T : unmanaged
+    {
+        var accelerator = GetDefaultAccelerator();
+        if (accelerator == null)
+        {
+            throw new InvalidOperationException("No Metal accelerator available");
+        }
+
+        return await accelerator.Memory.AllocateAsync(size * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+    }
+
+    /// <summary>
+    /// Copy data to a Metal buffer asynchronously
+    /// </summary>
+    public Task CopyToBufferAsync<T>(IBuffer<T> buffer, T[] data) where T : unmanaged
+    {
+        var accelerator = GetDefaultAccelerator();
+        if (accelerator == null)
+        {
+            throw new InvalidOperationException("No Metal accelerator available");
+        }
+
+        return buffer.CopyFromHostAsync<T>(data.AsMemory()).AsTask();
+    }
+
+    /// <summary>
+    /// Copy data from a Metal buffer asynchronously
+    /// </summary>
+    public Task CopyFromBufferAsync<T>(IBuffer<T> buffer, T[] data) where T : unmanaged
+    {
+        var accelerator = GetDefaultAccelerator();
+        if (accelerator == null)
+        {
+            throw new InvalidOperationException("No Metal accelerator available");
+        }
+
+        return buffer.CopyToHostAsync<T>(data.AsMemory()).AsTask();
+    }
+
+    /// <summary>
+    /// Compile a Metal function from source code
+    /// </summary>
+    public IntPtr CompileFunction(string source, string functionName)
+    {
+        var accelerator = GetDefaultAccelerator();
+        if (accelerator == null)
+        {
+            throw new InvalidOperationException("No Metal accelerator available");
+        }
+
+        // This would compile the Metal shader source
+        // For now, return a placeholder
+        return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Execute a compute shader asynchronously
+    /// </summary>
+    public async Task ExecuteComputeShaderAsync(IntPtr function, params IMemoryBuffer[] buffers)
+    {
+        var accelerator = GetDefaultAccelerator();
+        if (accelerator == null)
+        {
+            throw new InvalidOperationException("No Metal accelerator available");
+        }
+
+        // This would execute the compute shader
+        // For now, just complete the task
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Create a Metal command queue
+    /// </summary>
+    public IntPtr CreateCommandQueue()
+    {
+        var accelerator = GetDefaultAccelerator();
+        if (accelerator == null)
+        {
+            throw new InvalidOperationException("No Metal accelerator available");
+        }
+
+        // This would create a Metal command queue
+        // For now, return a placeholder
+        return IntPtr.Zero;
+    }
 
     private void DiscoverAccelerators()
     {
@@ -265,10 +380,11 @@ public sealed class MetalBackend : IDisposable
             _logger.LogDebug("Creating Metal accelerator for device: {DeviceName}", deviceName);
             
             // Create accelerator with the device
-            // Note: We'll need to modify MetalAccelerator constructor to accept an existing device
-            // For now, we'll create using the default constructor and the system will pick it up
+            // The MetalAccelerator will automatically discover and use the appropriate device
+            // based on the system configuration and available hardware
             var options = Microsoft.Extensions.Options.Options.Create(new MetalAcceleratorOptions());
-            return new MetalAccelerator(options, _logger);
+            var metalLogger = _loggerFactory.CreateLogger<MetalAccelerator>();
+            return new MetalAccelerator(options, metalLogger);
         }
         catch (Exception ex)
         {
@@ -280,7 +396,7 @@ public sealed class MetalBackend : IDisposable
     private void LogMetalDeviceCapabilities(MetalAccelerator accelerator)
     {
         var info = accelerator.Info;
-        var capabilities = info.Capabilities;
+        var capabilities = info.Capabilities ?? new Dictionary<string, object>();
         
         _logger.LogInformation("Metal Device: {Name} (ID: {Id})", info.Name, info.Id);
         _logger.LogInformation("  Device Type: {DeviceType}", info.DeviceType);

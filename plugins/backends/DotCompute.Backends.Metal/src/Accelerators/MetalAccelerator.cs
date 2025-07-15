@@ -72,18 +72,20 @@ public sealed class MetalAccelerator : IAccelerator
             ["RecommendedMaxWorkingSetSize"] = deviceInfo.RecommendedMaxWorkingSetSize
         };
 
-        _info = new AcceleratorInfo
-        {
-            Id = $"metal-{deviceInfo.RegistryID}",
-            Name = Marshal.PtrToStringAnsi(deviceInfo.Name) ?? "Unknown Metal Device",
-            DeviceType = GetDeviceType(deviceInfo),
-            Vendor = "Apple",
-            ComputeCapability = GetComputeCapability(deviceInfo),
-            TotalMemory = deviceInfo.HasUnifiedMemory ? 
+        _info = new AcceleratorInfo(
+            type: AcceleratorType.Metal,
+            name: Marshal.PtrToStringAnsi(deviceInfo.Name) ?? "Unknown Metal Device",
+            driverVersion: "1.0",
+            memorySize: deviceInfo.HasUnifiedMemory ? 
                 (long)deviceInfo.RecommendedMaxWorkingSetSize : 
                 (long)deviceInfo.MaxBufferLength,
-            ComputeUnits = (int)deviceInfo.MaxThreadgroupSize,
-            MaxClockFrequency = 0, // Metal doesn't expose clock frequency
+            computeUnits: (int)deviceInfo.MaxThreadgroupSize,
+            maxClockFrequency: 0, // Metal doesn't expose clock frequency
+            computeCapability: GetComputeCapability(deviceInfo),
+            maxSharedMemoryPerBlock: (long)deviceInfo.MaxThreadgroupSize * 1024, // Estimate
+            isUnifiedMemory: deviceInfo.HasUnifiedMemory
+        )
+        {
             Capabilities = capabilities
         };
 

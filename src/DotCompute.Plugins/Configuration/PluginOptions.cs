@@ -42,6 +42,32 @@ namespace DotCompute.Plugins.Configuration
         /// Gets or sets configured plugins.
         /// </summary>
         public Dictionary<string, PluginConfig> Plugins { get; set; } = new();
+
+        /// <summary>
+        /// Gets or sets the maximum number of concurrent plugin loads.
+        /// </summary>
+        public int MaxConcurrentLoads { get; set; } = 4;
+
+        /// <summary>
+        /// Gets or sets the timeout for plugin loading operations.
+        /// </summary>
+        public TimeSpan LoadTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+        private List<string> _pluginDirectories = new();
+        
+        /// <summary>
+        /// Gets or sets the directories to scan for plugins.
+        /// </summary>
+        public List<string> PluginDirectories 
+        { 
+            get => _pluginDirectories; 
+            set => _pluginDirectories = value ?? new();
+        }
+
+        /// <summary>
+        /// Gets or sets whether the plugin system is initialized.
+        /// </summary>
+        public bool IsInitialized { get; set; } = false;
     }
 
     /// <summary>

@@ -38,6 +38,11 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <!-- Allow internal access to Memory assembly -->
+    <InternalsVisibleTo Include="DotCompute.Memory" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- AOT-friendly dependencies only -->
     <PackageReference Include="System.Memory" />
     <PackageReference Include="System.Runtime.CompilerServices.Unsafe" />

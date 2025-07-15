@@ -45,6 +45,11 @@ namespace DotCompute.Plugins.Core
         /// <inheritdoc/>
         public abstract PluginCapabilities Capabilities { get; }
 
+        /// <summary>
+        /// Gets whether the plugin is loaded and in a running state.
+        /// </summary>
+        public bool IsLoaded => State == PluginState.Running;
+
         /// <inheritdoc/>
         public PluginState State
         {
@@ -374,6 +379,23 @@ namespace DotCompute.Plugins.Core
             {
                 _metrics.CpuUsage = Math.Max(0, Math.Min(100, percentage));
             }
+        }
+
+        /// <summary>
+        /// Loads the plugin asynchronously.
+        /// </summary>
+        public async Task LoadAsync(CancellationToken cancellationToken = default)
+        {
+            await InitializeAsync(ServiceProvider!, cancellationToken);
+            await StartAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Unloads the plugin asynchronously.
+        /// </summary>
+        public async Task UnloadAsync(CancellationToken cancellationToken = default)
+        {
+            await StopAsync(cancellationToken);
         }
 
         /// <summary>
