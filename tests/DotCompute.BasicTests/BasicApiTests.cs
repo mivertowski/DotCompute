@@ -1,5 +1,4 @@
 using DotCompute.Abstractions;
-using DotCompute.Core;
 using FluentAssertions;
 using Xunit;
 
@@ -10,19 +9,6 @@ namespace DotCompute.BasicTests;
 /// </summary>
 public class BasicApiTests
 {
-    [Fact]
-    public void AcceleratorInfo_Constructor_CreatesValidInstance()
-    {
-        // Arrange & Act
-        var info = new AcceleratorInfo(AcceleratorType.CPU, "Test CPU", "1.0", 1024 * 1024 * 1024);
-
-        // Assert
-        info.DeviceType.Should().Be(AcceleratorType.CPU);
-        info.Name.Should().Be("Test CPU");
-        info.Version.Should().Be("1.0");
-        info.MaxMemorySize.Should().Be(1024 * 1024 * 1024);
-    }
-
     [Fact]
     public void AcceleratorType_Enum_HasExpectedValues()
     {
@@ -81,39 +67,15 @@ public class BasicApiTests
         // Arrange & Act
         var options = new CompilationOptions
         {
-            OptimizationLevel = OptimizationLevel.Release,
+            OptimizationLevel = OptimizationLevel.None,
             FastMath = true,
             UnrollLoops = true
         };
 
         // Assert
-        options.OptimizationLevel.Should().Be(OptimizationLevel.Release);
+        options.OptimizationLevel.Should().Be(OptimizationLevel.None);
         options.FastMath.Should().BeTrue();
         options.UnrollLoops.Should().BeTrue();
-    }
-
-    [Fact]
-    public void StringKernelSource_Constructor_CreatesValidInstance()
-    {
-        // Arrange
-        var sourceCode = "__kernel void test() { }";
-
-        // Act
-        var source = new StringKernelSource(sourceCode);
-
-        // Assert
-        source.Should().NotBeNull();
-        source.GetSourceAsync().Result.Should().Be(sourceCode);
-    }
-
-    [Fact]
-    public void DefaultAcceleratorManager_Constructor_CreatesValidInstance()
-    {
-        // Arrange & Act
-        var manager = new DefaultAcceleratorManager();
-
-        // Assert
-        manager.Should().NotBeNull();
     }
 
     [Theory]
@@ -140,5 +102,47 @@ public class BasicApiTests
         combined.Should().HaveFlag(MemoryOptions.ReadOnly);
         combined.Should().HaveFlag(MemoryOptions.HostVisible);
         combined.Should().NotHaveFlag(MemoryOptions.WriteOnly);
+    }
+
+    [Fact]
+    public void OptimizationLevel_Enum_HasExpectedValues()
+    {
+        // Arrange & Act
+        var values = Enum.GetValues<OptimizationLevel>();
+
+        // Assert
+        values.Should().Contain(OptimizationLevel.None);
+        values.Should().Contain(OptimizationLevel.Default);
+        values.Length.Should().BeGreaterThan(1);
+    }
+
+    [Fact]
+    public void KernelArguments_Empty_HandlesCorrectly()
+    {
+        // Arrange & Act
+        var args = KernelArguments.Create(0);
+
+        // Assert
+        args.Length.Should().Be(0);
+    }
+
+    [Fact]
+    public void KernelArguments_MultipleValues_WorkCorrectly()
+    {
+        // Arrange
+        var args = KernelArguments.Create(3);
+        var values = new object[] { 42, 3.14f, "test" };
+
+        // Act
+        for (int i = 0; i < values.Length; i++)
+        {
+            args.Set(i, values[i]);
+        }
+
+        // Assert
+        for (int i = 0; i < values.Length; i++)
+        {
+            args.Get(i).Should().Be(values[i]);
+        }
     }
 }

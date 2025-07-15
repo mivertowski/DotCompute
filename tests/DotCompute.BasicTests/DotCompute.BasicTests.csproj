@@ -8,13 +8,7 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
-    <PackageReference Include="coverlet.collector" />
-    <PackageReference Include="FluentAssertions" />
-  </ItemGroup>
+  <!-- Test packages provided by Directory.Build.targets -->
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
