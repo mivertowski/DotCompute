@@ -310,7 +310,7 @@ public class CudaMemoryManager : ISyncMemoryManager
         }
     }
 
-    private void ValidateCopyParameters(ISyncMemoryBuffer source, ISyncMemoryBuffer destination,
+    private static void ValidateCopyParameters(ISyncMemoryBuffer source, ISyncMemoryBuffer destination,
         long sizeInBytes, long sourceOffset, long destinationOffset)
     {
         ValidateBuffer(source, sizeInBytes, sourceOffset);

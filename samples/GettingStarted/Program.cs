@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 
 namespace GettingStarted;
 
-internal class Program
+internal sealed class Program
 {
     public static Task<int> Main(string[] args)
     {

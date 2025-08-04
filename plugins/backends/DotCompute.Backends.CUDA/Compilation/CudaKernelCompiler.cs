@@ -75,6 +75,8 @@ public class CudaKernelCompiler : IDisposable
     private readonly string _cacheDirectory;
     private bool _disposed;
 
+    [RequiresUnreferencedCode()]
+    [RequiresDynamicCode()]
     public CudaKernelCompiler(CudaContext context, ILogger logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));

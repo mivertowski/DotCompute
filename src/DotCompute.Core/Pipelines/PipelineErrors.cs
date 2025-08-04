@@ -208,6 +208,9 @@ public class PipelineException : Exception
     public PipelineException()
     {
     }
+    public PipelineException(string message) : base(message)
+    {
+    }
 }
 
 /// <summary>
@@ -238,6 +241,9 @@ public sealed class PipelineValidationException : PipelineException
         Warnings = warnings;
     }
     public PipelineValidationException()
+    {
+    }
+    public PipelineValidationException(string message) : base(message)
     {
     }
 }
@@ -274,6 +280,9 @@ public sealed class PipelineExecutionException : PipelineException
     public PipelineExecutionException()
     {
     }
+    public PipelineExecutionException(string message) : base(message)
+    {
+    }
 }
 
 /// <summary>
@@ -306,6 +315,9 @@ public sealed class PipelineOptimizationException : PipelineException
         Reason = reason;
     }
     public PipelineOptimizationException()
+    {
+    }
+    public PipelineOptimizationException(string message) : base(message)
     {
     }
 }

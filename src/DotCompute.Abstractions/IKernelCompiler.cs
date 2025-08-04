@@ -58,7 +58,7 @@ public abstract class CompilerSpecificOptions
 /// <summary>
 /// Represents a validation result.
 /// </summary>
-public readonly struct ValidationResult
+public readonly struct ValidationResult : IEquatable<ValidationResult>
 {
     /// <summary>
     /// Gets whether the validation passed.
@@ -124,6 +124,11 @@ public readonly struct ValidationResult
     {
         return !(left == right);
     }
+
+    public bool Equals(ValidationResult other)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 /// <summary>
@@ -180,7 +185,7 @@ public enum KernelSourceType
 /// <summary>
 /// Metadata about a kernel compilation.
 /// </summary>
-public readonly struct CompilationMetadata
+public readonly struct CompilationMetadata : IEquatable<CompilationMetadata>
 {
     /// <summary>
     /// Gets the time taken to compile.
@@ -239,5 +244,10 @@ public readonly struct CompilationMetadata
     public static bool operator !=(CompilationMetadata left, CompilationMetadata right)
     {
         return !(left == right);
+    }
+
+    public bool Equals(CompilationMetadata other)
+    {
+        throw new NotImplementedException();
     }
 }

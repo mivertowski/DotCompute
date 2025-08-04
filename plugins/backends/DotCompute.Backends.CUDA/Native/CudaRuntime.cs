@@ -422,6 +422,9 @@ public class CudaException : Exception
     public CudaException()
     {
     }
+    public CudaException(string message) : base(message)
+    {
+    }
 }
 
 /// <summary>
@@ -532,6 +535,9 @@ public class NvrtcException : Exception
         ResultCode = resultCode;
     }
     public NvrtcException()
+    {
+    }
+    public NvrtcException(string message) : base(message)
     {
     }
 }

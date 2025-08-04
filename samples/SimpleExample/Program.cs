@@ -9,7 +9,7 @@ namespace SimpleExample
     /// <summary>
     /// Simple example demonstrating DotCompute core functionality without source generation.
     /// </summary>
-    internal unsafe class Program
+    internal sealed unsafe class Program
     {
         static void Main(string[] args)
         {

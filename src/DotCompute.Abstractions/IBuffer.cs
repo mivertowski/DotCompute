@@ -105,7 +105,7 @@ public interface IBuffer<T> : IMemoryBuffer where T : unmanaged
 /// Represents a mapped memory region.
 /// </summary>
 /// <typeparam name="T">The element type.</typeparam>
-public readonly struct MappedMemory<T> : IDisposable where T : unmanaged
+public readonly struct MappedMemory<T> : IDisposable, IEquatable<MappedMemory<T>> where T : unmanaged
 {
     private readonly IBuffer<T> _buffer;
     private readonly Memory<T> _memory;
@@ -159,6 +159,11 @@ public readonly struct MappedMemory<T> : IDisposable where T : unmanaged
     public static bool operator !=(MappedMemory<T> left, MappedMemory<T> right)
     {
         return !(left == right);
+    }
+
+    public bool Equals(MappedMemory<T> other)
+    {
+        throw new NotImplementedException();
     }
 }
 

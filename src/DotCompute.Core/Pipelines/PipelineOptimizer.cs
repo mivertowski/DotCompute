@@ -303,7 +303,7 @@ internal sealed class StageReorderingStrategy : IOptimizationStrategy
         });
     }
 
-    private List<IPipelineStage> TopologicalSortWithOptimization(List<IPipelineStage> stages)
+    private static List<IPipelineStage> TopologicalSortWithOptimization(List<IPipelineStage> stages)
     {
         // Simplified topological sort
         // In practice, this would optimize for cache locality and parallelism
@@ -434,7 +434,7 @@ internal sealed class ParallelMergingStrategy : IOptimizationStrategy
         });
     }
 
-    private List<List<IPipelineStage>> FindIndependentStageGroups(List<IPipelineStage> stages)
+    private static List<List<IPipelineStage>> FindIndependentStageGroups(List<IPipelineStage> stages)
     {
         var groups = new List<List<IPipelineStage>>();
         var processed = new HashSet<string>();
@@ -880,7 +880,7 @@ internal sealed class IntelligentBufferSizeCalculator
         };
     }
 
-    private long OptimizeForCpuHierarchy(long baseSize)
+    private static long OptimizeForCpuHierarchy(long baseSize)
     {
         // Optimize for CPU cache hierarchy
         if (baseSize <= L1_CACHE_SIZE)
@@ -990,7 +990,7 @@ internal sealed class IntelligentBufferSizeCalculator
         return System.Numerics.Vector<byte>.Count * 8;
     }
 
-    private long OptimizeForCacheLocality(long baseSize)
+    private static long OptimizeForCacheLocality(long baseSize)
     {
         // Calculate optimal buffer size for cache locality
 

@@ -179,7 +179,7 @@ public interface IPipelineMemoryView<T> where T : unmanaged
 /// <summary>
 /// Represents a lock on pipeline memory.
 /// </summary>
-public readonly struct MemoryLock<T> : IDisposable where T : unmanaged
+public readonly struct MemoryLock<T> : IDisposable, IEquatable<MemoryLock<T>> where T : unmanaged
 {
     private readonly IPipelineMemory<T> _memory;
     private readonly MemoryLockMode _mode;
@@ -266,6 +266,11 @@ public readonly struct MemoryLock<T> : IDisposable where T : unmanaged
     public static bool operator !=(MemoryLock<T> left, MemoryLock<T> right)
     {
         return !(left == right);
+    }
+
+    public bool Equals(MemoryLock<T> other)
+    {
+        throw new NotImplementedException();
     }
 }
 

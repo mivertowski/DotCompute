@@ -327,8 +327,8 @@ public static class MemoryTestUtilities
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "DotCompute", "TestReports");
 
-        [RequiresUnreferencedCode()]
-        [RequiresDynamicCode()]
+        [RequiresUnreferencedCode("This method uses System.Text.Json serialization which may require dynamic code generation")]
+        [RequiresDynamicCode("This method uses System.Text.Json serialization which may require dynamic code generation")]
         public static async Task SaveMemoryReport(MemoryReport report)
         {
             Directory.CreateDirectory(ReportDirectory);
@@ -340,8 +340,8 @@ public static class MemoryTestUtilities
             await File.WriteAllTextAsync(filePath, json);
         }
 
-        [RequiresUnreferencedCode()]
-        [RequiresDynamicCode()]
+        [RequiresUnreferencedCode("This method uses System.Text.Json serialization which may require dynamic code generation")]
+        [RequiresDynamicCode("This method uses System.Text.Json serialization which may require dynamic code generation")]
         public static async Task SaveBenchmarkReport(BenchmarkSummary summary, string testName)
         {
             Directory.CreateDirectory(ReportDirectory);
@@ -353,7 +353,8 @@ public static class MemoryTestUtilities
             await File.WriteAllTextAsync(filePath, json);
         }
 
-        [RequiresDynamicCode()]
+        [RequiresDynamicCode("This method uses System.Text.Json deserialization which may require dynamic code generation")]
+        [RequiresUnreferencedCode("This method uses System.Text.Json deserialization which may require dynamic code generation")]
         public static async Task<MemoryReport[]> LoadHistoricalReports(string testName)
         {
             if (!Directory.Exists(ReportDirectory))
