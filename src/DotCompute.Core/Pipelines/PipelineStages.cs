@@ -300,11 +300,9 @@ internal sealed class KernelStage : IPipelineStage
     /// <inheritdoc/>
     public IStageMetrics GetMetrics() => _metrics;
 
-    private List<object> PrepareArguments(PipelineExecutionContext context)
-    {
+    private List<object> PrepareArguments(PipelineExecutionContext context) =>
         // Use the new BuildKernelParameters method
-        return BuildKernelParameters(context);
-    }
+        BuildKernelParameters(context);
 
     private Dictionary<string, object> PrepareOutputs(PipelineExecutionContext context, List<object> arguments)
     {
@@ -337,11 +335,9 @@ internal sealed class KernelStage : IPipelineStage
         return PerformanceMonitor.GetComputeUtilization(executionTime, (long)workItems);
     }
 
-    private static double CalculateMemoryBandwidthUtilization()
-    {
+    private static double CalculateMemoryBandwidthUtilization() =>
         // Use performance monitor to get real memory bandwidth utilization
-        return PerformanceMonitor.GetMemoryBandwidthUtilization();
-    }
+        PerformanceMonitor.GetMemoryBandwidthUtilization();
 
     private double CalculateWorkItemsProcessed()
     {
@@ -364,7 +360,7 @@ internal sealed class ParallelStage : IPipelineStage
     private readonly SynchronizationMode _synchronizationMode;
     private readonly bool _hasBarrier;
     private readonly StageMetrics _metrics;
-    private readonly List<StageExecutionResult> results = new();
+    private readonly List<StageExecutionResult> results = [];
 
     public ParallelStage(
         string id,
@@ -593,10 +589,7 @@ internal sealed class ParallelStage : IPipelineStage
     private static async Task<StageExecutionResult> ExecuteStageAsync(
         IPipelineStage stage,
         PipelineExecutionContext context,
-        CancellationToken cancellationToken)
-    {
-        return await stage.ExecuteAsync(context, cancellationToken);
-    }
+        CancellationToken cancellationToken) => await stage.ExecuteAsync(context, cancellationToken);
 
     private static double CalculateParallelEfficiency(List<StageExecutionResult> results)
     {

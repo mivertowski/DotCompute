@@ -18,7 +18,7 @@ public class CudaBackendFactory : IBackendFactory
 
     public string Name => "CUDA";
     public string Description => "NVIDIA CUDA GPU Backend";
-    public Version Version => new Version(1, 0, 0);
+    public Version Version => new(1, 0, 0);
 
     public CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null)
     {

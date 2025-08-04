@@ -296,21 +296,19 @@ internal sealed class PipelineMetrics : IPipelineMetrics
 
     private string ExportPrometheus()
     {
-        var lines = new List<string>();
-
-        lines.Add($"# TYPE dotcompute_pipeline_executions_total counter");
-        lines.Add($"dotcompute_pipeline_executions_total{{pipeline_id=\"{PipelineId}\"}} {ExecutionCount}");
-
-        lines.Add($"# TYPE dotcompute_pipeline_execution_duration_seconds histogram");
-        lines.Add($"dotcompute_pipeline_execution_duration_seconds_sum{{pipeline_id=\"{PipelineId}\"}} {TotalExecutionTime.TotalSeconds}");
-        lines.Add($"dotcompute_pipeline_execution_duration_seconds_count{{pipeline_id=\"{PipelineId}\"}} {ExecutionCount}");
-
-        lines.Add($"# TYPE dotcompute_pipeline_success_rate gauge");
-        lines.Add($"dotcompute_pipeline_success_rate{{pipeline_id=\"{PipelineId}\"}} {SuccessRate}");
-
-        lines.Add($"# TYPE dotcompute_pipeline_memory_usage_bytes gauge");
-        lines.Add($"dotcompute_pipeline_memory_usage_bytes{{pipeline_id=\"{PipelineId}\",type=\"average\"}} {AverageMemoryUsage}");
-        lines.Add($"dotcompute_pipeline_memory_usage_bytes{{pipeline_id=\"{PipelineId}\",type=\"peak\"}} {PeakMemoryUsage}");
+        var lines = new List<string>
+        {
+            $"# TYPE dotcompute_pipeline_executions_total counter",
+            $"dotcompute_pipeline_executions_total{{pipeline_id=\"{PipelineId}\"}} {ExecutionCount}",
+            $"# TYPE dotcompute_pipeline_execution_duration_seconds histogram",
+            $"dotcompute_pipeline_execution_duration_seconds_sum{{pipeline_id=\"{PipelineId}\"}} {TotalExecutionTime.TotalSeconds}",
+            $"dotcompute_pipeline_execution_duration_seconds_count{{pipeline_id=\"{PipelineId}\"}} {ExecutionCount}",
+            $"# TYPE dotcompute_pipeline_success_rate gauge",
+            $"dotcompute_pipeline_success_rate{{pipeline_id=\"{PipelineId}\"}} {SuccessRate}",
+            $"# TYPE dotcompute_pipeline_memory_usage_bytes gauge",
+            $"dotcompute_pipeline_memory_usage_bytes{{pipeline_id=\"{PipelineId}\",type=\"average\"}} {AverageMemoryUsage}",
+            $"dotcompute_pipeline_memory_usage_bytes{{pipeline_id=\"{PipelineId}\",type=\"peak\"}} {PeakMemoryUsage}"
+        };
 
         foreach (var customMetric in CustomMetrics)
         {
@@ -473,8 +471,5 @@ internal sealed class StageMetrics : IStageMetrics
         }
     }
 
-    public void RecordCustomMetric(string name, double value)
-    {
-        _customMetrics.AddOrUpdate(name, value, (_, _) => value);
-    }
+    public void RecordCustomMetric(string name, double value) => _customMetrics.AddOrUpdate(name, value, (_, _) => value);
 }

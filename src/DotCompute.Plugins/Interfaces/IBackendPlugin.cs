@@ -184,9 +184,9 @@ namespace DotCompute.Plugins.Interfaces
     public class PluginValidationResult
     {
         public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = new();
-        public List<string> Warnings { get; set; } = new();
-        public Dictionary<string, object> Metadata { get; set; } = new();
+        public List<string> Errors { get; set; } = [];
+        public List<string> Warnings { get; set; } = [];
+        public Dictionary<string, object> Metadata { get; set; } = [];
     }
 
     /// <summary>
@@ -201,7 +201,7 @@ namespace DotCompute.Plugins.Interfaces
         public double AverageResponseTime { get; set; }
         public long MemoryUsage { get; set; }
         public double CpuUsage { get; set; }
-        public Dictionary<string, object> CustomMetrics { get; set; } = new();
+        public Dictionary<string, object> CustomMetrics { get; set; } = [];
     }
 
     /// <summary>
@@ -238,7 +238,7 @@ namespace DotCompute.Plugins.Interfaces
             Exception = exception;
             Context = context;
             Timestamp = DateTime.UtcNow;
-            AdditionalData = additionalData ?? new Dictionary<string, object>();
+            AdditionalData = additionalData ?? [];
         }
     }
 
@@ -259,7 +259,7 @@ namespace DotCompute.Plugins.Interfaces
             NewHealth = newHealth;
             Timestamp = DateTime.UtcNow;
             Reason = reason;
-            HealthData = healthData ?? new Dictionary<string, object>();
+            HealthData = healthData ?? [];
         }
     }
 }

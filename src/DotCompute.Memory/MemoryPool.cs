@@ -209,10 +209,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
     /// Checks if the pool is under memory pressure.
     /// </summary>
     /// <returns>True if under memory pressure.</returns>
-    public bool IsUnderMemoryPressure()
-    {
-        return TotalAllocatedBytes > _memoryPressureThreshold;
-    }
+    public bool IsUnderMemoryPressure() => TotalAllocatedBytes > _memoryPressureThreshold;
 
     /// <summary>
     /// Gets performance statistics for the memory pool.
@@ -373,10 +370,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
         return size;
     }
 
-    private ConcurrentQueue<IMemoryBuffer<T>> GetOrCreateBucket(int size)
-    {
-        return _buckets.GetOrAdd(size, _ => new ConcurrentQueue<IMemoryBuffer<T>>());
-    }
+    private ConcurrentQueue<IMemoryBuffer<T>> GetOrCreateBucket(int size) => _buckets.GetOrAdd(size, _ => new ConcurrentQueue<IMemoryBuffer<T>>());
 
     private void CleanupCallback(object? state)
     {

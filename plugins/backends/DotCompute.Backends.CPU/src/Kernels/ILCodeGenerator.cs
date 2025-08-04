@@ -230,7 +230,9 @@ internal sealed class ILCodeGenerator
     {
         // Default implementation for C = A + B using Memory<float>
         if (parameters.Count < 3)
-            return new List<Expression>();
+        {
+            return [];
+        }
 
         var expressions = new List<Expression>();
 
@@ -258,33 +260,25 @@ internal sealed class ILCodeGenerator
         return expressions;
     }
 
-    private List<Expression> GenerateDefaultScalarAddition(List<ParameterExpression> parameters, Expression indexExpr)
-    {
+    private List<Expression> GenerateDefaultScalarAddition(List<ParameterExpression> parameters, Expression indexExpr) =>
         // Same as vector addition but without SIMD
-        return GenerateDefaultVectorAddition(parameters, indexExpr);
-    }
+        GenerateDefaultVectorAddition(parameters, indexExpr);
 
-    private List<Expression> GenerateVectorAdd(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor)
-    {
+    private List<Expression> GenerateVectorAdd(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) =>
         // For simplicity, delegate to scalar addition
         // In a full implementation, this would use System.Numerics.Vector<T>
-        return GenerateScalarAdd(parameters, indexExpr);
-    }
+        GenerateScalarAdd(parameters, indexExpr);
 
-    private List<Expression> GenerateVectorMultiply(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor)
-    {
-        return GenerateScalarMultiply(parameters, indexExpr);
-    }
+    private List<Expression> GenerateVectorMultiply(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarMultiply(parameters, indexExpr);
 
-    private List<Expression> GenerateScalarAdd(List<ParameterExpression> parameters, Expression indexExpr)
-    {
-        return GenerateDefaultScalarAddition(parameters, indexExpr);
-    }
+    private List<Expression> GenerateScalarAdd(List<ParameterExpression> parameters, Expression indexExpr) => GenerateDefaultScalarAddition(parameters, indexExpr);
 
     private List<Expression> GenerateScalarMultiply(List<ParameterExpression> parameters, Expression indexExpr)
     {
         if (parameters.Count < 3)
-            return new List<Expression>();
+        {
+            return [];
+        }
 
         var expressions = new List<Expression>();
 
@@ -330,14 +324,19 @@ internal sealed class ILCodeGenerator
 
     private string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
     {
-        var notes = new List<string>();
-
-        notes.Add($"Compiled kernel with {ast.Operations.Count} operations");
+        var notes = new List<string>
+        {
+            $"Compiled kernel with {ast.Operations.Count} operations"
+        };
 
         if (analysis.CanVectorize)
+        {
             notes.Add($"Applied vectorization with factor {analysis.VectorizationFactor}");
+        }
         else
+        {
             notes.Add("Scalar execution (vectorization not applicable)");
+        }
 
         if (options.OptimizationLevel >= OptimizationLevel.Default)
         {

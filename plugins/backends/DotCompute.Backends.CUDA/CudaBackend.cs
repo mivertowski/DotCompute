@@ -13,7 +13,7 @@ namespace DotCompute.Backends.CUDA;
 public class CudaBackend : IDisposable
 {
     private readonly ILogger<CudaBackend> _logger;
-    private readonly List<CudaAccelerator> _accelerators = new();
+    private readonly List<CudaAccelerator> _accelerators = [];
     private bool _disposed;
 
     public CudaBackend(ILogger<CudaBackend> logger)

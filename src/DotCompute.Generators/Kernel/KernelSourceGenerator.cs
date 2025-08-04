@@ -330,23 +330,17 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine();
         }
 
-        private static string? GenerateCudaImplementation(KernelMethodInfo method, Compilation compilation)
-        {
+        private static string? GenerateCudaImplementation(KernelMethodInfo method, Compilation compilation) =>
             // Generate CUDA kernel implementation
-            return GenerateCudaKernelCode(method, compilation);
-        }
+            GenerateCudaKernelCode(method, compilation);
 
-        private static string? GenerateMetalImplementation(KernelMethodInfo method, Compilation compilation)
-        {
+        private static string? GenerateMetalImplementation(KernelMethodInfo method, Compilation compilation) =>
             // Generate Metal compute shader implementation
-            return GenerateMetalShaderCode(method, compilation);
-        }
+            GenerateMetalShaderCode(method, compilation);
 
-        private static string? GenerateOpenCLImplementation(KernelMethodInfo method, Compilation compilation)
-        {
+        private static string? GenerateOpenCLImplementation(KernelMethodInfo method, Compilation compilation) =>
             // Generate OpenCL kernel implementation
-            return GenerateOpenCLKernelCode(method, compilation);
-        }
+            GenerateOpenCLKernelCode(method, compilation);
 
         private static void GenerateKernelInvoker(
             KernelClassInfo kernelClass,
@@ -838,9 +832,9 @@ namespace DotCompute.Generators.Kernel
         public string Name { get; set; } = string.Empty;
         public string ContainingType { get; set; } = string.Empty;
         public string Namespace { get; set; } = string.Empty;
-        public List<ParameterInfo> Parameters { get; set; } = new();
+        public List<ParameterInfo> Parameters { get; set; } = [];
         public string ReturnType { get; set; } = string.Empty;
-        public List<string> Backends { get; set; } = new();
+        public List<string> Backends { get; set; } = [];
         public int VectorSize { get; set; }
         public bool IsParallel { get; set; }
         public MethodDeclarationSyntax MethodDeclaration { get; set; } = null!;
@@ -850,7 +844,7 @@ namespace DotCompute.Generators.Kernel
     {
         public string Name { get; set; } = string.Empty;
         public string Namespace { get; set; } = string.Empty;
-        public List<string> KernelMethodNames { get; set; } = new();
+        public List<string> KernelMethodNames { get; set; } = [];
     }
 
     internal sealed class ParameterInfo

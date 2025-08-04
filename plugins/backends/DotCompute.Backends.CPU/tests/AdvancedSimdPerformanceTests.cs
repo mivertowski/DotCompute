@@ -709,20 +709,39 @@ public class AdvancedSimdPerformanceTests
         int totalTests = 5;
 
         // Test 1: Basic vector support
-        if (Vector.IsHardwareAccelerated) score++;
+        if (Vector.IsHardwareAccelerated)
+        {
+            score++;
+        }
 
         // Test 2: Platform-specific SIMD
-        if (RuntimeInformation.ProcessArchitecture == Architecture.X64 && Sse2.IsSupported) score++;
-        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 && AdvSimd.IsSupported) score++;
+        if (RuntimeInformation.ProcessArchitecture == Architecture.X64 && Sse2.IsSupported)
+        {
+            score++;
+        }
+
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 && AdvSimd.IsSupported)
+        {
+            score++;
+        }
 
         // Test 3: Advanced features
-        if (Avx2.IsSupported || AdvSimd.IsSupported) score++;
+        if (Avx2.IsSupported || AdvSimd.IsSupported)
+        {
+            score++;
+        }
 
         // Test 4: FMA support
-        if (Fma.IsSupported || AdvSimd.IsSupported) score++;
+        if (Fma.IsSupported || AdvSimd.IsSupported)
+        {
+            score++;
+        }
 
         // Test 5: Wide vectors
-        if (Avx512F.IsSupported || Vector<float>.Count >= 4) score++;
+        if (Avx512F.IsSupported || Vector<float>.Count >= 4)
+        {
+            score++;
+        }
 
         return (score * 100) / totalTests;
     }

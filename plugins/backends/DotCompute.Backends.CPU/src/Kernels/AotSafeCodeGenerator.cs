@@ -15,7 +15,7 @@ internal sealed class AotSafeCodeGenerator
 
     public AotSafeCodeGenerator()
     {
-        _kernelImplementations = new Dictionary<string, Func<ExtendedKernelExecutionContext, Task>>();
+        _kernelImplementations = [];
         RegisterKernelImplementations();
     }
 
@@ -337,17 +337,24 @@ internal sealed class AotSafeCodeGenerator
 
     private string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
     {
-        var notes = new List<string>();
-
-        notes.Add($"AOT-safe kernel with {ast.Operations.Count} operations");
+        var notes = new List<string>
+        {
+            $"AOT-safe kernel with {ast.Operations.Count} operations"
+        };
 
         if (analysis.CanVectorize)
+        {
             notes.Add($"Applied vectorization with factor {analysis.VectorizationFactor}");
+        }
         else
+        {
             notes.Add("Scalar execution (vectorization not applicable)");
+        }
 
         if (options.OptimizationLevel >= OptimizationLevel.Default)
+        {
             notes.Add("Applied release optimizations");
+        }
 
         notes.Add("Using pre-compiled kernel implementation for AOT compatibility");
 

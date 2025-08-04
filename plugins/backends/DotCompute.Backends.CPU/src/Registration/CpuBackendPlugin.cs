@@ -223,10 +223,7 @@ public static class CpuBackendPluginExtensions
     /// <summary>
     /// Adds the CPU backend with default configuration.
     /// </summary>
-    public static IServiceCollection AddCpuBackend(this IServiceCollection services)
-    {
-        return services.AddCpuBackend(null, null);
-    }
+    public static IServiceCollection AddCpuBackend(this IServiceCollection services) => services.AddCpuBackend(null, null);
 }
 
 /// <summary>
@@ -252,18 +249,9 @@ internal sealed class NamedAcceleratorWrapper : AbstractionsIAccelerator
     public ValueTask<AbstractionsICompiledKernel> CompileKernelAsync(
         AbstractionsKernelDefinition definition,
         AbstractionsCompilationOptions? options = default,
-        CancellationToken cancellationToken = default)
-    {
-        return _accelerator.CompileKernelAsync(definition, options, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) => _accelerator.CompileKernelAsync(definition, options, cancellationToken);
 
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        return _accelerator.SynchronizeAsync(cancellationToken);
-    }
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => _accelerator.SynchronizeAsync(cancellationToken);
 
-    public ValueTask DisposeAsync()
-    {
-        return _accelerator.DisposeAsync();
-    }
+    public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
 }

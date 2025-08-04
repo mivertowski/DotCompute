@@ -241,11 +241,11 @@ public sealed class PipelineValidationException : PipelineException
     }
     public PipelineValidationException()
     {
-        Errors = Array.Empty<ValidationError>();
+        Errors = [];
     }
     public PipelineValidationException(string message) : base(message)
     {
-        Errors = Array.Empty<ValidationError>();
+        Errors = [];
     }
 }
 
@@ -280,11 +280,11 @@ public sealed class PipelineExecutionException : PipelineException
     }
     public PipelineExecutionException()
     {
-        Errors = Array.Empty<PipelineError>();
+        Errors = [];
     }
     public PipelineExecutionException(string message) : base(message)
     {
-        Errors = Array.Empty<PipelineError>();
+        Errors = [];
     }
 }
 

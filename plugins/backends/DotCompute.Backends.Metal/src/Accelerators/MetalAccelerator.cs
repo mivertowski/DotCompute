@@ -215,20 +215,35 @@ public sealed class MetalAccelerator : IAccelerator
     private static string GetDeviceType(MetalDeviceInfo info)
     {
         if (info.IsLowPower)
+        {
             return "IntegratedGPU";
+        }
+
         if (info.IsRemovable)
+        {
             return "ExternalGPU";
+        }
+
         return "DiscreteGPU";
     }
 
     private static string GetDeviceLocation(MetalDeviceInfo info)
     {
         if (info.Location == MetalDeviceLocation.BuiltIn)
+        {
             return "Built-in";
+        }
+
         if (info.Location == MetalDeviceLocation.Slot)
+        {
             return $"Slot {info.LocationNumber}";
+        }
+
         if (info.Location == MetalDeviceLocation.External)
+        {
             return "External";
+        }
+
         return "Unknown";
     }
 
@@ -238,13 +253,25 @@ public sealed class MetalAccelerator : IAccelerator
 
         // Map Metal GPU families to compute capability versions
         if (families.Contains("Apple8"))
+        {
             return new Version(8, 0); // M2 family
+        }
+
         if (families.Contains("Apple7"))
+        {
             return new Version(7, 0); // M1 family
+        }
+
         if (families.Contains("Apple6"))
+        {
             return new Version(6, 0); // A14 family
+        }
+
         if (families.Contains("Mac2"))
+        {
             return new Version(2, 0); // Intel Mac GPUs
+        }
+
         return new Version(1, 0); // Default/unknown
     }
 }

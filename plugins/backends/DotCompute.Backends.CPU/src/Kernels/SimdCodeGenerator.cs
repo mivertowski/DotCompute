@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// </summary>
 internal sealed class SimdCodeGenerator
 {
-    private readonly Dictionary<string, SimdKernelExecutor> _executorCache = new();
+    private readonly Dictionary<string, SimdKernelExecutor> _executorCache = [];
     private readonly SimdSummary _simdCapabilities;
 
     public SimdCodeGenerator(SimdSummary simdCapabilities)
@@ -494,7 +494,9 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
         Span<float> result)
     {
         if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+        {
             throw new ArgumentException("All spans must have the same length");
+        }
 
         const int VectorSize = 16; // 512 bits / 32 bits per float
         var vectorCount = a.Length / VectorSize;
@@ -550,7 +552,9 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
         Span<double> result)
     {
         if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+        {
             throw new ArgumentException("All spans must have the same length");
+        }
 
         const int VectorSize = 8; // 512 bits / 64 bits per double
         var vectorCount = a.Length / VectorSize;
@@ -848,7 +852,9 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
         Span<float> result)
     {
         if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+        {
             throw new ArgumentException("All spans must have the same length");
+        }
 
         const int VectorSize = 8; // 256 bits / 32 bits per float
         var vectorCount = a.Length / VectorSize;
@@ -904,7 +910,9 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
         Span<double> result)
     {
         if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+        {
             throw new ArgumentException("All spans must have the same length");
+        }
 
         const int VectorSize = 4; // 256 bits / 64 bits per double
         var vectorCount = a.Length / VectorSize;
@@ -1414,7 +1422,9 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
         Span<float> result)
     {
         if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+        {
             throw new ArgumentException("All spans must have the same length");
+        }
 
         const int VectorSize = 4; // 128 bits / 32 bits per float
         var vectorCount = a.Length / VectorSize;
@@ -1470,7 +1480,9 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
         Span<double> result)
     {
         if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+        {
             throw new ArgumentException("All spans must have the same length");
+        }
 
         const int VectorSize = 2; // 128 bits / 64 bits per double
         var vectorCount = a.Length / VectorSize;
@@ -2228,7 +2240,9 @@ public static class VectorPatterns
         where T : unmanaged
     {
         if (a.Length != b.Length || a.Length != c.Length || a.Length != result.Length)
+        {
             throw new ArgumentException("All spans must have the same length");
+        }
 
         if (typeof(T) == typeof(float))
         {

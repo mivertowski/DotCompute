@@ -165,10 +165,7 @@ public static unsafe class UnsafeMemoryOperations
     /// <param name="destination">The destination memory pointer.</param>
     /// <param name="byteCount">The number of bytes to zero.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void ZeroMemory(void* destination, nuint byteCount)
-    {
-        FillMemory(destination, 0, byteCount);
-    }
+    public static void ZeroMemory(void* destination, nuint byteCount) => FillMemory(destination, 0, byteCount);
 
     /// <summary>
     /// Zeros out memory using generic types.
@@ -196,10 +193,7 @@ public static unsafe class UnsafeMemoryOperations
     /// <param name="alignment">The alignment boundary.</param>
     /// <returns>True if the address is aligned.</returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsAligned(void* address, int alignment)
-    {
-        return ((nuint)address & (nuint)(alignment - 1)) == 0;
-    }
+    public static bool IsAligned(void* address, int alignment) => ((nuint)address & (nuint)(alignment - 1)) == 0;
 
     /// <summary>
     /// Aligns a memory address to the specified boundary.

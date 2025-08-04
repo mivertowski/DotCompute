@@ -23,7 +23,9 @@ public static class AdvancedSimdPatterns
     public static float DotProduct(ReadOnlySpan<float> a, ReadOnlySpan<float> b)
     {
         if (a.Length != b.Length)
+        {
             throw new ArgumentException("Arrays must have the same length");
+        }
 
         if (Vector512.IsHardwareAccelerated && a.Length >= 16)
         {
@@ -220,10 +222,7 @@ public static class AdvancedSimdPatterns
     /// Computes L2 norm (Euclidean norm) of a vector using SIMD.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static float L2Norm(ReadOnlySpan<float> vector)
-    {
-        return MathF.Sqrt(DotProduct(vector, vector));
-    }
+    public static float L2Norm(ReadOnlySpan<float> vector) => MathF.Sqrt(DotProduct(vector, vector));
 
     /// <summary>
     /// Performs vectorized reduction (sum) with platform-optimal SIMD.
@@ -400,7 +399,9 @@ public static class AdvancedSimdPatterns
         float threshold = 0.0f)
     {
         if (condition.Length != trueValues.Length || condition.Length != falseValues.Length || condition.Length != result.Length)
+        {
             throw new ArgumentException("All spans must have the same length");
+        }
 
         if (Vector512.IsHardwareAccelerated && condition.Length >= 16 && Avx512F.IsSupported)
         {
@@ -597,7 +598,9 @@ public static class AdvancedSimdPatterns
         Span<float> destination)
     {
         if (indices.Length != destination.Length)
+        {
             throw new ArgumentException("Indices and destination must have the same length");
+        }
 
         if (Avx2.IsSupported && indices.Length >= 8)
         {

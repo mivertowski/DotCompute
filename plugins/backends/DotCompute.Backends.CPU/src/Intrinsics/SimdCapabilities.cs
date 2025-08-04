@@ -51,63 +51,145 @@ public static class SimdCapabilities
 
         // x86/x64 instruction sets
         if (Sse.IsSupported)
+        {
             sets.Add("SSE");
+        }
+
         if (Sse2.IsSupported)
+        {
             sets.Add("SSE2");
+        }
+
         if (Sse3.IsSupported)
+        {
             sets.Add("SSE3");
+        }
+
         if (Ssse3.IsSupported)
+        {
             sets.Add("SSSE3");
+        }
+
         if (Sse41.IsSupported)
+        {
             sets.Add("SSE4.1");
+        }
+
         if (Sse42.IsSupported)
+        {
             sets.Add("SSE4.2");
+        }
+
         if (Avx.IsSupported)
+        {
             sets.Add("AVX");
+        }
+
         if (Avx2.IsSupported)
+        {
             sets.Add("AVX2");
+        }
+
         if (Avx512F.IsSupported)
+        {
             sets.Add("AVX512F");
+        }
+
         if (Avx512BW.IsSupported)
+        {
             sets.Add("AVX512BW");
+        }
+
         if (Avx512CD.IsSupported)
+        {
             sets.Add("AVX512CD");
+        }
+
         if (Avx512DQ.IsSupported)
+        {
             sets.Add("AVX512DQ");
+        }
+
         if (Avx512Vbmi.IsSupported)
+        {
             sets.Add("AVX512VBMI");
+        }
+
         if (Fma.IsSupported)
+        {
             sets.Add("FMA");
+        }
+
         if (Bmi1.IsSupported)
+        {
             sets.Add("BMI1");
+        }
+
         if (Bmi2.IsSupported)
+        {
             sets.Add("BMI2");
+        }
+
         if (Popcnt.IsSupported)
+        {
             sets.Add("POPCNT");
+        }
+
         if (Lzcnt.IsSupported)
+        {
             sets.Add("LZCNT");
+        }
 
         // ARM instruction sets
         if (AdvSimd.IsSupported)
+        {
             sets.Add("NEON");
+        }
+
         if (AdvSimd.Arm64.IsSupported)
+        {
             sets.Add("NEON-ARM64");
+        }
+
         if (ArmBase.IsSupported)
+        {
             sets.Add("ARM-BASE");
+        }
+
         if (ArmBase.Arm64.IsSupported)
+        {
             sets.Add("ARM64-BASE");
+        }
+
         if (Crc32.IsSupported)
+        {
             sets.Add("CRC32");
+        }
+
         if (Crc32.Arm64.IsSupported)
+        {
             sets.Add("CRC32-ARM64");
+        }
+
         if (Dp.IsSupported)
+        {
             sets.Add("DP");
+        }
+
         if (Rdm.IsSupported)
+        {
             sets.Add("RDM");
+        }
+
         if (Sha1.IsSupported)
+        {
             sets.Add("SHA1");
+        }
+
         if (Sha256.IsSupported)
+        {
             sets.Add("SHA256");
+        }
 
         return sets;
     }
@@ -172,7 +254,9 @@ public sealed class SimdSummary
     public override string ToString()
     {
         if (!IsHardwareAccelerated)
+        {
             return "No SIMD support detected";
+        }
 
         return $"SIMD: {PreferredVectorWidth}-bit vectors, Instructions: {string.Join(", ", SupportedInstructionSets)}";
     }

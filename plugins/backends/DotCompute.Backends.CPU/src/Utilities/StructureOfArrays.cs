@@ -125,7 +125,9 @@ public static class StructureOfArrays
         public void CalculateDistancesTo(Point3D reference, Span<float> distances)
         {
             if (distances.Length != Length)
+            {
                 throw new ArgumentException("Distances array must match point count");
+            }
 
             var refX = Vector256.Create(reference.X);
             var refY = Vector256.Create(reference.Y);
@@ -245,7 +247,9 @@ public static class StructureOfArrays
         public static void Multiply(ComplexSoA a, ComplexSoA b, ComplexSoA result)
         {
             if (a.Length != b.Length || a.Length != result.Length)
+            {
                 throw new ArgumentException("All complex arrays must have the same length");
+            }
 
             if (Vector256.IsHardwareAccelerated && a.Length >= 8)
             {
@@ -358,7 +362,9 @@ public static class StructureOfArrays
         public static void TransposeMatrix4x4(ReadOnlySpan<float> source, Span<float> destination)
         {
             if (source.Length != 16 || destination.Length != 16)
+            {
                 throw new ArgumentException("Source and destination must be 4x4 matrices (16 elements)");
+            }
 
             if (Vector128.IsHardwareAccelerated)
             {

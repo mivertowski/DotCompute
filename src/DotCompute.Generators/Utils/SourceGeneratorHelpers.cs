@@ -36,18 +36,12 @@ namespace DotCompute.Generators.Utils
         /// <summary>
         /// Generates a namespace declaration.
         /// </summary>
-        public static string BeginNamespace(string namespaceName)
-        {
-            return $"namespace {namespaceName}\n{{";
-        }
+        public static string BeginNamespace(string namespaceName) => $"namespace {namespaceName}\n{{";
 
         /// <summary>
         /// Closes a namespace declaration.
         /// </summary>
-        public static string EndNamespace()
-        {
-            return "}";
-        }
+        public static string EndNamespace() => "}";
 
         /// <summary>
         /// Indents code by the specified level.

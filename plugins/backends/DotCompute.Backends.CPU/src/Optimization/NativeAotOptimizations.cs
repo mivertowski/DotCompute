@@ -39,7 +39,9 @@ public static class NativeAotOptimizations
     public static void VectorAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         if (a.Length != b.Length || a.Length != result.Length)
+        {
             throw new ArgumentException("All spans must have the same length");
+        }
 
         int length = a.Length;
         int i = 0;
@@ -95,7 +97,9 @@ public static class NativeAotOptimizations
     public static void VectorAdd(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
     {
         if (a.Length != b.Length || a.Length != result.Length)
+        {
             throw new ArgumentException("All spans must have the same length");
+        }
 
         int length = a.Length;
         int i = 0;
@@ -152,20 +156,36 @@ public static class NativeAotOptimizations
         if (typeof(T) == typeof(float))
         {
             if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated)
+            {
                 return Vector512<float>.Count;
+            }
+
             if (Avx2.IsSupported && Vector256.IsHardwareAccelerated)
+            {
                 return Vector256<float>.Count;
+            }
+
             if (AdvSimd.IsSupported || Sse.IsSupported)
+            {
                 return Vector128<float>.Count;
+            }
         }
         else if (typeof(T) == typeof(double))
         {
             if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated)
+            {
                 return Vector512<double>.Count;
+            }
+
             if (Avx2.IsSupported && Vector256.IsHardwareAccelerated)
+            {
                 return Vector256<double>.Count;
+            }
+
             if (AdvSimd.IsSupported || Sse2.IsSupported)
+            {
                 return Vector128<double>.Count;
+            }
         }
 
         return 1; // Scalar fallback
@@ -192,7 +212,9 @@ public static class NativeAotOptimizations
     public static double DotProductDouble(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
     {
         if (a.Length != b.Length)
+        {
             throw new ArgumentException("Arrays must have the same length");
+        }
 
         if (Vector512.IsHardwareAccelerated && a.Length >= 8)
         {

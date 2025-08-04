@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
+
 namespace DotCompute.Plugins.Configuration
 {
     /// <summary>
@@ -16,7 +18,7 @@ namespace DotCompute.Plugins.Configuration
         /// <summary>
         /// Gets or sets whether to enable hot reload.
         /// </summary>
-        public bool EnableHotReload { get; set; } = false;
+        public bool EnableHotReload { get; set; }
 
         /// <summary>
         /// Gets or sets whether to load plugins in isolation.
@@ -26,19 +28,19 @@ namespace DotCompute.Plugins.Configuration
         /// <summary>
         /// Gets or sets the list of shared assemblies.
         /// </summary>
-        public List<string> SharedAssemblies { get; set; } = new()
-        {
+        public Collection<string> SharedAssemblies { get; internal set; } =
+        [
             "DotCompute.Core",
             "DotCompute.Plugins",
             "Microsoft.Extensions.DependencyInjection.Abstractions",
             "Microsoft.Extensions.Logging.Abstractions",
             "Microsoft.Extensions.Configuration.Abstractions"
-        };
+        ];
 
         /// <summary>
         /// Gets or sets configured plugins.
         /// </summary>
-        public Dictionary<string, PluginConfig> Plugins { get; set; } = new();
+        public Dictionary<string, PluginConfig> Plugins { get; internal set; } = [];
 
         /// <summary>
         /// Gets or sets the maximum number of concurrent plugin loads.
@@ -50,21 +52,21 @@ namespace DotCompute.Plugins.Configuration
         /// </summary>
         public TimeSpan LoadTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
-        private List<string> _pluginDirectories = new();
+        private Collection<string> _pluginDirectories = [];
 
         /// <summary>
         /// Gets or sets the directories to scan for plugins.
         /// </summary>
-        public List<string> PluginDirectories
+        public Collection<string> PluginDirectories
         {
             get => _pluginDirectories;
-            set => _pluginDirectories = value ?? new();
+            internal set => _pluginDirectories = value ?? [];
         }
 
         /// <summary>
         /// Gets or sets whether the plugin system is initialized.
         /// </summary>
-        public bool IsInitialized { get; set; } = false;
+        public bool IsInitialized { get; set; }
     }
 
     /// <summary>
@@ -90,6 +92,6 @@ namespace DotCompute.Plugins.Configuration
         /// <summary>
         /// Gets or sets plugin-specific settings.
         /// </summary>
-        public Dictionary<string, object> Settings { get; set; } = new();
+        public Dictionary<string, object> Settings { get; internal set; } = [];
     }
 }

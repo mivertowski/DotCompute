@@ -17,7 +17,7 @@ namespace DotCompute.Plugins.Attributes
         /// <summary>
         /// Gets or sets the display name of the plugin.
         /// </summary>
-        public string Name { get; set; }
+        public string Name { get; internal set; }
 
         /// <summary>
         /// Gets or sets the version of the plugin.
@@ -47,12 +47,12 @@ namespace DotCompute.Plugins.Attributes
         /// <summary>
         /// Gets or sets whether the plugin supports hot reload.
         /// </summary>
-        public bool SupportsHotReload { get; set; } = false;
+        public bool SupportsHotReload { get; set; }
 
         /// <summary>
         /// Gets or sets the priority for plugin loading (higher = loaded first).
         /// </summary>
-        public int Priority { get; set; } = 0;
+        public int Priority { get; set; }
 
         /// <summary>
         /// Gets or sets the load priority for backward compatibility.
@@ -63,7 +63,10 @@ namespace DotCompute.Plugins.Attributes
             set
             {
                 if (value < 0)
+                {
                     throw new ArgumentOutOfRangeException(nameof(value), "LoadPriority must be non-negative.");
+                }
+
                 Priority = value;
             }
         }
@@ -86,9 +89,14 @@ namespace DotCompute.Plugins.Attributes
         public PluginAttribute(string name)
         {
             if (string.IsNullOrEmpty(name))
+            {
                 throw new ArgumentException("Plugin name cannot be null or empty.", nameof(name));
+            }
+
             if (string.IsNullOrWhiteSpace(name))
+            {
                 throw new ArgumentException("Plugin name cannot be whitespace.", nameof(name));
+            }
 
             Id = name;
             Name = name;
@@ -119,7 +127,7 @@ namespace DotCompute.Plugins.Attributes
         /// <summary>
         /// Gets or sets whether the dependency is optional.
         /// </summary>
-        public bool IsOptional { get; set; } = false;
+        public bool IsOptional { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the PluginDependencyAttribute class.
@@ -145,7 +153,7 @@ namespace DotCompute.Plugins.Attributes
         /// <summary>
         /// Gets or sets whether configuration is required.
         /// </summary>
-        public bool IsRequired { get; set; } = false;
+        public bool IsRequired { get; set; }
 
         /// <summary>
         /// Gets or sets the JSON schema for configuration validation.
@@ -172,12 +180,12 @@ namespace DotCompute.Plugins.Attributes
         /// <summary>
         /// Gets or sets the priority for hook execution (higher = executed first).
         /// </summary>
-        public int Priority { get; set; } = 0;
+        public int Priority { get; set; }
 
         /// <summary>
         /// Gets or sets whether errors in this hook should prevent plugin loading.
         /// </summary>
-        public bool IsCritical { get; set; } = false;
+        public bool IsCritical { get; set; }
 
         /// <summary>
         /// Initializes a new instance of the PluginLifecycleHookAttribute class.
@@ -194,18 +202,69 @@ namespace DotCompute.Plugins.Attributes
     /// </summary>
     public enum PluginLifecycleStage
     {
+        /// <summary>
+        /// The pre load
+        /// </summary>
         PreLoad,
+
+        /// <summary>
+        /// The post load
+        /// </summary>
         PostLoad,
+
+        /// <summary>
+        /// The pre initialize
+        /// </summary>
         PreInitialize,
+
+        /// <summary>
+        /// The post initialize
+        /// </summary>
         PostInitialize,
+
+        /// <summary>
+        /// The pre start
+        /// </summary>
         PreStart,
+
+        /// <summary>
+        /// The post start
+        /// </summary>
         PostStart,
+
+        /// <summary>
+        /// The pre stop
+        /// </summary>
         PreStop,
+
+        /// <summary>
+        /// The post stop
+        /// </summary>
         PostStop,
+
+        /// <summary>
+        /// The pre unload
+        /// </summary>
         PreUnload,
+
+        /// <summary>
+        /// The post unload
+        /// </summary>
         PostUnload,
+
+        /// <summary>
+        /// The configuration changed
+        /// </summary>
         ConfigurationChanged,
+
+        /// <summary>
+        /// The health check
+        /// </summary>
         HealthCheck,
+
+        /// <summary>
+        /// The cleanup
+        /// </summary>
         Cleanup
     }
 
@@ -259,7 +318,7 @@ namespace DotCompute.Plugins.Attributes
         /// <summary>
         /// Gets or sets whether the injection is optional.
         /// </summary>
-        public bool IsOptional { get; set; } = false;
+        public bool IsOptional { get; set; }
     }
 
     /// <summary>
@@ -286,12 +345,12 @@ namespace DotCompute.Plugins.Attributes
         /// <summary>
         /// Gets or sets the minimum memory required in MB.
         /// </summary>
-        public int MinimumMemoryMB { get; set; } = 0;
+        public int MinimumMemoryMB { get; set; }
 
         /// <summary>
         /// Gets or sets whether 64-bit is required.
         /// </summary>
-        public bool Requires64Bit { get; set; } = false;
+        public bool Requires64Bit { get; set; }
     }
 
     /// <summary>
@@ -318,7 +377,7 @@ namespace DotCompute.Plugins.Attributes
         /// <summary>
         /// Gets or sets the registration priority (higher = registered first).
         /// </summary>
-        public int Priority { get; set; } = 0;
+        public int Priority { get; set; }
     }
 
     /// <summary>
@@ -326,8 +385,19 @@ namespace DotCompute.Plugins.Attributes
     /// </summary>
     public enum ServiceLifetime
     {
+        /// <summary>
+        /// The transient
+        /// </summary>
         Transient,
+
+        /// <summary>
+        /// The scoped
+        /// </summary>
         Scoped,
+
+        /// <summary>
+        /// The singleton
+        /// </summary>
         Singleton
     }
 }

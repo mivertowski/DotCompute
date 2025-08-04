@@ -358,7 +358,7 @@ public class CompilationMetadata
     /// <summary>
     /// Gets any compiler warnings generated during compilation.
     /// </summary>
-    public IList<string> Warnings { get; } = new List<string>();
+    public IList<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets additional metadata properties.

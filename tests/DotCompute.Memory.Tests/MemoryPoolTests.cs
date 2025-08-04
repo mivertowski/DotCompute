@@ -16,10 +16,7 @@ public class MemoryPoolTests : IDisposable
         _pool = new MemoryPool<int>(_memoryManager);
     }
 
-    public void Dispose()
-    {
-        _pool.Dispose();
-    }
+    public void Dispose() => _pool.Dispose();
 
     [Fact]
     public void Rent_WithValidSize_ShouldReturnBuffer()

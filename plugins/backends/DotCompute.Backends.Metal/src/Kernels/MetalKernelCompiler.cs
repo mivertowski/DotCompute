@@ -27,7 +27,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
         _device = device;
         _commandQueue = commandQueue;
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _libraryCache = new Dictionary<string, IntPtr>();
+        _libraryCache = [];
         _compilationSemaphore = new SemaphoreSlim(1, 1);
     }
 

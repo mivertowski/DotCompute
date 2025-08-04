@@ -422,10 +422,7 @@ public static partial class NumaInfo
     private static extern bool GetNumaHighestNodeNumber(out uint HighestNodeNumber);
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private static int GetNumaHighestNodeNumber()
-    {
-        return GetNumaHighestNodeNumber(out var highest) ? (int)highest : 0;
-    }
+    private static int GetNumaHighestNodeNumber() => GetNumaHighestNodeNumber(out var highest) ? (int)highest : 0;
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
@@ -627,23 +624,17 @@ public static partial class NumaInfo
         return 0;
     }
 
-    private static int GetCacheCoherencyDomain(int nodeId)
-    {
+    private static int GetCacheCoherencyDomain(int nodeId) =>
         // For most systems, cache coherency domain matches NUMA node
-        return nodeId;
-    }
+        nodeId;
 
-    private static int GetNumaNodeDistance(int fromNode, int toNode)
-    {
+    private static int GetNumaNodeDistance(int fromNode, int toNode) =>
         // Default NUMA distances if system doesn't provide them
-        return fromNode == toNode ? 10 : 20;
-    }
+        fromNode == toNode ? 10 : 20;
 
-    private static int GetCacheLineSize()
-    {
+    private static int GetCacheLineSize() =>
         // Most modern processors use 64-byte cache lines
-        return 64;
-    }
+        64;
 
     private static int GetPageSize()
     {
@@ -682,15 +673,9 @@ public static partial class NumaInfo
         return 0;
     }
 
-    private static long GetLinuxNodeMemorySizeSysfs(string nodeDir)
-    {
-        return GetNodeMemorySize(nodeDir);
-    }
+    private static long GetLinuxNodeMemorySizeSysfs(string nodeDir) => GetNodeMemorySize(nodeDir);
 
-    private static HugePagesInfo GetLinuxHugePagesInfo(int nodeId)
-    {
-        return GetLinuxHugePagesSysfs($"/sys/devices/system/node/node{nodeId}");
-    }
+    private static HugePagesInfo GetLinuxHugePagesInfo(int nodeId) => GetLinuxHugePagesSysfs($"/sys/devices/system/node/node{nodeId}");
 
     private static HugePagesInfo GetLinuxHugePagesSysfs(string nodeDir)
     {
@@ -732,10 +717,7 @@ public static partial class NumaInfo
         return new HugePagesInfo { SupportedSizes = supportedSizes };
     }
 
-    private static CacheHierarchy GetLinuxCacheInfo(int nodeId)
-    {
-        return GetLinuxCacheInfoSysfs(nodeId);
-    }
+    private static CacheHierarchy GetLinuxCacheInfo(int nodeId) => GetLinuxCacheInfoSysfs(nodeId);
 
     private static CacheHierarchy GetLinuxCacheInfoSysfs(int nodeId)
     {
@@ -970,7 +952,9 @@ public sealed class NumaTopology
     public IEnumerable<int> GetProcessorsForNode(int nodeId)
     {
         if (nodeId < 0 || nodeId >= Nodes.Length)
+        {
             yield break;
+        }
 
         var mask = Nodes[nodeId].ProcessorMask;
         for (int i = 0; i < 64; i++)
@@ -1003,7 +987,9 @@ public sealed class NumaTopology
     public IEnumerable<int> GetClosestNodes(int nodeId)
     {
         if (nodeId < 0 || nodeId >= NodeCount || DistanceMatrix == null)
+        {
             yield break;
+        }
 
         var distances = new List<(int node, int distance)>();
         for (int i = 0; i < NodeCount; i++)
@@ -1029,7 +1015,9 @@ public sealed class NumaTopology
     {
         var processorList = processorIds.ToArray();
         if (processorList.Length == 0)
+        {
             return 0;
+        }
 
         // Count processors per node
         var nodeProcessorCounts = new int[NodeCount];
@@ -1131,10 +1119,7 @@ public sealed class NumaNode
     /// <summary>
     /// Checks if a specific CPU belongs to this node.
     /// </summary>
-    public bool ContainsCpu(int cpuId)
-    {
-        return cpuId >= 0 && cpuId < 64 && (ProcessorMask & (1UL << cpuId)) != 0;
-    }
+    public bool ContainsCpu(int cpuId) => cpuId >= 0 && cpuId < 64 && (ProcessorMask & (1UL << cpuId)) != 0;
 }
 
 /// <summary>
@@ -1202,10 +1187,7 @@ public sealed class CacheHierarchy
     /// <summary>
     /// Gets a specific cache level.
     /// </summary>
-    public CacheLevel? GetLevel(int level)
-    {
-        return Levels.FirstOrDefault(l => l.Level == level);
-    }
+    public CacheLevel? GetLevel(int level) => Levels.FirstOrDefault(l => l.Level == level);
 
     /// <summary>
     /// Gets the total cache size across all levels.

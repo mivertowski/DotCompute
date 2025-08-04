@@ -286,7 +286,7 @@ internal sealed class CudaMemoryBufferView : ISyncMemoryBuffer
     public MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
 
-    internal IntPtr DevicePointer => new IntPtr(_parent.DevicePointer.ToInt64() + _offset);
+    internal IntPtr DevicePointer => new(_parent.DevicePointer.ToInt64() + _offset);
 
     public CudaMemoryBufferView(CudaMemoryBuffer parent, long offset, long length, ILogger logger)
     {
@@ -296,15 +296,9 @@ internal sealed class CudaMemoryBufferView : ISyncMemoryBuffer
         SizeInBytes = length;
     }
 
-    public unsafe void* GetHostPointer()
-    {
-        throw new NotSupportedException("Direct host access to CUDA device memory is not supported. Use memory copy operations instead.");
-    }
+    public unsafe void* GetHostPointer() => throw new NotSupportedException("Direct host access to CUDA device memory is not supported. Use memory copy operations instead.");
 
-    public unsafe Span<T> AsSpan<T>() where T : unmanaged
-    {
-        throw new NotSupportedException("Direct span access to CUDA device memory is not supported. Use memory copy operations instead.");
-    }
+    public unsafe Span<T> AsSpan<T>() where T : unmanaged => throw new NotSupportedException("Direct span access to CUDA device memory is not supported. Use memory copy operations instead.");
 
     public ISyncMemoryBuffer Slice(long offset, long length)
     {
@@ -370,11 +364,9 @@ internal sealed class CudaMemoryBufferView : ISyncMemoryBuffer
         await _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken).ConfigureAwait(false);
     }
 
-    public ValueTask DisposeAsync()
-    {
+    public ValueTask DisposeAsync() =>
         // Views don't own the memory, so nothing to dispose
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 
     public void Dispose()
     {

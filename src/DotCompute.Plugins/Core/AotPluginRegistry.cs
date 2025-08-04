@@ -23,8 +23,8 @@ public sealed class AotPluginRegistry : IDisposable
     public AotPluginRegistry(ILogger<AotPluginRegistry> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _plugins = new Dictionary<string, IBackendPlugin>();
-        _factories = new Dictionary<string, Func<IBackendPlugin>>();
+        _plugins = [];
+        _factories = [];
 
         RegisterKnownPlugins();
     }
@@ -107,7 +107,9 @@ public sealed class AotPluginRegistry : IDisposable
     public IBackendPlugin? CreatePlugin(string pluginTypeName)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(AotPluginRegistry));
+        }
 
         ArgumentException.ThrowIfNullOrEmpty(pluginTypeName);
 
@@ -143,7 +145,9 @@ public sealed class AotPluginRegistry : IDisposable
     public IBackendPlugin? GetPlugin(string pluginId)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(AotPluginRegistry));
+        }
 
         lock (_lock)
         {
@@ -157,7 +161,9 @@ public sealed class AotPluginRegistry : IDisposable
     public IReadOnlyCollection<IBackendPlugin> GetLoadedPlugins()
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(AotPluginRegistry));
+        }
 
         lock (_lock)
         {
@@ -171,7 +177,9 @@ public sealed class AotPluginRegistry : IDisposable
     public IReadOnlyCollection<string> GetAvailablePluginTypes()
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(AotPluginRegistry));
+        }
 
         return _factories.Keys.ToList();
     }
@@ -182,7 +190,9 @@ public sealed class AotPluginRegistry : IDisposable
     public bool UnloadPlugin(string pluginId)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(AotPluginRegistry));
+        }
 
         ArgumentException.ThrowIfNullOrEmpty(pluginId);
 
@@ -217,7 +227,9 @@ public sealed class AotPluginRegistry : IDisposable
     public void RegisterPluginFactory(string pluginTypeName, Func<IBackendPlugin> factory)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(AotPluginRegistry));
+        }
 
         ArgumentException.ThrowIfNullOrEmpty(pluginTypeName);
         ArgumentNullException.ThrowIfNull(factory);
@@ -232,7 +244,9 @@ public sealed class AotPluginRegistry : IDisposable
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
 
         _disposed = true;
 
@@ -288,7 +302,9 @@ public sealed class AotPluginSystem : IDisposable
         CancellationToken cancellationToken = default)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(AotPluginSystem));
+        }
 
         _logger.LogInformation("Loading plugin {Type} (assembly path ignored in AOT mode)", pluginTypeName);
 
@@ -304,7 +320,9 @@ public sealed class AotPluginSystem : IDisposable
     public async Task<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken = default)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(AotPluginSystem));
+        }
 
         await Task.Yield(); // Maintain async signature for compatibility
 
@@ -329,15 +347,17 @@ public sealed class AotPluginSystem : IDisposable
     /// <summary>
     /// Registers a custom plugin factory.
     /// </summary>
-    public void RegisterPluginFactory(string pluginTypeName, Func<IBackendPlugin> factory)
-    {
-        _registry.RegisterPluginFactory(pluginTypeName, factory);
-    }
+    public void RegisterPluginFactory(string pluginTypeName, Func<IBackendPlugin> factory) => _registry.RegisterPluginFactory(pluginTypeName, factory);
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
 
         _disposed = true;
         _registry.Dispose();
@@ -391,7 +411,7 @@ internal sealed class AotCpuBackendPlugin : IBackendPlugin
     public string Id => "DotCompute.Backends.CPU";
     public string Name => "CPU Backend";
     public string Description => "Multi-threaded CPU compute backend with SIMD acceleration";
-    public Version Version => new Version(1, 0, 0);
+    public Version Version => new(1, 0, 0);
     public string Author => "DotCompute Team";
     public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
     public PluginState State => _state;
@@ -441,25 +461,13 @@ internal sealed class AotCpuBackendPlugin : IBackendPlugin
         return Task.CompletedTask;
     }
 
-    public PluginValidationResult Validate()
-    {
-        return new PluginValidationResult { IsValid = true };
-    }
+    public PluginValidationResult Validate() => new() { IsValid = true };
 
-    public string GetConfigurationSchema()
-    {
-        return "{}";
-    }
+    public string GetConfigurationSchema() => "{}";
 
-    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-    public PluginMetrics GetMetrics()
-    {
-        return new PluginMetrics();
-    }
+    public PluginMetrics GetMetrics() => new();
 
     public void Dispose()
     {
@@ -482,7 +490,7 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
     public string Id => "DotCompute.Backends.CUDA";
     public string Name => "CUDA Backend";
     public string Description => "NVIDIA CUDA GPU compute backend";
-    public Version Version => new Version(1, 0, 0);
+    public Version Version => new(1, 0, 0);
     public string Author => "DotCompute Team";
     public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
     public PluginState State => _state;
@@ -551,20 +559,11 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
         return result;
     }
 
-    public string GetConfigurationSchema()
-    {
-        return "{}";
-    }
+    public string GetConfigurationSchema() => "{}";
 
-    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-    public PluginMetrics GetMetrics()
-    {
-        return new PluginMetrics();
-    }
+    public PluginMetrics GetMetrics() => new();
 
     public void Dispose()
     {
@@ -661,17 +660,16 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
     public string Id => "DotCompute.Backends.Metal";
     public string Name => "Metal Backend";
     public string Description => "Apple Metal GPU compute backend";
-    public Version Version => new Version(1, 0, 0);
+    public Version Version => new(1, 0, 0);
     public string Author => "DotCompute Team";
     public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
     public PluginState State => _state;
     public PluginHealth Health => _health;
 
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
-#pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
     public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
-#pragma warning restore CS0067
+
 
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
@@ -737,20 +735,11 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
         return result;
     }
 
-    public string GetConfigurationSchema()
-    {
-        return "{}";
-    }
+    public string GetConfigurationSchema() => "{}";
 
-    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default)
-    {
-        return Task.CompletedTask;
-    }
+    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
 
-    public PluginMetrics GetMetrics()
-    {
-        return new PluginMetrics();
-    }
+    public PluginMetrics GetMetrics() => new();
 
     public void Dispose()
     {
@@ -761,8 +750,5 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
         _disposed = true;
     }
 
-    private static bool IsMetalAvailable()
-    {
-        return OperatingSystem.IsMacOS() || OperatingSystem.IsIOS();
-    }
+    private static bool IsMetalAvailable() => OperatingSystem.IsMacOS() || OperatingSystem.IsIOS();
 }

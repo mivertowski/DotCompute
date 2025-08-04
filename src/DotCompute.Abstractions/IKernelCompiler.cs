@@ -81,35 +81,29 @@ public readonly struct ValidationResult : IEquatable<ValidationResult>
     /// <summary>
     /// Creates a successful validation result.
     /// </summary>
-    public static ValidationResult Success() => new ValidationResult(true, null, null);
+    public static ValidationResult Success() => new(true, null, null);
 
     /// <summary>
     /// Creates a successful validation result with warnings.
     /// </summary>
     public static ValidationResult SuccessWithWarnings(params string[] warnings)
-        => new ValidationResult(true, null, warnings);
+        => new(true, null, warnings);
 
     /// <summary>
     /// Creates a failed validation result.
     /// </summary>
     public static ValidationResult Failure(string errorMessage)
-        => new ValidationResult(false, errorMessage, null);
+        => new(false, errorMessage, null);
 
     /// <summary>
     /// Creates a failed validation result with warnings.
     /// </summary>
     public static ValidationResult FailureWithWarnings(string errorMessage, params string[] warnings)
-        => new ValidationResult(false, errorMessage, warnings);
+        => new(false, errorMessage, warnings);
 
-    public override bool Equals(object obj)
-    {
-        throw new NotImplementedException();
-    }
+    public override bool Equals(object obj) => throw new NotImplementedException();
 
-    public override int GetHashCode()
-    {
-        throw new NotImplementedException();
-    }
+    public override int GetHashCode() => throw new NotImplementedException();
 
     public static bool operator ==(ValidationResult left, ValidationResult right)
     {
@@ -121,10 +115,7 @@ public readonly struct ValidationResult : IEquatable<ValidationResult>
         return !(left == right);
     }
 
-    public bool Equals(ValidationResult other)
-    {
-        throw new NotImplementedException();
-    }
+    public bool Equals(ValidationResult other) => throw new NotImplementedException();
 }
 
 /// <summary>
@@ -222,15 +213,9 @@ public readonly struct CompilationMetadata : IEquatable<CompilationMetadata>
         OptimizationNotes = optimizationNotes;
     }
 
-    public override bool Equals(object obj)
-    {
-        throw new NotImplementedException();
-    }
+    public override bool Equals(object obj) => throw new NotImplementedException();
 
-    public override int GetHashCode()
-    {
-        throw new NotImplementedException();
-    }
+    public override int GetHashCode() => throw new NotImplementedException();
 
     public static bool operator ==(CompilationMetadata left, CompilationMetadata right)
     {
@@ -242,8 +227,5 @@ public readonly struct CompilationMetadata : IEquatable<CompilationMetadata>
         return !(left == right);
     }
 
-    public bool Equals(CompilationMetadata other)
-    {
-        throw new NotImplementedException();
-    }
+    public bool Equals(CompilationMetadata other) => throw new NotImplementedException();
 }

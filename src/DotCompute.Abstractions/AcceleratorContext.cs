@@ -38,22 +38,13 @@ public readonly struct AcceleratorContext : IEquatable<AcceleratorContext>
     /// <summary>
     /// Creates an invalid context.
     /// </summary>
-    public static AcceleratorContext Invalid => new AcceleratorContext(IntPtr.Zero, -1);
+    public static AcceleratorContext Invalid => new(IntPtr.Zero, -1);
 
-    public bool Equals(AcceleratorContext other)
-    {
-        return Handle == other.Handle && DeviceId == other.DeviceId;
-    }
+    public bool Equals(AcceleratorContext other) => Handle == other.Handle && DeviceId == other.DeviceId;
 
-    public override bool Equals(object? obj)
-    {
-        return obj is AcceleratorContext other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is AcceleratorContext other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Handle, DeviceId);
-    }
+    public override int GetHashCode() => HashCode.Combine(Handle, DeviceId);
 
     public static bool operator ==(AcceleratorContext left, AcceleratorContext right)
     {
@@ -65,8 +56,5 @@ public readonly struct AcceleratorContext : IEquatable<AcceleratorContext>
         return !left.Equals(right);
     }
 
-    public override string ToString()
-    {
-        return IsValid ? $"AcceleratorContext(Device={DeviceId}, Handle={Handle:X})" : "AcceleratorContext(Invalid)";
-    }
+    public override string ToString() => IsValid ? $"AcceleratorContext(Device={DeviceId}, Handle={Handle:X})" : "AcceleratorContext(Invalid)";
 }

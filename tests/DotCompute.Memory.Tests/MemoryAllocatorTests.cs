@@ -13,10 +13,7 @@ public class MemoryAllocatorTests : IDisposable
         _allocator = new MemoryAllocator();
     }
 
-    public void Dispose()
-    {
-        _allocator.Dispose();
-    }
+    public void Dispose() => _allocator.Dispose();
 
     [Fact]
     public void Allocate_WithValidSize_ShouldReturnMemoryOwner()

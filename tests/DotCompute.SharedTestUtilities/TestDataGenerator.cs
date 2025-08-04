@@ -168,18 +168,12 @@ public static class TestDataGenerator
     /// <summary>
     /// Generates random floats in specified range.
     /// </summary>
-    public static float[] GenerateRandomFloats(int length, float min = 0.0f, float max = 1.0f)
-    {
-        return GenerateArray(length, i => (float)(Random.NextDouble() * (max - min) + min));
-    }
+    public static float[] GenerateRandomFloats(int length, float min = 0.0f, float max = 1.0f) => GenerateArray(length, i => (float)(Random.NextDouble() * (max - min) + min));
 
     /// <summary>
     /// Generates random integers in specified range.
     /// </summary>
-    public static int[] GenerateRandomInts(int length, int min = 0, int max = 1000)
-    {
-        return GenerateArray(length, i => Random.Next(min, max));
-    }
+    public static int[] GenerateRandomInts(int length, int min = 0, int max = 1000) => GenerateArray(length, i => Random.Next(min, max));
 
     /// <summary>
     /// Generates sequential array with incremental values.

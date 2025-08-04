@@ -96,11 +96,9 @@ namespace DotCompute.Plugins.Core
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
 
         /// <inheritdoc/>
-        public virtual void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-        {
+        public virtual void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
             // Base implementation - derived classes can override
             services.AddSingleton(this);
-        }
 
         /// <inheritdoc/>
         public virtual async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
@@ -234,11 +232,9 @@ namespace DotCompute.Plugins.Core
         }
 
         /// <inheritdoc/>
-        public virtual string GetConfigurationSchema()
-        {
+        public virtual string GetConfigurationSchema() =>
             // Base implementation returns empty schema
-            return "{}";
-        }
+            "{}";
 
         /// <inheritdoc/>
         public virtual async Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default)
@@ -280,29 +276,23 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Called when the plugin needs to be initialized.
         /// </summary>
-        protected virtual Task OnInitializeAsync(CancellationToken cancellationToken)
-        {
+        protected virtual Task OnInitializeAsync(CancellationToken cancellationToken) =>
             // Override in derived classes
-            return Task.CompletedTask;
-        }
+            Task.CompletedTask;
 
         /// <summary>
         /// Called when the plugin needs to be started.
         /// </summary>
-        protected virtual Task OnStartAsync(CancellationToken cancellationToken)
-        {
+        protected virtual Task OnStartAsync(CancellationToken cancellationToken) =>
             // Override in derived classes
-            return Task.CompletedTask;
-        }
+            Task.CompletedTask;
 
         /// <summary>
         /// Called when the plugin needs to be stopped.
         /// </summary>
-        protected virtual Task OnStopAsync(CancellationToken cancellationToken)
-        {
+        protected virtual Task OnStopAsync(CancellationToken cancellationToken) =>
             // Override in derived classes
-            return Task.CompletedTask;
-        }
+            Task.CompletedTask;
 
         /// <summary>
         /// Called when plugin validation is performed.
@@ -315,11 +305,9 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Called when configuration is updated.
         /// </summary>
-        protected virtual Task OnConfigurationUpdatedAsync(IConfiguration configuration, CancellationToken cancellationToken)
-        {
+        protected virtual Task OnConfigurationUpdatedAsync(IConfiguration configuration, CancellationToken cancellationToken) =>
             // Override in derived classes
-            return Task.CompletedTask;
-        }
+            Task.CompletedTask;
 
         /// <summary>
         /// Called when metrics need to be updated.
@@ -390,10 +378,7 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Unloads the plugin asynchronously.
         /// </summary>
-        public async Task UnloadAsync(CancellationToken cancellationToken = default)
-        {
-            await StopAsync(cancellationToken);
-        }
+        public async Task UnloadAsync(CancellationToken cancellationToken = default) => await StopAsync(cancellationToken);
 
         /// <summary>
         /// Sets a custom metric value.
@@ -409,18 +394,12 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Raises the StateChanged event.
         /// </summary>
-        private void OnStateChanged(PluginState oldState, PluginState newState)
-        {
-            StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, newState));
-        }
+        private void OnStateChanged(PluginState oldState, PluginState newState) => StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, newState));
 
         /// <summary>
         /// Raises the HealthChanged event.
         /// </summary>
-        private void OnHealthChanged(PluginHealth oldHealth, PluginHealth newHealth)
-        {
-            HealthChanged?.Invoke(this, new PluginHealthChangedEventArgs(oldHealth, newHealth));
-        }
+        private void OnHealthChanged(PluginHealth oldHealth, PluginHealth newHealth) => HealthChanged?.Invoke(this, new PluginHealthChangedEventArgs(oldHealth, newHealth));
 
         /// <summary>
         /// Raises the ErrorOccurred event.

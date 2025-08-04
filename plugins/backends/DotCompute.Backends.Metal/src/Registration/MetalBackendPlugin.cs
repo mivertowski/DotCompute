@@ -230,10 +230,7 @@ public static class MetalBackendPluginExtensions
     /// <summary>
     /// Adds the Metal backend with default configuration.
     /// </summary>
-    public static IServiceCollection AddMetalBackend(this IServiceCollection services)
-    {
-        return services.AddMetalBackend(null);
-    }
+    public static IServiceCollection AddMetalBackend(this IServiceCollection services) => services.AddMetalBackend(null);
 
     /// <summary>
     /// Adds the Metal backend with device selection.
@@ -304,18 +301,9 @@ internal sealed class NamedAcceleratorWrapper : IAccelerator
     public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = default,
-        CancellationToken cancellationToken = default)
-    {
-        return _accelerator.CompileKernelAsync(definition, options, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) => _accelerator.CompileKernelAsync(definition, options, cancellationToken);
 
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        return _accelerator.SynchronizeAsync(cancellationToken);
-    }
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => _accelerator.SynchronizeAsync(cancellationToken);
 
-    public ValueTask DisposeAsync()
-    {
-        return _accelerator.DisposeAsync();
-    }
+    public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
 }

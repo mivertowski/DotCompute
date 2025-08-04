@@ -338,18 +338,12 @@ public readonly struct CompiledKernel : IEquatable<CompiledKernel>
     /// <summary>
     /// Determines whether this instance is equal to another object.
     /// </summary>
-    public override readonly bool Equals(object? obj)
-    {
-        return obj is CompiledKernel other && Equals(other);
-    }
+    public override readonly bool Equals(object? obj) => obj is CompiledKernel other && Equals(other);
 
     /// <summary>
     /// Returns the hash code for this instance.
     /// </summary>
-    public override readonly int GetHashCode()
-    {
-        return HashCode.Combine(Id, NativeHandle, SharedMemorySize, Configuration);
-    }
+    public override readonly int GetHashCode() => HashCode.Combine(Id, NativeHandle, SharedMemorySize, Configuration);
 
     /// <summary>
     /// Determines whether two CompiledKernel instances are equal.
@@ -392,26 +386,17 @@ public readonly struct KernelConfiguration : IEquatable<KernelConfiguration>
     /// <summary>
     /// Determines whether this instance is equal to another KernelConfiguration.
     /// </summary>
-    public readonly bool Equals(KernelConfiguration other)
-    {
-        return GridDimensions.Equals(other.GridDimensions) && BlockDimensions.Equals(other.BlockDimensions);
-    }
+    public readonly bool Equals(KernelConfiguration other) => GridDimensions.Equals(other.GridDimensions) && BlockDimensions.Equals(other.BlockDimensions);
 
     /// <summary>
     /// Determines whether this instance is equal to another object.
     /// </summary>
-    public override readonly bool Equals(object? obj)
-    {
-        return obj is KernelConfiguration other && Equals(other);
-    }
+    public override readonly bool Equals(object? obj) => obj is KernelConfiguration other && Equals(other);
 
     /// <summary>
     /// Returns the hash code for this instance.
     /// </summary>
-    public override readonly int GetHashCode()
-    {
-        return HashCode.Combine(GridDimensions, BlockDimensions);
-    }
+    public override readonly int GetHashCode() => HashCode.Combine(GridDimensions, BlockDimensions);
 
     /// <summary>
     /// Determines whether two KernelConfiguration instances are equal.
@@ -468,26 +453,17 @@ public readonly struct Dim3 : IEquatable<Dim3>
     /// <summary>
     /// Determines whether this instance is equal to another Dim3.
     /// </summary>
-    public readonly bool Equals(Dim3 other)
-    {
-        return X == other.X && Y == other.Y && Z == other.Z;
-    }
+    public readonly bool Equals(Dim3 other) => X == other.X && Y == other.Y && Z == other.Z;
 
     /// <summary>
     /// Determines whether this instance is equal to another object.
     /// </summary>
-    public override readonly bool Equals(object? obj)
-    {
-        return obj is Dim3 other && Equals(other);
-    }
+    public override readonly bool Equals(object? obj) => obj is Dim3 other && Equals(other);
 
     /// <summary>
     /// Returns the hash code for this instance.
     /// </summary>
-    public override readonly int GetHashCode()
-    {
-        return HashCode.Combine(X, Y, Z);
-    }
+    public override readonly int GetHashCode() => HashCode.Combine(X, Y, Z);
 
     /// <summary>
     /// Determines whether two Dim3 instances are equal.
@@ -568,10 +544,7 @@ public struct KernelArguments : IEquatable<KernelArguments>
     /// </summary>
     /// <param name="capacity">The number of arguments to allocate space for.</param>
     /// <returns>A new KernelArguments instance.</returns>
-    public static KernelArguments Create(int capacity)
-    {
-        return new KernelArguments(new object[capacity]);
-    }
+    public static KernelArguments Create(int capacity) => new(new object[capacity]);
 
     /// <summary>
     /// Gets the number of arguments.
@@ -609,10 +582,7 @@ public struct KernelArguments : IEquatable<KernelArguments>
     /// <summary>
     /// Determines whether this instance is equal to another object.
     /// </summary>
-    public override readonly bool Equals(object? obj)
-    {
-        return obj is KernelArguments other && Equals(other);
-    }
+    public override readonly bool Equals(object? obj) => obj is KernelArguments other && Equals(other);
 
     /// <summary>
     /// Returns the hash code for this instance.

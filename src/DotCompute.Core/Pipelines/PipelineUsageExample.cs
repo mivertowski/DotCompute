@@ -361,8 +361,8 @@ public static class PipelineUsageExample
 /// </summary>
 internal sealed class BasicPipelineProfiler : IPipelineProfiler
 {
-    private readonly Dictionary<string, DateTime> _executionStarts = new();
-    private readonly Dictionary<string, DateTime> _stageStarts = new();
+    private readonly Dictionary<string, DateTime> _executionStarts = [];
+    private readonly Dictionary<string, DateTime> _stageStarts = [];
 
     public void StartPipelineExecution(string pipelineId, string executionId)
     {
@@ -395,15 +395,9 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
         }
     }
 
-    public void RecordMemoryAllocation(string executionId, long bytes, string purpose)
-    {
-        Console.WriteLine($"[PROFILER] Memory allocated: {bytes / 1024.0 / 1024.0:F2} MB for {purpose}");
-    }
+    public void RecordMemoryAllocation(string executionId, long bytes, string purpose) => Console.WriteLine($"[PROFILER] Memory allocated: {bytes / 1024.0 / 1024.0:F2} MB for {purpose}");
 
-    public void RecordMemoryDeallocation(string executionId, long bytes)
-    {
-        Console.WriteLine($"[PROFILER] Memory released: {bytes / 1024.0 / 1024.0:F2} MB");
-    }
+    public void RecordMemoryDeallocation(string executionId, long bytes) => Console.WriteLine($"[PROFILER] Memory released: {bytes / 1024.0 / 1024.0:F2} MB");
 
     public void RecordDataTransfer(string executionId, long bytes, TimeSpan duration, DataTransferType type)
     {
@@ -411,15 +405,9 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
         Console.WriteLine($"[PROFILER] Data transfer ({type}): {bytes / 1024.0 / 1024.0:F2} MB in {duration.TotalMilliseconds:F2} ms ({rate:F2} MB/s)");
     }
 
-    public void RecordKernelExecution(string executionId, KernelExecutionStats stats)
-    {
-        Console.WriteLine($"[PROFILER] Kernel {stats.KernelName}: {stats.ExecutionTime.TotalMilliseconds:F2} ms, {stats.WorkItemsProcessed} work items, {stats.ComputeUtilization:P} utilization");
-    }
+    public void RecordKernelExecution(string executionId, KernelExecutionStats stats) => Console.WriteLine($"[PROFILER] Kernel {stats.KernelName}: {stats.ExecutionTime.TotalMilliseconds:F2} ms, {stats.WorkItemsProcessed} work items, {stats.ComputeUtilization:P} utilization");
 
-    public void RecordCustomMetric(string executionId, string name, double value)
-    {
-        Console.WriteLine($"[PROFILER] Metric {name}: {value}");
-    }
+    public void RecordCustomMetric(string executionId, string name, double value) => Console.WriteLine($"[PROFILER] Metric {name}: {value}");
 
     public ProfilingResults GetResults(string executionId)
     {

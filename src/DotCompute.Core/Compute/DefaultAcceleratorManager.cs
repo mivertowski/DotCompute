@@ -12,8 +12,8 @@ namespace DotCompute.Core.Accelerators;
 public class DefaultAcceleratorManager : IAcceleratorManager
 {
     private readonly ILogger<DefaultAcceleratorManager> _logger;
-    private readonly List<IAcceleratorProvider> _providers = new();
-    private readonly List<IAccelerator> _accelerators = new();
+    private readonly List<IAcceleratorProvider> _providers = [];
+    private readonly List<IAccelerator> _accelerators = [];
     private IAccelerator? _default;
     private bool _initialized;
     private bool _disposed;

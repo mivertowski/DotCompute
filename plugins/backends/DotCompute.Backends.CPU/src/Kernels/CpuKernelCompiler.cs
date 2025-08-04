@@ -413,13 +413,19 @@ internal sealed partial class CpuKernelCompiler
         // Check if kernel can be vectorized
         // Look for patterns that prevent vectorization
         if (ast.HasRecursion)
+        {
             return false;
+        }
 
         if (ast.HasIndirectMemoryAccess)
+        {
             return false;
+        }
 
         if (ast.HasComplexControlFlow)
+        {
             return false;
+        }
 
         // Check for vectorizable operations
         return ast.Operations.Any(op => IsVectorizableOperation(op));
@@ -450,10 +456,14 @@ internal sealed partial class CpuKernelCompiler
 
         // Add complexity for control flow
         if (ast.HasConditionals)
+        {
             complexity += 5;
+        }
 
         if (ast.HasLoops)
+        {
             complexity += 10;
+        }
 
         // Add complexity for memory operations
         complexity += ast.MemoryOperations.Count * 2;
@@ -469,7 +479,7 @@ internal sealed partial class CpuKernelCompiler
     {
         var metadata = original.Metadata != null
             ? new Dictionary<string, object>(original.Metadata)
-            : new Dictionary<string, object>();
+            : [];
 
         metadata["SimdCapabilities"] = simdCapabilities;
         metadata["CompilationTime"] = compilationTime;
@@ -603,8 +613,8 @@ public sealed class KernelCompilationException : Exception
 /// </summary>
 internal sealed class KernelAst
 {
-    public List<AstNode> Operations { get; set; } = new();
-    public List<AstNode> MemoryOperations { get; set; } = new();
+    public List<AstNode> Operations { get; set; } = [];
+    public List<AstNode> MemoryOperations { get; set; } = [];
     public bool HasConditionals { get; set; }
     public bool HasLoops { get; set; }
     public bool HasRecursion { get; set; }
@@ -618,7 +628,7 @@ internal sealed class KernelAst
 internal sealed class AstNode
 {
     public AstNodeType NodeType { get; set; }
-    public List<AstNode> Children { get; set; } = new();
+    public List<AstNode> Children { get; set; } = [];
     public object? Value { get; set; }
 }
 
@@ -697,13 +707,24 @@ internal sealed class KernelSourceParser
 
         // Parse operations (simplified)
         if (code.Contains('+'))
+        {
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Add });
+        }
+
         if (code.Contains('-'))
+        {
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Subtract });
+        }
+
         if (code.Contains('*'))
+        {
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Multiply });
+        }
+
         if (code.Contains('/'))
+        {
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Divide });
+        }
 
         // Detect memory operations
         var loadMatches = _loadPatternRegex.Matches(code);
@@ -727,11 +748,9 @@ internal sealed class KernelSourceParser
 /// </summary>
 internal sealed partial class KernelOptimizer
 {
-    public KernelAst ApplyBasicOptimizations(KernelAst ast)
-    {
+    public KernelAst ApplyBasicOptimizations(KernelAst ast) =>
         // Constant folding, dead code elimination
-        return ast;
-    }
+        ast;
 
     public KernelAst ApplyStandardOptimizations(KernelAst ast)
     {
@@ -747,21 +766,15 @@ internal sealed partial class KernelOptimizer
         return ast;
     }
 
-    public KernelAst ApplyVectorizationOptimizations(KernelAst ast, int vectorizationFactor)
-    {
+    public KernelAst ApplyVectorizationOptimizations(KernelAst ast, int vectorizationFactor) =>
         // Transform operations to use SIMD instructions
-        return ast;
-    }
+        ast;
 
-    public KernelAst ApplyLoopUnrolling(KernelAst ast, int unrollFactor)
-    {
+    public KernelAst ApplyLoopUnrolling(KernelAst ast, int unrollFactor) =>
         // Unroll loops by the specified factor
-        return ast;
-    }
+        ast;
 
-    public KernelAst ApplyFastMathOptimizations(KernelAst ast)
-    {
+    public KernelAst ApplyFastMathOptimizations(KernelAst ast) =>
         // Relaxed floating-point operations for performance
-        return ast;
-    }
+        ast;
 }

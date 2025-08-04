@@ -804,10 +804,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     public async ValueTask WriteAsync(
         T[] data,
         int offset = 0,
-        CancellationToken cancellationToken = default)
-    {
-        await WriteAsync(data.AsMemory(), offset, cancellationToken).ConfigureAwait(false);
-    }
+        CancellationToken cancellationToken = default) => await WriteAsync(data.AsMemory(), offset, cancellationToken).ConfigureAwait(false);
 
     /// <summary>
     /// Asynchronously ensures the buffer is available on the host.
@@ -927,10 +924,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// <param name="value">The value to fill with.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the fill operation.</returns>
-    public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
-    {
-        await FillAsync(value, 0, Length, cancellationToken).ConfigureAwait(false);
-    }
+    public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default) => await FillAsync(value, 0, Length, cancellationToken).ConfigureAwait(false);
 
     /// <summary>
     /// Fills a portion of this buffer with a specified value.
@@ -1241,11 +1235,9 @@ internal sealed class UnifiedBufferSlice<T> : IBuffer<T> where T : unmanaged
         return new MappedMemory<T>(this, sliceMemory, mode);
     }
 
-    public ValueTask DisposeAsync()
-    {
+    public ValueTask DisposeAsync() =>
         // Slices don't own the underlying memory
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 }
 
 /// <summary>
@@ -1392,9 +1384,7 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IBuffer<TNew>
         return new MappedMemory<TNew>(this, viewMemory.ToArray().AsMemory(), mode);
     }
 
-    public ValueTask DisposeAsync()
-    {
+    public ValueTask DisposeAsync() =>
         // Views don't own the underlying memory
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 }

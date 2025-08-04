@@ -46,9 +46,9 @@ public sealed class PipelineMetricsData
     public double SuccessRate { get; set; }
     public long AverageMemoryUsage { get; set; }
     public long PeakMemoryUsage { get; set; }
-    public Dictionary<string, StageMetricsData> StageMetrics { get; set; } = new();
-    public Dictionary<string, double> CustomMetrics { get; set; } = new();
-    public List<TimeSeriesData> TimeSeries { get; set; } = new();
+    public Dictionary<string, StageMetricsData> StageMetrics { get; set; } = [];
+    public Dictionary<string, double> CustomMetrics { get; set; } = [];
+    public List<TimeSeriesData> TimeSeries { get; set; } = [];
 }
 
 public sealed class StageMetricsData
@@ -61,7 +61,7 @@ public sealed class StageMetricsData
     public double MaxExecutionTime { get; set; }
     public double TotalExecutionTime { get; set; }
     public long AverageMemoryUsage { get; set; }
-    public Dictionary<string, double> CustomMetrics { get; set; } = new();
+    public Dictionary<string, double> CustomMetrics { get; set; } = [];
 }
 
 public sealed class TimeSeriesData
@@ -69,7 +69,7 @@ public sealed class TimeSeriesData
     public string MetricName { get; set; } = string.Empty;
     public double Value { get; set; }
     public string Timestamp { get; set; } = string.Empty;
-    public Dictionary<string, string> Labels { get; set; } = new();
+    public Dictionary<string, string> Labels { get; set; } = [];
 }
 
 /// <summary>
@@ -78,12 +78,12 @@ public sealed class TimeSeriesData
 public sealed class OpenTelemetryMetricsData
 {
     public OpenTelemetryResource Resource { get; set; } = new();
-    public List<OpenTelemetryMetric> Metrics { get; set; } = new();
+    public List<OpenTelemetryMetric> Metrics { get; set; } = [];
 }
 
 public sealed class OpenTelemetryResource
 {
-    public Dictionary<string, object> Attributes { get; set; } = new();
+    public Dictionary<string, object> Attributes { get; set; } = [];
 }
 
 public sealed class OpenTelemetryMetric
@@ -97,19 +97,19 @@ public sealed class OpenTelemetryMetric
 
 public sealed class OpenTelemetryGauge
 {
-    public List<OpenTelemetryDataPoint> DataPoints { get; set; } = new();
+    public List<OpenTelemetryDataPoint> DataPoints { get; set; } = [];
 }
 
 public sealed class OpenTelemetryHistogram
 {
-    public List<OpenTelemetryDataPoint> DataPoints { get; set; } = new();
+    public List<OpenTelemetryDataPoint> DataPoints { get; set; } = [];
 }
 
 public sealed class OpenTelemetryDataPoint
 {
     public object Value { get; set; } = new();
     public long TimeUnixNano { get; set; }
-    public Dictionary<string, object> Attributes { get; set; } = new();
+    public Dictionary<string, object> Attributes { get; set; } = [];
     public long? Count { get; set; }
     public double? Sum { get; set; }
 }

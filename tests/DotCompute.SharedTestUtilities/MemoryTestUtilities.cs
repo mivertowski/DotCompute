@@ -28,7 +28,7 @@ public static class MemoryTestUtilities
         {
             _testName = testName;
             _currentProcess = Process.GetCurrentProcess();
-            _snapshots = new List<MemorySnapshot>();
+            _snapshots = [];
             _startTime = Stopwatch.GetTimestamp();
 
             TakeSnapshot("Start");
@@ -167,7 +167,7 @@ public static class MemoryTestUtilities
 
         public MemoryPerformanceBenchmark()
         {
-            _results = new List<BenchmarkResult>();
+            _results = [];
         }
 
         public async Task<BenchmarkResult> BenchmarkAllocation(IMemoryManager memoryManager, long bufferSize, int iterations)

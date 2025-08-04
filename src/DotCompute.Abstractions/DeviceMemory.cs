@@ -43,22 +43,13 @@ public readonly struct DeviceMemory : IEquatable<DeviceMemory>
     /// <summary>
     /// Creates an invalid device memory handle.
     /// </summary>
-    public static DeviceMemory Invalid => new DeviceMemory(IntPtr.Zero, 0);
+    public static DeviceMemory Invalid => new(IntPtr.Zero, 0);
 
-    public bool Equals(DeviceMemory other)
-    {
-        return Handle == other.Handle && Size == other.Size;
-    }
+    public bool Equals(DeviceMemory other) => Handle == other.Handle && Size == other.Size;
 
-    public override bool Equals(object? obj)
-    {
-        return obj is DeviceMemory other && Equals(other);
-    }
+    public override bool Equals(object? obj) => obj is DeviceMemory other && Equals(other);
 
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Handle, Size);
-    }
+    public override int GetHashCode() => HashCode.Combine(Handle, Size);
 
     public static bool operator ==(DeviceMemory left, DeviceMemory right)
     {
@@ -70,8 +61,5 @@ public readonly struct DeviceMemory : IEquatable<DeviceMemory>
         return !left.Equals(right);
     }
 
-    public override string ToString()
-    {
-        return IsValid ? $"DeviceMemory({Handle:X}, {Size} bytes)" : "DeviceMemory(Invalid)";
-    }
+    public override string ToString() => IsValid ? $"DeviceMemory({Handle:X}, {Size} bytes)" : "DeviceMemory(Invalid)";
 }

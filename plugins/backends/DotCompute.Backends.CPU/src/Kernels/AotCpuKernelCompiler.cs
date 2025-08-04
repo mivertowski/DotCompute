@@ -19,8 +19,8 @@ internal sealed class AotCpuKernelCompiler
 
     public AotCpuKernelCompiler()
     {
-        _precompiledKernels = new Dictionary<string, Func<KernelExecutionContext, Task>>();
-        _kernelMetadata = new Dictionary<string, KernelMetadata>();
+        _precompiledKernels = [];
+        _kernelMetadata = [];
 
         RegisterPrecompiledKernels();
     }
@@ -353,22 +353,13 @@ internal sealed class AotCompiledKernel : ICompiledKernel
 /// </summary>
 public sealed class KernelExecutionContext
 {
-    private readonly Dictionary<int, object> _parameters = new();
+    private readonly Dictionary<int, object> _parameters = [];
 
-    public void SetParameter(int index, object value)
-    {
-        _parameters[index] = value;
-    }
+    public void SetParameter(int index, object value) => _parameters[index] = value;
 
-    public void SetBuffer<T>(int index, Memory<T> buffer) where T : struct
-    {
-        _parameters[index] = buffer;
-    }
+    public void SetBuffer<T>(int index, Memory<T> buffer) where T : struct => _parameters[index] = buffer;
 
-    public void SetScalar<T>(int index, T value) where T : struct
-    {
-        _parameters[index] = value;
-    }
+    public void SetScalar<T>(int index, T value) where T : struct => _parameters[index] = value;
 
     public Memory<T> GetBuffer<T>(int index) where T : struct
     {

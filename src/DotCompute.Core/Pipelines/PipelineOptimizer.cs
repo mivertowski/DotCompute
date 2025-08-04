@@ -15,14 +15,14 @@ public sealed class PipelineOptimizer : IPipelineOptimizer
     /// </summary>
     public PipelineOptimizer()
     {
-        _strategies = new List<IOptimizationStrategy>
-        {
+        _strategies =
+        [
             new KernelFusionStrategy(),
             new StageReorderingStrategy(),
             new MemoryOptimizationStrategy(),
             new ParallelMergingStrategy(),
             new DeadCodeEliminationStrategy()
-        };
+        ];
     }
 
     /// <inheritdoc/>
@@ -240,12 +240,10 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
                (stage2.Dependencies.Count == 0 || stage2.Dependencies.Contains(stage1.Id));
     }
 
-    private static IPipelineStage CreateFusedKernel(KernelStage stage1, KernelStage stage2)
-    {
+    private static IPipelineStage CreateFusedKernel(KernelStage stage1, KernelStage stage2) =>
         // Create a new fused kernel that combines both stages into a single execution unit
         // This optimization reduces kernel launch overhead and intermediate memory transfers
-        return new FusedKernelStage(stage1, stage2);
-    }
+        new FusedKernelStage(stage1, stage2);
 
     private static long EstimateIntermediateBufferSize(KernelStage stage1, KernelStage stage2)
     {
@@ -370,14 +368,12 @@ internal sealed class MemoryOptimizationStrategy : IOptimizationStrategy
         });
     }
 
-    private IPipelineStage CreateMemoryOptimizedStage(IPipelineStage stage)
-    {
+    private IPipelineStage CreateMemoryOptimizedStage(IPipelineStage stage) =>
         // Wrap the stage with memory optimization that includes:
         // - Memory pooling for reduced allocations
         // - Prefetching for improved cache performance
         // - Alignment optimizations for SIMD operations
-        return new MemoryOptimizedStageWrapper(stage);
-    }
+        new MemoryOptimizedStageWrapper(stage);
 }
 
 /// <summary>
@@ -530,17 +526,13 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
         });
     }
 
-    private static HashSet<string> FindUsedOutputs(List<IPipelineStage> stages)
-    {
+    private static HashSet<string> FindUsedOutputs(List<IPipelineStage> stages) =>
         // Simplified - in practice would analyze data flow
-        return stages.SelectMany(s => s.Dependencies).ToHashSet();
-    }
+        stages.SelectMany(s => s.Dependencies).ToHashSet();
 
-    private static bool HasUsefulOutput(IPipelineStage stage, HashSet<string> usedOutputs)
-    {
+    private static bool HasUsefulOutput(IPipelineStage stage, HashSet<string> usedOutputs) =>
         // Check if stage produces useful output or has side effects
-        return usedOutputs.Contains(stage.Id) || stage.Type == PipelineStageType.Kernel;
-    }
+        usedOutputs.Contains(stage.Id) || stage.Type == PipelineStageType.Kernel;
 }
 
 /// <summary>
@@ -643,11 +635,9 @@ internal sealed class FusedKernelStage : IPipelineStage
         };
     }
 
-    public IStageMetrics GetMetrics()
-    {
+    public IStageMetrics GetMetrics() =>
         // Combine metrics from both stages
-        return _stage1.GetMetrics(); // Simplified
-    }
+        _stage1.GetMetrics(); // Simplified
 
     private static MemoryUsageStats? CombineMemoryStats(MemoryUsageStats? stats1, MemoryUsageStats? stats2)
     {
@@ -713,17 +703,13 @@ internal sealed class MemoryOptimizedStageWrapper : IPipelineStage
 
     public IStageMetrics GetMetrics() => _innerStage.GetMetrics();
 
-    private static async ValueTask OptimizeMemoryAsync(PipelineExecutionContext context)
-    {
+    private static async ValueTask OptimizeMemoryAsync(PipelineExecutionContext context) =>
         // Implement memory layout optimizations
         await context.MemoryManager.CollectAsync();
-    }
 
-    private static async ValueTask CleanupMemoryAsync(PipelineExecutionContext context)
-    {
+    private static async ValueTask CleanupMemoryAsync(PipelineExecutionContext context) =>
         // Clean up temporary memory
         await context.MemoryManager.CollectAsync();
-    }
 }
 
 /// <summary>
@@ -1059,26 +1045,20 @@ internal sealed class IntelligentBufferSizeCalculator
         return 1 * GB;
     }
 
-    private static long GetWindowsAvailableMemory()
-    {
+    private static long GetWindowsAvailableMemory() =>
         // Use performance counters or WMI to get available memory
         // Simplified implementation - in practice would use Windows APIs
-        return Environment.WorkingSet * 4; // Rough estimate
-    }
+        Environment.WorkingSet * 4; // Rough estimate
 
-    private static long GetLinuxAvailableMemory()
-    {
+    private static long GetLinuxAvailableMemory() =>
         // Parse /proc/meminfo for available memory
         // Simplified implementation
-        return Environment.WorkingSet * 4; // Rough estimate
-    }
+        Environment.WorkingSet * 4; // Rough estimate
 
-    private static long GetMacOSAvailableMemory()
-    {
+    private static long GetMacOSAvailableMemory() =>
         // Use system calls to get memory information
         // Simplified implementation
-        return Environment.WorkingSet * 4; // Rough estimate
-    }
+        Environment.WorkingSet * 4; // Rough estimate
 
     private long ApplyOperationHeuristics(long baseSize, KernelStage stage1, KernelStage stage2)
     {
@@ -1295,15 +1275,9 @@ internal sealed class IntelligentBufferSizeCalculator
     }
 
     // Alignment helper methods
-    private static long AlignTocacheLine(long size, int cacheLineSize)
-    {
-        return ((size + cacheLineSize - 1) / cacheLineSize) * cacheLineSize;
-    }
+    private static long AlignTocacheLine(long size, int cacheLineSize) => ((size + cacheLineSize - 1) / cacheLineSize) * cacheLineSize;
 
-    private static long AlignToPageBoundary(long size, long pageSize)
-    {
-        return ((size + pageSize - 1) / pageSize) * pageSize;
-    }
+    private static long AlignToPageBoundary(long size, long pageSize) => ((size + pageSize - 1) / pageSize) * pageSize;
 
     private static long AlignToWarpSize(long size, int warpSize)
     {
@@ -1312,15 +1286,9 @@ internal sealed class IntelligentBufferSizeCalculator
         return ((size + warpSizeBytes - 1) / warpSizeBytes) * warpSizeBytes;
     }
 
-    private static long AlignToMemoryTransaction(long size, int transactionSize)
-    {
-        return ((size + transactionSize - 1) / transactionSize) * transactionSize;
-    }
+    private static long AlignToMemoryTransaction(long size, int transactionSize) => ((size + transactionSize - 1) / transactionSize) * transactionSize;
 
-    private static long AlignToVectorBoundary(long size, int vectorSizeBytes)
-    {
-        return ((size + vectorSizeBytes - 1) / vectorSizeBytes) * vectorSizeBytes;
-    }
+    private static long AlignToVectorBoundary(long size, int vectorSizeBytes) => ((size + vectorSizeBytes - 1) / vectorSizeBytes) * vectorSizeBytes;
 
     private static long AlignToNextPowerOfTwo(long size, int minAlignment)
     {

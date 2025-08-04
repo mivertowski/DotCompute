@@ -556,10 +556,7 @@ public sealed class KernelPipeline : IKernelPipeline
         return false;
     }
 
-    private bool CanMergeParallelStages()
-    {
-        return _stages.Any(s => s.Type == PipelineStageType.Parallel);
-    }
+    private bool CanMergeParallelStages() => _stages.Any(s => s.Type == PipelineStageType.Parallel);
 
     private static double CalculateComputeUtilization(List<StageExecutionResult> results)
     {
@@ -609,8 +606,5 @@ public sealed class KernelPipeline : IKernelPipeline
         return transferTimes;
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_isDisposed, nameof(KernelPipeline));
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, nameof(KernelPipeline));
 }

@@ -118,7 +118,9 @@ public sealed class CpuThreadPool : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(work);
 
         if (_disposed != 0)
+        {
             throw new ObjectDisposedException(nameof(CpuThreadPool));
+        }
 
         var workItem = new WorkItem(work, cancellationToken);
 
@@ -145,7 +147,9 @@ public sealed class CpuThreadPool : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(work);
 
         if (_disposed != 0)
+        {
             throw new ObjectDisposedException(nameof(CpuThreadPool));
+        }
 
         var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -184,13 +188,17 @@ public sealed class CpuThreadPool : IAsyncDisposable
         ArgumentNullException.ThrowIfNull(workItems);
 
         if (_disposed != 0)
+        {
             throw new ObjectDisposedException(nameof(CpuThreadPool));
+        }
 
         // Performance optimization: Convert to array once to avoid multiple enumeration
         var workArray = workItems as Action[] ?? workItems.ToArray();
 
         if (workArray.Length == 0)
+        {
             return;
+        }
 
         // Optimize for small batches - direct enqueue
         if (workArray.Length <= 4)
@@ -369,7 +377,9 @@ public sealed class CpuThreadPool : IAsyncDisposable
     private static void ExecuteWorkItem(WorkItem workItem)
     {
         if (workItem.CancellationToken.IsCancellationRequested)
+        {
             return;
+        }
 
         try
         {
@@ -603,10 +613,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         }
     }
 
-    private static void CPU_ZERO(ref cpu_set_t set)
-    {
-        set.__bits = new ulong[set.__bits.Length];
-    }
+    private static void CPU_ZERO(ref cpu_set_t set) => set.__bits = new ulong[set.__bits.Length];
 
     private static void CPU_SET(int cpu, ref cpu_set_t set)
     {

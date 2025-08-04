@@ -67,10 +67,7 @@ public class DeviceMetrics : IDeviceMetrics
     /// <summary>
     /// Records a memory transfer.
     /// </summary>
-    public void RecordMemoryTransfer(long bytes, TimeSpan duration, bool toDevice)
-    {
-        _transferStats.RecordTransfer(bytes, duration, toDevice);
-    }
+    public void RecordMemoryTransfer(long bytes, TimeSpan duration, bool toDevice) => _transferStats.RecordTransfer(bytes, duration, toDevice);
 
     /// <summary>
     /// Resets all metrics.

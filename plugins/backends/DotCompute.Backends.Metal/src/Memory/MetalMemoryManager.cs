@@ -322,22 +322,14 @@ internal sealed class MetalMemoryBufferView : IMemoryBuffer
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
 
     public ValueTask CopyToHostAsync<T>(
         Memory<T> destination,
         long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
 
-    public ValueTask DisposeAsync()
-    {
+    public ValueTask DisposeAsync() =>
         // Views don't own the underlying buffer
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 }

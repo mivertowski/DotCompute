@@ -8,8 +8,8 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// </summary>
 internal sealed class ExtendedKernelExecutionContext
 {
-    private readonly Dictionary<int, object> _parameters = new();
-    private readonly Dictionary<int, Memory<byte>> _buffers = new();
+    private readonly Dictionary<int, object> _parameters = [];
+    private readonly Dictionary<int, Memory<byte>> _buffers = [];
     private readonly DotCompute.Core.KernelExecutionContext _innerContext;
 
     public ExtendedKernelExecutionContext()
@@ -28,26 +28,17 @@ internal sealed class ExtendedKernelExecutionContext
     /// <summary>
     /// Sets a parameter at the given index.
     /// </summary>
-    public void SetParameter(int index, object parameter)
-    {
-        _parameters[index] = parameter;
-    }
+    public void SetParameter(int index, object parameter) => _parameters[index] = parameter;
 
     /// <summary>
     /// Gets a parameter at the given index.
     /// </summary>
-    public object? GetParameter(int index)
-    {
-        return _parameters.TryGetValue(index, out var value) ? value : null;
-    }
+    public object? GetParameter(int index) => _parameters.TryGetValue(index, out var value) ? value : null;
 
     /// <summary>
     /// Sets a buffer at the given index.
     /// </summary>
-    public void SetBuffer(int index, Memory<byte> buffer)
-    {
-        _buffers[index] = buffer;
-    }
+    public void SetBuffer(int index, Memory<byte> buffer) => _buffers[index] = buffer;
 
     /// <summary>
     /// Sets a typed buffer at the given index.

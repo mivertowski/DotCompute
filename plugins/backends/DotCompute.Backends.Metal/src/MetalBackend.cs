@@ -16,7 +16,7 @@ public sealed class MetalBackend : IDisposable
 {
     private readonly ILogger<MetalBackend> _logger;
     private readonly ILoggerFactory _loggerFactory;
-    private readonly List<MetalAccelerator> _accelerators = new();
+    private readonly List<MetalAccelerator> _accelerators = [];
     private bool _disposed;
 
     public MetalBackend(ILogger<MetalBackend> logger, ILoggerFactory loggerFactory)
@@ -351,7 +351,10 @@ public sealed class MetalBackend : IDisposable
 
             // Cleanup
             if (pipeline != IntPtr.Zero)
+            {
                 MetalNative.ReleaseComputePipelineState(pipeline);
+            }
+
             MetalNative.ReleaseFunction(function);
             MetalNative.ReleaseLibrary(library);
 
@@ -395,7 +398,7 @@ public sealed class MetalBackend : IDisposable
     private void LogMetalDeviceCapabilities(MetalAccelerator accelerator)
     {
         var info = accelerator.Info;
-        var capabilities = info.Capabilities ?? new Dictionary<string, object>();
+        var capabilities = info.Capabilities ?? [];
 
         _logger.LogInformation("Metal Device: {Name} (ID: {Id})", info.Name, info.Id);
         _logger.LogInformation("  Device Type: {DeviceType}", info.DeviceType);
@@ -405,19 +408,29 @@ public sealed class MetalBackend : IDisposable
         _logger.LogInformation("  Compute Units: {ComputeUnits}", info.ComputeUnits);
 
         if (capabilities.TryGetValue("MaxThreadgroupSize", out var maxThreadgroup))
+        {
             _logger.LogInformation("  Max Threadgroup Size: {MaxThreadgroup}", maxThreadgroup);
+        }
 
         if (capabilities.TryGetValue("MaxThreadsPerThreadgroup", out var maxThreadsPerGroup))
+        {
             _logger.LogInformation("  Max Threads per Threadgroup: {MaxThreads}", maxThreadsPerGroup);
+        }
 
         if (capabilities.TryGetValue("UnifiedMemory", out var unified) && (bool)unified)
+        {
             _logger.LogInformation("  Unified Memory: Supported");
+        }
 
         if (capabilities.TryGetValue("SupportsFamily", out var families))
+        {
             _logger.LogInformation("  GPU Families: {Families}", families);
+        }
 
         if (capabilities.TryGetValue("Location", out var location))
+        {
             _logger.LogInformation("  Location: {Location}", location);
+        }
     }
 
     public void Dispose()

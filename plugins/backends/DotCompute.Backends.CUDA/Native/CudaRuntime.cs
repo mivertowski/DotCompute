@@ -546,15 +546,9 @@ public class NvrtcException : Exception
 /// </summary>
 public static class ComputeCapability
 {
-    public static string GetArchString(int major, int minor)
-    {
-        return $"compute_{major}{minor}";
-    }
+    public static string GetArchString(int major, int minor) => $"compute_{major}{minor}";
 
-    public static string GetCodeString(int major, int minor)
-    {
-        return $"sm_{major}{minor}";
-    }
+    public static string GetCodeString(int major, int minor) => $"sm_{major}{minor}";
 
     public static (int major, int minor) ParseFromDevice(int deviceId)
     {

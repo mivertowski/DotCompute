@@ -18,7 +18,7 @@ namespace DotCompute.Backends.CPU.Accelerators;
 public sealed class CpuMemoryManager : IMemoryManager, IDisposable
 {
     private readonly object _lock = new();
-    private readonly List<WeakReference<CpuMemoryBuffer>> _buffers = new();
+    private readonly List<WeakReference<CpuMemoryBuffer>> _buffers = [];
     private readonly NumaTopology _topology;
     private readonly NumaMemoryPolicy _defaultPolicy;
     private long _totalAllocated;
@@ -102,15 +102,14 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         ArgumentNullException.ThrowIfNull(buffer);
 
         if (buffer is not CpuMemoryBuffer cpuBuffer)
+        {
             throw new ArgumentException("Buffer must be a CPU memory buffer", nameof(buffer));
+        }
 
         return cpuBuffer.CreateView(offset, length);
     }
 
-    internal void OnBufferDisposed(long sizeInBytes)
-    {
-        Interlocked.Add(ref _totalAllocated, -sizeInBytes);
-    }
+    internal void OnBufferDisposed(long sizeInBytes) => Interlocked.Add(ref _totalAllocated, -sizeInBytes);
 
     /// <summary>
     /// Creates a memory policy for the current thread's CPU affinity.
@@ -180,7 +179,9 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
             return;
+        }
 
         lock (_lock)
         {
@@ -230,17 +231,13 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return _topology.GetNodeForProcessor(currentCpu);
     }
 
-    private int GetFirstFitNode(long sizeInBytes)
-    {
+    private int GetFirstFitNode(long sizeInBytes) =>
         // Simple first-fit allocation
-        return 0;
-    }
+        0;
 
-    private int GetBestFitNode(long sizeInBytes)
-    {
+    private int GetBestFitNode(long sizeInBytes) =>
         // Select node with most available memory
-        return _topology.GetNodesByAvailableMemory().FirstOrDefault();
-    }
+        _topology.GetNodesByAvailableMemory().FirstOrDefault();
 
     private int GetInterleavedNode(NumaMemoryPolicy policy)
     {
@@ -253,10 +250,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return nodeArray[threadId % nodeArray.Length];
     }
 
-    private int GetExplicitNode(NumaMemoryPolicy policy)
-    {
-        return policy.PreferredNodes.FirstOrDefault();
-    }
+    private int GetExplicitNode(NumaMemoryPolicy policy) => policy.PreferredNodes.FirstOrDefault();
 
     private static int GetCurrentProcessorNumber()
     {
@@ -311,7 +305,9 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed != 0)
+        {
             throw new ObjectDisposedException(nameof(CpuMemoryManager));
+        }
     }
 }
 
@@ -396,13 +392,17 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         ThrowIfDisposed();
 
         if ((_options & MemoryOptions.WriteOnly) != 0 && (_options & MemoryOptions.ReadOnly) != 0)
+        {
             throw new InvalidOperationException("Cannot write to read-only buffer");
+        }
 
         var elementSize = Marshal.SizeOf<T>();
         var bytesToCopy = source.Length * elementSize;
 
         if (offset < 0 || offset + bytesToCopy > _viewLength)
+        {
             throw new ArgumentOutOfRangeException(nameof(offset));
+        }
 
         var destMemory = GetMemory().Slice((int)offset, bytesToCopy);
         var sourceSpan = MemoryMarshal.AsBytes(source.Span);
@@ -428,13 +428,17 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         ThrowIfDisposed();
 
         if ((_options & MemoryOptions.ReadOnly) != 0 && (_options & MemoryOptions.WriteOnly) != 0)
+        {
             throw new InvalidOperationException("Cannot read from write-only buffer");
+        }
 
         var elementSize = Marshal.SizeOf<T>();
         var bytesToCopy = destination.Length * elementSize;
 
         if (offset < 0 || offset + bytesToCopy > _viewLength)
+        {
             throw new ArgumentOutOfRangeException(nameof(offset));
+        }
 
         var sourceMemory = GetMemory().Slice((int)offset, bytesToCopy);
         var destSpan = MemoryMarshal.AsBytes(destination.Span);
@@ -457,7 +461,9 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         ThrowIfDisposed();
 
         if (offset < 0 || length < 0 || offset + length > _viewLength)
+        {
             throw new ArgumentOutOfRangeException();
+        }
 
         return new CpuMemoryBuffer(this, offset, length);
     }
@@ -494,7 +500,9 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     private static void OptimizedNumaMemoryCopy(ReadOnlySpan<byte> source, Span<byte> destination, int preferredNode)
     {
         if (source.Length != destination.Length)
+        {
             throw new ArgumentException("Source and destination must have the same length");
+        }
 
         // Performance optimization: Use different strategies based on size
         var length = source.Length;
@@ -575,10 +583,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     /// Optimized memory copy using SIMD instructions for better performance.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    private static void OptimizedMemoryCopy(ReadOnlySpan<byte> source, Span<byte> destination)
-    {
-        OptimizedNumaMemoryCopy(source, destination, 0);
-    }
+    private static void OptimizedMemoryCopy(ReadOnlySpan<byte> source, Span<byte> destination) => OptimizedNumaMemoryCopy(source, destination, 0);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void MemoryCopyAvx512(ReadOnlySpan<byte> source, Span<byte> destination)
@@ -733,7 +738,9 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
             return;
+        }
 
         // Only dispose if we're the original buffer, not a view
         if (_viewOffset == 0 && _viewLength == _sizeInBytes)
@@ -746,7 +753,9 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     private void ThrowIfDisposed()
     {
         if (_disposed != 0)
+        {
             throw new ObjectDisposedException(nameof(CpuMemoryBuffer));
+        }
     }
 }
 
@@ -763,13 +772,17 @@ internal sealed class NativeMemoryOwner : IMemoryOwner<byte>
     public unsafe NativeMemoryOwner(long size)
     {
         if (size <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(size));
+        }
 
         _size = size;
         _ptr = (byte*)NativeMemory.AlignedAlloc((nuint)size, 64); // 64-byte aligned for SIMD
 
         if (_ptr == null)
+        {
             throw new InvalidOperationException($"Failed to allocate {size} bytes of native memory");
+        }
     }
 
     public Memory<byte> Memory
@@ -804,7 +817,9 @@ internal sealed class NativeMemoryOwner : IMemoryOwner<byte>
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(NativeMemoryOwner));
+        }
     }
 }
 
@@ -827,7 +842,9 @@ internal sealed unsafe class UnmanagedMemoryManager<T> : MemoryManager<T> where 
     public override MemoryHandle Pin(int elementIndex = 0)
     {
         if (elementIndex < 0 || elementIndex >= _length)
+        {
             throw new ArgumentOutOfRangeException(nameof(elementIndex));
+        }
 
         return new MemoryHandle(_ptr + elementIndex);
     }
@@ -851,7 +868,9 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
     public unsafe NumaAwareMemoryOwner(long size, int preferredNode, NumaMemoryPolicy policy)
     {
         if (size <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(size));
+        }
 
         _size = size;
         _preferredNode = preferredNode;
@@ -861,7 +880,9 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
         _ptr = AllocateNumaMemory(size, preferredNode, policy);
 
         if (_ptr == null)
+        {
             throw new InvalidOperationException($"Failed to allocate {size} bytes on NUMA node {preferredNode}");
+        }
 
         // Perform first-touch allocation to ensure pages are allocated on the correct node
         PerformFirstTouchAllocation();
@@ -991,7 +1012,9 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
     private void ThrowIfDisposed()
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(NumaAwareMemoryOwner));
+        }
     }
 
     #region Windows NUMA API

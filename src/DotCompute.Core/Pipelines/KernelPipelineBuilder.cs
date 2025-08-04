@@ -22,9 +22,9 @@ public sealed class KernelPipelineBuilder : IKernelPipelineBuilder
     /// </summary>
     public KernelPipelineBuilder()
     {
-        _stages = new List<IPipelineStage>();
-        _metadata = new Dictionary<string, object>();
-        _eventHandlers = new List<Action<PipelineEvent>>();
+        _stages = [];
+        _metadata = [];
+        _eventHandlers = [];
         _name = $"Pipeline_{Guid.NewGuid():N}";
         _optimizationSettings = new PipelineOptimizationSettings();
     }
@@ -147,10 +147,10 @@ public sealed class KernelPipelineBuilder : IKernelPipelineBuilder
         return new KernelPipeline(
             id,
             _name,
-            new List<IPipelineStage>(_stages),
+            [.. _stages],
             _optimizationSettings,
             new Dictionary<string, object>(_metadata),
-            new List<Action<PipelineEvent>>(_eventHandlers),
+            [.. _eventHandlers],
             _errorHandler);
     }
 
@@ -182,19 +182,17 @@ internal sealed class KernelStageBuilder : IKernelStageBuilder
     {
         _name = name ?? throw new ArgumentNullException(nameof(name));
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
-        _dependencies = new List<string>();
-        _metadata = new Dictionary<string, object>();
-        _inputMappings = new Dictionary<string, string>();
-        _outputMappings = new Dictionary<string, string>();
-        _parameters = new Dictionary<string, object>();
+        _dependencies = [];
+        _metadata = [];
+        _inputMappings = [];
+        _outputMappings = [];
+        _parameters = [];
     }
 
     /// <inheritdoc/>
-    public IKernelStageBuilder WithName(string name)
-    {
+    public IKernelStageBuilder WithName(string name) =>
         // Name is set in constructor and cannot be changed
-        return this;
-    }
+        this;
 
     /// <inheritdoc/>
     public IKernelStageBuilder WithWorkSize(params long[] globalWorkSize)
@@ -270,7 +268,7 @@ internal sealed class KernelStageBuilder : IKernelStageBuilder
             new Dictionary<string, string>(_inputMappings),
             new Dictionary<string, string>(_outputMappings),
             new Dictionary<string, object>(_parameters),
-            new List<string>(_dependencies),
+            [.. _dependencies],
             new Dictionary<string, object>(_metadata),
             _memoryHint,
             _priority);
@@ -289,7 +287,7 @@ internal sealed class ParallelStageBuilder : IParallelStageBuilder
 
     public ParallelStageBuilder()
     {
-        _parallelStages = new List<IPipelineStage>();
+        _parallelStages = [];
     }
 
     /// <inheritdoc/>
@@ -352,7 +350,7 @@ internal sealed class ParallelStageBuilder : IParallelStageBuilder
         return new ParallelStage(
             $"Parallel_{Guid.NewGuid():N}",
             "Parallel Execution",
-            new List<IPipelineStage>(_parallelStages),
+            [.. _parallelStages],
             _maxDegreeOfParallelism,
             _synchronizationMode,
             _hasBarrier);

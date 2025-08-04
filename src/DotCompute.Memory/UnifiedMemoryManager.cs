@@ -140,11 +140,9 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         long sourceOffset = 0,
         long destinationOffset = 0,
         long? elementCount = null,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
+        CancellationToken cancellationToken = default) where T : unmanaged =>
         // Use the buffer's copy method
         await source.CopyToAsync(destination, cancellationToken);
-    }
 
     /// <summary>
     /// Gets memory usage statistics.
@@ -169,10 +167,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
     /// <summary>
     /// Gets the memory pool for the specified type.
     /// </summary>
-    public MemoryPool<T> GetPool<T>() where T : unmanaged
-    {
-        return (MemoryPool<T>)_pools.GetOrAdd(typeof(T), _ => new MemoryPool<T>(_baseMemoryManager));
-    }
+    public MemoryPool<T> GetPool<T>() where T : unmanaged => (MemoryPool<T>)_pools.GetOrAdd(typeof(T), _ => new MemoryPool<T>(_baseMemoryManager));
 
     /// <summary>
     /// Gets memory statistics and performance metrics.
@@ -648,10 +643,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_isDisposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, this);
 
     private static (long totalAllocatedBytes, long totalRetainedBytes, long totalReuses)? GetPoolStatsViaInterface(
         object pool)

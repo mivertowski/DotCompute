@@ -16,7 +16,7 @@ public class AcceleratorRuntime : IDisposable, IAsyncDisposable
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<AcceleratorRuntime> _logger;
-    private readonly List<IAccelerator> _accelerators = new();
+    private readonly List<IAccelerator> _accelerators = [];
     private readonly SemaphoreSlim _disposeLock = new(1, 1);
     private bool _disposed;
 
@@ -47,10 +47,7 @@ public class AcceleratorRuntime : IDisposable, IAsyncDisposable
     /// <summary>
     /// Get accelerator by type
     /// </summary>
-    public IAccelerator? GetAccelerator(string deviceType)
-    {
-        return _accelerators.FirstOrDefault(a => a.Info.DeviceType == deviceType);
-    }
+    public IAccelerator? GetAccelerator(string deviceType) => _accelerators.FirstOrDefault(a => a.Info.DeviceType == deviceType);
 
     private Task DiscoverAcceleratorsAsync()
     {

@@ -25,13 +25,13 @@ namespace DotCompute.Plugins.Core
         public PluginSystem(ILogger<PluginSystem> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-            _plugins = new Dictionary<string, LoadedPlugin>();
+            _plugins = [];
         }
 
         public PluginSystem(Configuration.PluginOptions options, ILogger<PluginSystem>? logger = null)
         {
             _logger = logger ?? new NullLogger<PluginSystem>();
-            _plugins = new Dictionary<string, LoadedPlugin>();
+            _plugins = [];
         }
 
         /// <summary>
@@ -45,7 +45,9 @@ namespace DotCompute.Plugins.Core
         public Task InitializeAsync(CancellationToken cancellationToken = default)
         {
             if (_disposed)
+            {
                 throw new ObjectDisposedException(nameof(PluginSystem));
+            }
 
             _isInitialized = true;
             return Task.CompletedTask;
@@ -71,7 +73,9 @@ namespace DotCompute.Plugins.Core
         public Task<IBackendPlugin?> LoadPluginAsync(IBackendPlugin plugin, CancellationToken cancellationToken = default)
         {
             if (_disposed)
+            {
                 throw new ObjectDisposedException(nameof(PluginSystem));
+            }
 
             ArgumentNullException.ThrowIfNull(plugin);
 
@@ -114,7 +118,9 @@ namespace DotCompute.Plugins.Core
         public Task<IBackendPlugin?> LoadPluginAsync(string assemblyPath, string pluginTypeName, CancellationToken cancellationToken = default)
         {
             if (_disposed)
+            {
                 throw new ObjectDisposedException(nameof(PluginSystem));
+            }
 
             try
             {
@@ -177,7 +183,9 @@ namespace DotCompute.Plugins.Core
         public async Task<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken = default)
         {
             if (_disposed)
+            {
                 throw new ObjectDisposedException(nameof(PluginSystem));
+            }
 
             lock (_lock)
             {
@@ -302,7 +310,9 @@ namespace DotCompute.Plugins.Core
         public void Dispose()
         {
             if (_disposed)
+            {
                 return;
+            }
 
             _disposed = true;
 
@@ -336,6 +346,13 @@ namespace DotCompute.Plugins.Core
             _resolver = new AssemblyDependencyResolver(pluginPath);
         }
 
+        /// <summary>
+        /// When overridden in a derived class, allows an assembly to be resolved based on its <see cref="System.Reflection.AssemblyName" />.
+        /// </summary>
+        /// <param name="assemblyName">The object that describes the assembly to be resolved.</param>
+        /// <returns>
+        /// The resolved assembly, or <see langword="null" />.
+        /// </returns>
         protected override Assembly? Load(AssemblyName assemblyName)
         {
             var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);

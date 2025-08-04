@@ -113,17 +113,17 @@ public sealed class CpuAccelerator : IAccelerator
     }
 
     /// <inheritdoc/>
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) =>
         // CPU operations are synchronous by default
-        return ValueTask.CompletedTask;
-    }
+        ValueTask.CompletedTask;
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
             return;
+        }
 
         _logger.LogInformation("Disposing CPU accelerator");
 
@@ -239,23 +239,16 @@ public sealed class CpuAccelerator : IAccelerator
         return 8L * 1024 * 1024 * 1024; // 8GB default
     }
 
-    private static long GetCacheSize()
-    {
+    private static long GetCacheSize() =>
         // L3 cache size estimation
         // In reality, you'd query this from the system
-        return 8 * 1024 * 1024; // 8MB default
-    }
+        8 * 1024 * 1024; // 8MB default
 
-    private static int GetNumaNodeCount()
-    {
-        return NumaInfo.Topology.NodeCount;
-    }
+    private static int GetNumaNodeCount() => NumaInfo.Topology.NodeCount;
 
-    private static int GetCacheLineSize()
-    {
+    private static int GetCacheLineSize() =>
         // Most modern CPUs use 64-byte cache lines
-        return 64;
-    }
+        64;
 
     private static CoreKernelDefinition ConvertToCoreKernelDefinition(KernelDefinition definition)
     {
@@ -319,16 +312,11 @@ internal sealed class CompiledKernelAdapter : ICompiledKernel
 
     public string Name => _coreKernel.Name;
 
-    public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
-    {
+    public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) =>
         // Direct pass-through to the core kernel (both use KernelArguments)
         await _coreKernel.ExecuteAsync(arguments, cancellationToken).ConfigureAwait(false);
-    }
 
-    public ValueTask DisposeAsync()
-    {
-        return _coreKernel.DisposeAsync();
-    }
+    public ValueTask DisposeAsync() => _coreKernel.DisposeAsync();
 }
 
 /// <summary>

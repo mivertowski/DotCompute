@@ -88,10 +88,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     /// <summary>
     /// Sets the compiled delegate for direct kernel execution.
     /// </summary>
-    public void SetCompiledDelegate(Delegate compiledDelegate)
-    {
-        _compiledDelegate = compiledDelegate ?? throw new ArgumentNullException(nameof(compiledDelegate));
-    }
+    public void SetCompiledDelegate(Delegate compiledDelegate) => _compiledDelegate = compiledDelegate ?? throw new ArgumentNullException(nameof(compiledDelegate));
 
     public async ValueTask ExecuteAsync(
         KernelArguments arguments,
@@ -605,7 +602,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         // Extract arguments based on their types
         var args = context.Arguments;
         if (args == null || args.Length < 2)
+        {
             return; // Need at least 2 arguments for most operations
+        }
 
         // For demonstration, we'll implement a simple vector addition kernel
         // In production, this would dispatch to the actual compiled kernel code
@@ -762,7 +761,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     public ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
             return ValueTask.CompletedTask;
+        }
 
         // Clean up any native resources
         // In a real implementation, this might free JIT-compiled code
@@ -777,7 +778,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         output = null;
 
         if (context.Arguments == null || context.Arguments.Length < 3)
+        {
             return false;
+        }
 
         // Try to extract buffer arguments (assuming simple vector operation kernel)
         if (context.Arguments[0] is IMemoryBuffer buf1 &&
@@ -848,7 +851,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     private void ThrowIfDisposed()
     {
         if (_disposed != 0)
+        {
             throw new ObjectDisposedException(nameof(CpuCompiledKernel));
+        }
     }
 
     private static bool IsSupportedArgumentType(Type type)

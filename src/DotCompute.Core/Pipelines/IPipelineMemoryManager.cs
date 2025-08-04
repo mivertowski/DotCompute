@@ -239,20 +239,11 @@ public readonly struct MemoryLock<T> : IDisposable, IEquatable<MemoryLock<T>> wh
             "Use CopyToAsync for data retrieval instead.");
     }
 
-    public void Dispose()
-    {
-        _unlockAction?.Invoke();
-    }
+    public void Dispose() => _unlockAction?.Invoke();
 
-    public override bool Equals(object? obj)
-    {
-        throw new NotImplementedException();
-    }
+    public override bool Equals(object? obj) => throw new NotImplementedException();
 
-    public override int GetHashCode()
-    {
-        throw new NotImplementedException();
-    }
+    public override int GetHashCode() => throw new NotImplementedException();
 
     public static bool operator ==(MemoryLock<T> left, MemoryLock<T> right)
     {
@@ -264,10 +255,7 @@ public readonly struct MemoryLock<T> : IDisposable, IEquatable<MemoryLock<T>> wh
         return !(left == right);
     }
 
-    public bool Equals(MemoryLock<T> other)
-    {
-        throw new NotImplementedException();
-    }
+    public bool Equals(MemoryLock<T> other) => throw new NotImplementedException();
 }
 
 /// <summary>
