@@ -157,7 +157,7 @@ public class UnifiedBufferTests : IDisposable
     [InlineData(typeof(long), 8)]
     [InlineData(typeof(float), 4)]
     [InlineData(typeof(double), 8)]
-    [RequiresDynamicCode()]
+    [RequiresDynamicCode("This test uses reflection and Activator.CreateInstance")]
     public void SizeInBytes_ForDifferentTypes_ShouldBeCorrect(Type type, int expectedElementSize)
     {
         // Act

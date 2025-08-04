@@ -75,8 +75,8 @@ public class CudaKernelCompiler : IDisposable
     private readonly string _cacheDirectory;
     private bool _disposed;
 
-    [RequiresUnreferencedCode()]
-    [RequiresDynamicCode()]
+    [RequiresUnreferencedCode("This type uses runtime code generation and reflection")]
+    [RequiresDynamicCode("This type uses runtime code generation for CUDA kernel compilation")]
     public CudaKernelCompiler(CudaContext context, ILogger logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
