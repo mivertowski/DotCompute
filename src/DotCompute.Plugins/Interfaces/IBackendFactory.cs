@@ -13,37 +13,37 @@ public interface IBackendFactory
     /// <summary>
     /// Gets the name of this backend.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>
     /// Gets the description of this backend.
     /// </summary>
-    string Description { get; }
+    public string Description { get; }
 
     /// <summary>
     /// Gets the version of this backend.
     /// </summary>
-    Version Version { get; }
+    public Version Version { get; }
 
     /// <summary>
     /// Determines if this backend is available on the current system.
     /// </summary>
-    bool IsAvailable();
+    public bool IsAvailable();
 
     /// <summary>
     /// Creates all available accelerators for this backend.
     /// </summary>
-    IEnumerable<IAccelerator> CreateAccelerators();
+    public IEnumerable<IAccelerator> CreateAccelerators();
 
     /// <summary>
     /// Creates the default accelerator for this backend.
     /// </summary>
-    IAccelerator? CreateDefaultAccelerator();
+    public IAccelerator? CreateDefaultAccelerator();
 
     /// <summary>
     /// Gets the capabilities of this backend.
     /// </summary>
-    BackendCapabilities GetCapabilities();
+    public BackendCapabilities GetCapabilities();
 }
 
 /// <summary>
@@ -109,5 +109,5 @@ public class BackendCapabilities
     /// <summary>
     /// List of supported features specific to this backend.
     /// </summary>
-    public string[] SupportedFeatures { get; set; } = Array.Empty<string>();
+    public IReadOnlyList<string> SupportedFeatures { get; set; } = Array.Empty<string>();
 }

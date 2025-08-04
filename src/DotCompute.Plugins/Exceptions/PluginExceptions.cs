@@ -169,7 +169,7 @@ namespace DotCompute.Plugins.Exceptions
     [Serializable]
     public class PluginValidationException : PluginException
     {
-        public string[]? ValidationErrors { get; }
+        public IReadOnlyList<string>? ValidationErrors { get; }
 
         public PluginValidationException() { }
 
@@ -178,7 +178,7 @@ namespace DotCompute.Plugins.Exceptions
         public PluginValidationException(string message, Exception innerException)
             : base(message, innerException) { }
 
-        public PluginValidationException(string message, string pluginId, string[] validationErrors)
+        public PluginValidationException(string message, string pluginId, IReadOnlyList<string> validationErrors)
             : base(message, pluginId)
         {
             ValidationErrors = validationErrors;

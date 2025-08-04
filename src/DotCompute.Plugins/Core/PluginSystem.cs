@@ -9,6 +9,8 @@ using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - plugin loading has dynamic logging requirements
+
 namespace DotCompute.Plugins.Core
 {
     /// <summary>
@@ -44,10 +46,7 @@ namespace DotCompute.Plugins.Core
         /// </summary>
         public Task InitializeAsync(CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(PluginSystem));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             _isInitialized = true;
             return Task.CompletedTask;
@@ -72,10 +71,7 @@ namespace DotCompute.Plugins.Core
         /// </summary>
         public Task<IBackendPlugin?> LoadPluginAsync(IBackendPlugin plugin, CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(PluginSystem));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             ArgumentNullException.ThrowIfNull(plugin);
 
@@ -117,10 +113,7 @@ namespace DotCompute.Plugins.Core
         /// </summary>
         public Task<IBackendPlugin?> LoadPluginAsync(string assemblyPath, string pluginTypeName, CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(PluginSystem));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             try
             {
@@ -130,10 +123,14 @@ namespace DotCompute.Plugins.Core
                 var context = new PluginAssemblyLoadContext(assemblyPath);
 
                 // Load the assembly
+                #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic assembly loading
                 var assembly = context.LoadFromAssemblyPath(assemblyPath);
+                #pragma warning restore IL2026
 
                 // Find the plugin type
+                #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic type loading
                 var pluginType = assembly.GetType(pluginTypeName);
+                #pragma warning restore IL2026
                 if (pluginType == null)
                 {
                     _logger.LogError("Plugin type {Type} not found in assembly", pluginTypeName);
@@ -148,7 +145,9 @@ namespace DotCompute.Plugins.Core
                 }
 
                 // Create instance - use factory method for AOT compatibility
+                #pragma warning disable IL2072 // DynamicallyAccessedMembers - Plugin instantiation requires dynamic type handling
                 var instance = CreatePluginInstance(pluginType);
+                #pragma warning restore IL2072
                 if (instance == null)
                 {
                     _logger.LogError("Failed to create instance of {Type}", pluginTypeName);
@@ -180,19 +179,16 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Unloads a plugin.
         /// </summary>
-        public async Task<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken = default)
+        public Task<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken = default)
         {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(nameof(PluginSystem));
-            }
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             lock (_lock)
             {
                 if (!_plugins.TryGetValue(pluginId, out var loadedPlugin))
                 {
                     _logger.LogWarning("Plugin {Id} not found", pluginId);
-                    return false;
+                    return Task.FromResult(false);
                 }
 
                 try
@@ -209,12 +205,12 @@ namespace DotCompute.Plugins.Core
                     loadedPlugin.LoadContext.Unload();
 
                     _logger.LogInformation("Successfully unloaded plugin {Id}", pluginId);
-                    return true;
+                    return Task.FromResult(true);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogError(ex, "Failed to unload plugin {Id}", pluginId);
-                    return false;
+                    return Task.FromResult(false);
                 }
             }
         }
@@ -246,7 +242,9 @@ namespace DotCompute.Plugins.Core
         /// </summary>
         public static IEnumerable<Type> DiscoverPluginTypes(Assembly assembly)
         {
+            #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin discovery requires type enumeration
             return assembly.GetTypes()
+            #pragma warning restore IL2026
                 .Where(t => !t.IsAbstract &&
                            !t.IsInterface &&
                            typeof(IBackendPlugin).IsAssignableFrom(t));
@@ -255,23 +253,25 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Discovers the first plugin type in an assembly.
         /// </summary>
-        private async Task<string?> DiscoverPluginTypeAsync(string assemblyPath)
+        private Task<string?> DiscoverPluginTypeAsync(string assemblyPath)
         {
             try
             {
                 // Create temporary load context
                 var context = new PluginAssemblyLoadContext(assemblyPath);
+                #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic assembly loading
                 var assembly = context.LoadFromAssemblyPath(assemblyPath);
+                #pragma warning restore IL2026
 
                 var pluginTypes = DiscoverPluginTypes(assembly);
                 var firstType = pluginTypes.FirstOrDefault();
 
-                return firstType?.FullName;
+                return Task.FromResult(firstType?.FullName);
             }
             catch (Exception ex)
             {
                 _logger?.LogError(ex, "Failed to discover plugin type in assembly {Path}", assemblyPath);
-                return null;
+                return Task.FromResult<string?>(null);
             }
         }
 
@@ -309,23 +309,34 @@ namespace DotCompute.Plugins.Core
 
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
             if (_disposed)
             {
                 return;
             }
 
-            _disposed = true;
-
-            lock (_lock)
+            if (disposing)
             {
-                foreach (var plugin in _plugins.ToList())
+                lock (_lock)
                 {
-                    UnloadPluginAsync(plugin.Key).GetAwaiter().GetResult();
+                    foreach (var plugin in _plugins.ToList())
+                    {
+                        #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - acceptable in Dispose pattern
+                        UnloadPluginAsync(plugin.Key).GetAwaiter().GetResult();
+                        #pragma warning restore VSTHRD002
+                    }
                 }
             }
+
+            _disposed = true;
         }
 
-        private class LoadedPlugin
+        private sealed class LoadedPlugin
         {
             public IBackendPlugin Plugin { get; set; } = null!;
             public PluginAssemblyLoadContext LoadContext { get; set; } = null!;
@@ -358,7 +369,9 @@ namespace DotCompute.Plugins.Core
             var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
             if (assemblyPath != null)
             {
+                #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin assembly loading requires dynamic loading
                 return LoadFromAssemblyPath(assemblyPath);
+                #pragma warning restore IL2026
             }
 
             return null;

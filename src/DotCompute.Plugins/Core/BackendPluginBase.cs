@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - base plugin class has dynamic logging needs
+
 namespace DotCompute.Plugins.Core
 {
     /// <summary>
@@ -96,9 +98,7 @@ namespace DotCompute.Plugins.Core
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
 
         /// <inheritdoc/>
-        public virtual void ConfigureServices(IServiceCollection services, IConfiguration configuration) =>
-            // Base implementation - derived classes can override
-            services.AddSingleton(this);
+        public virtual void ConfigureServices(IServiceCollection services, IConfiguration configuration) => services.AddSingleton(this);
 
         /// <inheritdoc/>
         public virtual async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
@@ -232,9 +232,7 @@ namespace DotCompute.Plugins.Core
         }
 
         /// <inheritdoc/>
-        public virtual string GetConfigurationSchema() =>
-            // Base implementation returns empty schema
-            "{}";
+        public virtual string GetConfigurationSchema() => "{}";
 
         /// <inheritdoc/>
         public virtual async Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default)
@@ -259,7 +257,7 @@ namespace DotCompute.Plugins.Core
                 // Allow derived classes to add custom metrics
                 OnUpdateMetrics(_metrics);
 
-                return new PluginMetrics
+                var result = new PluginMetrics
                 {
                     Timestamp = _metrics.Timestamp,
                     Uptime = _metrics.Uptime,
@@ -267,32 +265,33 @@ namespace DotCompute.Plugins.Core
                     ErrorCount = _metrics.ErrorCount,
                     AverageResponseTime = _metrics.AverageResponseTime,
                     MemoryUsage = _metrics.MemoryUsage,
-                    CpuUsage = _metrics.CpuUsage,
-                    CustomMetrics = new Dictionary<string, object>(_metrics.CustomMetrics)
+                    CpuUsage = _metrics.CpuUsage
                 };
+                
+                // Copy custom metrics
+                foreach (var kvp in _metrics.CustomMetrics)
+                {
+                    result.CustomMetrics[kvp.Key] = kvp.Value;
+                }
+                
+                return result;
             }
         }
 
         /// <summary>
         /// Called when the plugin needs to be initialized.
         /// </summary>
-        protected virtual Task OnInitializeAsync(CancellationToken cancellationToken) =>
-            // Override in derived classes
-            Task.CompletedTask;
+        protected virtual Task OnInitializeAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
         /// <summary>
         /// Called when the plugin needs to be started.
         /// </summary>
-        protected virtual Task OnStartAsync(CancellationToken cancellationToken) =>
-            // Override in derived classes
-            Task.CompletedTask;
+        protected virtual Task OnStartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
         /// <summary>
         /// Called when the plugin needs to be stopped.
         /// </summary>
-        protected virtual Task OnStopAsync(CancellationToken cancellationToken) =>
-            // Override in derived classes
-            Task.CompletedTask;
+        protected virtual Task OnStopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 
         /// <summary>
         /// Called when plugin validation is performed.
@@ -305,9 +304,7 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Called when configuration is updated.
         /// </summary>
-        protected virtual Task OnConfigurationUpdatedAsync(IConfiguration configuration, CancellationToken cancellationToken) =>
-            // Override in derived classes
-            Task.CompletedTask;
+        protected virtual Task OnConfigurationUpdatedAsync(IConfiguration configuration, CancellationToken cancellationToken) => Task.CompletedTask;
 
         /// <summary>
         /// Called when metrics need to be updated.
@@ -413,13 +410,7 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Throws if the plugin has been disposed.
         /// </summary>
-        protected void ThrowIfDisposed()
-        {
-            if (_disposed)
-            {
-                throw new ObjectDisposedException(GetType().Name);
-            }
-        }
+        protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType().Name);
 
         /// <inheritdoc/>
         public void Dispose()
@@ -442,11 +433,15 @@ namespace DotCompute.Plugins.Core
                     {
                         try
                         {
+                            #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - acceptable in Dispose pattern
                             StopAsync().GetAwaiter().GetResult();
+                            #pragma warning restore VSTHRD002
                         }
                         catch (Exception ex)
                         {
+                            #pragma warning disable CA1848 // Use the LoggerMessage delegates - not required for simple disposal logging
                             Logger?.LogError(ex, "Error stopping plugin {PluginId} during dispose", Id);
+                            #pragma warning restore CA1848
                         }
                     }
 

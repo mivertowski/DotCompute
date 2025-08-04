@@ -5,6 +5,8 @@ using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - simple example code
+
 namespace DotCompute.Plugins.Examples
 {
     /// <summary>

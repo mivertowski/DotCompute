@@ -1235,9 +1235,7 @@ internal sealed class UnifiedBufferSlice<T> : IBuffer<T> where T : unmanaged
         return new MappedMemory<T>(this, sliceMemory, mode);
     }
 
-    public ValueTask DisposeAsync() =>
-        // Slices don't own the underlying memory
-        ValueTask.CompletedTask;
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
 /// <summary>
@@ -1308,7 +1306,10 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IBuffer<TNew>
         var originalOffset = (offset * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
         var originalLength = (length * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
 
+        // The slice is wrapped by the view which manages its lifetime
+        #pragma warning disable CA2000 // Dispose objects before losing scope
         var parentSlice = new UnifiedBufferSlice<TOriginal>(_parent, originalOffset, originalLength);
+        #pragma warning restore CA2000 // Dispose objects before losing scope
         return new UnifiedBufferView<TOriginal, TNew>(parentSlice as UnifiedBuffer<TOriginal> ?? _parent, length);
     }
 
@@ -1384,7 +1385,5 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IBuffer<TNew>
         return new MappedMemory<TNew>(this, viewMemory.ToArray().AsMemory(), mode);
     }
 
-    public ValueTask DisposeAsync() =>
-        // Views don't own the underlying memory
-        ValueTask.CompletedTask;
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

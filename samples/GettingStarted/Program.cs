@@ -5,6 +5,8 @@ using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates
+
 namespace GettingStarted;
 
 internal sealed class Program

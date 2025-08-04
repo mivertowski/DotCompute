@@ -101,7 +101,7 @@ public readonly struct ValidationResult : IEquatable<ValidationResult>
     public static ValidationResult FailureWithWarnings(string errorMessage, params string[] warnings)
         => new(false, errorMessage, warnings);
 
-    public override bool Equals(object obj) => throw new NotImplementedException();
+    public override bool Equals(object? obj) => throw new NotImplementedException();
 
     public override int GetHashCode() => throw new NotImplementedException();
 
@@ -213,7 +213,7 @@ public readonly struct CompilationMetadata : IEquatable<CompilationMetadata>
         OptimizationNotes = optimizationNotes;
     }
 
-    public override bool Equals(object obj) => throw new NotImplementedException();
+    public override bool Equals(object? obj) => throw new NotImplementedException();
 
     public override int GetHashCode() => throw new NotImplementedException();
 

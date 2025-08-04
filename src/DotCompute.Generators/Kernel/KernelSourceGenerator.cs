@@ -330,17 +330,11 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine();
         }
 
-        private static string? GenerateCudaImplementation(KernelMethodInfo method, Compilation compilation) =>
-            // Generate CUDA kernel implementation
-            GenerateCudaKernelCode(method, compilation);
+        private static string? GenerateCudaImplementation(KernelMethodInfo method, Compilation compilation) => GenerateCudaKernelCode(method, compilation);
 
-        private static string? GenerateMetalImplementation(KernelMethodInfo method, Compilation compilation) =>
-            // Generate Metal compute shader implementation
-            GenerateMetalShaderCode(method, compilation);
+        private static string? GenerateMetalImplementation(KernelMethodInfo method, Compilation compilation) => GenerateMetalShaderCode(method, compilation);
 
-        private static string? GenerateOpenCLImplementation(KernelMethodInfo method, Compilation compilation) =>
-            // Generate OpenCL kernel implementation
-            GenerateOpenCLKernelCode(method, compilation);
+        private static string? GenerateOpenCLImplementation(KernelMethodInfo method, Compilation compilation) => GenerateOpenCLKernelCode(method, compilation);
 
         private static void GenerateKernelInvoker(
             KernelClassInfo kernelClass,

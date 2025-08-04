@@ -137,7 +137,7 @@ public readonly struct MappedMemory<T> : IDisposable, IEquatable<MappedMemory<T>
         // Buffer should handle unmapping
     }
 
-    public override bool Equals(object obj) => throw new NotImplementedException();
+    public override bool Equals(object? obj) => throw new NotImplementedException();
 
     public override int GetHashCode() => throw new NotImplementedException();
 

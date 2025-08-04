@@ -14,49 +14,49 @@ namespace DotCompute.Plugins.Interfaces
         /// <summary>
         /// Gets the unique identifier for this plugin.
         /// </summary>
-        string Id { get; }
+        public string Id { get; }
 
         /// <summary>
         /// Gets the display name of the plugin.
         /// </summary>
-        string Name { get; }
+        public string Name { get; }
 
         /// <summary>
         /// Gets the version of the plugin.
         /// </summary>
-        Version Version { get; }
+        public Version Version { get; }
 
         /// <summary>
         /// Gets the description of the plugin.
         /// </summary>
-        string Description { get; }
+        public string Description { get; }
 
         /// <summary>
         /// Gets the author of the plugin.
         /// </summary>
-        string Author { get; }
+        public string Author { get; }
 
         /// <summary>
         /// Gets the plugin's capabilities and features.
         /// </summary>
-        PluginCapabilities Capabilities { get; }
+        public PluginCapabilities Capabilities { get; }
 
         /// <summary>
         /// Gets the current state of the plugin.
         /// </summary>
-        PluginState State { get; }
+        public PluginState State { get; }
 
         /// <summary>
         /// Gets the plugin's health status.
         /// </summary>
-        PluginHealth Health { get; }
+        public PluginHealth Health { get; }
 
         /// <summary>
         /// Configures services for dependency injection.
         /// </summary>
         /// <param name="services">The service collection to configure.</param>
         /// <param name="configuration">The configuration for the plugin.</param>
-        void ConfigureServices(IServiceCollection services, IConfiguration configuration);
+        public void ConfigureServices(IServiceCollection services, IConfiguration configuration);
 
         /// <summary>
         /// Initializes the plugin asynchronously.
@@ -64,33 +64,33 @@ namespace DotCompute.Plugins.Interfaces
         /// <param name="serviceProvider">The service provider for dependency resolution.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Task representing the async operation.</returns>
-        Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default);
+        public Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Starts the plugin asynchronously.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Task representing the async operation.</returns>
-        Task StartAsync(CancellationToken cancellationToken = default);
+        public Task StartAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Stops the plugin asynchronously.
         /// </summary>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Task representing the async operation.</returns>
-        Task StopAsync(CancellationToken cancellationToken = default);
+        public Task StopAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Validates the plugin's configuration and dependencies.
         /// </summary>
         /// <returns>Validation result with any errors or warnings.</returns>
-        PluginValidationResult Validate();
+        public PluginValidationResult Validate();
 
         /// <summary>
         /// Gets the plugin's configuration schema.
         /// </summary>
         /// <returns>JSON schema for the plugin's configuration.</returns>
-        string GetConfigurationSchema();
+        public string GetConfigurationSchema();
 
         /// <summary>
         /// Handles configuration changes at runtime.
@@ -98,28 +98,28 @@ namespace DotCompute.Plugins.Interfaces
         /// <param name="configuration">The new configuration.</param>
         /// <param name="cancellationToken">Cancellation token.</param>
         /// <returns>Task representing the async operation.</returns>
-        Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default);
+        public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Gets the plugin's performance metrics.
         /// </summary>
         /// <returns>Current performance metrics.</returns>
-        PluginMetrics GetMetrics();
+        public PluginMetrics GetMetrics();
 
         /// <summary>
         /// Raised when the plugin's state changes.
         /// </summary>
-        event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+        public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
 
         /// <summary>
         /// Raised when the plugin encounters an error.
         /// </summary>
-        event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+        public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
 
         /// <summary>
         /// Raised when the plugin's health status changes.
         /// </summary>
-        event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+        public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
     }
 
     /// <summary>
@@ -184,9 +184,9 @@ namespace DotCompute.Plugins.Interfaces
     public class PluginValidationResult
     {
         public bool IsValid { get; set; }
-        public List<string> Errors { get; set; } = [];
-        public List<string> Warnings { get; set; } = [];
-        public Dictionary<string, object> Metadata { get; set; } = [];
+        public IList<string> Errors { get; } = new List<string>();
+        public IList<string> Warnings { get; } = new List<string>();
+        public Dictionary<string, object> Metadata { get; } = [];
     }
 
     /// <summary>
@@ -201,7 +201,7 @@ namespace DotCompute.Plugins.Interfaces
         public double AverageResponseTime { get; set; }
         public long MemoryUsage { get; set; }
         public double CpuUsage { get; set; }
-        public Dictionary<string, object> CustomMetrics { get; set; } = [];
+        public Dictionary<string, object> CustomMetrics { get; } = [];
     }
 
     /// <summary>

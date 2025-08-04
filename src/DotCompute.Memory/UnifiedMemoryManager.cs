@@ -140,9 +140,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         long sourceOffset = 0,
         long destinationOffset = 0,
         long? elementCount = null,
-        CancellationToken cancellationToken = default) where T : unmanaged =>
-        // Use the buffer's copy method
-        await source.CopyToAsync(destination, cancellationToken);
+        CancellationToken cancellationToken = default) where T : unmanaged => await source.CopyToAsync(destination, cancellationToken);
 
     /// <summary>
     /// Gets memory usage statistics.
@@ -411,11 +409,13 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         var transferTimes = new List<double>();
         var buffer1 = await CreateUnifiedBufferAsync<float>(TestDataSize / sizeof(float), cancellationToken: cancellationToken);
         var testData = new float[TestDataSize / sizeof(float)];
-        var random = new Random(42);
+        #pragma warning disable CA5394 // Do not use insecure randomness
+        var random = new Random(42); // Deterministic random for benchmarking
         for (int i = 0; i < testData.Length; i++)
         {
             testData[i] = random.NextSingle(); // Fill with test data
         }
+        #pragma warning restore CA5394
 
         for (int i = 0; i < BenchmarkIterations; i++)
         {
@@ -445,7 +445,9 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         for (int i = 0; i < BenchmarkIterations; i++)
         {
             sw.Restart();
-            var rental = pool.Rent(TestDataSize / sizeof(float));
+            #pragma warning disable CA2000 // Dispose objects before losing scope
+            var rental = pool.Rent(TestDataSize / sizeof(float)); // Returned to pool below
+            #pragma warning restore CA2000 // Dispose objects before losing scope
             sw.Stop();
             poolAllocTimes.Add(sw.Elapsed.TotalMicroseconds);
             pool.Return(rental, TestDataSize / sizeof(float));
@@ -489,9 +491,11 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         for (int i = 0; i < BenchmarkIterations; i++)
         {
             sw.Restart();
+            #pragma warning disable CA1849 // Call async methods when in an async method
             buffer1.EnsureOnHost();
             buffer1.EnsureOnDevice();
             buffer1.Synchronize();
+            #pragma warning restore CA1849 // Call async methods when in an async method
             sw.Stop();
             unifiedOpTimes.Add(sw.Elapsed.TotalMicroseconds);
         }
@@ -561,8 +565,10 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         var buffer = await CreateUnifiedBufferAsync<float>(testDataSize / sizeof(float), cancellationToken: cancellationToken);
         var testData = new float[testDataSize / sizeof(float)];
         await buffer.CopyFromAsync(testData, cancellationToken);
+        #pragma warning disable CA1849 // Call async methods when in an async method
         buffer.EnsureOnDevice();
         buffer.EnsureOnHost();
+        #pragma warning restore CA1849 // Call async methods when in an async method
         await buffer.DisposeAsync();
     }
 

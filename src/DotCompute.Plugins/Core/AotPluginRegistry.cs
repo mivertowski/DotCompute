@@ -6,6 +6,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - AOT plugin registry uses dynamic logging
+
 namespace DotCompute.Plugins.Core;
 
 /// <summary>
@@ -106,10 +108,7 @@ public sealed class AotPluginRegistry : IDisposable
     /// </summary>
     public IBackendPlugin? CreatePlugin(string pluginTypeName)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(AotPluginRegistry));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrEmpty(pluginTypeName);
 
@@ -144,10 +143,7 @@ public sealed class AotPluginRegistry : IDisposable
     /// </summary>
     public IBackendPlugin? GetPlugin(string pluginId)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(AotPluginRegistry));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         lock (_lock)
         {
@@ -160,10 +156,7 @@ public sealed class AotPluginRegistry : IDisposable
     /// </summary>
     public IReadOnlyCollection<IBackendPlugin> GetLoadedPlugins()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(AotPluginRegistry));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         lock (_lock)
         {
@@ -176,10 +169,7 @@ public sealed class AotPluginRegistry : IDisposable
     /// </summary>
     public IReadOnlyCollection<string> GetAvailablePluginTypes()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(AotPluginRegistry));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         return _factories.Keys.ToList();
     }
@@ -189,10 +179,7 @@ public sealed class AotPluginRegistry : IDisposable
     /// </summary>
     public bool UnloadPlugin(string pluginId)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(AotPluginRegistry));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrEmpty(pluginId);
 
@@ -226,10 +213,7 @@ public sealed class AotPluginRegistry : IDisposable
     /// </summary>
     public void RegisterPluginFactory(string pluginTypeName, Func<IBackendPlugin> factory)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(AotPluginRegistry));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         ArgumentException.ThrowIfNullOrEmpty(pluginTypeName);
         ArgumentNullException.ThrowIfNull(factory);
@@ -301,10 +285,7 @@ public sealed class AotPluginSystem : IDisposable
         string pluginTypeName,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(AotPluginSystem));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         _logger.LogInformation("Loading plugin {Type} (assembly path ignored in AOT mode)", pluginTypeName);
 
@@ -319,10 +300,7 @@ public sealed class AotPluginSystem : IDisposable
     /// </summary>
     public async Task<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(AotPluginSystem));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         await Task.Yield(); // Maintain async signature for compatibility
 
@@ -669,6 +647,10 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
     public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+    
+    private void OnStateChanged(PluginStateChangedEventArgs e) => StateChanged?.Invoke(this, e);
+    private void OnErrorOccurred(PluginErrorEventArgs e) => ErrorOccurred?.Invoke(this, e);
+    private void OnHealthChanged(PluginHealthChangedEventArgs e) => HealthChanged?.Invoke(this, e);
 
 
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
