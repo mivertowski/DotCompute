@@ -24,15 +24,15 @@
     <BaseOutputPath>$(MSBuildThisFileDirectory)artifacts\bin\$(MSBuildProjectName)\</BaseOutputPath>
     
     <!-- NuGet package properties -->
-    <Authors>DotCompute Contributors</Authors>
-    <Company>DotCompute</Company>
+    <Authors>Michael Ivertowski</Authors>
+    <Company></Company>
     <Product>DotCompute</Product>
-    <Copyright>Copyright (c) DotCompute Contributors. All rights reserved.</Copyright>
+    <Copyright>Copyright (c) 2025 Michael Ivertowski. All rights reserved.</Copyright>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/dotcompute/dotcompute</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/dotcompute/dotcompute.git</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/mivertowski/dotcompute</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/mivertowski/dotcompute.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     
     <!-- Versioning -->
     <VersionPrefix>0.1.0</VersionPrefix>
@@ -58,9 +58,4 @@
     <!-- Source Link -->
     <PackageReference Include="Microsoft.SourceLink.GitHub" PrivateAssets="All"/>
   </ItemGroup>
-
-  <!-- Central Package Management -->
-  <PropertyGroup>
-    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
-  </PropertyGroup>
 </Project>

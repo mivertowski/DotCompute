@@ -16,11 +16,9 @@
     
     <!-- Package Information -->
     <PackageId>DotCompute.Abstractions</PackageId>
-    <Authors>DotCompute Contributors</Authors>
+    <Authors>Michael Ivertowski</Authors>
     <Description>Core abstractions for DotCompute - a high-performance, AOT-compatible tensor compute library for .NET</Description>
-    <PackageTags>tensor;compute;gpu;cuda;accelerator;aot;native</PackageTags>
-    <PackageProjectUrl>https://github.com/dotcompute/dotcompute</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/dotcompute/dotcompute</RepositoryUrl>
+    <PackageTags>tensor;compute;gpu;cuda;accelerator;aot;native</PackageTags>    
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     
     <!-- Build Configuration -->
