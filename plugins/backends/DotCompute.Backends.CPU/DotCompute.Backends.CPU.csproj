@@ -22,7 +22,6 @@
     
     <!-- Build Configuration -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591;CA1711;CA1819;CA1848;CA1822;CA2000;VSTHRD002;VSTHRD103;IDE0011;CA1513;CA1512;IDE0059;CA1305;CA1307;CA1310;CA2012;CA5394;CA2208;IDE2005;CA2264;CA1849;CS0535</NoWarn>
     
     <!-- Enable hardware intrinsics -->
     <EnableHardwareIntrinsics>true</EnableHardwareIntrinsics>

@@ -68,7 +68,7 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Loads a plugin instance directly.
         /// </summary>
-        public async Task<IBackendPlugin?> LoadPluginAsync(IBackendPlugin plugin, CancellationToken cancellationToken = default)
+        public Task<IBackendPlugin?> LoadPluginAsync(IBackendPlugin plugin, CancellationToken cancellationToken = default)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(PluginSystem));
@@ -99,7 +99,7 @@ namespace DotCompute.Plugins.Core
                 }
 
                 _logger?.LogInformation("Successfully loaded plugin {Id} ({Name})", plugin.Id, plugin.Name);
-                return plugin;
+                return Task.FromResult<IBackendPlugin?>(plugin);
             }
             catch (Exception ex)
             {
@@ -111,7 +111,7 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Loads a plugin from assembly path.
         /// </summary>
-        public async Task<IBackendPlugin?> LoadPluginAsync(string assemblyPath, string pluginTypeName, CancellationToken cancellationToken = default)
+        public Task<IBackendPlugin?> LoadPluginAsync(string assemblyPath, string pluginTypeName, CancellationToken cancellationToken = default)
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(PluginSystem));
@@ -131,14 +131,14 @@ namespace DotCompute.Plugins.Core
                 if (pluginType == null)
                 {
                     _logger.LogError("Plugin type {Type} not found in assembly", pluginTypeName);
-                    return null;
+                    return Task.FromResult<IBackendPlugin?>(null);
                 }
 
                 // Verify it implements IBackendPlugin
                 if (!typeof(IBackendPlugin).IsAssignableFrom(pluginType))
                 {
                     _logger.LogError("Type {Type} does not implement IBackendPlugin", pluginTypeName);
-                    return null;
+                    return Task.FromResult<IBackendPlugin?>(null);
                 }
 
                 // Create instance - use factory method for AOT compatibility
@@ -146,7 +146,7 @@ namespace DotCompute.Plugins.Core
                 if (instance == null)
                 {
                     _logger.LogError("Failed to create instance of {Type}", pluginTypeName);
-                    return null;
+                    return Task.FromResult<IBackendPlugin?>(null);
                 }
 
                 // Store loaded plugin info
@@ -162,12 +162,12 @@ namespace DotCompute.Plugins.Core
                 }
 
                 _logger.LogInformation("Successfully loaded plugin {Id} ({Name})", instance.Id, instance.Name);
-                return instance;
+                return Task.FromResult<IBackendPlugin?>(instance);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to load plugin from {Path}", assemblyPath);
-                return null;
+                return Task.FromResult<IBackendPlugin?>(null);
             }
         }
 

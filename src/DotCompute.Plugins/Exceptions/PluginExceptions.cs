@@ -31,6 +31,7 @@ namespace DotCompute.Plugins.Exceptions
             PluginId = pluginId;
         }
 
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
         protected PluginException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -72,6 +73,7 @@ namespace DotCompute.Plugins.Exceptions
             FilePath = filePath;
         }
 
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
         protected PluginLoadException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -105,6 +107,7 @@ namespace DotCompute.Plugins.Exceptions
         public PluginInitializationException(string message, string pluginId, Exception innerException)
             : base(message, pluginId, innerException) { }
 
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
         protected PluginInitializationException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }
     }
@@ -141,6 +144,7 @@ namespace DotCompute.Plugins.Exceptions
             ActualVersion = actualVersion;
         }
 
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
         protected PluginDependencyException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -180,6 +184,7 @@ namespace DotCompute.Plugins.Exceptions
             ValidationErrors = validationErrors;
         }
 
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
         protected PluginValidationException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -217,6 +222,7 @@ namespace DotCompute.Plugins.Exceptions
             Operation = operation;
         }
 
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
         protected PluginTimeoutException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -254,6 +260,7 @@ namespace DotCompute.Plugins.Exceptions
             SecurityViolation = securityViolation;
         }
 
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
         protected PluginSecurityException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -297,6 +304,7 @@ namespace DotCompute.Plugins.Exceptions
             InvalidValue = invalidValue;
         }
 
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
         protected PluginConfigurationException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -340,6 +348,7 @@ namespace DotCompute.Plugins.Exceptions
             PluginName = pluginName;
         }
 
+        [Obsolete("This API supports obsolete formatter-based serialization. It should not be called or extended by application code.", DiagnosticId = "SYSLIB0051", UrlFormat = "https://aka.ms/dotnet-warnings/{0}")]
         protected PluginNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {

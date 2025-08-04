@@ -44,7 +44,7 @@ namespace DotCompute.Generators.Kernel
         private static readonly DiagnosticDescriptor InvalidVectorSizeRule = new(
             InvalidVectorSizeId,
             "Invalid vector size",
-            "Vector size {0} is not supported. Must be 4, 8, or 16",
+            "Vector size {0} is not supported. Must be 4, 8, or 16.",
             "DotCompute.Kernel",
             DiagnosticSeverity.Error,
             isEnabledByDefault: true,
@@ -68,8 +68,7 @@ namespace DotCompute.Generators.Kernel
             isEnabledByDefault: true,
             description: "Potential performance issue detected in kernel method.");
 
-        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(
+        public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
                 UnsupportedTypeRule,
                 MissingBufferParameterRule,
                 InvalidVectorSizeRule,
@@ -91,14 +90,18 @@ namespace DotCompute.Generators.Kernel
             var methodSymbol = context.SemanticModel.GetDeclaredSymbol(methodDeclaration);
 
             if (methodSymbol == null)
+            {
                 return;
+            }
 
             // Check if method has Kernel attribute
             var kernelAttribute = methodSymbol.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.Name == "KernelAttribute");
 
             if (kernelAttribute == null)
+            {
                 return;
+            }
 
             // Perform various checks
             CheckParameterTypes(context, methodSymbol);
@@ -169,11 +172,11 @@ namespace DotCompute.Generators.Kernel
             if (!isUnsafe && method.ContainingType != null)
             {
                 var typeDeclaration = method.ContainingType.DeclaringSyntaxReferences
-                    .FirstOrDefault()?.GetSyntax() as TypeDeclarationSyntax;
+                    .FirstOrDefault()?.GetSyntax();
 
-                if (typeDeclaration != null)
+                if (typeDeclaration is TypeDeclarationSyntax typeDecl)
                 {
-                    isUnsafe = typeDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.UnsafeKeyword));
+                    isUnsafe = typeDecl.Modifiers.Any(m => m.IsKind(SyntaxKind.UnsafeKeyword));
                 }
             }
 
@@ -192,7 +195,9 @@ namespace DotCompute.Generators.Kernel
             MethodDeclarationSyntax methodDeclaration)
         {
             if (methodDeclaration.Body == null)
+            {
                 return;
+            }
 
             // Check for nested loops
             var loops = methodDeclaration.Body.DescendantNodes()
@@ -205,7 +210,7 @@ namespace DotCompute.Generators.Kernel
                     .OfType<ForStatementSyntax>()
                     .ToList();
 
-                if (nestedLoops.Any())
+                if (nestedLoops.Count > 0)
                 {
                     var diagnostic = Diagnostic.Create(
                         PerformanceWarningRule,
@@ -222,7 +227,7 @@ namespace DotCompute.Generators.Kernel
                     .OfType<ObjectCreationExpressionSyntax>()
                     .ToList();
 
-                if (allocations.Any())
+                if (allocations.Count > 0)
                 {
                     var diagnostic = Diagnostic.Create(
                         PerformanceWarningRule,

@@ -40,7 +40,7 @@ namespace DotCompute.Generators.Kernel
         /// <summary>
         /// Gets or sets optimization hints for the compiler.
         /// </summary>
-        public OptimizationHints Optimizations { get; set; } = OptimizationHints.Default;
+        public OptimizationHints Optimizations { get; set; } = OptimizationHints.None;
 
         /// <summary>
         /// Gets or sets memory access pattern hints.
@@ -87,9 +87,9 @@ namespace DotCompute.Generators.Kernel
     public enum OptimizationHints
     {
         /// <summary>
-        /// Default optimizations.
+        /// No optimizations.
         /// </summary>
-        Default = 0,
+        None = 0,
 
         /// <summary>
         /// Aggressive inlining.

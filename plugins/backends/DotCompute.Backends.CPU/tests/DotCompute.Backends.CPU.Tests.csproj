@@ -16,8 +16,6 @@
     <TieredCompilation>false</TieredCompilation>
     <TieredCompilationQuickJit>false</TieredCompilationQuickJit>
     
-    <!-- Suppress code analysis warnings for tests -->
-    <NoWarn>$(NoWarn);CA1707;CA5394;CA1515;CA1822;IDE0011;IDE2001</NoWarn>
   </PropertyGroup>
 
   <!-- Package references are managed automatically by Directory.Build.props for .Tests projects -->

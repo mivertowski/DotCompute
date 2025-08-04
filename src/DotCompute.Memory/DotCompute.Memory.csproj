@@ -22,11 +22,6 @@
     
     <!-- Build Configuration -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
-    <AnalysisLevel>none</AnalysisLevel>
-    <!-- Emergency fix: disable compilation errors temporarily -->
-    <NoWarn>$(NoWarn);CS0021;CS7036;CS1061;CA1849;IDE2001;CA5394;CA2000</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

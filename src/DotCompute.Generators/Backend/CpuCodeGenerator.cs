@@ -298,7 +298,7 @@ namespace DotCompute.Generators.Backend
         /// <summary>
         /// Transforms method body for scalar execution.
         /// </summary>
-        private string TransformMethodBodyForScalar(string methodBody)
+        private static string TransformMethodBodyForScalar(string methodBody)
         {
             if (string.IsNullOrEmpty(methodBody))
             {

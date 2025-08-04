@@ -151,7 +151,9 @@ namespace DotCompute.Generators.Utils
             var body = method.Body;
 
             if (body == null)
+            {
                 return info;
+            }
 
             // Look for loops
             var loops = body.DescendantNodes().OfType<ForStatementSyntax>().ToList();
@@ -159,7 +161,7 @@ namespace DotCompute.Generators.Utils
 
             // Look for array/span accesses
             var elementAccesses = body.DescendantNodes().OfType<ElementAccessExpressionSyntax>().ToList();
-            info.HasArrayAccess = elementAccesses.Any();
+            info.HasArrayAccess = elementAccesses.Count > 0;
 
             // Look for arithmetic operations
             var binaryOps = body.DescendantNodes().OfType<BinaryExpressionSyntax>()
@@ -191,11 +193,15 @@ namespace DotCompute.Generators.Utils
         {
             // Simple heuristic: loop has simple increment and array access pattern
             if (loop.Incrementors.Count != 1)
+            {
                 return false;
+            }
 
             var incrementor = loop.Incrementors[0];
             if (incrementor is not PostfixUnaryExpressionSyntax && incrementor is not PrefixUnaryExpressionSyntax)
+            {
                 return false;
+            }
 
             // Check for array access pattern in loop body
             if (loop.Statement is BlockSyntax block)

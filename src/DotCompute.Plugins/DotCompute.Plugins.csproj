@@ -6,7 +6,6 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591;SYSLIB0051;IL2026;IL2075;IL2072;IL3000;IL3050;VSTHRD002;CA1848;CA1019;CA1805;CA1513;CA1852;CA2227;CA1002;CA2211;CS1998;IDE0019;CA1508;CA1509;CA1036;IDE0090;IDE0028;IDE0290;MA0048;RCS1139;IDE0040;CA1063;CA1816;CA1819;IDE0011</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

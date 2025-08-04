@@ -244,7 +244,7 @@ public readonly struct MemoryLock<T> : IDisposable, IEquatable<MemoryLock<T>> wh
         _unlockAction?.Invoke();
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         throw new NotImplementedException();
     }

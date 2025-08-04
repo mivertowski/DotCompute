@@ -48,7 +48,9 @@ namespace DotCompute.Generators.Kernel
         private static bool IsKernelMethod(SyntaxNode node)
         {
             if (node is not MethodDeclarationSyntax methodDeclaration)
+            {
                 return false;
+            }
 
             // Check for [Kernel] attribute
             return methodDeclaration.AttributeLists
@@ -59,7 +61,9 @@ namespace DotCompute.Generators.Kernel
         private static bool IsKernelClass(SyntaxNode node)
         {
             if (node is not ClassDeclarationSyntax classDeclaration)
+            {
                 return false;
+            }
 
             // Check if class has kernel methods or implements IKernel
             return classDeclaration.Members
@@ -76,14 +80,18 @@ namespace DotCompute.Generators.Kernel
             var methodSymbol = model.GetDeclaredSymbol(methodDeclaration);
 
             if (methodSymbol is null)
+            {
                 return null;
+            }
 
             // Extract kernel attribute data
             var kernelAttribute = methodSymbol.GetAttributes()
                 .FirstOrDefault(a => a.AttributeClass?.Name == "KernelAttribute");
 
             if (kernelAttribute is null)
+            {
                 return null;
+            }
 
             // Extract kernel configuration
             var backends = GetBackendsFromAttribute(kernelAttribute);
@@ -111,15 +119,19 @@ namespace DotCompute.Generators.Kernel
             var classSymbol = model.GetDeclaredSymbol(classDeclaration);
 
             if (classSymbol is null)
+            {
                 return null;
+            }
 
             var kernelMethods = classSymbol.GetMembers()
                 .OfType<IMethodSymbol>()
                 .Where(m => m.GetAttributes().Any(a => a.AttributeClass?.Name == "KernelAttribute"))
                 .ToList();
 
-            if (!kernelMethods.Any())
+            if (kernelMethods.Count == 0)
+            {
                 return null;
+            }
 
             return new KernelClassInfo
             {
@@ -136,7 +148,9 @@ namespace DotCompute.Generators.Kernel
             SourceProductionContext context)
         {
             if (kernelMethods.IsDefaultOrEmpty && kernelClasses.IsDefaultOrEmpty)
+            {
                 return;
+            }
 
             // Generate kernel registry
             GenerateKernelRegistry(kernelMethods, kernelClasses, context);
@@ -188,7 +202,7 @@ namespace DotCompute.Generators.Kernel
                 source.AppendLine($"                ContainingType = typeof({method.ContainingType}),");
                 source.AppendLine($"                SupportedBackends = new[] {{ {string.Join(", ", method.Backends.Select(b => $"AcceleratorType.{b}"))} }},");
                 source.AppendLine($"                VectorSize = {method.VectorSize},");
-                source.AppendLine($"                IsParallel = {method.IsParallel.ToString().ToLower()}");
+                source.AppendLine($"                IsParallel = {(method.IsParallel ? "true" : "false")}");
                 source.AppendLine("            },");
             }
 
@@ -368,7 +382,7 @@ namespace DotCompute.Generators.Kernel
             // Generate individual invoke methods
             foreach (var methodName in kernelClass.KernelMethodNames)
             {
-                var method = allMethods.FirstOrDefault(m => m.Name == methodName && m.ContainingType.EndsWith(kernelClass.Name));
+                var method = allMethods.FirstOrDefault(m => m.Name == methodName && m.ContainingType.EndsWith(kernelClass.Name, StringComparison.Ordinal));
                 if (method != null)
                 {
                     GenerateInvokeMethod(source, method);
@@ -422,9 +436,18 @@ namespace DotCompute.Generators.Kernel
 
             if (attribute.NamedArguments.FirstOrDefault(a => a.Key == "Backends").Value.Value is int backendsValue)
             {
-                if ((backendsValue & 2) != 0) backends.Add("CUDA");
-                if ((backendsValue & 4) != 0) backends.Add("Metal");
-                if ((backendsValue & 8) != 0) backends.Add("OpenCL");
+                if ((backendsValue & 2) != 0)
+                {
+                    backends.Add("CUDA");
+                }
+                if ((backendsValue & 4) != 0)
+                {
+                    backends.Add("Metal");
+                }
+                if ((backendsValue & 8) != 0)
+                {
+                    backends.Add("OpenCL");
+                }
             }
 
             return backends;
@@ -541,7 +564,10 @@ namespace DotCompute.Generators.Kernel
                 var cudaType = ConvertToCudaType(param.Type);
                 var modifier = param.IsBuffer ? "*" : "";
                 source.Append($"    {cudaType}{modifier} {param.Name}");
-                if (i < method.Parameters.Count - 1) source.Append(",");
+                if (i < method.Parameters.Count - 1)
+                {
+                    source.Append(',');
+                }
                 source.AppendLine();
             }
             source.AppendLine("    , int length)");
@@ -582,7 +608,10 @@ namespace DotCompute.Generators.Kernel
                 var addressSpace = param.IsBuffer ? "device " : "constant ";
                 var modifier = param.IsBuffer ? "*" : "&";
                 source.Append($"    {addressSpace}{metalType}{modifier} {param.Name} [[buffer({i})]]");
-                if (i < method.Parameters.Count - 1) source.Append(",");
+                if (i < method.Parameters.Count - 1)
+                {
+                    source.Append(',');
+                }
                 source.AppendLine();
             }
             source.AppendLine("    , uint2 gid [[thread_position_in_grid]],");
@@ -617,7 +646,10 @@ namespace DotCompute.Generators.Kernel
                 var addressSpace = param.IsBuffer ? "__global " : "__constant ";
                 var modifier = param.IsBuffer ? "*" : "";
                 source.Append($"    {addressSpace}{openclType}{modifier} {param.Name}");
-                if (i < method.Parameters.Count - 1) source.Append(",");
+                if (i < method.Parameters.Count - 1)
+                {
+                    source.Append(',');
+                }
                 source.AppendLine();
             }
             source.AppendLine("    , int length)");
@@ -734,7 +766,10 @@ namespace DotCompute.Generators.Kernel
             for (int i = 0; i < method.Parameters.Count; i++)
             {
                 source.Append($"        ({ConvertToCudaType(method.Parameters[i].Type)}*)args[{i}]");
-                if (i < method.Parameters.Count - 1) source.Append(",");
+                if (i < method.Parameters.Count - 1)
+                {
+                    source.Append(',');
+                }
                 source.AppendLine();
             }
             source.AppendLine("        , length);");
@@ -796,10 +831,9 @@ namespace DotCompute.Generators.Kernel
                 _ => "float" // Default fallback
             };
         }
-
     }
 
-    internal class KernelMethodInfo
+    internal sealed class KernelMethodInfo
     {
         public string Name { get; set; } = string.Empty;
         public string ContainingType { get; set; } = string.Empty;
@@ -812,14 +846,14 @@ namespace DotCompute.Generators.Kernel
         public MethodDeclarationSyntax MethodDeclaration { get; set; } = null!;
     }
 
-    internal class KernelClassInfo
+    internal sealed class KernelClassInfo
     {
         public string Name { get; set; } = string.Empty;
         public string Namespace { get; set; } = string.Empty;
         public List<string> KernelMethodNames { get; set; } = new();
     }
 
-    internal class ParameterInfo
+    internal sealed class ParameterInfo
     {
         public string Name { get; set; } = string.Empty;
         public string Type { get; set; } = string.Empty;

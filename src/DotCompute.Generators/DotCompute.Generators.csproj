@@ -10,14 +10,14 @@
     <DevelopmentDependency>true</DevelopmentDependency>
     <NoPackageAnalysis>true</NoPackageAnalysis>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
     <!-- Source generators target netstandard2.0 and don't support AOT/Trimming -->
     <IsAotCompatible>false</IsAotCompatible>
     <EnableAotAnalyzer>false</EnableAotAnalyzer>
     <IsTrimmable>false</IsTrimmable>
     <EnableTrimAnalyzer>false</EnableTrimAnalyzer>
-    <NoWarn>$(NoWarn);CA1008;CA1310;CA1812;CA1852;IDE0001;IDE0002;IDE0003;IDE0004;IDE0005;IDE0006;IDE0011;IDE0019;IDE0046;IDE0055;IDE0058;IDE0059;IDE0161;IDE2001;IDE2006;RS1032;RS2008;CA1860;CA1304;CA1311;NETSDK1210;NETSDK1211;NETSDK1212;IDE2002;CA1834;CA1822</NoWarn>
+    <EnableSingleFileAnalyzer>false</EnableSingleFileAnalyzer>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,6 +35,11 @@
 
   <ItemGroup>
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
+    <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
 
   <ItemGroup>

@@ -204,9 +204,11 @@ public class PipelineException : Exception
     }
     public PipelineException()
     {
+        ErrorCode = "UNKNOWN_ERROR";
     }
     public PipelineException(string message) : base(message)
     {
+        ErrorCode = "UNKNOWN_ERROR";
     }
 }
 
@@ -239,9 +241,11 @@ public sealed class PipelineValidationException : PipelineException
     }
     public PipelineValidationException()
     {
+        Errors = Array.Empty<ValidationError>();
     }
     public PipelineValidationException(string message) : base(message)
     {
+        Errors = Array.Empty<ValidationError>();
     }
 }
 
@@ -276,9 +280,11 @@ public sealed class PipelineExecutionException : PipelineException
     }
     public PipelineExecutionException()
     {
+        Errors = Array.Empty<PipelineError>();
     }
     public PipelineExecutionException(string message) : base(message)
     {
+        Errors = Array.Empty<PipelineError>();
     }
 }
 
@@ -313,8 +319,12 @@ public sealed class PipelineOptimizationException : PipelineException
     }
     public PipelineOptimizationException()
     {
+        FailedOptimization = OptimizationType.KernelFusion;
+        Reason = "Unknown reason";
     }
     public PipelineOptimizationException(string message) : base(message)
     {
+        FailedOptimization = OptimizationType.KernelFusion;
+        Reason = "Unknown reason";
     }
 }

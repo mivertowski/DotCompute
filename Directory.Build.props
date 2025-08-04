@@ -5,9 +5,9 @@
     <LangVersion>13</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <WarningsNotAsErrors>$(WarningsNotAsErrors);CS1591</WarningsNotAsErrors>
-    <NoWarn>$(NoWarn);IDE0040;CA1815;CA1720;CA2225;CA1711;CA1024;VSTHRD200</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsNotAsErrors></WarningsNotAsErrors>
+    <NoWarn></NoWarn>
     
     <!-- AOT Configuration -->
     <IsAotCompatible>true</IsAotCompatible>
@@ -15,9 +15,12 @@
     <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
     <EnableAotAnalyzer>true</EnableAotAnalyzer>
     
-    <!-- Disable style analyzers for AOT testing -->
-    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
-    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <!-- Enable style analyzers for clean code -->
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <RunAnalyzersDuringBuild>true</RunAnalyzersDuringBuild>
+    <RunAnalyzersDuringLiveAnalysis>true</RunAnalyzersDuringLiveAnalysis>
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-all</AnalysisLevel>
     
     <!-- Build output -->
     <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)artifacts\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
