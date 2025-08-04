@@ -1,5 +1,4 @@
 using DotCompute.Abstractions;
-using DotCompute.Memory;
 using FluentAssertions;
 using NSubstitute;
 using Xunit;

@@ -1,13 +1,6 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
@@ -19,7 +12,6 @@ using CoreAcceleratorType = DotCompute.Abstractions.AcceleratorType;
 using CoreCompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using CoreICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using CoreKernelDefinition = DotCompute.Abstractions.KernelDefinition;
-using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 
 namespace DotCompute.Backends.CPU.Accelerators;
 

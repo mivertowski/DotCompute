@@ -3,7 +3,6 @@
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
-using DotCompute.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 

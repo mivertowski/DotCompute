@@ -1,8 +1,4 @@
-using System.Collections.Generic;
-using DotCompute.Abstractions;
-using DotCompute.Core;
 using FluentAssertions;
-using FluentAssertions.Execution;
 using Xunit;
 
 namespace DotCompute.Core.Tests;

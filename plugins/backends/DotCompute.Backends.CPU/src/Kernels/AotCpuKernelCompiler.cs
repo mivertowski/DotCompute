@@ -1,18 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Backends.CPU.Accelerators;
-using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Threading;
-using DotCompute.Core;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Kernels;
