@@ -6,8 +6,8 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 
 namespace DotCompute.Backends.CPU.Utilities;
 
@@ -41,7 +41,7 @@ public static class StructureOfArrays
         public static Point3DSoA FromAoS(ReadOnlySpan<Point3D> points)
         {
             var soa = new Point3DSoA(points.Length);
-            
+
             if (Vector256.IsHardwareAccelerated && points.Length >= 8)
             {
                 ConvertAoSToSoAVectorized(points, soa);
@@ -50,7 +50,7 @@ public static class StructureOfArrays
             {
                 ConvertAoSToSoAScalar(points, soa);
             }
-            
+
             return soa;
         }
 
@@ -59,7 +59,7 @@ public static class StructureOfArrays
         {
             const int VectorSize = 8; // AVX2 can process 8 floats at once
             int vectorCount = points.Length / VectorSize;
-            
+
             fixed (Point3D* pointsPtr = points)
             fixed (float* xPtr = soa.X)
             fixed (float* yPtr = soa.Y)
@@ -68,7 +68,7 @@ public static class StructureOfArrays
                 for (int i = 0; i < vectorCount; i++)
                 {
                     int baseIndex = i * VectorSize;
-                    
+
                     // Load 8 points (24 floats total)
                     var p0 = pointsPtr[baseIndex + 0];
                     var p1 = pointsPtr[baseIndex + 1];
@@ -78,19 +78,19 @@ public static class StructureOfArrays
                     var p5 = pointsPtr[baseIndex + 5];
                     var p6 = pointsPtr[baseIndex + 6];
                     var p7 = pointsPtr[baseIndex + 7];
-                    
+
                     // Pack X coordinates
                     var xVec = Vector256.Create(p0.X, p1.X, p2.X, p3.X, p4.X, p5.X, p6.X, p7.X);
                     var yVec = Vector256.Create(p0.Y, p1.Y, p2.Y, p3.Y, p4.Y, p5.Y, p6.Y, p7.Y);
                     var zVec = Vector256.Create(p0.Z, p1.Z, p2.Z, p3.Z, p4.Z, p5.Z, p6.Z, p7.Z);
-                    
+
                     // Store to SoA arrays
                     Avx.Store(xPtr + baseIndex, xVec);
                     Avx.Store(yPtr + baseIndex, yVec);
                     Avx.Store(zPtr + baseIndex, zVec);
                 }
             }
-            
+
             // Handle remainder
             int remainder = points.Length % VectorSize;
             if (remainder > 0)
@@ -147,25 +147,25 @@ public static class StructureOfArrays
         {
             const int VectorSize = 8;
             int vectorCount = Length / VectorSize;
-            
+
             ref var xRef = ref MemoryMarshal.GetArrayDataReference(X);
             ref var yRef = ref MemoryMarshal.GetArrayDataReference(Y);
             ref var zRef = ref MemoryMarshal.GetArrayDataReference(Z);
             ref var distRef = ref MemoryMarshal.GetReference(distances);
-            
+
             for (int i = 0; i < vectorCount; i++)
             {
                 var offset = i * VectorSize;
-                
+
                 var x = Vector256.LoadUnsafe(ref Unsafe.Add(ref xRef, offset));
                 var y = Vector256.LoadUnsafe(ref Unsafe.Add(ref yRef, offset));
                 var z = Vector256.LoadUnsafe(ref Unsafe.Add(ref zRef, offset));
-                
+
                 // Calculate squared distance: (x-refX)² + (y-refY)² + (z-refZ)²
                 var dx = Avx.Subtract(x, refX);
                 var dy = Avx.Subtract(y, refY);
                 var dz = Avx.Subtract(z, refZ);
-                
+
                 Vector256<float> distSq;
                 if (Fma.IsSupported)
                 {
@@ -181,13 +181,13 @@ public static class StructureOfArrays
                     var dz2 = Avx.Multiply(dz, dz);
                     distSq = Avx.Add(Avx.Add(dx2, dy2), dz2);
                 }
-                
+
                 // Square root to get distance
                 var dist = Avx.Sqrt(distSq);
-                
+
                 dist.StoreUnsafe(ref Unsafe.Add(ref distRef, offset));
             }
-            
+
             // Handle remainder
             int remainder = Length % VectorSize;
             if (remainder > 0)
@@ -263,25 +263,25 @@ public static class StructureOfArrays
         {
             const int VectorSize = 8;
             int vectorCount = a.Length / VectorSize;
-            
+
             ref var aRealRef = ref MemoryMarshal.GetArrayDataReference(a.Real);
             ref var aImagRef = ref MemoryMarshal.GetArrayDataReference(a.Imaginary);
             ref var bRealRef = ref MemoryMarshal.GetArrayDataReference(b.Real);
             ref var bImagRef = ref MemoryMarshal.GetArrayDataReference(b.Imaginary);
             ref var resultRealRef = ref MemoryMarshal.GetArrayDataReference(result.Real);
             ref var resultImagRef = ref MemoryMarshal.GetArrayDataReference(result.Imaginary);
-            
+
             for (int i = 0; i < vectorCount; i++)
             {
                 var offset = i * VectorSize;
-                
+
                 var aReal = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRealRef, offset));
                 var aImag = Vector256.LoadUnsafe(ref Unsafe.Add(ref aImagRef, offset));
                 var bReal = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRealRef, offset));
                 var bImag = Vector256.LoadUnsafe(ref Unsafe.Add(ref bImagRef, offset));
-                
+
                 Vector256<float> resultReal, resultImag;
-                
+
                 if (Fma.IsSupported)
                 {
                     // Use FMA for complex multiplication:
@@ -298,15 +298,15 @@ public static class StructureOfArrays
                     var bd = Avx.Multiply(aImag, bImag);
                     var ad = Avx.Multiply(aReal, bImag);
                     var bc = Avx.Multiply(aImag, bReal);
-                    
+
                     resultReal = Avx.Subtract(ac, bd);
                     resultImag = Avx.Add(ad, bc);
                 }
-                
+
                 resultReal.StoreUnsafe(ref Unsafe.Add(ref resultRealRef, offset));
                 resultImag.StoreUnsafe(ref Unsafe.Add(ref resultImagRef, offset));
             }
-            
+
             // Handle remainder
             int remainder = a.Length % VectorSize;
             if (remainder > 0)
@@ -319,7 +319,7 @@ public static class StructureOfArrays
                     var aI = a.Imaginary[idx];
                     var bR = b.Real[idx];
                     var bI = b.Imaginary[idx];
-                    
+
                     result.Real[idx] = aR * bR - aI * bI;
                     result.Imaginary[idx] = aR * bI + aI * bR;
                 }
@@ -335,7 +335,7 @@ public static class StructureOfArrays
                 var aI = a.Imaginary[i];
                 var bR = b.Real[i];
                 var bI = b.Imaginary[i];
-                
+
                 result.Real[i] = aR * bR - aI * bI;
                 result.Imaginary[i] = aR * bI + aI * bR;
             }
@@ -376,15 +376,15 @@ public static class StructureOfArrays
         {
             ref var srcRef = ref MemoryMarshal.GetReference(source);
             ref var dstRef = ref MemoryMarshal.GetReference(destination);
-            
+
             // Load 4 rows as vectors
             var row0 = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, 0));  // [00, 01, 02, 03]
             var row1 = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, 4));  // [10, 11, 12, 13]
             var row2 = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, 8));  // [20, 21, 22, 23]
             var row3 = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, 12)); // [30, 31, 32, 33]
-            
+
             Vector128<float> col0, col1, col2, col3;
-            
+
             if (Sse.IsSupported)
             {
                 // Use SSE shuffle to transpose
@@ -393,7 +393,7 @@ public static class StructureOfArrays
                 var tmp1 = Sse.UnpackHigh(row0, row1);  // [02, 12, 03, 13]
                 var tmp2 = Sse.UnpackLow(row2, row3);   // [20, 30, 21, 31]
                 var tmp3 = Sse.UnpackHigh(row2, row3);  // [22, 32, 23, 33]
-                
+
                 // Final shuffle to get columns
                 col0 = Sse.MoveLowToHigh(tmp0, tmp2);  // [00, 10, 20, 30]
                 col1 = Sse.MoveHighToLow(tmp2, tmp0);  // [01, 11, 21, 31]
@@ -415,7 +415,7 @@ public static class StructureOfArrays
                 TransposeMatrix4x4Scalar(source, destination);
                 return;
             }
-            
+
             // Store transposed columns as rows
             col0.StoreUnsafe(ref Unsafe.Add(ref dstRef, 0));
             col1.StoreUnsafe(ref Unsafe.Add(ref dstRef, 4));
@@ -455,12 +455,12 @@ public readonly struct Point3D : IEquatable<Point3D>
     }
 
     public override bool Equals(object? obj) => obj is Point3D other && Equals(other);
-    
+
     public bool Equals(Point3D other) => X == other.X && Y == other.Y && Z == other.Z;
-    
+
     public override int GetHashCode() => HashCode.Combine(X, Y, Z);
-    
+
     public static bool operator ==(Point3D left, Point3D right) => left.Equals(right);
-    
+
     public static bool operator !=(Point3D left, Point3D right) => !left.Equals(right);
 }

@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections.Generic;
-using DotCompute.Core;
 using DotCompute.Abstractions;
+using DotCompute.Core;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core.Pipelines;
@@ -18,7 +18,7 @@ public sealed class KernelPipelineBuilder : IKernelPipelineBuilder
     private readonly Dictionary<string, object> _metadata;
     private readonly List<Action<PipelineEvent>> _eventHandlers;
     private string _name;
-    private PipelineOptimizationSettings _optimizationSettings;
+    private readonly PipelineOptimizationSettings _optimizationSettings;
     private Func<Exception, PipelineExecutionContext, ErrorHandlingResult>? _errorHandler;
 
     /// <summary>
@@ -48,10 +48,10 @@ public sealed class KernelPipelineBuilder : IKernelPipelineBuilder
     {
         var stageBuilder = new KernelStageBuilder(name, kernel);
         configure?.Invoke(stageBuilder);
-        
+
         var stage = stageBuilder.Build();
         _stages.Add(stage);
-        
+
         return this;
     }
 
@@ -60,10 +60,10 @@ public sealed class KernelPipelineBuilder : IKernelPipelineBuilder
     {
         var parallelBuilder = new ParallelStageBuilder();
         configure(parallelBuilder);
-        
+
         var stage = parallelBuilder.Build();
         _stages.Add(stage);
-        
+
         return this;
     }
 
@@ -75,18 +75,18 @@ public sealed class KernelPipelineBuilder : IKernelPipelineBuilder
     {
         var trueBuilder = new KernelPipelineBuilder();
         trueBranch(trueBuilder);
-        
+
         var falseBuilder = falseBranch != null ? new KernelPipelineBuilder() : null;
         falseBranch?.Invoke(falseBuilder!);
-        
+
         var stage = new BranchStage(
             $"Branch_{Guid.NewGuid():N}",
             condition,
             trueBuilder._stages,
             falseBuilder?._stages);
-        
+
         _stages.Add(stage);
-        
+
         return this;
     }
 
@@ -97,14 +97,14 @@ public sealed class KernelPipelineBuilder : IKernelPipelineBuilder
     {
         var bodyBuilder = new KernelPipelineBuilder();
         body(bodyBuilder);
-        
+
         var stage = new LoopStage(
             $"Loop_{Guid.NewGuid():N}",
             condition,
             bodyBuilder._stages);
-        
+
         _stages.Add(stage);
-        
+
         return this;
     }
 
@@ -147,7 +147,7 @@ public sealed class KernelPipelineBuilder : IKernelPipelineBuilder
     public IKernelPipeline Build()
     {
         var id = Guid.NewGuid().ToString();
-        
+
         return new KernelPipeline(
             id,
             _name,
@@ -176,11 +176,11 @@ internal sealed class KernelStageBuilder : IKernelStageBuilder
     private readonly Dictionary<string, string> _inputMappings;
     private readonly Dictionary<string, string> _outputMappings;
     private readonly Dictionary<string, object> _parameters;
-    
+
     private long[]? _globalWorkSize;
     private long[]? _localWorkSize;
     private MemoryHint _memoryHint = MemoryHint.None;
-    private int _priority = 0;
+    private int _priority;
 
     public KernelStageBuilder(string name, ICompiledKernel kernel)
     {
@@ -289,7 +289,7 @@ internal sealed class ParallelStageBuilder : IParallelStageBuilder
     private readonly List<IPipelineStage> _parallelStages;
     private int _maxDegreeOfParallelism = Environment.ProcessorCount;
     private SynchronizationMode _synchronizationMode = SynchronizationMode.WaitAll;
-    private bool _hasBarrier = false;
+    private bool _hasBarrier;
 
     public ParallelStageBuilder()
     {
@@ -304,10 +304,10 @@ internal sealed class ParallelStageBuilder : IParallelStageBuilder
     {
         var stageBuilder = new KernelStageBuilder(name, kernel);
         configure?.Invoke(stageBuilder);
-        
+
         var stage = stageBuilder.Build();
         _parallelStages.Add(stage);
-        
+
         return this;
     }
 
@@ -318,15 +318,15 @@ internal sealed class ParallelStageBuilder : IParallelStageBuilder
     {
         var pipelineBuilder = new KernelPipelineBuilder();
         configure(pipelineBuilder);
-        
+
         var pipeline = pipelineBuilder.Build();
         var stage = new PipelineWrapperStage(
             $"Pipeline_{Guid.NewGuid():N}",
             name,
             pipeline);
-        
+
         _parallelStages.Add(stage);
-        
+
         return this;
     }
 

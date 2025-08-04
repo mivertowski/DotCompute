@@ -17,7 +17,7 @@ public class AcceleratorMockTests
         var compiledKernel = Substitute.For<ICompiledKernel>();
         var kernelSource = new TextKernelSource("test code", "test", KernelLanguage.CSharpIL);
         var kernelDef = new KernelDefinition("test", kernelSource, new CompilationOptions());
-        
+
         accelerator.Info.Returns(info);
         accelerator.Memory.Returns(memoryManager);
         accelerator.CompileKernelAsync(kernelDef, Arg.Any<CompilationOptions?>(), default)
@@ -165,7 +165,7 @@ public class BufferMockTests
         buffer.Map(MapMode.ReadWrite).Returns(default(MappedMemory<double>));
 
         // Act
-        var result = buffer.Map(MapMode.ReadWrite);
+        _ = buffer.Map(MapMode.ReadWrite);
 
         // Assert
         // Can't test MappedMemory properties since constructor is internal
@@ -323,12 +323,14 @@ public class MemoryManagerMockTests
 
 public class MemoryBufferMockTests
 {
+    private static readonly int[] array = new int[] { 1, 2, 3 };
+
     [Fact]
     public async Task IMemoryBuffer_CopyFromHostAsync_ShouldBeCallable()
     {
         // Arrange
         var buffer = Substitute.For<IMemoryBuffer>();
-        var data = new ReadOnlyMemory<int>(new int[] { 1, 2, 3 });
+        var data = new ReadOnlyMemory<int>(array);
         buffer.CopyFromHostAsync(data, 0, default).Returns(ValueTask.CompletedTask);
 
         // Act

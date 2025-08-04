@@ -9,7 +9,7 @@ namespace SimpleExample
     /// <summary>
     /// Simple example demonstrating DotCompute core functionality without source generation.
     /// </summary>
-    public unsafe class Program
+    internal unsafe class Program
     {
         static void Main(string[] args)
         {
@@ -31,9 +31,9 @@ namespace SimpleExample
                 // Execute simple vector addition
                 Console.WriteLine("\nExecuting vector addition...");
                 var sw = System.Diagnostics.Stopwatch.StartNew();
-                
+
                 AddVectors(a.AsSpan(0, size), b.AsSpan(0, size), result.AsSpan(0, size));
-                
+
                 sw.Stop();
                 Console.WriteLine($"Completed in {sw.ElapsedMilliseconds}ms");
 
@@ -44,7 +44,7 @@ namespace SimpleExample
             {
                 // Cleanup
                 ArrayPool<float>.Shared.Return(a);
-                ArrayPool<float>.Shared.Return(b);  
+                ArrayPool<float>.Shared.Return(b);
                 ArrayPool<float>.Shared.Return(result);
             }
 
@@ -83,7 +83,7 @@ namespace SimpleExample
                     Console.WriteLine($"Error at index {i}: expected {expected}, got {actual}");
                 }
             }
-            
+
             if (errors == 0)
             {
                 Console.WriteLine("✓ Results verified successfully!");

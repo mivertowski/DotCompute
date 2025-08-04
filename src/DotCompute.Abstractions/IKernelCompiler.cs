@@ -15,13 +15,13 @@ public interface IKernelCompiler
     /// <summary>
     /// Gets the name of the compiler.
     /// </summary>
-    string Name { get; }
-    
+    public string Name { get; }
+
     /// <summary>
     /// Gets the supported kernel source types.
     /// </summary>
-    KernelSourceType[] SupportedSourceTypes { get; }
-    
+    public KernelSourceType[] SupportedSourceTypes { get; }
+
     /// <summary>
     /// Compiles a kernel from the given definition.
     /// </summary>
@@ -29,17 +29,17 @@ public interface IKernelCompiler
     /// <param name="options">Optional compilation options.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The compiled kernel.</returns>
-    ValueTask<ICompiledKernel> CompileAsync(
+    public ValueTask<ICompiledKernel> CompileAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Validates whether a kernel definition can be compiled.
     /// </summary>
     /// <param name="definition">The kernel definition to validate.</param>
     /// <returns>A validation result indicating whether compilation is possible.</returns>
-    ValidationResult Validate(KernelDefinition definition);
+    public ValidationResult Validate(KernelDefinition definition);
 }
 
 // Note: CompilationOptions and ICompiledKernel are defined in IAccelerator.cs
@@ -64,46 +64,66 @@ public readonly struct ValidationResult
     /// Gets whether the validation passed.
     /// </summary>
     public bool IsValid { get; }
-    
+
     /// <summary>
     /// Gets the error message if validation failed.
     /// </summary>
     public string? ErrorMessage { get; }
-    
+
     /// <summary>
     /// Gets any warnings from validation.
     /// </summary>
     public string[]? Warnings { get; }
-    
+
     private ValidationResult(bool isValid, string? errorMessage, string[]? warnings)
     {
         IsValid = isValid;
         ErrorMessage = errorMessage;
         Warnings = warnings;
     }
-    
+
     /// <summary>
     /// Creates a successful validation result.
     /// </summary>
     public static ValidationResult Success() => new ValidationResult(true, null, null);
-    
+
     /// <summary>
     /// Creates a successful validation result with warnings.
     /// </summary>
-    public static ValidationResult SuccessWithWarnings(params string[] warnings) 
+    public static ValidationResult SuccessWithWarnings(params string[] warnings)
         => new ValidationResult(true, null, warnings);
-    
+
     /// <summary>
     /// Creates a failed validation result.
     /// </summary>
-    public static ValidationResult Failure(string errorMessage) 
+    public static ValidationResult Failure(string errorMessage)
         => new ValidationResult(false, errorMessage, null);
-    
+
     /// <summary>
     /// Creates a failed validation result with warnings.
     /// </summary>
-    public static ValidationResult FailureWithWarnings(string errorMessage, params string[] warnings) 
+    public static ValidationResult FailureWithWarnings(string errorMessage, params string[] warnings)
         => new ValidationResult(false, errorMessage, warnings);
+
+    public override bool Equals(object obj)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override int GetHashCode()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static bool operator ==(ValidationResult left, ValidationResult right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(ValidationResult left, ValidationResult right)
+    {
+        return !(left == right);
+    }
 }
 
 /// <summary>
@@ -115,42 +135,42 @@ public enum KernelSourceType
     /// C# expression tree.
     /// </summary>
     ExpressionTree,
-    
+
     /// <summary>
     /// CUDA C/C++ source code.
     /// </summary>
     CUDA,
-    
+
     /// <summary>
     /// OpenCL C source code.
     /// </summary>
     OpenCL,
-    
+
     /// <summary>
     /// HLSL shader code.
     /// </summary>
     HLSL,
-    
+
     /// <summary>
     /// SPIR-V bytecode.
     /// </summary>
     SPIRV,
-    
+
     /// <summary>
     /// Metal shader language.
     /// </summary>
     Metal,
-    
+
     /// <summary>
     /// ROCm HIP source code.
     /// </summary>
     HIP,
-    
+
     /// <summary>
     /// SYCL/DPC++ source code.
     /// </summary>
     SYCL,
-    
+
     /// <summary>
     /// Pre-compiled binary.
     /// </summary>
@@ -166,27 +186,27 @@ public readonly struct CompilationMetadata
     /// Gets the time taken to compile.
     /// </summary>
     public TimeSpan CompilationTime { get; }
-    
+
     /// <summary>
     /// Gets the size of the compiled code in bytes.
     /// </summary>
     public long CodeSize { get; }
-    
+
     /// <summary>
     /// Gets the register usage per thread.
     /// </summary>
     public int RegistersPerThread { get; }
-    
+
     /// <summary>
     /// Gets the shared memory usage per block.
     /// </summary>
     public long SharedMemoryPerBlock { get; }
-    
+
     /// <summary>
     /// Gets any optimization notes from the compiler.
     /// </summary>
     public string[]? OptimizationNotes { get; }
-    
+
     public CompilationMetadata(
         TimeSpan compilationTime,
         long codeSize,
@@ -199,5 +219,25 @@ public readonly struct CompilationMetadata
         RegistersPerThread = registersPerThread;
         SharedMemoryPerBlock = sharedMemoryPerBlock;
         OptimizationNotes = optimizationNotes;
+    }
+
+    public override bool Equals(object obj)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override int GetHashCode()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static bool operator ==(CompilationMetadata left, CompilationMetadata right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(CompilationMetadata left, CompilationMetadata right)
+    {
+        return !(left == right);
     }
 }

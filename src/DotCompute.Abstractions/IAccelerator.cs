@@ -15,16 +15,16 @@ public interface IAccelerator : IAsyncDisposable
 {
     /// <summary>Gets device information.</summary>
     public AcceleratorInfo Info { get; }
-    
+
     /// <summary>Gets memory manager for this accelerator.</summary>
     public IMemoryManager Memory { get; }
-    
+
     /// <summary>Compiles a kernel for execution.</summary>
     public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default);
-    
+
     /// <summary>Synchronizes all pending operations.</summary>
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
 }
@@ -36,22 +36,22 @@ public class AcceleratorInfo
 {
     /// <summary>Gets or sets the unique identifier for this device.</summary>
     public required string Id { get; init; }
-    
+
     /// <summary>Gets or sets the friendly name of this device.</summary>
     public required string Name { get; init; }
-    
+
     /// <summary>Gets or sets the device type (e.g., "CPU", "GPU", "TPU").</summary>
     public required string DeviceType { get; init; }
-    
+
     /// <summary>Gets or sets the vendor name.</summary>
     public required string Vendor { get; init; }
-    
+
     /// <summary>Gets or sets the device type for legacy compatibility.</summary>
     public string Type => DeviceType;
-    
+
     /// <summary>Gets or sets the driver version.</summary>
     public string? DriverVersion { get; init; }
-    
+
     /// <summary>
     /// Legacy constructor for backward compatibility with tests.
     /// </summary>
@@ -71,23 +71,50 @@ public class AcceleratorInfo
         IsUnifiedMemory = type == AcceleratorType.CPU;
         MaxThreadsPerBlock = 1024; // Default value for legacy compatibility
     }
-    
+
     /// <summary>
     /// Constructor for tests with full parameters.
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
-    public AcceleratorInfo(string name, string vendor, string driverVersion, AcceleratorType type, 
-                          double computeCapability, int maxThreadsPerBlock, int maxSharedMemory, 
+    public AcceleratorInfo(string name, string vendor, string driverVersion, AcceleratorType type,
+                          double computeCapability, int maxThreadsPerBlock, int maxSharedMemory,
                           long totalMemory, long availableMemory)
     {
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
-        if (string.IsNullOrEmpty(vendor)) throw new ArgumentException("Vendor cannot be null or empty", nameof(vendor));
-        if (string.IsNullOrEmpty(driverVersion)) throw new ArgumentException("DriverVersion cannot be null or empty", nameof(driverVersion));
-        if (computeCapability <= 0) throw new ArgumentOutOfRangeException(nameof(computeCapability), "ComputeCapability must be positive");
-        if (maxThreadsPerBlock <= 0) throw new ArgumentOutOfRangeException(nameof(maxThreadsPerBlock), "MaxThreadsPerBlock must be positive");
-        if (maxSharedMemory < 0) throw new ArgumentOutOfRangeException(nameof(maxSharedMemory), "MaxSharedMemory cannot be negative");
-        if (totalMemory <= 0 || availableMemory <= 0 || availableMemory > totalMemory) throw new ArgumentException("Invalid memory sizes");
-        
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new ArgumentException("Name cannot be null or empty", nameof(name));
+        }
+
+        if (string.IsNullOrEmpty(vendor))
+        {
+            throw new ArgumentException("Vendor cannot be null or empty", nameof(vendor));
+        }
+
+        if (string.IsNullOrEmpty(driverVersion))
+        {
+            throw new ArgumentException("DriverVersion cannot be null or empty", nameof(driverVersion));
+        }
+
+        if (computeCapability <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(computeCapability), "ComputeCapability must be positive");
+        }
+
+        if (maxThreadsPerBlock <= 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxThreadsPerBlock), "MaxThreadsPerBlock must be positive");
+        }
+
+        if (maxSharedMemory < 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(maxSharedMemory), "MaxSharedMemory cannot be negative");
+        }
+
+        if (totalMemory <= 0 || availableMemory <= 0 || availableMemory > totalMemory)
+        {
+            throw new ArgumentException("Invalid memory sizes");
+        }
+
         Id = $"{type}_{name}";
         Name = name;
         DeviceType = type.ToString();
@@ -102,13 +129,13 @@ public class AcceleratorInfo
         MaxThreadsPerBlock = maxThreadsPerBlock;
         ComputeCapability = new Version((int)computeCapability, (int)((computeCapability % 1) * 10));
     }
-    
+
     /// <summary>
     /// Extended constructor for tests.
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
-    public AcceleratorInfo(AcceleratorType type, string name, string driverVersion, long memorySize, 
-                          int computeUnits, int maxClockFrequency, Version? computeCapability, 
+    public AcceleratorInfo(AcceleratorType type, string name, string driverVersion, long memorySize,
+                          int computeUnits, int maxClockFrequency, Version? computeCapability,
                           long maxSharedMemoryPerBlock, bool isUnifiedMemory)
     {
         Id = $"{type}_{name}";
@@ -126,40 +153,40 @@ public class AcceleratorInfo
         MaxClockFrequency = maxClockFrequency;
         ComputeCapability = computeCapability;
     }
-    
+
     /// <summary>Gets or sets the compute capability or version.</summary>
     public Version? ComputeCapability { get; init; }
-    
+
     /// <summary>Gets or sets the total device memory in bytes.</summary>
     public long TotalMemory { get; init; }
-    
+
     /// <summary>Gets or sets the total device memory in bytes (alias for TotalMemory).</summary>
     public long MemorySize => TotalMemory;
-    
+
     /// <summary>Gets or sets the available device memory in bytes.</summary>
     public long AvailableMemory { get; init; }
-    
+
     /// <summary>Gets or sets the maximum shared memory per block in bytes.</summary>
     public long MaxSharedMemoryPerBlock { get; init; }
-    
+
     /// <summary>Gets or sets the maximum memory allocation size in bytes.</summary>
     public long MaxMemoryAllocationSize { get; init; }
-    
+
     /// <summary>Gets or sets the local memory size in bytes.</summary>
     public long LocalMemorySize { get; init; }
-    
+
     /// <summary>Gets or sets whether the device uses unified memory.</summary>
     public bool IsUnifiedMemory { get; init; }
-    
+
     /// <summary>Gets or sets the number of compute units.</summary>
     public int ComputeUnits { get; init; }
-    
+
     /// <summary>Gets or sets the maximum clock frequency in MHz.</summary>
     public int MaxClockFrequency { get; init; }
-    
+
     /// <summary>Gets or sets the maximum threads per block.</summary>
     public int MaxThreadsPerBlock { get; init; }
-    
+
     /// <summary>Gets or sets device-specific capabilities.</summary>
     public Dictionary<string, object>? Capabilities { get; init; }
 }
@@ -171,7 +198,7 @@ public interface ICompiledKernel : IAsyncDisposable
 {
     /// <summary>Gets the kernel name.</summary>
     public string Name { get; }
-    
+
     /// <summary>Executes the kernel with given arguments.</summary>
     public ValueTask ExecuteAsync(
         KernelArguments arguments,
@@ -185,19 +212,19 @@ public class CompilationOptions
 {
     /// <summary>Gets or sets optimization level.</summary>
     public OptimizationLevel OptimizationLevel { get; init; } = OptimizationLevel.Default;
-    
+
     /// <summary>Gets or sets whether to enable debug information.</summary>
     public bool EnableDebugInfo { get; init; }
-    
+
     /// <summary>Gets or sets additional compiler flags.</summary>
     public string[]? AdditionalFlags { get; init; }
-    
+
     /// <summary>Gets or sets preprocessor defines.</summary>
     public Dictionary<string, string>? Defines { get; init; }
-    
+
     /// <summary>Gets or sets whether to enable fast math optimizations.</summary>
     public bool FastMath { get; init; }
-    
+
     /// <summary>Gets or sets whether to enable loop unrolling.</summary>
     public bool UnrollLoops { get; init; }
 }
@@ -209,10 +236,10 @@ public enum OptimizationLevel
 {
     /// <summary>No optimization.</summary>
     None,
-    
+
     /// <summary>Default optimization level.</summary>
     Default,
-    
+
     /// <summary>Maximum optimization.</summary>
     Maximum
 }
@@ -224,16 +251,16 @@ public class KernelDefinition
 {
     /// <summary>Gets or sets the kernel name.</summary>
     public required string Name { get; init; }
-    
+
     /// <summary>Gets or sets the kernel source code or bytecode.</summary>
     public required byte[] Code { get; init; }
-    
+
     /// <summary>Gets or sets the kernel entry point.</summary>
     public string? EntryPoint { get; init; }
-    
+
     /// <summary>Gets or sets kernel metadata.</summary>
     public Dictionary<string, object>? Metadata { get; init; }
-    
+
     /// <summary>
     /// Initializes a new instance of the KernelDefinition class.
     /// </summary>
@@ -243,10 +270,21 @@ public class KernelDefinition
     [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
     public KernelDefinition(string name, IKernelSource source, CompilationOptions options)
     {
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
-        if (source == null) throw new ArgumentNullException(nameof(source));
-        if (options == null) throw new ArgumentNullException(nameof(options));
-        
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new ArgumentException("Name cannot be null or empty", nameof(name));
+        }
+
+        if (source == null)
+        {
+            throw new ArgumentNullException(nameof(source));
+        }
+
+        if (options == null)
+        {
+            throw new ArgumentNullException(nameof(options));
+        }
+
         Name = name;
         Code = System.Text.Encoding.UTF8.GetBytes(source.Code);
         EntryPoint = source.EntryPoint;
@@ -269,22 +307,22 @@ public readonly struct CompiledKernel : IEquatable<CompiledKernel>
     /// Gets the unique identifier for this kernel.
     /// </summary>
     public Guid Id { get; }
-    
+
     /// <summary>
     /// Gets the native handle to the compiled kernel code.
     /// </summary>
     public IntPtr NativeHandle { get; }
-    
+
     /// <summary>
     /// Gets the kernel's required shared memory size in bytes.
     /// </summary>
     public int SharedMemorySize { get; }
-    
+
     /// <summary>
     /// Gets the kernel's thread configuration.
     /// </summary>
     public KernelConfiguration Configuration { get; }
-    
+
     public CompiledKernel(Guid id, IntPtr nativeHandle, int sharedMemorySize, KernelConfiguration configuration)
     {
         Id = id;
@@ -292,16 +330,16 @@ public readonly struct CompiledKernel : IEquatable<CompiledKernel>
         SharedMemorySize = sharedMemorySize;
         Configuration = configuration;
     }
-    
+
     /// <summary>
     /// Determines whether this instance is equal to another CompiledKernel.
     /// </summary>
     public readonly bool Equals(CompiledKernel other)
     {
-        return Id.Equals(other.Id) && NativeHandle.Equals(other.NativeHandle) && 
+        return Id.Equals(other.Id) && NativeHandle.Equals(other.NativeHandle) &&
                SharedMemorySize == other.SharedMemorySize && Configuration.Equals(other.Configuration);
     }
-    
+
     /// <summary>
     /// Determines whether this instance is equal to another object.
     /// </summary>
@@ -309,7 +347,7 @@ public readonly struct CompiledKernel : IEquatable<CompiledKernel>
     {
         return obj is CompiledKernel other && Equals(other);
     }
-    
+
     /// <summary>
     /// Returns the hash code for this instance.
     /// </summary>
@@ -317,7 +355,7 @@ public readonly struct CompiledKernel : IEquatable<CompiledKernel>
     {
         return HashCode.Combine(Id, NativeHandle, SharedMemorySize, Configuration);
     }
-    
+
     /// <summary>
     /// Determines whether two CompiledKernel instances are equal.
     /// </summary>
@@ -325,7 +363,7 @@ public readonly struct CompiledKernel : IEquatable<CompiledKernel>
     {
         return left.Equals(right);
     }
-    
+
     /// <summary>
     /// Determines whether two CompiledKernel instances are not equal.
     /// </summary>
@@ -344,18 +382,18 @@ public readonly struct KernelConfiguration : IEquatable<KernelConfiguration>
     /// Gets the number of thread blocks in each dimension.
     /// </summary>
     public Dim3 GridDimensions { get; }
-    
+
     /// <summary>
     /// Gets the number of threads per block in each dimension.
     /// </summary>
     public Dim3 BlockDimensions { get; }
-    
+
     public KernelConfiguration(Dim3 gridDimensions, Dim3 blockDimensions)
     {
         GridDimensions = gridDimensions;
         BlockDimensions = blockDimensions;
     }
-    
+
     /// <summary>
     /// Determines whether this instance is equal to another KernelConfiguration.
     /// </summary>
@@ -363,7 +401,7 @@ public readonly struct KernelConfiguration : IEquatable<KernelConfiguration>
     {
         return GridDimensions.Equals(other.GridDimensions) && BlockDimensions.Equals(other.BlockDimensions);
     }
-    
+
     /// <summary>
     /// Determines whether this instance is equal to another object.
     /// </summary>
@@ -371,7 +409,7 @@ public readonly struct KernelConfiguration : IEquatable<KernelConfiguration>
     {
         return obj is KernelConfiguration other && Equals(other);
     }
-    
+
     /// <summary>
     /// Returns the hash code for this instance.
     /// </summary>
@@ -379,7 +417,7 @@ public readonly struct KernelConfiguration : IEquatable<KernelConfiguration>
     {
         return HashCode.Combine(GridDimensions, BlockDimensions);
     }
-    
+
     /// <summary>
     /// Determines whether two KernelConfiguration instances are equal.
     /// </summary>
@@ -387,7 +425,7 @@ public readonly struct KernelConfiguration : IEquatable<KernelConfiguration>
     {
         return left.Equals(right);
     }
-    
+
     /// <summary>
     /// Determines whether two KernelConfiguration instances are not equal.
     /// </summary>
@@ -405,33 +443,33 @@ public readonly struct Dim3 : IEquatable<Dim3>
     public int X { get; }
     public int Y { get; }
     public int Z { get; }
-    
+
     public Dim3(int x, int y = 1, int z = 1)
     {
         X = x;
         Y = y;
         Z = z;
     }
-    
+
     public static implicit operator Dim3(int value) => new(value);
     public static implicit operator Dim3((int x, int y) value) => new(value.x, value.y);
     public static implicit operator Dim3((int x, int y, int z) value) => new(value.x, value.y, value.z);
-    
+
     /// <summary>
     /// Creates a Dim3 from an integer value.
     /// </summary>
     public static Dim3 FromInt32(int value) => new(value);
-    
+
     /// <summary>
     /// Creates a Dim3 from a value tuple with x and y components.
     /// </summary>
     public static Dim3 FromValueTuple((int x, int y) value) => new(value.x, value.y);
-    
+
     /// <summary>
     /// Creates a Dim3 from a value tuple with x, y, and z components.
     /// </summary>
     public static Dim3 FromValueTuple((int x, int y, int z) value) => new(value.x, value.y, value.z);
-    
+
     /// <summary>
     /// Determines whether this instance is equal to another Dim3.
     /// </summary>
@@ -439,7 +477,7 @@ public readonly struct Dim3 : IEquatable<Dim3>
     {
         return X == other.X && Y == other.Y && Z == other.Z;
     }
-    
+
     /// <summary>
     /// Determines whether this instance is equal to another object.
     /// </summary>
@@ -447,7 +485,7 @@ public readonly struct Dim3 : IEquatable<Dim3>
     {
         return obj is Dim3 other && Equals(other);
     }
-    
+
     /// <summary>
     /// Returns the hash code for this instance.
     /// </summary>
@@ -455,7 +493,7 @@ public readonly struct Dim3 : IEquatable<Dim3>
     {
         return HashCode.Combine(X, Y, Z);
     }
-    
+
     /// <summary>
     /// Determines whether two Dim3 instances are equal.
     /// </summary>
@@ -463,7 +501,7 @@ public readonly struct Dim3 : IEquatable<Dim3>
     {
         return left.Equals(right);
     }
-    
+
     /// <summary>
     /// Determines whether two Dim3 instances are not equal.
     /// </summary>
@@ -479,17 +517,17 @@ public readonly struct Dim3 : IEquatable<Dim3>
 public struct KernelArguments : IEquatable<KernelArguments>
 {
     private readonly object[] _args;
-    
+
     public KernelArguments(params object[] args)
     {
         _args = args ?? Array.Empty<object>();
     }
-    
+
     /// <summary>
     /// Gets the arguments as a read-only span.
     /// </summary>
     public readonly ReadOnlySpan<object> Arguments => _args;
-    
+
     /// <summary>
     /// Sets an argument at the specified index.
     /// </summary>
@@ -497,11 +535,19 @@ public struct KernelArguments : IEquatable<KernelArguments>
     /// <param name="value">The value to set.</param>
     public void Set(int index, object value)
     {
-        if (_args == null) throw new InvalidOperationException("KernelArguments not initialized with proper capacity");
-        if (index < 0 || index >= _args.Length) throw new ArgumentOutOfRangeException(nameof(index));
+        if (_args == null)
+        {
+            throw new InvalidOperationException("KernelArguments not initialized with proper capacity");
+        }
+
+        if (index < 0 || index >= _args.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
         _args[index] = value;
     }
-    
+
     /// <summary>
     /// Gets an argument at the specified index.
     /// </summary>
@@ -509,11 +555,19 @@ public struct KernelArguments : IEquatable<KernelArguments>
     /// <returns>The argument at the specified index.</returns>
     public object Get(int index)
     {
-        if (_args == null) throw new InvalidOperationException("KernelArguments not initialized");
-        if (index < 0 || index >= _args.Length) throw new ArgumentOutOfRangeException(nameof(index));
+        if (_args == null)
+        {
+            throw new InvalidOperationException("KernelArguments not initialized");
+        }
+
+        if (index < 0 || index >= _args.Length)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
         return _args[index];
     }
-    
+
     /// <summary>
     /// Creates a new KernelArguments with the specified capacity.
     /// </summary>
@@ -523,12 +577,12 @@ public struct KernelArguments : IEquatable<KernelArguments>
     {
         return new KernelArguments(new object[capacity]);
     }
-    
+
     /// <summary>
     /// Gets the number of arguments.
     /// </summary>
     public int Length => _args?.Length ?? 0;
-    
+
     /// <summary>
     /// Determines whether this instance is equal to another KernelArguments.
     /// </summary>
@@ -546,7 +600,7 @@ public struct KernelArguments : IEquatable<KernelArguments>
         {
             return false;
         }
-        
+
         for (int i = 0; i < _args.Length; i++)
         {
             if (!Equals(_args[i], other._args[i]))
@@ -556,7 +610,7 @@ public struct KernelArguments : IEquatable<KernelArguments>
         }
         return true;
     }
-    
+
     /// <summary>
     /// Determines whether this instance is equal to another object.
     /// </summary>
@@ -564,7 +618,7 @@ public struct KernelArguments : IEquatable<KernelArguments>
     {
         return obj is KernelArguments other && Equals(other);
     }
-    
+
     /// <summary>
     /// Returns the hash code for this instance.
     /// </summary>
@@ -581,7 +635,7 @@ public struct KernelArguments : IEquatable<KernelArguments>
         }
         return hashCode.ToHashCode();
     }
-    
+
     /// <summary>
     /// Determines whether two KernelArguments instances are equal.
     /// </summary>
@@ -589,7 +643,7 @@ public struct KernelArguments : IEquatable<KernelArguments>
     {
         return left.Equals(right);
     }
-    
+
     /// <summary>
     /// Determines whether two KernelArguments instances are not equal.
     /// </summary>

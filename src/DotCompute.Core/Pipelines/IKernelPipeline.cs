@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using DotCompute.Core;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core.Pipelines;
 
@@ -19,27 +19,27 @@ public interface IKernelPipeline : IAsyncDisposable
     /// <summary>
     /// Gets the pipeline identifier.
     /// </summary>
-    string Id { get; }
+    public string Id { get; }
 
     /// <summary>
     /// Gets the pipeline name.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>
     /// Gets the pipeline stages.
     /// </summary>
-    IReadOnlyList<IPipelineStage> Stages { get; }
+    public IReadOnlyList<IPipelineStage> Stages { get; }
 
     /// <summary>
     /// Gets the pipeline optimization settings.
     /// </summary>
-    PipelineOptimizationSettings OptimizationSettings { get; }
+    public PipelineOptimizationSettings OptimizationSettings { get; }
 
     /// <summary>
     /// Gets the pipeline metadata.
     /// </summary>
-    IReadOnlyDictionary<string, object> Metadata { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
 
     /// <summary>
     /// Executes the pipeline asynchronously.
@@ -47,7 +47,7 @@ public interface IKernelPipeline : IAsyncDisposable
     /// <param name="context">The execution context.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The execution result.</returns>
-    ValueTask<PipelineExecutionResult> ExecuteAsync(
+    public ValueTask<PipelineExecutionResult> ExecuteAsync(
         PipelineExecutionContext context,
         CancellationToken cancellationToken = default);
 
@@ -55,20 +55,20 @@ public interface IKernelPipeline : IAsyncDisposable
     /// Validates the pipeline configuration.
     /// </summary>
     /// <returns>Validation result with any errors or warnings.</returns>
-    PipelineValidationResult Validate();
+    public PipelineValidationResult Validate();
 
     /// <summary>
     /// Gets performance metrics for the pipeline.
     /// </summary>
     /// <returns>Performance metrics.</returns>
-    IPipelineMetrics GetMetrics();
+    public IPipelineMetrics GetMetrics();
 
     /// <summary>
     /// Optimizes the pipeline by applying transformations like kernel fusion.
     /// </summary>
     /// <param name="optimizer">The pipeline optimizer.</param>
     /// <returns>An optimized pipeline.</returns>
-    ValueTask<IKernelPipeline> OptimizeAsync(IPipelineOptimizer optimizer);
+    public ValueTask<IKernelPipeline> OptimizeAsync(IPipelineOptimizer optimizer);
 }
 
 /// <summary>
@@ -79,12 +79,12 @@ public interface IKernelPipelineBuilder
     /// <summary>
     /// Sets the pipeline name.
     /// </summary>
-    IKernelPipelineBuilder WithName(string name);
+    public IKernelPipelineBuilder WithName(string name);
 
     /// <summary>
     /// Adds a kernel stage to the pipeline.
     /// </summary>
-    IKernelPipelineBuilder AddKernel(
+    public IKernelPipelineBuilder AddKernel(
         string name,
         ICompiledKernel kernel,
         Action<IKernelStageBuilder>? configure = null);
@@ -92,12 +92,12 @@ public interface IKernelPipelineBuilder
     /// <summary>
     /// Adds a parallel stage that executes multiple kernels concurrently.
     /// </summary>
-    IKernelPipelineBuilder AddParallel(Action<IParallelStageBuilder> configure);
+    public IKernelPipelineBuilder AddParallel(Action<IParallelStageBuilder> configure);
 
     /// <summary>
     /// Adds a branching stage that conditionally executes different paths.
     /// </summary>
-    IKernelPipelineBuilder AddBranch(
+    public IKernelPipelineBuilder AddBranch(
         Func<PipelineExecutionContext, bool> condition,
         Action<IKernelPipelineBuilder> trueBranch,
         Action<IKernelPipelineBuilder>? falseBranch = null);
@@ -105,39 +105,39 @@ public interface IKernelPipelineBuilder
     /// <summary>
     /// Adds a loop stage that repeats execution.
     /// </summary>
-    IKernelPipelineBuilder AddLoop(
+    public IKernelPipelineBuilder AddLoop(
         Func<PipelineExecutionContext, int, bool> condition,
         Action<IKernelPipelineBuilder> body);
 
     /// <summary>
     /// Adds a custom stage.
     /// </summary>
-    IKernelPipelineBuilder AddStage(IPipelineStage stage);
+    public IKernelPipelineBuilder AddStage(IPipelineStage stage);
 
     /// <summary>
     /// Adds metadata to the pipeline.
     /// </summary>
-    IKernelPipelineBuilder WithMetadata(string key, object value);
+    public IKernelPipelineBuilder WithMetadata(string key, object value);
 
     /// <summary>
     /// Configures optimization settings.
     /// </summary>
-    IKernelPipelineBuilder WithOptimization(Action<PipelineOptimizationSettings> configure);
+    public IKernelPipelineBuilder WithOptimization(Action<PipelineOptimizationSettings> configure);
 
     /// <summary>
     /// Adds error handling to the pipeline.
     /// </summary>
-    IKernelPipelineBuilder WithErrorHandler(Func<Exception, PipelineExecutionContext, ErrorHandlingResult> handler);
+    public IKernelPipelineBuilder WithErrorHandler(Func<Exception, PipelineExecutionContext, ErrorHandlingResult> handler);
 
     /// <summary>
     /// Adds a callback for pipeline events.
     /// </summary>
-    IKernelPipelineBuilder WithEventHandler(Action<PipelineEvent> handler);
+    public IKernelPipelineBuilder WithEventHandler(Action<PipelineEvent> handler);
 
     /// <summary>
     /// Builds the pipeline.
     /// </summary>
-    IKernelPipeline Build();
+    public IKernelPipeline Build();
 }
 
 /// <summary>
@@ -148,44 +148,44 @@ public interface IPipelineStage
     /// <summary>
     /// Gets the stage identifier.
     /// </summary>
-    string Id { get; }
+    public string Id { get; }
 
     /// <summary>
     /// Gets the stage name.
     /// </summary>
-    string Name { get; }
+    public string Name { get; }
 
     /// <summary>
     /// Gets the stage type.
     /// </summary>
-    PipelineStageType Type { get; }
+    public PipelineStageType Type { get; }
 
     /// <summary>
     /// Gets the stage dependencies.
     /// </summary>
-    IReadOnlyList<string> Dependencies { get; }
+    public IReadOnlyList<string> Dependencies { get; }
 
     /// <summary>
     /// Gets the stage metadata.
     /// </summary>
-    IReadOnlyDictionary<string, object> Metadata { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
 
     /// <summary>
     /// Executes the stage.
     /// </summary>
-    ValueTask<StageExecutionResult> ExecuteAsync(
+    public ValueTask<StageExecutionResult> ExecuteAsync(
         PipelineExecutionContext context,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Validates the stage configuration.
     /// </summary>
-    StageValidationResult Validate();
+    public StageValidationResult Validate();
 
     /// <summary>
     /// Gets performance metrics for this stage.
     /// </summary>
-    IStageMetrics GetMetrics();
+    public IStageMetrics GetMetrics();
 }
 
 /// <summary>
@@ -408,7 +408,7 @@ public interface IPipelineOptimizer
     /// <summary>
     /// Optimizes a pipeline.
     /// </summary>
-    ValueTask<OptimizedPipeline> OptimizeAsync(
+    public ValueTask<OptimizedPipeline> OptimizeAsync(
         IKernelPipeline pipeline,
         PipelineOptimizationSettings settings,
         CancellationToken cancellationToken = default);

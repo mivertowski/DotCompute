@@ -13,11 +13,11 @@ using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using DotCompute.Abstractions;
+using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Threading;
-using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Core;
-using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Kernels;
@@ -43,7 +43,7 @@ internal sealed partial class CpuKernelCompiler
         logger.LogDebug("Starting kernel compilation: {KernelName}", definition.Name);
 
         var stopwatch = Stopwatch.StartNew();
-        
+
         try
         {
             // Step 1: Validate kernel definition
@@ -60,36 +60,36 @@ internal sealed partial class CpuKernelCompiler
 
             // Step 3: Analyze the kernel for vectorization opportunities
             var analysis = await AnalyzeKernelAsync(definition, kernelAst, cancellationToken).ConfigureAwait(false);
-            
+
             // Step 4: Apply optimization passes
             // Apply optimization passes if enabled
             if (options.OptimizationLevel != OptimizationLevel.None)
             {
                 kernelAst = await OptimizeKernelAstAsync(kernelAst!, options, analysis, cancellationToken).ConfigureAwait(false);
             }
-            
+
             // Step 5: Generate native code or IL
             var compiledCode = await GenerateCodeAsync(definition, kernelAst, analysis, options, cancellationToken).ConfigureAwait(false);
-            
+
             // Step 6: Generate vectorized execution plan
             var executionPlan = GenerateExecutionPlan(analysis, context);
-            
+
             // Step 7: Add compilation metadata
             var enrichedDefinition = EnrichDefinitionWithCompilationMetadata(definition, context.SimdCapabilities, compiledCode, stopwatch.Elapsed);
-            
+
             // Step 8: Create the compiled kernel
             var compiledKernel = new CpuCompiledKernel(enrichedDefinition, executionPlan, context.ThreadPool, logger);
-            
+
             // Store compiled code delegate if generated
             if (compiledCode.CompiledDelegate != null)
             {
                 compiledKernel.SetCompiledDelegate(compiledCode.CompiledDelegate);
             }
-            
+
             stopwatch.Stop();
-            logger.LogInformation("Successfully compiled kernel '{KernelName}' in {ElapsedMs}ms with {OptimizationLevel} optimization", 
+            logger.LogInformation("Successfully compiled kernel '{KernelName}' in {ElapsedMs}ms with {OptimizationLevel} optimization",
                 definition.Name, stopwatch.ElapsedMilliseconds, options.OptimizationLevel);
-            
+
             return compiledKernel;
         }
         catch (Exception ex)
@@ -198,14 +198,14 @@ internal sealed partial class CpuKernelCompiler
     {
         // Analyze the kernel to determine optimal vectorization factor
         var simdWidth = SimdCapabilities.PreferredVectorWidth;
-        
+
         // Extract parameter count from metadata
         var paramCount = 3; // Default to 3 parameters
         if (definition.Metadata?.TryGetValue("ParameterCount", out var paramCountObj) == true && paramCountObj is int count)
         {
             paramCount = count;
         }
-        
+
         // For simple kernels, use maximum vectorization
         if (paramCount <= 4)
         {
@@ -236,13 +236,13 @@ internal sealed partial class CpuKernelCompiler
         {
             paramCount = count;
         }
-        
+
         // Analyze parameter types to determine memory access pattern
         // Default assumption: all parameters are buffers with read-write access
         var bufferParams = paramCount;
         var readOnlyParams = 0;
         var writeOnlyParams = 0;
-        
+
         if (definition.Metadata?.TryGetValue("ParameterAccess", out var accessObj) == true && accessObj is string[] access)
         {
             readOnlyParams = access.Count(a => a == "ReadOnly");
@@ -275,14 +275,14 @@ internal sealed partial class CpuKernelCompiler
         {
             paramCount = count;
         }
-        
+
         // Extract work dimensions from metadata
         var workDimensions = 1; // Default to 1D
         if (definition.Metadata?.TryGetValue("WorkDimensions", out var dimObj) == true && dimObj is int dims)
         {
             workDimensions = dims;
         }
-        
+
         // Estimate based on kernel complexity
         var parameterComplexity = paramCount;
         var dimensionComplexity = workDimensions;
@@ -306,7 +306,7 @@ internal sealed partial class CpuKernelCompiler
         {
             workDimensions = dims;
         }
-        
+
         // Calculate based on dimensions and complexity
         var baseSize = workDimensions switch
         {
@@ -322,7 +322,7 @@ internal sealed partial class CpuKernelCompiler
         {
             paramCount = count;
         }
-        
+
         // Adjust based on parameter count
         if (paramCount > 8)
         {
@@ -344,17 +344,17 @@ internal sealed partial class CpuKernelCompiler
             _ => 64
         };
     }
-    
+
     private static async ValueTask<KernelAst> OptimizeKernelAstAsync(
-        KernelAst ast, 
-        CompilationOptions options, 
+        KernelAst ast,
+        CompilationOptions options,
         KernelAnalysis analysis,
         CancellationToken cancellationToken)
     {
         await Task.Yield();
 
         var optimizer = new KernelOptimizer();
-        
+
         // Apply optimization passes based on optimization level
         switch (options.OptimizationLevel)
         {
@@ -362,7 +362,7 @@ internal sealed partial class CpuKernelCompiler
                 // Minimal optimization for debugging
                 ast = optimizer.ApplyBasicOptimizations(ast);
                 break;
-                
+
             case OptimizationLevel.Default:
                 // Standard optimizations
                 ast = optimizer.ApplyStandardOptimizations(ast);
@@ -371,7 +371,7 @@ internal sealed partial class CpuKernelCompiler
                     ast = optimizer.ApplyVectorizationOptimizations(ast, analysis.VectorizationFactor);
                 }
                 break;
-                
+
             case OptimizationLevel.Maximum:
                 // Aggressive optimizations
                 ast = optimizer.ApplyAggressiveOptimizations(ast);
@@ -401,7 +401,7 @@ internal sealed partial class CpuKernelCompiler
         await Task.Yield();
 
         var codeGen = new CpuRuntimeCodeGenerator();
-        
+
         if (kernelAst != null)
         {
             // Generate code from AST
@@ -425,13 +425,13 @@ internal sealed partial class CpuKernelCompiler
         // Look for patterns that prevent vectorization
         if (ast.HasRecursion)
             return false;
-            
+
         if (ast.HasIndirectMemoryAccess)
             return false;
-            
+
         if (ast.HasComplexControlFlow)
             return false;
-            
+
         // Check for vectorizable operations
         return ast.Operations.Any(op => IsVectorizableOperation(op));
     }
@@ -455,20 +455,20 @@ internal sealed partial class CpuKernelCompiler
     private static int EstimateComplexity(KernelAst ast)
     {
         var complexity = 0;
-        
+
         // Count operations
         complexity += ast.Operations.Count;
-        
+
         // Add complexity for control flow
         if (ast.HasConditionals)
             complexity += 5;
-            
+
         if (ast.HasLoops)
             complexity += 10;
-            
+
         // Add complexity for memory operations
         complexity += ast.MemoryOperations.Count * 2;
-        
+
         return complexity;
     }
 
@@ -481,12 +481,12 @@ internal sealed partial class CpuKernelCompiler
         var metadata = original.Metadata != null
             ? new Dictionary<string, object>(original.Metadata)
             : new Dictionary<string, object>();
-        
+
         metadata["SimdCapabilities"] = simdCapabilities;
         metadata["CompilationTime"] = compilationTime;
         metadata["CodeSize"] = compiledCode.CodeSize;
         metadata["OptimizationNotes"] = compiledCode.OptimizationNotes;
-        
+
         var sourceCode = System.Text.Encoding.UTF8.GetString(original.Code);
         var kernelSource = new TextKernelSource(
             code: sourceCode,
@@ -495,7 +495,7 @@ internal sealed partial class CpuKernelCompiler
             entryPoint: original.EntryPoint ?? "main",
             dependencies: Array.Empty<string>()
         );
-        
+
         var compilationOptions = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
@@ -503,9 +503,9 @@ internal sealed partial class CpuKernelCompiler
             AdditionalFlags = null,
             Defines = null
         };
-        
+
         var definition = new KernelDefinition(original.Name, kernelSource, compilationOptions);
-        
+
         // Override metadata with enriched information
         if (definition.Metadata != null)
         {
@@ -514,7 +514,7 @@ internal sealed partial class CpuKernelCompiler
                 definition.Metadata[kvp.Key] = kvp.Value;
             }
         }
-        
+
         return definition;
     }
 }
@@ -591,7 +591,7 @@ internal readonly struct ValidationResult
 {
     public bool IsValid { get; }
     public string? ErrorMessage { get; }
-    
+
     public ValidationResult(bool isValid, string? errorMessage)
     {
         IsValid = isValid;
@@ -644,7 +644,7 @@ internal enum AstNodeType
     Multiply,
     Divide,
     Modulo,
-    
+
     // Math functions
     Abs,
     Min,
@@ -656,17 +656,17 @@ internal enum AstNodeType
     Sin,
     Cos,
     Tan,
-    
+
     // Memory operations
     Load,
     Store,
-    
+
     // Control flow
     If,
     For,
     While,
     Return,
-    
+
     // Literals and identifiers
     Constant,
     Variable,
@@ -689,23 +689,23 @@ internal sealed class CompiledCode
 /// </summary>
 internal sealed class KernelSourceParser
 {
-    #pragma warning disable SYSLIB1045 // Suppress GeneratedRegex warning for AOT compatibility
+#pragma warning disable SYSLIB1045 // Suppress GeneratedRegex warning for AOT compatibility
     private static readonly Regex _loadPatternRegex = new(@"(\w+)\[", RegexOptions.Compiled);
     private static readonly Regex _storePatternRegex = new(@"\[\w+\]\s*=", RegexOptions.Compiled);
-    #pragma warning restore SYSLIB1045
+#pragma warning restore SYSLIB1045
     public KernelAst Parse(string code, string language)
     {
         // Simple parser implementation for demonstration
         // In production, this would use a proper parser library or Roslyn for C#
-        
+
         var ast = new KernelAst();
-        
+
         // Detect basic patterns
         ast.HasConditionals = code.Contains("if") || code.Contains('?');
         ast.HasLoops = code.Contains("for") || code.Contains("while");
         ast.HasRecursion = false; // Would need deeper analysis
         ast.HasIndirectMemoryAccess = code.Contains('[') && code.Contains(']');
-        
+
         // Parse operations (simplified)
         if (code.Contains('+'))
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Add });
@@ -715,20 +715,20 @@ internal sealed class KernelSourceParser
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Multiply });
         if (code.Contains('/'))
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Divide });
-        
+
         // Detect memory operations
         var loadMatches = _loadPatternRegex.Matches(code);
         foreach (Match match in loadMatches)
         {
             ast.MemoryOperations.Add(new AstNode { NodeType = AstNodeType.Load });
         }
-        
+
         var storeMatches = _storePatternRegex.Matches(code);
         foreach (Match match in storeMatches)
         {
             ast.MemoryOperations.Add(new AstNode { NodeType = AstNodeType.Store });
         }
-        
+
         return ast;
     }
 }
@@ -743,33 +743,33 @@ internal sealed partial class KernelOptimizer
         // Constant folding, dead code elimination
         return ast;
     }
-    
+
     public KernelAst ApplyStandardOptimizations(KernelAst ast)
     {
         // Common subexpression elimination, strength reduction
         ast = ApplyBasicOptimizations(ast);
         return ast;
     }
-    
+
     public KernelAst ApplyAggressiveOptimizations(KernelAst ast)
     {
         // Loop transformations, function inlining
         ast = ApplyStandardOptimizations(ast);
         return ast;
     }
-    
+
     public KernelAst ApplyVectorizationOptimizations(KernelAst ast, int vectorizationFactor)
     {
         // Transform operations to use SIMD instructions
         return ast;
     }
-    
+
     public KernelAst ApplyLoopUnrolling(KernelAst ast, int unrollFactor)
     {
         // Unroll loops by the specified factor
         return ast;
     }
-    
+
     public KernelAst ApplyFastMathOptimizations(KernelAst ast)
     {
         // Relaxed floating-point operations for performance

@@ -1,8 +1,8 @@
+using System.Collections.Generic;
 using DotCompute.Abstractions;
 using DotCompute.Core;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using System.Collections.Generic;
 using Xunit;
 
 namespace DotCompute.Core.Tests;
@@ -61,10 +61,10 @@ public class KernelExecutionContextTests
         };
 
         // Act
-        var context = new KernelExecutionContext 
-        { 
+        var context = new KernelExecutionContext
+        {
             Name = "TestKernel",
-            WorkDimensions = workDims 
+            WorkDimensions = workDims
         };
 
         // Assert
@@ -75,10 +75,10 @@ public class KernelExecutionContextTests
     public void LocalWorkSize_CanBeNull()
     {
         // Act
-        var context = new KernelExecutionContext 
-        { 
+        var context = new KernelExecutionContext
+        {
             Name = "TestKernel",
-            LocalWorkSize = null 
+            LocalWorkSize = null
         };
 
         // Assert
@@ -94,24 +94,24 @@ public class KernelExecutionContextTests
         var sizes3D = new long[] { 8, 8, 4 };
 
         // Act & Assert
-        var context1D = new KernelExecutionContext 
-        { 
+        var context1D = new KernelExecutionContext
+        {
             Name = "TestKernel",
-            LocalWorkSize = sizes1D 
+            LocalWorkSize = sizes1D
         };
         context1D.LocalWorkSize.Should().BeEquivalentTo(sizes1D);
 
-        var context2D = new KernelExecutionContext 
-        { 
+        var context2D = new KernelExecutionContext
+        {
             Name = "TestKernel",
-            LocalWorkSize = sizes2D 
+            LocalWorkSize = sizes2D
         };
         context2D.LocalWorkSize.Should().BeEquivalentTo(sizes2D);
 
-        var context3D = new KernelExecutionContext 
-        { 
+        var context3D = new KernelExecutionContext
+        {
             Name = "TestKernel",
-            LocalWorkSize = sizes3D 
+            LocalWorkSize = sizes3D
         };
         context3D.LocalWorkSize.Should().BeEquivalentTo(sizes3D);
     }
@@ -121,10 +121,10 @@ public class KernelExecutionContextTests
     {
         // Arrange
         var cts = new CancellationTokenSource();
-        var context = new KernelExecutionContext 
-        { 
+        var context = new KernelExecutionContext
+        {
             Name = "TestKernel",
-            CancellationToken = cts.Token 
+            CancellationToken = cts.Token
         };
 
         // Act

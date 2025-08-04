@@ -7,13 +7,13 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using DotCompute.Backends.CPU.Kernels;
 using Xunit;
 using Xunit.Abstractions;
-using DotCompute.Backends.CPU.Kernels;
 
 namespace DotCompute.Backends.CPU.Tests;
 
@@ -281,7 +281,7 @@ public class AdvancedSimdPerformanceTests
                 }, 50);
 
                 _output.WriteLine($"ARM NEON {operation} time: {time:F2}ms");
-                
+
                 // Validate ARM NEON performance
                 Assert.True(time < 5.0, $"ARM NEON {operation} should complete in < 5ms, but took {time:F2}ms");
             }
@@ -516,21 +516,21 @@ public class AdvancedSimdPerformanceTests
     public void PerformanceRoadmapTargetsAreAchieved()
     {
         _output.WriteLine("=== SIMD Roadmap Performance Validation ===");
-        
+
         // Report detected capabilities
         ReportSimdCapabilities();
 
         // Validate all critical implementations are working
         const int testSize = 100_000;
-        
+
         // 1. FMA Performance Target: Should achieve significant speedup
         var fmaSpeedup = TestFmaPerformance(testSize);
         _output.WriteLine($"✓ FMA Performance: {fmaSpeedup:F2}x speedup");
-        
+
         // 2. Integer SIMD Performance Target
         var intSpeedup = TestIntegerSimdPerformance(testSize);
         _output.WriteLine($"✓ Integer SIMD Performance: {intSpeedup:F2}x speedup");
-        
+
         // 3. Cross-platform compatibility
         var crossPlatformScore = TestCrossPlatformCompatibility();
         _output.WriteLine($"✓ Cross-platform Compatibility: {crossPlatformScore}");
@@ -539,7 +539,7 @@ public class AdvancedSimdPerformanceTests
         Assert.True(fmaSpeedup >= 2.0, "FMA implementation must achieve at least 2x speedup");
         Assert.True(intSpeedup >= 2.0, "Integer SIMD must achieve at least 2x speedup");
         Assert.True(crossPlatformScore >= 80, "Cross-platform compatibility must be >= 80%");
-        
+
         _output.WriteLine("=== SIMD Roadmap Completion: SUCCESS ===");
     }
 
@@ -605,7 +605,7 @@ public class AdvancedSimdPerformanceTests
         for (int i = 0; i < count; i++)
         {
             var diff = Math.Abs(expected[i] - actual[i]);
-            Assert.True(diff <= tolerance, 
+            Assert.True(diff <= tolerance,
                 $"Results differ at index {i}: expected={expected[i]}, actual={actual[i]}, diff={diff}, tolerance={tolerance}");
         }
     }
@@ -615,7 +615,7 @@ public class AdvancedSimdPerformanceTests
         for (int i = 0; i < count; i++)
         {
             var diff = Math.Abs(expected[i] - actual[i]);
-            Assert.True(diff <= tolerance, 
+            Assert.True(diff <= tolerance,
                 $"Results differ at index {i}: expected={expected[i]}, actual={actual[i]}, diff={diff}, tolerance={tolerance}");
         }
     }
@@ -624,8 +624,8 @@ public class AdvancedSimdPerformanceTests
     {
         _output.WriteLine($"Vector<T>.IsHardwareAccelerated: {Vector.IsHardwareAccelerated}");
         _output.WriteLine($"Vector<float>.Count: {Vector<float>.Count}");
-        
-        if (RuntimeInformation.ProcessArchitecture == Architecture.X64 || 
+
+        if (RuntimeInformation.ProcessArchitecture == Architecture.X64 ||
             RuntimeInformation.ProcessArchitecture == Architecture.X86)
         {
             _output.WriteLine($"SSE: {Sse.IsSupported}");

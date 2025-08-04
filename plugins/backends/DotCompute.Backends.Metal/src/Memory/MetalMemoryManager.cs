@@ -44,7 +44,7 @@ public sealed class MetalMemoryManager : IMemoryManager
 
         if (sizeInBytes > _options.MaxMemoryAllocation)
         {
-            throw new ArgumentOutOfRangeException(nameof(sizeInBytes), 
+            throw new ArgumentOutOfRangeException(nameof(sizeInBytes),
                 $"Requested size {sizeInBytes} exceeds maximum allocation size {_options.MaxMemoryAllocation}.");
         }
 
@@ -57,7 +57,7 @@ public sealed class MetalMemoryManager : IMemoryManager
         {
             // Determine storage mode based on options
             var storageMode = GetStorageMode(options);
-            
+
             // Create Metal buffer
             var buffer = MetalNative.CreateBuffer(_device, (nuint)sizeInBytes, storageMode);
             if (buffer == IntPtr.Zero)
@@ -67,7 +67,7 @@ public sealed class MetalMemoryManager : IMemoryManager
 
             // Create memory buffer wrapper
             var memoryBuffer = new MetalMemoryBuffer(buffer, sizeInBytes, options, storageMode, this);
-            
+
             // Track allocation
             if (!_allocations.TryAdd(memoryBuffer, memoryBuffer))
             {
@@ -76,7 +76,7 @@ public sealed class MetalMemoryManager : IMemoryManager
             }
 
             Interlocked.Add(ref _totalAllocated, sizeInBytes);
-            
+
             return memoryBuffer;
         }, cancellationToken).ConfigureAwait(false);
     }
@@ -89,7 +89,7 @@ public sealed class MetalMemoryManager : IMemoryManager
     {
         var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
         var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
-        
+
         try
         {
             await buffer.CopyFromHostAsync(source, 0, cancellationToken).ConfigureAwait(false);
@@ -106,7 +106,7 @@ public sealed class MetalMemoryManager : IMemoryManager
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
         ArgumentNullException.ThrowIfNull(buffer);
-        
+
         if (!_allocations.TryGetValue(buffer, out var metalBuffer))
         {
             throw new ArgumentException("Buffer was not allocated by this manager.", nameof(buffer));
@@ -155,7 +155,7 @@ public sealed class MetalMemoryManager : IMemoryManager
         {
             return MetalStorageMode.Shared; // Unified memory (most common on Apple Silicon)
         }
-        
+
         if (options.HasFlag(MemoryOptions.Cached))
         {
             return MetalStorageMode.Managed; // Managed memory with explicit synchronization
@@ -185,9 +185,9 @@ internal sealed class MetalMemoryBuffer : IMemoryBuffer
     }
 
     public IntPtr Buffer { get; }
-    
+
     public long SizeInBytes { get; }
-    
+
     public MemoryOptions Options { get; }
 
     public async ValueTask CopyFromHostAsync<T>(
@@ -224,7 +224,7 @@ internal sealed class MetalMemoryBuffer : IMemoryBuffer
                 using var handle = source.Pin();
                 var sourcePtr = new IntPtr(handle.Pointer);
                 var destPtr = IntPtr.Add(contents, (int)offset);
-                
+
                 System.Buffer.MemoryCopy(sourcePtr.ToPointer(), destPtr.ToPointer(), SizeInBytes - offset, sizeInBytes);
 
                 // For managed storage mode, mark the range as modified
@@ -270,7 +270,7 @@ internal sealed class MetalMemoryBuffer : IMemoryBuffer
                 using var handle = destination.Pin();
                 var destPtr = new IntPtr(handle.Pointer);
                 var sourcePtr = IntPtr.Add(contents, (int)offset);
-                
+
                 System.Buffer.MemoryCopy(sourcePtr.ToPointer(), destPtr.ToPointer(), sizeInBytes, sizeInBytes);
             }
         }, cancellationToken).ConfigureAwait(false);

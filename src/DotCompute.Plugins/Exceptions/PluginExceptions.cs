@@ -18,7 +18,7 @@ namespace DotCompute.Plugins.Exceptions
 
         public PluginException(string message) : base(message) { }
 
-        public PluginException(string message, Exception innerException) 
+        public PluginException(string message, Exception innerException)
             : base(message, innerException) { }
 
         public PluginException(string message, string pluginId) : base(message)
@@ -26,13 +26,13 @@ namespace DotCompute.Plugins.Exceptions
             PluginId = pluginId;
         }
 
-        public PluginException(string message, string pluginId, Exception innerException) 
+        public PluginException(string message, string pluginId, Exception innerException)
             : base(message, innerException)
         {
             PluginId = pluginId;
         }
 
-        protected PluginException(SerializationInfo info, StreamingContext context) 
+        protected PluginException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             PluginId = info.GetString(nameof(PluginId));
@@ -58,22 +58,22 @@ namespace DotCompute.Plugins.Exceptions
 
         public PluginLoadException(string message) : base(message) { }
 
-        public PluginLoadException(string message, Exception innerException) 
+        public PluginLoadException(string message, Exception innerException)
             : base(message, innerException) { }
 
-        public PluginLoadException(string message, string pluginId, string filePath) 
+        public PluginLoadException(string message, string pluginId, string filePath)
             : base(message, pluginId)
         {
             FilePath = filePath;
         }
 
-        public PluginLoadException(string message, string pluginId, string filePath, Exception innerException) 
+        public PluginLoadException(string message, string pluginId, string filePath, Exception innerException)
             : base(message, pluginId, innerException)
         {
             FilePath = filePath;
         }
 
-        protected PluginLoadException(SerializationInfo info, StreamingContext context) 
+        protected PluginLoadException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             FilePath = info.GetString(nameof(FilePath));
@@ -97,16 +97,16 @@ namespace DotCompute.Plugins.Exceptions
 
         public PluginInitializationException(string message) : base(message) { }
 
-        public PluginInitializationException(string message, Exception innerException) 
+        public PluginInitializationException(string message, Exception innerException)
             : base(message, innerException) { }
 
-        public PluginInitializationException(string message, string pluginId) 
+        public PluginInitializationException(string message, string pluginId)
             : base(message, pluginId) { }
 
-        public PluginInitializationException(string message, string pluginId, Exception innerException) 
+        public PluginInitializationException(string message, string pluginId, Exception innerException)
             : base(message, pluginId, innerException) { }
 
-        protected PluginInitializationException(SerializationInfo info, StreamingContext context) 
+        protected PluginInitializationException(SerializationInfo info, StreamingContext context)
             : base(info, context) { }
     }
 
@@ -124,17 +124,17 @@ namespace DotCompute.Plugins.Exceptions
 
         public PluginDependencyException(string message) : base(message) { }
 
-        public PluginDependencyException(string message, Exception innerException) 
+        public PluginDependencyException(string message, Exception innerException)
             : base(message, innerException) { }
 
-        public PluginDependencyException(string message, string pluginId, string dependencyId) 
+        public PluginDependencyException(string message, string pluginId, string dependencyId)
             : base(message, pluginId)
         {
             DependencyId = dependencyId;
         }
 
-        public PluginDependencyException(string message, string pluginId, string dependencyId, 
-            string requiredVersion, string? actualVersion = null) 
+        public PluginDependencyException(string message, string pluginId, string dependencyId,
+            string requiredVersion, string? actualVersion = null)
             : base(message, pluginId)
         {
             DependencyId = dependencyId;
@@ -142,7 +142,7 @@ namespace DotCompute.Plugins.Exceptions
             ActualVersion = actualVersion;
         }
 
-        protected PluginDependencyException(SerializationInfo info, StreamingContext context) 
+        protected PluginDependencyException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             DependencyId = info.GetString(nameof(DependencyId));
@@ -172,16 +172,16 @@ namespace DotCompute.Plugins.Exceptions
 
         public PluginValidationException(string message) : base(message) { }
 
-        public PluginValidationException(string message, Exception innerException) 
+        public PluginValidationException(string message, Exception innerException)
             : base(message, innerException) { }
 
-        public PluginValidationException(string message, string pluginId, string[] validationErrors) 
+        public PluginValidationException(string message, string pluginId, string[] validationErrors)
             : base(message, pluginId)
         {
             ValidationErrors = validationErrors;
         }
 
-        protected PluginValidationException(SerializationInfo info, StreamingContext context) 
+        protected PluginValidationException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             ValidationErrors = (string[]?)info.GetValue(nameof(ValidationErrors), typeof(string[]));
@@ -208,17 +208,17 @@ namespace DotCompute.Plugins.Exceptions
 
         public PluginTimeoutException(string message) : base(message) { }
 
-        public PluginTimeoutException(string message, Exception innerException) 
+        public PluginTimeoutException(string message, Exception innerException)
             : base(message, innerException) { }
 
-        public PluginTimeoutException(string message, string pluginId, TimeSpan timeout, string operation) 
+        public PluginTimeoutException(string message, string pluginId, TimeSpan timeout, string operation)
             : base(message, pluginId)
         {
             Timeout = timeout;
             Operation = operation;
         }
 
-        protected PluginTimeoutException(SerializationInfo info, StreamingContext context) 
+        protected PluginTimeoutException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             Timeout = (TimeSpan)info.GetValue(nameof(Timeout), typeof(TimeSpan))!;
@@ -246,16 +246,16 @@ namespace DotCompute.Plugins.Exceptions
 
         public PluginSecurityException(string message) : base(message) { }
 
-        public PluginSecurityException(string message, Exception innerException) 
+        public PluginSecurityException(string message, Exception innerException)
             : base(message, innerException) { }
 
-        public PluginSecurityException(string message, string pluginId, string securityViolation) 
+        public PluginSecurityException(string message, string pluginId, string securityViolation)
             : base(message, pluginId)
         {
             SecurityViolation = securityViolation;
         }
 
-        protected PluginSecurityException(SerializationInfo info, StreamingContext context) 
+        protected PluginSecurityException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             SecurityViolation = info.GetString(nameof(SecurityViolation));
@@ -282,23 +282,23 @@ namespace DotCompute.Plugins.Exceptions
 
         public PluginConfigurationException(string message) : base(message) { }
 
-        public PluginConfigurationException(string message, Exception innerException) 
+        public PluginConfigurationException(string message, Exception innerException)
             : base(message, innerException) { }
 
-        public PluginConfigurationException(string message, string pluginId, string configurationKey) 
+        public PluginConfigurationException(string message, string pluginId, string configurationKey)
             : base(message, pluginId)
         {
             ConfigurationKey = configurationKey;
         }
 
-        public PluginConfigurationException(string message, string pluginId, string configurationKey, object invalidValue) 
+        public PluginConfigurationException(string message, string pluginId, string configurationKey, object invalidValue)
             : base(message, pluginId)
         {
             ConfigurationKey = configurationKey;
             InvalidValue = invalidValue;
         }
 
-        protected PluginConfigurationException(SerializationInfo info, StreamingContext context) 
+        protected PluginConfigurationException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
             ConfigurationKey = info.GetString(nameof(ConfigurationKey));
@@ -326,23 +326,23 @@ namespace DotCompute.Plugins.Exceptions
 
         public PluginNotFoundException(string message) : base(message) { }
 
-        public PluginNotFoundException(string message, Exception innerException) 
+        public PluginNotFoundException(string message, Exception innerException)
             : base(message, innerException) { }
 
-        public PluginNotFoundException(string message, string pluginId) 
+        public PluginNotFoundException(string message, string pluginId)
             : base(message, pluginId) { }
 
-        public PluginNotFoundException(string message, string pluginId, Exception innerException) 
+        public PluginNotFoundException(string message, string pluginId, Exception innerException)
             : base(message, pluginId, innerException) { }
 
-        public PluginNotFoundException(string message, string pluginId, string pluginName) 
-            : base(message, pluginId) 
+        public PluginNotFoundException(string message, string pluginId, string pluginName)
+            : base(message, pluginId)
         {
             PluginName = pluginName;
         }
 
-        protected PluginNotFoundException(SerializationInfo info, StreamingContext context) 
-            : base(info, context) 
+        protected PluginNotFoundException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
             PluginName = info.GetString(nameof(PluginName));
         }

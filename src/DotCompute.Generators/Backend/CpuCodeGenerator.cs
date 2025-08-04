@@ -1,12 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using DotCompute.Generators.Utils;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DotCompute.Generators.Backend
 {
@@ -307,7 +307,7 @@ namespace DotCompute.Generators.Backend
             {
                 return string.Empty;
             }
-            
+
             var transformedBody = methodBody
                 .Replace("{", "")
                 .Replace("}", "")
@@ -337,7 +337,7 @@ namespace DotCompute.Generators.Backend
         private void GenerateDefaultScalarImplementation(StringBuilder sb)
         {
             sb.AppendLine("            // Default scalar implementation based on operation type");
-            
+
             if (_vectorizationInfo.IsArithmetic)
             {
                 sb.AppendLine("            for (int i = start; i < end; i++)");
@@ -374,7 +374,7 @@ namespace DotCompute.Generators.Backend
             sb.AppendLine("            {");
             sb.AppendLine("                for (int i = start; i < alignedEnd; i += vectorSize)");
             sb.AppendLine("                {");
-            
+
             if (_vectorizationInfo.IsArithmetic)
             {
                 sb.AppendLine("                    // Load vectors for arithmetic operation");
@@ -396,7 +396,7 @@ namespace DotCompute.Generators.Backend
                 sb.AppendLine("                    var processed = ProcessVector(vec);");
                 sb.AppendLine("                    processed.CopyTo(output, i);");
             }
-            
+
             sb.AppendLine("                }");
             sb.AppendLine("            }");
         }
@@ -411,7 +411,7 @@ namespace DotCompute.Generators.Backend
             sb.AppendLine("            {");
             sb.AppendLine("                for (int i = start; i < alignedEnd; i += vectorSize)");
             sb.AppendLine("                {");
-            
+
             if (_vectorizationInfo.IsArithmetic)
             {
                 sb.AppendLine("                    // AVX2 arithmetic operations");
@@ -432,7 +432,7 @@ namespace DotCompute.Generators.Backend
                 sb.AppendLine("                        Avx.Store(pOutput, vec);");
                 sb.AppendLine("                    }");
             }
-            
+
             sb.AppendLine("                }");
             sb.AppendLine("            }");
         }
@@ -447,7 +447,7 @@ namespace DotCompute.Generators.Backend
             sb.AppendLine("            {");
             sb.AppendLine("                for (int i = start; i < alignedEnd; i += vectorSize)");
             sb.AppendLine("                {");
-            
+
             if (_vectorizationInfo.IsArithmetic)
             {
                 sb.AppendLine("                    // AVX-512 arithmetic operations");
@@ -468,7 +468,7 @@ namespace DotCompute.Generators.Backend
                 sb.AppendLine("                        Avx512F.Store(pOutput, vec);");
                 sb.AppendLine("                    }");
             }
-            
+
             sb.AppendLine("                }");
             sb.AppendLine("            }");
         }

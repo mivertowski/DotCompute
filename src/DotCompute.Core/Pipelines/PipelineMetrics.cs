@@ -51,44 +51,44 @@ internal sealed class PipelineMetrics : IPipelineMetrics
     public long FailedExecutionCount => _failedExecutionCount;
 
     /// <inheritdoc/>
-    public TimeSpan AverageExecutionTime => 
-        _executionCount > 0 ? 
-        TimeSpan.FromTicks(_totalExecutionTime.Ticks / _executionCount) : 
-        TimeSpan.Zero;
+    public TimeSpan AverageExecutionTime
+        => _executionCount > 0
+        ? TimeSpan.FromTicks(_totalExecutionTime.Ticks / _executionCount)
+        : TimeSpan.Zero;
 
     /// <inheritdoc/>
-    public TimeSpan MinExecutionTime => 
-        _executionCount > 0 ? _minExecutionTime : TimeSpan.Zero;
+    public TimeSpan MinExecutionTime
+        => _executionCount > 0 ? _minExecutionTime : TimeSpan.Zero;
 
     /// <inheritdoc/>
-    public TimeSpan MaxExecutionTime => 
-        _executionCount > 0 ? _maxExecutionTime : TimeSpan.Zero;
+    public TimeSpan MaxExecutionTime
+        => _executionCount > 0 ? _maxExecutionTime : TimeSpan.Zero;
 
     /// <inheritdoc/>
     public TimeSpan TotalExecutionTime => _totalExecutionTime;
 
     /// <inheritdoc/>
-    public double Throughput => 
-        _totalExecutionTime.TotalSeconds > 0 ? 
-        _executionCount / _totalExecutionTime.TotalSeconds : 
-        0;
+    public double Throughput
+        => _totalExecutionTime.TotalSeconds > 0
+        ? _executionCount / _totalExecutionTime.TotalSeconds
+        : 0;
 
     /// <inheritdoc/>
-    public double SuccessRate => 
-        _executionCount > 0 ? 
-        (double)_successfulExecutionCount / _executionCount : 
-        0;
+    public double SuccessRate
+        => _executionCount > 0
+        ? (double)_successfulExecutionCount / _executionCount
+        : 0;
 
     /// <inheritdoc/>
-    public long AverageMemoryUsage => 
-        _executionCount > 0 ? _totalMemoryUsage / _executionCount : 0;
+    public long AverageMemoryUsage
+        => _executionCount > 0 ? _totalMemoryUsage / _executionCount : 0;
 
     /// <inheritdoc/>
     public long PeakMemoryUsage => _peakMemoryUsage;
 
     /// <inheritdoc/>
-    public IReadOnlyDictionary<string, IStageMetrics> StageMetrics => 
-        _stageMetrics.ToDictionary(kvp => kvp.Key, kvp => (IStageMetrics)kvp.Value);
+    public IReadOnlyDictionary<string, IStageMetrics> StageMetrics
+        => _stageMetrics.ToDictionary(kvp => kvp.Key, kvp => (IStageMetrics)kvp.Value);
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, double> CustomMetrics => _customMetrics;
@@ -106,7 +106,7 @@ internal sealed class PipelineMetrics : IPipelineMetrics
 
             // Keep only recent metrics (last 1000)
             var recent = list.OrderByDescending(m => m.Timestamp).Take(1000).ToList();
-            
+
             // Re-enqueue the recent ones
             foreach (var metric in recent)
             {
@@ -137,7 +137,7 @@ internal sealed class PipelineMetrics : IPipelineMetrics
             }
 
             _totalExecutionTime = _totalExecutionTime.Add(metrics.Duration);
-            
+
             if (metrics.Duration < _minExecutionTime)
             {
                 _minExecutionTime = metrics.Duration;
@@ -149,7 +149,7 @@ internal sealed class PipelineMetrics : IPipelineMetrics
             }
 
             _totalMemoryUsage += metrics.MemoryUsage.AllocatedBytes;
-            
+
             if (metrics.MemoryUsage.PeakBytes > _peakMemoryUsage)
             {
                 _peakMemoryUsage = metrics.MemoryUsage.PeakBytes;
@@ -184,9 +184,13 @@ internal sealed class PipelineMetrics : IPipelineMetrics
     {
         lock (_lock)
         {
-            while (_executions.TryDequeue(out _)) { }
+            while (_executions.TryDequeue(out _))
+            {
+            }
             _stageMetrics.Clear();
-            while (_timeSeries.TryDequeue(out _)) { }
+            while (_timeSeries.TryDequeue(out _))
+            {
+            }
             _customMetrics.Clear();
 
             _executionCount = 0;
@@ -408,18 +412,18 @@ internal sealed class StageMetrics : IStageMetrics
     public long ExecutionCount => _executionCount;
 
     /// <inheritdoc/>
-    public TimeSpan AverageExecutionTime => 
-        _executionCount > 0 ? 
-        TimeSpan.FromTicks(_totalExecutionTime.Ticks / _executionCount) : 
-        TimeSpan.Zero;
+    public TimeSpan AverageExecutionTime
+        => _executionCount > 0
+        ? TimeSpan.FromTicks(_totalExecutionTime.Ticks / _executionCount)
+        : TimeSpan.Zero;
 
     /// <inheritdoc/>
-    public TimeSpan MinExecutionTime => 
-        _executionCount > 0 ? _minExecutionTime : TimeSpan.Zero;
+    public TimeSpan MinExecutionTime
+        => _executionCount > 0 ? _minExecutionTime : TimeSpan.Zero;
 
     /// <inheritdoc/>
-    public TimeSpan MaxExecutionTime => 
-        _executionCount > 0 ? _maxExecutionTime : TimeSpan.Zero;
+    public TimeSpan MaxExecutionTime
+        => _executionCount > 0 ? _maxExecutionTime : TimeSpan.Zero;
 
     /// <inheritdoc/>
     public TimeSpan TotalExecutionTime => _totalExecutionTime;
@@ -428,14 +432,14 @@ internal sealed class StageMetrics : IStageMetrics
     public long ErrorCount => _errorCount;
 
     /// <inheritdoc/>
-    public double SuccessRate => 
-        _executionCount > 0 ? 
-        (double)(_executionCount - _errorCount) / _executionCount : 
-        0;
+    public double SuccessRate
+        => _executionCount > 0
+        ? (double)(_executionCount - _errorCount) / _executionCount
+        : 0;
 
     /// <inheritdoc/>
-    public long AverageMemoryUsage => 
-        _executionCount > 0 ? _totalMemoryUsage / _executionCount : 0;
+    public long AverageMemoryUsage
+        => _executionCount > 0 ? _totalMemoryUsage / _executionCount : 0;
 
     /// <inheritdoc/>
     public IReadOnlyDictionary<string, double> CustomMetrics => _customMetrics;

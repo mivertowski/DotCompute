@@ -8,11 +8,11 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using DotCompute.Abstractions;
+using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Threading;
-using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Core;
-using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Kernels;
@@ -30,7 +30,7 @@ internal sealed class AotCpuKernelCompiler
     {
         _precompiledKernels = new Dictionary<string, Func<KernelExecutionContext, Task>>();
         _kernelMetadata = new Dictionary<string, KernelMetadata>();
-        
+
         RegisterPrecompiledKernels();
     }
 
@@ -122,10 +122,10 @@ internal sealed class AotCpuKernelCompiler
 
         // Create compiled kernel
         var compiledKernel = new AotCompiledKernel(
-            definition, 
-            kernelImpl, 
-            executionPlan, 
-            context.ThreadPool, 
+            definition,
+            kernelImpl,
+            executionPlan,
+            context.ThreadPool,
             logger);
 
         logger.LogInformation("Successfully compiled AOT kernel: {KernelName}", definition.Name);
@@ -188,7 +188,7 @@ internal sealed class AotCpuKernelCompiler
     {
         // Base work group size calculation
         var baseSize = metadata.SupportsVectorization ? 64 : 32;
-        
+
         // Adjust based on parameter count
         if (metadata.ParameterCount > 4)
         {
@@ -220,9 +220,9 @@ internal sealed class AotCpuKernelCompiler
         var bufferA = context.GetBuffer<float>(0);
         var bufferB = context.GetBuffer<float>(1);
         var bufferC = context.GetBuffer<float>(2);
-        
+
         var length = Math.Min(Math.Min(bufferA.Length, bufferB.Length), bufferC.Length);
-        
+
         await Task.Run(() =>
         {
             // Use SIMD vectorization when available
@@ -240,11 +240,11 @@ internal sealed class AotCpuKernelCompiler
         var matrixC = context.GetBuffer<float>(2);
         var rows = context.GetScalar<int>(3);
         var cols = context.GetScalar<int>(4);
-        
+
         await Task.Run(() =>
         {
             VectorizedMath.MatrixMultiply(
-                matrixA.Span, matrixB.Span, matrixC.Span, 
+                matrixA.Span, matrixB.Span, matrixC.Span,
                 rows, cols, cols);
         });
     }
@@ -257,9 +257,9 @@ internal sealed class AotCpuKernelCompiler
         var bufferA = context.GetBuffer<float>(0);
         var bufferB = context.GetBuffer<float>(1);
         var bufferC = context.GetBuffer<float>(2);
-        
+
         var length = Math.Min(Math.Min(bufferA.Length, bufferB.Length), bufferC.Length);
-        
+
         await Task.Run(() =>
         {
             VectorizedMath.Multiply(bufferA.Span, bufferB.Span, bufferC.Span, length);
@@ -273,7 +273,7 @@ internal sealed class AotCpuKernelCompiler
     {
         var input = context.GetBuffer<float>(0);
         var output = context.GetBuffer<float>(1);
-        
+
         await Task.Run(() =>
         {
             var sum = VectorizedMath.Sum(input.Span);
@@ -327,9 +327,9 @@ internal sealed class AotCompiledKernel : ICompiledKernel
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(arguments);
-        
+
         _logger.LogDebug("Executing AOT kernel: {KernelName}", Name);
-        
+
         try
         {
             // Convert KernelArguments to KernelExecutionContext for internal processing
@@ -338,7 +338,7 @@ internal sealed class AotCompiledKernel : ICompiledKernel
             {
                 context.SetParameter(i, arguments.Arguments[i]);
             }
-            
+
             await _implementation(context).ConfigureAwait(false);
             _logger.LogDebug("Successfully executed AOT kernel: {KernelName}", Name);
         }
@@ -431,7 +431,7 @@ internal static class VectorizedMath
     public static void Multiply(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
     {
         var vectorCount = length / System.Numerics.Vector<float>.Count;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * System.Numerics.Vector<float>.Count;

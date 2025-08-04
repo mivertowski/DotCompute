@@ -68,7 +68,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
     public CpuThreadPool(IOptions<CpuThreadPoolOptions> options)
     {
         _options = options.Value;
-        
+
         var threadCount = _options.WorkerThreads ?? Environment.ProcessorCount;
         _threads = new Thread[threadCount];
         _shutdownCts = new CancellationTokenSource();
@@ -83,7 +83,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         };
 
         _globalWorkQueue = Channel.CreateBounded<WorkItem>(channelOptions);
-        
+
         // Initialize local work queues for work-stealing
         _localWorkQueues = new ConcurrentQueue<WorkItem>[threadCount];
         for (int i = 0; i < threadCount; i++)
@@ -122,7 +122,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
             throw new ObjectDisposedException(nameof(CpuThreadPool));
 
         var workItem = new WorkItem(work, cancellationToken);
-        
+
         // Use work-stealing: try to enqueue to a less busy local queue first
         if (_options.EnableWorkStealing)
         {
@@ -133,7 +133,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
                 return ValueTask.CompletedTask;
             }
         }
-        
+
         // Fall back to global queue
         return _globalWorkQueue.Writer.WriteAsync(workItem, cancellationToken);
     }
@@ -149,7 +149,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
             throw new ObjectDisposedException(nameof(CpuThreadPool));
 
         var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
-        
+
         void WorkWrapper()
         {
             try
@@ -189,10 +189,10 @@ public sealed class CpuThreadPool : IAsyncDisposable
 
         // Performance optimization: Convert to array once to avoid multiple enumeration
         var workArray = workItems as Action[] ?? workItems.ToArray();
-        
+
         if (workArray.Length == 0)
             return;
-        
+
         // Optimize for small batches - direct enqueue
         if (workArray.Length <= 4)
         {
@@ -202,13 +202,13 @@ public sealed class CpuThreadPool : IAsyncDisposable
             }
             return;
         }
-        
+
         // For larger batches, distribute across local queues for better load balancing
         if (_options.EnableWorkStealing)
         {
             var itemsPerThread = Math.Max(1, workArray.Length / _localWorkQueues.Length);
             var currentIndex = 0;
-            
+
             for (int threadIdx = 0; threadIdx < _localWorkQueues.Length && currentIndex < workArray.Length; threadIdx++)
             {
                 var count = Math.Min(itemsPerThread, workArray.Length - currentIndex);
@@ -217,7 +217,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
                     // Last thread gets all remaining items
                     count = workArray.Length - currentIndex;
                 }
-                
+
                 for (int i = 0; i < count && currentIndex < workArray.Length; i++)
                 {
                     var workItem = new WorkItem(workArray[currentIndex++], cancellationToken);
@@ -239,7 +239,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
     private void WorkerThreadProc(object? state)
     {
         var threadIndex = (int)state!;
-        
+
         // Set thread affinity if requested
         if (_options.UseThreadAffinity)
         {
@@ -256,7 +256,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
             while (!cancellationToken.IsCancellationRequested)
             {
                 bool hasWork = false;
-                
+
                 // 1. Try local queue first (no contention)
                 if (localQueue.TryDequeue(out WorkItem workItem))
                 {
@@ -279,7 +279,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
                 {
                     consecutiveStealFailures++;
                 }
-                
+
                 if (hasWork)
                 {
                     ExecuteWorkItem(workItem);
@@ -316,7 +316,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
                     using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
                     {
                         cts.CancelAfter(100);
-                        
+
                         var waitTask = globalReader.WaitToReadAsync(cts.Token).AsTask();
                         try
                         {
@@ -356,7 +356,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
                     ExecuteWorkItem(workItem);
                 }
             }
-            
+
             while (globalReader.TryRead(out var workItem))
             {
                 if (!workItem.CancellationToken.IsCancellationRequested)
@@ -392,86 +392,86 @@ public sealed class CpuThreadPool : IAsyncDisposable
         var startIndex = (int)(((uint)Environment.TickCount * 2654435761U) >> 22) % _localWorkQueues.Length;
         var minCount = int.MaxValue;
         var bestThread = -1;
-        
+
         // Check up to MaxChecks threads starting from a pseudo-random position
         for (int i = 0; i < Math.Min(MaxChecks, _localWorkQueues.Length); i++)
         {
             var threadIdx = (startIndex + i) % _localWorkQueues.Length;
             var count = _localWorkQueues[threadIdx].Count;
-            
+
             if (count == 0)
             {
                 // Found empty queue, use immediately
                 return threadIdx;
             }
-            
+
             if (count < minCount)
             {
                 minCount = count;
                 bestThread = threadIdx;
             }
         }
-        
+
         // If all checked queues are busy, just use round-robin
         return bestThread >= 0 ? bestThread : startIndex;
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private bool TryStealWork(int currentThread, out WorkItem workItem)
     {
         // Performance optimization: Use deterministic pseudo-random for better cache behavior
         var attempts = Math.Min(_options.MaxStealAttempts, _localWorkQueues.Length - 1);
         var hash = (uint)(currentThread + Environment.TickCount);
-        
+
         // Try neighbors first (better cache locality)
         var leftNeighbor = (currentThread - 1 + _localWorkQueues.Length) % _localWorkQueues.Length;
         var rightNeighbor = (currentThread + 1) % _localWorkQueues.Length;
-        
+
         if (_localWorkQueues[leftNeighbor].TryDequeue(out workItem))
         {
             return true;
         }
-        
+
         if (_localWorkQueues[rightNeighbor].TryDequeue(out workItem))
         {
             return true;
         }
-        
+
         // Then try random threads
         for (int i = 2; i < attempts; i++)
         {
             // Fast pseudo-random using multiplicative hash
             hash = hash * 1664525U + 1013904223U;
             var targetThread = (int)(hash % (uint)_localWorkQueues.Length);
-            
-            if (targetThread == currentThread || 
-                targetThread == leftNeighbor || 
+
+            if (targetThread == currentThread ||
+                targetThread == leftNeighbor ||
                 targetThread == rightNeighbor)
             {
                 continue;
             }
-                
+
             if (_localWorkQueues[targetThread].TryDequeue(out workItem))
             {
                 return true;
             }
         }
-        
+
         workItem = default;
         return false;
     }
-    
+
     private void SetThreadAffinity(int threadIndex)
     {
         try
         {
             // Set thread priority as a hint for better scheduling
             Thread.CurrentThread.Priority = _options.ThreadPriority;
-            
+
             // Get NUMA topology for intelligent affinity assignment
             var topology = NumaInfo.Topology;
             var affinityInfo = CalculateOptimalAffinity(threadIndex, topology);
-            
+
             // Apply NUMA-aware thread affinity
             if (OperatingSystem.IsWindows())
             {
@@ -487,27 +487,27 @@ public sealed class CpuThreadPool : IAsyncDisposable
             // Ignore affinity setting errors - not critical for functionality
         }
     }
-    
+
     private NumaThreadAffinityInfo CalculateOptimalAffinity(int threadIndex, NumaTopology topology)
     {
         // Distribute threads across NUMA nodes for optimal performance
         var totalThreads = _threads.Length;
         var threadsPerNode = Math.Max(1, totalThreads / topology.NodeCount);
         var targetNodeId = threadIndex / threadsPerNode;
-        
+
         // Ensure we don't exceed available nodes
         if (targetNodeId >= topology.NodeCount)
         {
             targetNodeId = threadIndex % topology.NodeCount;
         }
-        
+
         var targetNode = topology.Nodes[targetNodeId];
         var cpusInNode = targetNode.CpuList.ToArray();
-        
+
         // Select specific CPU within the node
         var cpuIndex = threadIndex % Math.Max(1, cpusInNode.Length);
         var targetCpu = cpusInNode.Length > 0 ? cpusInNode[cpuIndex] : threadIndex % Environment.ProcessorCount;
-        
+
         return new NumaThreadAffinityInfo
         {
             ThreadIndex = threadIndex,
@@ -517,7 +517,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
             Group = targetNode.Group
         };
     }
-    
+
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private void SetThreadAffinityWindows(NumaThreadAffinityInfo affinityInfo)
     {
@@ -526,7 +526,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
             // Use SetThreadAffinityMask for Windows
             var mask = new UIntPtr(affinityInfo.ProcessorMask);
             _ = SetThreadAffinityMask(GetCurrentThread(), mask);
-            
+
             // Set ideal processor for additional scheduling hints
             _ = SetThreadIdealProcessor(GetCurrentThread(), (uint)affinityInfo.CpuId);
         }
@@ -535,7 +535,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
             // Fallback: just set priority
         }
     }
-    
+
     [System.Runtime.Versioning.SupportedOSPlatform("linux")]
     private void SetThreadAffinityLinux(NumaThreadAffinityInfo affinityInfo)
     {
@@ -545,7 +545,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
             var cpuSet = new cpu_set_t();
             CPU_ZERO(ref cpuSet);
             CPU_SET(affinityInfo.CpuId, ref cpuSet);
-            
+
             var result = pthread_setaffinity_np(pthread_self(), Marshal.SizeOf<cpu_set_t>(), ref cpuSet);
             if (result != 0)
             {
@@ -570,45 +570,45 @@ public sealed class CpuThreadPool : IAsyncDisposable
             }
         }
     }
-    
+
     #region Windows Thread Affinity API
-    
+
     [DllImport("kernel32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern IntPtr GetCurrentThread();
-    
+
     [DllImport("kernel32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern UIntPtr SetThreadAffinityMask(IntPtr hThread, UIntPtr dwThreadAffinityMask);
-    
+
     [DllImport("kernel32.dll")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern uint SetThreadIdealProcessor(IntPtr hThread, uint dwIdealProcessor);
-    
+
     #endregion
-    
+
     #region Linux Thread Affinity API
-    
+
     [StructLayout(LayoutKind.Sequential)]
     private struct cpu_set_t
     {
         private const int CPU_SETSIZE = 1024;
         private const int NCPUBITS = 8 * sizeof(ulong);
-        
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = CPU_SETSIZE / NCPUBITS)]
         public ulong[] __bits;
-        
+
         public cpu_set_t()
         {
             __bits = new ulong[CPU_SETSIZE / NCPUBITS];
         }
     }
-    
+
     private static void CPU_ZERO(ref cpu_set_t set)
     {
         set.__bits = new ulong[set.__bits.Length];
     }
-    
+
     private static void CPU_SET(int cpu, ref cpu_set_t set)
     {
         if (cpu >= 0 && cpu < 1024)
@@ -621,21 +621,21 @@ public sealed class CpuThreadPool : IAsyncDisposable
             }
         }
     }
-    
+
     [DllImport("pthread", EntryPoint = "pthread_self")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern IntPtr pthread_self();
-    
+
     [DllImport("pthread", EntryPoint = "pthread_setaffinity_np")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int pthread_setaffinity_np(IntPtr thread, int cpusetsize, ref cpu_set_t cpuset);
-    
+
     [DllImport("c", EntryPoint = "sched_setaffinity")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int sched_setaffinity(int pid, int cpusetsize, ref ulong mask);
-    
+
     #endregion
-    
+
     /// <summary>
     /// Gets statistics about the thread pool.
     /// </summary>
@@ -651,13 +651,13 @@ public sealed class CpuThreadPool : IAsyncDisposable
         {
             // Ignore errors
         }
-        
+
         var localQueueCounts = new int[_localWorkQueues.Length];
         for (int i = 0; i < _localWorkQueues.Length; i++)
         {
             localQueueCounts[i] = _localWorkQueues[i].Count;
         }
-        
+
         return new ThreadPoolStatistics
         {
             ThreadCount = _threads.Length,
@@ -690,7 +690,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         _shutdownCts.Dispose();
         _shutdownTcs.SetResult();
     }
-    
+
     private readonly struct WorkItem
     {
         public readonly Action Work;
@@ -713,7 +713,7 @@ public sealed class ThreadPoolStatistics
     public required int GlobalQueueCount { get; init; }
     public required int[] LocalQueueCounts { get; init; }
     public required int TotalQueuedItems { get; init; }
-    
+
     public double AverageLocalQueueSize => LocalQueueCounts.Length > 0 ? LocalQueueCounts.Average() : 0;
     public int MaxLocalQueueSize => LocalQueueCounts.Length > 0 ? LocalQueueCounts.Max() : 0;
     public int MinLocalQueueSize => LocalQueueCounts.Length > 0 ? LocalQueueCounts.Min() : 0;
@@ -728,22 +728,22 @@ internal sealed class NumaThreadAffinityInfo
     /// Gets the thread index.
     /// </summary>
     public required int ThreadIndex { get; init; }
-    
+
     /// <summary>
     /// Gets the NUMA node ID this thread is assigned to.
     /// </summary>
     public required int NodeId { get; init; }
-    
+
     /// <summary>
     /// Gets the specific CPU ID this thread is assigned to.
     /// </summary>
     public required int CpuId { get; init; }
-    
+
     /// <summary>
     /// Gets the processor affinity mask.
     /// </summary>
     public required ulong ProcessorMask { get; init; }
-    
+
     /// <summary>
     /// Gets the processor group (Windows only).
     /// </summary>

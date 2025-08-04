@@ -14,87 +14,87 @@ public interface IPipelineMetrics
     /// <summary>
     /// Gets the pipeline identifier.
     /// </summary>
-    string PipelineId { get; }
+    public string PipelineId { get; }
 
     /// <summary>
     /// Gets the total execution count.
     /// </summary>
-    long ExecutionCount { get; }
+    public long ExecutionCount { get; }
 
     /// <summary>
     /// Gets the successful execution count.
     /// </summary>
-    long SuccessfulExecutionCount { get; }
+    public long SuccessfulExecutionCount { get; }
 
     /// <summary>
     /// Gets the failed execution count.
     /// </summary>
-    long FailedExecutionCount { get; }
+    public long FailedExecutionCount { get; }
 
     /// <summary>
     /// Gets the average execution time.
     /// </summary>
-    TimeSpan AverageExecutionTime { get; }
+    public TimeSpan AverageExecutionTime { get; }
 
     /// <summary>
     /// Gets the minimum execution time.
     /// </summary>
-    TimeSpan MinExecutionTime { get; }
+    public TimeSpan MinExecutionTime { get; }
 
     /// <summary>
     /// Gets the maximum execution time.
     /// </summary>
-    TimeSpan MaxExecutionTime { get; }
+    public TimeSpan MaxExecutionTime { get; }
 
     /// <summary>
     /// Gets the total execution time.
     /// </summary>
-    TimeSpan TotalExecutionTime { get; }
+    public TimeSpan TotalExecutionTime { get; }
 
     /// <summary>
     /// Gets throughput in executions per second.
     /// </summary>
-    double Throughput { get; }
+    public double Throughput { get; }
 
     /// <summary>
     /// Gets the success rate.
     /// </summary>
-    double SuccessRate { get; }
+    public double SuccessRate { get; }
 
     /// <summary>
     /// Gets average memory usage.
     /// </summary>
-    long AverageMemoryUsage { get; }
+    public long AverageMemoryUsage { get; }
 
     /// <summary>
     /// Gets peak memory usage.
     /// </summary>
-    long PeakMemoryUsage { get; }
+    public long PeakMemoryUsage { get; }
 
     /// <summary>
     /// Gets metrics by stage.
     /// </summary>
-    IReadOnlyDictionary<string, IStageMetrics> StageMetrics { get; }
+    public IReadOnlyDictionary<string, IStageMetrics> StageMetrics { get; }
 
     /// <summary>
     /// Gets custom metrics.
     /// </summary>
-    IReadOnlyDictionary<string, double> CustomMetrics { get; }
+    public IReadOnlyDictionary<string, double> CustomMetrics { get; }
 
     /// <summary>
     /// Gets performance over time.
     /// </summary>
-    IReadOnlyList<TimeSeriesMetric> TimeSeries { get; }
+    public IReadOnlyList<TimeSeriesMetric> TimeSeries { get; }
 
     /// <summary>
     /// Resets all metrics.
     /// </summary>
-    void Reset();
+    public void Reset();
 
     /// <summary>
     /// Exports metrics to a specific format.
     /// </summary>
-    string Export(MetricsExportFormat format);
+    public string Export(MetricsExportFormat format);
 }
 
 /// <summary>
@@ -166,57 +166,57 @@ public interface IPipelineProfiler
     /// <summary>
     /// Starts profiling a pipeline execution.
     /// </summary>
-    void StartPipelineExecution(string pipelineId, string executionId);
+    public void StartPipelineExecution(string pipelineId, string executionId);
 
     /// <summary>
     /// Ends profiling a pipeline execution.
     /// </summary>
-    void EndPipelineExecution(string executionId);
+    public void EndPipelineExecution(string executionId);
 
     /// <summary>
     /// Starts profiling a stage execution.
     /// </summary>
-    void StartStageExecution(string executionId, string stageId);
+    public void StartStageExecution(string executionId, string stageId);
 
     /// <summary>
     /// Ends profiling a stage execution.
     /// </summary>
-    void EndStageExecution(string executionId, string stageId);
+    public void EndStageExecution(string executionId, string stageId);
 
     /// <summary>
     /// Records a memory allocation.
     /// </summary>
-    void RecordMemoryAllocation(string executionId, long bytes, string purpose);
+    public void RecordMemoryAllocation(string executionId, long bytes, string purpose);
 
     /// <summary>
     /// Records a memory deallocation.
     /// </summary>
-    void RecordMemoryDeallocation(string executionId, long bytes);
+    public void RecordMemoryDeallocation(string executionId, long bytes);
 
     /// <summary>
     /// Records a data transfer.
     /// </summary>
-    void RecordDataTransfer(string executionId, long bytes, TimeSpan duration, DataTransferType type);
+    public void RecordDataTransfer(string executionId, long bytes, TimeSpan duration, DataTransferType type);
 
     /// <summary>
     /// Records kernel execution statistics.
     /// </summary>
-    void RecordKernelExecution(string executionId, KernelExecutionStats stats);
+    public void RecordKernelExecution(string executionId, KernelExecutionStats stats);
 
     /// <summary>
     /// Records a custom metric.
     /// </summary>
-    void RecordCustomMetric(string executionId, string name, double value);
+    public void RecordCustomMetric(string executionId, string name, double value);
 
     /// <summary>
     /// Gets profiling results for an execution.
     /// </summary>
-    ProfilingResults GetResults(string executionId);
+    public ProfilingResults GetResults(string executionId);
 
     /// <summary>
     /// Gets aggregated profiling results.
     /// </summary>
-    AggregatedProfilingResults GetAggregatedResults(string pipelineId);
+    public AggregatedProfilingResults GetAggregatedResults(string pipelineId);
 }
 
 /// <summary>

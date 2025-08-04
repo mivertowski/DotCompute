@@ -100,7 +100,7 @@ public class MemoryPoolTests : IDisposable
         // Act & Assert
         buffer.Should().NotBeNull();
         buffer.Length.Should().BeGreaterThanOrEqualTo(10);
-        
+
         // Cleanup
         buffer.Dispose();
     }
@@ -111,13 +111,13 @@ public class MemoryPoolTests : IDisposable
         // Arrange
         var initialAllocated = _pool.TotalAllocatedBuffers;
         var buffer1 = _pool.Rent(1024);
-        
+
         // Verify buffer was allocated
         _pool.TotalAllocatedBuffers.Should().Be(initialAllocated + 1);
 
         // Act
         buffer1.Dispose();
-        var buffer2 = _pool.Rent(1024);
+        _ = _pool.Rent(1024);
 
         // Assert - No new allocation should have occurred for same size
         _pool.TotalAllocatedBuffers.Should().Be(initialAllocated + 1);
@@ -177,7 +177,7 @@ public class MemoryPoolTests : IDisposable
             var buffer = _pool.Rent(1024 * 1024); // 1MB each
             buffers.Add(buffer);
         }
-        
+
         // Return all buffers
         foreach (var buffer in buffers)
         {

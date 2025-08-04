@@ -4,8 +4,8 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using DotCompute.Core;
 using DotCompute.Abstractions;
+using DotCompute.Core;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core.Pipelines;
@@ -27,7 +27,7 @@ public static class PipelineUsageExample
     {
         var pipeline = KernelPipelineBuilder.Create()
             .WithName("ImageProcessingPipeline")
-            
+
             // Stage 1: Gaussian blur
             .AddKernel("Blur", blurKernel, stage => stage
                 .WithWorkSize(1920, 1080)  // Full HD image
@@ -36,7 +36,7 @@ public static class PipelineUsageExample
                 .SetParameter("blur_radius", 3.0f)
                 .WithMemoryHint(MemoryHint.Sequential)
                 .WithPriority(1))
-            
+
             // Stage 2: Edge detection (depends on blur output)
             .AddKernel("EdgeDetection", edgeKernel, stage => stage
                 .WithWorkSize(1920, 1080)
@@ -45,7 +45,7 @@ public static class PipelineUsageExample
                 .SetParameter("threshold", 0.1f)
                 .DependsOn("Blur")
                 .WithMemoryHint(MemoryHint.Random))
-            
+
             // Stage 3: Parallel enhancement operations
             .AddParallel(parallel => parallel
                 .AddKernel("Sharpen", enhanceKernel, stage => stage
@@ -53,17 +53,17 @@ public static class PipelineUsageExample
                     .MapInput("input_image", "blurred_image")
                     .MapOutput("sharpened", "sharp_image")
                     .SetParameter("sharpen_amount", 1.5f))
-                
+
                 .AddKernel("Contrast", enhanceKernel, stage => stage
                     .WithWorkSize(1920, 1080)
                     .MapInput("input_image", "blurred_image")
                     .MapOutput("contrasted", "contrast_image")
                     .SetParameter("contrast_level", 1.2f))
-                
+
                 .WithMaxDegreeOfParallelism(2)
                 .WithSynchronization(SynchronizationMode.WaitAll)
                 .WithBarrier())
-            
+
             // Stage 4: Conditional final processing
             .AddBranch(
                 context => context.Inputs.ContainsKey("enable_final_filter"),
@@ -77,7 +77,7 @@ public static class PipelineUsageExample
                         .WithWorkSize(1920, 1080)
                         .MapInput("input_image", "contrast_image")
                         .MapOutput("final_image", "result")))
-            
+
             // Configure optimization
             .WithOptimization(opt =>
             {
@@ -86,36 +86,41 @@ public static class PipelineUsageExample
                 opt.EnableParallelMerging = true;
                 opt.Level = PipelineOptimizationLevel.Aggressive;
             })
-            
+
             // Add metadata
             .WithMetadata("ImageFormat", "RGBA32")
             .WithMetadata("Resolution", "1920x1080")
             .WithMetadata("Creator", "DotCompute.ImageProcessing")
-            
+
             // Add event monitoring
-            .WithEventHandler(evt => 
+            .WithEventHandler(evt =>
             {
                 Console.WriteLine($"[{evt.Type}] {evt.Message}");
                 if (evt.StageId != null)
+                {
                     Console.WriteLine($"  Stage: {evt.StageId}");
+                }
             })
-            
+
             // Add error handling
             .WithErrorHandler((exception, context) =>
             {
                 Console.WriteLine($"Error in pipeline: {exception.Message}");
-                
+
                 // Continue on non-critical errors
                 if (exception is not OutOfMemoryException)
+                {
                     return ErrorHandlingResult.Continue;
-                
+                }
+
                 return ErrorHandlingResult.Abort;
             })
-            
+
             .Build();
 
         return Task.FromResult(pipeline);
     }
+    private static readonly float[] value = new[] { 0.485f, 0.456f, 0.406f };
 
     /// <summary>
     /// Example: Machine learning inference pipeline with preprocessing and postprocessing.
@@ -128,16 +133,16 @@ public static class PipelineUsageExample
     {
         var pipeline = KernelPipelineBuilder.Create()
             .WithName("MLInferencePipeline")
-            
+
             // Preprocessing stage
             .AddKernel("Preprocessing", preprocessKernel, stage => stage
                 .WithWorkSize(224, 224, 3)  // Standard ML input size
                 .MapInput("raw_data", "input_tensor")
                 .MapOutput("normalized_data", "preprocessed_tensor")
-                .SetParameter("mean", new[] { 0.485f, 0.456f, 0.406f })
+                .SetParameter("mean", value)
                 .SetParameter("std", new[] { 0.229f, 0.224f, 0.225f })
                 .WithMemoryHint(MemoryHint.Sequential))
-            
+
             // Inference stage
             .AddKernel("Inference", inferenceKernel, stage => stage
                 .WithWorkSize(1)  // Single inference
@@ -145,7 +150,7 @@ public static class PipelineUsageExample
                 .MapOutput("logits", "raw_predictions")
                 .WithMemoryHint(MemoryHint.Persistent)
                 .DependsOn("Preprocessing"))
-            
+
             // Postprocessing stage
             .AddKernel("Postprocessing", postprocessKernel, stage => stage
                 .WithWorkSize(1000)  // 1000 classes
@@ -154,14 +159,14 @@ public static class PipelineUsageExample
                 .SetParameter("temperature", 1.0f)
                 .WithMemoryHint(MemoryHint.Temporary)
                 .DependsOn("Inference"))
-            
+
             .WithOptimization(opt =>
             {
                 opt.EnableKernelFusion = true;
                 opt.EnableMemoryOptimization = true;
                 opt.Level = PipelineOptimizationLevel.Balanced;
             })
-            
+
             .Build();
 
         return Task.FromResult(pipeline);
@@ -177,24 +182,29 @@ public static class PipelineUsageExample
     {
         var pipeline = KernelPipelineBuilder.Create()
             .WithName("IterativeComputationPipeline")
-            
+
             // Initial setup
             .AddKernel("Initialize", computeKernel, stage => stage
                 .WithWorkSize(1000, 1000)
                 .MapInput("initial_values", "x0")
                 .MapOutput("current_values", "x")
                 .WithMemoryHint(MemoryHint.Persistent))
-            
+
             // Iterative loop
             .AddLoop(
                 (context, iteration) =>
                 {
                     // Continue until convergence or max iterations
-                    if (iteration >= 1000) return false;
-                    
+                    if (iteration >= 1000)
+                    {
+                        return false;
+                    }
+
                     if (context.State.TryGetValue("converged", out var converged))
+                    {
                         return !(bool)converged;
-                    
+                    }
+
                     return true;
                 },
                 loopBody => loopBody
@@ -203,25 +213,25 @@ public static class PipelineUsageExample
                         .MapInput("x_prev", "current_values")
                         .MapOutput("x_new", "next_values")
                         .SetParameter("alpha", 0.01f))
-                    
+
                     .AddKernel("CheckConvergence", convergenceKernel, stage => stage
                         .WithWorkSize(1)
                         .MapInput("x_old", "current_values")
                         .MapInput("x_new", "next_values")
                         .MapOutput("converged", "convergence_flag")
                         .SetParameter("tolerance", 1e-6f))
-                    
+
                     .AddKernel("UpdateValues", computeKernel, stage => stage
                         .WithWorkSize(1000, 1000)
                         .MapInput("x_new", "next_values")
                         .MapOutput("current_values", "x")))
-            
+
             .WithOptimization(opt =>
             {
                 opt.EnableMemoryOptimization = true;
                 opt.Level = PipelineOptimizationLevel.Conservative;
             })
-            
+
             .Build();
 
         return Task.FromResult(pipeline);
@@ -238,7 +248,7 @@ public static class PipelineUsageExample
     {
         // Create profiler for detailed monitoring
         var profiler = new BasicPipelineProfiler();
-        
+
         // Create execution context
         var context = new PipelineExecutionContext
         {
@@ -259,7 +269,7 @@ public static class PipelineUsageExample
         {
             Console.WriteLine($"Starting pipeline execution: {pipeline.Name}");
             Console.WriteLine($"Input count: {inputs.Count}");
-            
+
             // Validate pipeline before execution
             var validation = pipeline.Validate();
             if (!validation.IsValid)
@@ -277,21 +287,21 @@ public static class PipelineUsageExample
 
             // Execute pipeline
             var result = await pipeline.ExecuteAsync(context);
-            
+
             // Display results
             Console.WriteLine($"Pipeline execution completed: {(result.Success ? "SUCCESS" : "FAILED")}");
             Console.WriteLine($"Execution time: {result.Metrics.Duration.TotalMilliseconds:F2} ms");
             Console.WriteLine($"Memory usage: {result.Metrics.MemoryUsage.AllocatedBytes / 1024.0 / 1024.0:F2} MB");
             Console.WriteLine($"Compute utilization: {result.Metrics.ComputeUtilization:P}");
             Console.WriteLine($"Output count: {result.Outputs.Count}");
-            
+
             // Display stage performance
             Console.WriteLine("\nStage Performance:");
             foreach (var stageResult in result.StageResults)
             {
                 Console.WriteLine($"  {stageResult.StageId}: {stageResult.Duration.TotalMilliseconds:F2} ms ({(stageResult.Success ? "OK" : "FAILED")})");
             }
-            
+
             if (result.Errors != null)
             {
                 Console.WriteLine("\nErrors:");
@@ -299,7 +309,9 @@ public static class PipelineUsageExample
                 {
                     Console.WriteLine($"  {error.Severity}: {error.Message}");
                     if (error.StageId != null)
+                    {
                         Console.WriteLine($"    Stage: {error.StageId}");
+                    }
                 }
             }
 
@@ -318,7 +330,7 @@ public static class PipelineUsageExample
     public static async Task<IKernelPipeline> OptimizePipelineAsync(IKernelPipeline originalPipeline)
     {
         Console.WriteLine($"Optimizing pipeline: {originalPipeline.Name}");
-        
+
         var optimizer = new PipelineOptimizer();
         var optimizationSettings = new PipelineOptimizationSettings
         {
@@ -330,12 +342,12 @@ public static class PipelineUsageExample
         };
 
         var optimizedResult = await optimizer.OptimizeAsync(originalPipeline, optimizationSettings);
-        
+
         Console.WriteLine($"Optimization completed:");
         Console.WriteLine($"  Applied optimizations: {optimizedResult.AppliedOptimizations.Count}");
         Console.WriteLine($"  Estimated speedup: {optimizedResult.EstimatedSpeedup:F2}x");
         Console.WriteLine($"  Estimated memory savings: {optimizedResult.EstimatedMemorySavings / 1024.0 / 1024.0:F2} MB");
-        
+
         Console.WriteLine("\nOptimizations applied:");
         foreach (var optimization in optimizedResult.AppliedOptimizations)
         {
@@ -355,7 +367,7 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
 {
     private readonly Dictionary<string, DateTime> _executionStarts = new();
     private readonly Dictionary<string, DateTime> _stageStarts = new();
-    
+
     public void StartPipelineExecution(string pipelineId, string executionId)
     {
         _executionStarts[executionId] = DateTime.UtcNow;

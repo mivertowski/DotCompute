@@ -7,8 +7,8 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DotCompute.Core;
 using DotCompute.Abstractions;
+using DotCompute.Core;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core.Pipelines;
@@ -74,11 +74,11 @@ internal sealed class KernelStage : IPipelineStage
     private List<object> BuildKernelParameters(PipelineExecutionContext context)
     {
         var parameters = new List<object>();
-        
+
         // Build parameter list based on mappings and context
         // Since we don't have KernelDefinition.Parameters yet, we'll use the mappings
         // The order will be determined by the order in which parameters are added
-        
+
         // First, add parameters from input mappings
         foreach (var (paramName, contextKey) in _inputMappings)
         {
@@ -95,7 +95,7 @@ internal sealed class KernelStage : IPipelineStage
                 throw new InvalidOperationException($"No value found for parameter '{paramName}' (mapped from '{contextKey}')");
             }
         }
-        
+
         // Then add any parameters that aren't in input mappings but are in _parameters
         foreach (var (paramName, paramValue) in _parameters)
         {
@@ -104,7 +104,7 @@ internal sealed class KernelStage : IPipelineStage
                 parameters.Add(paramValue);
             }
         }
-        
+
         return parameters;
     }
 
@@ -117,9 +117,9 @@ internal sealed class KernelStage : IPipelineStage
     {
         // Since we don't have KernelDefinition.Parameters, we'll use the order
         // established by BuildKernelParameters method
-        
+
         int index = 0;
-        
+
         // Check input mappings first (these come first in BuildKernelParameters)
         foreach (var (mappingParam, _) in _inputMappings)
         {
@@ -129,7 +129,7 @@ internal sealed class KernelStage : IPipelineStage
             }
             index++;
         }
-        
+
         // Then check parameters that aren't in input mappings
         foreach (var (param, _) in _parameters)
         {
@@ -142,7 +142,7 @@ internal sealed class KernelStage : IPipelineStage
                 index++;
             }
         }
-        
+
         return -1; // Not found
     }
 
@@ -171,7 +171,7 @@ internal sealed class KernelStage : IPipelineStage
     {
         var stopwatch = Stopwatch.StartNew();
         var startMemory = GC.GetTotalMemory(false);
-        
+
         // Start performance monitoring
         PerformanceMonitor.ExecutionMetrics.StartExecution();
 
@@ -195,7 +195,7 @@ internal sealed class KernelStage : IPipelineStage
             await _kernel.ExecuteAsync(kernelArgs, cancellationToken);
 
             stopwatch.Stop();
-            
+
             // Get detailed execution metrics
             var (cpuTime, allocatedBytes, elapsedMs) = PerformanceMonitor.ExecutionMetrics.EndExecution();
             var endMemory = GC.GetTotalMemory(false);
@@ -338,12 +338,12 @@ internal sealed class KernelStage : IPipelineStage
         // Calculate real compute utilization based on work items and execution time
         var workItems = CalculateWorkItemsProcessed();
         var executionTime = _metrics.AverageExecutionTime;
-        
+
         // Use performance monitor to get real CPU utilization
         return PerformanceMonitor.GetComputeUtilization(executionTime, (long)workItems);
     }
 
-    private double CalculateMemoryBandwidthUtilization()
+    private static double CalculateMemoryBandwidthUtilization()
     {
         // Use performance monitor to get real memory bandwidth utilization
         return PerformanceMonitor.GetMemoryBandwidthUtilization();
@@ -352,7 +352,9 @@ internal sealed class KernelStage : IPipelineStage
     private double CalculateWorkItemsProcessed()
     {
         if (_globalWorkSize == null)
+        {
             return 0;
+        }
 
         return _globalWorkSize.Aggregate(1L, (acc, size) => acc * size);
     }
@@ -409,7 +411,7 @@ internal sealed class ParallelStage : IPipelineStage
     {
         var stopwatch = Stopwatch.StartNew();
         var startMemory = GC.GetTotalMemory(false);
-        
+
         // Start performance monitoring
         PerformanceMonitor.ExecutionMetrics.StartExecution();
         var startCpuUtilization = PerformanceMonitor.GetCpuUtilization();
@@ -451,7 +453,7 @@ internal sealed class ParallelStage : IPipelineStage
                     foreach (var stage in _parallelStages)
                     {
                         var capturedStage = stage;
-                        ThreadPool.QueueUserWorkItem(async _ => 
+                        ThreadPool.QueueUserWorkItem(async _ =>
                         {
                             try
                             {
@@ -484,7 +486,7 @@ internal sealed class ParallelStage : IPipelineStage
             }
 
             stopwatch.Stop();
-            
+
             // Get detailed execution metrics
             var (cpuTime, allocatedBytes, elapsedMs) = PerformanceMonitor.ExecutionMetrics.EndExecution();
             var endCpuUtilization = PerformanceMonitor.GetCpuUtilization();
@@ -507,7 +509,7 @@ internal sealed class ParallelStage : IPipelineStage
             // Calculate real parallel efficiency
             var parallelEfficiency = CalculateParallelEfficiency(results);
             var loadBalance = CalculateLoadBalance(results);
-            
+
             // Calculate real synchronization overhead based on CPU utilization difference
             var avgCpuUtilization = (startCpuUtilization + endCpuUtilization) / 2.0;
             var expectedCpuUtilization = Math.Min(1.0, parallelEfficiency * _maxDegreeOfParallelism / Environment.ProcessorCount);
@@ -605,77 +607,85 @@ internal sealed class ParallelStage : IPipelineStage
     private static double CalculateParallelEfficiency(List<StageExecutionResult> results)
     {
         if (results.Count == 0)
+        {
             return 0;
+        }
 
         var totalTime = results.Sum(r => r.Duration.TotalMilliseconds);
         var maxTime = results.Max(r => r.Duration.TotalMilliseconds);
-        
+
         return maxTime > 0 ? (totalTime / (results.Count * maxTime)) : 0;
     }
 
     private static double CalculateLoadBalance(List<StageExecutionResult> results)
     {
         if (results.Count == 0)
+        {
             return 1;
+        }
 
         var durations = results.Select(r => r.Duration.TotalMilliseconds).ToList();
         var mean = durations.Average();
         var variance = durations.Sum(d => Math.Pow(d - mean, 2)) / durations.Count;
         var stdDev = Math.Sqrt(variance);
-        
+
         return mean > 0 ? Math.Max(0, 1 - (stdDev / mean)) : 1;
     }
 
     private static double CalculateSynchronizationOverhead(List<StageExecutionResult> results)
     {
         if (results.Count <= 1)
+        {
             return 0.0;
+        }
 
         // Calculate synchronization overhead based on variance in execution times
         var executionTimes = results.Select(r => r.Duration.TotalMilliseconds).ToList();
         var mean = executionTimes.Average();
         var variance = executionTimes.Sum(t => Math.Pow(t - mean, 2)) / executionTimes.Count;
         var stdDev = Math.Sqrt(variance);
-        
+
         // Higher variance indicates more synchronization overhead
         var coefficientOfVariation = mean > 0 ? stdDev / mean : 0;
-        
+
         // Convert to overhead percentage (clamped between 0% and 20%)
         return Math.Min(0.20, Math.Max(0.0, coefficientOfVariation * 0.1));
     }
 
     private static double GetThreadPoolUtilization()
     {
-        var (activeWorkers, activeCompletionPorts, availableWorkers, availableCompletionPorts) = 
+        var (activeWorkers, activeCompletionPorts, availableWorkers, availableCompletionPorts) =
             PerformanceMonitor.GetThreadPoolStats();
-        
+
         var totalWorkers = activeWorkers + availableWorkers;
         var totalCompletionPorts = activeCompletionPorts + availableCompletionPorts;
-        
+
         if (totalWorkers > 0)
         {
             var workerUtilization = (double)activeWorkers / totalWorkers;
-            var completionPortUtilization = totalCompletionPorts > 0 ? 
+            var completionPortUtilization = totalCompletionPorts > 0 ?
                 (double)activeCompletionPorts / totalCompletionPorts : 0;
-            
+
             // Average of worker and completion port utilization
             return (workerUtilization + completionPortUtilization) / 2.0;
         }
-        
+
         return 0.0;
     }
 
     private static double CalculateActualParallelism(List<StageExecutionResult> results, TimeSpan totalDuration)
     {
         if (results.Count == 0 || totalDuration.TotalMilliseconds == 0)
+        {
             return 0.0;
-        
+        }
+
         // Calculate the sum of all stage durations
         var totalStageDuration = results.Sum(r => r.Duration.TotalMilliseconds);
-        
+
         // Actual parallelism is the ratio of total work time to wall clock time
         var actualParallelism = totalStageDuration / totalDuration.TotalMilliseconds;
-        
+
         // This gives us the average number of stages running in parallel
         return Math.Min(results.Count, actualParallelism);
     }
@@ -687,21 +697,21 @@ internal sealed class ParallelStage : IPipelineStage
     {
         // Implementation of custom synchronization patterns
         var customStrategy = DetermineCustomStrategy(context);
-        
+
         switch (customStrategy)
         {
             case CustomSyncStrategy.BarrierSync:
-                await ExecuteBarrierSynchronization(context, cancellationToken);
+                await ExecuteBarrierSynchronizationAsync(context, cancellationToken);
                 break;
-                
+
             case CustomSyncStrategy.ProducerConsumer:
-                await ExecuteProducerConsumerPattern(context, cancellationToken);
+                await ExecuteProducerConsumerPatternAsync(context, cancellationToken);
                 break;
-                
+
             case CustomSyncStrategy.WorkStealing:
-                await ExecuteWorkStealingPattern(context, cancellationToken);
+                await ExecuteWorkStealingPatternAsync(context, cancellationToken);
                 break;
-                
+
             default:
                 // Fallback to WaitAll if no custom strategy is determined
                 var tasks = _parallelStages.Select(stage => ExecuteStageAsync(stage, context, cancellationToken));
@@ -726,15 +736,15 @@ internal sealed class ParallelStage : IPipelineStage
         {
             return CustomSyncStrategy.BarrierSync;
         }
-        
+
         return CustomSyncStrategy.Default;
     }
 
-    private async Task ExecuteBarrierSynchronization(PipelineExecutionContext context, CancellationToken cancellationToken)
+    private async Task ExecuteBarrierSynchronizationAsync(PipelineExecutionContext context, CancellationToken cancellationToken)
     {
         using var barrier = new Barrier(_parallelStages.Count);
         var tasks = new List<Task<StageExecutionResult>>();
-        
+
         foreach (var stage in _parallelStages)
         {
             var task = Task.Run(async () =>
@@ -743,24 +753,24 @@ internal sealed class ParallelStage : IPipelineStage
                 barrier.SignalAndWait(cancellationToken);
                 return result;
             }, cancellationToken);
-            
+
             tasks.Add(task);
         }
-        
+
         var stageResults = await Task.WhenAll(tasks);
         results.AddRange(stageResults);
     }
 
-    private async Task ExecuteProducerConsumerPattern(PipelineExecutionContext context, CancellationToken cancellationToken)
+    private async Task ExecuteProducerConsumerPatternAsync(PipelineExecutionContext context, CancellationToken cancellationToken)
     {
         var channel = System.Threading.Channels.Channel.CreateUnbounded<object>();
         var writer = channel.Writer;
         var reader = channel.Reader;
-        
+
         // Start producer stages
         var producers = _parallelStages.Where(s => s.Type != PipelineStageType.Custom).ToList();
         var consumers = _parallelStages.Where(s => s.Type == PipelineStageType.Custom).ToList();
-        
+
         var producerTasks = producers.Select(async stage =>
         {
             var result = await ExecuteStageAsync(stage, context, cancellationToken);
@@ -773,7 +783,7 @@ internal sealed class ParallelStage : IPipelineStage
             }
             return result;
         });
-        
+
         var consumerTasks = consumers.Select(async stage =>
         {
             await foreach (var item in reader.ReadAllAsync(cancellationToken))
@@ -782,38 +792,38 @@ internal sealed class ParallelStage : IPipelineStage
             }
             return await ExecuteStageAsync(stage, context, cancellationToken);
         });
-        
+
         var allTasks = producerTasks.Concat(consumerTasks);
         var stageResults = await Task.WhenAll(allTasks);
         results.AddRange(stageResults);
-        
+
         writer.Complete();
     }
 
-    private async Task ExecuteWorkStealingPattern(PipelineExecutionContext context, CancellationToken cancellationToken)
+    private async Task ExecuteWorkStealingPatternAsync(PipelineExecutionContext context, CancellationToken cancellationToken)
     {
         var workQueue = new System.Collections.Concurrent.ConcurrentQueue<IPipelineStage>(_parallelStages);
         var workerCount = Math.Min(_maxDegreeOfParallelism, Environment.ProcessorCount);
         var workers = new List<Task<List<StageExecutionResult>>>();
-        
+
         for (int i = 0; i < workerCount; i++)
         {
             var worker = Task.Run(async () =>
             {
                 var workerResults = new List<StageExecutionResult>();
-                
+
                 while (workQueue.TryDequeue(out var stage))
                 {
                     var result = await ExecuteStageAsync(stage, context, cancellationToken);
                     workerResults.Add(result);
                 }
-                
+
                 return workerResults;
             }, cancellationToken);
-            
+
             workers.Add(worker);
         }
-        
+
         var allWorkerResults = await Task.WhenAll(workers);
         foreach (var workerResults in allWorkerResults)
         {
@@ -889,7 +899,7 @@ internal sealed class BranchStage : IPipelineStage
                     };
 
                     var result = await stage.ExecuteAsync(stageContext, cancellationToken);
-                    
+
                     if (!result.Success)
                     {
                         return new StageExecutionResult
@@ -1032,7 +1042,7 @@ internal sealed class LoopStage : IPipelineStage
                     };
 
                     var result = await stage.ExecuteAsync(stageContext, cancellationToken);
-                    
+
                     if (!result.Success)
                     {
                         return new StageExecutionResult
@@ -1156,7 +1166,7 @@ internal sealed class PipelineWrapperStage : IPipelineStage
         try
         {
             var result = await _pipeline.ExecuteAsync(context, cancellationToken);
-            
+
             stopwatch.Stop();
             _metrics.RecordExecution(stopwatch.Elapsed, result.Success);
 
@@ -1189,7 +1199,7 @@ internal sealed class PipelineWrapperStage : IPipelineStage
     public StageValidationResult Validate()
     {
         var pipelineValidation = _pipeline.Validate();
-        
+
         return new StageValidationResult
         {
             IsValid = pipelineValidation.IsValid,

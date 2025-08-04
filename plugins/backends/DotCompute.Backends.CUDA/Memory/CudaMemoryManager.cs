@@ -30,7 +30,7 @@ public class CudaMemoryManager : ISyncMemoryManager
     public ISyncMemoryBuffer Allocate(long sizeInBytes, MemoryOptions options = MemoryOptions.None)
     {
         ThrowIfDisposed();
-        
+
         if (sizeInBytes <= 0)
         {
             throw new ArgumentException("Size must be greater than zero", nameof(sizeInBytes));
@@ -39,15 +39,15 @@ public class CudaMemoryManager : ISyncMemoryManager
         try
         {
             _logger.LogDebug("Allocating {Size} bytes of CUDA memory with options {Options}", sizeInBytes, options);
-            
+
             var buffer = new CudaMemoryBuffer(_context, sizeInBytes, options, _logger);
-            
+
             if (!_buffers.TryAdd(buffer, buffer))
             {
                 buffer.Dispose();
                 throw new MemoryException("Failed to track allocated buffer");
             }
-            
+
             _logger.LogDebug("Successfully allocated CUDA buffer of {Size} bytes", sizeInBytes);
             return buffer;
         }
@@ -61,7 +61,7 @@ public class CudaMemoryManager : ISyncMemoryManager
     public ISyncMemoryBuffer AllocateAligned(long sizeInBytes, int alignment, MemoryOptions options = MemoryOptions.None)
     {
         ThrowIfDisposed();
-        
+
         if (alignment <= 0 || (alignment & (alignment - 1)) != 0)
         {
             throw new ArgumentException("Alignment must be a power of 2", nameof(alignment));
@@ -70,7 +70,7 @@ public class CudaMemoryManager : ISyncMemoryManager
         // CUDA allocations are already aligned to at least 256 bytes
         // For specific alignment requirements, we may need to over-allocate
         var alignedSize = ((sizeInBytes + alignment - 1) / alignment) * alignment;
-        
+
         return Allocate(alignedSize, options);
     }
 
@@ -108,10 +108,12 @@ public class CudaMemoryManager : ISyncMemoryManager
     public unsafe void CopyFromHost(void* source, ISyncMemoryBuffer destination, long sizeInBytes, long destinationOffset = 0)
     {
         ThrowIfDisposed();
-        
+
         if (source == null)
+        {
             throw new ArgumentNullException(nameof(source));
-        
+        }
+
         ValidateBuffer(destination, sizeInBytes, destinationOffset);
 
         try
@@ -140,10 +142,12 @@ public class CudaMemoryManager : ISyncMemoryManager
     public unsafe void CopyToHost(ISyncMemoryBuffer source, void* destination, long sizeInBytes, long sourceOffset = 0)
     {
         ThrowIfDisposed();
-        
+
         if (destination == null)
+        {
             throw new ArgumentNullException(nameof(destination));
-        
+        }
+
         ValidateBuffer(source, sizeInBytes, sourceOffset);
 
         try
@@ -197,9 +201,11 @@ public class CudaMemoryManager : ISyncMemoryManager
     public void Zero(ISyncMemoryBuffer buffer)
     {
         ThrowIfDisposed();
-        
+
         if (buffer == null)
+        {
             throw new ArgumentNullException(nameof(buffer));
+        }
 
         Fill(buffer, 0, buffer.SizeInBytes);
     }
@@ -207,7 +213,9 @@ public class CudaMemoryManager : ISyncMemoryManager
     public void Free(ISyncMemoryBuffer buffer)
     {
         if (buffer == null)
+        {
             throw new ArgumentNullException(nameof(buffer));
+        }
 
         if (_buffers.TryRemove(buffer, out var cudaBuffer))
         {
@@ -267,7 +275,9 @@ public class CudaMemoryManager : ISyncMemoryManager
     private CudaMemoryBuffer GetCudaBuffer(ISyncMemoryBuffer buffer)
     {
         if (buffer == null)
+        {
             throw new ArgumentNullException(nameof(buffer));
+        }
 
         if (_buffers.TryGetValue(buffer, out var cudaBuffer))
         {
@@ -277,22 +287,30 @@ public class CudaMemoryManager : ISyncMemoryManager
         throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
     }
 
-    private void ValidateBuffer(ISyncMemoryBuffer buffer, long sizeInBytes, long offset)
+    private static void ValidateBuffer(ISyncMemoryBuffer buffer, long sizeInBytes, long offset)
     {
         if (buffer == null)
+        {
             throw new ArgumentNullException(nameof(buffer));
+        }
 
         if (sizeInBytes <= 0)
+        {
             throw new ArgumentException("Size must be greater than zero", nameof(sizeInBytes));
+        }
 
         if (offset < 0)
+        {
             throw new ArgumentException("Offset cannot be negative", nameof(offset));
+        }
 
         if (offset + sizeInBytes > buffer.SizeInBytes)
+        {
             throw new ArgumentException("Operation would exceed buffer bounds");
+        }
     }
 
-    private void ValidateCopyParameters(ISyncMemoryBuffer source, ISyncMemoryBuffer destination, 
+    private void ValidateCopyParameters(ISyncMemoryBuffer source, ISyncMemoryBuffer destination,
         long sizeInBytes, long sourceOffset, long destinationOffset)
     {
         ValidateBuffer(source, sizeInBytes, sourceOffset);
@@ -309,7 +327,10 @@ public class CudaMemoryManager : ISyncMemoryManager
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         try
         {

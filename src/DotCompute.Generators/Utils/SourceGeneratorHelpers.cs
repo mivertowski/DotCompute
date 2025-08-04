@@ -1,13 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace DotCompute.Generators.Utils
 {
@@ -68,7 +68,7 @@ namespace DotCompute.Generators.Utils
         public static string GenerateParameterValidation(IEnumerable<(string name, string type, bool isBuffer)> parameters)
         {
             var sb = new StringBuilder();
-            
+
             foreach (var (name, type, isBuffer) in parameters)
             {
                 if (isBuffer)

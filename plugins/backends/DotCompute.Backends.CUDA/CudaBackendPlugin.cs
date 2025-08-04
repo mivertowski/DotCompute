@@ -43,28 +43,28 @@ public sealed class CudaBackendPlugin : BackendPluginBase
     public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         base.ConfigureServices(services, configuration);
-        
+
         // Register the CUDA backend factory
         services.TryAddSingleton<CudaBackendFactory>();
-        
+
         // Register multiple CUDA accelerators (one per device)
         services.AddSingleton<IEnumerable<IAccelerator>>(provider =>
         {
             var factory = provider.GetRequiredService<CudaBackendFactory>();
             return factory.CreateAccelerators();
         });
-        
+
         // Register a default CUDA accelerator
         services.AddSingleton<IAccelerator>(provider =>
         {
             var factory = provider.GetRequiredService<CudaBackendFactory>();
             var defaultAccelerator = factory.CreateDefaultAccelerator();
-            
+
             if (defaultAccelerator == null)
             {
                 throw new InvalidOperationException("Failed to create default CUDA accelerator");
             }
-            
+
             return new NamedAcceleratorWrapper("cuda", defaultAccelerator);
         });
     }
@@ -94,12 +94,12 @@ public sealed class CudaBackendPlugin : BackendPluginBase
     protected override void OnValidate(PluginValidationResult result)
     {
         base.OnValidate(result);
-        
+
         // Check CUDA runtime availability
         try
         {
             var cudaResult = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
-            
+
             if (cudaResult != CudaError.Success)
             {
                 result.IsValid = false;
@@ -113,19 +113,19 @@ public sealed class CudaBackendPlugin : BackendPluginBase
             else
             {
                 result.Metadata["CudaDeviceCount"] = deviceCount;
-                
+
                 // Check device capabilities
                 for (int i = 0; i < deviceCount; i++)
                 {
                     var props = new CudaDeviceProperties();
                     var propResult = CudaRuntime.cudaGetDeviceProperties(ref props, i);
-                    
+
                     if (propResult == CudaError.Success)
                     {
                         result.Metadata[$"Device{i}Name"] = props.Name;
                         result.Metadata[$"Device{i}ComputeCapability"] = $"{props.Major}.{props.Minor}";
                         result.Metadata[$"Device{i}GlobalMemory"] = props.TotalGlobalMem;
-                        
+
                         // Check minimum compute capability
                         if (props.Major < 3)
                         {
@@ -194,7 +194,7 @@ public sealed class CudaBackendPlugin : BackendPluginBase
     protected override void OnUpdateMetrics(PluginMetrics metrics)
     {
         base.OnUpdateMetrics(metrics);
-        
+
         // Add CUDA-specific metrics
         try
         {
@@ -202,19 +202,19 @@ public sealed class CudaBackendPlugin : BackendPluginBase
             if (result == CudaError.Success)
             {
                 metrics.CustomMetrics["CudaDeviceCount"] = deviceCount;
-                
+
                 // Get runtime version
                 if (CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion) == CudaError.Success)
                 {
                     metrics.CustomMetrics["CudaRuntimeVersion"] = runtimeVersion;
                 }
-                
+
                 // Get driver version
                 if (CudaRuntime.cudaDriverGetVersion(out var driverVersion) == CudaError.Success)
                 {
                     metrics.CustomMetrics["CudaDriverVersion"] = driverVersion;
                 }
-                
+
                 // Get memory info for default device
                 if (deviceCount > 0)
                 {
@@ -247,25 +247,25 @@ public static class CudaBackendPluginExtensions
     {
         // Register the CUDA backend factory
         services.TryAddSingleton<CudaBackendFactory>();
-        
+
         // Register multiple CUDA accelerators (one per device)
         services.AddSingleton<IEnumerable<IAccelerator>>(provider =>
         {
             var factory = provider.GetRequiredService<CudaBackendFactory>();
             return factory.CreateAccelerators();
         });
-        
+
         // Register a default CUDA accelerator
         services.AddSingleton<IAccelerator>(provider =>
         {
             var factory = provider.GetRequiredService<CudaBackendFactory>();
             var defaultAccelerator = factory.CreateDefaultAccelerator();
-            
+
             if (defaultAccelerator == null)
             {
                 throw new InvalidOperationException("Failed to create default CUDA accelerator");
             }
-            
+
             return new NamedAcceleratorWrapper("cuda", defaultAccelerator);
         });
 
@@ -278,7 +278,7 @@ public static class CudaBackendPluginExtensions
     public static IServiceCollection AddCudaBackend(this IServiceCollection services, int deviceId)
     {
         services.TryAddSingleton<CudaBackendFactory>();
-        
+
         services.AddSingleton<IAccelerator>(provider =>
         {
             var logger = provider.GetService<ILogger<CudaAccelerator>>();

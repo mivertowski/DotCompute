@@ -4,8 +4,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using DotCompute.Core;
 using DotCompute.Abstractions;
+using DotCompute.Core;
 using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using OptimizationLevel = DotCompute.Abstractions.OptimizationLevel;
@@ -20,7 +20,7 @@ public interface IComputeEngine : IAsyncDisposable
     /// <summary>
     /// Compiles a kernel from source code.
     /// </summary>
-    ValueTask<ICompiledKernel> CompileKernelAsync(
+    public ValueTask<ICompiledKernel> CompileKernelAsync(
         string kernelSource,
         string? entryPoint = null,
         CompilationOptions? options = null,
@@ -29,7 +29,7 @@ public interface IComputeEngine : IAsyncDisposable
     /// <summary>
     /// Executes a compiled kernel on the specified backend.
     /// </summary>
-    ValueTask ExecuteAsync(
+    public ValueTask ExecuteAsync(
         ICompiledKernel kernel,
         object[] arguments,
         ComputeBackendType backendType,
@@ -39,12 +39,12 @@ public interface IComputeEngine : IAsyncDisposable
     /// <summary>
     /// Gets available compute backends.
     /// </summary>
-    ComputeBackendType[] AvailableBackends { get; }
+    public ComputeBackendType[] AvailableBackends { get; }
 
     /// <summary>
     /// Gets the default backend for the current system.
     /// </summary>
-    ComputeBackendType DefaultBackend { get; }
+    public ComputeBackendType DefaultBackend { get; }
 }
 
 
@@ -56,22 +56,22 @@ public interface ICompilationMetadata
     /// <summary>
     /// Gets the compilation timestamp.
     /// </summary>
-    DateTimeOffset CompilationTime { get; }
+    public DateTimeOffset CompilationTime { get; }
 
     /// <summary>
     /// Gets compilation options used.
     /// </summary>
-    CompilationOptions Options { get; }
+    public CompilationOptions Options { get; }
 
     /// <summary>
     /// Gets any compilation warnings.
     /// </summary>
-    string[] Warnings { get; }
+    public string[] Warnings { get; }
 
     /// <summary>
     /// Gets optimization level applied.
     /// </summary>
-    OptimizationLevel OptimizationLevel { get; }
+    public OptimizationLevel OptimizationLevel { get; }
 }
 
 /// <summary>

@@ -6,8 +6,8 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 using DotCompute.Core;
 
 namespace DotCompute.Backends.CPU.Kernels;
@@ -42,7 +42,7 @@ public static class AdvancedSimdKernels
                 var va = Avx512F.LoadVector512(a + offset);
                 var vb = Avx512F.LoadVector512(b + offset);
                 var vc = Avx512F.LoadVector512(c + offset);
-                
+
                 // True hardware FMA: a * b + c in single instruction
                 var vr = Avx512F.FusedMultiplyAdd(va, vb, vc);
                 Avx512F.Store(result + offset, vr);
@@ -61,7 +61,7 @@ public static class AdvancedSimdKernels
                 var va = Avx.LoadVector256(a + offset);
                 var vb = Avx.LoadVector256(b + offset);
                 var vc = Avx.LoadVector256(c + offset);
-                
+
                 // Hardware FMA with AVX2
                 var vr = Fma.MultiplyAdd(va, vb, vc);
                 Avx.Store(result + offset, vr);
@@ -80,7 +80,7 @@ public static class AdvancedSimdKernels
                 var va = AdvSimd.LoadVector128(a + offset);
                 var vb = AdvSimd.LoadVector128(b + offset);
                 var vc = AdvSimd.LoadVector128(c + offset);
-                
+
                 // ARM NEON FMA
                 var vr = AdvSimd.FusedMultiplyAdd(vc, va, vb); // Note: ARM FMA is addend + multiplicand * multiplier
                 AdvSimd.Store(result + offset, vr);
@@ -116,7 +116,7 @@ public static class AdvancedSimdKernels
                 var va = Avx512F.LoadVector512(a + offset);
                 var vb = Avx512F.LoadVector512(b + offset);
                 var vc = Avx512F.LoadVector512(c + offset);
-                
+
                 var vr = Avx512F.FusedMultiplyAdd(va, vb, vc);
                 Avx512F.Store(result + offset, vr);
             }
@@ -134,7 +134,7 @@ public static class AdvancedSimdKernels
                 var va = Avx.LoadVector256(a + offset);
                 var vb = Avx.LoadVector256(b + offset);
                 var vc = Avx.LoadVector256(c + offset);
-                
+
                 var vr = Fma.MultiplyAdd(va, vb, vc);
                 Avx.Store(result + offset, vr);
             }
@@ -152,7 +152,7 @@ public static class AdvancedSimdKernels
                 var va = AdvSimd.LoadVector128(a + offset);
                 var vb = AdvSimd.LoadVector128(b + offset);
                 var vc = AdvSimd.LoadVector128(c + offset);
-                
+
                 var vr = AdvSimd.Arm64.FusedMultiplyAdd(vc, va, vb);
                 AdvSimd.Store(result + offset, vr);
             }
@@ -270,29 +270,29 @@ public static class AdvancedSimdKernels
             for (long v = 0; v < vectorCount; v++)
             {
                 var offset = v * VectorSize;
-                
+
                 // Load 64-bit values
                 var va = Avx2.LoadVector256(a + offset);
                 var vb = Avx2.LoadVector256(b + offset);
-                
+
                 // Decompose 64-bit multiply into 32-bit operations
                 // Split each 64-bit value into high and low 32-bit parts
                 var aLo = Avx2.And(va, Vector256.Create(0xFFFFFFFFL));
                 var aHi = Avx2.ShiftRightLogical(va, 32);
                 var bLo = Avx2.And(vb, Vector256.Create(0xFFFFFFFFL));
                 var bHi = Avx2.ShiftRightLogical(vb, 32);
-                
+
                 // Compute partial products
                 var loLo = Avx2.Multiply(aLo.AsUInt32(), bLo.AsUInt32()); // Low 32 bits of each result
                 var loHi = Avx2.Multiply(aLo.AsUInt32(), bHi.AsUInt32());
                 var hiLo = Avx2.Multiply(aHi.AsUInt32(), bLo.AsUInt32());
-                
+
                 // Combine partial products
                 // Result = loLo + ((loHi + hiLo) << 32)
                 var middle = Avx2.Add(loHi, hiLo);
                 var middleShifted = Avx2.ShiftLeftLogical(middle, 32);
                 var vr = Avx2.Add(loLo.AsInt64(), middleShifted.AsInt64());
-                
+
                 Avx2.Store(result + offset, vr);
             }
             i = vectorCount * VectorSize;
@@ -306,21 +306,21 @@ public static class AdvancedSimdKernels
             for (long v = 0; v < vectorCount; v++)
             {
                 var offset = v * VectorSize;
-                
+
                 // Load 64-bit values
                 var va = AdvSimd.LoadVector128(a + offset);
                 var vb = AdvSimd.LoadVector128(b + offset);
-                
+
                 // ARM64 NEON doesn't have direct 64-bit multiply either
                 // Use scalar multiplication for each element
                 var a0 = va.GetElement(0);
                 var a1 = va.GetElement(1);
                 var b0 = vb.GetElement(0);
                 var b1 = vb.GetElement(1);
-                
+
                 var r0 = a0 * b0;
                 var r1 = a1 * b1;
-                
+
                 var vr = Vector128.Create(r0, r1);
                 AdvSimd.Store(result + offset, vr);
             }
@@ -498,10 +498,10 @@ public static class AdvancedSimdKernels
             {
                 var offset = v * VectorSize;
                 var vindices = Avx2.LoadVector256(indices + offset);
-                
+
                 // Scale indices by sizeof(float) = 4
                 var scaledIndices = Avx2.ShiftLeftLogical(vindices, 2);
-                
+
                 // Gather using scaled indices
                 var gathered = Avx2.GatherVector256(basePtr, scaledIndices, sizeof(float));
                 Avx.Store(result + offset, gathered);
@@ -518,7 +518,7 @@ public static class AdvancedSimdKernels
             {
                 var offset = v * VectorSize;
                 var vindices = Avx512F.LoadVector512(indices + offset);
-                
+
                 // AVX-512 gather (using simpler approach for compatibility)
                 for (int j = 0; j < VectorSize; j++)
                 {
@@ -555,7 +555,7 @@ public static class AdvancedSimdKernels
                 var offset = v * VectorSize;
                 var vvalues = Avx512F.LoadVector512(values + offset);
                 var vindices = Avx512F.LoadVector512(indices + offset);
-                
+
                 // AVX-512 scatter (using simpler approach for compatibility)
                 for (int j = 0; j < VectorSize; j++)
                 {
@@ -620,7 +620,7 @@ public static class AdvancedSimdKernels
                                 {
                                     var vb = Avx.LoadVector256(b + kIdx * n + j);
                                     var vc = Avx.LoadVector256(c + i * n + j);
-                                    
+
                                     // FMA: c[i,j] += a[i,k] * b[k,j]
                                     var result = Fma.MultiplyAdd(vaik, vb, vc);
                                     Avx.Store(c + i * n + j, result);
@@ -650,7 +650,7 @@ public static class AdvancedSimdKernels
     public static unsafe float VectorHorizontalSum(float* data, long count)
     {
         long i = 0;
-        
+
         // AVX-512 reduction
         if (Avx512F.IsSupported)
         {
@@ -737,7 +737,7 @@ public static class AdvancedSimdKernels
 
                 // Create mask: condition > threshold
                 var mask = Avx.Compare(vcond, vthreshold, FloatComparisonMode.OrderedGreaterThanSignaling);
-                
+
                 // Blend based on mask: select a where true, b where false
                 var result_vec = Avx.BlendVariable(vb, va, mask);
                 Avx.Store(result + offset, result_vec);
@@ -794,7 +794,7 @@ public static class AdvancedSimdKernels
         var low = vector.GetLower();
         var high = vector.GetUpper();
         var sum128 = Sse.Add(low, high);
-        
+
         // Horizontal add pairs
         if (Sse3.IsSupported)
         {

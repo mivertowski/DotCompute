@@ -4,12 +4,12 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
+using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Kernels;
 using Xunit;
 using Xunit.Abstractions;
-using DotCompute.Backends.CPU.Kernels;
-using DotCompute.Backends.CPU.Intrinsics;
 
 namespace DotCompute.Backends.CPU.Tests;
 
@@ -30,7 +30,7 @@ public class SimdIntegrationTests
     public void SimdCapabilitiesAreDetectedCorrectly()
     {
         var capabilities = SimdCapabilities.GetSummary();
-        
+
         _output.WriteLine($"Hardware acceleration: {capabilities.IsHardwareAccelerated}");
         _output.WriteLine($"Preferred vector width: {capabilities.PreferredVectorWidth}");
         _output.WriteLine($"Supported instruction sets: {string.Join(", ", capabilities.SupportedInstructionSets)}");
@@ -84,7 +84,7 @@ public class SimdIntegrationTests
             var expected = MathF.FusedMultiplyAdd(a[i], b[i], c[i]);
             var actual = result[i];
             var error = Math.Abs(expected - actual);
-            
+
             Assert.True(error < 1e-6f, $"FMA result mismatch at index {i}: expected {expected}, got {actual}");
         }
 
@@ -121,7 +121,7 @@ public class SimdIntegrationTests
         {
             var expected = a[i] + b[i];
             var actual = result[i];
-            
+
             Assert.Equal(expected, actual);
         }
 
@@ -227,7 +227,7 @@ public class SimdIntegrationTests
         {
             var expected = data[indices[i]];
             var actual = gathered[i];
-            
+
             Assert.Equal(expected, actual);
         }
 
@@ -248,7 +248,7 @@ public class SimdIntegrationTests
             {
                 var expected = values[i];
                 var actual = data[size + indices[i]];
-                
+
                 Assert.Equal(expected, actual);
             }
         }
@@ -373,7 +373,7 @@ public class SimdIntegrationTests
         // Validate result (allowing for floating-point accumulation differences)
         var error = Math.Abs(expectedSum - actualSum);
         var relativeError = error / Math.Abs(expectedSum);
-        
+
         Assert.True(relativeError < 1e-5, $"Horizontal reduction error too large: expected {expectedSum}, got {actualSum}, relative error {relativeError}");
 
         _output.WriteLine("✓ Horizontal reduction produces correct results");
@@ -506,7 +506,7 @@ public class SimdIntegrationTests
         try
         {
             const int size = 100;
-            
+
             // Test gather/scatter
             if (Avx2.IsSupported)
             {

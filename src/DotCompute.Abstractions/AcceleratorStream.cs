@@ -17,27 +17,27 @@ public abstract class AcceleratorStream : IAsyncDisposable
     /// Gets the unique identifier for this stream.
     /// </summary>
     public abstract string Id { get; }
-    
+
     /// <summary>
     /// Gets the accelerator this stream belongs to.
     /// </summary>
     public abstract IAccelerator Accelerator { get; }
-    
+
     /// <summary>
     /// Gets whether this stream is the default stream for the accelerator.
     /// </summary>
     public abstract bool IsDefault { get; }
-    
+
     /// <summary>
     /// Gets the native handle for this stream.
     /// </summary>
     public abstract IntPtr Handle { get; }
-    
+
     /// <summary>
     /// Gets whether this stream supports asynchronous operations.
     /// </summary>
     public abstract bool SupportsAsync { get; }
-    
+
     /// <summary>
     /// Enqueues a kernel launch on this stream.
     /// </summary>
@@ -51,7 +51,7 @@ public abstract class AcceleratorStream : IAsyncDisposable
         Dim3 gridDim,
         Dim3 blockDim,
         params object[] arguments);
-    
+
     /// <summary>
     /// Enqueues a memory copy operation on this stream.
     /// </summary>
@@ -64,7 +64,7 @@ public abstract class AcceleratorStream : IAsyncDisposable
         IMemoryBuffer source,
         IMemoryBuffer destination,
         int count) where T : unmanaged;
-    
+
     /// <summary>
     /// Enqueues a memory fill operation on this stream.
     /// </summary>
@@ -77,47 +77,47 @@ public abstract class AcceleratorStream : IAsyncDisposable
         IMemoryBuffer buffer,
         T value,
         int count) where T : unmanaged;
-    
+
     /// <summary>
     /// Synchronizes this stream, waiting for all enqueued operations to complete.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the synchronization.</returns>
     public abstract ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Creates an event that can be used for synchronization.
     /// </summary>
     /// <returns>A new accelerator event.</returns>
     public abstract AcceleratorEvent CreateEvent();
-    
+
     /// <summary>
     /// Records an event on this stream.
     /// </summary>
     /// <param name="event">The event to record.</param>
     /// <returns>A task representing the record operation.</returns>
     public abstract ValueTask RecordEventAsync(AcceleratorEvent @event);
-    
+
     /// <summary>
     /// Waits for an event on this stream.
     /// </summary>
     /// <param name="event">The event to wait for.</param>
     /// <returns>A task representing the wait operation.</returns>
     public abstract ValueTask WaitForEventAsync(AcceleratorEvent @event);
-    
+
     /// <summary>
     /// Adds a callback to be called when all currently enqueued operations complete.
     /// </summary>
     /// <param name="callback">The callback to invoke.</param>
     /// <returns>A task representing the callback scheduling.</returns>
     public abstract ValueTask AddCallbackAsync(Action callback);
-    
+
     /// <summary>
     /// Gets whether this stream has completed all enqueued operations.
     /// </summary>
     /// <returns>True if all operations are complete, false otherwise.</returns>
     public abstract bool IsCompleted { get; }
-    
+
     /// <summary>
     /// Disposes of this stream asynchronously.
     /// </summary>
@@ -133,38 +133,38 @@ public abstract class AcceleratorEvent : IDisposable
     /// Gets the native handle for this event.
     /// </summary>
     public abstract IntPtr Handle { get; }
-    
+
     /// <summary>
     /// Gets whether this event has been recorded.
     /// </summary>
     public abstract bool IsRecorded { get; }
-    
+
     /// <summary>
     /// Gets whether this event has completed.
     /// </summary>
     public abstract bool IsCompleted { get; }
-    
+
     /// <summary>
     /// Synchronously waits for this event to complete.
     /// </summary>
     /// <param name="timeout">The maximum time to wait.</param>
     /// <returns>True if the event completed within the timeout, false otherwise.</returns>
     public abstract bool Wait(TimeSpan timeout);
-    
+
     /// <summary>
     /// Asynchronously waits for this event to complete.
     /// </summary>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that completes when the event is signaled.</returns>
     public abstract ValueTask WaitAsync(CancellationToken cancellationToken = default);
-    
+
     /// <summary>
     /// Gets the elapsed time between this event and another event.
     /// </summary>
     /// <param name="startEvent">The start event.</param>
     /// <returns>The elapsed time, or null if not available.</returns>
     public abstract TimeSpan? GetElapsedTime(AcceleratorEvent startEvent);
-    
+
     /// <summary>
     /// Disposes of this event.
     /// </summary>

@@ -33,7 +33,7 @@ public class CudaBackendFactory : IBackendFactory
         try
         {
             var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
-            
+
             if (result != CudaError.Success)
             {
                 _logger.LogWarning("CUDA runtime returned error: {Error}", CudaRuntime.GetErrorString(result));
@@ -41,9 +41,9 @@ public class CudaBackendFactory : IBackendFactory
             }
 
             var available = deviceCount > 0;
-            _logger.LogInformation("CUDA backend availability check: {Available} ({DeviceCount} devices found)", 
+            _logger.LogInformation("CUDA backend availability check: {Available} ({DeviceCount} devices found)",
                 available, deviceCount);
-            
+
             return available;
         }
         catch (DllNotFoundException)
@@ -67,14 +67,14 @@ public class CudaBackendFactory : IBackendFactory
         }
 
         var createdAccelerators = new List<IAccelerator>();
-        
+
         try
         {
             var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
             CudaRuntime.CheckError(result, "Get device count");
 
             _logger.LogInformation("Creating {DeviceCount} CUDA accelerator(s)", deviceCount);
-            
+
             for (int deviceId = 0; deviceId < deviceCount; deviceId++)
             {
                 try
@@ -97,7 +97,7 @@ public class CudaBackendFactory : IBackendFactory
         {
             _logger.LogError(ex, "Failed to enumerate CUDA devices");
         }
-        
+
         foreach (var accelerator in createdAccelerators)
         {
             yield return accelerator;
@@ -115,7 +115,7 @@ public class CudaBackendFactory : IBackendFactory
         try
         {
             _logger.LogInformation("Creating default CUDA accelerator (device 0)");
-            
+
             var deviceLogger = _logger is ILoggerFactory loggerFactory
                 ? loggerFactory.CreateLogger<CudaAccelerator>()
                 : new NullLogger<CudaAccelerator>();
@@ -164,12 +164,15 @@ public class CudaBackendFactory : IBackendFactory
     {
         try
         {
-            if (!IsAvailable()) return false;
+            if (!IsAvailable())
+            {
+                return false;
+            }
 
             // Check if first device supports unified memory
             var props = new CudaDeviceProperties();
             var result = CudaRuntime.cudaGetDeviceProperties(ref props, 0);
-            
+
             if (result == CudaError.Success)
             {
                 return props.ManagedMemory > 0;
@@ -187,7 +190,10 @@ public class CudaBackendFactory : IBackendFactory
     {
         try
         {
-            if (!IsAvailable()) return 0;
+            if (!IsAvailable())
+            {
+                return 0;
+            }
 
             var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
             return result == CudaError.Success ? deviceCount : 0;

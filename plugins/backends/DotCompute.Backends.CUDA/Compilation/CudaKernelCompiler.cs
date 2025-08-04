@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
@@ -13,12 +15,11 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
 
 namespace DotCompute.Backends.CUDA.Compilation;
 
 // Internal types for kernel compilation
-internal class KernelSource
+internal sealed class KernelSource
 {
     public required string Name { get; set; }
     public required string EntryPoint { get; set; }
@@ -36,7 +37,7 @@ internal enum KernelLanguage
 /// <summary>
 /// Metadata for cached kernel entries
 /// </summary>
-internal class KernelCacheMetadata
+internal sealed class KernelCacheMetadata
 {
     public required string CacheKey { get; set; }
     public required string KernelName { get; set; }
@@ -84,7 +85,7 @@ public class CudaKernelCompiler : IDisposable
         _cacheDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DotCompute", "Cache", "CUDA");
         Directory.CreateDirectory(_tempDirectory);
         Directory.CreateDirectory(_cacheDirectory);
-        
+
         // Verify NVRTC availability
         if (!IsNvrtcAvailable())
         {
@@ -95,7 +96,7 @@ public class CudaKernelCompiler : IDisposable
             var (major, minor) = GetNvrtcVersion();
             _logger.LogInformation("NVRTC version {Major}.{Minor} detected and ready for kernel compilation", major, minor);
         }
-        
+
         // Load persistent cache on startup
         _ = Task.Run(LoadPersistentCacheAsync);
     }
@@ -103,9 +104,11 @@ public class CudaKernelCompiler : IDisposable
     public async Task<ICompiledKernel> CompileAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
         if (definition == null)
+        {
             throw new ArgumentNullException(nameof(definition));
+        }
 
         try
         {
@@ -121,8 +124,8 @@ public class CudaKernelCompiler : IDisposable
                     cacheMetadata.LastAccessed = DateTime.UtcNow;
                     cacheMetadata.AccessCount++;
                 }
-                
-                _logger.LogDebug("Using cached kernel: {KernelName} (accessed {AccessCount} times)", 
+
+                _logger.LogDebug("Using cached kernel: {KernelName} (accessed {AccessCount} times)",
                     definition.Name, cacheMetadata?.AccessCount ?? 0);
                 return cachedKernel;
             }
@@ -138,14 +141,14 @@ public class CudaKernelCompiler : IDisposable
 
             // Prepare CUDA source code
             var cudaSource = await PrepareCudaSourceAsync(source, options);
-            
+
             // Validate source code
             var validationResult = ValidateCudaSource(cudaSource, source.Name);
             if (!validationResult.IsValid)
             {
                 throw new KernelCompilationException($"CUDA source validation failed for '{source.Name}': {validationResult.ErrorMessage}");
             }
-            
+
             if (validationResult.Warnings != null && validationResult.Warnings.Length > 0)
             {
                 foreach (var warning in validationResult.Warnings)
@@ -153,11 +156,11 @@ public class CudaKernelCompiler : IDisposable
                     _logger.LogWarning("CUDA source warning for '{KernelName}': {Warning}", source.Name, warning);
                 }
             }
-            
+
             // Compile to PTX or CUBIN based on optimization settings
             byte[] compiledCode;
             var useCubin = ShouldUseCubin(options);
-            
+
             if (useCubin)
             {
                 _logger.LogDebug("Using CUBIN compilation for kernel: {KernelName}", source.Name);
@@ -168,13 +171,13 @@ public class CudaKernelCompiler : IDisposable
                 _logger.LogDebug("Using PTX compilation for kernel: {KernelName}", source.Name);
                 compiledCode = await CompileToPtxAsync(cudaSource, source.Name, options);
             }
-            
+
             // Verify compiled code
             if (!VerifyCompiledCode(compiledCode, source.Name))
             {
                 throw new KernelCompilationException($"Compiled code verification failed for kernel '{source.Name}'");
             }
-            
+
             // Create compiled kernel
             var compiledKernel = new CudaCompiledKernel(
                 _context,
@@ -196,12 +199,12 @@ public class CudaKernelCompiler : IDisposable
                 CompilationOptions = options,
                 PtxSize = compiledCode.Length
             };
-            
+
             _kernelCache.TryAdd(cacheKey, compiledKernel);
             _cacheMetadata.TryAdd(cacheKey, metadata);
-            
+
             // Persist to disk asynchronously
-            _ = Task.Run(() => PersistKernelToDiskAsync(cacheKey, compiledCode, metadata));
+            _ = Task.Run(() => PersistKernelToDiskAsync(cacheKey, compiledCode, metadata), cancellationToken);
 
             _logger.LogInformation("Successfully compiled CUDA kernel: {KernelName}", source.Name);
             return compiledKernel;
@@ -216,9 +219,11 @@ public class CudaKernelCompiler : IDisposable
     public async Task<ICompiledKernel[]> CompileBatchAsync(KernelDefinition[] definitions, CompilationOptions? options = null, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
         if (definitions == null)
+        {
             throw new ArgumentNullException(nameof(definitions));
+        }
 
         // Compile kernels in parallel
         var tasks = definitions.Select(def => CompileAsync(def, options, cancellationToken)).ToArray();
@@ -228,7 +233,7 @@ public class CudaKernelCompiler : IDisposable
     public bool TryGetCached(string kernelName, out ICompiledKernel? compiledKernel)
     {
         ThrowIfDisposed();
-        
+
         // Simple cache lookup by name (without options consideration)
         var cachedKernel = _kernelCache.Values.FirstOrDefault(k => k.Name == kernelName);
         compiledKernel = cachedKernel;
@@ -238,14 +243,14 @@ public class CudaKernelCompiler : IDisposable
     public void ClearCache()
     {
         ThrowIfDisposed();
-        
+
         _logger.LogInformation("Clearing CUDA kernel cache");
-        
+
         foreach (var kernel in _kernelCache.Values)
         {
             kernel.Dispose();
         }
-        
+
         _kernelCache.Clear();
         _cacheMetadata.Clear();
     }
@@ -263,22 +268,22 @@ public class CudaKernelCompiler : IDisposable
         // Add essential CUDA headers
         builder.AppendLine("#include <cuda_runtime.h>");
         builder.AppendLine("#include <device_launch_parameters.h>");
-        
+
         // Add performance-oriented headers
         if (options?.OptimizationLevel == OptimizationLevel.Maximum)
         {
             builder.AppendLine("#include <cuda_fp16.h>");  // Half precision support
             builder.AppendLine("#include <cooperative_groups.h>");  // Cooperative groups
         }
-        
+
         // Add mathematical libraries if needed
         if (source.Code.Contains("sin") || source.Code.Contains("cos") || source.Code.Contains("exp"))
         {
             builder.AppendLine("#include <math_functions.h>");
         }
-        
+
         builder.AppendLine();
-        
+
         // Add performance macros
         builder.AppendLine("// Performance optimization macros");
         if (options?.OptimizationLevel == OptimizationLevel.Maximum)
@@ -291,7 +296,7 @@ public class CudaKernelCompiler : IDisposable
             builder.AppendLine("#define FORCE_INLINE inline");
             builder.AppendLine("#define RESTRICT");
         }
-        
+
         // Add debug macros
         if (options?.EnableDebugInfo == true)
         {
@@ -303,23 +308,23 @@ public class CudaKernelCompiler : IDisposable
             builder.AppendLine("#define DEBUG_KERNEL 0");
             builder.AppendLine("#define KERNEL_ASSERT(x)");
         }
-        
+
         builder.AppendLine();
-        
+
         // Add compute capability specific optimizations
         var (major, minor) = GetTargetComputeCapability();
         builder.AppendLine($"// Target compute capability: {major}.{minor}");
-        
+
         if (major >= 7) // Volta and newer
         {
             builder.AppendLine("#define VOLTA_OPTIMIZATIONS 1");
         }
-        
+
         if (major >= 8) // Ampere and newer
         {
             builder.AppendLine("#define AMPERE_OPTIMIZATIONS 1");
         }
-        
+
         builder.AppendLine();
 
         // Add the kernel source code
@@ -328,13 +333,13 @@ public class CudaKernelCompiler : IDisposable
             case KernelLanguage.Cuda:
                 builder.Append(source.Code);
                 break;
-                
+
             case KernelLanguage.OpenCL:
                 // Convert OpenCL to CUDA syntax
                 var convertedCode = ConvertOpenClToCuda(source.Code);
                 builder.Append(convertedCode);
                 break;
-                
+
             default:
                 throw new NotSupportedException($"Kernel language '{source.Language}' is not supported by CUDA compiler");
         }
@@ -342,7 +347,7 @@ public class CudaKernelCompiler : IDisposable
         return Task.FromResult(builder.ToString());
     }
 
-    private string ConvertOpenClToCuda(string openClCode)
+    private static string ConvertOpenClToCuda(string openClCode)
     {
         // Comprehensive OpenCL to CUDA conversion with proper language mapping
         var cudaCode = openClCode;
@@ -370,11 +375,11 @@ public class CudaKernelCompiler : IDisposable
     {
         var stopwatch = Stopwatch.StartNew();
         IntPtr program = IntPtr.Zero;
-        
+
         try
         {
             _logger.LogDebug("Starting NVRTC compilation for kernel: {KernelName}", kernelName);
-            
+
             // Create NVRTC program
             var result = NvrtcRuntime.nvrtcCreateProgram(
                 out program,
@@ -385,21 +390,21 @@ public class CudaKernelCompiler : IDisposable
                 null  // includeNames
             );
             NvrtcRuntime.CheckResult(result, "creating NVRTC program");
-            
+
             // Build compilation options
             var compilationOptions = BuildCompilationOptions(options);
-            
+
             _logger.LogDebug("NVRTC compilation options: {Options}", string.Join(" ", compilationOptions));
-            
+
             // Compile the program
             result = NvrtcRuntime.nvrtcCompileProgram(
                 program,
                 compilationOptions.Length,
                 compilationOptions);
-            
+
             // Get compilation log regardless of success/failure
             var compilerLog = await GetCompilationLogAsync(program);
-            
+
             if (!string.IsNullOrWhiteSpace(compilerLog))
             {
                 if (result == NvrtcResult.Success)
@@ -411,7 +416,7 @@ public class CudaKernelCompiler : IDisposable
                     _logger.LogError("NVRTC compilation failed for {KernelName}: {Log}", kernelName, compilerLog);
                 }
             }
-            
+
             // Check compilation result
             if (result != NvrtcResult.Success)
             {
@@ -419,26 +424,26 @@ public class CudaKernelCompiler : IDisposable
                     $"NVRTC compilation failed for kernel '{kernelName}': {NvrtcRuntime.GetErrorString(result)}",
                     compilerLog);
             }
-            
+
             // Get PTX size
             result = NvrtcRuntime.nvrtcGetPTXSize(program, out var ptxSize);
             NvrtcRuntime.CheckResult(result, "getting PTX size");
-            
+
             // Get PTX code
             var ptxBuilder = new StringBuilder((int)ptxSize);
             result = NvrtcRuntime.nvrtcGetPTX(program, ptxBuilder);
             NvrtcRuntime.CheckResult(result, "getting PTX code");
-            
+
             var ptxString = ptxBuilder.ToString();
             var ptxBytes = Encoding.UTF8.GetBytes(ptxString);
-            
+
             stopwatch.Stop();
             _logger.LogInformation(
                 "Successfully compiled kernel '{KernelName}' using NVRTC in {CompilationTime}ms. PTX size: {PtxSize} bytes",
                 kernelName,
                 stopwatch.ElapsedMilliseconds,
                 ptxBytes.Length);
-            
+
             return ptxBytes;
         }
         catch (Exception ex) when (!(ex is KernelCompilationException))
@@ -462,7 +467,7 @@ public class CudaKernelCompiler : IDisposable
             }
         }
     }
-    
+
     private Task<string> GetCompilationLogAsync(IntPtr program)
     {
         try
@@ -473,7 +478,7 @@ public class CudaKernelCompiler : IDisposable
             {
                 return Task.FromResult(string.Empty);
             }
-            
+
             // Get log content
             var logBuilder = new StringBuilder((int)logSize);
             result = NvrtcRuntime.nvrtcGetProgramLog(program, logBuilder);
@@ -481,7 +486,7 @@ public class CudaKernelCompiler : IDisposable
             {
                 return Task.FromResult("Failed to retrieve compilation log");
             }
-            
+
             return Task.FromResult(logBuilder.ToString().Trim());
         }
         catch (Exception ex)
@@ -490,15 +495,15 @@ public class CudaKernelCompiler : IDisposable
             return Task.FromResult("Failed to retrieve compilation log");
         }
     }
-    
+
     private string[] BuildCompilationOptions(CompilationOptions? options)
     {
         var optionsList = new List<string>();
-        
+
         // Get target GPU architecture
         var (major, minor) = GetTargetComputeCapability();
         optionsList.Add($"--gpu-architecture={ComputeCapability.GetArchString(major, minor)}");
-        
+
         // Add optimization level
         var optLevel = options?.OptimizationLevel ?? OptimizationLevel.Default;
         switch (optLevel)
@@ -515,7 +520,7 @@ public class CudaKernelCompiler : IDisposable
                 optionsList.Add("-O2");
                 break;
         }
-        
+
         // Debug information
         if (options?.EnableDebugInfo == true)
         {
@@ -530,21 +535,21 @@ public class CudaKernelCompiler : IDisposable
             optionsList.Add("--restrict");
             optionsList.Add("--extra-device-vectorization");
         }
-        
+
         // Standard includes and defines
         optionsList.Add("-default-device");
         optionsList.Add("-std=c++17");
         optionsList.Add("-DCUDA_KERNEL_COMPILATION");
-        
+
         // Add any additional user-specified flags
         if (options?.AdditionalFlags != null)
         {
             optionsList.AddRange(options.AdditionalFlags);
         }
-        
+
         return optionsList.ToArray();
     }
-    
+
     private (int major, int minor) GetTargetComputeCapability()
     {
         try
@@ -560,11 +565,11 @@ public class CudaKernelCompiler : IDisposable
         {
             _logger.LogWarning(ex, "Failed to get current device compute capability, using default");
         }
-        
+
         // Default to a widely supported compute capability (Maxwell generation)
         return ComputeCapability.Common.Maxwell;
     }
-    
+
     /// <summary>
     /// Compiles kernel to CUBIN for better performance (when supported)
     /// </summary>
@@ -572,11 +577,11 @@ public class CudaKernelCompiler : IDisposable
     {
         var stopwatch = Stopwatch.StartNew();
         IntPtr program = IntPtr.Zero;
-        
+
         try
         {
             _logger.LogDebug("Starting NVRTC CUBIN compilation for kernel: {KernelName}", kernelName);
-            
+
             // Create NVRTC program
             var result = NvrtcRuntime.nvrtcCreateProgram(
                 out program,
@@ -587,21 +592,21 @@ public class CudaKernelCompiler : IDisposable
                 null  // includeNames
             );
             NvrtcRuntime.CheckResult(result, "creating NVRTC program");
-            
+
             // Build compilation options for CUBIN (use code generation instead of compute architecture)
             var compilationOptions = BuildCompilationOptionsForCubin(options);
-            
+
             _logger.LogDebug("NVRTC CUBIN compilation options: {Options}", string.Join(" ", compilationOptions));
-            
+
             // Compile the program
             result = NvrtcRuntime.nvrtcCompileProgram(
                 program,
                 compilationOptions.Length,
                 compilationOptions);
-            
+
             // Get compilation log
             var compilerLog = await GetCompilationLogAsync(program);
-            
+
             if (!string.IsNullOrWhiteSpace(compilerLog))
             {
                 if (result == NvrtcResult.Success)
@@ -613,7 +618,7 @@ public class CudaKernelCompiler : IDisposable
                     _logger.LogError("NVRTC CUBIN compilation failed for {KernelName}: {Log}", kernelName, compilerLog);
                 }
             }
-            
+
             // Check compilation result
             if (result != NvrtcResult.Success)
             {
@@ -621,23 +626,23 @@ public class CudaKernelCompiler : IDisposable
                     $"NVRTC CUBIN compilation failed for kernel '{kernelName}': {NvrtcRuntime.GetErrorString(result)}",
                     compilerLog);
             }
-            
+
             // Get CUBIN size
             result = NvrtcRuntime.nvrtcGetCUBINSize(program, out var cubinSize);
             NvrtcRuntime.CheckResult(result, "getting CUBIN size");
-            
+
             // Get CUBIN code
             var cubinData = new byte[(int)cubinSize];
             result = NvrtcRuntime.nvrtcGetCUBIN(program, cubinData);
             NvrtcRuntime.CheckResult(result, "getting CUBIN code");
-            
+
             stopwatch.Stop();
             _logger.LogInformation(
                 "Successfully compiled kernel '{KernelName}' to CUBIN using NVRTC in {CompilationTime}ms. CUBIN size: {CubinSize} bytes",
                 kernelName,
                 stopwatch.ElapsedMilliseconds,
                 cubinData.Length);
-            
+
             return cubinData;
         }
         catch (Exception ex) when (!(ex is KernelCompilationException))
@@ -661,16 +666,16 @@ public class CudaKernelCompiler : IDisposable
             }
         }
     }
-    
+
     private string[] BuildCompilationOptionsForCubin(CompilationOptions? options)
     {
         var optionsList = new List<string>();
-        
+
         // Get target GPU architecture for CUBIN generation
         var (major, minor) = GetTargetComputeCapability();
         optionsList.Add($"--gpu-code={ComputeCapability.GetCodeString(major, minor)}");
         optionsList.Add($"--gpu-architecture={ComputeCapability.GetArchString(major, minor)}");
-        
+
         // Add optimization level
         var optLevel = options?.OptimizationLevel ?? OptimizationLevel.Default;
         switch (optLevel)
@@ -689,7 +694,7 @@ public class CudaKernelCompiler : IDisposable
                 optionsList.Add("-O2");
                 break;
         }
-        
+
         // Debug information
         if (options?.EnableDebugInfo == true)
         {
@@ -705,23 +710,23 @@ public class CudaKernelCompiler : IDisposable
             optionsList.Add("--extra-device-vectorization");
             optionsList.Add("--optimize-float-atomics");
         }
-        
+
         // CUBIN-specific optimizations
         optionsList.Add("-rdc=false"); // Disable relocatable device code for better optimization
         optionsList.Add("-default-device");
         optionsList.Add("-std=c++17");
         optionsList.Add("-DCUDA_KERNEL_COMPILATION");
         optionsList.Add("-DCUDA_CUBIN_COMPILATION");
-        
+
         // Add any additional user-specified flags
         if (options?.AdditionalFlags != null)
         {
             optionsList.AddRange(options.AdditionalFlags);
         }
-        
+
         return optionsList.ToArray();
     }
-    
+
     /// <summary>
     /// Determines whether to use CUBIN or PTX based on compilation options and device support
     /// </summary>
@@ -734,7 +739,7 @@ public class CudaKernelCompiler : IDisposable
             {
                 // Check if CUBIN is supported on current device
                 var (major, minor) = GetTargetComputeCapability();
-                
+
                 // CUBIN is generally supported on compute capability 3.5 and above
                 return major > 3 || (major == 3 && minor >= 5);
             }
@@ -743,17 +748,17 @@ public class CudaKernelCompiler : IDisposable
                 return false;
             }
         }
-        
+
         return false;
     }
-    
+
     /// <summary>
     /// Validates CUDA source code for common issues before compilation
     /// </summary>
     private ValidationResult ValidateCudaSource(string cudaSource, string kernelName)
     {
         var warnings = new List<string>();
-        
+
         try
         {
             // Check for basic CUDA kernel structure
@@ -761,31 +766,31 @@ public class CudaKernelCompiler : IDisposable
             {
                 return ValidationResult.Failure("CUDA source must contain at least one __global__ or __device__ function");
             }
-            
+
             // Check for potential issues
             if (cudaSource.Contains("printf") && !cudaSource.Contains("#include <cstdio>"))
             {
                 warnings.Add("Using printf without including <cstdio> may cause compilation issues");
             }
-            
+
             if (cudaSource.Contains("__syncthreads()") && !cudaSource.Contains("__shared__"))
             {
                 warnings.Add("Using __syncthreads() without shared memory may indicate inefficient synchronization");
             }
-            
+
             // Check for deprecated functions
             if (cudaSource.Contains("__threadfence_system"))
             {
                 warnings.Add("__threadfence_system is deprecated, consider using __threadfence() or memory fences");
             }
-            
+
             // Check for potential memory issues
             if (cudaSource.Contains("malloc") || cudaSource.Contains("free"))
             {
                 warnings.Add("Dynamic memory allocation in kernels can impact performance and may not be supported on all devices");
             }
-            
-            return warnings.Count > 0 
+
+            return warnings.Count > 0
                 ? ValidationResult.SuccessWithWarnings(warnings.ToArray())
                 : ValidationResult.Success();
         }
@@ -795,7 +800,7 @@ public class CudaKernelCompiler : IDisposable
             return ValidationResult.SuccessWithWarnings("Source validation failed, proceeding with compilation");
         }
     }
-    
+
     /// <summary>
     /// Verifies the compiled PTX/CUBIN for basic correctness
     /// </summary>
@@ -808,7 +813,7 @@ public class CudaKernelCompiler : IDisposable
                 _logger.LogError("Compiled code is null or empty for kernel: {KernelName}", kernelName);
                 return false;
             }
-            
+
             // Basic PTX validation
             var codeString = Encoding.UTF8.GetString(compiledCode);
             if (codeString.StartsWith(".version") || codeString.StartsWith("//"))
@@ -819,19 +824,19 @@ public class CudaKernelCompiler : IDisposable
                     _logger.LogWarning("PTX code does not contain .entry directive for kernel: {KernelName}", kernelName);
                     return false;
                 }
-                
+
                 _logger.LogDebug("PTX verification passed for kernel: {KernelName}", kernelName);
                 return true;
             }
-            
+
             // If it's binary data, assume it's CUBIN and do basic size check
             if (compiledCode.Length > 100) // CUBIN should be reasonably sized
             {
-                _logger.LogDebug("Binary code verification passed for kernel: {KernelName} (size: {Size} bytes)", 
+                _logger.LogDebug("Binary code verification passed for kernel: {KernelName} (size: {Size} bytes)",
                     kernelName, compiledCode.Length);
                 return true;
             }
-            
+
             _logger.LogWarning("Compiled code verification inconclusive for kernel: {KernelName}", kernelName);
             return true; // Allow inconclusive results to proceed
         }
@@ -841,7 +846,7 @@ public class CudaKernelCompiler : IDisposable
             return true; // Allow verification errors to proceed
         }
     }
-    
+
     /// <summary>
     /// Checks NVRTC availability and version
     /// </summary>
@@ -857,7 +862,7 @@ public class CudaKernelCompiler : IDisposable
             return false;
         }
     }
-    
+
     /// <summary>
     /// Gets NVRTC version information
     /// </summary>
@@ -872,17 +877,17 @@ public class CudaKernelCompiler : IDisposable
             }
         }
         catch { }
-        
+
         return (0, 0);
     }
 
-    private string GenerateCacheKey(KernelDefinition definition, CompilationOptions? options)
+    private static string GenerateCacheKey(KernelDefinition definition, CompilationOptions? options)
     {
         var key = new StringBuilder();
         key.Append(definition.Name);
         key.Append('_');
         key.Append(definition.Code.GetHashCode());
-        
+
         if (options != null)
         {
             key.Append('_');
@@ -893,37 +898,43 @@ public class CudaKernelCompiler : IDisposable
 
         return key.ToString();
     }
-    
+
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
+    [RequiresDynamicCode("Calls System.Text.Json.JsonSerializer.Deserialize<TValue>(String, JsonSerializerOptions)")]
     private async Task LoadPersistentCacheAsync()
     {
         try
         {
             if (!Directory.Exists(_cacheDirectory))
+            {
                 return;
-            
+            }
+
             var cacheFiles = Directory.GetFiles(_cacheDirectory, "*.ptx");
             var loadedCount = 0;
-            
+
             foreach (var ptxFile in cacheFiles)
             {
                 try
                 {
                     var metadataFile = Path.ChangeExtension(ptxFile, ".metadata.json");
                     if (!File.Exists(metadataFile))
+                    {
                         continue;
-                    
+                    }
+
                     var metadataJson = await File.ReadAllTextAsync(metadataFile);
                     var metadata = System.Text.Json.JsonSerializer.Deserialize<KernelCacheMetadata>(metadataJson);
-                    
+
                     if (metadata == null || IsCacheEntryExpired(metadata))
                     {
                         File.Delete(ptxFile);
                         File.Delete(metadataFile);
                         continue;
                     }
-                    
+
                     var ptxData = await File.ReadAllBytesAsync(ptxFile);
-                    
+
                     // Create compiled kernel from cached PTX
                     var compiledKernel = new CudaCompiledKernel(
                         _context,
@@ -932,10 +943,10 @@ public class CudaKernelCompiler : IDisposable
                         ptxData,
                         metadata.CompilationOptions,
                         _logger);
-                    
+
                     _kernelCache.TryAdd(metadata.CacheKey, compiledKernel);
                     _cacheMetadata.TryAdd(metadata.CacheKey, metadata);
-                    
+
                     loadedCount++;
                 }
                 catch (Exception ex)
@@ -943,7 +954,7 @@ public class CudaKernelCompiler : IDisposable
                     _logger.LogWarning(ex, "Failed to load cached kernel from: {File}", ptxFile);
                 }
             }
-            
+
             if (loadedCount > 0)
             {
                 _logger.LogInformation("Loaded {Count} cached kernels from disk", loadedCount);
@@ -954,7 +965,9 @@ public class CudaKernelCompiler : IDisposable
             _logger.LogWarning(ex, "Failed to load persistent kernel cache");
         }
     }
-    
+
+    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
+    [RequiresDynamicCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
     private async Task PersistKernelToDiskAsync(string cacheKey, byte[] ptx, KernelCacheMetadata metadata)
     {
         try
@@ -962,15 +975,15 @@ public class CudaKernelCompiler : IDisposable
             var fileName = SanitizeFileName(cacheKey);
             var ptxFile = Path.Combine(_cacheDirectory, $"{fileName}.ptx");
             var metadataFile = Path.Combine(_cacheDirectory, $"{fileName}.metadata.json");
-            
+
             await File.WriteAllBytesAsync(ptxFile, ptx);
-            
+
             var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata, new System.Text.Json.JsonSerializerOptions
             {
                 WriteIndented = true
             });
             await File.WriteAllTextAsync(metadataFile, metadataJson);
-            
+
             _logger.LogDebug("Persisted kernel cache to disk: {File}", ptxFile);
         }
         catch (Exception ex)
@@ -978,12 +991,12 @@ public class CudaKernelCompiler : IDisposable
             _logger.LogWarning(ex, "Failed to persist kernel cache for: {CacheKey}", cacheKey);
         }
     }
-    
+
     private static string SanitizeFileName(string fileName)
     {
         var invalidChars = Path.GetInvalidFileNameChars();
         var sanitized = new StringBuilder();
-        
+
         foreach (var c in fileName)
         {
             if (invalidChars.Contains(c))
@@ -995,30 +1008,30 @@ public class CudaKernelCompiler : IDisposable
                 sanitized.Append(c);
             }
         }
-        
+
         return sanitized.ToString();
     }
-    
+
     private static bool IsCacheEntryExpired(KernelCacheMetadata metadata)
     {
         // Cache entries expire after 7 days of no access
         var maxAge = TimeSpan.FromDays(7);
         return DateTime.UtcNow - metadata.LastAccessed > maxAge;
     }
-    
+
     /// <summary>
     /// Gets cache statistics for monitoring and debugging
     /// </summary>
     public CacheStatistics GetCacheStatistics()
     {
         ThrowIfDisposed();
-        
+
         var totalEntries = _kernelCache.Count;
         var totalSize = _cacheMetadata.Values.Sum(m => m.PtxSize);
         var avgAccessCount = totalEntries > 0 ? _cacheMetadata.Values.Average(m => m.AccessCount) : 0;
         var oldestEntry = _cacheMetadata.Values.MinBy(m => m.CompileTime)?.CompileTime;
         var newestEntry = _cacheMetadata.Values.MaxBy(m => m.CompileTime)?.CompileTime;
-        
+
         return new CacheStatistics
         {
             TotalEntries = totalEntries,
@@ -1029,29 +1042,31 @@ public class CudaKernelCompiler : IDisposable
             HitRate = CalculateHitRate()
         };
     }
-    
+
     private double CalculateHitRate()
     {
         var totalAccess = _cacheMetadata.Values.Sum(m => m.AccessCount);
         var uniqueKernels = _cacheMetadata.Count;
-        
+
         if (totalAccess == 0 || uniqueKernels == 0)
+        {
             return 0.0;
-        
+        }
+
         // Hit rate = (total accesses - unique kernels) / total accesses
         // This represents how often we served from cache vs compiled new
         return uniqueKernels > totalAccess ? 0.0 : (double)(totalAccess - uniqueKernels) / totalAccess;
     }
-    
+
     /// <summary>
     /// Cleans up expired cache entries
     /// </summary>
     public void CleanupExpiredEntries()
     {
         ThrowIfDisposed();
-        
+
         var expiredKeys = new List<string>();
-        
+
         foreach (var kvp in _cacheMetadata)
         {
             if (IsCacheEntryExpired(kvp.Value))
@@ -1059,7 +1074,7 @@ public class CudaKernelCompiler : IDisposable
                 expiredKeys.Add(kvp.Key);
             }
         }
-        
+
         foreach (var key in expiredKeys)
         {
             if (_kernelCache.TryRemove(key, out var kernel))
@@ -1067,7 +1082,7 @@ public class CudaKernelCompiler : IDisposable
                 kernel.Dispose();
             }
             _cacheMetadata.TryRemove(key, out _);
-            
+
             // Also remove from disk
             _ = Task.Run(() =>
             {
@@ -1076,14 +1091,21 @@ public class CudaKernelCompiler : IDisposable
                     var fileName = SanitizeFileName(key);
                     var ptxFile = Path.Combine(_cacheDirectory, $"{fileName}.ptx");
                     var metadataFile = Path.Combine(_cacheDirectory, $"{fileName}.metadata.json");
-                    
-                    if (File.Exists(ptxFile)) File.Delete(ptxFile);
-                    if (File.Exists(metadataFile)) File.Delete(metadataFile);
+
+                    if (File.Exists(ptxFile))
+                    {
+                        File.Delete(ptxFile);
+                    }
+
+                    if (File.Exists(metadataFile))
+                    {
+                        File.Delete(metadataFile);
+                    }
                 }
                 catch { /* Ignore cleanup errors */ }
             });
         }
-        
+
         if (expiredKeys.Count > 0)
         {
             _logger.LogInformation("Cleaned up {Count} expired cache entries", expiredKeys.Count);
@@ -1100,7 +1122,10 @@ public class CudaKernelCompiler : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         try
         {
@@ -1114,7 +1139,7 @@ public class CudaKernelCompiler : IDisposable
                     Directory.Delete(_tempDirectory, true);
                 }
                 catch { /* Ignore cleanup errors */ }
-                
+
                 // Clean up expired entries from disk cache
                 CleanupExpiredEntries();
             }

@@ -24,7 +24,7 @@ internal sealed class ExtendedKernelExecutionContext
             WorkDimensions = new[] { 1L }
         };
     }
-    
+
     public string Name => _innerContext.Name;
     public IReadOnlyList<long>? WorkDimensions => _innerContext.WorkDimensions;
     public object[]? Arguments => _innerContext.Arguments;

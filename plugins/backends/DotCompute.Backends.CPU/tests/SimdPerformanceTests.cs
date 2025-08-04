@@ -130,7 +130,7 @@ public class SimdPerformanceTests
         // Verify results are close (allowing for floating-point error)
         // Use relative tolerance due to large numbers involved in dot product
         var tolerance = Math.Max(Math.Abs(scalarResult), Math.Abs(simdResult)) * 0.001f; // 0.1% relative tolerance
-        Assert.True(Math.Abs(scalarResult - simdResult) < tolerance, 
+        Assert.True(Math.Abs(scalarResult - simdResult) < tolerance,
             $"Results differ: scalar={scalarResult}, simd={simdResult}, tolerance={tolerance}");
 
         PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 2.0, "dot product SIMD");
@@ -297,12 +297,12 @@ public class SimdPerformanceTests
     private static unsafe float DotProductSimd(float[] a, float[] b)
     {
         int i = 0;
-        
+
         if (Avx2.IsSupported)
         {
             // Use 8-wide AVX2 vectors
             var sum256 = Vector256<float>.Zero;
-            
+
             fixed (float* pA = a)
             fixed (float* pB = b)
             {
@@ -313,20 +313,20 @@ public class SimdPerformanceTests
                     sum256 = Avx.Add(sum256, Avx.Multiply(va, vb));
                 }
             }
-            
+
             // Horizontal sum of the vector
             var sum128 = Sse.Add(Avx.ExtractVector128(sum256, 1), sum256.GetLower());
             sum128 = Sse.Add(sum128, Sse.Shuffle(sum128, sum128, 0x4E));
             sum128 = Sse.Add(sum128, Sse.Shuffle(sum128, sum128, 0xB1));
-            
+
             float sum = sum128.ToScalar();
-            
+
             // Process remaining elements
             for (; i < a.Length; i++)
             {
                 sum += a[i] * b[i];
             }
-            
+
             return sum;
         }
         else
@@ -334,22 +334,22 @@ public class SimdPerformanceTests
             // Fallback to portable SIMD
             var vectorSize = Vector<float>.Count;
             var sumVector = Vector<float>.Zero;
-            
+
             for (; i + vectorSize <= a.Length; i += vectorSize)
             {
                 var va = new Vector<float>(a, i);
                 var vb = new Vector<float>(b, i);
                 sumVector += va * vb;
             }
-            
+
             float sum = Vector.Dot(sumVector, Vector<float>.One);
-            
+
             // Process remaining elements
             for (; i < a.Length; i++)
             {
                 sum += a[i] * b[i];
             }
-            
+
             return sum;
         }
     }

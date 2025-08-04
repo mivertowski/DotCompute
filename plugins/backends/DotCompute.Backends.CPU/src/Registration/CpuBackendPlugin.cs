@@ -13,11 +13,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using AbstractionsAcceleratorInfo = DotCompute.Abstractions.AcceleratorInfo;
-using AbstractionsKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using AbstractionsCompilationOptions = DotCompute.Abstractions.CompilationOptions;
-using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using AbstractionsIAccelerator = DotCompute.Abstractions.IAccelerator;
+using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using AbstractionsIMemoryManager = DotCompute.Abstractions.IMemoryManager;
+using AbstractionsKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using IAccelerator = DotCompute.Abstractions.IAccelerator;
 
 namespace DotCompute.Backends.CPU.Registration;
@@ -49,18 +49,18 @@ public sealed class CpuBackendPlugin : BackendPluginBase
     public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         base.ConfigureServices(services, configuration);
-        
+
         // Configure CPU backend options
-        #pragma warning disable IL2026, IL3050 // Suppress AOT and trimming warnings for configuration binding
-        services.Configure<CpuAcceleratorOptions>(options => 
+#pragma warning disable IL2026, IL3050 // Suppress AOT and trimming warnings for configuration binding
+        services.Configure<CpuAcceleratorOptions>(options =>
             configuration.GetSection("CpuBackend:Accelerator").Bind(options));
-        services.Configure<CpuThreadPoolOptions>(options => 
+        services.Configure<CpuThreadPoolOptions>(options =>
             configuration.GetSection("CpuBackend:ThreadPool").Bind(options));
-        #pragma warning restore IL2026, IL3050
-        
+#pragma warning restore IL2026, IL3050
+
         // Register the CPU accelerator
         services.TryAddSingleton<CpuAccelerator>();
-        
+
         // Register as IAccelerator with a factory that includes the backend name
         services.AddSingleton<IAccelerator>(provider =>
         {
@@ -94,14 +94,14 @@ public sealed class CpuBackendPlugin : BackendPluginBase
     protected override void OnValidate(PluginValidationResult result)
     {
         base.OnValidate(result);
-        
+
         // Validate CPU availability
         if (Environment.ProcessorCount <= 0)
         {
             result.IsValid = false;
             result.Errors.Add("No CPU cores detected");
         }
-        
+
         // Check SIMD support
         try
         {
@@ -158,12 +158,12 @@ public sealed class CpuBackendPlugin : BackendPluginBase
     protected override void OnUpdateMetrics(PluginMetrics metrics)
     {
         base.OnUpdateMetrics(metrics);
-        
+
         // Add CPU-specific metrics
         metrics.CustomMetrics["ProcessorCount"] = Environment.ProcessorCount;
         metrics.CustomMetrics["WorkingSet"] = Environment.WorkingSet;
         metrics.CustomMetrics["Is64BitProcess"] = Environment.Is64BitProcess;
-        
+
         // Get SIMD capabilities
         try
         {
@@ -212,7 +212,7 @@ public static class CpuBackendPluginExtensions
 
         // Register the CPU accelerator
         services.TryAddSingleton<CpuAccelerator>();
-        
+
         // Register as IAccelerator with a factory that includes the backend name
         services.AddSingleton<IAccelerator>(provider =>
         {

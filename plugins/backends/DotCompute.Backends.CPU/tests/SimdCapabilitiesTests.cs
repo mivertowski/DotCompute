@@ -33,7 +33,7 @@ public class SimdCapabilitiesTests
         Assert.NotNull(summary);
         Assert.True(summary.PreferredVectorWidth > 0);
         Assert.NotNull(summary.SupportedInstructionSets);
-        
+
         _output.WriteLine($"Hardware Accelerated: {summary.IsHardwareAccelerated}");
         _output.WriteLine($"Preferred Vector Width: {summary.PreferredVectorWidth}");
         _output.WriteLine($"Supported Instruction Sets: {string.Join(", ", summary.SupportedInstructionSets)}");
@@ -163,7 +163,7 @@ public class SimdCapabilitiesTests
             {
                 Assert.Equal(9.0f, result[i], 0.0001f);
             }
-            
+
             _output.WriteLine($"Vector<T> operations work correctly with size {vectorSize}");
         }
     }

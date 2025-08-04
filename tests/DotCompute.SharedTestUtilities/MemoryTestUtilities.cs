@@ -4,10 +4,11 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading.Tasks;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Text.Json;
 using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
 using DotCompute.Abstractions;
 
 namespace DotCompute.SharedTestUtilities;
@@ -34,17 +35,20 @@ public static class MemoryTestUtilities
             _currentProcess = Process.GetCurrentProcess();
             _snapshots = new List<MemorySnapshot>();
             _startTime = Stopwatch.GetTimestamp();
-            
+
             TakeSnapshot("Start");
         }
 
         public void TakeSnapshot(string label)
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
 
             var timestamp = Stopwatch.GetTimestamp();
             var elapsedMs = (timestamp - _startTime) * 1000 / Stopwatch.Frequency;
-            
+
             _currentProcess.Refresh();
             var snapshot = new MemorySnapshot
             {
@@ -64,7 +68,7 @@ public static class MemoryTestUtilities
         public MemoryReport GenerateReport()
         {
             TakeSnapshot("End");
-            
+
             return new MemoryReport
             {
                 TestName = _testName,
@@ -81,18 +85,23 @@ public static class MemoryTestUtilities
             foreach (var snapshot in _snapshots)
             {
                 if (snapshot.WorkingSetMB > peak)
+                {
                     peak = snapshot.WorkingSetMB;
+                }
             }
             return peak;
         }
 
         private int GetTotalGCCollections()
         {
-            if (_snapshots.Count < 2) return 0;
-            
+            if (_snapshots.Count < 2)
+            {
+                return 0;
+            }
+
             var start = _snapshots[0];
             var end = _snapshots[^1];
-            
+
             return (end.GCGen0Collections - start.GCGen0Collections) +
                    (end.GCGen1Collections - start.GCGen1Collections) +
                    (end.GCGen2Collections - start.GCGen2Collections);
@@ -100,21 +109,28 @@ public static class MemoryTestUtilities
 
         private bool DetectMemoryLeak()
         {
-            if (_snapshots.Count < 2) return false;
-            
+            if (_snapshots.Count < 2)
+            {
+                return false;
+            }
+
             var start = _snapshots[0];
             var end = _snapshots[^1];
-            
+
             // Consider it a leak if memory increased by more than 10MB and no GC occurred
             var memoryIncrease = end.WorkingSetMB - start.WorkingSetMB;
             var gcOccurred = end.GCGen0Collections > start.GCGen0Collections;
-            
+
             return memoryIncrease > 10 && !gcOccurred;
         }
 
         public void Dispose()
         {
-            if (_disposed) return;
+            if (_disposed)
+            {
+                return;
+            }
+
             _disposed = true;
             _currentProcess?.Dispose();
         }
@@ -311,36 +327,43 @@ public static class MemoryTestUtilities
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "DotCompute", "TestReports");
 
+        [RequiresUnreferencedCode()]
+        [RequiresDynamicCode()]
         public static async Task SaveMemoryReport(MemoryReport report)
         {
             Directory.CreateDirectory(ReportDirectory);
-            
+
             var fileName = $"memory_report_{report.TestName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             var filePath = Path.Combine(ReportDirectory, fileName);
-            
+
             var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(filePath, json);
         }
 
+        [RequiresUnreferencedCode()]
+        [RequiresDynamicCode()]
         public static async Task SaveBenchmarkReport(BenchmarkSummary summary, string testName)
         {
             Directory.CreateDirectory(ReportDirectory);
-            
+
             var fileName = $"benchmark_report_{testName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             var filePath = Path.Combine(ReportDirectory, fileName);
-            
+
             var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(filePath, json);
         }
 
+        [RequiresDynamicCode()]
         public static async Task<MemoryReport[]> LoadHistoricalReports(string testName)
         {
             if (!Directory.Exists(ReportDirectory))
+            {
                 return Array.Empty<MemoryReport>();
+            }
 
             var reports = new List<MemoryReport>();
             var files = Directory.GetFiles(ReportDirectory, $"memory_report_{testName}_*.json");
-            
+
             foreach (var file in files)
             {
                 try
@@ -348,7 +371,9 @@ public static class MemoryTestUtilities
                     var json = await File.ReadAllTextAsync(file);
                     var report = JsonSerializer.Deserialize<MemoryReport>(json);
                     if (report != null)
+                    {
                         reports.Add(report);
+                    }
                 }
                 catch
                 {
@@ -362,11 +387,13 @@ public static class MemoryTestUtilities
         public static void CleanupOldReports(int maxDays = 30)
         {
             if (!Directory.Exists(ReportDirectory))
+            {
                 return;
+            }
 
             var cutoffDate = DateTime.Now.AddDays(-maxDays);
             var files = Directory.GetFiles(ReportDirectory, "*.json");
-            
+
             foreach (var file in files)
             {
                 try
@@ -393,7 +420,9 @@ public static class MemoryTestUtilities
         public static bool DetectPerformanceRegression(BenchmarkResult current, BenchmarkResult baseline, double tolerancePercent = 10.0)
         {
             if (current.OperationType != baseline.OperationType)
+            {
                 return false;
+            }
 
             var performanceChange = (current.OperationsPerSecond - baseline.OperationsPerSecond) / baseline.OperationsPerSecond * 100;
             return performanceChange < -tolerancePercent;
@@ -402,11 +431,13 @@ public static class MemoryTestUtilities
         public static bool DetectMemoryRegression(MemoryReport current, MemoryReport baseline, double tolerancePercent = 20.0)
         {
             if (current.Snapshots.Length == 0 || baseline.Snapshots.Length == 0)
+            {
                 return false;
+            }
 
             var currentPeak = current.PeakWorkingSetMB;
             var baselinePeak = baseline.PeakWorkingSetMB;
-            
+
             var memoryIncrease = (currentPeak - baselinePeak) / (double)baselinePeak * 100;
             return memoryIncrease > tolerancePercent;
         }

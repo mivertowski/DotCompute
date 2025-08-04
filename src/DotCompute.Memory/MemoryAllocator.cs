@@ -21,22 +21,22 @@ public sealed class MemoryAllocator : IDisposable
     private long _totalAllocatedBytes;
     private long _totalAllocations;
     private long _totalDeallocations;
-    
+
     /// <summary>
     /// Gets the total number of bytes allocated.
     /// </summary>
     public long TotalAllocatedBytes => Interlocked.Read(ref _totalAllocatedBytes);
-    
+
     /// <summary>
     /// Gets the total number of allocations made.
     /// </summary>
     public long TotalAllocations => Interlocked.Read(ref _totalAllocations);
-    
+
     /// <summary>
     /// Gets the total number of deallocations made.
     /// </summary>
     public long TotalDeallocations => Interlocked.Read(ref _totalDeallocations);
-    
+
     /// <summary>
     /// Allocates aligned memory for the specified type.
     /// </summary>
@@ -49,30 +49,30 @@ public sealed class MemoryAllocator : IDisposable
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
         ArgumentOutOfRangeException.ThrowIfNegative(alignment);
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         if (alignment <= 0 || (alignment & (alignment - 1)) != 0)
         {
             throw new ArgumentException("Alignment must be a power of 2.", nameof(alignment));
         }
-        
+
         var sizeInBytes = length * Unsafe.SizeOf<T>();
-        
+
         // Allocate extra space for alignment
         var totalSize = sizeInBytes + alignment - 1;
         var memory = AllocateNative(totalSize);
-        
+
         unsafe
         {
             var alignedPtr = UnsafeMemoryOperations.AlignAddress(memory.ToPointer(), alignment);
             var alignedMemory = new IntPtr(alignedPtr);
-            
+
             Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
             Interlocked.Increment(ref _totalAllocations);
-            
+
             return new AlignedMemoryOwner<T>(this, memory, alignedMemory, length, sizeInBytes);
         }
     }
-    
+
     /// <summary>
     /// Allocates pinned memory for the specified type.
     /// </summary>
@@ -83,17 +83,17 @@ public sealed class MemoryAllocator : IDisposable
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         var array = new T[length];
         var handle = GCHandle.Alloc(array, GCHandleType.Pinned);
         var sizeInBytes = length * Unsafe.SizeOf<T>();
-        
+
         Interlocked.Add(ref _totalAllocatedBytes, sizeInBytes);
         Interlocked.Increment(ref _totalAllocations);
-        
+
         return new PinnedMemoryOwner<T>(this, handle, array, sizeInBytes);
     }
-    
+
     /// <summary>
     /// Allocates memory using the system allocator.
     /// </summary>
@@ -104,10 +104,10 @@ public sealed class MemoryAllocator : IDisposable
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         return AllocateAligned<T>(length, IntPtr.Size); // Default to pointer alignment
     }
-    
+
     /// <summary>
     /// Creates a unified buffer using this allocator.
     /// </summary>
@@ -120,10 +120,10 @@ public sealed class MemoryAllocator : IDisposable
         ArgumentNullException.ThrowIfNull(memoryManager);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(length);
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         return new UnifiedBuffer<T>(memoryManager, length);
     }
-    
+
     /// <summary>
     /// Creates a unified buffer with initial data using this allocator.
     /// </summary>
@@ -135,10 +135,10 @@ public sealed class MemoryAllocator : IDisposable
     {
         ArgumentNullException.ThrowIfNull(memoryManager);
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         return new UnifiedBuffer<T>(memoryManager, data);
     }
-    
+
     /// <summary>
     /// Gets statistics about the memory allocator.
     /// </summary>
@@ -146,14 +146,14 @@ public sealed class MemoryAllocator : IDisposable
     public MemoryAllocatorStatistics GetStatistics()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         return new MemoryAllocatorStatistics(
             TotalAllocatedBytes,
             TotalAllocations,
             TotalDeallocations
         );
     }
-    
+
     /// <summary>
     /// Releases all resources used by the MemoryAllocator.
     /// </summary>
@@ -163,30 +163,30 @@ public sealed class MemoryAllocator : IDisposable
         {
             return;
         }
-        
+
         lock (_lock)
         {
             if (_disposed)
             {
                 return;
             }
-            
+
             _disposed = true;
         }
     }
-    
+
     #region Internal Methods
-    
+
     internal void NotifyDeallocation(long sizeInBytes)
     {
         Interlocked.Add(ref _totalAllocatedBytes, -sizeInBytes);
         Interlocked.Increment(ref _totalDeallocations);
     }
-    
+
     #endregion
-    
+
     #region Private Methods
-    
+
     private static IntPtr AllocateNative(int size)
     {
         var ptr = Marshal.AllocHGlobal(size);
@@ -194,10 +194,10 @@ public sealed class MemoryAllocator : IDisposable
         {
             throw new InvalidOperationException($"Failed to allocate {size} bytes of native memory.");
         }
-        
+
         return ptr;
     }
-    
+
     #endregion
 }
 
@@ -213,9 +213,9 @@ internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanage
     private readonly int _length;
     private readonly long _sizeInBytes;
     private volatile bool _disposed;
-    
+
     public Memory<T> Memory { get; }
-    
+
     public AlignedMemoryOwner(MemoryAllocator allocator, IntPtr originalMemory, IntPtr alignedMemory, int length, long sizeInBytes)
     {
         _allocator = allocator;
@@ -223,23 +223,23 @@ internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanage
         _alignedMemory = alignedMemory;
         _length = length;
         _sizeInBytes = sizeInBytes;
-        
+
         unsafe
         {
             var span = new Span<T>(alignedMemory.ToPointer(), length);
             Memory = new Memory<T>(span.ToArray());
         }
     }
-    
+
     public void Dispose()
     {
         if (_disposed)
         {
             return;
         }
-        
+
         _disposed = true;
-        
+
         Marshal.FreeHGlobal(_originalMemory);
         _allocator.NotifyDeallocation(_sizeInBytes);
     }
@@ -256,33 +256,33 @@ internal sealed class PinnedMemoryOwner<T> : IMemoryOwner<T> where T : unmanaged
     private readonly T[] _array;
     private readonly long _sizeInBytes;
     private volatile bool _disposed;
-    
+
     public Memory<T> Memory { get; }
-    
+
     public PinnedMemoryOwner(MemoryAllocator allocator, GCHandle handle, T[] array, long sizeInBytes)
     {
         _allocator = allocator;
         _handle = handle;
         _array = array;
         _sizeInBytes = sizeInBytes;
-        
+
         Memory = new Memory<T>(array);
     }
-    
+
     public void Dispose()
     {
         if (_disposed)
         {
             return;
         }
-        
+
         _disposed = true;
-        
+
         if (_handle.IsAllocated)
         {
             _handle.Free();
         }
-        
+
         _allocator.NotifyDeallocation(_sizeInBytes);
     }
 }

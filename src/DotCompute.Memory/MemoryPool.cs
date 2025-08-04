@@ -22,43 +22,43 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
     private readonly ConcurrentDictionary<int, ConcurrentQueue<IMemoryBuffer<T>>> _buckets;
     private readonly object _lock = new();
     private readonly Timer _cleanupTimer;
-    
+
     private volatile bool _disposed;
     private long _totalAllocatedBytes;
     private long _totalRentedBuffers;
     private long _totalReturnedBuffers;
     private long _totalAllocatedBuffers;
-    
+
     // Configuration
     private readonly int _maxBuffersPerBucket;
     private readonly TimeSpan _cleanupInterval;
     private readonly long _memoryPressureThreshold;
-    
+
     /// <summary>
     /// Gets the total number of bytes currently allocated by the pool.
     /// </summary>
     public long TotalAllocatedBytes => Interlocked.Read(ref _totalAllocatedBytes);
-    
+
     /// <summary>
     /// Gets the total number of buffers currently rented from the pool.
     /// </summary>
     public long TotalRentedBuffers => Interlocked.Read(ref _totalRentedBuffers);
-    
+
     /// <summary>
     /// Gets the total number of buffers returned to the pool.
     /// </summary>
     public long TotalReturnedBuffers => Interlocked.Read(ref _totalReturnedBuffers);
-    
+
     /// <summary>
     /// Gets the total number of buffers allocated by the pool.
     /// </summary>
     public long TotalAllocatedBuffers => Interlocked.Read(ref _totalAllocatedBuffers);
-    
+
     /// <summary>
     /// Gets the memory manager used by this pool.
     /// </summary>
     public IMemoryManager MemoryManager => _memoryManager;
-    
+
     /// <summary>
     /// Initializes a new instance of the MemoryPool class.
     /// </summary>
@@ -66,7 +66,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
     /// <param name="maxBuffersPerBucket">The maximum number of buffers to keep in each bucket.</param>
     /// <param name="cleanupInterval">The interval at which to clean up unused buffers.</param>
     /// <param name="memoryPressureThreshold">The memory pressure threshold in bytes.</param>
-    public MemoryPool(IMemoryManager memoryManager, 
+    public MemoryPool(IMemoryManager memoryManager,
                      int maxBuffersPerBucket = 64,
                      TimeSpan cleanupInterval = default,
                      long memoryPressureThreshold = 1024 * 1024 * 1024) // 1GB
@@ -74,18 +74,18 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
         ArgumentNullException.ThrowIfNull(memoryManager);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxBuffersPerBucket);
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(memoryPressureThreshold);
-        
+
         _memoryManager = memoryManager;
         _maxBuffersPerBucket = maxBuffersPerBucket;
         _cleanupInterval = cleanupInterval == default ? TimeSpan.FromMinutes(5) : cleanupInterval;
         _memoryPressureThreshold = memoryPressureThreshold;
-        
+
         _buckets = new ConcurrentDictionary<int, ConcurrentQueue<IMemoryBuffer<T>>>();
-        
+
         // Start cleanup timer
         _cleanupTimer = new Timer(CleanupCallback, null, _cleanupInterval, _cleanupInterval);
     }
-    
+
     /// <summary>
     /// Rents a buffer from the pool with at least the specified length.
     /// </summary>
@@ -95,26 +95,26 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
     {
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(minimumLength);
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         var bucketSize = GetBucketSize(minimumLength);
         var bucket = GetOrCreateBucket(bucketSize);
-        
+
         // Try to get a buffer from the bucket
         if (bucket.TryDequeue(out var buffer))
         {
             Interlocked.Increment(ref _totalRentedBuffers);
             return new PooledMemoryBuffer<T>(this, buffer, bucketSize);
         }
-        
+
         // Create a new buffer
         buffer = new UnifiedBuffer<T>(_memoryManager, bucketSize);
         Interlocked.Increment(ref _totalAllocatedBuffers);
         Interlocked.Increment(ref _totalRentedBuffers);
         Interlocked.Add(ref _totalAllocatedBytes, buffer.SizeInBytes);
-        
+
         return new PooledMemoryBuffer<T>(this, buffer, bucketSize);
     }
-    
+
     /// <summary>
     /// Rents a buffer from the pool with the specified length and initial data.
     /// </summary>
@@ -124,12 +124,12 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
     {
         ArgumentOutOfRangeException.ThrowIfZero(data.Length);
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         var buffer = Rent(data.Length);
         data.CopyTo(buffer.AsSpan());
         return buffer;
     }
-    
+
     /// <summary>
     /// Returns a buffer to the pool.
     /// </summary>
@@ -141,9 +141,9 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
         {
             return;
         }
-        
+
         var bucket = GetOrCreateBucket(bucketSize);
-        
+
         // Check if bucket is not full
         if (bucket.Count < _maxBuffersPerBucket)
         {
@@ -159,14 +159,14 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
             Interlocked.Add(ref _totalAllocatedBytes, -buffer.SizeInBytes);
         }
     }
-    
+
     /// <summary>
     /// Clears all buffers from the pool.
     /// </summary>
     public void Clear()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         lock (_lock)
         {
             foreach (var bucket in _buckets.Values)
@@ -177,14 +177,14 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
                     Interlocked.Add(ref _totalAllocatedBytes, -buffer.SizeInBytes);
                 }
             }
-            
+
             _buckets.Clear();
             Interlocked.Exchange(ref _totalAllocatedBytes, 0);
             Interlocked.Exchange(ref _totalAllocatedBuffers, 0);
             Interlocked.Exchange(ref _totalReturnedBuffers, 0);
         }
     }
-    
+
     /// <summary>
     /// Gets statistics about the memory pool.
     /// </summary>
@@ -192,14 +192,14 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
     public MemoryPoolStatistics GetStatistics()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         var bucketStats = new Dictionary<int, int>();
-        
+
         foreach (var kvp in _buckets)
         {
             bucketStats[kvp.Key] = kvp.Value.Count;
         }
-        
+
         return new MemoryPoolStatistics(
             TotalAllocatedBytes,
             TotalRentedBuffers,
@@ -208,7 +208,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
             bucketStats
         );
     }
-    
+
     /// <summary>
     /// Checks if the pool is under memory pressure.
     /// </summary>
@@ -217,7 +217,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
     {
         return TotalAllocatedBytes > _memoryPressureThreshold;
     }
-    
+
     /// <summary>
     /// Gets performance statistics for the memory pool.
     /// </summary>
@@ -225,14 +225,14 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
     public MemoryPoolPerformanceStats GetPerformanceStats()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         return new MemoryPoolPerformanceStats(
             TotalAllocatedBytes,
             TotalAllocatedBytes, // TotalRetainedBytes - assuming all allocated bytes are retained
             TotalReturnedBuffers // ReuseCount
         );
     }
-    
+
     /// <summary>
     /// Handles memory pressure by releasing unused buffers.
     /// </summary>
@@ -242,13 +242,13 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
         ArgumentOutOfRangeException.ThrowIfLessThan(pressure, 0.0);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(pressure, 1.0);
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         if (pressure > 0.5)
         {
             CleanupOldBuffers();
         }
     }
-    
+
     /// <summary>
     /// Compacts the memory pool and releases unused memory.
     /// </summary>
@@ -257,20 +257,20 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
     public long Compact(long maxBytesToRelease = long.MaxValue)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        
+
         long bytesReleased = 0;
-        
+
         lock (_lock)
         {
             if (_disposed)
             {
                 return 0;
             }
-            
+
             foreach (var bucket in _buckets.Values)
             {
                 var itemsToRemove = Math.Min(bucket.Count / 2, 10); // Remove up to 50% or 10 items
-                
+
                 for (int i = 0; i < itemsToRemove && bytesReleased < maxBytesToRelease; i++)
                 {
                     if (bucket.TryDequeue(out var buffer))
@@ -282,10 +282,10 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
                 }
             }
         }
-        
+
         return bytesReleased;
     }
-    
+
     /// <summary>
     /// Releases all resources used by the MemoryPool.
     /// </summary>
@@ -295,16 +295,16 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
         {
             return;
         }
-        
+
         lock (_lock)
         {
             if (_disposed)
             {
                 return;
             }
-            
+
             _cleanupTimer?.Dispose();
-            
+
             // Clear all buffers before marking as disposed
             foreach (var bucket in _buckets.Values)
             {
@@ -314,7 +314,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
                 }
             }
             _buckets.Clear();
-            
+
             _disposed = true;
         }
     }
@@ -328,18 +328,18 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
         {
             return;
         }
-        
+
         await Task.Yield(); // Ensure we're not blocking the caller
-        
+
         lock (_lock)
         {
             if (_disposed)
             {
                 return;
             }
-            
+
             _cleanupTimer?.Dispose();
-            
+
             // Clear all buffers before marking as disposed
             foreach (var bucket in _buckets.Values)
             {
@@ -352,14 +352,14 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
                     Interlocked.Add(ref _totalAllocatedBytes, -buffer.Length * Unsafe.SizeOf<T>());
                 }
             }
-            
+
             _buckets.Clear();
             _disposed = true;
         }
     }
-    
+
     #region Private Methods
-    
+
     private static int GetBucketSize(int minimumLength)
     {
         // Round up to the next power of 2
@@ -367,28 +367,28 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
         {
             return 1;
         }
-        
+
         var size = 1;
         while (size < minimumLength)
         {
             size <<= 1;
         }
-        
+
         return size;
     }
-    
+
     private ConcurrentQueue<IMemoryBuffer<T>> GetOrCreateBucket(int size)
     {
         return _buckets.GetOrAdd(size, _ => new ConcurrentQueue<IMemoryBuffer<T>>());
     }
-    
+
     private void CleanupCallback(object? state)
     {
         if (_disposed)
         {
             return;
         }
-        
+
         try
         {
             // Check memory pressure and clean up if needed
@@ -402,7 +402,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
             // Ignore cleanup errors
         }
     }
-    
+
     private void CleanupOldBuffers()
     {
         lock (_lock)
@@ -411,12 +411,12 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
             {
                 return;
             }
-            
+
             // Remove some buffers from each bucket to reduce memory pressure
             foreach (var bucket in _buckets.Values)
             {
                 var itemsToRemove = bucket.Count / 4; // Remove 25% of buffers
-                
+
                 for (int i = 0; i < itemsToRemove; i++)
                 {
                     if (bucket.TryDequeue(out var buffer))
@@ -428,7 +428,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
             }
         }
     }
-    
+
     #endregion
 }
 
@@ -442,124 +442,124 @@ internal sealed class PooledMemoryBuffer<T> : IMemoryBuffer<T> where T : unmanag
     private readonly IMemoryBuffer<T> _buffer;
     private readonly int _bucketSize;
     private volatile bool _disposed;
-    
+
     public int Length => _buffer.Length;
     public long SizeInBytes => _buffer.SizeInBytes;
     public bool IsOnHost => _buffer.IsOnHost;
     public bool IsOnDevice => _buffer.IsOnDevice;
     public bool IsDirty => _buffer.IsDirty;
     public BufferState State => _buffer.State;
-    
+
     public PooledMemoryBuffer(MemoryPool<T> pool, IMemoryBuffer<T> buffer, int bucketSize)
     {
         _pool = pool;
         _buffer = buffer;
         _bucketSize = bucketSize;
     }
-    
+
     public Span<T> AsSpan()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.AsSpan();
     }
-    
+
     public ReadOnlySpan<T> AsReadOnlySpan()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.AsReadOnlySpan();
     }
-    
+
     public Memory<T> AsMemory()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.AsMemory();
     }
-    
+
     public ReadOnlyMemory<T> AsReadOnlyMemory()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.AsReadOnlyMemory();
     }
-    
+
     public DeviceMemory GetDeviceMemory()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.GetDeviceMemory();
     }
-    
+
     public void EnsureOnHost()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _buffer.EnsureOnHost();
     }
-    
+
     public void EnsureOnDevice()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _buffer.EnsureOnDevice();
     }
-    
+
     public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.EnsureOnHostAsync(context, cancellationToken);
     }
-    
+
     public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.EnsureOnDeviceAsync(context, cancellationToken);
     }
-    
+
     public void MarkHostDirty()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _buffer.MarkHostDirty();
     }
-    
+
     public void MarkDeviceDirty()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _buffer.MarkDeviceDirty();
     }
-    
+
     public void Synchronize()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         _buffer.Synchronize();
     }
-    
+
     public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.SynchronizeAsync(context, cancellationToken);
     }
-    
+
     public Memory<T> GetMemory()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.GetMemory();
     }
-    
+
     public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.CopyFromAsync(source, cancellationToken);
     }
-    
+
     public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         return _buffer.CopyToAsync(destination, cancellationToken);
     }
-    
+
     public void Dispose()
     {
         if (_disposed)
         {
             return;
         }
-        
+
         _disposed = true;
         _pool.Return(_buffer, _bucketSize);
     }

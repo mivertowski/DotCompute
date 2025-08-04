@@ -13,50 +13,50 @@ public interface ISyncMemoryManager : IDisposable
     /// <summary>
     /// Allocates memory with the specified size.
     /// </summary>
-    ISyncMemoryBuffer Allocate(long sizeInBytes, MemoryOptions options = MemoryOptions.None);
+    public ISyncMemoryBuffer Allocate(long sizeInBytes, MemoryOptions options = MemoryOptions.None);
 
     /// <summary>
     /// Allocates memory with the specified size and alignment.
     /// </summary>
-    ISyncMemoryBuffer AllocateAligned(long sizeInBytes, int alignment, MemoryOptions options = MemoryOptions.None);
+    public ISyncMemoryBuffer AllocateAligned(long sizeInBytes, int alignment, MemoryOptions options = MemoryOptions.None);
 
     /// <summary>
     /// Copies data between memory buffers.
     /// </summary>
-    void Copy(ISyncMemoryBuffer source, ISyncMemoryBuffer destination, long sizeInBytes, long sourceOffset = 0, long destinationOffset = 0);
+    public void Copy(ISyncMemoryBuffer source, ISyncMemoryBuffer destination, long sizeInBytes, long sourceOffset = 0, long destinationOffset = 0);
 
     /// <summary>
     /// Copies data from host memory to a device buffer.
     /// </summary>
-    unsafe void CopyFromHost(void* source, ISyncMemoryBuffer destination, long sizeInBytes, long destinationOffset = 0);
+    public unsafe void CopyFromHost(void* source, ISyncMemoryBuffer destination, long sizeInBytes, long destinationOffset = 0);
 
     /// <summary>
     /// Copies data from a device buffer to host memory.
     /// </summary>
-    unsafe void CopyToHost(ISyncMemoryBuffer source, void* destination, long sizeInBytes, long sourceOffset = 0);
+    public unsafe void CopyToHost(ISyncMemoryBuffer source, void* destination, long sizeInBytes, long sourceOffset = 0);
 
     /// <summary>
     /// Fills a buffer with a specific byte value.
     /// </summary>
-    void Fill(ISyncMemoryBuffer buffer, byte value, long sizeInBytes, long offset = 0);
+    public void Fill(ISyncMemoryBuffer buffer, byte value, long sizeInBytes, long offset = 0);
 
     /// <summary>
     /// Zeros out a buffer.
     /// </summary>
-    void Zero(ISyncMemoryBuffer buffer);
+    public void Zero(ISyncMemoryBuffer buffer);
 
     /// <summary>
     /// Frees a memory buffer.
     /// </summary>
-    void Free(ISyncMemoryBuffer buffer);
+    public void Free(ISyncMemoryBuffer buffer);
 
     /// <summary>
     /// Gets memory usage statistics.
     /// </summary>
-    MemoryStatistics GetStatistics();
+    public MemoryStatistics GetStatistics();
 
     /// <summary>
     /// Resets the memory manager, freeing all allocations.
     /// </summary>
-    void Reset();
+    public void Reset();
 }

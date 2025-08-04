@@ -75,7 +75,7 @@ public static class PerformanceTestHelpers
     public static void AssertSpeedupWithinExpectedRange(double actualSpeedup, double baselineExpectedSpeedup, string testName)
     {
         var minimumSpeedup = GetMinimumExpectedSpeedup(baselineExpectedSpeedup, testName);
-        
+
         if (actualSpeedup < minimumSpeedup)
         {
             var environment = IsVirtualizedEnvironment() ? " (virtualized environment detected)" : "";
@@ -93,7 +93,7 @@ public static class PerformanceTestHelpers
         {
             return 0.15; // 15% tolerance in virtual environments
         }
-        
+
         if (Environment.GetEnvironmentVariable("CI") != null)
         {
             return 0.10; // 10% tolerance on CI

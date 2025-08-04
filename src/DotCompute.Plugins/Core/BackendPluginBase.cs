@@ -109,26 +109,26 @@ namespace DotCompute.Plugins.Core
         public virtual async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            
+
             if (State != PluginState.Unknown && State != PluginState.Loaded)
             {
                 throw new InvalidOperationException($"Cannot initialize plugin in state {State}");
             }
 
             State = PluginState.Initializing;
-            
+
             try
             {
                 ServiceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
                 Logger = serviceProvider.GetService<ILoggerFactory>()?.CreateLogger(GetType());
-                
+
                 Logger?.LogInformation("Initializing plugin {PluginId}", Id);
-                
+
                 await OnInitializeAsync(cancellationToken);
-                
+
                 State = PluginState.Initialized;
                 Health = PluginHealth.Healthy;
-                
+
                 Logger?.LogInformation("Plugin {PluginId} initialized successfully", Id);
             }
             catch (Exception ex)
@@ -145,23 +145,23 @@ namespace DotCompute.Plugins.Core
         public virtual async Task StartAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            
+
             if (State != PluginState.Initialized && State != PluginState.Stopped)
             {
                 throw new InvalidOperationException($"Cannot start plugin in state {State}");
             }
 
             State = PluginState.Starting;
-            
+
             try
             {
                 Logger?.LogInformation("Starting plugin {PluginId}", Id);
-                
+
                 _startTime = DateTime.UtcNow;
                 await OnStartAsync(cancellationToken);
-                
+
                 State = PluginState.Running;
-                
+
                 Logger?.LogInformation("Plugin {PluginId} started successfully", Id);
             }
             catch (Exception ex)
@@ -178,7 +178,7 @@ namespace DotCompute.Plugins.Core
         public virtual async Task StopAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            
+
             if (State != PluginState.Running)
             {
                 Logger?.LogWarning("Plugin {PluginId} is not running (state: {State})", Id, State);
@@ -186,15 +186,15 @@ namespace DotCompute.Plugins.Core
             }
 
             State = PluginState.Stopping;
-            
+
             try
             {
                 Logger?.LogInformation("Stopping plugin {PluginId}", Id);
-                
+
                 await OnStopAsync(cancellationToken);
-                
+
                 State = PluginState.Stopped;
-                
+
                 Logger?.LogInformation("Plugin {PluginId} stopped successfully", Id);
             }
             catch (Exception ex)
@@ -247,11 +247,11 @@ namespace DotCompute.Plugins.Core
         public virtual async Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            
+
             Configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
-            
+
             Logger?.LogInformation("Configuration changed for plugin {PluginId}", Id);
-            
+
             await OnConfigurationUpdatedAsync(configuration, cancellationToken);
         }
 
@@ -262,10 +262,10 @@ namespace DotCompute.Plugins.Core
             {
                 _metrics.Timestamp = DateTime.UtcNow;
                 _metrics.Uptime = State == PluginState.Running ? DateTime.UtcNow - _startTime : TimeSpan.Zero;
-                
+
                 // Allow derived classes to add custom metrics
                 OnUpdateMetrics(_metrics);
-                
+
                 return new PluginMetrics
                 {
                     Timestamp = _metrics.Timestamp,

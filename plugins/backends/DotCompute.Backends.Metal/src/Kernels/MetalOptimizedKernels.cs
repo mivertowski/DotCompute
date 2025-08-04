@@ -38,21 +38,21 @@ kernel void vectorAdd(
             entryPoint: "vectorAdd",
             dependencies: Array.Empty<string>()
         );
-        
+
         var compilationOptions = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
-        
+
         var definition = new KernelDefinition("vectorAdd", kernelSource, compilationOptions);
-        
+
         if (definition.Metadata != null)
         {
             definition.Metadata["paramCount"] = 4;
             definition.Metadata["operation"] = "VectorAdd";
         }
-        
+
         return definition;
     }
 
@@ -97,22 +97,22 @@ kernel void matrixMultiply(
             entryPoint: "matrixMultiply",
             dependencies: Array.Empty<string>()
         );
-        
+
         var compilationOptions = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
-        
+
         var definition = new KernelDefinition("matrixMultiply", kernelSource, compilationOptions);
-        
+
         if (definition.Metadata != null)
         {
             definition.Metadata["paramCount"] = 6;
             definition.Metadata["operation"] = "MatrixMultiply";
             definition.Metadata["requiresTiling"] = true;
         }
-        
+
         return definition;
     }
 
@@ -172,21 +172,21 @@ kernel void reduction{operation}(
             entryPoint: kernelName,
             dependencies: Array.Empty<string>()
         );
-        
+
         var compilationOptions = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
-        
+
         var definition = new KernelDefinition(kernelName, kernelSource, compilationOptions);
-        
+
         if (definition.Metadata != null)
         {
             definition.Metadata["operation"] = operation.ToString();
             definition.Metadata["requiresSharedMemory"] = true;
         }
-        
+
         return definition;
     }
 
@@ -253,21 +253,21 @@ kernel void convolution2D(
             entryPoint: "convolution2D",
             dependencies: Array.Empty<string>()
         );
-        
+
         var compilationOptions = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
-        
+
         var definition = new KernelDefinition("convolution2D", kernelSource, compilationOptions);
-        
+
         if (definition.Metadata != null)
         {
             definition.Metadata["operation"] = "Convolution2D";
             definition.Metadata["requiresStructParam"] = true;
         }
-        
+
         return definition;
     }
 
@@ -311,20 +311,20 @@ kernel void activation{activation}(
             entryPoint: kernelName,
             dependencies: Array.Empty<string>()
         );
-        
+
         var compilationOptions = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
-        
+
         var definition = new KernelDefinition(kernelName, kernelSource, compilationOptions);
-        
+
         if (definition.Metadata != null)
         {
             definition.Metadata["activation"] = activation.ToString();
         }
-        
+
         return definition;
     }
 
@@ -357,20 +357,20 @@ kernel void {operation}(
             entryPoint: operation,
             dependencies: Array.Empty<string>()
         );
-        
+
         var compilationOptions = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
             EnableDebugInfo = false
         };
-        
+
         var definition = new KernelDefinition(operation, kernelSource, compilationOptions);
-        
+
         if (definition.Metadata != null)
         {
             definition.Metadata["operation"] = operation;
         }
-        
+
         return definition;
     }
 }

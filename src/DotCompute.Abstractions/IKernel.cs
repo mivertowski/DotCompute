@@ -16,17 +16,17 @@ public interface IKernel
     /// Gets the unique name of this kernel.
     /// </summary>
     public static abstract string Name { get; }
-    
+
     /// <summary>
     /// Gets the source code or IL representation of the kernel.
     /// </summary>
     public static abstract string Source { get; }
-    
+
     /// <summary>
     /// Gets the entry point method name for the kernel.
     /// </summary>
     public static abstract string EntryPoint { get; }
-    
+
     /// <summary>
     /// Gets the required shared memory size in bytes.
     /// </summary>
@@ -44,32 +44,32 @@ public sealed class KernelParameter
     /// Gets the parameter name.
     /// </summary>
     public string Name { get; }
-    
+
     /// <summary>
     /// Gets the parameter type.
     /// </summary>
     public Type Type { get; }
-    
+
     /// <summary>
     /// Gets whether this is an input parameter.
     /// </summary>
     public bool IsInput { get; }
-    
+
     /// <summary>
     /// Gets whether this is an output parameter.
     /// </summary>
     public bool IsOutput { get; }
-    
+
     /// <summary>
     /// Gets the parameter index.
     /// </summary>
     public int Index { get; }
-    
+
     /// <summary>
     /// Gets whether this is a constant parameter that should never be null.
     /// </summary>
     public bool IsConstant { get; }
-    
+
     public KernelParameter(string name, Type type, int index, bool isInput = true, bool isOutput = false, bool isConstant = false)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));

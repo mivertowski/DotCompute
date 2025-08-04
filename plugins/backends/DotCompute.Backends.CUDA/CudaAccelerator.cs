@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Backends.CUDA.Native;
-using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Memory;
+using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -40,24 +40,24 @@ public class CudaAccelerator : IAccelerator, IDisposable
     {
         _logger = logger ?? new NullLogger<CudaAccelerator>();
         _deviceId = deviceId;
-        
+
         try
         {
             _logger.LogInformation("Initializing CUDA accelerator for device {DeviceId}", deviceId);
-            
+
             // Initialize CUDA context
             _context = new CudaContext(deviceId);
-            
+
             // Create memory manager
             _memoryManager = new CudaMemoryManager(_context, _logger);
-        _memoryAdapter = new CudaAsyncMemoryManagerAdapter(_memoryManager);
-            
+            _memoryAdapter = new CudaAsyncMemoryManagerAdapter(_memoryManager);
+
             // Create kernel compiler
             _kernelCompiler = new CudaKernelCompiler(_context, _logger);
-            
+
             // Build accelerator info
             _info = BuildAcceleratorInfo();
-            
+
             _logger.LogInformation("CUDA accelerator initialized successfully. Device: {DeviceName}",
                 _info.Name);
         }
@@ -96,11 +96,11 @@ public class CudaAccelerator : IAccelerator, IDisposable
     public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
         try
         {
             _logger.LogTrace("Synchronizing CUDA device {DeviceId}", _deviceId);
-            
+
             // Run synchronization on a background thread to avoid blocking
             await Task.Run(() =>
             {
@@ -110,7 +110,7 @@ public class CudaAccelerator : IAccelerator, IDisposable
                     throw new InvalidOperationException($"CUDA synchronization failed: {CudaRuntime.GetErrorString(result)}");
                 }
             }, cancellationToken).ConfigureAwait(false);
-            
+
             _logger.LogTrace("CUDA device {DeviceId} synchronized", _deviceId);
         }
         catch (Exception ex)
@@ -123,22 +123,22 @@ public class CudaAccelerator : IAccelerator, IDisposable
     public void Reset()
     {
         ThrowIfDisposed();
-        
+
         try
         {
             _logger.LogInformation("Resetting CUDA device");
-            
+
             // Clear all allocations
             _memoryManager.Reset();
-            
+
             // Reset the device
             var result = CudaRuntime.cudaDeviceReset();
-            
+
             if (result != CudaError.Success)
             {
                 throw new InvalidOperationException($"CUDA device reset failed: {CudaRuntime.GetErrorString(result)}");
             }
-            
+
             // Reinitialize context
             _context.Reinitialize();
         }
@@ -155,12 +155,12 @@ public class CudaAccelerator : IAccelerator, IDisposable
         {
             var deviceProps = new CudaDeviceProperties();
             var result = CudaRuntime.cudaGetDeviceProperties(ref deviceProps, _deviceId);
-            
+
             if (result != CudaError.Success)
             {
                 throw new InvalidOperationException($"Failed to query device properties: {CudaRuntime.GetErrorString(result)}");
             }
-            
+
             var capabilities = new Dictionary<string, object>
             {
                 ["ComputeCapabilityMajor"] = deviceProps.Major,
@@ -182,7 +182,7 @@ public class CudaAccelerator : IAccelerator, IDisposable
                 ["MemoryBusWidth"] = deviceProps.MemoryBusWidth,
                 ["MemoryBandwidth"] = 2.0 * deviceProps.MemoryClockRate * (deviceProps.MemoryBusWidth / 8) / 1.0e6
             };
-            
+
             return new AcceleratorInfo(
                 type: AcceleratorType.CUDA,
                 name: deviceProps.Name,
@@ -216,20 +216,23 @@ public class CudaAccelerator : IAccelerator, IDisposable
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
         try
         {
             _logger.LogInformation("Disposing CUDA accelerator");
-            
+
             // Synchronize before disposal
             await SynchronizeAsync().ConfigureAwait(false);
-            
+
             // Dispose managed resources
             _kernelCompiler?.Dispose();
             _memoryManager?.Dispose();
             _context?.Dispose();
-            
+
             _disposed = true;
         }
         catch (Exception ex)
@@ -243,20 +246,23 @@ public class CudaAccelerator : IAccelerator, IDisposable
     /// </summary>
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
         try
         {
             _logger.LogInformation("Disposing CUDA accelerator");
-            
+
             // Synchronize before disposal
             _context?.Synchronize();
-            
+
             // Dispose managed resources
             _kernelCompiler?.Dispose();
             _memoryManager?.Dispose();
             _context?.Dispose();
-            
+
             _disposed = true;
         }
         catch (Exception ex)

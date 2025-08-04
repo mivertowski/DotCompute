@@ -15,7 +15,7 @@ public interface IMemoryManager : IAsyncDisposable
     /// <summary>
     /// Creates a buffer with the specified size and location.
     /// </summary>
-    ValueTask<IBuffer<T>> CreateBufferAsync<T>(
+    public ValueTask<IBuffer<T>> CreateBufferAsync<T>(
         int elementCount,
         MemoryLocation location,
         MemoryAccess access = MemoryAccess.ReadWrite,
@@ -24,7 +24,7 @@ public interface IMemoryManager : IAsyncDisposable
     /// <summary>
     /// Creates a buffer from existing data.
     /// </summary>
-    ValueTask<IBuffer<T>> CreateBufferAsync<T>(
+    public ValueTask<IBuffer<T>> CreateBufferAsync<T>(
         ReadOnlyMemory<T> data,
         MemoryLocation location,
         MemoryAccess access = MemoryAccess.ReadWrite,
@@ -33,7 +33,7 @@ public interface IMemoryManager : IAsyncDisposable
     /// <summary>
     /// Copies data between buffers.
     /// </summary>
-    ValueTask CopyAsync<T>(
+    public ValueTask CopyAsync<T>(
         IBuffer<T> source,
         IBuffer<T> destination,
         long sourceOffset = 0,
@@ -44,12 +44,12 @@ public interface IMemoryManager : IAsyncDisposable
     /// <summary>
     /// Gets memory usage statistics.
     /// </summary>
-    IMemoryStatistics GetStatistics();
+    public IMemoryStatistics GetStatistics();
 
     /// <summary>
     /// Gets available memory locations.
     /// </summary>
-    MemoryLocation[] AvailableLocations { get; }
+    public MemoryLocation[] AvailableLocations { get; }
 }
 
 /// <summary>
@@ -60,27 +60,27 @@ public interface IBuffer<T> : IAsyncDisposable where T : unmanaged
     /// <summary>
     /// Gets the number of elements in the buffer.
     /// </summary>
-    int ElementCount { get; }
+    public int ElementCount { get; }
 
     /// <summary>
     /// Gets the size in bytes.
     /// </summary>
-    long SizeInBytes { get; }
+    public long SizeInBytes { get; }
 
     /// <summary>
     /// Gets the memory location.
     /// </summary>
-    MemoryLocation Location { get; }
+    public MemoryLocation Location { get; }
 
     /// <summary>
     /// Gets the access mode.
     /// </summary>
-    MemoryAccess Access { get; }
+    public MemoryAccess Access { get; }
 
     /// <summary>
     /// Reads data from the buffer.
     /// </summary>
-    ValueTask<T[]> ReadAsync(
+    public ValueTask<T[]> ReadAsync(
         int offset = 0,
         int? count = null,
         CancellationToken cancellationToken = default);
@@ -88,7 +88,7 @@ public interface IBuffer<T> : IAsyncDisposable where T : unmanaged
     /// <summary>
     /// Writes data to the buffer.
     /// </summary>
-    ValueTask WriteAsync(
+    public ValueTask WriteAsync(
         ReadOnlyMemory<T> data,
         int offset = 0,
         CancellationToken cancellationToken = default);
@@ -96,7 +96,7 @@ public interface IBuffer<T> : IAsyncDisposable where T : unmanaged
     /// <summary>
     /// Fills the buffer with a value.
     /// </summary>
-    ValueTask FillAsync(
+    public ValueTask FillAsync(
         T value,
         int offset = 0,
         int? count = null,
@@ -105,7 +105,7 @@ public interface IBuffer<T> : IAsyncDisposable where T : unmanaged
     /// <summary>
     /// Maps the buffer for direct access.
     /// </summary>
-    ValueTask<IMemoryMapping<T>> MapAsync(
+    public ValueTask<IMemoryMapping<T>> MapAsync(
         MemoryMapMode mode = MemoryMapMode.ReadWrite,
         int offset = 0,
         int? count = null,
@@ -199,22 +199,22 @@ public interface IMemoryMapping<T> : IDisposable where T : unmanaged
     /// <summary>
     /// Gets the mapped memory span.
     /// </summary>
-    Span<T> Span { get; }
+    public Span<T> Span { get; }
 
     /// <summary>
     /// Gets the mapping mode.
     /// </summary>
-    MemoryMapMode Mode { get; }
+    public MemoryMapMode Mode { get; }
 
     /// <summary>
     /// Gets whether the mapping is valid.
     /// </summary>
-    bool IsValid { get; }
+    public bool IsValid { get; }
 
     /// <summary>
     /// Flushes any pending writes.
     /// </summary>
-    void Flush();
+    public void Flush();
 }
 
 /// <summary>
@@ -225,30 +225,30 @@ public interface IMemoryStatistics
     /// <summary>
     /// Gets total allocated memory in bytes.
     /// </summary>
-    long TotalAllocatedBytes { get; }
+    public long TotalAllocatedBytes { get; }
 
     /// <summary>
     /// Gets available memory in bytes.
     /// </summary>
-    long AvailableBytes { get; }
+    public long AvailableBytes { get; }
 
     /// <summary>
     /// Gets peak memory usage in bytes.
     /// </summary>
-    long PeakUsageBytes { get; }
+    public long PeakUsageBytes { get; }
 
     /// <summary>
     /// Gets allocation count.
     /// </summary>
-    int AllocationCount { get; }
+    public int AllocationCount { get; }
 
     /// <summary>
     /// Gets memory fragmentation percentage.
     /// </summary>
-    double FragmentationPercentage { get; }
+    public double FragmentationPercentage { get; }
 
     /// <summary>
     /// Gets memory usage by location.
     /// </summary>
-    IReadOnlyDictionary<MemoryLocation, long> UsageByLocation { get; }
+    public IReadOnlyDictionary<MemoryLocation, long> UsageByLocation { get; }
 }

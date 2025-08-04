@@ -62,8 +62,8 @@ public class AcceleratorInfoTests
         var availableMemory = 20480L * 1024 * 1024; // 20GB
 
         // Act
-        var info = new AcceleratorInfo(name, vendor, driverVersion, type, 
-            computeCapability, maxThreadsPerBlock, maxSharedMemory, 
+        var info = new AcceleratorInfo(name, vendor, driverVersion, type,
+            computeCapability, maxThreadsPerBlock, maxSharedMemory,
             totalMemory, availableMemory);
 
         // Assert
@@ -90,7 +90,7 @@ public class AcceleratorInfoTests
         string name, string vendor, string driverVersion, AcceleratorType type)
     {
         // Act & Assert
-        var act = () => new AcceleratorInfo(name, vendor, driverVersion, type, 
+        var act = () => new AcceleratorInfo(name, vendor, driverVersion, type,
             7.5, 1024, 49152, 8589934592L, 8589934592L);
         act.Should().Throw<ArgumentException>();
     }
@@ -102,7 +102,7 @@ public class AcceleratorInfoTests
         double computeCapability)
     {
         // Act & Assert
-        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA, 
+        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             computeCapability, 1024, 49152, 8589934592L, 8589934592L);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -114,7 +114,7 @@ public class AcceleratorInfoTests
         int maxThreadsPerBlock)
     {
         // Act & Assert
-        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA, 
+        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, maxThreadsPerBlock, 49152, 8589934592L, 8589934592L);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -123,7 +123,7 @@ public class AcceleratorInfoTests
     public void FullConstructor_WithNegativeSharedMemory_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert
-        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA, 
+        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, 1024, -1, 8589934592L, 8589934592L);
         act.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -136,7 +136,7 @@ public class AcceleratorInfoTests
         long totalMemory, long availableMemory)
     {
         // Act & Assert
-        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA, 
+        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, 1024, 49152, totalMemory, availableMemory);
         act.Should().Throw<ArgumentException>();
     }
@@ -156,8 +156,8 @@ public class AcceleratorInfoTests
         var isUnifiedMemory = false;
 
         // Act
-        var info = new AcceleratorInfo(type, name, driverVersion, memorySize, 
-            computeUnits, maxClockFrequency, computeCapability, 
+        var info = new AcceleratorInfo(type, name, driverVersion, memorySize,
+            computeUnits, maxClockFrequency, computeCapability,
             maxSharedMemoryPerBlock, isUnifiedMemory);
 
         // Assert

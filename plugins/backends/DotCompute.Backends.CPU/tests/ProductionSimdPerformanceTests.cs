@@ -2,12 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
-using DotCompute.Backends.CPU.Optimization;
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Optimization;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -35,20 +35,20 @@ public class ProductionSimdPerformanceTests
         Assert.NotNull(summary);
         Assert.True(summary.PreferredVectorWidth > 0);
         Assert.NotEmpty(summary.SupportedInstructionSets);
-        
+
         // Validate against actual hardware capabilities
         if (Sse.IsSupported)
         {
             Assert.Contains("SSE", summary.SupportedInstructionSets);
             Assert.True(summary.PreferredVectorWidth >= 128);
         }
-        
+
         if (Avx.IsSupported)
         {
             Assert.Contains("AVX", summary.SupportedInstructionSets);
             Assert.True(summary.PreferredVectorWidth >= 256);
         }
-        
+
         if (Avx512F.IsSupported)
         {
             Assert.Contains("AVX512F", summary.SupportedInstructionSets);
@@ -71,7 +71,7 @@ public class ProductionSimdPerformanceTests
         var b = new float[arraySize];
         var resultScalar = new float[arraySize];
         var resultVectorized = new float[arraySize];
-        
+
 #pragma warning disable CA5394 // Do not use insecure randomness
         var random = new Random(42);
 #pragma warning restore CA5394
@@ -101,13 +101,13 @@ public class ProductionSimdPerformanceTests
         }
 
         // Calculate speedup
-        double speedup = vectorizedStopwatch.ElapsedTicks > 0 ? 
+        double speedup = vectorizedStopwatch.ElapsedTicks > 0 ?
             (double)scalarStopwatch.ElapsedTicks / vectorizedStopwatch.ElapsedTicks : 1.0;
 
         // Assert - Vectorized should show improvement for larger arrays
         if (arraySize >= 8192 && NativeAotOptimizations.HasAdvancedSimdSupport)
         {
-            Assert.True(speedup > 1.1, 
+            Assert.True(speedup > 1.1,
                 $"Expected at least 1.1x speedup for large arrays, got {speedup:F2}x (Vectorized: {vectorizedStopwatch.ElapsedTicks} ticks, Scalar: {scalarStopwatch.ElapsedTicks} ticks)");
         }
 
@@ -163,7 +163,7 @@ public class ProductionSimdPerformanceTests
 #pragma warning disable CA5394 // Do not use insecure randomness
         var random = new Random(42);
 #pragma warning restore CA5394
-        
+
         for (int i = 0; i < arraySize; i++)
         {
             data[i] = (float)(random.NextDouble() * 100);
@@ -335,7 +335,7 @@ public class ProductionSimdPerformanceTests
 #pragma warning disable CA5394 // Do not use insecure randomness
         var random = new Random(42);
 #pragma warning restore CA5394
-        
+
         for (int i = 0; i < rows; i++)
         {
             for (int j = 0; j < cols; j++)
@@ -343,7 +343,7 @@ public class ProductionSimdPerformanceTests
                 matrix[i][j] = (float)random.NextDouble();
             }
         }
-        
+
         return matrix;
     }
 
@@ -365,14 +365,14 @@ public class ProductionSimdPerformanceTests
     private static void MultiplyMatricesVectorized(float[][] a, float[][] b, float[][] result, int size)
     {
         var vectorSize = Vector<float>.Count;
-        
+
         for (int i = 0; i < size; i++)
         {
             for (int j = 0; j < size; j++)
             {
                 var sum = Vector<float>.Zero;
                 int k = 0;
-                
+
                 // Vectorized inner loop
                 for (; k <= size - vectorSize; k += vectorSize)
                 {
@@ -380,10 +380,10 @@ public class ProductionSimdPerformanceTests
                     var bVec = LoadVectorFromMatrix(b, k, j, vectorSize, true);
                     sum += aVec * bVec;
                 }
-                
+
                 // Sum the vector elements
                 result[i][j] = Vector.Dot(sum, Vector<float>.One);
-                
+
                 // Handle remaining elements
                 for (; k < size; k++)
                 {
@@ -397,7 +397,7 @@ public class ProductionSimdPerformanceTests
     {
         var values = new float[vectorSize];
         var matrixSize = matrix.Length;
-        
+
         if (!transpose)
         {
             for (int i = 0; i < vectorSize; i++)
@@ -414,7 +414,7 @@ public class ProductionSimdPerformanceTests
                 values[i] = (matrixRow < matrixSize && row < matrix[matrixRow].Length) ? matrix[matrixRow][row] : 0f;
             }
         }
-        
+
         return new Vector<float>(values);
     }
 
@@ -426,14 +426,14 @@ public class ProductionSimdPerformanceTests
             {
                 var diff = Math.Abs(a[i][j] - b[i][j]);
                 var maxValue = Math.Max(Math.Abs(a[i][j]), Math.Abs(b[i][j]));
-                
+
                 // Use relative error for large values, absolute error for small values
-                bool withinTolerance = maxValue < 1.0f 
-                    ? diff <= tolerance 
+                bool withinTolerance = maxValue < 1.0f
+                    ? diff <= tolerance
                     : diff <= tolerance * maxValue;
-                
-                Assert.True(withinTolerance, 
-                    $"Matrix difference at [{i},{j}]: {a[i][j]} vs {b[i][j]}, diff: {diff}, relative: {diff/maxValue:F4}");
+
+                Assert.True(withinTolerance,
+                    $"Matrix difference at [{i},{j}]: {a[i][j]} vs {b[i][j]}, diff: {diff}, relative: {diff / maxValue:F4}");
             }
         }
     }
@@ -486,9 +486,9 @@ public class ProductionSimdPerformanceTests
         {
             var a = Vector128.Create(1.0f, 2.0f, 3.0f, 4.0f);
             var b = Vector128.Create(5.0f, 6.0f, 7.0f, 8.0f);
-            
+
             var result = Sse.Add(a, b);
-            
+
             Assert.Equal(6.0f, result.GetElement(0), 5);
             Assert.Equal(8.0f, result.GetElement(1), 5);
             Assert.Equal(10.0f, result.GetElement(2), 5);
@@ -507,9 +507,9 @@ public class ProductionSimdPerformanceTests
         {
             var a = Vector128.Create(1, 2, 3, 4);
             var b = Vector128.Create(5, 6, 7, 8);
-            
+
             var result = Sse2.Add(a, b);
-            
+
             Assert.Equal(6, result.GetElement(0));
             Assert.Equal(8, result.GetElement(1));
             Assert.Equal(10, result.GetElement(2));
@@ -528,9 +528,9 @@ public class ProductionSimdPerformanceTests
         {
             var a = Vector256.Create(1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f, 8.0f);
             var b = Vector256.Create(8.0f, 7.0f, 6.0f, 5.0f, 4.0f, 3.0f, 2.0f, 1.0f);
-            
+
             var result = Avx.Add(a, b);
-            
+
             for (int i = 0; i < 8; i++)
             {
                 Assert.Equal(9.0f, result.GetElement(i), 5);
@@ -549,9 +549,9 @@ public class ProductionSimdPerformanceTests
         {
             var a = Vector256.Create(1, 2, 3, 4, 5, 6, 7, 8);
             var b = Vector256.Create(8, 7, 6, 5, 4, 3, 2, 1);
-            
+
             var result = Avx2.Add(a, b);
-            
+
             for (int i = 0; i < 8; i++)
             {
                 Assert.Equal(9, result.GetElement(i));
@@ -570,9 +570,9 @@ public class ProductionSimdPerformanceTests
         {
             var a = Vector512.Create(1.0f);
             var b = Vector512.Create(2.0f);
-            
+
             var result = Avx512F.Add(a, b);
-            
+
             for (int i = 0; i < 16; i++)
             {
                 Assert.Equal(3.0f, result.GetElement(i), 5);

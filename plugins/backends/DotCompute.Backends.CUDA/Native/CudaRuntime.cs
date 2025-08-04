@@ -173,7 +173,7 @@ public static class CudaRuntime
     {
         if (error != CudaError.Success)
         {
-            var message = string.IsNullOrEmpty(operation) 
+            var message = string.IsNullOrEmpty(operation)
                 ? $"CUDA error: {GetErrorString(error)}"
                 : $"CUDA error during {operation}: {GetErrorString(error)}";
             throw new CudaException(message, error);
@@ -296,20 +296,20 @@ public struct CudaDeviceProperties
 {
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
     public string Name;
-    
+
     public ulong TotalGlobalMem;
     public ulong SharedMemPerBlock;
     public int RegsPerBlock;
     public int WarpSize;
     public ulong MemPitch;
     public int MaxThreadsPerBlock;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxThreadsDim;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxGridSize;
-    
+
     public int ClockRate;
     public ulong TotalConstMem;
     public int Major;
@@ -325,55 +325,55 @@ public struct CudaDeviceProperties
     public int MaxTexture1D;
     public int MaxTexture1DMipmap;
     public int MaxTexture1DLinear;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
     public int[] MaxTexture2D;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
     public int[] MaxTexture2DMipmap;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxTexture2DLinear;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
     public int[] MaxTexture2DGather;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxTexture3D;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxTexture3DAlt;
-    
+
     public int MaxTextureCubemap;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
     public int[] MaxTexture1DLayered;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxTexture2DLayered;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
     public int[] MaxTextureCubemapLayered;
-    
+
     public int MaxSurface1D;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
     public int[] MaxSurface2D;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxSurface3D;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
     public int[] MaxSurface1DLayered;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxSurface2DLayered;
-    
+
     public int MaxSurfaceCubemap;
-    
+
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
     public int[] MaxSurfaceCubemapLayered;
-    
+
     public ulong SurfaceAlignment;
     public int ConcurrentKernels;
     public int ECCEnabled;
@@ -418,6 +418,9 @@ public class CudaException : Exception
     public CudaException(string message, CudaError errorCode) : base(message)
     {
         ErrorCode = errorCode;
+    }
+    public CudaException()
+    {
     }
 }
 
@@ -528,6 +531,9 @@ public class NvrtcException : Exception
     {
         ResultCode = resultCode;
     }
+    public NvrtcException()
+    {
+    }
 }
 
 /// <summary>
@@ -586,5 +592,8 @@ public class KernelCompilationException : Exception
     public KernelCompilationException(string message, string? compilerLog, Exception innerException) : base(message, innerException)
     {
         CompilerLog = compilerLog;
+    }
+    public KernelCompilationException()
+    {
     }
 }

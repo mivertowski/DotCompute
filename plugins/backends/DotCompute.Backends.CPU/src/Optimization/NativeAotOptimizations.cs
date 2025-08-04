@@ -5,8 +5,8 @@ using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Kernels;
 
 namespace DotCompute.Backends.CPU.Optimization;
@@ -27,7 +27,7 @@ public static class NativeAotOptimizations
         // Use the robust implementations from AdvancedSimdPatterns
         public static readonly Func<ReadOnlySpan<float>, ReadOnlySpan<float>, float> DotProductFloat32 = AdvancedSimdPatterns.DotProduct;
         public static readonly Func<ReadOnlySpan<double>, ReadOnlySpan<double>, double> DotProductFloat64 = DotProductDouble;
-        
+
         // Vector operations delegates
         public static readonly Action<ReadOnlySpan<float>, ReadOnlySpan<float>, Span<float>> VectorAddFloat32 = VectorAdd;
         public static readonly Action<ReadOnlySpan<double>, ReadOnlySpan<double>, Span<double>> VectorAddFloat64 = VectorAdd;
@@ -229,18 +229,18 @@ public static class NativeAotOptimizations
     {
         const int VectorSize = 8;
         int vectorCount = a.Length / VectorSize;
-        
+
         ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
         ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
-        
+
         var sum = Vector512<double>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
             var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-            
+
             if (Avx512F.IsSupported)
             {
                 sum = Avx512F.FusedMultiplyAdd(va, vb, sum);
@@ -250,9 +250,9 @@ public static class NativeAotOptimizations
                 sum = Avx512F.Add(sum, Avx512F.Multiply(va, vb));
             }
         }
-        
+
         double result = Vector512.Sum(sum);
-        
+
         int remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
@@ -262,7 +262,7 @@ public static class NativeAotOptimizations
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -271,18 +271,18 @@ public static class NativeAotOptimizations
     {
         const int VectorSize = 4;
         int vectorCount = a.Length / VectorSize;
-        
+
         ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
         ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
-        
+
         var sum = Vector256<double>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
             var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-            
+
             if (Fma.IsSupported)
             {
                 sum = Fma.MultiplyAdd(va, vb, sum);
@@ -292,9 +292,9 @@ public static class NativeAotOptimizations
                 sum = Avx.Add(sum, Avx.Multiply(va, vb));
             }
         }
-        
+
         double result = Vector256.Sum(sum);
-        
+
         int remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
@@ -304,7 +304,7 @@ public static class NativeAotOptimizations
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -313,23 +313,23 @@ public static class NativeAotOptimizations
     {
         const int VectorSize = 2;
         int vectorCount = a.Length / VectorSize;
-        
+
         ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
         ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
-        
+
         var sum = Vector128<double>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
             var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-            
+
             sum = AdvSimd.Arm64.FusedMultiplyAdd(sum, va, vb);
         }
-        
+
         double result = Vector128.Sum(sum);
-        
+
         int remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
@@ -339,7 +339,7 @@ public static class NativeAotOptimizations
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -348,23 +348,23 @@ public static class NativeAotOptimizations
     {
         const int VectorSize = 2;
         int vectorCount = a.Length / VectorSize;
-        
+
         ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
         ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
-        
+
         var sum = Vector128<double>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
             var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-            
+
             sum = Sse2.Add(sum, Sse2.Multiply(va, vb));
         }
-        
+
         double result = Vector128.Sum(sum);
-        
+
         int remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
@@ -374,7 +374,7 @@ public static class NativeAotOptimizations
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 }

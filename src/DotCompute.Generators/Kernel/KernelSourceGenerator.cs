@@ -1,16 +1,16 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace DotCompute.Generators.Kernel
 {
@@ -395,7 +395,7 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine($"                throw new ArgumentException($\"Expected {method.Parameters.Count} arguments, got {{args.Length}}\");");
             source.AppendLine();
             source.AppendLine("            // Cast arguments");
-            
+
             for (int i = 0; i < method.Parameters.Count; i++)
             {
                 var param = method.Parameters[i];
@@ -466,8 +466,8 @@ namespace DotCompute.Generators.Kernel
         private static bool IsBufferType(ITypeSymbol type)
         {
             // Check if type implements IBuffer or is a pointer/span
-            return type.Name.Contains("Buffer") || 
-                   type.Name.Contains("Span") || 
+            return type.Name.Contains("Buffer") ||
+                   type.Name.Contains("Span") ||
                    type.TypeKind == TypeKind.Pointer ||
                    type.AllInterfaces.Any(i => i.Name == "IBuffer");
         }
@@ -479,7 +479,7 @@ namespace DotCompute.Generators.Kernel
         {
             // Analyze the method body for vectorizable patterns
             var methodBody = method.MethodDeclaration?.Body?.ToString() ?? "";
-            
+
             // Generate SIMD-optimized implementation based on common patterns
             if (ContainsArithmeticOperations(methodBody))
             {
@@ -502,10 +502,10 @@ namespace DotCompute.Generators.Kernel
         private static void GenerateScalarMethodBody(StringBuilder source, KernelMethodInfo method)
         {
             var methodBody = method.MethodDeclaration?.Body?.ToString() ?? "";
-            
+
             source.AppendLine("            for (int i = 0; i < length; i++)");
             source.AppendLine("            {");
-            
+
             // Transform the method body for scalar execution
             if (ContainsArithmeticOperations(methodBody))
             {
@@ -520,7 +520,7 @@ namespace DotCompute.Generators.Kernel
                 source.AppendLine("                // Process element at index i");
                 source.AppendLine($"                // Original operation: {methodBody.Replace(Environment.NewLine, " ").Trim()}");
             }
-            
+
             source.AppendLine("            }");
         }
 
@@ -536,7 +536,7 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine("#include <cuda_runtime.h>");
             source.AppendLine("#include <device_launch_parameters.h>");
             source.AppendLine();
-            
+
             // Generate kernel function
             source.AppendLine($"extern \"C\" __global__ void {method.Name}_cuda_kernel(");
             for (int i = 0; i < method.Parameters.Count; i++)
@@ -552,16 +552,16 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine("{");
             source.AppendLine("    int idx = blockIdx.x * blockDim.x + threadIdx.x;");
             source.AppendLine("    if (idx < length) {");
-            
+
             // Generate CUDA kernel body
             GenerateCudaKernelBody(source, method);
-            
+
             source.AppendLine("    }");
             source.AppendLine("}");
-            
+
             // Generate host wrapper
             GenerateCudaHostWrapper(source, method);
-            
+
             return source.ToString();
         }
 
@@ -576,7 +576,7 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine("#include <metal_stdlib>");
             source.AppendLine("using namespace metal;");
             source.AppendLine();
-            
+
             // Generate kernel function
             source.AppendLine($"kernel void {method.Name}_metal_kernel(");
             for (int i = 0; i < method.Parameters.Count; i++)
@@ -593,12 +593,12 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine("    uint2 grid_size [[threads_per_grid]])");
             source.AppendLine("{");
             source.AppendLine("    uint index = gid.x + gid.y * grid_size.x;");
-            
+
             // Generate Metal kernel body
             GenerateMetalKernelBody(source, method);
-            
+
             source.AppendLine("}");
-            
+
             return source.ToString();
         }
 
@@ -611,7 +611,7 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine("// <auto-generated/>");
             source.AppendLine("// OpenCL Kernel Implementation");
             source.AppendLine();
-            
+
             // Generate kernel function
             source.AppendLine($"__kernel void {method.Name}_opencl_kernel(");
             for (int i = 0; i < method.Parameters.Count; i++)
@@ -628,20 +628,20 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine("{");
             source.AppendLine("    int idx = get_global_id(0);");
             source.AppendLine("    if (idx < length) {");
-            
+
             // Generate OpenCL kernel body
             GenerateOpenCLKernelBody(source, method);
-            
+
             source.AppendLine("    }");
             source.AppendLine("}");
-            
+
             return source.ToString();
         }
 
         // Helper methods for pattern detection
         private static bool ContainsArithmeticOperations(string methodBody)
         {
-            return methodBody.Contains("+") || methodBody.Contains("-") || 
+            return methodBody.Contains("+") || methodBody.Contains("-") ||
                    methodBody.Contains("*") || methodBody.Contains("/") ||
                    methodBody.Contains("Math.") || methodBody.Contains("MathF.");
         }

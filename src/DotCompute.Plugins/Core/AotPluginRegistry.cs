@@ -30,7 +30,7 @@ public sealed class AotPluginRegistry : IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _plugins = new Dictionary<string, IBackendPlugin>();
         _factories = new Dictionary<string, Func<IBackendPlugin>>();
-        
+
         RegisterKnownPlugins();
     }
 
@@ -43,10 +43,10 @@ public sealed class AotPluginRegistry : IDisposable
         _logger.LogInformation("Registering known plugins for AOT compatibility");
 
         // Register CPU backend
-        _factories["DotCompute.Backends.CPU"] = () => 
+        _factories["DotCompute.Backends.CPU"] = () =>
         {
             _logger.LogDebug("Creating CPU backend plugin");
-            
+
             // Create a minimal CPU backend plugin implementation for AOT compatibility
             return new AotCpuBackendPlugin();
         };
@@ -55,7 +55,7 @@ public sealed class AotPluginRegistry : IDisposable
         _factories["DotCompute.Backends.CUDA"] = () =>
         {
             _logger.LogDebug("Creating CUDA backend plugin");
-            
+
             // Check if CUDA is available at runtime
             if (IsCudaAvailable())
             {
@@ -72,7 +72,7 @@ public sealed class AotPluginRegistry : IDisposable
         _factories["DotCompute.Backends.Metal"] = () =>
         {
             _logger.LogDebug("Creating Metal backend plugin");
-            
+
             // Metal is only available on macOS/iOS
             if (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
             {
@@ -97,7 +97,7 @@ public sealed class AotPluginRegistry : IDisposable
         {
             // This would normally check for CUDA runtime availability
             // For AOT compatibility, we do a simple platform check
-            return Environment.Is64BitOperatingSystem && 
+            return Environment.Is64BitOperatingSystem &&
                    (OperatingSystem.IsWindows() || OperatingSystem.IsLinux());
         }
         catch
@@ -124,10 +124,10 @@ public sealed class AotPluginRegistry : IDisposable
                 {
                     var plugin = factory();
                     _plugins[plugin.Id] = plugin;
-                    
-                    _logger.LogInformation("Successfully created plugin {Id} ({Name}) from factory", 
+
+                    _logger.LogInformation("Successfully created plugin {Id} ({Name}) from factory",
                         plugin.Id, plugin.Name);
-                    
+
                     return plugin;
                 }
 
@@ -254,7 +254,7 @@ public sealed class AotPluginRegistry : IDisposable
                     _logger.LogError(ex, "Error disposing plugin {Id}", plugin.Id);
                 }
             }
-            
+
             _plugins.Clear();
             _factories.Clear();
         }
@@ -276,10 +276,10 @@ public sealed class AotPluginSystem : IDisposable
     public AotPluginSystem(ILogger<AotPluginSystem> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
-        var registryLogger = _logger as ILogger<AotPluginRegistry> ?? 
+
+        var registryLogger = _logger as ILogger<AotPluginRegistry> ??
             Microsoft.Extensions.Logging.Abstractions.NullLogger<AotPluginRegistry>.Instance;
-        
+
         _registry = new AotPluginRegistry(registryLogger);
     }
 
@@ -288,8 +288,8 @@ public sealed class AotPluginSystem : IDisposable
     /// This method signature maintains compatibility with the original PluginSystem.
     /// </summary>
     public async Task<IBackendPlugin?> LoadPluginAsync(
-        string assemblyPath, 
-        string pluginTypeName, 
+        string assemblyPath,
+        string pluginTypeName,
         CancellationToken cancellationToken = default)
     {
         if (_disposed)
@@ -299,7 +299,7 @@ public sealed class AotPluginSystem : IDisposable
 
         // In AOT mode, we ignore the assembly path and use static registration
         await Task.Yield(); // Maintain async signature for compatibility
-        
+
         return _registry.CreatePlugin(pluginTypeName);
     }
 
@@ -312,7 +312,7 @@ public sealed class AotPluginSystem : IDisposable
             throw new ObjectDisposedException(nameof(AotPluginSystem));
 
         await Task.Yield(); // Maintain async signature for compatibility
-        
+
         return _registry.UnloadPlugin(pluginId);
     }
 
@@ -371,12 +371,12 @@ public static class AotPluginHelpers
     {
         if (IsAotCompatible)
         {
-            return new AotPluginSystem(logger as ILogger<AotPluginSystem> ?? 
+            return new AotPluginSystem(logger as ILogger<AotPluginSystem> ??
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<AotPluginSystem>.Instance);
         }
         else
         {
-            return new PluginSystem(logger as ILogger<PluginSystem> ?? 
+            return new PluginSystem(logger as ILogger<PluginSystem> ??
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<PluginSystem>.Instance);
         }
     }
@@ -392,7 +392,7 @@ internal sealed class AotCpuBackendPlugin : IBackendPlugin
     private PluginState _state = PluginState.Loaded;
     private PluginHealth _health = PluginHealth.Healthy;
 #pragma warning restore IDE0044
-    
+
     public string Id => "DotCompute.Backends.CPU";
     public string Name => "CPU Backend";
     public string Description => "Multi-threaded CPU compute backend with SIMD acceleration";
@@ -401,7 +401,7 @@ internal sealed class AotCpuBackendPlugin : IBackendPlugin
     public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
     public PluginState State => _state;
     public PluginHealth Health => _health;
-    
+
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
 #pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
@@ -483,7 +483,7 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
     private PluginHealth _health = PluginHealth.Unknown;
     private bool _disposed;
 #pragma warning restore IDE0044
-    
+
     public string Id => "DotCompute.Backends.CUDA";
     public string Name => "CUDA Backend";
     public string Description => "NVIDIA CUDA GPU compute backend";
@@ -492,7 +492,7 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
     public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
     public PluginState State => _state;
     public PluginHealth Health => _health;
-    
+
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
 #pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
@@ -512,7 +512,7 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
             _state = PluginState.Failed;
             return;
         }
-        
+
         _state = PluginState.Initialized;
         _health = PluginHealth.Healthy;
         StateChanged?.Invoke(this, new PluginStateChangedEventArgs(PluginState.Loaded, _state));
@@ -527,7 +527,7 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
             {
                 return Task.CompletedTask;
             }
-                
+
             var oldState = _state;
             _state = PluginState.Running;
             StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
@@ -585,7 +585,7 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
         try
         {
             // Check platform compatibility first
-            if (!Environment.Is64BitOperatingSystem || 
+            if (!Environment.Is64BitOperatingSystem ||
                 !(OperatingSystem.IsWindows() || OperatingSystem.IsLinux()))
             {
                 return false;
@@ -600,7 +600,7 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
             {
                 return CheckLinuxCudaAvailability();
             }
-            
+
             return false;
         }
         catch
@@ -619,7 +619,7 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
             var systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
             var nvmlPath = Path.Combine(systemDirectory, "nvml.dll");
             var cudartPath = Path.Combine(systemDirectory, "cudart64_*.dll");
-            
+
             return File.Exists(nvmlPath) || Directory.GetFiles(systemDirectory, "cudart64_*.dll").Length > 0;
         }
         catch
@@ -640,7 +640,7 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
                 "/usr/local/cuda/lib64/libcudart.so"
             };
 
-            return cudaPaths.Any(File.Exists) || 
+            return cudaPaths.Any(File.Exists) ||
                    Directory.Exists("/proc/driver/nvidia") ||
                    File.Exists("/dev/nvidia0");
         }
@@ -662,7 +662,7 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
     private PluginHealth _health = PluginHealth.Unknown;
     private bool _disposed;
 #pragma warning restore IDE0044
-    
+
     public string Id => "DotCompute.Backends.Metal";
     public string Name => "Metal Backend";
     public string Description => "Apple Metal GPU compute backend";
@@ -671,7 +671,7 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
     public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
     public PluginState State => _state;
     public PluginHealth Health => _health;
-    
+
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
 #pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
@@ -689,7 +689,7 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
         {
             var oldState = _state;
             var oldHealth = _health;
-            
+
             if (!IsMetalAvailable())
             {
                 _health = PluginHealth.Unhealthy;
@@ -697,7 +697,7 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
                 StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
                 return;
             }
-            
+
             _state = PluginState.Initialized;
             _health = PluginHealth.Healthy;
             StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
@@ -713,7 +713,7 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
             {
                 return Task.CompletedTask;
             }
-                
+
             var oldState = _state;
             _state = PluginState.Running;
             StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
@@ -765,7 +765,7 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
         }
         _disposed = true;
     }
-    
+
     private static bool IsMetalAvailable()
     {
         return OperatingSystem.IsMacOS() || OperatingSystem.IsIOS();

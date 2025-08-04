@@ -65,14 +65,14 @@ public class CompilationOptionsTests
     public void Multiple_Instances_ShouldBeIndependent()
     {
         // Arrange
-        var options1 = new CompilationOptions 
-        { 
+        var options1 = new CompilationOptions
+        {
             OptimizationLevel = OptimizationLevel.None,
             EnableDebugInfo = true
         };
-        
-        var options2 = new CompilationOptions 
-        { 
+
+        var options2 = new CompilationOptions
+        {
             OptimizationLevel = OptimizationLevel.Maximum,
             FastMath = true
         };
@@ -81,7 +81,7 @@ public class CompilationOptionsTests
         options1.OptimizationLevel.Should().Be(OptimizationLevel.None);
         options1.EnableDebugInfo.Should().BeTrue();
         options1.FastMath.Should().BeFalse();
-        
+
         options2.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
         options2.EnableDebugInfo.Should().BeFalse();
         options2.FastMath.Should().BeTrue();

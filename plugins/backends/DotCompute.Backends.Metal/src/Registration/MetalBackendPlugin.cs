@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,7 +14,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Backends.Metal.Registration;
 
@@ -46,19 +46,19 @@ public sealed class MetalBackendPlugin : BackendPluginBase
     public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         base.ConfigureServices(services, configuration);
-        
+
         // Check platform support
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             throw new PlatformNotSupportedException("Metal backend is only supported on macOS and iOS platforms.");
         }
-        
+
         // Configure Metal backend options  
         services.Configure<MetalAcceleratorOptions>(configuration.GetSection("MetalBackend:Accelerator"));
-        
+
         // Register the Metal accelerator
         services.TryAddSingleton<MetalAccelerator>();
-        
+
         // Register as IAccelerator with a factory that includes the backend name
         services.AddSingleton<IAccelerator>(provider =>
         {
@@ -101,14 +101,14 @@ public sealed class MetalBackendPlugin : BackendPluginBase
     protected override void OnValidate(PluginValidationResult result)
     {
         base.OnValidate(result);
-        
+
         // Validate platform support
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             result.IsValid = false;
             result.Errors.Add("Metal backend requires macOS or iOS platform");
         }
-        
+
         // Check Metal device availability
         try
         {
@@ -162,11 +162,11 @@ public sealed class MetalBackendPlugin : BackendPluginBase
     protected override void OnUpdateMetrics(PluginMetrics metrics)
     {
         base.OnUpdateMetrics(metrics);
-        
+
         // Add Metal-specific metrics
         metrics.CustomMetrics["Platform"] = "macOS";
         metrics.CustomMetrics["Architecture"] = RuntimeInformation.ProcessArchitecture.ToString();
-        
+
         // Get Metal device information if available
         try
         {
@@ -178,7 +178,7 @@ public sealed class MetalBackendPlugin : BackendPluginBase
                 metrics.CustomMetrics["MetalDeviceHasUnifiedMemory"] = deviceInfo.HasUnifiedMemory;
                 metrics.CustomMetrics["MetalDeviceIsLowPower"] = deviceInfo.IsLowPower;
                 metrics.CustomMetrics["MetalDeviceMaxThreadgroupSize"] = deviceInfo.MaxThreadgroupSize;
-                
+
                 DotCompute.Backends.Metal.Native.MetalNative.ReleaseDevice(device);
             }
         }
@@ -219,7 +219,7 @@ public static class MetalBackendPluginExtensions
 
         // Register the Metal accelerator
         services.TryAddSingleton<MetalAccelerator>();
-        
+
         // Register as IAccelerator with a factory that includes the backend name
         services.AddSingleton<IAccelerator>(provider =>
         {

@@ -24,7 +24,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
     private readonly ConcurrentDictionary<Type, object> _pools = new();
     private readonly ConcurrentDictionary<object, WeakReference> _activeBuffers = new();
     private readonly object _lock = new();
-    
+
     // Performance optimization: Use thread-safe counters with padding to avoid false sharing
     private struct AlignedCounter
     {
@@ -38,12 +38,12 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         public void Increment() => Interlocked.Increment(ref Unsafe.AsRef(in _value));
         public void Add(long value) => Interlocked.Add(ref Unsafe.AsRef(in _value), value);
     }
-    
+
     private readonly AlignedCounter _totalAllocations;
     private bool _isDisposed;
-    
+
     // Note: Removed accelerator property as it's not available in the new interface
-    
+
     /// <summary>
     /// Initializes a new instance of the UnifiedMemoryManager.
     /// </summary>
@@ -52,7 +52,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
     {
         _baseMemoryManager = baseMemoryManager ?? throw new ArgumentNullException(nameof(baseMemoryManager));
     }
-    
+
     /// <summary>
     /// Creates a unified buffer with both host and device memory coordination.
     /// </summary>
@@ -62,19 +62,19 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
-        
+
         ArgumentOutOfRangeException.ThrowIfNegative(length);
-        
+
         var buffer = new UnifiedBuffer<T>(_baseMemoryManager, length);
-        
+
         // Track the buffer
         _activeBuffers.TryAdd(buffer, new WeakReference(buffer));
-        
+
         _totalAllocations.Increment();
-        
+
         return new ValueTask<UnifiedBuffer<T>>(buffer);
     }
-    
+
     /// <summary>
     /// Creates a unified buffer from existing data.
     /// </summary>
@@ -87,7 +87,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         await buffer.CopyFromAsync(source, cancellationToken);
         return buffer;
     }
-    
+
     /// <summary>
     /// Creates a buffer with the specified parameters.
     /// </summary>
@@ -107,7 +107,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         var unifiedBuffer = await CreateUnifiedBufferAsync<T>(length, MemoryOptions.None, cancellationToken);
         return (IBuffer<T>)unifiedBuffer;
     }
-    
+
     /// <summary>
     /// Creates a buffer from existing data.
     /// </summary>
@@ -127,7 +127,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         var unifiedBuffer = await CreateUnifiedBufferFromAsync<T>(data, MemoryOptions.None, cancellationToken);
         return unifiedBuffer;
     }
-    
+
     /// <summary>
     /// Copies data between buffers.
     /// </summary>
@@ -150,7 +150,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         // Use the buffer's copy method
         await source.CopyToAsync(destination, cancellationToken);
     }
-    
+
     /// <summary>
     /// Gets memory usage statistics.
     /// </summary>
@@ -160,17 +160,17 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         var stats = GetStats();
         return new MemoryStatisticsImpl(stats);
     }
-    
+
     /// <summary>
     /// Gets available memory locations.
     /// </summary>
-    public static IReadOnlyList<MemoryLocation> AvailableLocations => new[] 
-    { 
-        MemoryLocation.Host, 
-        MemoryLocation.Device, 
-        MemoryLocation.Unified 
+    public static IReadOnlyList<MemoryLocation> AvailableLocations => new[]
+    {
+        MemoryLocation.Host,
+        MemoryLocation.Device,
+        MemoryLocation.Unified
     };
-    
+
     /// <summary>
     /// Gets the memory pool for the specified type.
     /// </summary>
@@ -178,19 +178,19 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
     {
         return (MemoryPool<T>)_pools.GetOrAdd(typeof(T), _ => new MemoryPool<T>(_baseMemoryManager));
     }
-    
+
     /// <summary>
     /// Gets memory statistics and performance metrics.
     /// </summary>
     public MemoryManagerStats GetStats()
     {
         CleanupDeadReferences();
-        
+
         long totalAllocatedBytes = 0;
         long totalRetainedBytes = 0;
         long totalReuses = 0;
         int activePoolCount = 0;
-        
+
         foreach (var kvp in _pools)
         {
             if (kvp.Value is MemoryPool<byte> bytePool)
@@ -214,7 +214,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
                 }
             }
         }
-        
+
         return new MemoryManagerStats
         {
             TotalAllocatedBytes = totalAllocatedBytes,
@@ -236,7 +236,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             // Use GC.GetTotalMemory to estimate available memory
             var currentMemory = GC.GetTotalMemory(false);
             var maxMemory = Environment.WorkingSet;
-            
+
             // Conservative estimate: return 80% of working set minus current allocation
             var availableMemory = (long)(maxMemory * 0.8) - currentMemory;
             return Math.Max(0, availableMemory);
@@ -262,7 +262,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             return 8L * 1024L * 1024L * 1024L; // 8GB fallback
         }
     }
-    
+
     /// <summary>
     /// Handles memory pressure by releasing unused resources.
     /// </summary>
@@ -272,15 +272,15 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         {
             throw new ArgumentOutOfRangeException(nameof(pressure));
         }
-        
+
         ThrowIfDisposed();
-        
+
         // Performance optimization: Process in parallel for large pool counts
         if (_pools.Count > Environment.ProcessorCount)
         {
             // Clean up dead references first
             CleanupDeadReferences();
-            
+
             // Handle pressure in all pools in parallel
             Parallel.ForEach(_pools, kvp =>
             {
@@ -299,7 +299,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         {
             // Small pool count - process sequentially
             CleanupDeadReferences();
-            
+
             foreach (var kvp in _pools)
             {
                 if (kvp.Value is MemoryPool<byte> pool)
@@ -312,7 +312,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
                 }
             }
         }
-        
+
         // Force garbage collection if pressure is high
         // Optimization: Use background GC mode for less blocking
         if (pressure > 0.8)
@@ -320,19 +320,19 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             GC.Collect(1, GCCollectionMode.Optimized);
             // Don't wait for finalizers - let them run in background
         }
-        
+
         return ValueTask.CompletedTask;
     }
-    
+
     /// <summary>
     /// Compacts all memory pools and releases unused memory.
     /// </summary>
     public ValueTask<long> CompactAsync()
     {
         ThrowIfDisposed();
-        
+
         long totalReleased = 0;
-        
+
         foreach (var kvp in _pools)
         {
             if (kvp.Value is MemoryPool<byte> pool)
@@ -349,26 +349,26 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
                 }
             }
         }
-        
+
         CleanupDeadReferences();
-        
+
         return new ValueTask<long>(totalReleased);
     }
-    
+
     /// <summary>
     /// Runs performance benchmarks.
     /// </summary>
     public async ValueTask<MemoryBenchmarkResults> RunBenchmarksAsync(CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
         // Implement comprehensive memory benchmarks
         var results = await RunComprehensiveBenchmarksAsync(cancellationToken);
-        
+
         return results;
-        
+
     }
-    
+
     /// <summary>
     /// Runs comprehensive memory benchmarks across all memory operations.
     /// </summary>
@@ -377,7 +377,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         const int WarmupIterations = 3;
         const int BenchmarkIterations = 10;
         const int TestDataSize = 1024 * 1024; // 1MB test buffers
-        
+
         var results = new MemoryBenchmarkResults
         {
             TransferBandwidth = new TransferBandwidthResults(),
@@ -386,17 +386,17 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             PoolPerformance = new PoolPerformanceResults(),
             UnifiedBufferPerformance = new UnifiedBufferPerformanceResults()
         };
-        
+
         // Warmup
         for (int i = 0; i < WarmupIterations; i++)
         {
             await RunSingleBenchmarkIterationAsync(TestDataSize, cancellationToken);
         }
-        
+
         // Benchmark allocation overhead
         var allocationTimes = new List<double>();
         var sw = System.Diagnostics.Stopwatch.StartNew();
-        
+
         for (int i = 0; i < BenchmarkIterations; i++)
         {
             sw.Restart();
@@ -405,7 +405,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             allocationTimes.Add(sw.Elapsed.TotalMicroseconds);
             await buffer.DisposeAsync();
         }
-        
+
         // Set allocation overhead with proper measurement structure
         results.AllocationOverhead.SingleAllocationSmall = new AllocationMeasurement
         {
@@ -416,7 +416,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             AllocationsPerSecond = BenchmarkIterations / TimeSpan.FromMicroseconds(allocationTimes.Sum()).TotalSeconds,
             DeallocationsPerSecond = BenchmarkIterations / TimeSpan.FromMicroseconds(allocationTimes.Sum() * 0.1).TotalSeconds
         };
-        
+
         // Benchmark transfer bandwidth
         var transferTimes = new List<double>();
         var buffer1 = await CreateUnifiedBufferAsync<float>(TestDataSize / sizeof(float), cancellationToken: cancellationToken);
@@ -426,7 +426,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         {
             testData[i] = random.NextSingle(); // Fill with test data
         }
-        
+
         for (int i = 0; i < BenchmarkIterations; i++)
         {
             sw.Restart();
@@ -434,10 +434,10 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             sw.Stop();
             transferTimes.Add(sw.Elapsed.TotalMicroseconds);
         }
-        
+
         var avgTransferTime = transferTimes.Average();
         var bandwidthMBps = (TestDataSize / (avgTransferTime / 1_000_000.0)) / (1024.0 * 1024.0);
-        
+
         // Set transfer bandwidth results with proper measurements
         results.TransferBandwidth.HostToDeviceMedium = new BandwidthMeasurement
         {
@@ -446,12 +446,12 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             BandwidthGBps = bandwidthMBps / 1024.0, // Convert MB/s to GB/s
             IterationCount = BenchmarkIterations
         };
-        
-        
+
+
         // Benchmark memory pool performance
         var poolAllocTimes = new List<double>();
         var pool = GetPool<float>();
-        
+
         for (int i = 0; i < BenchmarkIterations; i++)
         {
             sw.Restart();
@@ -460,7 +460,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             poolAllocTimes.Add(sw.Elapsed.TotalMicroseconds);
             pool.Return(rental, TestDataSize / sizeof(float));
         }
-        
+
         // Set pool performance results with proper measurements
         var avgPoolAllocTime = poolAllocTimes.Average();
         results.PoolPerformance.AllocationEfficiency = new PoolEfficiencyMeasurement
@@ -470,13 +470,13 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             EfficiencyRatio = 0.85, // Default efficiency ratio
             TotalRetainedBytes = TestDataSize * BenchmarkIterations
         };
-        
+
         var poolStats = pool.GetPerformanceStats();
         // Calculate and set pool efficiency
-        var poolEfficiency = poolStats.ReuseCount > 0 
-            ? (double)poolStats.ReuseCount / (poolStats.ReuseCount + poolStats.TotalAllocatedBytes / (TestDataSize / sizeof(float))) 
+        var poolEfficiency = poolStats.ReuseCount > 0
+            ? (double)poolStats.ReuseCount / (poolStats.ReuseCount + poolStats.TotalAllocatedBytes / (TestDataSize / sizeof(float)))
             : 0.0;
-        
+
         results.PoolPerformance.ReuseRate = new PoolReuseMeasurement
         {
             ReuseTime = TimeSpan.FromMicroseconds(avgPoolAllocTime),
@@ -484,7 +484,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             ReuseRate = poolEfficiency,
             ReusePerSecond = poolStats.ReuseCount / TimeSpan.FromMicroseconds(poolAllocTimes.Sum()).TotalSeconds
         };
-        
+
         results.PoolPerformance.MemoryOverhead = new PoolMemoryOverheadMeasurement
         {
             RetainedBytes = poolStats.TotalRetainedBytes,
@@ -492,10 +492,10 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             OverheadRatio = poolStats.TotalRetainedBytes > 0 ? (double)poolStats.TotalAllocatedBytes / poolStats.TotalRetainedBytes - 1.0 : 0.0,
             BucketCount = 10 // Estimate bucket count
         };
-        
+
         // Benchmark unified buffer operations
         var unifiedOpTimes = new List<double>();
-        
+
         for (int i = 0; i < BenchmarkIterations; i++)
         {
             sw.Restart();
@@ -505,7 +505,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             sw.Stop();
             unifiedOpTimes.Add(sw.Elapsed.TotalMicroseconds);
         }
-        
+
         // Set unified buffer performance results
         var avgUnifiedOpTime = unifiedOpTimes.Average();
         results.UnifiedBufferPerformance.LazySyncEfficiency = new LazySyncMeasurement
@@ -515,24 +515,24 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             LazySyncTime = TimeSpan.FromMicroseconds(avgUnifiedOpTime * 0.4),
             SyncEfficiencyRatio = 0.8 // Default efficiency
         };
-        
+
         results.UnifiedBufferPerformance.StateTransitionOverhead = new StateTransitionMeasurement
         {
             Transitions = new List<(BufferState, BufferState, TimeSpan)>(),
             AverageTransitionTime = TimeSpan.FromMicroseconds(avgUnifiedOpTime),
             TotalTransitions = BenchmarkIterations * 3 // Host, Device, Sync
         };
-        
+
         results.UnifiedBufferPerformance.MemoryCoherencePerformance = new CoherenceMeasurement
         {
             TotalCoherenceTime = TimeSpan.FromMicroseconds(unifiedOpTimes.Sum()),
             CoherenceOperations = BenchmarkIterations,
             AverageCoherenceTime = TimeSpan.FromMicroseconds(avgUnifiedOpTime)
         };
-        
+
         // Memory usage patterns
         var memStats = GetStats();
-        
+
         // Set memory usage pattern results
         results.MemoryUsagePatterns.FragmentationImpact = new FragmentationMeasurement
         {
@@ -541,7 +541,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             SuccessfulAllocations = 45, // Out of 50 expected
             FragmentationLevel = 0.1 // 10% fragmentation
         };
-        
+
         results.MemoryUsagePatterns.ConcurrentAllocation = new ConcurrentAllocationMeasurement
         {
             ThreadCount = Environment.ProcessorCount,
@@ -550,7 +550,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             TotalErrors = 0,
             AllocationsPerSecond = (BenchmarkIterations * Environment.ProcessorCount) / 0.1 // 100ms = 0.1s
         };
-        
+
         results.MemoryUsagePatterns.MemoryPressureHandling = new MemoryPressureMeasurement
         {
             TimeToReachPressure = TimeSpan.FromSeconds(30),
@@ -558,11 +558,11 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             MemoryPressureLevel = 0.8,
             AvailableMemoryAtPressure = memStats.AvailableDeviceMemory
         };
-        
+
         await buffer1.DisposeAsync();
         return results;
     }
-    
+
     /// <summary>
     /// Runs a single benchmark iteration for warmup purposes.
     /// </summary>
@@ -575,7 +575,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         buffer.EnsureOnHost();
         await buffer.DisposeAsync();
     }
-    
+
     /// <summary>
     /// Calculates the standard deviation of a collection of values.
     /// </summary>
@@ -586,14 +586,14 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         {
             return 0.0;
         }
-        
+
         var mean = valuesList.Average();
         var variance = valuesList.Select(x => Math.Pow(x - mean, 2)).Average();
         return Math.Sqrt(variance);
     }
-    
+
     #region IMemoryManager Implementation (Abstractions)
-    
+
     // Async interface implementation
     public ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,
@@ -620,9 +620,9 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
     }
 
     // Note: Legacy sync methods removed as they are not part of the new IMemoryManager interface
-    
+
     #endregion
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void CleanupDeadReferences()
     {
@@ -630,7 +630,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         // Use ArrayPool to avoid allocations
         var keysToRemove = ArrayPool<object>.Shared.Rent(Math.Min(_activeBuffers.Count, 1024));
         var removeCount = 0;
-        
+
         try
         {
             foreach (var kvp in _activeBuffers)
@@ -640,7 +640,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
                     keysToRemove[removeCount++] = kvp.Key;
                 }
             }
-            
+
             for (int i = 0; i < removeCount; i++)
             {
                 _activeBuffers.TryRemove(keysToRemove[i], out _);
@@ -651,13 +651,13 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             ArrayPool<object>.Shared.Return(keysToRemove, clearArray: true);
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private void ThrowIfDisposed()
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
     }
-    
+
     private static (long totalAllocatedBytes, long totalRetainedBytes, long totalReuses)? GetPoolStatsViaInterface(
         object pool)
     {
@@ -668,10 +668,10 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         }
         return null;
     }
-    
-    
+
+
     private static void InvokeHandleMemoryPressureViaInterface(
-        object pool, 
+        object pool,
         double pressure)
     {
         if (pool is IMemoryPoolInternal memoryPool)
@@ -679,7 +679,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
             memoryPool.HandleMemoryPressure(pressure);
         }
     }
-    
+
     private static long? InvokeCompactViaInterface(
         object pool)
     {
@@ -689,21 +689,21 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         }
         return null;
     }
-    
+
     public void Dispose()
     {
         if (_isDisposed)
         {
             return;
         }
-        
+
         lock (_lock)
         {
             if (_isDisposed)
             {
                 return;
             }
-            
+
             // Dispose all pools
             foreach (var kvp in _pools)
             {
@@ -712,23 +712,23 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
                     disposable.Dispose();
                 }
             }
-            
+
             _pools.Clear();
             _activeBuffers.Clear();
-            
+
             // Note: base memory manager disposal handled by DI container or caller
-            
+
             _isDisposed = true;
         }
     }
-    
+
     public async ValueTask DisposeAsync()
     {
         if (_isDisposed)
         {
             return;
         }
-        
+
         // Dispose all pools asynchronously if they support it
         foreach (var kvp in _pools)
         {
@@ -741,7 +741,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
                 disposable.Dispose();
             }
         }
-        
+
         Dispose();
     }
 }
@@ -756,37 +756,37 @@ public enum MemoryOptions
     /// No special options.
     /// </summary>
     None = 0,
-    
+
     /// <summary>
     /// Memory is read-only.
     /// </summary>
     ReadOnly = 1,
-    
+
     /// <summary>
     /// Memory is write-only.
     /// </summary>
     WriteOnly = 2,
-    
+
     /// <summary>
     /// Memory should be allocated in host-visible memory if possible.
     /// </summary>
     HostVisible = 4,
-    
+
     /// <summary>
     /// Memory should be cached if possible.
     /// </summary>
     Cached = 8,
-    
+
     /// <summary>
     /// Memory will be used for atomic operations.
     /// </summary>
     Atomic = 16,
-    
+
     /// <summary>
     /// Use lazy synchronization between host and device.
     /// </summary>
     LazySync = 32,
-    
+
     /// <summary>
     /// Prefer pooled allocation for better performance.
     /// </summary>
@@ -799,12 +799,12 @@ public enum MemoryOptions
 internal sealed class MemoryStatisticsImpl : IMemoryStatistics
 {
     private readonly MemoryManagerStats _stats;
-    
+
     public MemoryStatisticsImpl(MemoryManagerStats stats)
     {
         _stats = stats;
     }
-    
+
     public long TotalAllocatedBytes => _stats.TotalAllocatedBytes;
     public long AvailableBytes => _stats.AvailableDeviceMemory;
     public long PeakUsageBytes => _stats.TotalAllocatedBytes;

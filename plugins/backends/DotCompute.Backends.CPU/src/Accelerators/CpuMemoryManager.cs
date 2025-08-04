@@ -8,8 +8,8 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
@@ -51,14 +51,14 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this);
-        
+
         lock (_lock)
         {
             _buffers.Add(new WeakReference<CpuMemoryBuffer>(buffer));
         }
 
         Interlocked.Add(ref _totalAllocated, sizeInBytes);
-        
+
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
 
@@ -76,16 +76,16 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
 
         policy ??= _defaultPolicy;
         var preferredNode = DetermineOptimalNode(policy, sizeInBytes);
-        
+
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this, preferredNode, policy);
-        
+
         lock (_lock)
         {
             _buffers.Add(new WeakReference<CpuMemoryBuffer>(buffer));
         }
 
         Interlocked.Add(ref _totalAllocated, sizeInBytes);
-        
+
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
 
@@ -96,16 +96,16 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     {
         var sizeInBytes = source.Length * Marshal.SizeOf<T>();
         var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
-        
+
         await buffer.CopyFromHostAsync(source, 0, cancellationToken).ConfigureAwait(false);
-        
+
         return buffer;
     }
 
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
         ArgumentNullException.ThrowIfNull(buffer);
-        
+
         if (buffer is not CpuMemoryBuffer cpuBuffer)
             throw new ArgumentException("Buffer must be a CPU memory buffer", nameof(buffer));
 
@@ -124,7 +124,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     {
         var currentCpu = GetCurrentProcessorNumber();
         var preferredNode = _topology.GetNodeForProcessor(currentCpu);
-        
+
         return new NumaMemoryPolicy
         {
             Strategy = NumaAllocationStrategy.LocalPreferred,
@@ -140,7 +140,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     {
         var processors = processorIds.ToArray();
         var optimalNode = _topology.GetOptimalNodeForProcessors(processors);
-        
+
         return new NumaMemoryPolicy
         {
             Strategy = NumaAllocationStrategy.LocalPreferred,
@@ -155,7 +155,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     public NumaMemoryStatistics GetNumaStatistics()
     {
         var nodeStats = new Dictionary<int, NumaNodeStatistics>();
-        
+
         lock (_lock)
         {
             foreach (var weakRef in _buffers)
@@ -168,13 +168,13 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
                         stats = new NumaNodeStatistics { NodeId = nodeId };
                         nodeStats[nodeId] = stats;
                     }
-                    
+
                     stats.AllocatedBytes += buffer.SizeInBytes;
                     stats.BufferCount++;
                 }
             }
         }
-        
+
         return new NumaMemoryStatistics
         {
             TotalAllocatedBytes = TotalAllocatedBytes,
@@ -230,7 +230,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         {
             return policy.PreferredNodes[0];
         }
-        
+
         var currentCpu = GetCurrentProcessorNumber();
         return _topology.GetNodeForProcessor(currentCpu);
     }
@@ -252,7 +252,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         // Round-robin across specified nodes or all nodes
         var nodes = policy.PreferredNodes.Length > 0 ? policy.PreferredNodes : Enumerable.Range(0, _topology.NodeCount);
         var nodeArray = nodes.ToArray();
-        
+
         // Use thread ID for deterministic but distributed allocation
         var threadId = Environment.CurrentManagedThreadId;
         return nodeArray[threadId % nodeArray.Length];
@@ -274,14 +274,14 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         {
             return GetCurrentProcessorNumberLinux();
         }
-        
+
         return 0; // Fallback
     }
 
     [DllImport("kernel32.dll", EntryPoint = "GetCurrentProcessorNumber")]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
     private static extern uint GetCurrentProcessorNumberWin32Api();
-    
+
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static uint GetCurrentProcessorNumberWin32()
     {
@@ -383,13 +383,13 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     public Memory<byte> GetMemory()
     {
         ThrowIfDisposed();
-        
+
         var memory = _memoryOwner.Memory;
         if (_viewOffset > 0 || _viewLength < _sizeInBytes)
         {
             memory = memory.Slice((int)_viewOffset, (int)_viewLength);
         }
-        
+
         return memory;
     }
 
@@ -399,19 +399,19 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
-        
+
         if ((_options & MemoryOptions.WriteOnly) != 0 && (_options & MemoryOptions.ReadOnly) != 0)
             throw new InvalidOperationException("Cannot write to read-only buffer");
 
         var elementSize = Marshal.SizeOf<T>();
         var bytesToCopy = source.Length * elementSize;
-        
+
         if (offset < 0 || offset + bytesToCopy > _viewLength)
             throw new ArgumentOutOfRangeException(nameof(offset));
 
         var destMemory = GetMemory().Slice((int)offset, bytesToCopy);
         var sourceSpan = MemoryMarshal.AsBytes(source.Span);
-        
+
         // Use optimized NUMA-aware memory copy
         if (bytesToCopy >= 64)
         {
@@ -431,19 +431,19 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
-        
+
         if ((_options & MemoryOptions.ReadOnly) != 0 && (_options & MemoryOptions.WriteOnly) != 0)
             throw new InvalidOperationException("Cannot read from write-only buffer");
 
         var elementSize = Marshal.SizeOf<T>();
         var bytesToCopy = destination.Length * elementSize;
-        
+
         if (offset < 0 || offset + bytesToCopy > _viewLength)
             throw new ArgumentOutOfRangeException(nameof(offset));
 
         var sourceMemory = GetMemory().Slice((int)offset, bytesToCopy);
         var destSpan = MemoryMarshal.AsBytes(destination.Span);
-        
+
         // Use optimized NUMA-aware memory copy
         if (bytesToCopy >= 64)
         {
@@ -460,7 +460,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     public CpuMemoryBuffer CreateView(long offset, long length)
     {
         ThrowIfDisposed();
-        
+
         if (offset < 0 || length < 0 || offset + length > _viewLength)
             throw new ArgumentOutOfRangeException();
 
@@ -474,12 +474,12 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     {
         // For large allocations, use NUMA-aware native memory
         const int largeAllocationThreshold = 64 * 1024; // 64KB threshold
-        
+
         if (sizeInBytes >= largeAllocationThreshold && NumaInfo.IsNumaSystem)
         {
             return new NumaAwareMemoryOwner(sizeInBytes, preferredNode, policy);
         }
-        
+
         // For smaller allocations, use regular pooled memory
         const int maxArrayLength = 1024 * 1024 * 1024; // 1GB limit
         if (sizeInBytes <= maxArrayLength)
@@ -503,14 +503,14 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
 
         // Performance optimization: Use different strategies based on size
         var length = source.Length;
-        
+
         // For very small copies, just use the built-in copy
         if (length < 256)
         {
             source.CopyTo(destination);
             return;
         }
-        
+
         // Add NUMA-aware prefetching for large transfers
         if (length >= 256 * 1024) // 256KB threshold (reduced for better cache utilization)
         {
@@ -545,7 +545,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         // Prefetch data in cache-line sized chunks
         const int prefetchDistance = 64; // Cache line size
         const int maxPrefetchLines = 8;  // Prefetch up to 8 cache lines ahead
-        
+
         unsafe
         {
             fixed (byte* srcPtr = source)
@@ -553,7 +553,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
             {
                 var length = Math.Min(source.Length, destination.Length);
                 var prefetchLines = Math.Min(maxPrefetchLines, (length + prefetchDistance - 1) / prefetchDistance);
-                
+
                 for (int i = 0; i < prefetchLines; i++)
                 {
                     var offset = i * prefetchDistance;
@@ -564,7 +564,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
                         {
                             Sse.Prefetch0(srcPtr + offset);
                         }
-                        
+
                         // Prefetch for writing
                         if (Sse.IsSupported)
                         {
@@ -590,32 +590,32 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     {
         const int VectorSize = 64; // 512 bits = 64 bytes
         int vectorCount = source.Length / VectorSize;
-        
+
         ref var srcRef = ref MemoryMarshal.GetReference(source);
         ref var dstRef = ref MemoryMarshal.GetReference(destination);
-        
+
         // Performance optimization: Unroll loop for better throughput
         int unrolledCount = vectorCount / 4;
         int remainingVectors = vectorCount % 4;
-        
+
         // Process 4 vectors at a time (256 bytes)
         for (int i = 0; i < unrolledCount; i++)
         {
             var baseOffset = i * VectorSize * 4;
-            
+
             // Load all 4 vectors
             var data0 = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset));
             var data1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset + VectorSize));
             var data2 = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset + VectorSize * 2));
             var data3 = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset + VectorSize * 3));
-            
+
             // Store all 4 vectors
             data0.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset));
             data1.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset + VectorSize));
             data2.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset + VectorSize * 2));
             data3.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset + VectorSize * 3));
         }
-        
+
         // Process remaining vectors
         var remainingOffset = unrolledCount * VectorSize * 4;
         for (int i = 0; i < remainingVectors; i++)
@@ -624,7 +624,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
             var data = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, offset));
             data.StoreUnsafe(ref Unsafe.Add(ref dstRef, offset));
         }
-        
+
         // Handle remainder bytes
         int remainder = source.Length % VectorSize;
         if (remainder > 0)
@@ -632,7 +632,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
             int lastOffset = vectorCount * VectorSize;
             var remainingSource = source.Slice(lastOffset, remainder);
             var remainingDest = destination.Slice(lastOffset, remainder);
-            
+
             // Use AVX2 or SSE for remainder if possible
             if (remainder >= 32 && Vector256.IsHardwareAccelerated)
             {
@@ -654,26 +654,26 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     {
         const int VectorSize = 32; // 256 bits = 32 bytes
         int vectorCount = source.Length / VectorSize;
-        
+
         ref var srcRef = ref MemoryMarshal.GetReference(source);
         ref var dstRef = ref MemoryMarshal.GetReference(destination);
-        
+
         // Performance optimization: Unroll by 2 for AVX2
         int unrolledCount = vectorCount / 2;
         int remainingVectors = vectorCount % 2;
-        
+
         // Process 2 vectors at a time (64 bytes)
         for (int i = 0; i < unrolledCount; i++)
         {
             var baseOffset = i * VectorSize * 2;
-            
+
             var data0 = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset));
             var data1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, baseOffset + VectorSize));
-            
+
             data0.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset));
             data1.StoreUnsafe(ref Unsafe.Add(ref dstRef, baseOffset + VectorSize));
         }
-        
+
         // Process remaining vector
         if (remainingVectors > 0)
         {
@@ -681,7 +681,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
             var data = Vector256.LoadUnsafe(ref Unsafe.Add(ref srcRef, offset));
             data.StoreUnsafe(ref Unsafe.Add(ref dstRef, offset));
         }
-        
+
         // Handle remainder
         int remainder = source.Length % VectorSize;
         if (remainder > 0)
@@ -689,7 +689,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
             int lastOffset = vectorCount * VectorSize;
             var remainingSource = source.Slice(lastOffset, remainder);
             var remainingDest = destination.Slice(lastOffset, remainder);
-            
+
             if (remainder >= 16 && Vector128.IsHardwareAccelerated)
             {
                 MemoryCopyVector128(remainingSource, remainingDest);
@@ -706,10 +706,10 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     {
         const int VectorSize = 16; // 128 bits = 16 bytes
         int vectorCount = source.Length / VectorSize;
-        
+
         ref var srcRef = ref MemoryMarshal.GetReference(source);
         ref var dstRef = ref MemoryMarshal.GetReference(destination);
-        
+
         // Copy 16 bytes at a time using SSE/NEON
         for (int i = 0; i < vectorCount; i++)
         {
@@ -717,7 +717,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
             var data = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, offset));
             data.StoreUnsafe(ref Unsafe.Add(ref dstRef, offset));
         }
-        
+
         // Handle remainder
         int remainder = source.Length % VectorSize;
         if (remainder > 0)
@@ -772,7 +772,7 @@ internal sealed class NativeMemoryOwner : IMemoryOwner<byte>
 
         _size = size;
         _ptr = (byte*)NativeMemory.AlignedAlloc((nuint)size, 64); // 64-byte aligned for SIMD
-        
+
         if (_ptr == null)
             throw new InvalidOperationException($"Failed to allocate {size} bytes of native memory");
     }
@@ -864,7 +864,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
 
         // Allocate memory using NUMA-aware allocation
         _ptr = AllocateNumaMemory(size, preferredNode, policy);
-        
+
         if (_ptr == null)
             throw new InvalidOperationException($"Failed to allocate {size} bytes on NUMA node {preferredNode}");
 
@@ -895,7 +895,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
         {
             return AllocateNumaMemoryLinux(size, preferredNode, policy);
         }
-        
+
         // Fallback to regular aligned allocation
         return (byte*)NativeMemory.AlignedAlloc((nuint)size, 64);
     }
@@ -913,7 +913,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
                 MEM_COMMIT | MEM_RESERVE,
                 PAGE_READWRITE,
                 (uint)preferredNode);
-            
+
             return (byte*)ptr;
         }
         catch
@@ -939,7 +939,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
         {
             // Fallback to regular allocation
         }
-        
+
         return (byte*)NativeMemory.AlignedAlloc((nuint)size, 64);
     }
 
@@ -948,7 +948,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
         // Touch each page to ensure it's allocated on the correct NUMA node
         const int pageSize = 4096; // Standard page size
         var pages = (int)((_size + pageSize - 1) / pageSize);
-        
+
         for (int i = 0; i < pages; i++)
         {
             var offset = i * pageSize;

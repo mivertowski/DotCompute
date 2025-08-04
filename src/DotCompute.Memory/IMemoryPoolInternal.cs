@@ -14,13 +14,13 @@ internal interface IMemoryPoolInternal
     /// </summary>
     /// <returns>The performance statistics.</returns>
     public MemoryPoolPerformanceStats GetPerformanceStats();
-    
+
     /// <summary>
     /// Handles memory pressure by releasing unused buffers.
     /// </summary>
     /// <param name="pressure">The memory pressure value between 0.0 and 1.0.</param>
     public void HandleMemoryPressure(double pressure);
-    
+
     /// <summary>
     /// Compacts the memory pool and releases unused memory.
     /// </summary>

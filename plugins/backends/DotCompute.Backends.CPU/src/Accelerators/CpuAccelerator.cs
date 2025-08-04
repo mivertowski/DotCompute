@@ -8,17 +8,17 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using DotCompute.Backends.CPU.Intrinsics;
-using DotCompute.Backends.CPU.Threading;
-using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Abstractions;
+using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Kernels;
+using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using CoreAcceleratorInfo = DotCompute.Abstractions.AcceleratorInfo;
 using CoreAcceleratorType = DotCompute.Abstractions.AcceleratorType;
-using CoreKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using CoreCompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using CoreICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using CoreKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 
 namespace DotCompute.Backends.CPU.Accelerators;
@@ -113,7 +113,7 @@ public sealed class CpuAccelerator : IAccelerator
             ? await new CpuKernelCompiler().CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false)
             : await new AotCpuKernelCompiler().CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false);
 
-        _logger.LogDebug("Successfully compiled kernel '{KernelName}' with {VectorWidth}-bit vectorization", 
+        _logger.LogDebug("Successfully compiled kernel '{KernelName}' with {VectorWidth}-bit vectorization",
             definition.Name, SimdCapabilities.PreferredVectorWidth);
 
         // Wrap the Core compiled kernel to implement Abstractions.ICompiledKernel
@@ -201,7 +201,7 @@ public sealed class CpuAccelerator : IAccelerator
         {
             return gcMemoryInfo.TotalAvailableMemoryBytes;
         }
-        
+
         // Fallback to process-based estimation
         var process = System.Diagnostics.Process.GetCurrentProcess();
         return Math.Max(process.WorkingSet64 * 8, 4L * 1024 * 1024 * 1024);
@@ -242,7 +242,7 @@ public sealed class CpuAccelerator : IAccelerator
         {
             return gcMemoryInfo.TotalAvailableMemoryBytes;
         }
-        
+
         // Fallback to reasonable default for macOS systems
         return 8L * 1024 * 1024 * 1024; // 8GB default
     }
@@ -270,7 +270,7 @@ public sealed class CpuAccelerator : IAccelerator
         // Convert from Abstractions to Core types
         // Since we're using Abstractions now, we can use the definition directly
         var source = definition.Code;
-        
+
         var sourceCode = System.Text.Encoding.UTF8.GetString(source);
         var kernelSource = new TextKernelSource(
             code: sourceCode,
@@ -279,7 +279,7 @@ public sealed class CpuAccelerator : IAccelerator
             entryPoint: definition.EntryPoint ?? "main",
             dependencies: Array.Empty<string>()
         );
-        
+
         var compilationOptions = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default,
@@ -287,9 +287,9 @@ public sealed class CpuAccelerator : IAccelerator
             AdditionalFlags = null,
             Defines = null
         };
-        
+
         var coreDefinition = new CoreKernelDefinition(definition.Name, kernelSource, compilationOptions);
-        
+
         // Override metadata with original information
         if (coreDefinition.Metadata != null && definition.Metadata != null)
         {
@@ -298,7 +298,7 @@ public sealed class CpuAccelerator : IAccelerator
                 coreDefinition.Metadata[kvp.Key] = kvp.Value;
             }
         }
-        
+
         return coreDefinition;
     }
 

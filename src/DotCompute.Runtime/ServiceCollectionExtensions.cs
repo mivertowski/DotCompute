@@ -19,7 +19,7 @@ public static class ServiceCollectionExtensions
     {
         services.AddSingleton<AcceleratorRuntime>();
         services.AddLogging();
-        
+
         return services;
     }
 }

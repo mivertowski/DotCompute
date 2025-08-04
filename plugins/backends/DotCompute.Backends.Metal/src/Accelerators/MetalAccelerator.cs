@@ -76,8 +76,8 @@ public sealed class MetalAccelerator : IAccelerator
             type: AcceleratorType.Metal,
             name: Marshal.PtrToStringAnsi(deviceInfo.Name) ?? "Unknown Metal Device",
             driverVersion: "1.0",
-            memorySize: deviceInfo.HasUnifiedMemory ? 
-                (long)deviceInfo.RecommendedMaxWorkingSetSize : 
+            memorySize: deviceInfo.HasUnifiedMemory ?
+                (long)deviceInfo.RecommendedMaxWorkingSetSize :
                 (long)deviceInfo.MaxBufferLength,
             computeUnits: (int)deviceInfo.MaxThreadgroupSize,
             maxClockFrequency: 0, // Metal doesn't expose clock frequency
@@ -115,8 +115,8 @@ public sealed class MetalAccelerator : IAccelerator
         {
             // Compile kernel using Metal Shading Language
             var compiledKernel = await _kernelCompiler.CompileAsync(
-                definition, 
-                options, 
+                definition,
+                options,
                 cancellationToken);
 
             _logger.LogDebug("Successfully compiled kernel: {Name}", definition.Name);
@@ -240,7 +240,7 @@ public sealed class MetalAccelerator : IAccelerator
     private static Version GetComputeCapability(MetalDeviceInfo info)
     {
         var families = Marshal.PtrToStringAnsi(info.SupportedFamilies) ?? "";
-        
+
         // Map Metal GPU families to compute capability versions
         if (families.Contains("Apple8"))
             return new Version(8, 0); // M2 family

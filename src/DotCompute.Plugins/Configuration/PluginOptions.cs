@@ -54,13 +54,13 @@ namespace DotCompute.Plugins.Configuration
         public TimeSpan LoadTimeout { get; set; } = TimeSpan.FromSeconds(30);
 
         private List<string> _pluginDirectories = new();
-        
+
         /// <summary>
         /// Gets or sets the directories to scan for plugins.
         /// </summary>
-        public List<string> PluginDirectories 
-        { 
-            get => _pluginDirectories; 
+        public List<string> PluginDirectories
+        {
+            get => _pluginDirectories;
             set => _pluginDirectories = value ?? new();
         }
 

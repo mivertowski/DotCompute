@@ -10,8 +10,8 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Threading;
 using System.Threading.Tasks;
-using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Exceptions;
+using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -128,10 +128,10 @@ namespace DotCompute.Plugins.Core
 
                 // Create isolated load context
                 var context = new PluginAssemblyLoadContext(assemblyPath);
-                
+
                 // Load the assembly
                 var assembly = context.LoadFromAssemblyPath(assemblyPath);
-                
+
                 // Find the plugin type
                 var pluginType = assembly.GetType(pluginTypeName);
                 if (pluginType == null)
@@ -245,8 +245,8 @@ namespace DotCompute.Plugins.Core
         public static IEnumerable<Type> DiscoverPluginTypes(Assembly assembly)
         {
             return assembly.GetTypes()
-                .Where(t => !t.IsAbstract && 
-                           !t.IsInterface && 
+                .Where(t => !t.IsAbstract &&
+                           !t.IsInterface &&
                            typeof(IBackendPlugin).IsAssignableFrom(t));
         }
 
@@ -260,10 +260,10 @@ namespace DotCompute.Plugins.Core
                 // Create temporary load context
                 var context = new PluginAssemblyLoadContext(assemblyPath);
                 var assembly = context.LoadFromAssemblyPath(assemblyPath);
-                
+
                 var pluginTypes = DiscoverPluginTypes(assembly);
                 var firstType = pluginTypes.FirstOrDefault();
-                
+
                 return firstType?.FullName;
             }
             catch (Exception ex)

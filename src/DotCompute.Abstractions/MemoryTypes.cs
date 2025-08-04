@@ -111,22 +111,22 @@ public interface IMemoryMapping<T> : IDisposable where T : unmanaged
     /// <summary>
     /// Gets the mapped memory span.
     /// </summary>
-    Span<T> Span { get; }
+    public Span<T> Span { get; }
 
     /// <summary>
     /// Gets the mapping mode.
     /// </summary>
-    MemoryMapMode Mode { get; }
+    public MemoryMapMode Mode { get; }
 
     /// <summary>
     /// Gets whether the mapping is valid.
     /// </summary>
-    bool IsValid { get; }
+    public bool IsValid { get; }
 
     /// <summary>
     /// Flushes any pending writes.
     /// </summary>
-    void Flush();
+    public void Flush();
 }
 
 /// <summary>
@@ -138,30 +138,30 @@ public interface IMemoryStatistics
     /// <summary>
     /// Gets total allocated memory in bytes.
     /// </summary>
-    long TotalAllocatedBytes { get; }
+    public long TotalAllocatedBytes { get; }
 
     /// <summary>
     /// Gets available memory in bytes.
     /// </summary>
-    long AvailableBytes { get; }
+    public long AvailableBytes { get; }
 
     /// <summary>
     /// Gets peak memory usage in bytes.
     /// </summary>
-    long PeakUsageBytes { get; }
+    public long PeakUsageBytes { get; }
 
     /// <summary>
     /// Gets allocation count.
     /// </summary>
-    int AllocationCount { get; }
+    public int AllocationCount { get; }
 
     /// <summary>
     /// Gets memory fragmentation percentage.
     /// </summary>
-    double FragmentationPercentage { get; }
+    public double FragmentationPercentage { get; }
 
     /// <summary>
     /// Gets memory usage by location.
     /// </summary>
-    IReadOnlyDictionary<MemoryLocation, long> UsageByLocation { get; }
+    public IReadOnlyDictionary<MemoryLocation, long> UsageByLocation { get; }
 }

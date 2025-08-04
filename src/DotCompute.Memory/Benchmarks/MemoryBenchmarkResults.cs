@@ -15,45 +15,45 @@ public sealed class MemoryBenchmarkResults
     /// Transfer bandwidth benchmark results.
     /// </summary>
     public TransferBandwidthResults TransferBandwidth { get; set; } = new();
-    
+
     /// <summary>
     /// Allocation overhead benchmark results.
     /// </summary>
     public AllocationOverheadResults AllocationOverhead { get; set; } = new();
-    
+
     /// <summary>
     /// Memory usage pattern benchmark results.
     /// </summary>
     public MemoryUsagePatternResults MemoryUsagePatterns { get; set; } = new();
-    
+
     /// <summary>
     /// Pool performance benchmark results.
     /// </summary>
     public PoolPerformanceResults PoolPerformance { get; set; } = new();
-    
+
     /// <summary>
     /// Unified buffer performance benchmark results.
     /// </summary>
     public UnifiedBufferPerformanceResults UnifiedBufferPerformance { get; set; } = new();
-    
+
     /// <summary>
     /// Overall performance summary.
     /// </summary>
     public PerformanceSummary Summary => new()
     {
-        MaxBandwidthGBps = Math.Max(Math.Max(TransferBandwidth.HostToDeviceLarge.BandwidthGBps, 
+        MaxBandwidthGBps = Math.Max(Math.Max(TransferBandwidth.HostToDeviceLarge.BandwidthGBps,
                                            TransferBandwidth.DeviceToHostLarge.BandwidthGBps),
                                   TransferBandwidth.DeviceToDeviceLarge.BandwidthGBps),
-        
+
         MinAllocationLatencyMs = Math.Min(Math.Min(AllocationOverhead.SingleAllocationSmall.AllocationTime.TotalMilliseconds,
                                                  AllocationOverhead.SingleAllocationMedium.AllocationTime.TotalMilliseconds),
                                         AllocationOverhead.SingleAllocationLarge.AllocationTime.TotalMilliseconds),
-        
+
         PoolEfficiency = PoolPerformance.AllocationEfficiency.EfficiencyRatio,
-        
+
         OverallScore = CalculateOverallScore()
     };
-    
+
     private double CalculateOverallScore()
     {
         // Weighted score based on various performance metrics
@@ -61,7 +61,7 @@ public sealed class MemoryBenchmarkResults
         var latencyScore = Math.Min(1000.0 / Summary.MinAllocationLatencyMs, 1.0) * 0.3; // 30% weight
         var poolScore = Summary.PoolEfficiency * 0.2; // 20% weight
         var coherenceScore = Math.Min(1000.0 / UnifiedBufferPerformance.MemoryCoherencePerformance.AverageCoherenceTime.TotalMilliseconds, 1.0) * 0.2; // 20% weight
-        
+
         return (bandwidthScore + latencyScore + poolScore + coherenceScore) * 100.0;
     }
 }
@@ -134,7 +134,7 @@ public readonly struct BandwidthMeasurement : IEquatable<BandwidthMeasurement>
     public TimeSpan ElapsedTime { get; init; }
     public double BandwidthGBps { get; init; }
     public int IterationCount { get; init; }
-    
+
     public double LatencyMs => ElapsedTime.TotalMilliseconds / IterationCount;
     public double ThroughputMBps => BandwidthGBps * 1024.0;
 
@@ -162,7 +162,7 @@ public readonly struct AllocationMeasurement : IEquatable<AllocationMeasurement>
     public long TotalBytes { get; init; }
     public double AllocationsPerSecond { get; init; }
     public double DeallocationsPerSecond { get; init; }
-    
+
     public double AverageAllocationLatencyMs => AllocationTime.TotalMilliseconds / AllocationCount;
     public double AverageDeallocationLatencyMs => DeallocationTime.TotalMilliseconds / AllocationCount;
     public double TotalLatencyMs => AllocationTime.TotalMilliseconds + DeallocationTime.TotalMilliseconds;
@@ -194,7 +194,7 @@ public readonly struct FragmentationMeasurement : IEquatable<FragmentationMeasur
     public TimeSpan FragmentedAllocationTime { get; init; }
     public int SuccessfulAllocations { get; init; }
     public double FragmentationLevel { get; init; }
-    
+
     public double FragmentationImpactRatio => FragmentedAllocationTime.TotalMilliseconds / FragmentationSetupTime.TotalMilliseconds;
     public double AllocationSuccessRate => SuccessfulAllocations / 50.0; // Expected 50 allocations
 
@@ -222,7 +222,7 @@ public readonly struct ConcurrentAllocationMeasurement : IEquatable<ConcurrentAl
     public int TotalAllocations { get; init; }
     public int TotalErrors { get; init; }
     public double AllocationsPerSecond { get; init; }
-    
+
     public double ErrorRate => (double)TotalErrors / ThreadCount;
     public double ScalingEfficiency => AllocationsPerSecond / ThreadCount;
 
@@ -249,7 +249,7 @@ public readonly struct MemoryPressureMeasurement : IEquatable<MemoryPressureMeas
     public int AllocationsAtPressure { get; init; }
     public double MemoryPressureLevel { get; init; }
     public long AvailableMemoryAtPressure { get; init; }
-    
+
     public double PressureBuilupRate => AllocationsAtPressure / TimeToReachPressure.TotalSeconds;
     public double MemoryUtilization => 1.0 - (double)AvailableMemoryAtPressure / (AvailableMemoryAtPressure + AllocationsAtPressure * 1024 * 1024);
 
@@ -269,7 +269,7 @@ public readonly struct PoolEfficiencyMeasurement : IEquatable<PoolEfficiencyMeas
     public int AllocationCount { get; init; }
     public double EfficiencyRatio { get; init; }
     public long TotalRetainedBytes { get; init; }
-    
+
     public double AllocationsPerSecond => AllocationCount / AllocationTime.TotalSeconds;
     public double AverageAllocationLatencyMs => AllocationTime.TotalMilliseconds / AllocationCount;
 
@@ -289,7 +289,7 @@ public readonly struct PoolReuseMeasurement : IEquatable<PoolReuseMeasurement>
     public int ReuseCount { get; init; }
     public double ReuseRate { get; init; }
     public double ReusePerSecond { get; init; }
-    
+
     public double ReuseLatencyMs => ReuseTime.TotalMilliseconds / ReuseCount;
 
     public override bool Equals(object? obj) => obj is PoolReuseMeasurement other && Equals(other);
@@ -314,7 +314,7 @@ public readonly struct PoolMemoryOverheadMeasurement : IEquatable<PoolMemoryOver
     public long AllocatedBytes { get; init; }
     public double OverheadRatio { get; init; }
     public int BucketCount { get; init; }
-    
+
     public double MemoryEfficiency => 1.0 - OverheadRatio;
     public double AverageRetainedPerBucket => (double)RetainedBytes / BucketCount;
 
@@ -334,7 +334,7 @@ public readonly struct LazySyncMeasurement : IEquatable<LazySyncMeasurement>
     public TimeSpan DeviceAllocationTime { get; init; }
     public TimeSpan LazySyncTime { get; init; }
     public double SyncEfficiencyRatio { get; init; }
-    
+
     public TimeSpan TotalSetupTime => HostAllocationTime + DeviceAllocationTime;
     public double SyncOverheadRatio => LazySyncTime.TotalMilliseconds / TotalSetupTime.TotalMilliseconds;
 
@@ -359,7 +359,7 @@ public readonly struct StateTransitionMeasurement : IEquatable<StateTransitionMe
     public IReadOnlyList<(BufferState From, BufferState To, TimeSpan Duration)> Transitions { get; init; }
     public TimeSpan AverageTransitionTime { get; init; }
     public int TotalTransitions { get; init; }
-    
+
     public double TransitionEfficiency => 1.0 / AverageTransitionTime.TotalMilliseconds;
 
     public override bool Equals(object? obj) => obj is StateTransitionMeasurement other && Equals(other);
@@ -377,7 +377,7 @@ public readonly struct CoherenceMeasurement : IEquatable<CoherenceMeasurement>
     public TimeSpan TotalCoherenceTime { get; init; }
     public int CoherenceOperations { get; init; }
     public TimeSpan AverageCoherenceTime { get; init; }
-    
+
     public double CoherenceOperationsPerSecond => CoherenceOperations / TotalCoherenceTime.TotalSeconds;
     public double CoherenceEfficiency => 1.0 / AverageCoherenceTime.TotalMilliseconds;
 
@@ -402,7 +402,7 @@ public readonly struct PerformanceSummary : IEquatable<PerformanceSummary>
     public double MinAllocationLatencyMs { get; init; }
     public double PoolEfficiency { get; init; }
     public double OverallScore { get; init; }
-    
+
     public string PerformanceGrade => OverallScore switch
     {
         >= 90 => "A+ (Excellent)",

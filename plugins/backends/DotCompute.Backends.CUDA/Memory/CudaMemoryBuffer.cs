@@ -28,7 +28,7 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
         if (sizeInBytes <= 0)
         {
             throw new ArgumentException("Size must be greater than zero", nameof(sizeInBytes));
@@ -47,20 +47,20 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
             _context.MakeCurrent();
 
             var result = CudaRuntime.cudaMalloc(ref _devicePointer, (ulong)SizeInBytes);
-            
+
             if (result != CudaError.Success)
             {
                 throw new MemoryException($"Failed to allocate CUDA memory: {CudaRuntime.GetErrorString(result)}");
             }
 
-            _logger.LogDebug("Allocated {Size} bytes at device pointer {Pointer:X}", 
+            _logger.LogDebug("Allocated {Size} bytes at device pointer {Pointer:X}",
                 SizeInBytes, _devicePointer.ToInt64());
 
             // Initialize memory to zero by default
             if (true) // Always zero-initialize for safety
             {
                 result = CudaRuntime.cudaMemset(_devicePointer, 0, (ulong)SizeInBytes);
-                
+
                 if (result != CudaError.Success)
                 {
                     // Clean up on failure
@@ -79,7 +79,7 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
     public unsafe void* GetHostPointer()
     {
         ThrowIfDisposed();
-        
+
         // CUDA device memory cannot be directly accessed from host
         throw new NotSupportedException("Direct host access to CUDA device memory is not supported. Use memory copy operations instead.");
     }
@@ -87,7 +87,7 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
     public unsafe Span<T> AsSpan<T>() where T : unmanaged
     {
         ThrowIfDisposed();
-        
+
         // CUDA device memory cannot be directly accessed as a Span
         throw new NotSupportedException("Direct span access to CUDA device memory is not supported. Use memory copy operations instead.");
     }
@@ -95,15 +95,21 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
     public ISyncMemoryBuffer Slice(long offset, long length)
     {
         ThrowIfDisposed();
-        
+
         if (offset < 0)
+        {
             throw new ArgumentException("Offset cannot be negative", nameof(offset));
-        
+        }
+
         if (length <= 0)
+        {
             throw new ArgumentException("Length must be greater than zero", nameof(length));
-        
+        }
+
         if (offset + length > SizeInBytes)
+        {
             throw new ArgumentException("Slice would exceed buffer bounds");
+        }
 
         // Create a view that shares the same device memory
         return new CudaMemoryBufferView(this, offset, length, _logger);
@@ -115,15 +121,19 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
-        
+
         if (offset < 0)
+        {
             throw new ArgumentException("Offset cannot be negative", nameof(offset));
-            
+        }
+
         var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var bytesToCopy = source.Length * elementSize;
-        
+
         if (offset + bytesToCopy > SizeInBytes)
+        {
             throw new ArgumentException("Copy would exceed buffer bounds");
+        }
 
         // Pin source memory
         using var handle = source.Pin();
@@ -134,7 +144,7 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
             srcPtr = new IntPtr(handle.Pointer);
             dstPtr = new IntPtr(_devicePointer.ToInt64() + offset);
         }
-        
+
         await Task.Run(() =>
         {
             _context.MakeCurrent();
@@ -149,15 +159,19 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
-        
+
         if (offset < 0)
+        {
             throw new ArgumentException("Offset cannot be negative", nameof(offset));
-            
+        }
+
         var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var bytesToCopy = destination.Length * elementSize;
-        
+
         if (offset + bytesToCopy > SizeInBytes)
+        {
             throw new ArgumentException("Copy would exceed buffer bounds");
+        }
 
         // Pin destination memory
         using var handle = destination.Pin();
@@ -168,7 +182,7 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
             srcPtr = new IntPtr(_devicePointer.ToInt64() + offset);
             dstPtr = new IntPtr(handle.Pointer);
         }
-        
+
         await Task.Run(() =>
         {
             _context.MakeCurrent();
@@ -187,7 +201,10 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         try
         {
@@ -197,15 +214,15 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
                 {
                     _context.MakeCurrent();
                     var result = CudaRuntime.cudaFree(_devicePointer);
-                    
+
                     if (result != CudaError.Success)
                     {
-                        _logger.LogWarning("Failed to free CUDA memory: {Error}", 
+                        _logger.LogWarning("Failed to free CUDA memory: {Error}",
                             CudaRuntime.GetErrorString(result));
                     }
                     else
                     {
-                        _logger.LogDebug("Freed {Size} bytes at device pointer {Pointer:X}", 
+                        _logger.LogDebug("Freed {Size} bytes at device pointer {Pointer:X}",
                             SizeInBytes, _devicePointer.ToInt64());
                     }
 
@@ -223,7 +240,10 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         try
         {
@@ -231,15 +251,15 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
             {
                 _context.MakeCurrent();
                 var result = CudaRuntime.cudaFree(_devicePointer);
-                
+
                 if (result != CudaError.Success)
                 {
-                    _logger.LogWarning("Failed to free CUDA memory: {Error}", 
+                    _logger.LogWarning("Failed to free CUDA memory: {Error}",
                         CudaRuntime.GetErrorString(result));
                 }
                 else
                 {
-                    _logger.LogDebug("Freed {Size} bytes at device pointer {Pointer:X}", 
+                    _logger.LogDebug("Freed {Size} bytes at device pointer {Pointer:X}",
                         SizeInBytes, _devicePointer.ToInt64());
                 }
 
@@ -258,7 +278,7 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
 /// <summary>
 /// A view into a CUDA memory buffer (for slicing)
 /// </summary>
-internal class CudaMemoryBufferView : ISyncMemoryBuffer
+internal sealed class CudaMemoryBufferView : ISyncMemoryBuffer
 {
     private readonly CudaMemoryBuffer _parent;
     private readonly long _offset;
@@ -291,13 +311,19 @@ internal class CudaMemoryBufferView : ISyncMemoryBuffer
     public ISyncMemoryBuffer Slice(long offset, long length)
     {
         if (offset < 0)
+        {
             throw new ArgumentException("Offset cannot be negative", nameof(offset));
-        
+        }
+
         if (length <= 0)
+        {
             throw new ArgumentException("Length must be greater than zero", nameof(length));
-        
+        }
+
         if (offset + length > SizeInBytes)
+        {
             throw new ArgumentException("Slice would exceed buffer bounds");
+        }
 
         return new CudaMemoryBufferView(_parent, _offset + offset, length, _logger);
     }
@@ -308,13 +334,17 @@ internal class CudaMemoryBufferView : ISyncMemoryBuffer
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (offset < 0)
+        {
             throw new ArgumentException("Offset cannot be negative", nameof(offset));
-            
+        }
+
         var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var bytesToCopy = source.Length * elementSize;
-        
+
         if (offset + bytesToCopy > SizeInBytes)
+        {
             throw new ArgumentException("Copy would exceed buffer bounds");
+        }
 
         // Delegate to parent with adjusted offset
         await _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken).ConfigureAwait(false);
@@ -326,13 +356,17 @@ internal class CudaMemoryBufferView : ISyncMemoryBuffer
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (offset < 0)
+        {
             throw new ArgumentException("Offset cannot be negative", nameof(offset));
-            
+        }
+
         var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var bytesToCopy = destination.Length * elementSize;
-        
+
         if (offset + bytesToCopy > SizeInBytes)
+        {
             throw new ArgumentException("Copy would exceed buffer bounds");
+        }
 
         // Delegate to parent with adjusted offset
         await _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken).ConfigureAwait(false);

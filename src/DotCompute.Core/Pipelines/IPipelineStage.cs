@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
-using DotCompute.Core;
 using DotCompute.Abstractions;
+using DotCompute.Core;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
 namespace DotCompute.Core.Pipelines;
@@ -81,47 +81,47 @@ public interface IStageMetrics
     /// <summary>
     /// Gets the total execution count.
     /// </summary>
-    long ExecutionCount { get; }
+    public long ExecutionCount { get; }
 
     /// <summary>
     /// Gets the average execution time.
     /// </summary>
-    TimeSpan AverageExecutionTime { get; }
+    public TimeSpan AverageExecutionTime { get; }
 
     /// <summary>
     /// Gets the minimum execution time.
     /// </summary>
-    TimeSpan MinExecutionTime { get; }
+    public TimeSpan MinExecutionTime { get; }
 
     /// <summary>
     /// Gets the maximum execution time.
     /// </summary>
-    TimeSpan MaxExecutionTime { get; }
+    public TimeSpan MaxExecutionTime { get; }
 
     /// <summary>
     /// Gets the total execution time.
     /// </summary>
-    TimeSpan TotalExecutionTime { get; }
+    public TimeSpan TotalExecutionTime { get; }
 
     /// <summary>
     /// Gets the error count.
     /// </summary>
-    long ErrorCount { get; }
+    public long ErrorCount { get; }
 
     /// <summary>
     /// Gets the success rate.
     /// </summary>
-    double SuccessRate { get; }
+    public double SuccessRate { get; }
 
     /// <summary>
     /// Gets average memory usage.
     /// </summary>
-    long AverageMemoryUsage { get; }
+    public long AverageMemoryUsage { get; }
 
     /// <summary>
     /// Gets custom metrics.
     /// </summary>
-    IReadOnlyDictionary<string, double> CustomMetrics { get; }
+    public IReadOnlyDictionary<string, double> CustomMetrics { get; }
 }
 
 /// <summary>
@@ -132,52 +132,52 @@ public interface IKernelStageBuilder
     /// <summary>
     /// Sets the stage name.
     /// </summary>
-    IKernelStageBuilder WithName(string name);
+    public IKernelStageBuilder WithName(string name);
 
     /// <summary>
     /// Sets the work size for the kernel.
     /// </summary>
-    IKernelStageBuilder WithWorkSize(params long[] globalWorkSize);
+    public IKernelStageBuilder WithWorkSize(params long[] globalWorkSize);
 
     /// <summary>
     /// Sets the local work size for the kernel.
     /// </summary>
-    IKernelStageBuilder WithLocalWorkSize(params long[] localWorkSize);
+    public IKernelStageBuilder WithLocalWorkSize(params long[] localWorkSize);
 
     /// <summary>
     /// Maps an input from the pipeline context.
     /// </summary>
-    IKernelStageBuilder MapInput(string parameterName, string contextKey);
+    public IKernelStageBuilder MapInput(string parameterName, string contextKey);
 
     /// <summary>
     /// Maps an output to the pipeline context.
     /// </summary>
-    IKernelStageBuilder MapOutput(string parameterName, string contextKey);
+    public IKernelStageBuilder MapOutput(string parameterName, string contextKey);
 
     /// <summary>
     /// Sets a constant parameter value.
     /// </summary>
-    IKernelStageBuilder SetParameter<T>(string parameterName, T value);
+    public IKernelStageBuilder SetParameter<T>(string parameterName, T value);
 
     /// <summary>
     /// Adds a dependency on another stage.
     /// </summary>
-    IKernelStageBuilder DependsOn(string stageId);
+    public IKernelStageBuilder DependsOn(string stageId);
 
     /// <summary>
     /// Adds metadata to the stage.
     /// </summary>
-    IKernelStageBuilder WithMetadata(string key, object value);
+    public IKernelStageBuilder WithMetadata(string key, object value);
 
     /// <summary>
     /// Sets memory allocation hints.
     /// </summary>
-    IKernelStageBuilder WithMemoryHint(MemoryHint hint);
+    public IKernelStageBuilder WithMemoryHint(MemoryHint hint);
 
     /// <summary>
     /// Sets execution priority.
     /// </summary>
-    IKernelStageBuilder WithPriority(int priority);
+    public IKernelStageBuilder WithPriority(int priority);
 }
 
 /// <summary>
@@ -188,7 +188,7 @@ public interface IParallelStageBuilder
     /// <summary>
     /// Adds a kernel to execute in parallel.
     /// </summary>
-    IParallelStageBuilder AddKernel(
+    public IParallelStageBuilder AddKernel(
         string name,
         ICompiledKernel kernel,
         Action<IKernelStageBuilder>? configure = null);
@@ -196,24 +196,24 @@ public interface IParallelStageBuilder
     /// <summary>
     /// Adds a sub-pipeline to execute in parallel.
     /// </summary>
-    IParallelStageBuilder AddPipeline(
+    public IParallelStageBuilder AddPipeline(
         string name,
         Action<IKernelPipelineBuilder> configure);
 
     /// <summary>
     /// Sets the maximum degree of parallelism.
     /// </summary>
-    IParallelStageBuilder WithMaxDegreeOfParallelism(int maxDegree);
+    public IParallelStageBuilder WithMaxDegreeOfParallelism(int maxDegree);
 
     /// <summary>
     /// Sets the synchronization mode.
     /// </summary>
-    IParallelStageBuilder WithSynchronization(SynchronizationMode mode);
+    public IParallelStageBuilder WithSynchronization(SynchronizationMode mode);
 
     /// <summary>
     /// Adds a barrier after all parallel operations.
     /// </summary>
-    IParallelStageBuilder WithBarrier();
+    public IParallelStageBuilder WithBarrier();
 }
 
 /// <summary>

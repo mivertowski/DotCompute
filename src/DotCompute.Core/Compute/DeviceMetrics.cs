@@ -15,7 +15,6 @@ public class DeviceMetrics : IDeviceMetrics
 {
     private long _kernelExecutionCount;
     private long _totalComputeTimeMs;
-    private readonly Stopwatch _uptime = Stopwatch.StartNew();
     private readonly MemoryTransferStats _transferStats = new();
 
     /// <inheritdoc/>
@@ -26,7 +25,7 @@ public class DeviceMetrics : IDeviceMetrics
     {
         get
         {
-            var (workingSet, privateMemory, virtualMemory) = PerformanceMonitor.GetMemoryStats();
+            var (workingSet, _, _) = PerformanceMonitor.GetMemoryStats();
             var totalAvailable = Environment.WorkingSet;
             return totalAvailable > 0 ? (double)workingSet / totalAvailable : 0.0;
         }
@@ -50,8 +49,8 @@ public class DeviceMetrics : IDeviceMetrics
         get
         {
             var count = _kernelExecutionCount;
-            return count > 0 
-                ? TimeSpan.FromMilliseconds((double)_totalComputeTimeMs / count) 
+            return count > 0
+                ? TimeSpan.FromMilliseconds((double)_totalComputeTimeMs / count)
                 : TimeSpan.Zero;
         }
     }
@@ -113,8 +112,10 @@ public class MemoryTransferStats : IMemoryTransferStats
             lock (_lock)
             {
                 if (_transfersToDevice == 0 || _totalTransferTimeMs == 0)
+                {
                     return 0.0;
-                
+                }
+
                 // Calculate GB/s
                 var gbTransferred = _bytesToDevice / (1024.0 * 1024.0 * 1024.0);
                 var seconds = _totalTransferTimeMs / 1000.0;
@@ -131,8 +132,10 @@ public class MemoryTransferStats : IMemoryTransferStats
             lock (_lock)
             {
                 if (_transfersFromDevice == 0 || _totalTransferTimeMs == 0)
+                {
                     return 0.0;
-                
+                }
+
                 // Calculate GB/s
                 var gbTransferred = _bytesFromDevice / (1024.0 * 1024.0 * 1024.0);
                 var seconds = _totalTransferTimeMs / 1000.0;
@@ -161,7 +164,7 @@ public class MemoryTransferStats : IMemoryTransferStats
                 _bytesFromDevice += bytes;
                 _transfersFromDevice++;
             }
-            
+
             _totalTransferTimeMs += (long)duration.TotalMilliseconds;
         }
     }

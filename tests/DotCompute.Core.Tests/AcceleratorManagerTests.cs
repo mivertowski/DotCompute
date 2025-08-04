@@ -68,10 +68,10 @@ public class AcceleratorManagerTests
         var accelerator = Substitute.For<IAccelerator>();
         var info = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024 * 1024 * 1024);
         accelerator.Info.Returns(info);
-        
+
         provider.Name.Returns("TestProvider");
         provider.DiscoverAsync(default).Returns(new[] { accelerator });
-        
+
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
 
@@ -105,10 +105,10 @@ public class AcceleratorManagerTests
         var accelerator = Substitute.For<IAccelerator>();
         var info = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024 * 1024 * 1024);
         accelerator.Info.Returns(info);
-        
+
         provider.Name.Returns("TestProvider");
         provider.DiscoverAsync(default).Returns(new[] { accelerator });
-        
+
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
 
@@ -141,16 +141,16 @@ public class AcceleratorManagerTests
         var provider = Substitute.For<IAcceleratorProvider>();
         var cpuAccel = Substitute.For<IAccelerator>();
         var gpuAccel = Substitute.For<IAccelerator>();
-        
+
         var cpuInfo = new AcceleratorInfo(AcceleratorType.CPU, "CPU", "1.0", 1024 * 1024 * 1024);
         var gpuInfo = new AcceleratorInfo(AcceleratorType.OpenCL, "GPU", "1.0", 1024 * 1024 * 1024);
-        
+
         cpuAccel.Info.Returns(cpuInfo);
         gpuAccel.Info.Returns(gpuInfo);
-        
+
         provider.Name.Returns("TestProvider");
         provider.DiscoverAsync(default).Returns(new[] { cpuAccel, gpuAccel });
-        
+
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
 
@@ -172,15 +172,15 @@ public class AcceleratorManagerTests
         var manager = new DefaultAcceleratorManager(_logger);
         var provider1 = Substitute.For<IAcceleratorProvider>();
         var provider2 = Substitute.For<IAcceleratorProvider>();
-        
+
         var accel1 = Substitute.For<IAccelerator>();
         var accel2 = Substitute.For<IAccelerator>();
         var accel3 = Substitute.For<IAccelerator>();
-        
+
         var info1 = new AcceleratorInfo(AcceleratorType.CPU, "CPU1", "1.0", 1024 * 1024 * 1024);
         var info2 = new AcceleratorInfo(AcceleratorType.CUDA, "GPU1", "1.0", 2 * 1024 * 1024 * 1024L);
         var info3 = new AcceleratorInfo(AcceleratorType.CUDA, "GPU2", "1.0", 2 * 1024 * 1024 * 1024L);
-        
+
         accel1.Info.Returns(info1);
         accel2.Info.Returns(info2);
         accel3.Info.Returns(info3);
@@ -209,25 +209,25 @@ public class AcceleratorManagerTests
         // Arrange
         var manager = new DefaultAcceleratorManager(_logger);
         var provider = Substitute.For<IAcceleratorProvider>();
-        
+
         var accel1 = Substitute.For<IAccelerator>();
         var accel2 = Substitute.For<IAccelerator>();
         var accel3 = Substitute.For<IAccelerator>();
-        
+
         var info1 = new AcceleratorInfo(AcceleratorType.CPU, "CPU", "1.0", 1024L * 1024 * 1024);
         var info2 = new AcceleratorInfo(AcceleratorType.OpenCL, "GPU1", "1.0", 2048L * 1024 * 1024);
         var info3 = new AcceleratorInfo(AcceleratorType.OpenCL, "GPU2", "1.0", 4096L * 1024 * 1024);
-        
+
         accel1.Info.Returns(info1);
         accel2.Info.Returns(info2);
         accel3.Info.Returns(info3);
-        
+
         provider.Name.Returns("Provider");
         provider.DiscoverAsync(default).Returns(new[] { accel1, accel2, accel3 });
-        
+
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
-        
+
         var criteria = new AcceleratorSelectionCriteria
         {
             PreferredType = AcceleratorType.OpenCL,
@@ -250,10 +250,10 @@ public class AcceleratorManagerTests
         var accelerator = Substitute.For<IAccelerator>();
         var info = new AcceleratorInfo(AcceleratorType.CPU, "CPU", "1.0", 1024 * 1024 * 1024);
         accelerator.Info.Returns(info);
-        
+
         provider.Name.Returns("Provider");
         provider.DiscoverAsync(default).Returns(new[] { accelerator });
-        
+
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
 
@@ -273,16 +273,16 @@ public class AcceleratorManagerTests
         var provider = Substitute.For<IAcceleratorProvider>();
         var accel1 = Substitute.For<IAccelerator>();
         var accel2 = Substitute.For<IAccelerator>();
-        
+
         var info1 = new AcceleratorInfo(AcceleratorType.CPU, "CPU", "1.0", 1024 * 1024 * 1024);
         var info2 = new AcceleratorInfo(AcceleratorType.OpenCL, "GPU", "1.0", 1024 * 1024 * 1024);
-        
+
         accel1.Info.Returns(info1);
         accel2.Info.Returns(info2);
-        
+
         provider.Name.Returns("Provider");
         provider.DiscoverAsync(default).Returns(new[] { accel1, accel2 });
-        
+
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
 

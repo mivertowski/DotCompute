@@ -20,7 +20,7 @@ public interface IPipelineMemoryManager : IAsyncDisposable
     /// <param name="hint">Memory allocation hint.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Allocated memory handle.</returns>
-    ValueTask<IPipelineMemory<T>> AllocateAsync<T>(
+    public ValueTask<IPipelineMemory<T>> AllocateAsync<T>(
         long elementCount,
         MemoryHint hint = MemoryHint.None,
         CancellationToken cancellationToken = default) where T : unmanaged;
@@ -28,7 +28,7 @@ public interface IPipelineMemoryManager : IAsyncDisposable
     /// <summary>
     /// Allocates memory with a specific key for sharing between stages.
     /// </summary>
-    ValueTask<IPipelineMemory<T>> AllocateSharedAsync<T>(
+    public ValueTask<IPipelineMemory<T>> AllocateSharedAsync<T>(
         string key,
         long elementCount,
         MemoryHint hint = MemoryHint.None,
@@ -37,12 +37,12 @@ public interface IPipelineMemoryManager : IAsyncDisposable
     /// <summary>
     /// Gets shared memory by key.
     /// </summary>
-    IPipelineMemory<T>? GetShared<T>(string key) where T : unmanaged;
+    public IPipelineMemory<T>? GetShared<T>(string key) where T : unmanaged;
 
     /// <summary>
     /// Transfers memory ownership between stages.
     /// </summary>
-    ValueTask TransferAsync<T>(
+    public ValueTask TransferAsync<T>(
         IPipelineMemory<T> memory,
         string fromStage,
         string toStage,
@@ -51,7 +51,7 @@ public interface IPipelineMemoryManager : IAsyncDisposable
     /// <summary>
     /// Creates a memory view (non-owning reference).
     /// </summary>
-    IPipelineMemoryView<T> CreateView<T>(
+    public IPipelineMemoryView<T> CreateView<T>(
         IPipelineMemory<T> memory,
         long offset = 0,
         long? length = null) where T : unmanaged;
@@ -59,7 +59,7 @@ public interface IPipelineMemoryManager : IAsyncDisposable
     /// <summary>
     /// Optimizes memory layout for better access patterns.
     /// </summary>
-    ValueTask<IPipelineMemory<T>> OptimizeLayoutAsync<T>(
+    public ValueTask<IPipelineMemory<T>> OptimizeLayoutAsync<T>(
         IPipelineMemory<T> memory,
         MemoryLayoutHint layoutHint,
         CancellationToken cancellationToken = default) where T : unmanaged;
@@ -67,17 +67,17 @@ public interface IPipelineMemoryManager : IAsyncDisposable
     /// <summary>
     /// Gets current memory usage statistics.
     /// </summary>
-    MemoryManagerStats GetStats();
+    public MemoryManagerStats GetStats();
 
     /// <summary>
     /// Forces garbage collection of unused memory.
     /// </summary>
-    ValueTask CollectAsync(CancellationToken cancellationToken = default);
+    public ValueTask CollectAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Registers a memory pool for efficient allocation.
     /// </summary>
-    void RegisterPool<T>(MemoryPoolOptions options) where T : unmanaged;
+    public void RegisterPool<T>(MemoryPoolOptions options) where T : unmanaged;
 }
 
 /// <summary>
@@ -88,44 +88,44 @@ public interface IPipelineMemory<T> : IAsyncDisposable where T : unmanaged
     /// <summary>
     /// Gets the memory identifier.
     /// </summary>
-    string Id { get; }
+    public string Id { get; }
 
     /// <summary>
     /// Gets the element count.
     /// </summary>
-    long ElementCount { get; }
+    public long ElementCount { get; }
 
     /// <summary>
     /// Gets the size in bytes.
     /// </summary>
-    long SizeInBytes { get; }
+    public long SizeInBytes { get; }
 
     /// <summary>
     /// Gets whether the memory is currently locked.
     /// </summary>
-    bool IsLocked { get; }
+    public bool IsLocked { get; }
 
     /// <summary>
     /// Gets the memory access mode.
     /// </summary>
-    Memory.MemoryAccess AccessMode { get; }
+    public Memory.MemoryAccess AccessMode { get; }
 
     /// <summary>
     /// Gets the device where memory is allocated.
     /// </summary>
-    IComputeDevice Device { get; }
+    public IComputeDevice Device { get; }
 
     /// <summary>
     /// Locks the memory for exclusive access.
     /// </summary>
-    ValueTask<MemoryLock<T>> LockAsync(
+    public ValueTask<MemoryLock<T>> LockAsync(
         MemoryLockMode mode,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Copies data to this memory.
     /// </summary>
-    ValueTask CopyFromAsync(
+    public ValueTask CopyFromAsync(
         ReadOnlyMemory<T> source,
         long offset = 0,
         CancellationToken cancellationToken = default);
@@ -133,7 +133,7 @@ public interface IPipelineMemory<T> : IAsyncDisposable where T : unmanaged
     /// <summary>
     /// Copies data from this memory.
     /// </summary>
-    ValueTask CopyToAsync(
+    public ValueTask CopyToAsync(
         Memory<T> destination,
         long offset = 0,
         int? count = null,
@@ -142,12 +142,12 @@ public interface IPipelineMemory<T> : IAsyncDisposable where T : unmanaged
     /// <summary>
     /// Creates a sub-region view of this memory.
     /// </summary>
-    IPipelineMemoryView<T> Slice(long offset, long length);
+    public IPipelineMemoryView<T> Slice(long offset, long length);
 
     /// <summary>
     /// Ensures memory is synchronized across devices.
     /// </summary>
-    ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -158,22 +158,22 @@ public interface IPipelineMemoryView<T> where T : unmanaged
     /// <summary>
     /// Gets the offset in the parent memory.
     /// </summary>
-    long Offset { get; }
+    public long Offset { get; }
 
     /// <summary>
     /// Gets the view length.
     /// </summary>
-    long Length { get; }
+    public long Length { get; }
 
     /// <summary>
     /// Gets the parent memory.
     /// </summary>
-    IPipelineMemory<T> Parent { get; }
+    public IPipelineMemory<T> Parent { get; }
 
     /// <summary>
     /// Creates a sub-view.
     /// </summary>
-    IPipelineMemoryView<T> Slice(long offset, long length);
+    public IPipelineMemoryView<T> Slice(long offset, long length);
 }
 
 /// <summary>
@@ -208,14 +208,16 @@ public readonly struct MemoryLock<T> : IDisposable where T : unmanaged
     public Span<T> GetSpan()
     {
         if (_mode == MemoryLockMode.ReadOnly)
+        {
             throw new InvalidOperationException("Cannot get writable span for read-only lock.");
-        
+        }
+
         // Try to get span from memory if it supports direct access
         if (_memory is IPipelineMemoryWithDirectAccess<T> directAccessMemory)
         {
             return directAccessMemory.GetSpan();
         }
-        
+
         // For memory types that don't support direct access (e.g., GPU memory),
         // we need to fail gracefully
         throw new NotSupportedException(
@@ -233,7 +235,7 @@ public readonly struct MemoryLock<T> : IDisposable where T : unmanaged
         {
             return directAccessMemory.GetReadOnlySpan();
         }
-        
+
         // For memory types that don't support direct access (e.g., GPU memory),
         // we need to fail gracefully
         throw new NotSupportedException(
@@ -244,6 +246,26 @@ public readonly struct MemoryLock<T> : IDisposable where T : unmanaged
     public void Dispose()
     {
         _unlockAction?.Invoke();
+    }
+
+    public override bool Equals(object obj)
+    {
+        throw new NotImplementedException();
+    }
+
+    public override int GetHashCode()
+    {
+        throw new NotImplementedException();
+    }
+
+    public static bool operator ==(MemoryLock<T> left, MemoryLock<T> right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(MemoryLock<T> left, MemoryLock<T> right)
+    {
+        return !(left == right);
     }
 }
 
@@ -424,13 +446,13 @@ public interface IPipelineMemoryWithDirectAccess<T> : IPipelineMemory<T> where T
     /// <remarks>
     /// This method should only be called when holding an appropriate memory lock.
     /// </remarks>
-    Span<T> GetSpan();
-    
+    public Span<T> GetSpan();
+
     /// <summary>
     /// Gets a direct read-only span to the underlying memory.
     /// </summary>
     /// <remarks>
     /// This method should only be called when holding an appropriate memory lock.
     /// </remarks>
-    ReadOnlySpan<T> GetReadOnlySpan();
+    public ReadOnlySpan<T> GetReadOnlySpan();
 }

@@ -15,17 +15,17 @@ public readonly struct AcceleratorContext : IEquatable<AcceleratorContext>
     /// Gets the context handle.
     /// </summary>
     public IntPtr Handle { get; }
-    
+
     /// <summary>
     /// Gets the device ID associated with this context.
     /// </summary>
     public int DeviceId { get; }
-    
+
     /// <summary>
     /// Gets whether this is a valid context.
     /// </summary>
     public bool IsValid => Handle != IntPtr.Zero;
-    
+
     /// <summary>
     /// Creates a new accelerator context.
     /// </summary>
@@ -36,37 +36,37 @@ public readonly struct AcceleratorContext : IEquatable<AcceleratorContext>
         Handle = handle;
         DeviceId = deviceId;
     }
-    
+
     /// <summary>
     /// Creates an invalid context.
     /// </summary>
     public static AcceleratorContext Invalid => new AcceleratorContext(IntPtr.Zero, -1);
-    
+
     public bool Equals(AcceleratorContext other)
     {
         return Handle == other.Handle && DeviceId == other.DeviceId;
     }
-    
+
     public override bool Equals(object? obj)
     {
         return obj is AcceleratorContext other && Equals(other);
     }
-    
+
     public override int GetHashCode()
     {
         return HashCode.Combine(Handle, DeviceId);
     }
-    
+
     public static bool operator ==(AcceleratorContext left, AcceleratorContext right)
     {
         return left.Equals(right);
     }
-    
+
     public static bool operator !=(AcceleratorContext left, AcceleratorContext right)
     {
         return !left.Equals(right);
     }
-    
+
     public override string ToString()
     {
         return IsValid ? $"AcceleratorContext(Device={DeviceId}, Handle={Handle:X})" : "AcceleratorContext(Invalid)";

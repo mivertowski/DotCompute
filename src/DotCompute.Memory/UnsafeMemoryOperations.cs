@@ -19,7 +19,7 @@ public static unsafe class UnsafeMemoryOperations
     /// The default memory alignment for SIMD operations.
     /// </summary>
     public const int DefaultAlignment = 32; // 256-bit alignment for AVX2
-    
+
     /// <summary>
     /// Copies memory from source to destination with optimal performance.
     /// Uses vectorized operations when possible.
@@ -34,17 +34,17 @@ public static unsafe class UnsafeMemoryOperations
         {
             return;
         }
-        
+
         if (source == null)
         {
             throw new ArgumentNullException(nameof(source));
         }
-        
+
         if (destination == null)
         {
             throw new ArgumentNullException(nameof(destination));
         }
-        
+
         // Use platform-specific optimized copy
         if (Avx2.IsSupported && byteCount >= 32)
         {
@@ -59,7 +59,7 @@ public static unsafe class UnsafeMemoryOperations
             CopyMemoryScalar(source, destination, byteCount);
         }
     }
-    
+
     /// <summary>
     /// Copies memory from source to destination using generic types.
     /// </summary>
@@ -73,21 +73,21 @@ public static unsafe class UnsafeMemoryOperations
         {
             throw new ArgumentException("Source and destination must have the same length.");
         }
-        
+
         if (source.Length == 0)
         {
             return;
         }
-        
+
         var byteCount = (nuint)(source.Length * sizeof(T));
-        
+
         fixed (T* src = source)
         fixed (T* dst = destination)
         {
             CopyMemory(src, dst, byteCount);
         }
     }
-    
+
     /// <summary>
     /// Fills memory with a specified value using vectorized operations.
     /// </summary>
@@ -101,12 +101,12 @@ public static unsafe class UnsafeMemoryOperations
         {
             return;
         }
-        
+
         if (destination == null)
         {
             throw new ArgumentNullException(nameof(destination));
         }
-        
+
         // Use platform-specific optimized fill
         if (Avx2.IsSupported && byteCount >= 32)
         {
@@ -121,7 +121,7 @@ public static unsafe class UnsafeMemoryOperations
             FillMemoryScalar(destination, value, byteCount);
         }
     }
-    
+
     /// <summary>
     /// Fills memory with a specified value using generic types.
     /// </summary>
@@ -135,7 +135,7 @@ public static unsafe class UnsafeMemoryOperations
         {
             return;
         }
-        
+
         // For simple types, use vectorized operations
         if (typeof(T) == typeof(byte))
         {
@@ -159,7 +159,7 @@ public static unsafe class UnsafeMemoryOperations
             destination.Fill(value);
         }
     }
-    
+
     /// <summary>
     /// Zeros out memory using vectorized operations.
     /// </summary>
@@ -170,7 +170,7 @@ public static unsafe class UnsafeMemoryOperations
     {
         FillMemory(destination, 0, byteCount);
     }
-    
+
     /// <summary>
     /// Zeros out memory using generic types.
     /// </summary>
@@ -183,13 +183,13 @@ public static unsafe class UnsafeMemoryOperations
         {
             return;
         }
-        
+
         fixed (T* dst = destination)
         {
             ZeroMemory(dst, (nuint)(destination.Length * sizeof(T)));
         }
     }
-    
+
     /// <summary>
     /// Checks if a memory address is aligned to the specified boundary.
     /// </summary>
@@ -201,7 +201,7 @@ public static unsafe class UnsafeMemoryOperations
     {
         return ((nuint)address & (nuint)(alignment - 1)) == 0;
     }
-    
+
     /// <summary>
     /// Aligns a memory address to the specified boundary.
     /// </summary>
@@ -214,7 +214,7 @@ public static unsafe class UnsafeMemoryOperations
         var mask = (nuint)(alignment - 1);
         return (void*)(((nuint)address + mask) & ~mask);
     }
-    
+
     /// <summary>
     /// Calculates the padding needed to align an address.
     /// </summary>
@@ -228,16 +228,16 @@ public static unsafe class UnsafeMemoryOperations
         var aligned = ((nuint)address + mask) & ~mask;
         return (int)(aligned - (nuint)address);
     }
-    
+
     #region Platform-Specific Implementations
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void CopyMemoryAvx2(void* source, void* destination, nuint byteCount)
     {
         var src = (byte*)source;
         var dst = (byte*)destination;
         var remaining = byteCount;
-        
+
         // Process 32-byte chunks with AVX2
         while (remaining >= 32)
         {
@@ -247,21 +247,21 @@ public static unsafe class UnsafeMemoryOperations
             dst += 32;
             remaining -= 32;
         }
-        
+
         // Process remaining bytes
         if (remaining > 0)
         {
             CopyMemoryScalar(src, dst, remaining);
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void CopyMemorySse2(void* source, void* destination, nuint byteCount)
     {
         var src = (byte*)source;
         var dst = (byte*)destination;
         var remaining = byteCount;
-        
+
         // Process 16-byte chunks with SSE2
         while (remaining >= 16)
         {
@@ -271,21 +271,21 @@ public static unsafe class UnsafeMemoryOperations
             dst += 16;
             remaining -= 16;
         }
-        
+
         // Process remaining bytes
         if (remaining > 0)
         {
             CopyMemoryScalar(src, dst, remaining);
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void CopyMemoryScalar(void* source, void* destination, nuint byteCount)
     {
         var src = (byte*)source;
         var dst = (byte*)destination;
         var remaining = byteCount;
-        
+
         // Process 8-byte chunks
         while (remaining >= 8)
         {
@@ -294,7 +294,7 @@ public static unsafe class UnsafeMemoryOperations
             dst += 8;
             remaining -= 8;
         }
-        
+
         // Process 4-byte chunks
         while (remaining >= 4)
         {
@@ -303,7 +303,7 @@ public static unsafe class UnsafeMemoryOperations
             dst += 4;
             remaining -= 4;
         }
-        
+
         // Process remaining bytes
         while (remaining > 0)
         {
@@ -313,14 +313,14 @@ public static unsafe class UnsafeMemoryOperations
             remaining--;
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void FillMemoryAvx2(void* destination, byte value, nuint byteCount)
     {
         var dst = (byte*)destination;
         var remaining = byteCount;
         var vector = Vector256.Create(value);
-        
+
         // Process 32-byte chunks with AVX2
         while (remaining >= 32)
         {
@@ -328,21 +328,21 @@ public static unsafe class UnsafeMemoryOperations
             dst += 32;
             remaining -= 32;
         }
-        
+
         // Process remaining bytes
         if (remaining > 0)
         {
             FillMemoryScalar(dst, value, remaining);
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void FillMemorySse2(void* destination, byte value, nuint byteCount)
     {
         var dst = (byte*)destination;
         var remaining = byteCount;
         var vector = Vector128.Create(value);
-        
+
         // Process 16-byte chunks with SSE2
         while (remaining >= 16)
         {
@@ -350,26 +350,26 @@ public static unsafe class UnsafeMemoryOperations
             dst += 16;
             remaining -= 16;
         }
-        
+
         // Process remaining bytes
         if (remaining > 0)
         {
             FillMemoryScalar(dst, value, remaining);
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void FillMemoryScalar(void* destination, byte value, nuint byteCount)
     {
         var dst = (byte*)destination;
         var remaining = byteCount;
-        
+
         // Create patterns for efficient filling
         var pattern64 = ((ulong)value << 56) | ((ulong)value << 48) | ((ulong)value << 40) | ((ulong)value << 32) |
                        ((ulong)value << 24) | ((ulong)value << 16) | ((ulong)value << 8) | value;
-        
+
         var pattern32 = ((uint)value << 24) | ((uint)value << 16) | ((uint)value << 8) | value;
-        
+
         // Process 8-byte chunks
         while (remaining >= 8)
         {
@@ -377,7 +377,7 @@ public static unsafe class UnsafeMemoryOperations
             dst += 8;
             remaining -= 8;
         }
-        
+
         // Process 4-byte chunks
         while (remaining >= 4)
         {
@@ -385,7 +385,7 @@ public static unsafe class UnsafeMemoryOperations
             dst += 4;
             remaining -= 4;
         }
-        
+
         // Process remaining bytes
         while (remaining > 0)
         {
@@ -394,18 +394,18 @@ public static unsafe class UnsafeMemoryOperations
             remaining--;
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void FillMemoryInt32Avx2<T>(Span<T> destination, int value) where T : unmanaged
     {
         var vector = Vector256.Create(value);
         var span = MemoryMarshal.Cast<T, int>(destination);
-        
+
         fixed (int* dst = span)
         {
             var ptr = dst;
             var remaining = span.Length;
-            
+
             // Process 8-int chunks with AVX2
             while (remaining >= 8)
             {
@@ -413,7 +413,7 @@ public static unsafe class UnsafeMemoryOperations
                 ptr += 8;
                 remaining -= 8;
             }
-            
+
             // Process remaining elements
             while (remaining > 0)
             {
@@ -423,18 +423,18 @@ public static unsafe class UnsafeMemoryOperations
             }
         }
     }
-    
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void FillMemoryFloatAvx<T>(Span<T> destination, float value) where T : unmanaged
     {
         var vector = Vector256.Create(value);
         var span = MemoryMarshal.Cast<T, float>(destination);
-        
+
         fixed (float* dst = span)
         {
             var ptr = dst;
             var remaining = span.Length;
-            
+
             // Process 8-float chunks with AVX
             while (remaining >= 8)
             {
@@ -442,7 +442,7 @@ public static unsafe class UnsafeMemoryOperations
                 ptr += 8;
                 remaining -= 8;
             }
-            
+
             // Process remaining elements
             while (remaining > 0)
             {
@@ -452,6 +452,6 @@ public static unsafe class UnsafeMemoryOperations
             }
         }
     }
-    
+
     #endregion
 }

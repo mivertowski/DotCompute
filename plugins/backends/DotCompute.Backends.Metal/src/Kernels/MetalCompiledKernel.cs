@@ -173,7 +173,7 @@ public sealed class MetalCompiledKernel : ICompiledKernel
                     uint x = (uint)dim3.X;
                     uint y = (uint)dim3.Y;
                     uint z = (uint)dim3.Z;
-                    
+
                     MetalNative.SetBytes(encoder, (IntPtr)(&x), sizeof(uint), bufferIndex++);
                     MetalNative.SetBytes(encoder, (IntPtr)(&y), sizeof(uint), bufferIndex++);
                     MetalNative.SetBytes(encoder, (IntPtr)(&z), sizeof(uint), bufferIndex);
@@ -240,7 +240,7 @@ public sealed class MetalCompiledKernel : ICompiledKernel
     {
         // Look for dimension information in kernel arguments
         var workDimensions = ExtractWorkDimensionsFromArguments(arguments);
-        
+
         var gridWidth = Math.Max(1, (int)Math.Ceiling((double)workDimensions.x / threadgroupSize.width));
         var gridHeight = Math.Max(1, (int)Math.Ceiling((double)workDimensions.y / threadgroupSize.height));
         var gridDepth = Math.Max(1, (int)Math.Ceiling((double)workDimensions.z / threadgroupSize.depth));

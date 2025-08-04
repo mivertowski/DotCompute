@@ -13,27 +13,27 @@ public interface IKernelSource
     /// <summary>
     /// Gets the name of the kernel.
     /// </summary>
-    string Name { get; }
-    
+    public string Name { get; }
+
     /// <summary>
     /// Gets the source code or bytecode of the kernel.
     /// </summary>
-    string Code { get; }
-    
+    public string Code { get; }
+
     /// <summary>
     /// Gets the kernel language or source type.
     /// </summary>
-    KernelLanguage Language { get; }
-    
+    public KernelLanguage Language { get; }
+
     /// <summary>
     /// Gets the entry point method name for the kernel.
     /// </summary>
-    string EntryPoint { get; }
-    
+    public string EntryPoint { get; }
+
     /// <summary>
     /// Gets the dependencies required by this kernel.
     /// </summary>
-    string[] Dependencies { get; }
+    public string[] Dependencies { get; }
 }
 
 /// <summary>
@@ -45,47 +45,47 @@ public enum KernelLanguage
     /// CUDA C/C++ source code.
     /// </summary>
     Cuda,
-    
+
     /// <summary>
     /// OpenCL C source code.
     /// </summary>
     OpenCL,
-    
+
     /// <summary>
     /// NVIDIA PTX assembly.
     /// </summary>
     Ptx,
-    
+
     /// <summary>
     /// HLSL shader code.
     /// </summary>
     HLSL,
-    
+
     /// <summary>
     /// SPIR-V bytecode.
     /// </summary>
     SPIRV,
-    
+
     /// <summary>
     /// Metal shader language.
     /// </summary>
     Metal,
-    
+
     /// <summary>
     /// ROCm HIP source code.
     /// </summary>
     HIP,
-    
+
     /// <summary>
     /// SYCL/DPC++ source code.
     /// </summary>
     SYCL,
-    
+
     /// <summary>
     /// C# IL or expression tree.
     /// </summary>
     CSharpIL,
-    
+
     /// <summary>
     /// Pre-compiled binary.
     /// </summary>
@@ -105,13 +105,24 @@ public class TextKernelSource : IKernelSource
     /// <param name="language">The kernel language.</param>
     /// <param name="entryPoint">The entry point method name.</param>
     /// <param name="dependencies">The kernel dependencies.</param>
-    public TextKernelSource(string code, string name = "main", KernelLanguage language = KernelLanguage.CSharpIL, 
+    public TextKernelSource(string code, string name = "main", KernelLanguage language = KernelLanguage.CSharpIL,
                            string entryPoint = "main", params string[] dependencies)
     {
-        if (string.IsNullOrEmpty(code)) throw new ArgumentException("Code cannot be null or empty", nameof(code));
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
-        if (string.IsNullOrEmpty(entryPoint)) throw new ArgumentException("EntryPoint cannot be null or empty", nameof(entryPoint));
-        
+        if (string.IsNullOrEmpty(code))
+        {
+            throw new ArgumentException("Code cannot be null or empty", nameof(code));
+        }
+
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new ArgumentException("Name cannot be null or empty", nameof(name));
+        }
+
+        if (string.IsNullOrEmpty(entryPoint))
+        {
+            throw new ArgumentException("EntryPoint cannot be null or empty", nameof(entryPoint));
+        }
+
         Code = code;
         Name = name;
         Language = language;
@@ -148,14 +159,29 @@ public class BytecodeKernelSource : IKernelSource
     /// <param name="language">The kernel language.</param>
     /// <param name="entryPoint">The entry point method name.</param>
     /// <param name="dependencies">The kernel dependencies.</param>
-    public BytecodeKernelSource(byte[] bytecode, string name = "main", KernelLanguage language = KernelLanguage.Binary, 
+    public BytecodeKernelSource(byte[] bytecode, string name = "main", KernelLanguage language = KernelLanguage.Binary,
                                string entryPoint = "main", params string[] dependencies)
     {
-        if (bytecode == null) throw new ArgumentNullException(nameof(bytecode));
-        if (bytecode.Length == 0) throw new ArgumentException("Bytecode cannot be empty", nameof(bytecode));
-        if (string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
-        if (string.IsNullOrEmpty(entryPoint)) throw new ArgumentException("EntryPoint cannot be null or empty", nameof(entryPoint));
-        
+        if (bytecode == null)
+        {
+            throw new ArgumentNullException(nameof(bytecode));
+        }
+
+        if (bytecode.Length == 0)
+        {
+            throw new ArgumentException("Bytecode cannot be empty", nameof(bytecode));
+        }
+
+        if (string.IsNullOrEmpty(name))
+        {
+            throw new ArgumentException("Name cannot be null or empty", nameof(name));
+        }
+
+        if (string.IsNullOrEmpty(entryPoint))
+        {
+            throw new ArgumentException("EntryPoint cannot be null or empty", nameof(entryPoint));
+        }
+
         Code = Convert.ToBase64String(bytecode);
         Name = name;
         Language = language;

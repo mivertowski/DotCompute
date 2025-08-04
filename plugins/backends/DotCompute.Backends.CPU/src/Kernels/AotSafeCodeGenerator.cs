@@ -5,8 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using DotCompute.Core;
 using DotCompute.Abstractions;
+using DotCompute.Core;
 using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 
 namespace DotCompute.Backends.CPU.Kernels;
@@ -36,7 +36,7 @@ internal sealed class AotSafeCodeGenerator
     {
         // For AOT, we select from pre-compiled kernel implementations
         var kernelKey = GenerateKernelKey(definition, ast, analysis);
-        
+
         if (!_kernelImplementations.TryGetValue(kernelKey, out var implementation))
         {
             // Fall back to generic implementation based on operation type
@@ -71,19 +71,19 @@ internal sealed class AotSafeCodeGenerator
     {
         // Generate a key based on kernel characteristics
         var operationTypeUpper = ast.Operations.FirstOrDefault()?.NodeType.ToString().ToUpperInvariant() ?? "UNKNOWN";
-        #pragma warning disable CA1308 // Normalize strings to uppercase - needed for kernel key matching
+#pragma warning disable CA1308 // Normalize strings to uppercase - needed for kernel key matching
         var operationType = operationTypeUpper.ToLowerInvariant();
-        #pragma warning restore CA1308
+#pragma warning restore CA1308
         // Determine data type from metadata or default to float
         var dataTypeUpper = "FLOAT";
         if (definition.Metadata?.TryGetValue("DataType", out var dataTypeObj) == true)
         {
             dataTypeUpper = dataTypeObj?.ToString()?.ToUpperInvariant() ?? "FLOAT";
         }
-        #pragma warning disable CA1308 // Normalize strings to uppercase - needed for kernel key matching
+#pragma warning disable CA1308 // Normalize strings to uppercase - needed for kernel key matching
         var dataType = dataTypeUpper.ToLowerInvariant();
-        #pragma warning restore CA1308
-        
+#pragma warning restore CA1308
+
         // Special handling for common patterns
         if (definition.Name.Contains("add", StringComparison.OrdinalIgnoreCase))
         {
@@ -97,7 +97,7 @@ internal sealed class AotSafeCodeGenerator
             }
             return analysis.CanVectorize ? $"vector_multiply_{dataType}" : $"elementwise_multiply_{dataType}";
         }
-        else if (definition.Name.Contains("sum", StringComparison.OrdinalIgnoreCase) || 
+        else if (definition.Name.Contains("sum", StringComparison.OrdinalIgnoreCase) ||
                  definition.Name.Contains("reduce", StringComparison.OrdinalIgnoreCase))
         {
             return $"reduction_sum_{dataType}";
@@ -120,7 +120,7 @@ internal sealed class AotSafeCodeGenerator
         {
             return analysis.CanVectorize ? VectorMultiplyFloatKernelAsync : ElementwiseMultiplyFloatKernelAsync;
         }
-        
+
         // Default to simple elementwise operation
         return ElementwiseAddFloatKernelAsync;
     }
@@ -135,7 +135,7 @@ internal sealed class AotSafeCodeGenerator
         {
             paramCount = count;
         }
-        
+
         // For simplicity, we support common signatures
         // In production, this would be more comprehensive
         switch (paramCount)
@@ -148,11 +148,11 @@ internal sealed class AotSafeCodeGenerator
                     context.SetBuffer(1, b);
                     context.SetBuffer(2, c);
                     context.SetParameter(3, workItemId);
-                    
+
                     // Execute synchronously for AOT compatibility
                     implementation(context).GetAwaiter().GetResult();
                 });
-                
+
             case 2: // Reduction case: input, output
                 return new Action<Memory<float>, Memory<float>, long[]>((input, output, workItemId) =>
                 {
@@ -160,10 +160,10 @@ internal sealed class AotSafeCodeGenerator
                     context.SetBuffer(0, input);
                     context.SetBuffer(1, output);
                     context.SetParameter(2, workItemId);
-                    
+
                     implementation(context).GetAwaiter().GetResult();
                 });
-                
+
             default:
                 // Generic delegate for other cases
                 return new Action<object[], long[]>((parameters, workItemId) =>
@@ -174,7 +174,7 @@ internal sealed class AotSafeCodeGenerator
                         context.SetParameter(i, parameters[i]);
                     }
                     context.SetParameter(parameters.Length, workItemId);
-                    
+
                     implementation(context).GetAwaiter().GetResult();
                 });
         }
@@ -188,10 +188,10 @@ internal sealed class AotSafeCodeGenerator
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
         var workItemId = context.GetParameter(3) as long[] ?? new long[] { 0 };
-        
+
         var index = (int)workItemId[0];
         var vectorSize = System.Numerics.Vector<float>.Count;
-        
+
         // Vectorized operation
         if (index + vectorSize <= a.Length)
         {
@@ -205,7 +205,7 @@ internal sealed class AotSafeCodeGenerator
             // Scalar fallback for remainder
             c.Span[index] = a.Span[index] + b.Span[index];
         }
-        
+
         await Task.CompletedTask;
     }
 
@@ -215,10 +215,10 @@ internal sealed class AotSafeCodeGenerator
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
         var workItemId = context.GetParameter(3) as long[] ?? new long[] { 0 };
-        
+
         var index = (int)workItemId[0];
         var vectorSize = System.Numerics.Vector<float>.Count;
-        
+
         if (index + vectorSize <= a.Length)
         {
             var va = new System.Numerics.Vector<float>(a.Span.Slice(index));
@@ -230,7 +230,7 @@ internal sealed class AotSafeCodeGenerator
         {
             c.Span[index] = a.Span[index] * b.Span[index];
         }
-        
+
         await Task.CompletedTask;
     }
 
@@ -240,10 +240,10 @@ internal sealed class AotSafeCodeGenerator
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
         var workItemId = context.GetParameter(3) as long[] ?? new long[] { 0 };
-        
+
         var index = (int)workItemId[0];
         c.Span[index] = a.Span[index] + b.Span[index];
-        
+
         await Task.CompletedTask;
     }
 
@@ -253,10 +253,10 @@ internal sealed class AotSafeCodeGenerator
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
         var workItemId = context.GetParameter(3) as long[] ?? new long[] { 0 };
-        
+
         var index = (int)workItemId[0];
         c.Span[index] = a.Span[index] * b.Span[index];
-        
+
         await Task.CompletedTask;
     }
 
@@ -269,17 +269,17 @@ internal sealed class AotSafeCodeGenerator
         var n = context.GetScalar<int>(4);
         var k = context.GetScalar<int>(5);
         var workItemId = context.GetParameter(6) as long[] ?? new long[] { 0 };
-        
+
         var row = (int)(workItemId[0] / n);
         var col = (int)(workItemId[0] % n);
-        
+
         float sum = 0;
         for (int i = 0; i < k; i++)
         {
             sum += a.Span[row * k + i] * b.Span[i * n + col];
         }
         c.Span[row * n + col] = sum;
-        
+
         await Task.CompletedTask;
     }
 
@@ -288,14 +288,14 @@ internal sealed class AotSafeCodeGenerator
         var input = context.GetBuffer<float>(0);
         var output = context.GetBuffer<float>(1);
         var workItemId = context.GetParameter(2) as long[] ?? new long[] { 0 };
-        
+
         // Simple reduction - in production would use tree reduction
         if (workItemId[0] == 0)
         {
             float sum = 0;
             var vectorSize = System.Numerics.Vector<float>.Count;
             var vectorCount = input.Length / vectorSize;
-            
+
             // Vectorized sum
             var vsum = System.Numerics.Vector<float>.Zero;
             for (int i = 0; i < vectorCount; i++)
@@ -303,22 +303,22 @@ internal sealed class AotSafeCodeGenerator
                 var v = new System.Numerics.Vector<float>(input.Span.Slice(i * vectorSize));
                 vsum += v;
             }
-            
+
             // Sum vector elements
             for (int i = 0; i < vectorSize; i++)
             {
                 sum += vsum[i];
             }
-            
+
             // Add remainder
             for (int i = vectorCount * vectorSize; i < input.Length; i++)
             {
                 sum += input.Span[i];
             }
-            
+
             output.Span[0] = sum;
         }
-        
+
         await Task.CompletedTask;
     }
 
@@ -330,11 +330,11 @@ internal sealed class AotSafeCodeGenerator
         long baseSize = 1024;
         baseSize += ast.Operations.Count * 128;
         baseSize += ast.MemoryOperations.Count * 64;
-        if (ast.HasLoops) 
+        if (ast.HasLoops)
         {
             baseSize += 512;
         }
-        if (ast.HasConditionals) 
+        if (ast.HasConditionals)
         {
             baseSize += 256;
         }
@@ -344,19 +344,19 @@ internal sealed class AotSafeCodeGenerator
     private string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
     {
         var notes = new List<string>();
-        
+
         notes.Add($"AOT-safe kernel with {ast.Operations.Count} operations");
-        
+
         if (analysis.CanVectorize)
             notes.Add($"Applied vectorization with factor {analysis.VectorizationFactor}");
         else
             notes.Add("Scalar execution (vectorization not applicable)");
-            
+
         if (options.OptimizationLevel >= OptimizationLevel.Default)
             notes.Add("Applied release optimizations");
-            
+
         notes.Add("Using pre-compiled kernel implementation for AOT compatibility");
-            
+
         return notes.ToArray();
     }
 }

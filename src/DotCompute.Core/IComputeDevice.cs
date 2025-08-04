@@ -188,7 +188,7 @@ public interface IDeviceCapabilities
     /// <summary>
     /// Checks if a specific feature is supported.
     /// </summary>
-    bool IsFeatureSupported(DeviceFeature feature);
+    public bool IsFeatureSupported(DeviceFeature feature);
 }
 
 /// <summary>
@@ -354,32 +354,32 @@ public interface IDeviceMemoryInfo
     /// <summary>
     /// Gets total global memory in bytes.
     /// </summary>
-    long TotalGlobalMemory { get; }
+    public long TotalGlobalMemory { get; }
 
     /// <summary>
     /// Gets available global memory in bytes.
     /// </summary>
-    long AvailableGlobalMemory { get; }
+    public long AvailableGlobalMemory { get; }
 
     /// <summary>
     /// Gets total local memory per work group in bytes.
     /// </summary>
-    long LocalMemoryPerWorkGroup { get; }
+    public long LocalMemoryPerWorkGroup { get; }
 
     /// <summary>
     /// Gets memory bandwidth in GB/s.
     /// </summary>
-    double MemoryBandwidth { get; }
+    public double MemoryBandwidth { get; }
 
     /// <summary>
     /// Gets cache sizes.
     /// </summary>
-    ICacheSizes CacheSizes { get; }
+    public ICacheSizes CacheSizes { get; }
 
     /// <summary>
     /// Gets memory allocation granularity.
     /// </summary>
-    long AllocationGranularity { get; }
+    public long AllocationGranularity { get; }
 }
 
 /// <summary>
@@ -390,27 +390,27 @@ public interface ICacheSizes
     /// <summary>
     /// Gets L1 cache size in bytes.
     /// </summary>
-    long L1Size { get; }
+    public long L1Size { get; }
 
     /// <summary>
     /// Gets L2 cache size in bytes.
     /// </summary>
-    long L2Size { get; }
+    public long L2Size { get; }
 
     /// <summary>
     /// Gets L3 cache size in bytes.
     /// </summary>
-    long L3Size { get; }
+    public long L3Size { get; }
 
     /// <summary>
     /// Gets texture cache size in bytes.
     /// </summary>
-    long TextureCacheSize { get; }
+    public long TextureCacheSize { get; }
 
     /// <summary>
     /// Gets constant cache size in bytes.
     /// </summary>
-    long ConstantCacheSize { get; }
+    public long ConstantCacheSize { get; }
 }
 
 /// <summary>
@@ -421,7 +421,7 @@ public interface IDeviceMemory : IAsyncDisposable
     /// <summary>
     /// Gets the memory size in bytes.
     /// </summary>
-    long SizeInBytes { get; }
+    public long SizeInBytes { get; }
 
     /// <summary>
     /// Gets the device that owns this memory.
@@ -436,7 +436,7 @@ public interface IDeviceMemory : IAsyncDisposable
     /// <summary>
     /// Copies data from host to device memory.
     /// </summary>
-    ValueTask WriteAsync<T>(
+    public ValueTask WriteAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged;
@@ -444,7 +444,7 @@ public interface IDeviceMemory : IAsyncDisposable
     /// <summary>
     /// Copies data from device to host memory.
     /// </summary>
-    ValueTask ReadAsync<T>(
+    public ValueTask ReadAsync<T>(
         Memory<T> destination,
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged;
@@ -452,7 +452,7 @@ public interface IDeviceMemory : IAsyncDisposable
     /// <summary>
     /// Fills memory with a pattern.
     /// </summary>
-    ValueTask FillAsync<T>(
+    public ValueTask FillAsync<T>(
         T pattern,
         long offset = 0,
         long? count = null,
@@ -461,7 +461,7 @@ public interface IDeviceMemory : IAsyncDisposable
     /// <summary>
     /// Copies to another device memory.
     /// </summary>
-    ValueTask CopyToAsync(
+    public ValueTask CopyToAsync(
         IDeviceMemory destination,
         long sourceOffset = 0,
         long destinationOffset = 0,
@@ -477,17 +477,17 @@ public interface ICommandQueue : IAsyncDisposable
     /// <summary>
     /// Gets the queue identifier.
     /// </summary>
-    string Id { get; }
+    public string Id { get; }
 
     /// <summary>
     /// Gets the associated device.
     /// </summary>
-    IComputeDevice Device { get; }
+    public IComputeDevice Device { get; }
 
     /// <summary>
     /// Enqueues a kernel for execution.
     /// </summary>
-    ValueTask EnqueueKernelAsync(
+    public ValueTask EnqueueKernelAsync(
         ICompiledKernel kernel,
         KernelExecutionContext context,
         CancellationToken cancellationToken = default);
@@ -495,7 +495,7 @@ public interface ICommandQueue : IAsyncDisposable
     /// <summary>
     /// Enqueues a memory copy operation.
     /// </summary>
-    ValueTask EnqueueCopyAsync(
+    public ValueTask EnqueueCopyAsync(
         IDeviceMemory source,
         IDeviceMemory destination,
         long sourceOffset = 0,
@@ -506,17 +506,17 @@ public interface ICommandQueue : IAsyncDisposable
     /// <summary>
     /// Enqueues a barrier to synchronize operations.
     /// </summary>
-    ValueTask EnqueueBarrierAsync(CancellationToken cancellationToken = default);
+    public ValueTask EnqueueBarrierAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Waits for all enqueued operations to complete.
     /// </summary>
-    ValueTask FinishAsync(CancellationToken cancellationToken = default);
+    public ValueTask FinishAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Flushes the command queue.
     /// </summary>
-    ValueTask FlushAsync(CancellationToken cancellationToken = default);
+    public ValueTask FlushAsync(CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -574,42 +574,42 @@ public interface IDeviceMetrics
     /// <summary>
     /// Gets current utilization percentage.
     /// </summary>
-    double Utilization { get; }
+    public double Utilization { get; }
 
     /// <summary>
     /// Gets current memory usage percentage.
     /// </summary>
-    double MemoryUsage { get; }
+    public double MemoryUsage { get; }
 
     /// <summary>
     /// Gets current temperature in Celsius.
     /// </summary>
-    double? Temperature { get; }
+    public double? Temperature { get; }
 
     /// <summary>
     /// Gets current power consumption in watts.
     /// </summary>
-    double? PowerConsumption { get; }
+    public double? PowerConsumption { get; }
 
     /// <summary>
     /// Gets kernel execution count.
     /// </summary>
-    long KernelExecutionCount { get; }
+    public long KernelExecutionCount { get; }
 
     /// <summary>
     /// Gets total compute time.
     /// </summary>
-    TimeSpan TotalComputeTime { get; }
+    public TimeSpan TotalComputeTime { get; }
 
     /// <summary>
     /// Gets average kernel execution time.
     /// </summary>
-    TimeSpan AverageKernelTime { get; }
+    public TimeSpan AverageKernelTime { get; }
 
     /// <summary>
     /// Gets memory transfer statistics.
     /// </summary>
-    IMemoryTransferStats TransferStats { get; }
+    public IMemoryTransferStats TransferStats { get; }
 }
 
 /// <summary>
@@ -620,25 +620,25 @@ public interface IMemoryTransferStats
     /// <summary>
     /// Gets total bytes transferred to device.
     /// </summary>
-    long BytesToDevice { get; }
+    public long BytesToDevice { get; }
 
     /// <summary>
     /// Gets total bytes transferred from device.
     /// </summary>
-    long BytesFromDevice { get; }
+    public long BytesFromDevice { get; }
 
     /// <summary>
     /// Gets average transfer rate to device in GB/s.
     /// </summary>
-    double AverageRateToDevice { get; }
+    public double AverageRateToDevice { get; }
 
     /// <summary>
     /// Gets average transfer rate from device in GB/s.
     /// </summary>
-    double AverageRateFromDevice { get; }
+    public double AverageRateFromDevice { get; }
 
     /// <summary>
     /// Gets total transfer time.
     /// </summary>
-    TimeSpan TotalTransferTime { get; }
+    public TimeSpan TotalTransferTime { get; }
 }

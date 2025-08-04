@@ -190,7 +190,7 @@ public sealed class KernelPipeline : IKernelPipeline
 
             _metrics.RecordExecution(metrics, errors.Count == 0);
 
-            var success = errors.Count == 0 || 
+            var success = errors.Count == 0 ||
                 (context.Options.ContinueOnError && errors.All(e => e.Severity < ErrorSeverity.Critical));
 
             PublishEvent(new PipelineEvent
@@ -355,7 +355,7 @@ public sealed class KernelPipeline : IKernelPipeline
         ThrowIfDisposed();
 
         var result = await optimizer.OptimizeAsync(this, OptimizationSettings);
-        
+
         PublishEvent(new PipelineEvent
         {
             Type = PipelineEventType.OptimizationApplied,
@@ -376,7 +376,9 @@ public sealed class KernelPipeline : IKernelPipeline
     public async ValueTask DisposeAsync()
     {
         if (_isDisposed)
+        {
             return;
+        }
 
         _executionSemaphore?.Dispose();
 
@@ -461,7 +463,7 @@ public sealed class KernelPipeline : IKernelPipeline
             if (_errorHandler != null)
             {
                 var errorResult = _errorHandler(ex, context);
-                
+
                 switch (errorResult)
                 {
                     case ErrorHandlingResult.Continue:
@@ -576,7 +578,7 @@ public sealed class KernelPipeline : IKernelPipeline
             .Sum(r => r.Metrics!["ComputeUtilization"]);
 
         var count = results.Count(r => r.Metrics?.ContainsKey("ComputeUtilization") == true);
-        
+
         return count > 0 ? utilizationSum / count : 0;
     }
 
@@ -592,7 +594,7 @@ public sealed class KernelPipeline : IKernelPipeline
             .Sum(r => r.Metrics!["MemoryBandwidthUtilization"]);
 
         var count = results.Count(r => r.Metrics?.ContainsKey("MemoryBandwidthUtilization") == true);
-        
+
         return count > 0 ? utilizationSum / count : 0;
     }
 

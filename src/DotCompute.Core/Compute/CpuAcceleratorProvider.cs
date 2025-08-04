@@ -3,18 +3,18 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 using Microsoft.Extensions.Logging;
-using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
-using KernelDefinition = DotCompute.Abstractions.KernelDefinition;
+using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
+using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using KernelArguments = DotCompute.Abstractions.KernelArguments;
-using System.Diagnostics;
+using KernelDefinition = DotCompute.Abstractions.KernelDefinition;
 
 namespace DotCompute.Core.Accelerators;
 
@@ -33,6 +33,7 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
     public string Name => "CPU";
 
     public AcceleratorType[] SupportedTypes => new[] { AcceleratorType.CPU };
+    private static readonly char[] separator = new[] { ' ' };
 
     public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
     {
@@ -59,7 +60,9 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
     public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
     {
         if (info.DeviceType != "CPU")
+        {
             throw new ArgumentException("Can only create CPU accelerators", nameof(info));
+        }
 
         var accelerator = new CpuAccelerator(info, _logger);
         return ValueTask.FromResult<IAccelerator>(accelerator);
@@ -68,13 +71,21 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
     private static string GetProcessorName()
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
             return Environment.GetEnvironmentVariable("PROCESSOR_IDENTIFIER") ?? "Unknown CPU";
+        }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
             return "Linux CPU"; // Would need to parse /proc/cpuinfo
+        }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
             return "macOS CPU"; // Would need to use sysctl
+        }
         else
+        {
             return "Unknown CPU";
+        }
     }
 
     private static string GetProcessorVendor()
@@ -92,13 +103,21 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
     {
         // Simple version based on SIMD support
         if (System.Runtime.Intrinsics.X86.Avx2.IsSupported)
+        {
             return new Version(2, 0);
+        }
         else if (System.Runtime.Intrinsics.X86.Sse41.IsSupported)
+        {
             return new Version(1, 4);
+        }
         else if (System.Numerics.Vector.IsHardwareAccelerated)
+        {
             return new Version(1, 0);
+        }
         else
+        {
             return new Version(0, 1);
+        }
     }
 
     private static long GetAvailableMemory()
@@ -140,11 +159,11 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.CreateNoWindow = true;
-            
+
             process.Start();
             var output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
-            
+
             var lines = output.Split('\n');
             foreach (var line in lines)
             {
@@ -175,7 +194,7 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
                 var availableLine = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:"));
                 if (availableLine != null)
                 {
-                    var parts = availableLine.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+                    var parts = availableLine.Split(separator, StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
                     {
                         return kb * 1024; // Convert KB to bytes
@@ -200,11 +219,11 @@ public class CpuAcceleratorProvider : IAcceleratorProvider
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
             process.StartInfo.CreateNoWindow = true;
-            
+
             process.Start();
             var output = process.StandardOutput.ReadToEnd();
             process.WaitForExit();
-            
+
             var parts = output.Split(':');
             if (parts.Length == 2 && long.TryParse(parts[1].Trim(), out var bytes))
             {
@@ -278,7 +297,7 @@ internal class CpuAccelerator : IAccelerator
             // Determine kernel type from metadata or assume C# by default
             ICompiledKernel compiledKernel;
             var kernelType = definition.Metadata?.GetValueOrDefault("SourceType")?.ToString() ?? "CSharp";
-            
+
             if (kernelType == "CSharp")
             {
                 compiledKernel = await CompileCSharpKernelAsync(context, cancellationToken);
@@ -302,7 +321,7 @@ internal class CpuAccelerator : IAccelerator
         }
     }
 
-    private async ValueTask<ICompiledKernel> CompileCSharpKernelAsync(
+    private static async ValueTask<ICompiledKernel> CompileCSharpKernelAsync(
         CpuKernelCompilationContext context,
         CancellationToken cancellationToken)
     {
@@ -318,7 +337,9 @@ internal class CpuAccelerator : IAccelerator
             for (long i = 0; i < workSize; i++)
             {
                 if (execContext.CancellationToken.IsCancellationRequested)
+                {
                     break;
+                }
                 // Kernel execution logic would go here
             }
         };
@@ -326,7 +347,7 @@ internal class CpuAccelerator : IAccelerator
         return new CpuCompiledKernel(context.Definition.Name, context.Definition, compiledFunction);
     }
 
-    private async ValueTask<ICompiledKernel> CompileNativeKernelAsync(
+    private static async ValueTask<ICompiledKernel> CompileNativeKernelAsync(
         CpuKernelCompilationContext context,
         CancellationToken cancellationToken)
     {
@@ -384,22 +405,24 @@ internal class CpuMemoryManager : IMemoryManager, IDisposable
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
 
-    public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
+    public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
         ReadOnlyMemory<T> source,
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         var buffer = new CpuMemoryBuffer(sizeInBytes, options);
-        buffer.CopyFromHostAsync(source).AsTask().Wait();
+        await buffer.CopyFromHostAsync(source, cancellationToken: cancellationToken).AsTask();
         _allocatedBuffers.Add(buffer);
-        return ValueTask.FromResult<IMemoryBuffer>(buffer);
+        return await ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
 
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
         if (buffer is not CpuMemoryBuffer cpuBuffer)
+        {
             throw new ArgumentException("Buffer must be a CPU buffer", nameof(buffer));
+        }
 
         return new CpuMemoryBufferView(cpuBuffer, offset, length);
     }
@@ -425,8 +448,10 @@ internal class CpuMemoryBuffer : IMemoryBuffer
     public CpuMemoryBuffer(long sizeInBytes, MemoryOptions options)
     {
         if (sizeInBytes > int.MaxValue)
+        {
             throw new ArgumentException("Size too large for CPU buffer", nameof(sizeInBytes));
-            
+        }
+
         _data = new byte[sizeInBytes];
         SizeInBytes = sizeInBytes;
         Options = options;
@@ -550,7 +575,6 @@ internal class CpuCompiledKernel : ICompiledKernel
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(arguments);
 
         if (_disposed)
         {

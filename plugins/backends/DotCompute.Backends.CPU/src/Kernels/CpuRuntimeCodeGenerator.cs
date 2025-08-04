@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
-using DotCompute.Core;
 using DotCompute.Abstractions;
+using DotCompute.Core;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -18,7 +18,7 @@ internal sealed class CpuRuntimeCodeGenerator
     {
         // Use advanced IL code generator
         var kernelCode = _ilGenerator.GenerateKernel(definition, ast, analysis, options);
-        
+
         return new CompiledCode
         {
             CompiledDelegate = kernelCode.CompiledDelegate,
@@ -26,7 +26,7 @@ internal sealed class CpuRuntimeCodeGenerator
             OptimizationNotes = kernelCode.OptimizationNotes
         };
     }
-    
+
     public CompiledCode GenerateFromBytecode(byte[] bytecode, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // JIT compile bytecode
@@ -36,15 +36,15 @@ internal sealed class CpuRuntimeCodeGenerator
             CodeSize = bytecode.Length,
             OptimizationNotes = new[] { "JIT compiled from bytecode" }
         };
-        
+
         return compiledCode;
     }
-    
+
     public CompiledCode GenerateDefaultKernel(KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // Generate a default vectorized kernel based on metadata
         var compiledCode = new CompiledCode();
-        
+
         // Check if operation type is specified in metadata
         if (definition.Metadata?.TryGetValue("Operation", out var opObj) == true && opObj is string opStr)
         {
@@ -55,9 +55,9 @@ internal sealed class CpuRuntimeCodeGenerator
         {
             compiledCode.OptimizationNotes = new[] { "Generated default kernel" };
         }
-        
+
         compiledCode.CodeSize = 2048; // Estimated
-        
+
         return compiledCode;
     }
 }

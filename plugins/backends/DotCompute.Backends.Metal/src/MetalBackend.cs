@@ -2,11 +2,11 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
-using System.Threading.Tasks;
 
 namespace DotCompute.Backends.Metal;
 
@@ -247,7 +247,7 @@ public sealed class MetalBackend : IDisposable
 
             // Get device info for validation
             var deviceInfo = MetalNative.GetDeviceInfo(device);
-            
+
             // 4. Validate compute support
             if (!ValidateComputeSupport(deviceInfo, deviceIndex))
             {
@@ -282,9 +282,9 @@ public sealed class MetalBackend : IDisposable
 
             // Verify minimum capability requirements
             var familyString = Marshal.PtrToStringAnsi(deviceInfo.SupportedFamilies) ?? "";
-            
+
             // Require at least Mac2 (Intel) or Apple4 (Apple Silicon) family support
-            bool hasMinimumCapability = familyString.Contains("Mac2") || 
+            bool hasMinimumCapability = familyString.Contains("Mac2") ||
                                       familyString.Contains("Apple") ||
                                       familyString.Contains("Common");
 
@@ -376,9 +376,9 @@ public sealed class MetalBackend : IDisposable
         {
             var deviceInfo = MetalNative.GetDeviceInfo(device);
             var deviceName = Marshal.PtrToStringAnsi(deviceInfo.Name) ?? $"Metal Device {deviceIndex}";
-            
+
             _logger.LogDebug("Creating Metal accelerator for device: {DeviceName}", deviceName);
-            
+
             // Create accelerator with the device
             // The MetalAccelerator will automatically discover and use the appropriate device
             // based on the system configuration and available hardware
@@ -397,26 +397,26 @@ public sealed class MetalBackend : IDisposable
     {
         var info = accelerator.Info;
         var capabilities = info.Capabilities ?? new Dictionary<string, object>();
-        
+
         _logger.LogInformation("Metal Device: {Name} (ID: {Id})", info.Name, info.Id);
         _logger.LogInformation("  Device Type: {DeviceType}", info.DeviceType);
         _logger.LogInformation("  Compute Capability: {ComputeCapability}", info.ComputeCapability);
-        _logger.LogInformation("  Total Memory: {TotalMemory:N0} bytes ({MemoryGB:F1} GB)", 
+        _logger.LogInformation("  Total Memory: {TotalMemory:N0} bytes ({MemoryGB:F1} GB)",
             info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024));
         _logger.LogInformation("  Compute Units: {ComputeUnits}", info.ComputeUnits);
-        
+
         if (capabilities.TryGetValue("MaxThreadgroupSize", out var maxThreadgroup))
             _logger.LogInformation("  Max Threadgroup Size: {MaxThreadgroup}", maxThreadgroup);
-        
+
         if (capabilities.TryGetValue("MaxThreadsPerThreadgroup", out var maxThreadsPerGroup))
             _logger.LogInformation("  Max Threads per Threadgroup: {MaxThreads}", maxThreadsPerGroup);
-            
+
         if (capabilities.TryGetValue("UnifiedMemory", out var unified) && (bool)unified)
             _logger.LogInformation("  Unified Memory: Supported");
-            
+
         if (capabilities.TryGetValue("SupportsFamily", out var families))
             _logger.LogInformation("  GPU Families: {Families}", families);
-            
+
         if (capabilities.TryGetValue("Location", out var location))
             _logger.LogInformation("  Location: {Location}", location);
     }
@@ -432,7 +432,7 @@ public sealed class MetalBackend : IDisposable
         {
             accelerator?.DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
-        
+
         _accelerators.Clear();
         _disposed = true;
         GC.SuppressFinalize(this);

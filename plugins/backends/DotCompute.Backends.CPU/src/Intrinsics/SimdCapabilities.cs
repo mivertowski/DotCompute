@@ -4,8 +4,8 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 
 namespace DotCompute.Backends.CPU.Intrinsics;
 
@@ -23,7 +23,7 @@ public static class SimdCapabilities
     /// Gets the preferred vector width in bits.
     /// </summary>
     public static int PreferredVectorWidth { get; } = Vector256.IsHardwareAccelerated ? 256 :
-                                                      Vector128.IsHardwareAccelerated ? 128 : 
+                                                      Vector128.IsHardwareAccelerated ? 128 :
                                                       Vector.IsHardwareAccelerated ? Vector<byte>.Count * 8 : 64;
 
     /// <summary>

@@ -6,8 +6,8 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
+using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
 
 namespace DotCompute.Backends.CPU.Kernels;
@@ -50,18 +50,18 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 16;
         int vectorCount = a.Length / VectorSize;
-        
+
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
-        
+
         var sum = Vector512<float>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
             var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-            
+
             if (Avx512F.IsSupported)
             {
                 sum = Avx512F.FusedMultiplyAdd(va, vb, sum);
@@ -71,10 +71,10 @@ public static class AdvancedSimdPatterns
                 sum = Avx512F.Add(sum, Avx512F.Multiply(va, vb));
             }
         }
-        
+
         // Horizontal reduction
         float result = Vector512.Sum(sum);
-        
+
         // Handle remainder
         int remainder = a.Length % VectorSize;
         if (remainder > 0)
@@ -85,7 +85,7 @@ public static class AdvancedSimdPatterns
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -94,18 +94,18 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 8;
         int vectorCount = a.Length / VectorSize;
-        
+
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
-        
+
         var sum = Vector256<float>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
             var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-            
+
             if (Fma.IsSupported)
             {
                 sum = Fma.MultiplyAdd(va, vb, sum);
@@ -115,10 +115,10 @@ public static class AdvancedSimdPatterns
                 sum = Avx.Add(sum, Avx.Multiply(va, vb));
             }
         }
-        
+
         // Horizontal reduction
         float result = Vector256.Sum(sum);
-        
+
         // Handle remainder
         int remainder = a.Length % VectorSize;
         if (remainder > 0)
@@ -129,7 +129,7 @@ public static class AdvancedSimdPatterns
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -138,24 +138,24 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 4;
         int vectorCount = a.Length / VectorSize;
-        
+
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
-        
+
         var sum = Vector128<float>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
             var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-            
+
             sum = AdvSimd.FusedMultiplyAdd(sum, va, vb);
         }
-        
+
         // Horizontal reduction for NEON
         float result = Vector128.Sum(sum);
-        
+
         // Handle remainder
         int remainder = a.Length % VectorSize;
         if (remainder > 0)
@@ -166,7 +166,7 @@ public static class AdvancedSimdPatterns
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -175,24 +175,24 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 4;
         int vectorCount = a.Length / VectorSize;
-        
+
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
-        
+
         var sum = Vector128<float>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
             var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-            
+
             sum = Sse.Add(sum, Sse.Multiply(va, vb));
         }
-        
+
         // Horizontal reduction
         float result = Vector128.Sum(sum);
-        
+
         // Handle remainder
         int remainder = a.Length % VectorSize;
         if (remainder > 0)
@@ -203,7 +203,7 @@ public static class AdvancedSimdPatterns
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -256,19 +256,19 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 16;
         int vectorCount = vector.Length / VectorSize;
-        
+
         ref var vectorRef = ref MemoryMarshal.GetReference(vector);
         var sum = Vector512<float>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var v = Vector512.LoadUnsafe(ref Unsafe.Add(ref vectorRef, offset));
             sum = Avx512F.Add(sum, v);
         }
-        
+
         float result = Vector512.Sum(sum);
-        
+
         // Handle remainder
         int remainder = vector.Length % VectorSize;
         if (remainder > 0)
@@ -279,7 +279,7 @@ public static class AdvancedSimdPatterns
                 result += vector[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -288,19 +288,19 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 8;
         int vectorCount = vector.Length / VectorSize;
-        
+
         ref var vectorRef = ref MemoryMarshal.GetReference(vector);
         var sum = Vector256<float>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var v = Vector256.LoadUnsafe(ref Unsafe.Add(ref vectorRef, offset));
             sum = Avx.Add(sum, v);
         }
-        
+
         float result = Vector256.Sum(sum);
-        
+
         // Handle remainder
         int remainder = vector.Length % VectorSize;
         if (remainder > 0)
@@ -311,7 +311,7 @@ public static class AdvancedSimdPatterns
                 result += vector[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -320,19 +320,19 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 4;
         int vectorCount = vector.Length / VectorSize;
-        
+
         ref var vectorRef = ref MemoryMarshal.GetReference(vector);
         var sum = Vector128<float>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var v = Vector128.LoadUnsafe(ref Unsafe.Add(ref vectorRef, offset));
             sum = AdvSimd.Add(sum, v);
         }
-        
+
         float result = Vector128.Sum(sum);
-        
+
         // Handle remainder
         int remainder = vector.Length % VectorSize;
         if (remainder > 0)
@@ -343,7 +343,7 @@ public static class AdvancedSimdPatterns
                 result += vector[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -352,19 +352,19 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 4;
         int vectorCount = vector.Length / VectorSize;
-        
+
         ref var vectorRef = ref MemoryMarshal.GetReference(vector);
         var sum = Vector128<float>.Zero;
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var v = Vector128.LoadUnsafe(ref Unsafe.Add(ref vectorRef, offset));
             sum = Sse.Add(sum, v);
         }
-        
+
         float result = Vector128.Sum(sum);
-        
+
         // Handle remainder
         int remainder = vector.Length % VectorSize;
         if (remainder > 0)
@@ -375,7 +375,7 @@ public static class AdvancedSimdPatterns
                 result += vector[lastOffset + i];
             }
         }
-        
+
         return result;
     }
 
@@ -432,30 +432,30 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 16;
         int vectorCount = condition.Length / VectorSize;
-        
+
         var thresholdVec = Vector512.Create(threshold);
-        
+
         ref var condRef = ref MemoryMarshal.GetReference(condition);
         ref var trueRef = ref MemoryMarshal.GetReference(trueValues);
         ref var falseRef = ref MemoryMarshal.GetReference(falseValues);
         ref var resultRef = ref MemoryMarshal.GetReference(result);
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var cond = Vector512.LoadUnsafe(ref Unsafe.Add(ref condRef, offset));
             var trueVec = Vector512.LoadUnsafe(ref Unsafe.Add(ref trueRef, offset));
             var falseVec = Vector512.LoadUnsafe(ref Unsafe.Add(ref falseRef, offset));
-            
+
             // Create mask where condition > threshold
             var mask = Avx512F.CompareGreaterThan(cond, thresholdVec);
-            
+
             // Use masked blend: select trueVec where mask is true, falseVec otherwise
             var resultVec = Avx512F.BlendVariable(falseVec, trueVec, mask.AsSingle());
-            
+
             resultVec.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
         }
-        
+
         // Handle remainder
         int remainder = condition.Length % VectorSize;
         if (remainder > 0)
@@ -479,30 +479,30 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 8;
         int vectorCount = condition.Length / VectorSize;
-        
+
         var thresholdVec = Vector256.Create(threshold);
-        
+
         ref var condRef = ref MemoryMarshal.GetReference(condition);
         ref var trueRef = ref MemoryMarshal.GetReference(trueValues);
         ref var falseRef = ref MemoryMarshal.GetReference(falseValues);
         ref var resultRef = ref MemoryMarshal.GetReference(result);
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var cond = Vector256.LoadUnsafe(ref Unsafe.Add(ref condRef, offset));
             var trueVec = Vector256.LoadUnsafe(ref Unsafe.Add(ref trueRef, offset));
             var falseVec = Vector256.LoadUnsafe(ref Unsafe.Add(ref falseRef, offset));
-            
+
             // Create mask where condition > threshold
             var mask = Avx.CompareGreaterThan(cond, thresholdVec);
-            
+
             // Use blend to select based on mask
             var resultVec = Avx.BlendVariable(falseVec, trueVec, mask);
-            
+
             resultVec.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
         }
-        
+
         // Handle remainder
         int remainder = condition.Length % VectorSize;
         if (remainder > 0)
@@ -526,24 +526,24 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 4;
         int vectorCount = condition.Length / VectorSize;
-        
+
         var thresholdVec = Vector128.Create(threshold);
-        
+
         ref var condRef = ref MemoryMarshal.GetReference(condition);
         ref var trueRef = ref MemoryMarshal.GetReference(trueValues);
         ref var falseRef = ref MemoryMarshal.GetReference(falseValues);
         ref var resultRef = ref MemoryMarshal.GetReference(result);
-        
+
         for (int i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var cond = Vector128.LoadUnsafe(ref Unsafe.Add(ref condRef, offset));
             var trueVec = Vector128.LoadUnsafe(ref Unsafe.Add(ref trueRef, offset));
             var falseVec = Vector128.LoadUnsafe(ref Unsafe.Add(ref falseRef, offset));
-            
+
             // Create mask where condition > threshold
             var mask = Sse.CompareGreaterThan(cond, thresholdVec);
-            
+
             // Use blend to select based on mask
             Vector128<float> resultVec;
             if (Sse41.IsSupported)
@@ -557,10 +557,10 @@ public static class AdvancedSimdPatterns
                 var maskedFalse = Sse.AndNot(mask, falseVec);
                 resultVec = Sse.Or(maskedTrue, maskedFalse);
             }
-            
+
             resultVec.StoreUnsafe(ref Unsafe.Add(ref resultRef, offset));
         }
-        
+
         // Handle remainder
         int remainder = condition.Length % VectorSize;
         if (remainder > 0)
@@ -619,24 +619,24 @@ public static class AdvancedSimdPatterns
     {
         const int VectorSize = 8;
         int vectorCount = indices.Length / VectorSize;
-        
+
         fixed (float* sourcePtr = source)
         fixed (int* indicesPtr = indices)
         {
             ref var destRef = ref MemoryMarshal.GetReference(destination);
-            
+
             for (int i = 0; i < vectorCount; i++)
             {
                 var offset = i * VectorSize;
                 var indicesVec = Vector256.LoadUnsafe(ref Unsafe.Add(ref MemoryMarshal.GetReference(indices), offset));
-                
+
                 // AVX2 gather: load floats from source using indices
                 var gathered = Avx2.GatherVector256(sourcePtr, indicesVec, 4); // scale = 4 for sizeof(float)
-                
+
                 gathered.StoreUnsafe(ref Unsafe.Add(ref destRef, offset));
             }
         }
-        
+
         // Handle remainder with scalar
         int remainder = indices.Length % VectorSize;
         if (remainder > 0)

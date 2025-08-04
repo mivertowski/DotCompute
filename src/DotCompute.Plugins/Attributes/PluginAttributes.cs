@@ -59,15 +59,15 @@ namespace DotCompute.Plugins.Attributes
         /// <summary>
         /// Gets or sets the load priority for backward compatibility.
         /// </summary>
-        public int LoadPriority 
-        { 
-            get => Priority; 
-            set 
-            { 
+        public int LoadPriority
+        {
+            get => Priority;
+            set
+            {
                 if (value < 0)
                     throw new ArgumentOutOfRangeException(nameof(value), "LoadPriority must be non-negative.");
-                Priority = value; 
-            } 
+                Priority = value;
+            }
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace DotCompute.Plugins.Attributes
                 throw new ArgumentException("Plugin name cannot be null or empty.", nameof(name));
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Plugin name cannot be whitespace.", nameof(name));
-            
+
             Id = name;
             Name = name;
         }

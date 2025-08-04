@@ -61,7 +61,7 @@ public class CudaBackend : IDisposable
         try
         {
             _logger.LogInformation("Discovering CUDA devices...");
-            
+
             // 1. Enumerate CUDA devices using cuDeviceGet
             var deviceCountResult = CudaRuntime.cudaGetDeviceCount(out int deviceCount);
             if (deviceCountResult != CudaError.Success)
@@ -138,7 +138,7 @@ public class CudaBackend : IDisposable
             var setDeviceResult = CudaRuntime.cudaSetDevice(deviceId);
             if (setDeviceResult != CudaError.Success)
             {
-                _logger.LogWarning("Cannot access CUDA device {DeviceId}: {Error}", 
+                _logger.LogWarning("Cannot access CUDA device {DeviceId}: {Error}",
                     deviceId, CudaRuntime.GetErrorString(setDeviceResult));
                 return false;
             }
@@ -147,7 +147,7 @@ public class CudaBackend : IDisposable
             var syncResult = CudaRuntime.cudaDeviceSynchronize();
             if (syncResult != CudaError.Success)
             {
-                _logger.LogWarning("CUDA device {DeviceId} failed synchronization test: {Error}", 
+                _logger.LogWarning("CUDA device {DeviceId} failed synchronization test: {Error}",
                     deviceId, CudaRuntime.GetErrorString(syncResult));
                 return false;
             }
@@ -167,10 +167,10 @@ public class CudaBackend : IDisposable
         {
             var deviceProps = new CudaDeviceProperties();
             var result = CudaRuntime.cudaGetDeviceProperties(ref deviceProps, deviceId);
-            
+
             if (result != CudaError.Success)
             {
-                _logger.LogError("Failed to get properties for CUDA device {DeviceId}: {Error}", 
+                _logger.LogError("Failed to get properties for CUDA device {DeviceId}: {Error}",
                     deviceId, CudaRuntime.GetErrorString(result));
                 return null;
             }
@@ -186,7 +186,7 @@ public class CudaBackend : IDisposable
             var acceleratorLogger = _logger is ILoggerFactory loggerFactory
                 ? loggerFactory.CreateLogger<CudaAccelerator>()
                 : new NullLogger<CudaAccelerator>();
-            
+
             return new CudaAccelerator(deviceId, acceleratorLogger);
         }
         catch (Exception ex)
@@ -200,34 +200,34 @@ public class CudaBackend : IDisposable
     {
         var info = accelerator.Info;
         var capabilities = info.Capabilities;
-        
+
         _logger.LogInformation("CUDA Device: {Name} (ID: {Id})", info.Name, info.Id);
         _logger.LogInformation("  Compute Capability: {ComputeCapability}", info.ComputeCapability);
-        _logger.LogInformation("  Total Memory: {TotalMemory:N0} bytes ({MemoryGB:F1} GB)", 
+        _logger.LogInformation("  Total Memory: {TotalMemory:N0} bytes ({MemoryGB:F1} GB)",
             info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024));
         _logger.LogInformation("  Multiprocessors: {ComputeUnits}", info.ComputeUnits);
         _logger.LogInformation("  Clock Rate: {ClockRate} MHz", info.MaxClockFrequency);
-        
+
         if (capabilities != null && capabilities.TryGetValue("SharedMemoryPerBlock", out var sharedMem) && sharedMem != null)
         {
             _logger.LogInformation("  Shared Memory per Block: {SharedMem:N0} bytes", sharedMem);
         }
-        
+
         if (capabilities != null && capabilities.TryGetValue("MaxThreadsPerBlock", out var maxThreads) && maxThreads != null)
         {
             _logger.LogInformation("  Max Threads per Block: {MaxThreads}", maxThreads);
         }
-            
+
         if (capabilities != null && capabilities.TryGetValue("WarpSize", out var warpSize) && warpSize != null)
         {
             _logger.LogInformation("  Warp Size: {WarpSize}", warpSize);
         }
-            
+
         if (capabilities != null && capabilities.TryGetValue("ECCEnabled", out var ecc) && ecc is bool eccEnabled && eccEnabled)
         {
             _logger.LogInformation("  ECC Memory: Enabled");
         }
-            
+
         if (capabilities != null && capabilities.TryGetValue("UnifiedAddressing", out var unified) && unified is bool unifiedEnabled && unifiedEnabled)
         {
             _logger.LogInformation("  Unified Virtual Addressing: Supported");
@@ -236,13 +236,16 @@ public class CudaBackend : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         foreach (var accelerator in _accelerators)
         {
             accelerator?.Dispose();
         }
-        
+
         _accelerators.Clear();
         _disposed = true;
     }

@@ -96,7 +96,7 @@ public class CommandQueueOptionsTests
     {
         // Act
         var defaultOptions = CommandQueueOptions.Default;
-        var newOptions = new CommandQueueOptions
+        _ = new CommandQueueOptions
         {
             EnableProfiling = true,
             EnableOutOfOrderExecution = true,

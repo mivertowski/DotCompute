@@ -173,7 +173,7 @@ public class PipelineException : Exception
     /// <summary>
     /// Initializes a new instance of the PipelineException class.
     /// </summary>
-    public PipelineException(string message, string errorCode) 
+    public PipelineException(string message, string errorCode)
         : base(message)
     {
         ErrorCode = errorCode;
@@ -182,7 +182,7 @@ public class PipelineException : Exception
     /// <summary>
     /// Initializes a new instance of the PipelineException class with inner exception.
     /// </summary>
-    public PipelineException(string message, string errorCode, Exception innerException) 
+    public PipelineException(string message, string errorCode, Exception innerException)
         : base(message, innerException)
     {
         ErrorCode = errorCode;
@@ -192,18 +192,21 @@ public class PipelineException : Exception
     /// Initializes a new instance of the PipelineException class with full context.
     /// </summary>
     public PipelineException(
-        string message, 
+        string message,
         string errorCode,
         string? pipelineId = null,
         string? stageId = null,
         IReadOnlyDictionary<string, object>? context = null,
-        Exception? innerException = null) 
+        Exception? innerException = null)
         : base(message, innerException)
     {
         ErrorCode = errorCode;
         PipelineId = pipelineId;
         StageId = stageId;
         Context = context;
+    }
+    public PipelineException()
+    {
     }
 }
 
@@ -233,6 +236,9 @@ public sealed class PipelineValidationException : PipelineException
     {
         Errors = errors;
         Warnings = warnings;
+    }
+    public PipelineValidationException()
+    {
     }
 }
 
@@ -265,6 +271,9 @@ public sealed class PipelineExecutionException : PipelineException
         Errors = errors;
         PartialResult = partialResult;
     }
+    public PipelineExecutionException()
+    {
+    }
 }
 
 /// <summary>
@@ -295,5 +304,8 @@ public sealed class PipelineOptimizationException : PipelineException
     {
         FailedOptimization = failedOptimization;
         Reason = reason;
+    }
+    public PipelineOptimizationException()
+    {
     }
 }

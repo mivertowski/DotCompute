@@ -146,8 +146,8 @@ public class MemoryAllocatorTests : IDisposable
     {
         // Arrange
         var allocator = new MemoryAllocator();
-        var mem1 = allocator.Allocate<byte>(1024);
-        var mem2 = allocator.Allocate<byte>(2048);
+        _ = allocator.Allocate<byte>(1024);
+        _ = allocator.Allocate<byte>(2048);
 
         // Act
         allocator.Dispose();

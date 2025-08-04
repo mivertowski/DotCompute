@@ -56,7 +56,7 @@ namespace DotCompute.Plugins.Extensions
             PluginOptions options)
         {
             ArgumentNullException.ThrowIfNull(options);
-            
+
             services.Configure<PluginOptions>(opts =>
             {
                 opts.PluginsDirectory = options.PluginsDirectory;
@@ -69,7 +69,7 @@ namespace DotCompute.Plugins.Extensions
                 opts.PluginDirectories = options.PluginDirectories;
                 opts.IsInitialized = options.IsInitialized;
             });
-            
+
             services.AddSingleton<PluginSystem>();
             return services;
         }

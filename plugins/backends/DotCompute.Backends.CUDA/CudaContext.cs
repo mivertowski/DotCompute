@@ -3,8 +3,8 @@
 
 using System;
 using System.Runtime.InteropServices;
-using DotCompute.Backends.CUDA.Native;
 using DotCompute.Abstractions;
+using DotCompute.Backends.CUDA.Native;
 
 namespace DotCompute.Backends.CUDA;
 
@@ -70,7 +70,7 @@ public class CudaContext : IDisposable
     public void MakeCurrent()
     {
         ThrowIfDisposed();
-        
+
         var result = CudaRuntime.cuCtxSetCurrent(_context);
         if (result != CudaError.Success)
         {
@@ -81,7 +81,7 @@ public class CudaContext : IDisposable
     public void Synchronize()
     {
         ThrowIfDisposed();
-        
+
         var result = CudaRuntime.cudaStreamSynchronize(_stream);
         if (result != CudaError.Success)
         {
@@ -114,8 +114,11 @@ public class CudaContext : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
         Cleanup();
         _disposed = true;
     }

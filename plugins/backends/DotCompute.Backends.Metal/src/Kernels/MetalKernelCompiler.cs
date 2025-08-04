@@ -40,8 +40,8 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
     public string Name => "Metal Shader Compiler";
 
     /// <inheritdoc/>
-    public KernelSourceType[] SupportedSourceTypes => new[] 
-    { 
+    public KernelSourceType[] SupportedSourceTypes => new[]
+    {
         KernelSourceType.Metal,
         KernelSourceType.Binary
     };
@@ -70,7 +70,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
         try
         {
             var stopwatch = Stopwatch.StartNew();
-            
+
             // Generate or extract Metal code
             var metalCode = ExtractMetalCode(definition);
             var codeHash = ComputeHash(metalCode);
@@ -85,7 +85,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
             // Compile Metal code
             _logger.LogDebug("Compiling Metal kernel: {Name}", definition.Name);
             var library = await CompileMetalCodeAsync(metalCode, definition.Name, options, cancellationToken).ConfigureAwait(false);
-            
+
             // Cache the compiled library
             _libraryCache[codeHash] = library;
 
@@ -135,7 +135,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
 
         // Assume it's text-based Metal code
         var code = Encoding.UTF8.GetString(definition.Code);
-        
+
         // If the code doesn't include Metal headers, add them
         if (!code.Contains("#include <metal_stdlib>"))
         {
@@ -158,7 +158,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
         {
             return false;
         }
-        
+
         // Metal library magic number
         return code[0] == 0x4D && code[1] == 0x54 && code[2] == 0x4C && code[3] == 0x42;
     }
@@ -169,11 +169,11 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
         {
             // Create compile options
             var compileOptions = MetalNative.CreateCompileOptions();
-            
+
             // Set optimization level
             var enableFastMath = options.OptimizationLevel >= OptimizationLevel.Default;
             MetalNative.SetCompileOptionsFastMath(compileOptions, enableFastMath);
-            
+
             // Set language version
             MetalNative.SetCompileOptionsLanguageVersion(compileOptions, MetalLanguageVersion.Metal30);
 
@@ -185,10 +185,10 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
 
                 if (library == IntPtr.Zero)
                 {
-                    var errorMessage = error != IntPtr.Zero ? 
+                    var errorMessage = error != IntPtr.Zero ?
                         Marshal.PtrToStringAnsi(MetalNative.GetErrorLocalizedDescription(error)) ?? "Unknown error" :
                         "Failed to compile Metal library";
-                    
+
                     if (error != IntPtr.Zero)
                     {
                         MetalNative.ReleaseError(error);
@@ -210,7 +210,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
     private MetalCompiledKernel CreateCompiledKernel(KernelDefinition definition, IntPtr library, TimeSpan compilationTime)
     {
         var entryPoint = definition.EntryPoint ?? definition.Name;
-        
+
         // Get the kernel function from the library
         var function = MetalNative.GetFunction(library, entryPoint);
         if (function == IntPtr.Zero)

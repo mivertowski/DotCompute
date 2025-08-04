@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Memory;
 using FluentAssertions;
@@ -86,7 +87,7 @@ public class UnifiedBufferTests : IDisposable
 
         // Assert - Buffer is allocated on host at creation
         buffer.State.Should().Be(BufferState.HostOnly);
-        
+
         // Act - Write to span
         var span = buffer.AsSpan();
         span[0] = 42;
@@ -156,6 +157,7 @@ public class UnifiedBufferTests : IDisposable
     [InlineData(typeof(long), 8)]
     [InlineData(typeof(float), 4)]
     [InlineData(typeof(double), 8)]
+    [RequiresDynamicCode()]
     public void SizeInBytes_ForDifferentTypes_ShouldBeCorrect(Type type, int expectedElementSize)
     {
         // Act

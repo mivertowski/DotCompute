@@ -41,7 +41,7 @@ public class CudaCompiledKernel : ICompiledKernel, IDisposable
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _ptxData = ptxData ?? throw new ArgumentNullException(nameof(ptxData));
-        
+
         Name = name ?? throw new ArgumentNullException(nameof(name));
         _entryPoint = entryPoint ?? throw new ArgumentNullException(nameof(entryPoint));
 
@@ -68,7 +68,7 @@ public class CudaCompiledKernel : ICompiledKernel, IDisposable
                 result = CudaRuntime.cuModuleGetFunction(ref _function, _module, _entryPoint);
                 CudaRuntime.CheckError(result, "Get function");
 
-                _logger.LogDebug("Loaded CUDA module for kernel '{Name}' with entry point '{EntryPoint}'", 
+                _logger.LogDebug("Loaded CUDA module for kernel '{Name}' with entry point '{EntryPoint}'",
                     Name, _entryPoint);
             }
             finally
@@ -87,9 +87,11 @@ public class CudaCompiledKernel : ICompiledKernel, IDisposable
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        
+
         if (arguments.Arguments.Length == 0)
+        {
             throw new ArgumentException("No arguments provided for kernel execution", nameof(arguments));
+        }
 
         try
         {
@@ -188,7 +190,10 @@ public class CudaCompiledKernel : ICompiledKernel, IDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         try
         {
@@ -210,11 +215,14 @@ public class CudaCompiledKernel : ICompiledKernel, IDisposable
             _logger.LogError(ex, "Error during CUDA compiled kernel disposal");
         }
     }
-    
+
     public void Dispose()
     {
-        if (_disposed) return;
-        
+        if (_disposed)
+        {
+            return;
+        }
+
         try
         {
             if (_module != IntPtr.Zero)
@@ -224,7 +232,7 @@ public class CudaCompiledKernel : ICompiledKernel, IDisposable
                 _module = IntPtr.Zero;
                 _function = IntPtr.Zero;
             }
-            
+
             _disposed = true;
         }
         catch (Exception ex)

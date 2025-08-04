@@ -1,12 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Immutable;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
-using System.Collections.Immutable;
-using System.Linq;
 
 namespace DotCompute.Generators.Kernel
 {
@@ -166,12 +166,12 @@ namespace DotCompute.Generators.Kernel
         {
             // Check if method or containing type has unsafe modifier
             bool isUnsafe = methodDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.UnsafeKeyword));
-            
+
             if (!isUnsafe && method.ContainingType != null)
             {
                 var typeDeclaration = method.ContainingType.DeclaringSyntaxReferences
                     .FirstOrDefault()?.GetSyntax() as TypeDeclarationSyntax;
-                
+
                 if (typeDeclaration != null)
                 {
                     isUnsafe = typeDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.UnsafeKeyword));

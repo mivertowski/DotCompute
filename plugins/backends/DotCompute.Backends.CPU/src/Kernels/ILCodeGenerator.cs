@@ -8,8 +8,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
-using DotCompute.Core;
 using DotCompute.Abstractions;
+using DotCompute.Core;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -23,7 +23,7 @@ internal sealed class ILCodeGenerator
     public ILCodeGenerator()
     {
         // For AOT compatibility, we use Expression Trees instead of AssemblyBuilder
-        
+
         // Initialize AOT-safe generator if dynamic code compilation is not available
         if (!RuntimeFeature.IsDynamicCodeCompiled)
         {
@@ -45,7 +45,7 @@ internal sealed class ILCodeGenerator
         {
             return _aotGenerator.GenerateKernel(definition, ast, analysis, options);
         }
-        
+
         if (analysis.CanVectorize && options.OptimizationLevel >= OptimizationLevel.Default)
         {
             return GenerateVectorizedKernel(definition, ast, analysis, options);
@@ -65,13 +65,13 @@ internal sealed class ILCodeGenerator
         // Create parameter expressions for kernel arguments
         var parameters = CreateParameterExpressions(definition);
         var workItemIdParam = Expression.Parameter(typeof(long[]), "workItemId");
-        
+
         // Add work item ID to parameters
         var allParams = parameters.Concat(new[] { workItemIdParam }).ToArray();
 
         // Create body expression
         var bodyExpressions = new List<Expression>();
-        
+
         // Get work item index
         var indexVar = Expression.Variable(typeof(long), "index");
         bodyExpressions.Add(Expression.Assign(indexVar, Expression.ArrayIndex(workItemIdParam, Expression.Constant(0))));
@@ -90,12 +90,12 @@ internal sealed class ILCodeGenerator
 
         // Create expression body
         var body = Expression.Block(new[] { indexVar }, bodyExpressions);
-        
+
         // Compile to delegate
-        #pragma warning disable IL3050 // Using member 'Expression.Lambda' which requires dynamic code
+#pragma warning disable IL3050 // Using member 'Expression.Lambda' which requires dynamic code
         var lambda = Expression.Lambda(body, allParams);
         var compiledDelegate = lambda.Compile();
-        #pragma warning restore IL3050
+#pragma warning restore IL3050
 
         return new CompiledKernelCode
         {
@@ -116,12 +116,12 @@ internal sealed class ILCodeGenerator
         // Create parameter expressions
         var parameters = CreateParameterExpressions(definition);
         var workItemIdParam = Expression.Parameter(typeof(long[]), "workItemId");
-        
+
         var allParams = parameters.Concat(new[] { workItemIdParam }).ToArray();
 
         // Create body expression
         var bodyExpressions = new List<Expression>();
-        
+
         // Get work item index
         var indexVar = Expression.Variable(typeof(long), "index");
         bodyExpressions.Add(Expression.Assign(indexVar, Expression.ArrayIndex(workItemIdParam, Expression.Constant(0))));
@@ -140,12 +140,12 @@ internal sealed class ILCodeGenerator
 
         // Create expression body
         var body = Expression.Block(new[] { indexVar }, bodyExpressions);
-        
+
         // Compile to delegate
-        #pragma warning disable IL3050 // Using member 'Expression.Lambda' which requires dynamic code
+#pragma warning disable IL3050 // Using member 'Expression.Lambda' which requires dynamic code
         var lambda = Expression.Lambda(body, allParams);
         var compiledDelegate = lambda.Compile();
-        #pragma warning restore IL3050
+#pragma warning restore IL3050
 
         return new CompiledKernelCode
         {
@@ -160,7 +160,7 @@ internal sealed class ILCodeGenerator
     private List<ParameterExpression> CreateParameterExpressions(KernelDefinition definition)
     {
         var parameters = new List<ParameterExpression>();
-        
+
         // Create default parameters based on common kernel patterns
         // This supports the most common scenarios of binary operations with an output buffer
         for (int i = 0; i < 3; i++)
@@ -176,7 +176,7 @@ internal sealed class ILCodeGenerator
             };
             parameters.Add(Expression.Parameter(paramType, paramName));
         }
-        
+
         return parameters;
     }
 
@@ -187,7 +187,7 @@ internal sealed class ILCodeGenerator
         int vectorizationFactor)
     {
         var expressions = new List<Expression>();
-        
+
         // Generate expressions for each operation
         foreach (var op in ast.Operations)
         {
@@ -196,15 +196,15 @@ internal sealed class ILCodeGenerator
                 case AstNodeType.Add:
                     expressions.AddRange(GenerateVectorAdd(parameters, indexExpr, vectorizationFactor));
                     break;
-                    
+
                 case AstNodeType.Multiply:
                     expressions.AddRange(GenerateVectorMultiply(parameters, indexExpr, vectorizationFactor));
                     break;
-                    
-                // Add more operations as needed
+
+                    // Add more operations as needed
             }
         }
-        
+
         return expressions;
     }
 
@@ -214,7 +214,7 @@ internal sealed class ILCodeGenerator
         Expression indexExpr)
     {
         var expressions = new List<Expression>();
-        
+
         foreach (var op in ast.Operations)
         {
             switch (op.NodeType)
@@ -222,13 +222,13 @@ internal sealed class ILCodeGenerator
                 case AstNodeType.Add:
                     expressions.AddRange(GenerateScalarAdd(parameters, indexExpr));
                     break;
-                    
+
                 case AstNodeType.Multiply:
                     expressions.AddRange(GenerateScalarMultiply(parameters, indexExpr));
                     break;
             }
         }
-        
+
         return expressions;
     }
 
@@ -239,7 +239,7 @@ internal sealed class ILCodeGenerator
             return new List<Expression>();
 
         var expressions = new List<Expression>();
-        
+
         // Assume first 3 parameters are Memory<float> for input1, input2, output
         var input1 = parameters[0];
         var input2 = parameters[1];
@@ -256,7 +256,7 @@ internal sealed class ILCodeGenerator
         var value1 = Expression.MakeIndex(input1Span, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
         var value2 = Expression.MakeIndex(input2Span, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
         var result = Expression.Add(value1, value2);
-        
+
         // Store result
         var outputElement = Expression.MakeIndex(outputSpan, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
         expressions.Add(Expression.Assign(outputElement, result));
@@ -293,7 +293,7 @@ internal sealed class ILCodeGenerator
             return new List<Expression>();
 
         var expressions = new List<Expression>();
-        
+
         var input1 = parameters[0];
         var input2 = parameters[1];
         var output = parameters[2];
@@ -309,7 +309,7 @@ internal sealed class ILCodeGenerator
         var value1 = Expression.MakeIndex(input1Span, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
         var value2 = Expression.MakeIndex(input2Span, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
         var result = Expression.Multiply(value1, value2);
-        
+
         // Store result
         var outputElement = Expression.MakeIndex(outputSpan, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
         expressions.Add(Expression.Assign(outputElement, result));
@@ -337,29 +337,29 @@ internal sealed class ILCodeGenerator
     private string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
     {
         var notes = new List<string>();
-        
+
         notes.Add($"Compiled kernel with {ast.Operations.Count} operations");
-        
+
         if (analysis.CanVectorize)
             notes.Add($"Applied vectorization with factor {analysis.VectorizationFactor}");
         else
             notes.Add("Scalar execution (vectorization not applicable)");
-            
+
         if (options.OptimizationLevel >= OptimizationLevel.Default)
         {
             notes.Add("Applied release optimizations");
         }
-            
+
         if (options.EnableDebugInfo)
         {
             notes.Add("Debug info enabled");
         }
-            
+
         if (ast.HasLoops && options.OptimizationLevel == OptimizationLevel.Maximum)
         {
             notes.Add("Applied loop unrolling");
         }
-            
+
         return notes.ToArray();
     }
 }
