@@ -471,3 +471,15 @@ memory/claude-flow-data.json
 memory/agents/README.md
 memory/sessions/README.md
 src/.swarm/memory.db
+calculate-coverage.sh
+TEST_SUMMARY.md
+COVERAGE_ANALYSIS.md
+.claude-flow/metrics/system-metrics.json
+FINAL_SUMMARY.md
+fix-ide0011.sh
+build_output.txt
+.gitignore
+build_output2.txt
+build_new.txt
+final_build.txt
+build_final2.txt

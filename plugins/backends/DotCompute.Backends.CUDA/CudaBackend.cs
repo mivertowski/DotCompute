@@ -208,20 +208,30 @@ public class CudaBackend : IDisposable
         _logger.LogInformation("  Multiprocessors: {ComputeUnits}", info.ComputeUnits);
         _logger.LogInformation("  Clock Rate: {ClockRate} MHz", info.MaxClockFrequency);
         
-        if (capabilities.TryGetValue("SharedMemoryPerBlock", out var sharedMem))
+        if (capabilities != null && capabilities.TryGetValue("SharedMemoryPerBlock", out var sharedMem) && sharedMem != null)
+        {
             _logger.LogInformation("  Shared Memory per Block: {SharedMem:N0} bytes", sharedMem);
+        }
         
-        if (capabilities.TryGetValue("MaxThreadsPerBlock", out var maxThreads))
+        if (capabilities != null && capabilities.TryGetValue("MaxThreadsPerBlock", out var maxThreads) && maxThreads != null)
+        {
             _logger.LogInformation("  Max Threads per Block: {MaxThreads}", maxThreads);
+        }
             
-        if (capabilities.TryGetValue("WarpSize", out var warpSize))
+        if (capabilities != null && capabilities.TryGetValue("WarpSize", out var warpSize) && warpSize != null)
+        {
             _logger.LogInformation("  Warp Size: {WarpSize}", warpSize);
+        }
             
-        if (capabilities.TryGetValue("ECCEnabled", out var ecc) && (bool)ecc)
+        if (capabilities != null && capabilities.TryGetValue("ECCEnabled", out var ecc) && ecc is bool eccEnabled && eccEnabled)
+        {
             _logger.LogInformation("  ECC Memory: Enabled");
+        }
             
-        if (capabilities.TryGetValue("UnifiedAddressing", out var unified) && (bool)unified)
+        if (capabilities != null && capabilities.TryGetValue("UnifiedAddressing", out var unified) && unified is bool unifiedEnabled && unifiedEnabled)
+        {
             _logger.LogInformation("  Unified Virtual Addressing: Supported");
+        }
     }
 
     public void Dispose()

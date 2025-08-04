@@ -10,14 +10,14 @@ namespace GettingStarted;
 
 public class Program
 {
-    public static async Task<int> Main(string[] args)
+    public static Task<int> Main(string[] args)
     {
         // Handle --version argument for CI validation
         if (args.Length > 0 && args[0] == "--version")
         {
             Console.WriteLine("DotCompute Getting Started Sample v1.0.0");
             Console.WriteLine("Built with .NET 9 Native AOT");
-            return 0;
+            return Task.FromResult(0);
         }
 
         try
@@ -65,16 +65,16 @@ public class Program
             {
                 logger.LogError("Expected: [{Expected}]", string.Join(", ", expected));
                 logger.LogError("Actual: [{Actual}]", string.Join(", ", actual));
-                return 1;
+                return Task.FromResult(1);
             }
             
             Console.WriteLine("✅ Sample completed successfully!");
-            return 0;
+            return Task.FromResult(0);
         }
         catch (Exception ex)
         {
             Console.WriteLine($"❌ Error: {ex.Message}");
-            return 1;
+            return Task.FromResult(1);
         }
     }
 }

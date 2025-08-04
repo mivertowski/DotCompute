@@ -31,13 +31,19 @@ public static unsafe class UnsafeMemoryOperations
     public static void CopyMemory(void* source, void* destination, nuint byteCount)
     {
         if (byteCount == 0)
+        {
             return;
+        }
         
         if (source == null)
+        {
             throw new ArgumentNullException(nameof(source));
+        }
         
         if (destination == null)
+        {
             throw new ArgumentNullException(nameof(destination));
+        }
         
         // Use platform-specific optimized copy
         if (Avx2.IsSupported && byteCount >= 32)
@@ -64,10 +70,14 @@ public static unsafe class UnsafeMemoryOperations
     public static void CopyMemory<T>(ReadOnlySpan<T> source, Span<T> destination) where T : unmanaged
     {
         if (source.Length != destination.Length)
+        {
             throw new ArgumentException("Source and destination must have the same length.");
+        }
         
         if (source.Length == 0)
+        {
             return;
+        }
         
         var byteCount = (nuint)(source.Length * sizeof(T));
         
@@ -88,10 +98,14 @@ public static unsafe class UnsafeMemoryOperations
     public static void FillMemory(void* destination, byte value, nuint byteCount)
     {
         if (byteCount == 0)
+        {
             return;
+        }
         
         if (destination == null)
+        {
             throw new ArgumentNullException(nameof(destination));
+        }
         
         // Use platform-specific optimized fill
         if (Avx2.IsSupported && byteCount >= 32)
@@ -118,7 +132,9 @@ public static unsafe class UnsafeMemoryOperations
     public static void FillMemory<T>(Span<T> destination, T value) where T : unmanaged
     {
         if (destination.Length == 0)
+        {
             return;
+        }
         
         // For simple types, use vectorized operations
         if (typeof(T) == typeof(byte))
@@ -164,7 +180,9 @@ public static unsafe class UnsafeMemoryOperations
     public static void ZeroMemory<T>(Span<T> destination) where T : unmanaged
     {
         if (destination.Length == 0)
+        {
             return;
+        }
         
         fixed (T* dst = destination)
         {

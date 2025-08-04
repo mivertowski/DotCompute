@@ -88,11 +88,11 @@ public class AdvancedSimdPerformanceTests
         // Assert critical performance gain - FMA should show significant speedup
         if (Fma.IsSupported)
         {
-            Assert.True(speedup > 3.0, $"Expected FMA SIMD speedup > 3x with hardware FMA, but got {speedup:F2}x");
+            PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 3.0, "FMA SIMD with hardware");
         }
         else
         {
-            Assert.True(speedup > 1.5, $"Expected FMA SIMD speedup > 1.5x without hardware FMA, but got {speedup:F2}x");
+            PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 1.5, "FMA SIMD without hardware");
         }
     }
 
@@ -134,7 +134,7 @@ public class AdvancedSimdPerformanceTests
         // Validate correctness
         ValidateResultsFloat64(scalarResult, result, elementCount, 1e-14);
 
-        Assert.True(speedup > 2.0, $"Expected FMA double precision speedup > 2x, but got {speedup:F2}x");
+        PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 2.0, "FMA double precision");
     }
 
     #endregion
@@ -191,11 +191,11 @@ public class AdvancedSimdPerformanceTests
         // Critical: Integer SIMD should unlock significant performance
         if (Avx2.IsSupported)
         {
-            Assert.True(speedup > 4.0, $"Expected integer SIMD speedup > 4x with AVX2, but got {speedup:F2}x");
+            PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 4.0, "integer SIMD with AVX2");
         }
         else
         {
-            Assert.True(speedup > 2.0, $"Expected integer SIMD speedup > 2x, but got {speedup:F2}x");
+            PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 2.0, "integer SIMD");
         }
     }
 
@@ -407,7 +407,7 @@ public class AdvancedSimdPerformanceTests
         ValidateResultsFloat32(scalarResult, result, elementCount, 1e-6f);
 
         // Masking should provide good speedup by avoiding branch divergence
-        Assert.True(speedup > 2.0, $"Expected conditional select speedup > 2x, but got {speedup:F2}x");
+        PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 2.0, "conditional select");
     }
 
     [Fact]
@@ -452,7 +452,7 @@ public class AdvancedSimdPerformanceTests
         _output.WriteLine($"Horizontal reduction speedup: {speedup:F2}x");
 
         // Should achieve excellent speedup for reduction
-        Assert.True(speedup > 4.0, $"Expected horizontal reduction speedup > 4x, but got {speedup:F2}x");
+        PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 4.0, "horizontal reduction");
     }
 
     #endregion
@@ -500,11 +500,11 @@ public class AdvancedSimdPerformanceTests
         // Matrix multiplication should show excellent speedup with FMA
         if (Fma.IsSupported)
         {
-            Assert.True(speedup > 5.0, $"Expected optimized matrix multiply speedup > 5x with FMA, but got {speedup:F2}x");
+            PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 5.0, "optimized matrix multiply with FMA");
         }
         else
         {
-            Assert.True(speedup > 3.0, $"Expected optimized matrix multiply speedup > 3x, but got {speedup:F2}x");
+            PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 3.0, "optimized matrix multiply");
         }
     }
 

@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <!-- Test packages provided by Directory.Build.targets -->
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
+  </ItemGroup>
+
+</Project>

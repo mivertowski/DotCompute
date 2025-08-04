@@ -39,12 +39,9 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
         public void Add(long value) => Interlocked.Add(ref Unsafe.AsRef(in _value), value);
     }
     
-    private AlignedCounter _totalAllocations;
+    private readonly AlignedCounter _totalAllocations;
     private bool _isDisposed;
     
-    /// <summary>
-    /// Gets the underlying accelerator - not available in unified manager.
-    /// </summary>
     // Note: Removed accelerator property as it's not available in the new interface
     
     /// <summary>
@@ -272,7 +269,9 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     public ValueTask HandleMemoryPressureAsync(double pressure)
     {
         if (pressure < 0.0 || pressure > 1.0)
+        {
             throw new ArgumentOutOfRangeException(nameof(pressure));
+        }
         
         ThrowIfDisposed();
         
@@ -345,7 +344,9 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
                 // Use reflection to call Compact on generic pools
                 var released = InvokeCompactViaReflection(kvp.Value);
                 if (released.HasValue)
+                {
                     totalReleased += released.Value;
+                }
             }
         }
         
@@ -581,7 +582,10 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     private static double CalculateStandardDeviation(IEnumerable<double> values)
     {
         var valuesList = values.ToList();
-        if (valuesList.Count <= 1) return 0.0;
+        if (valuesList.Count <= 1)
+        {
+            return 0.0;
+        }
         
         var mean = valuesList.Average();
         var variance = valuesList.Select(x => Math.Pow(x - mean, 2)).Average();
@@ -657,7 +661,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", 
         Justification = "The generic MemoryPool<T> types are preserved via other code paths")]
     private static (long totalAllocatedBytes, long totalRetainedBytes, long totalReuses)? GetPoolStatsViaReflection(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] object pool)
+        object pool)
     {
         var poolType = pool.GetType();
         var getStatsMethod = poolType.GetMethod("GetPerformanceStats");
@@ -673,7 +677,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     }
     
     private static (long totalAllocatedBytes, long totalRetainedBytes, long totalReuses) ExtractStatsFromObject(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] object stats)
+        object stats)
     {
         var statsType = stats.GetType();
         var allocatedBytesProperty = statsType.GetProperty("TotalAllocatedBytes");
@@ -685,11 +689,17 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
         long totalReuses = 0;
         
         if (allocatedBytesProperty != null)
+        {
             totalAllocatedBytes = (long)allocatedBytesProperty.GetValue(stats)!;
+        }
         if (retainedBytesProperty != null)
+        {
             totalRetainedBytes = (long)retainedBytesProperty.GetValue(stats)!;
+        }
         if (reuseCountProperty != null)
+        {
             totalReuses = (long)reuseCountProperty.GetValue(stats)!;
+        }
             
         return (totalAllocatedBytes, totalRetainedBytes, totalReuses);
     }
@@ -697,7 +707,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", 
         Justification = "The generic MemoryPool<T> types are preserved via other code paths")]
     private static void InvokeHandleMemoryPressureViaReflection(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] object pool, 
+        object pool, 
         double pressure)
     {
         var poolType = pool.GetType();
@@ -708,7 +718,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", 
         Justification = "The generic MemoryPool<T> types are preserved via other code paths")]
     private static long? InvokeCompactViaReflection(
-        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)] object pool)
+        object pool)
     {
         var poolType = pool.GetType();
         var compactMethod = poolType.GetMethod("Compact", Type.EmptyTypes);
@@ -716,7 +726,9 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
         {
             var result = compactMethod.Invoke(pool, null);
             if (result is long released)
+            {
                 return released;
+            }
         }
         return null;
     }
@@ -724,12 +736,16 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     public void Dispose()
     {
         if (_isDisposed)
+        {
             return;
+        }
         
         lock (_lock)
         {
             if (_isDisposed)
+            {
                 return;
+            }
             
             // Dispose all pools
             foreach (var kvp in _pools)
@@ -752,7 +768,9 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
     public async ValueTask DisposeAsync()
     {
         if (_isDisposed)
+        {
             return;
+        }
         
         // Dispose all pools asynchronously if they support it
         foreach (var kvp in _pools)

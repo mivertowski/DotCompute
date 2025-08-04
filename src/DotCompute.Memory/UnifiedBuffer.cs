@@ -86,6 +86,9 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
         
         // Allocate pinned host memory for zero-copy operations
         AllocatePinnedHost();
+        
+        // After allocation, the buffer is on host
+        _state = BufferState.HostOnly;
     }
     
     /// <summary>
@@ -481,12 +484,16 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
         
         lock (_lock)
         {
             if (_disposed)
+            {
                 return;
+            }
             
             _disposed = true;
             
@@ -551,7 +558,9 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     private void TransferHostToDevice()
     {
         if (_hostArray == null)
+        {
             throw new InvalidOperationException("Host array is not allocated");
+        }
         
         // CPU-only implementation for Phase 2:
         // In a CPU-only environment, "device" memory is actually just host memory.
@@ -565,7 +574,9 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     private void TransferDeviceToHost()
     {
         if (_hostArray == null)
+        {
             throw new InvalidOperationException("Host array is not allocated");
+        }
         
         // CPU-only implementation for Phase 2:
         // In a CPU-only environment, "device" memory is actually just host memory.
@@ -584,7 +595,9 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     private async ValueTask TransferHostToDeviceAsync(AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_hostArray == null)
+        {
             throw new InvalidOperationException("Host array is not allocated");
+        }
         
         cancellationToken.ThrowIfCancellationRequested();
         
@@ -623,7 +636,9 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     private async ValueTask TransferDeviceToHostAsync(AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_hostArray == null)
+        {
             throw new InvalidOperationException("Host array is not allocated");
+        }
         
         cancellationToken.ThrowIfCancellationRequested();
         
@@ -662,7 +677,9 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     private async ValueTask AllocateDeviceMemoryAsync(AcceleratorContext context, CancellationToken cancellationToken)
     {
         if (_deviceMemory.IsValid)
+        {
             return;
+        }
         
         cancellationToken.ThrowIfCancellationRequested();
         
@@ -801,7 +818,10 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// </summary>
     private async ValueTask EnsureOnHostAsync(CancellationToken cancellationToken = default)
     {
-        if (IsOnHost) return;
+        if (IsOnHost)
+        {
+            return;
+        }
         
         // If buffer is on device only, transfer to host
         if (_state == BufferState.DeviceOnly || _state == BufferState.DeviceDirty)
@@ -817,7 +837,10 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// </summary>
     private async ValueTask TransferFromDeviceAsync(CancellationToken cancellationToken = default)
     {
-        if (!_deviceMemory.IsValid || _hostArray == null) return;
+        if (!_deviceMemory.IsValid || _hostArray == null)
+        {
+            return;
+        }
         
         try
         {
@@ -1002,7 +1025,9 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
         CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         if (typeof(TSource) != typeof(T))
+        {
             throw new ArgumentException($"Source type {typeof(TSource)} does not match buffer type {typeof(T)}");
+        }
         
         var typedSource = MemoryMarshal.Cast<TSource, T>(source.Span);
         var elementOffset = (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
@@ -1024,7 +1049,9 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
         CancellationToken cancellationToken = default) where TDestination : unmanaged
     {
         if (typeof(TDestination) != typeof(T))
+        {
             throw new ArgumentException($"Destination type {typeof(TDestination)} does not match buffer type {typeof(T)}");
+        }
         
         var elementOffset = (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
         var elementCount = destination.Length;
@@ -1071,7 +1098,9 @@ internal sealed class UnifiedBufferSlice<T> : IBuffer<T> where T : unmanaged
     public ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         if (typeof(TSource) != typeof(T))
+        {
             throw new ArgumentException($"Source type {typeof(TSource)} does not match buffer type {typeof(T)}");
+        }
         
         var typedSource = MemoryMarshal.Cast<TSource, T>(source.Span);
         return _parent.WriteAsync(typedSource.ToArray(), _offset + (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<T>()), cancellationToken);
@@ -1080,7 +1109,9 @@ internal sealed class UnifiedBufferSlice<T> : IBuffer<T> where T : unmanaged
     public ValueTask CopyToHostAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged
     {
         if (typeof(TDestination) != typeof(T))
+        {
             throw new ArgumentException($"Destination type {typeof(TDestination)} does not match buffer type {typeof(T)}");
+        }
         
         return _parent.CopyToHostAsync(destination, offset + _offset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken);
     }
@@ -1104,15 +1135,16 @@ internal sealed class UnifiedBufferSlice<T> : IBuffer<T> where T : unmanaged
     {
         ArgumentNullException.ThrowIfNull(destination);
         
-        // Create a temporary array to hold the slice data
-        var tempData = new T[_length];
+        // Create the read task
         var readTask = _parent.ReadAsync(_offset, _length, cancellationToken);
         
-        return new ValueTask(readTask.AsTask().ContinueWith(async task =>
-        {
-            var data = await task;
-            await destination.CopyFromHostAsync<T>(data.AsMemory(), 0, cancellationToken);
-        }, cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default).Unwrap());
+        return CopyToAsyncImplAsync(readTask, destination, cancellationToken);
+    }
+    
+    private static async ValueTask CopyToAsyncImplAsync(ValueTask<T[]> readTask, IBuffer<T> destination, CancellationToken cancellationToken)
+    {
+        var data = await readTask.ConfigureAwait(false);
+        await destination.CopyFromHostAsync<T>(data.AsMemory(), 0, cancellationToken).ConfigureAwait(false);
     }
 
     public ValueTask CopyToAsync(int sourceOffset, IBuffer<T> destination, int destinationOffset, int count, CancellationToken cancellationToken = default)
@@ -1125,11 +1157,13 @@ internal sealed class UnifiedBufferSlice<T> : IBuffer<T> where T : unmanaged
 
         var readTask = _parent.ReadAsync(_offset + sourceOffset, count, cancellationToken);
         
-        return new ValueTask(readTask.AsTask().ContinueWith(async task =>
-        {
-            var data = await task;
-            await destination.CopyFromHostAsync<T>(data.AsMemory(), destinationOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken);
-        }, cancellationToken, TaskContinuationOptions.None, TaskScheduler.Default).Unwrap());
+        return CopyToAsyncWithOffsetImplAsync(readTask, destination, destinationOffset, cancellationToken);
+    }
+    
+    private static async ValueTask CopyToAsyncWithOffsetImplAsync(ValueTask<T[]> readTask, IBuffer<T> destination, int destinationOffset, CancellationToken cancellationToken)
+    {
+        var data = await readTask.ConfigureAwait(false);
+        await destination.CopyFromHostAsync<T>(data.AsMemory(), destinationOffset * System.Runtime.CompilerServices.Unsafe.SizeOf<T>(), cancellationToken).ConfigureAwait(false);
     }
 
     public async ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
@@ -1207,7 +1241,9 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IBuffer<TNew>
     public ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
         if (typeof(TSource) != typeof(TNew))
+        {
             throw new ArgumentException($"Source type {typeof(TSource)} does not match buffer type {typeof(TNew)}");
+        }
         
         // Convert from TNew to TOriginal
         var sourceSpan = MemoryMarshal.Cast<TSource, TNew>(source.Span);
@@ -1220,7 +1256,9 @@ internal sealed class UnifiedBufferView<TOriginal, TNew> : IBuffer<TNew>
     public async ValueTask CopyToHostAsync<TDestination>(Memory<TDestination> destination, long offset = 0, CancellationToken cancellationToken = default) where TDestination : unmanaged
     {
         if (typeof(TDestination) != typeof(TNew))
+        {
             throw new ArgumentException($"Destination type {typeof(TDestination)} does not match buffer type {typeof(TNew)}");
+        }
         
         var elementOffset = (int)(offset / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
         var elementCount = destination.Length;

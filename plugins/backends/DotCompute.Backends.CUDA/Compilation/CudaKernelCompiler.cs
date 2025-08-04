@@ -250,7 +250,7 @@ public class CudaKernelCompiler : IDisposable
         _cacheMetadata.Clear();
     }
 
-    private async Task<string> PrepareCudaSourceAsync(KernelSource source, CompilationOptions? options)
+    private Task<string> PrepareCudaSourceAsync(KernelSource source, CompilationOptions? options)
     {
         var builder = new StringBuilder();
 
@@ -339,7 +339,7 @@ public class CudaKernelCompiler : IDisposable
                 throw new NotSupportedException($"Kernel language '{source.Language}' is not supported by CUDA compiler");
         }
 
-        return builder.ToString();
+        return Task.FromResult(builder.ToString());
     }
 
     private string ConvertOpenClToCuda(string openClCode)
@@ -463,7 +463,7 @@ public class CudaKernelCompiler : IDisposable
         }
     }
     
-    private async Task<string> GetCompilationLogAsync(IntPtr program)
+    private Task<string> GetCompilationLogAsync(IntPtr program)
     {
         try
         {
@@ -471,7 +471,7 @@ public class CudaKernelCompiler : IDisposable
             var result = NvrtcRuntime.nvrtcGetProgramLogSize(program, out var logSize);
             if (result != NvrtcResult.Success || logSize <= 1)
             {
-                return string.Empty;
+                return Task.FromResult(string.Empty);
             }
             
             // Get log content
@@ -479,15 +479,15 @@ public class CudaKernelCompiler : IDisposable
             result = NvrtcRuntime.nvrtcGetProgramLog(program, logBuilder);
             if (result != NvrtcResult.Success)
             {
-                return "Failed to retrieve compilation log";
+                return Task.FromResult("Failed to retrieve compilation log");
             }
             
-            return logBuilder.ToString().Trim();
+            return Task.FromResult(logBuilder.ToString().Trim());
         }
         catch (Exception ex)
         {
             _logger.LogWarning(ex, "Failed to retrieve NVRTC compilation log");
-            return "Failed to retrieve compilation log";
+            return Task.FromResult("Failed to retrieve compilation log");
         }
     }
     
@@ -1069,7 +1069,7 @@ public class CudaKernelCompiler : IDisposable
             _cacheMetadata.TryRemove(key, out _);
             
             // Also remove from disk
-            _ = Task.Run(async () =>
+            _ = Task.Run(() =>
             {
                 try
                 {

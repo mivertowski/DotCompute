@@ -138,7 +138,9 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
     internal void Return(IMemoryBuffer<T> buffer, int bucketSize)
     {
         if (_disposed || buffer == null)
+        {
             return;
+        }
         
         var bucket = GetOrCreateBucket(bucketSize);
         
@@ -261,7 +263,9 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
         lock (_lock)
         {
             if (_disposed)
+            {
                 return 0;
+            }
             
             foreach (var bucket in _buckets.Values)
             {
@@ -288,17 +292,30 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
         
         lock (_lock)
         {
             if (_disposed)
+            {
                 return;
-            
-            _disposed = true;
+            }
             
             _cleanupTimer?.Dispose();
-            Clear();
+            
+            // Clear all buffers before marking as disposed
+            foreach (var bucket in _buckets.Values)
+            {
+                while (bucket.TryDequeue(out var buffer))
+                {
+                    buffer.Dispose();
+                }
+            }
+            _buckets.Clear();
+            
+            _disposed = true;
         }
     }
     
@@ -308,7 +325,9 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
     {
         // Round up to the next power of 2
         if (minimumLength <= 0)
+        {
             return 1;
+        }
         
         var size = 1;
         while (size < minimumLength)
@@ -327,7 +346,9 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
     private void CleanupCallback(object? state)
     {
         if (_disposed)
+        {
             return;
+        }
         
         try
         {
@@ -348,7 +369,9 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
         lock (_lock)
         {
             if (_disposed)
+            {
                 return;
+            }
             
             // Remove some buffers from each bucket to reduce memory pressure
             foreach (var bucket in _buckets.Values)
@@ -494,7 +517,9 @@ internal sealed class PooledMemoryBuffer<T> : IMemoryBuffer<T> where T : unmanag
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
         
         _disposed = true;
         _pool.Return(_buffer, _bucketSize);

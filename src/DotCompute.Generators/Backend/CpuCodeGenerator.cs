@@ -107,7 +107,7 @@ namespace DotCompute.Generators.Backend
             if (!string.IsNullOrEmpty(methodBody))
             {
                 // Transform the method body for scalar execution
-                var transformedBody = TransformMethodBodyForScalar(methodBody);
+                var transformedBody = TransformMethodBodyForScalar(methodBody!);
                 sb.AppendLine("            // Transformed scalar implementation:");
                 sb.AppendLine(transformedBody);
             }

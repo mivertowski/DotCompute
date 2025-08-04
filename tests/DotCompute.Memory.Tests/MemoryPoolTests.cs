@@ -1,0 +1,251 @@
+using DotCompute.Abstractions;
+using DotCompute.Memory;
+using FluentAssertions;
+using NSubstitute;
+using Xunit;
+
+namespace DotCompute.Memory.Tests;
+
+public class MemoryPoolTests : IDisposable
+{
+    private readonly IMemoryManager _memoryManager;
+    private readonly MemoryPool<int> _pool;
+
+    public MemoryPoolTests()
+    {
+        _memoryManager = Substitute.For<IMemoryManager>();
+        _pool = new MemoryPool<int>(_memoryManager);
+    }
+
+    public void Dispose()
+    {
+        _pool.Dispose();
+    }
+
+    [Fact]
+    public void Rent_WithValidSize_ShouldReturnBuffer()
+    {
+        // Act
+        var buffer = _pool.Rent(1024);
+
+        // Assert
+        buffer.Should().NotBeNull();
+        buffer.Length.Should().BeGreaterThanOrEqualTo(1024);
+    }
+
+    [Fact]
+    public void Rent_WithZeroSize_ShouldThrowArgumentOutOfRangeException()
+    {
+        // Act & Assert
+        var act = () => _pool.Rent(0);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Fact]
+    public void Rent_WithNegativeSize_ShouldThrowArgumentOutOfRangeException()
+    {
+        // Act & Assert
+        var act = () => _pool.Rent(-1);
+        act.Should().Throw<ArgumentOutOfRangeException>();
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(100)]
+    [InlineData(1024)]
+    [InlineData(4096)]
+    public void Rent_WithVariousSizes_ShouldReturnAppropriateBuffers(int size)
+    {
+        // Act
+        var buffer = _pool.Rent(size);
+
+        // Assert
+        buffer.Should().NotBeNull();
+        buffer.Length.Should().BeGreaterThanOrEqualTo(size);
+    }
+
+    [Fact]
+    public void Return_WithValidBuffer_ShouldAcceptIt()
+    {
+        // Arrange
+        var buffer = _pool.Rent(1024);
+
+        // Act & Assert
+        buffer.Dispose();
+        // Disposing a buffer should not throw
+    }
+
+    [Fact]
+    public void RentDispose_Pattern_ShouldWork()
+    {
+        // Arrange & Act
+        IMemoryBuffer<int>? buffer = null;
+        var act = () =>
+        {
+            buffer = _pool.Rent(1024);
+            buffer.Dispose();
+        };
+
+        // Assert
+        act.Should().NotThrow();
+    }
+
+    [Fact]
+    public void RentAndDispose_Pattern_ShouldWork()
+    {
+        // Arrange
+        var buffer = _pool.Rent(10);
+
+        // Act & Assert
+        buffer.Should().NotBeNull();
+        buffer.Length.Should().BeGreaterThanOrEqualTo(10);
+        
+        // Cleanup
+        buffer.Dispose();
+    }
+
+    [Fact]
+    public void RentAndReturn_ShouldReuseBuffers()
+    {
+        // Arrange
+        var initialAllocated = _pool.TotalAllocatedBuffers;
+        var buffer1 = _pool.Rent(1024);
+        
+        // Verify buffer was allocated
+        _pool.TotalAllocatedBuffers.Should().Be(initialAllocated + 1);
+
+        // Act
+        buffer1.Dispose();
+        var buffer2 = _pool.Rent(1024);
+
+        // Assert - No new allocation should have occurred for same size
+        _pool.TotalAllocatedBuffers.Should().Be(initialAllocated + 1);
+    }
+
+    [Fact]
+    public void TotalAllocatedBytes_ShouldTrackMemoryUsage()
+    {
+        // Arrange
+        var initialBytes = _pool.TotalAllocatedBytes;
+        var buffer1 = _pool.Rent(1024);
+        var buffer2 = _pool.Rent(2048);
+
+        // Act
+        var totalBytes = _pool.TotalAllocatedBytes;
+
+        // Assert
+        totalBytes.Should().BeGreaterThanOrEqualTo(initialBytes);
+
+        // Cleanup
+        buffer1.Dispose();
+        buffer2.Dispose();
+    }
+
+    [Fact]
+    public void Compact_ShouldReduceMemoryUsage()
+    {
+        // Arrange
+        var buffers = new List<IMemoryBuffer<int>>();
+        for (int i = 0; i < 10; i++)
+        {
+            buffers.Add(_pool.Rent(1024));
+        }
+
+        foreach (var buffer in buffers)
+        {
+            buffer.Dispose();
+        }
+
+        var bytesBefore = _pool.TotalAllocatedBytes;
+
+        // Act
+        _pool.Compact();
+        var bytesAfter = _pool.TotalAllocatedBytes;
+
+        // Assert
+        bytesAfter.Should().BeLessThanOrEqualTo(bytesBefore);
+    }
+
+    [Fact]
+    public void HandleMemoryPressure_ShouldReleaseUnusedBuffers()
+    {
+        // Arrange
+        var buffers = new List<IMemoryBuffer<int>>();
+        for (int i = 0; i < 5; i++)
+        {
+            var buffer = _pool.Rent(1024 * 1024); // 1MB each
+            buffers.Add(buffer);
+        }
+        
+        // Return all buffers
+        foreach (var buffer in buffers)
+        {
+            buffer.Dispose();
+        }
+
+        // Act
+        _pool.HandleMemoryPressure(0.5); // Release 50%
+
+        // Assert
+        // Memory pressure handling should not throw
+        _pool.TotalReturnedBuffers.Should().BeGreaterThanOrEqualTo(5);
+    }
+
+    [Fact]
+    public void MultipleThreads_ShouldWorkConcurrently()
+    {
+        // Arrange
+        var tasks = new List<Task>();
+        var bufferCount = 100;
+        var threadCount = 10;
+
+        // Act
+        for (int t = 0; t < threadCount; t++)
+        {
+            tasks.Add(Task.Run(() =>
+            {
+                for (int i = 0; i < bufferCount; i++)
+                {
+                    var buffer = _pool.Rent(Random.Shared.Next(100, 1000));
+                    Thread.Sleep(Random.Shared.Next(0, 1));
+                    buffer.Dispose();
+                }
+            }));
+        }
+
+        // Assert
+        var act = async () => await Task.WhenAll(tasks);
+        act.Should().NotThrowAsync().Wait();
+    }
+
+    [Fact]
+    public void Dispose_ShouldReleaseAllResources()
+    {
+        // Arrange
+        var memMgr = Substitute.For<IMemoryManager>();
+        var pool = new MemoryPool<byte>(memMgr);
+        var buffer1 = pool.Rent(1024);
+        var buffer2 = pool.Rent(2048);
+
+        // Act
+        pool.Dispose();
+
+        // Assert
+        var act = () => pool.Rent(100);
+        act.Should().Throw<ObjectDisposedException>();
+    }
+
+    [Fact]
+    public void RentAfterDispose_ShouldThrowObjectDisposedException()
+    {
+        // Arrange
+        var memMgr = Substitute.For<IMemoryManager>();
+        var pool = new MemoryPool<int>(memMgr);
+        pool.Dispose();
+
+        // Act & Assert
+        var act = () => pool.Rent(100);
+        act.Should().Throw<ObjectDisposedException>();
+    }
+}

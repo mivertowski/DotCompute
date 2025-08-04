@@ -60,7 +60,7 @@ public class SimdPerformanceTests
         _output.WriteLine($"SIMD speedup: {speedup:F2}x");
 
         // Assert significant speedup
-        Assert.True(speedup > 2.0, $"Expected SIMD speedup > 2x, but got {speedup:F2}x");
+        PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 2.0, "vector addition SIMD");
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class SimdPerformanceTests
         var speedup = scalarTime / simdTime;
         _output.WriteLine($"Matrix multiply SIMD speedup: {speedup:F2}x");
 
-        Assert.True(speedup > 3.0, $"Expected matrix multiply SIMD speedup > 3x, but got {speedup:F2}x");
+        PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 3.0, "matrix multiply SIMD");
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class SimdPerformanceTests
         Assert.True(Math.Abs(scalarResult - simdResult) < tolerance, 
             $"Results differ: scalar={scalarResult}, simd={simdResult}, tolerance={tolerance}");
 
-        Assert.True(speedup > 2.0, $"Expected dot product SIMD speedup > 2x, but got {speedup:F2}x");
+        PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 2.0, "dot product SIMD");
     }
 
     private static double MeasureTime(Action action, int iterations)

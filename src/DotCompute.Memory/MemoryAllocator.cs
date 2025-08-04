@@ -51,7 +51,9 @@ public sealed class MemoryAllocator : IDisposable
         ObjectDisposedException.ThrowIf(_disposed, this);
         
         if (alignment <= 0 || (alignment & (alignment - 1)) != 0)
+        {
             throw new ArgumentException("Alignment must be a power of 2.", nameof(alignment));
+        }
         
         var sizeInBytes = length * Unsafe.SizeOf<T>();
         
@@ -158,12 +160,16 @@ public sealed class MemoryAllocator : IDisposable
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
         
         lock (_lock)
         {
             if (_disposed)
+            {
                 return;
+            }
             
             _disposed = true;
         }
@@ -185,7 +191,9 @@ public sealed class MemoryAllocator : IDisposable
     {
         var ptr = Marshal.AllocHGlobal(size);
         if (ptr == IntPtr.Zero)
+        {
             throw new InvalidOperationException($"Failed to allocate {size} bytes of native memory.");
+        }
         
         return ptr;
     }
@@ -226,7 +234,9 @@ internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanage
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
         
         _disposed = true;
         
@@ -262,7 +272,9 @@ internal sealed class PinnedMemoryOwner<T> : IMemoryOwner<T> where T : unmanaged
     public void Dispose()
     {
         if (_disposed)
+        {
             return;
+        }
         
         _disposed = true;
         

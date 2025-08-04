@@ -149,7 +149,14 @@ public class DefaultAcceleratorManager : IAcceleratorManager
             throw new ArgumentException("Accelerator is not managed by this manager", nameof(accelerator));
             
         // For CPU accelerators, create a context with the thread ID as the handle
-        var deviceId = int.Parse(accelerator.Info.Id.Split('-').LastOrDefault() ?? "0");
+        // Try to extract a numeric device ID from the accelerator ID
+        var idParts = accelerator.Info.Id.Split(new[] { '-', '_' });
+        var lastPart = idParts.LastOrDefault() ?? "0";
+        // Try to parse the last part as a number, otherwise use 0
+        if (!int.TryParse(lastPart, out var deviceId))
+        {
+            deviceId = 0;
+        }
         
         // Use the current thread ID as the device context handle for CPU
         // This provides a unique, valid handle for each context
