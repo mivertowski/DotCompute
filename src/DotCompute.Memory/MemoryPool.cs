@@ -16,7 +16,7 @@ namespace DotCompute.Memory;
 /// Provides thread-safe concurrent operations and memory pressure monitoring.
 /// </summary>
 /// <typeparam name="T">The element type.</typeparam>
-public sealed class MemoryPool<T> : IDisposable where T : unmanaged
+public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisposable where T : unmanaged
 {
     private readonly IMemoryManager _memoryManager;
     private readonly ConcurrentDictionary<int, ConcurrentQueue<IMemoryBuffer<T>>> _buckets;
@@ -315,6 +315,45 @@ public sealed class MemoryPool<T> : IDisposable where T : unmanaged
             }
             _buckets.Clear();
             
+            _disposed = true;
+        }
+    }
+
+    /// <summary>
+    /// Asynchronously disposes the memory pool and releases all resources.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+        
+        await Task.Yield(); // Ensure we're not blocking the caller
+        
+        lock (_lock)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+            
+            _cleanupTimer?.Dispose();
+            
+            // Clear all buffers before marking as disposed
+            foreach (var bucket in _buckets.Values)
+            {
+                while (bucket.TryDequeue(out var buffer))
+                {
+                    if (buffer is IDisposable disposable)
+                    {
+                        disposable.Dispose();
+                    }
+                    Interlocked.Add(ref _totalAllocatedBytes, -buffer.Length * Unsafe.SizeOf<T>());
+                }
+            }
+            
+            _buckets.Clear();
             _disposed = true;
         }
     }

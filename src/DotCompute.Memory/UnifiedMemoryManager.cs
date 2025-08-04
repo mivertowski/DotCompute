@@ -18,7 +18,7 @@ namespace DotCompute.Memory;
 /// Unified memory manager implementation that coordinates host and device memory
 /// with efficient pooling and lazy synchronization.
 /// </summary>
-public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
+public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposable
 {
     private readonly IMemoryManager _baseMemoryManager;
     private readonly ConcurrentDictionary<Type, object> _pools = new();
@@ -204,7 +204,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
             else
             {
                 // Use reflection to get stats from generic pools
-                var poolStats = GetPoolStatsViaReflection(kvp.Value);
+                var poolStats = GetPoolStatsViaInterface(kvp.Value);
                 if (poolStats.HasValue)
                 {
                     totalAllocatedBytes += poolStats.Value.totalAllocatedBytes;
@@ -291,7 +291,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
                 else
                 {
                     // Use reflection to call HandleMemoryPressure on generic pools
-                    InvokeHandleMemoryPressureViaReflection(kvp.Value, pressure);
+                    InvokeHandleMemoryPressureViaInterface(kvp.Value, pressure);
                 }
             });
         }
@@ -308,7 +308,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
                 }
                 else
                 {
-                    InvokeHandleMemoryPressureViaReflection(kvp.Value, pressure);
+                    InvokeHandleMemoryPressureViaInterface(kvp.Value, pressure);
                 }
             }
         }
@@ -342,7 +342,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
             else
             {
                 // Use reflection to call Compact on generic pools
-                var released = InvokeCompactViaReflection(kvp.Value);
+                var released = InvokeCompactViaInterface(kvp.Value);
                 if (released.HasValue)
                 {
                     totalReleased += released.Value;
@@ -403,7 +403,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
             var buffer = await CreateUnifiedBufferAsync<float>(TestDataSize / sizeof(float), cancellationToken: cancellationToken);
             sw.Stop();
             allocationTimes.Add(sw.Elapsed.TotalMicroseconds);
-            buffer.Dispose();
+            await buffer.DisposeAsync();
         }
         
         // Set allocation overhead with proper measurement structure
@@ -559,7 +559,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
             AvailableMemoryAtPressure = memStats.AvailableDeviceMemory
         };
         
-        buffer1.Dispose();
+        await buffer1.DisposeAsync();
         return results;
     }
     
@@ -573,7 +573,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
         await buffer.CopyFromAsync(testData, cancellationToken);
         buffer.EnsureOnDevice();
         buffer.EnsureOnHost();
-        buffer.Dispose();
+        await buffer.DisposeAsync();
     }
     
     /// <summary>
@@ -658,77 +658,34 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager
         ObjectDisposedException.ThrowIf(_isDisposed, this);
     }
     
-    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", 
-        Justification = "The generic MemoryPool<T> types are preserved via other code paths")]
-    private static (long totalAllocatedBytes, long totalRetainedBytes, long totalReuses)? GetPoolStatsViaReflection(
+    private static (long totalAllocatedBytes, long totalRetainedBytes, long totalReuses)? GetPoolStatsViaInterface(
         object pool)
     {
-        var poolType = pool.GetType();
-        var getStatsMethod = poolType.GetMethod("GetPerformanceStats");
-        if (getStatsMethod != null)
+        if (pool is IMemoryPoolInternal memoryPool)
         {
-            var stats = getStatsMethod.Invoke(pool, null);
-            if (stats != null)
-            {
-                return ExtractStatsFromObject(stats);
-            }
+            var stats = memoryPool.GetPerformanceStats();
+            return (stats.TotalAllocatedBytes, stats.TotalRetainedBytes, stats.ReuseCount);
         }
         return null;
     }
     
-    private static (long totalAllocatedBytes, long totalRetainedBytes, long totalReuses) ExtractStatsFromObject(
-        object stats)
-    {
-        var statsType = stats.GetType();
-        var allocatedBytesProperty = statsType.GetProperty("TotalAllocatedBytes");
-        var retainedBytesProperty = statsType.GetProperty("TotalRetainedBytes");
-        var reuseCountProperty = statsType.GetProperty("ReuseCount");
-        
-        long totalAllocatedBytes = 0;
-        long totalRetainedBytes = 0;
-        long totalReuses = 0;
-        
-        if (allocatedBytesProperty != null)
-        {
-            totalAllocatedBytes = (long)allocatedBytesProperty.GetValue(stats)!;
-        }
-        if (retainedBytesProperty != null)
-        {
-            totalRetainedBytes = (long)retainedBytesProperty.GetValue(stats)!;
-        }
-        if (reuseCountProperty != null)
-        {
-            totalReuses = (long)reuseCountProperty.GetValue(stats)!;
-        }
-            
-        return (totalAllocatedBytes, totalRetainedBytes, totalReuses);
-    }
     
-    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", 
-        Justification = "The generic MemoryPool<T> types are preserved via other code paths")]
-    private static void InvokeHandleMemoryPressureViaReflection(
+    private static void InvokeHandleMemoryPressureViaInterface(
         object pool, 
         double pressure)
     {
-        var poolType = pool.GetType();
-        var handlePressureMethod = poolType.GetMethod("HandleMemoryPressure");
-        handlePressureMethod?.Invoke(pool, new object[] { pressure });
+        if (pool is IMemoryPoolInternal memoryPool)
+        {
+            memoryPool.HandleMemoryPressure(pressure);
+        }
     }
     
-    [UnconditionalSuppressMessage("AOT", "IL3050:RequiresDynamicCode", 
-        Justification = "The generic MemoryPool<T> types are preserved via other code paths")]
-    private static long? InvokeCompactViaReflection(
+    private static long? InvokeCompactViaInterface(
         object pool)
     {
-        var poolType = pool.GetType();
-        var compactMethod = poolType.GetMethod("Compact", Type.EmptyTypes);
-        if (compactMethod != null)
+        if (pool is IMemoryPoolInternal memoryPool)
         {
-            var result = compactMethod.Invoke(pool, null);
-            if (result is long released)
-            {
-                return released;
-            }
+            return memoryPool.Compact();
         }
         return null;
     }

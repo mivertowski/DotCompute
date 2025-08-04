@@ -1065,10 +1065,46 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// Disposes this buffer asynchronously.
     /// </summary>
     /// <returns>A task representing the disposal operation.</returns>
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
-        Dispose();
-        return ValueTask.CompletedTask;
+        if (_disposed)
+        {
+            return;
+        }
+        
+        await _asyncLock.WaitAsync();
+        try
+        {
+            if (_disposed)
+            {
+                return;
+            }
+            
+            _disposed = true;
+            
+            // Free device memory
+            if (_deviceMemory.IsValid)
+            {
+                // Free device memory using modern disposal pattern
+                // In a complete implementation, the memory manager would provide
+                // a Free method or handle cleanup through its disposal patterns.
+                // For CPU-only mode, the device memory is just a logical handle.
+                _deviceMemory = DeviceMemory.Invalid;
+            }
+            
+            // Free pinned host memory  
+            if (_pinnedHandle.IsAllocated)
+            {
+                _pinnedHandle.Free();
+            }
+            
+            _hostArray = null;
+            _state = BufferState.Uninitialized;
+        }
+        finally
+        {
+            _asyncLock.Dispose();
+        }
     }
     
     #endregion
