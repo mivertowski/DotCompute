@@ -36,9 +36,9 @@
 
   <ItemGroup>
     <!-- Memory management dependencies -->
-    <PackageReference Include="System.IO.Pipelines" />
-    <PackageReference Include="Microsoft.Toolkit.HighPerformance" />
-    <PackageReference Include="System.Runtime.InteropServices" />
+    <PackageReference Include="System.IO.Pipelines" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.2" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
   </ItemGroup>
 
 </Project>

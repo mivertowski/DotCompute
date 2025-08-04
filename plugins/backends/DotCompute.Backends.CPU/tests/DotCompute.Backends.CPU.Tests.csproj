@@ -23,7 +23,7 @@
   <!-- Package references are managed automatically by Directory.Build.props for .Tests projects -->
   <!-- Additional packages needed for this specific test project -->
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="BenchmarkDotNet" Version="0.13.12" />
   </ItemGroup>
 
   <ItemGroup>
