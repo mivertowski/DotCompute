@@ -24,12 +24,22 @@ namespace DotCompute.Plugins.Core
         private bool _disposed;
         private bool _isInitialized;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PluginSystem"/> class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <exception cref="System.ArgumentNullException">logger</exception>
         public PluginSystem(ILogger<PluginSystem> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _plugins = [];
         }
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PluginSystem"/> class.
+        /// </summary>
+        /// <param name="options">The options.</param>
+        /// <param name="logger">The logger.</param>
         public PluginSystem(Configuration.PluginOptions options, ILogger<PluginSystem>? logger = null)
         {
             _logger = logger ?? new NullLogger<PluginSystem>();
@@ -307,12 +317,19 @@ namespace DotCompute.Plugins.Core
             }
         }
 
+        /// <summary>
+        /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        /// Releases unmanaged and - optionally - managed resources.
+        /// </summary>
+        /// <param name="disposing"><c>true</c> to release both managed and unmanaged resources; <c>false</c> to release only unmanaged resources.</param>
         protected virtual void Dispose(bool disposing)
         {
             if (_disposed)
@@ -372,6 +389,13 @@ namespace DotCompute.Plugins.Core
             return null;
         }
 
+        /// <summary>
+        /// Allows derived class to load an unmanaged library by name.
+        /// </summary>
+        /// <param name="unmanagedDllName">Name of the unmanaged library. Typically this is the filename without its path or extensions.</param>
+        /// <returns>
+        /// A handle to the loaded library, or <see cref="nint.Zero" />.
+        /// </returns>
         protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
         {
             var libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);

@@ -101,7 +101,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         var context = new CoreKernelExecutionContext
         {
             Name = _definition.Name,
-            WorkDimensions = new[] { 1024L }, // Default work size - should be configurable
+            WorkDimensions = [1024L], // Default work size - should be configurable
             Arguments = arguments.Arguments.ToArray()
         };
 
@@ -256,7 +256,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     {
         for (var i = startIndex; i < endIndex && !context.CancellationToken.IsCancellationRequested; i++)
         {
-            var workItemId = GetWorkItemId(i, context.KernelContext.WorkDimensions ?? Array.Empty<long>());
+            var workItemId = GetWorkItemId(i, context.KernelContext.WorkDimensions ?? []);
             ExecuteSingleWorkItem(context.KernelContext, workItemId);
         }
     }
@@ -278,9 +278,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
             for (var v = 0; v < vectorFactor; v++)
             {
                 var actualIndex = baseIndex + v;
-                if (actualIndex < GetTotalWorkItems(context.KernelContext.WorkDimensions ?? Array.Empty<long>()))
+                if (actualIndex < GetTotalWorkItems(context.KernelContext.WorkDimensions ?? []))
                 {
-                    workItemIds[v] = GetWorkItemId(actualIndex, context.KernelContext.WorkDimensions ?? Array.Empty<long>());
+                    workItemIds[v] = GetWorkItemId(actualIndex, context.KernelContext.WorkDimensions ?? []);
                 }
             }
 
@@ -579,7 +579,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
                 {
                     Array.Copy(context.Arguments, delegateArgs, argCount);
                 }
-                delegateArgs[delegateArgs.Length - 1] = workItemId;
+                delegateArgs[^1] = workItemId;
 
                 // Invoke the compiled kernel
                 _compiledDelegate.DynamicInvoke(delegateArgs);

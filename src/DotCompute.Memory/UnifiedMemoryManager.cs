@@ -25,7 +25,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
     private readonly Lock _lock = new();
 
     // Performance optimization: Use thread-safe counters with padding to avoid false sharing
-    private struct AlignedCounter
+    private readonly struct AlignedCounter
     {
 #pragma warning disable CS0649 // Field is never assigned to - it's modified through Unsafe.AsRef
         private readonly long _value;
@@ -33,9 +33,9 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
 #pragma warning disable CS0169, CA1823 // The padding fields are intentionally unused to prevent false sharing
         private readonly byte _padding1, _padding2, _padding3, _padding4, _padding5, _padding6, _padding7;
 #pragma warning restore CS0169, CA1823
-        public long Value => Interlocked.Read(ref Unsafe.AsRef(in _value));
-        public void Increment() => Interlocked.Increment(ref Unsafe.AsRef(in _value));
-        public void Add(long value) => Interlocked.Add(ref Unsafe.AsRef(in _value), value);
+        public readonly long Value => Interlocked.Read(ref Unsafe.AsRef(in _value));
+        public readonly void Increment() => Interlocked.Increment(ref Unsafe.AsRef(in _value));
+        public readonly void Add(long value) => Interlocked.Add(ref Unsafe.AsRef(in _value), value);
     }
 
     private readonly AlignedCounter _totalAllocations;
@@ -148,12 +148,12 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
     /// <summary>
     /// Gets available memory locations.
     /// </summary>
-    public static IReadOnlyList<MemoryLocation> AvailableLocations => new[]
-    {
+    public static IReadOnlyList<MemoryLocation> AvailableLocations
+    => [
         MemoryLocation.Host,
         MemoryLocation.Device,
         MemoryLocation.Unified
-    };
+    ];
 
     /// <summary>
     /// Gets the memory pool for the specified type.
@@ -583,7 +583,13 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
 
     #region IMemoryManager Implementation (Abstractions)
 
-    // Async interface implementation
+    /// <summary>
+    /// Allocates memory on the accelerator.
+    /// </summary>
+    /// <param name="sizeInBytes"></param>
+    /// <param name="options"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,
         DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None,
@@ -593,6 +599,15 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         return _baseMemoryManager.AllocateAsync(sizeInBytes, options, cancellationToken);
     }
 
+
+    /// <summary>
+    /// Allocates memory and copies data from host.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="source"></param>
+    /// <param name="options"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
         ReadOnlyMemory<T> source,
         DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None,
@@ -602,6 +617,13 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         return _baseMemoryManager.AllocateAndCopyAsync(source, options, cancellationToken);
     }
 
+    /// <summary>
+    /// Creates a view over existing memory.
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="offset"></param>
+    /// <param name="length"></param>
+    /// <returns></returns>
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
         ThrowIfDisposed();
@@ -676,6 +698,9 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         return null;
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         if (_isDisposed)
@@ -708,6 +733,13 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         }
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or
+    /// resetting unmanaged resources asynchronously.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous dispose operation.
+    /// </returns>
     public async ValueTask DisposeAsync()
     {
         if (_isDisposed)

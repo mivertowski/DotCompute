@@ -64,6 +64,10 @@ public sealed class CpuThreadPool : IAsyncDisposable
     private readonly TaskCompletionSource _shutdownTcs;
     private int _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="CpuThreadPool"/> class.
+    /// </summary>
+    /// <param name="options">The options.</param>
     public CpuThreadPool(IOptions<CpuThreadPoolOptions> options)
     {
         _options = options.Value;
@@ -668,6 +672,13 @@ public sealed class CpuThreadPool : IAsyncDisposable
         };
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or
+    /// resetting unmanaged resources asynchronously.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous dispose operation.
+    /// </returns>
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
@@ -708,15 +719,62 @@ public sealed class CpuThreadPool : IAsyncDisposable
 /// </summary>
 public sealed class ThreadPoolStatistics
 {
+    /// <summary>
+    /// Gets the thread count.
+    /// </summary>
+    /// <value>
+    /// The thread count.
+    /// </value>
     public required int ThreadCount { get; init; }
+
+    /// <summary>
+    /// Gets the global queue count.
+    /// </summary>
+    /// <value>
+    /// The global queue count.
+    /// </value>
     public required int GlobalQueueCount { get; init; }
-#pragma warning disable CA1819 // Properties should not return arrays - Required for work queue statistics
+
+#pragma warning disable CA1819 // Properties should not return arrays - Required for work queue statistics    
+    /// <summary>
+    /// Gets the local queue counts.
+    /// </summary>
+    /// <value>
+    /// The local queue counts.
+    /// </value>
     public required int[] LocalQueueCounts { get; init; }
 #pragma warning restore CA1819
+
+    /// <summary>
+    /// Gets the total queued items.
+    /// </summary>
+    /// <value>
+    /// The total queued items.
+    /// </value>
     public required int TotalQueuedItems { get; init; }
 
+    /// <summary>
+    /// Gets the average size of the local queue.
+    /// </summary>
+    /// <value>
+    /// The average size of the local queue.
+    /// </value>
     public double AverageLocalQueueSize => LocalQueueCounts.Length > 0 ? LocalQueueCounts.Average() : 0;
+
+    /// <summary>
+    /// Gets the maximum size of the local queue.
+    /// </summary>
+    /// <value>
+    /// The maximum size of the local queue.
+    /// </value>
     public int MaxLocalQueueSize => LocalQueueCounts.Length > 0 ? LocalQueueCounts.Max() : 0;
+
+    /// <summary>
+    /// Gets the minimum size of the local queue.
+    /// </summary>
+    /// <value>
+    /// The minimum size of the local queue.
+    /// </value>
     public int MinLocalQueueSize => LocalQueueCounts.Length > 0 ? LocalQueueCounts.Min() : 0;
 }
 

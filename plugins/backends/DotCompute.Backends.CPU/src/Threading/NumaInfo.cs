@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Management;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
@@ -42,8 +43,8 @@ public static partial class NumaInfo
             {
                 NodeCount = 1,
                 ProcessorCount = Environment.ProcessorCount,
-                Nodes = new[]
-                {
+                Nodes =
+                [
                     new NumaNode
                     {
                         NodeId = 0,
@@ -51,7 +52,7 @@ public static partial class NumaInfo
                         ProcessorCount = Environment.ProcessorCount,
                         MemorySize = 0 // Unknown
                     }
-                }
+                ]
             };
         }
     }
@@ -135,7 +136,7 @@ public static partial class NumaInfo
             var results = searcher.Get();
             if (results.Count > 0)
             {
-                foreach (System.Management.ManagementObject node in results)
+                foreach (var node in results.Cast<ManagementObject>())
                 {
                     var nodeId = Convert.ToInt32(node["NodeId"]);
                     var processorMask = GetProcessorMaskFromWmi(node);
@@ -539,8 +540,8 @@ public static partial class NumaInfo
         {
             NodeCount = 1,
             ProcessorCount = processorCount,
-            Nodes = new[]
-            {
+            Nodes =
+            [
                 new NumaNode
                 {
                     NodeId = 0,
@@ -550,8 +551,8 @@ public static partial class NumaInfo
                     Group = 0,
                     CacheCoherencyDomain = 0
                 }
-            },
-            DistanceMatrix = new int[][] { new int[] { 10 } },
+            ],
+            DistanceMatrix = [[10]],
             CacheLineSize = 64,
             PageSize = 4096,
             SupportsMemoryBinding = false,
@@ -1056,7 +1057,7 @@ public sealed class NumaTopology
     public IEnumerable<int> GetNodesByAvailableMemory()
     {
         return Nodes
-            .Select((node, index) => new { NodeId = index, MemorySize = node.MemorySize })
+            .Select((node, index) => new { NodeId = index, node.MemorySize })
             .OrderByDescending(x => x.MemorySize)
             .Select(x => x.NodeId);
     }

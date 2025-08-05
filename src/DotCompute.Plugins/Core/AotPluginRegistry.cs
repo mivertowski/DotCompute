@@ -22,6 +22,11 @@ public sealed class AotPluginRegistry : IDisposable
     private readonly Lock _lock = new();
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AotPluginRegistry"/> class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <exception cref="System.ArgumentNullException">logger</exception>
     public AotPluginRegistry(ILogger<AotPluginRegistry> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -225,6 +230,9 @@ public sealed class AotPluginRegistry : IDisposable
         }
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         if (_disposed)
@@ -266,6 +274,11 @@ public sealed class AotPluginSystem : IDisposable
     private readonly ILogger<AotPluginSystem> _logger;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AotPluginSystem"/> class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <exception cref="System.ArgumentNullException">logger</exception>
     public AotPluginSystem(ILogger<AotPluginSystem> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
