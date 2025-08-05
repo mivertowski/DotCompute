@@ -107,8 +107,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
         var stopwatch = Stopwatch.StartNew();
 
-        _logger.LogDebug(
-            "Executing kernel '{KernelName}' with global work size: [{WorkSize}], vectorization: {Vectorization}",
+        CpuCompiledKernelLoggerMessages.LogExecutingKernel(_logger, 
             _definition.Name,
             string.Join(", ", context.WorkDimensions),
             _executionPlan.UseVectorization ? $"{_executionPlan.VectorWidth}-bit" : "disabled");
@@ -200,15 +199,14 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
             newBits = BitConverter.DoubleToInt64Bits(newValue);
         } while (Interlocked.CompareExchange(ref Unsafe.As<double, long>(ref _totalExecutionTimeMs), newBits, currentBits) != currentBits);
 
-        _logger.LogDebug("Kernel '{KernelName}' execution completed in {ElapsedMs:F2}ms",
+        CpuCompiledKernelLoggerMessages.LogKernelExecutionCompleted(_logger,
             _definition.Name, stopwatch.Elapsed.TotalMilliseconds);
 
         // Log performance stats periodically
         if (_executionCount % 100 == 0)
         {
             var avgTime = _totalExecutionTimeMs / _executionCount;
-            _logger.LogInformation(
-                "Kernel '{KernelName}' performance: {ExecutionCount} executions, avg time: {AvgTime:F2}ms",
+            CpuCompiledKernelLoggerMessages.LogKernelPerformance(_logger,
                 _definition.Name, _executionCount, avgTime);
         }
     }
@@ -589,7 +587,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to execute compiled delegate, falling back to default implementation");
+                CpuCompiledKernelLoggerMessages.LogFailedCompiledDelegate(_logger, ex);
             }
         }
 

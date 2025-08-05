@@ -259,7 +259,8 @@ internal sealed class AotSafeCodeGenerator
         var a = context.GetBuffer<float>(0);
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
-        var m = context.GetScalar<int>(3);
+        // m = rows in matrix A (not used in single work item computation)
+        _ = context.GetScalar<int>(3);
         var n = context.GetScalar<int>(4);
         var k = context.GetScalar<int>(5);
         var workItemId = context.GetParameter(6) as long[] ?? new long[] { 0 };

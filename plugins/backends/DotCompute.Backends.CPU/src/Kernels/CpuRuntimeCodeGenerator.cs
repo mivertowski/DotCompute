@@ -25,7 +25,7 @@ internal sealed class CpuRuntimeCodeGenerator
         };
     }
 
-    public CompiledCode GenerateFromBytecode(byte[] bytecode, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
+    public static CompiledCode GenerateFromBytecode(byte[] bytecode, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // JIT compile bytecode
         var compiledCode = new CompiledCode
@@ -38,7 +38,7 @@ internal sealed class CpuRuntimeCodeGenerator
         return compiledCode;
     }
 
-    public CompiledCode GenerateDefaultKernel(KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
+    public static CompiledCode GenerateDefaultKernel(KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // Generate a default vectorized kernel based on metadata
         var compiledCode = new CompiledCode();

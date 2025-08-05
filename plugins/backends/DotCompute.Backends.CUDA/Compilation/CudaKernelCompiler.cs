@@ -67,6 +67,12 @@ public sealed partial class CudaKernelCompiler : IDisposable
     private readonly string _tempDirectory;
     private readonly string _cacheDirectory;
     private bool _disposed;
+    
+    // Cached JsonSerializerOptions to avoid CA1869
+    private static readonly System.Text.Json.JsonSerializerOptions s_jsonOptions = new()
+    {
+        WriteIndented = true
+    };
 
     [RequiresUnreferencedCode("This type uses runtime code generation and reflection")]
     [RequiresDynamicCode("This type uses runtime code generation for CUDA kernel compilation")]
@@ -952,12 +958,12 @@ public sealed partial class CudaKernelCompiler : IDisposable
 
             if (loadedCount > 0)
             {
-                _logger.LogInformation("Loaded {Count} cached kernels from disk", loadedCount);
+                LogLoadedCachedKernels(_logger, loadedCount);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to load persistent kernel cache");
+            LogFailedToLoadCache(_logger, ex);
         }
     }
 
@@ -973,17 +979,14 @@ public sealed partial class CudaKernelCompiler : IDisposable
 
             await File.WriteAllBytesAsync(ptxFile, ptx);
 
-            var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata, new System.Text.Json.JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
+            var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata, s_jsonOptions);
             await File.WriteAllTextAsync(metadataFile, metadataJson);
 
-            _logger.LogDebug("Persisted kernel cache to disk: {File}", ptxFile);
+            LogPersistedKernelCache(_logger, ptxFile);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to persist kernel cache for: {CacheKey}", cacheKey);
+            LogFailedToPersistCache(_logger, ex, cacheKey);
         }
     }
 
@@ -1109,10 +1112,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaKernelCompiler));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public void Dispose()

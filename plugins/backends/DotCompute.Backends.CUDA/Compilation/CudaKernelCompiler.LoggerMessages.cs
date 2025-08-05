@@ -87,4 +87,28 @@ public sealed partial class CudaKernelCompiler
         Level = LogLevel.Error,
         Message = "Compiled code is null or empty for kernel: {KernelName}")]
     private static partial void LogEmptyCompiledCode(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 1013,
+        Level = LogLevel.Information,
+        Message = "Loaded {Count} cached kernels from disk")]
+    private static partial void LogLoadedCachedKernels(ILogger logger, int count);
+
+    [LoggerMessage(
+        EventId = 1014,
+        Level = LogLevel.Warning,
+        Message = "Failed to load persistent kernel cache")]
+    private static partial void LogFailedToLoadCache(ILogger logger, Exception ex);
+
+    [LoggerMessage(
+        EventId = 1015,
+        Level = LogLevel.Debug,
+        Message = "Persisted kernel cache to disk: {File}")]
+    private static partial void LogPersistedKernelCache(ILogger logger, string file);
+
+    [LoggerMessage(
+        EventId = 1016,
+        Level = LogLevel.Warning,
+        Message = "Failed to persist kernel cache for: {CacheKey}")]
+    private static partial void LogFailedToPersistCache(ILogger logger, Exception ex, string cacheKey);
 }

@@ -401,12 +401,12 @@ internal static partial class CpuKernelCompiler
         else if (definition.Code != null && definition.Code.Length > 0)
         {
             // JIT compile bytecode
-            return CodeGenerator.GenerateFromBytecode(definition.Code, definition, analysis, options);
+            return CpuRuntimeCodeGenerator.GenerateFromBytecode(definition.Code, definition, analysis, options);
         }
         else
         {
             // Generate default vectorized kernel based on operation type
-            return CodeGenerator.GenerateDefaultKernel(definition, analysis, options);
+            return CpuRuntimeCodeGenerator.GenerateDefaultKernel(definition, analysis, options);
         }
     }
 
