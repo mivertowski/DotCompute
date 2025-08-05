@@ -4,7 +4,7 @@ using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
-public class MemoryAllocatorTests : IDisposable
+public sealed class MemoryAllocatorTests : IDisposable
 {
     private readonly MemoryAllocator _allocator;
 
@@ -13,7 +13,11 @@ public class MemoryAllocatorTests : IDisposable
         _allocator = new MemoryAllocator();
     }
 
-    public void Dispose() => _allocator.Dispose();
+    public void Dispose()
+    {
+        _allocator.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
     [Fact]
     public void Allocate_WithValidSize_ShouldReturnMemoryOwner()

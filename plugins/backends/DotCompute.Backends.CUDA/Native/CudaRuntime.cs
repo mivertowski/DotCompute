@@ -443,13 +443,16 @@ public static class NvrtcRuntime
 
     // NVRTC Core Functions
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcVersion(out int major, out int minor);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcVersion(out int major, out int minor);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcGetSupportedArchs(out int[] supportedArchs);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcGetSupportedArchs(out int[] supportedArchs);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcCreateProgram(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcCreateProgram(
         out IntPtr prog,
         [MarshalAs(UnmanagedType.LPStr)] string src,
         [MarshalAs(UnmanagedType.LPStr)] string? name,
@@ -458,34 +461,43 @@ public static class NvrtcRuntime
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[]? includeNames);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcDestroyProgram(ref IntPtr prog);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcDestroyProgram(ref IntPtr prog);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcCompileProgram(
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcCompileProgram(
         IntPtr prog,
         int numOptions,
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[]? options);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcGetPTXSize(IntPtr prog, out IntPtr ptxSizeRet);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcGetPTXSize(IntPtr prog, out IntPtr ptxSizeRet);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcGetPTX(IntPtr prog, [Out] StringBuilder ptx);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcGetPTX(IntPtr prog, [Out] StringBuilder ptx);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcGetCUBINSize(IntPtr prog, out IntPtr cubinSizeRet);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcGetCUBINSize(IntPtr prog, out IntPtr cubinSizeRet);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcGetCUBIN(IntPtr prog, [Out] byte[] cubin);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcGetCUBIN(IntPtr prog, [Out] byte[] cubin);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcGetProgramLogSize(IntPtr prog, out IntPtr logSizeRet);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcGetProgramLogSize(IntPtr prog, out IntPtr logSizeRet);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, [Out] StringBuilder log);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, [Out] StringBuilder log);
 
     [DllImport(NVRTC_LIBRARY)]
-    public static extern IntPtr nvrtcGetErrorString(NvrtcResult result);
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern IntPtr nvrtcGetErrorString(NvrtcResult result);
 
     // Helper Methods
     public static string GetErrorString(NvrtcResult result)
