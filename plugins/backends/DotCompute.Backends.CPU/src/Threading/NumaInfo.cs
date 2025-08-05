@@ -627,12 +627,10 @@ public static partial class NumaInfo
     private static int GetCacheCoherencyDomain(int nodeId) => nodeId; // For most systems, cache coherency domain matches NUMA node
 
     private static int GetNumaNodeDistance(int fromNode, int toNode) =>
-        // Default NUMA distances if system doesn't provide them
-        fromNode == toNode ? 10 : 20;
+        fromNode == toNode ? 10 : 20; // Default NUMA distances if system doesn't provide them
 
     private static int GetCacheLineSize() =>
-        // Most modern processors use 64-byte cache lines
-        64;
+        64; // Most modern processors use 64-byte cache lines
 
     private static int GetPageSize()
     {

@@ -127,8 +127,9 @@ public sealed partial class CudaBackend : IDisposable
             // Check minimum version requirements (CUDA 11.0+)
             if (runtimeVersion < 11000 || driverVersion < 11000)
             {
-                _logger.LogWarning("CUDA device {DeviceId} requires CUDA 11.0 or higher. Runtime: {Runtime}, Driver: {Driver}",
-                    deviceId, runtimeVersion, driverVersion);
+                LogCudaVersionTooLow(_logger, deviceId,
+                    runtimeVersion.HasValue ? $"{runtimeVersion / 1000}.{(runtimeVersion % 1000) / 10}" : "unknown",
+                    driverVersion.HasValue ? $"{driverVersion / 1000}.{(driverVersion % 1000) / 10}" : "unknown");
                 return false;
             }
 

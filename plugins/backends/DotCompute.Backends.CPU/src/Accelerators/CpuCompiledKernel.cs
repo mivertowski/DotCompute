@@ -149,9 +149,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
         // Determine work distribution with vectorization
         var workerCount = _threadPool.WorkerCount;
-        var vectorizedWorkItems = _executionPlan.UseVectorization ?
-            (totalWorkItems + _executionPlan.VectorizationFactor - 1) / _executionPlan.VectorizationFactor :
-            totalWorkItems;
+        var vectorizedWorkItems = _executionPlan.UseVectorization
+            ? (totalWorkItems + _executionPlan.VectorizationFactor - 1) / _executionPlan.VectorizationFactor
+            : totalWorkItems;
         var workItemsPerWorker = (vectorizedWorkItems + workerCount - 1) / workerCount;
 
         // Create tasks for parallel execution

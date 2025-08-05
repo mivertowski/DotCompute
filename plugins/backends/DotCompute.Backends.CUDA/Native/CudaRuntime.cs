@@ -125,7 +125,7 @@ public static class CudaRuntime
 
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cuModuleGetFunction(ref IntPtr hfunc, IntPtr hmod, [MarshalAs(UnmanagedType.LPStr, CharSet = CharSet.Ansi)] string name);
+    internal static extern CudaError cuModuleGetFunction(ref IntPtr hfunc, IntPtr hmod, [MarshalAs(UnmanagedType.LPStr)] string name);
 
     // Kernel Execution (Driver API)
     [DllImport(CUDA_DRIVER_LIBRARY)]
@@ -454,8 +454,8 @@ public static class NvrtcRuntime
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern NvrtcResult nvrtcCreateProgram(
         out IntPtr prog,
-        [MarshalAs(UnmanagedType.LPStr, CharSet = CharSet.Ansi)] string src,
-        [MarshalAs(UnmanagedType.LPStr, CharSet = CharSet.Ansi)] string? name,
+        [MarshalAs(UnmanagedType.LPStr)] string src,
+        [MarshalAs(UnmanagedType.LPStr)] string? name,
         int numHeaders,
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[]? headers,
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[]? includeNames);

@@ -10,162 +10,162 @@ public partial class CudaBackend
     [LoggerMessage(
         EventId = 2001,
         Level = LogLevel.Warning,
-        Message = "DotCompute.Backends.CUDA is not available or did not load correctly. CUDA features will be unavailable")]
-    private static partial void LogCudaBackendNotAvailable(ILogger logger);
+        Message = "CUDA is not available on this platform")]
+    private static partial void LogCudaNotAvailable(ILogger logger);
 
     [LoggerMessage(
         EventId = 2002,
         Level = LogLevel.Information,
-        Message = "Initializing CUDA backend...")]
-    private static partial void LogInitializingCudaBackend(ILogger logger);
+        Message = "Discovering CUDA devices...")]
+    private static partial void LogDiscoveringCudaDevices(ILogger logger);
 
     [LoggerMessage(
         EventId = 2003,
         Level = LogLevel.Error,
-        Message = "Failed to detect CUDA devices")]
-    private static partial void LogFailedToDetectCudaDevices(ILogger logger);
+        Message = "Failed to get CUDA device count: {Error}")]
+    private static partial void LogFailedToGetDeviceCount(ILogger logger, string error);
 
     [LoggerMessage(
         EventId = 2004,
+        Level = LogLevel.Information,
+        Message = "No CUDA devices found")]
+    private static partial void LogNoCudaDevicesFound(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 2005,
         Level = LogLevel.Information,
         Message = "Found {DeviceCount} CUDA device(s)")]
     private static partial void LogFoundCudaDevices(ILogger logger, int deviceCount);
 
     [LoggerMessage(
-        EventId = 2005,
-        Level = LogLevel.Information,
-        Message = "CUDA backend initialized successfully")]
-    private static partial void LogCudaBackendInitialized(ILogger logger);
-
-    [LoggerMessage(
         EventId = 2006,
-        Level = LogLevel.Warning,
-        Message = "Unable to set CUDA device {DeviceId}")]
-    private static partial void LogUnableToSetCudaDevice(ILogger logger, Exception ex, int deviceId);
+        Level = LogLevel.Information,
+        Message = "CUDA device discovery completed - {AcceleratorCount} accelerators available")]
+    private static partial void LogDeviceDiscoveryCompleted(ILogger logger, int acceleratorCount);
 
     [LoggerMessage(
         EventId = 2007,
-        Level = LogLevel.Information,
-        Message = "Set active CUDA device to {DeviceId}")]
-    private static partial void LogSetActiveCudaDevice(ILogger logger, int deviceId);
+        Level = LogLevel.Warning,
+        Message = "Failed to initialize CUDA device {DeviceId}")]
+    private static partial void LogFailedToInitializeDevice(ILogger logger, Exception ex, int deviceId);
 
     [LoggerMessage(
         EventId = 2008,
         Level = LogLevel.Error,
-        Message = "Failed to set CUDA device {DeviceId}")]
-    private static partial void LogFailedToSetCudaDevice(ILogger logger, Exception ex, int deviceId);
+        Message = "Failed to discover CUDA accelerators")]
+    private static partial void LogFailedToDiscoverAccelerators(ILogger logger, Exception ex);
 
     [LoggerMessage(
         EventId = 2009,
         Level = LogLevel.Warning,
-        Message = "Failed to allocate CUDA buffer")]
-    private static partial void LogFailedToAllocateCudaBuffer(ILogger logger);
+        Message = "Could not determine CUDA runtime version for device {DeviceId}")]
+    private static partial void LogCouldNotDetermineRuntimeVersion(ILogger logger, int deviceId);
 
     [LoggerMessage(
         EventId = 2010,
         Level = LogLevel.Warning,
-        Message = "Failed to create CUDA stream")]
-    private static partial void LogFailedToCreateCudaStream(ILogger logger);
+        Message = "Could not determine CUDA driver version for device {DeviceId}")]
+    private static partial void LogCouldNotDetermineDriverVersion(ILogger logger, int deviceId);
 
     [LoggerMessage(
         EventId = 2011,
         Level = LogLevel.Warning,
-        Message = "Failed to register memory for CUDA")]
-    private static partial void LogFailedToRegisterMemory(ILogger logger);
+        Message = "CUDA device {DeviceId} requires CUDA 11.0 or higher. Runtime: {Runtime}, Driver: {Driver}")]
+    private static partial void LogCudaVersionTooLow(ILogger logger, int deviceId, string runtime, string driver);
 
     [LoggerMessage(
         EventId = 2012,
         Level = LogLevel.Warning,
-        Message = "Failed to copy data to CUDA device")]
-    private static partial void LogFailedToCopyToDevice(ILogger logger);
+        Message = "Cannot access CUDA device {DeviceId}: {Error}")]
+    private static partial void LogCannotAccessDevice(ILogger logger, int deviceId, string error);
 
     [LoggerMessage(
         EventId = 2013,
         Level = LogLevel.Warning,
-        Message = "Failed to copy data from CUDA device")]
-    private static partial void LogFailedToCopyFromDevice(ILogger logger);
+        Message = "CUDA device {DeviceId} failed synchronization test: {Error}")]
+    private static partial void LogDeviceFailedSynchronization(ILogger logger, int deviceId, string error);
 
     [LoggerMessage(
         EventId = 2014,
         Level = LogLevel.Warning,
-        Message = "Failed to execute kernel on CUDA")]
-    private static partial void LogFailedToExecuteKernel(ILogger logger, Exception ex);
+        Message = "Error validating CUDA device {DeviceId} accessibility")]
+    private static partial void LogErrorValidatingDevice(ILogger logger, Exception ex, int deviceId);
 
     [LoggerMessage(
         EventId = 2015,
         Level = LogLevel.Error,
-        Message = "Not implemented: ExecuteKernelAsync")]
-    private static partial void LogExecuteKernelNotImplemented(ILogger logger);
+        Message = "Failed to get properties for CUDA device {DeviceId}: {Error}")]
+    private static partial void LogFailedToGetDeviceProperties(ILogger logger, int deviceId, string error);
 
     [LoggerMessage(
         EventId = 2016,
         Level = LogLevel.Information,
-        Message = "Disposing CUDA context...")]
-    private static partial void LogDisposingCudaContext(ILogger logger);
+        Message = "Skipping CUDA device {DeviceId} ({Name}) - compute capability {Major}.{Minor} is below minimum 5.0")]
+    private static partial void LogSkippingDeviceLowComputeCapability(ILogger logger, int deviceId, string name, int major, int minor);
 
     [LoggerMessage(
         EventId = 2017,
         Level = LogLevel.Error,
-        Message = "Failed to dispose CUDA context")]
-    private static partial void LogFailedToDisposeCudaContext(ILogger logger, Exception ex);
+        Message = "Failed to create accelerator for CUDA device {DeviceId}")]
+    private static partial void LogFailedToCreateAccelerator(ILogger logger, Exception ex, int deviceId);
 
     [LoggerMessage(
         EventId = 2018,
         Level = LogLevel.Information,
-        Message = "Name: {Name}")]
-    private static partial void LogDeviceName(ILogger logger, string name);
+        Message = "CUDA Device: {Name} (ID: {Id})")]
+    private static partial void LogCudaDevice(ILogger logger, string name, Guid id);
 
     [LoggerMessage(
         EventId = 2019,
         Level = LogLevel.Information,
-        Message = "Compute Capability: {Major}.{Minor}")]
-    private static partial void LogComputeCapability(ILogger logger, int major, int minor);
+        Message = "  Compute Capability: {ComputeCapability}")]
+    private static partial void LogComputeCapability(ILogger logger, string computeCapability);
 
     [LoggerMessage(
         EventId = 2020,
         Level = LogLevel.Information,
-        Message = "Total Memory: {TotalMemory} GB")]
-    private static partial void LogTotalMemory(ILogger logger, double totalMemory);
+        Message = "  Total Memory: {TotalMemory:N0} bytes ({MemoryGB:F1} GB)")]
+    private static partial void LogTotalMemory(ILogger logger, long totalMemory, double memoryGB);
 
     [LoggerMessage(
         EventId = 2021,
         Level = LogLevel.Information,
-        Message = "Multiprocessors: {MultiprocessorCount}")]
-    private static partial void LogMultiprocessorCount(ILogger logger, int multiprocessorCount);
+        Message = "  Multiprocessors: {ComputeUnits}")]
+    private static partial void LogMultiprocessors(ILogger logger, int computeUnits);
 
     [LoggerMessage(
         EventId = 2022,
         Level = LogLevel.Information,
-        Message = "Clock Rate: {ClockRate} MHz")]
-    private static partial void LogClockRate(ILogger logger, double clockRate);
+        Message = "  Clock Rate: {ClockRate} MHz")]
+    private static partial void LogClockRate(ILogger logger, long clockRate);
 
     [LoggerMessage(
         EventId = 2023,
         Level = LogLevel.Information,
-        Message = "Memory Clock Rate: {MemoryClockRate} MHz")]
-    private static partial void LogMemoryClockRate(ILogger logger, double memoryClockRate);
+        Message = "  Shared Memory per Block: {SharedMem:N0} bytes")]
+    private static partial void LogSharedMemoryPerBlock(ILogger logger, object sharedMem);
 
     [LoggerMessage(
         EventId = 2024,
         Level = LogLevel.Information,
-        Message = "Memory Bus Width: {MemoryBusWidth} bits")]
-    private static partial void LogMemoryBusWidth(ILogger logger, int memoryBusWidth);
+        Message = "  Max Threads per Block: {MaxThreads}")]
+    private static partial void LogMaxThreadsPerBlock(ILogger logger, object maxThreads);
 
     [LoggerMessage(
         EventId = 2025,
         Level = LogLevel.Information,
-        Message = "Unified Addressing: {UnifiedAddressing}")]
-    private static partial void LogUnifiedAddressing(ILogger logger, bool unifiedAddressing);
+        Message = "  Warp Size: {WarpSize}")]
+    private static partial void LogWarpSize(ILogger logger, object warpSize);
 
     [LoggerMessage(
         EventId = 2026,
         Level = LogLevel.Information,
-        Message = "Concurrent Kernels: {ConcurrentKernels}")]
-    private static partial void LogConcurrentKernels(ILogger logger, bool concurrentKernels);
+        Message = "  ECC Memory: Enabled")]
+    private static partial void LogEccMemoryEnabled(ILogger logger);
 
     [LoggerMessage(
         EventId = 2027,
         Level = LogLevel.Information,
-        Message = "ECC Enabled: {EccEnabled}")]
-    private static partial void LogEccEnabled(ILogger logger, bool eccEnabled);
+        Message = "  Unified Virtual Addressing: Supported")]
+    private static partial void LogUnifiedAddressingSupported(ILogger logger);
 }
