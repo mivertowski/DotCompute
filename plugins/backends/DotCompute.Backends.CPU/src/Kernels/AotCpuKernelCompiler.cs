@@ -301,8 +301,12 @@ internal sealed class AotCompiledKernel(
 {
     private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
     private readonly Func<KernelExecutionContext, Task> _implementation = implementation ?? throw new ArgumentNullException(nameof(implementation));
+#pragma warning disable CA1823 // Avoid unused private fields - These fields are reserved for future use
     private readonly KernelExecutionPlan _executionPlan = executionPlan ?? throw new ArgumentNullException(nameof(executionPlan));
+#pragma warning restore CA1823
+#pragma warning disable CA1823, CA2213 // Field is reserved for future use and disposal is handled externally
     private readonly CpuThreadPool _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
+#pragma warning restore CA1823, CA2213
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public string Name => _definition.Name;
@@ -333,7 +337,8 @@ internal sealed class AotCompiledKernel(
 
     public ValueTask DisposeAsync()
     {
-        // AOT kernels don't require disposal as they don't allocate dynamic resources
+        // Thread pool disposal is handled by the accelerator
+        // _threadPool is managed externally
         _logger.LogDebug("Disposed AOT kernel: {KernelName}", Name);
         return ValueTask.CompletedTask;
     }
