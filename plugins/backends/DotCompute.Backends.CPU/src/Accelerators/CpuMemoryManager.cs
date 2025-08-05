@@ -45,9 +45,9 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
-        #pragma warning disable CA2000 // Dispose objects before losing scope - buffer ownership is transferred to caller
+#pragma warning disable CA2000 // Dispose objects before losing scope - buffer ownership is transferred to caller
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this);
-        #pragma warning restore CA2000
+#pragma warning restore CA2000
 
         lock (_lock)
         {
@@ -74,9 +74,9 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         policy ??= _defaultPolicy;
         var preferredNode = DetermineOptimalNode(policy, sizeInBytes);
 
-        #pragma warning disable CA2000 // Dispose objects before losing scope - buffer ownership is transferred to caller
+#pragma warning disable CA2000 // Dispose objects before losing scope - buffer ownership is transferred to caller
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this, preferredNode, policy);
-        #pragma warning restore CA2000
+#pragma warning restore CA2000
 
         lock (_lock)
         {

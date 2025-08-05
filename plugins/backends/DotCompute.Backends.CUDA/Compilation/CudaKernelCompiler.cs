@@ -68,7 +68,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
     private readonly string _tempDirectory;
     private readonly string _cacheDirectory;
     private bool _disposed;
-    
+
     // Cached JsonSerializerOptions to avoid CA1869
     private static readonly System.Text.Json.JsonSerializerOptions _jsonOptions = new()
     {

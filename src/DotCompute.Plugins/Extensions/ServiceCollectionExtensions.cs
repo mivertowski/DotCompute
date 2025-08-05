@@ -24,9 +24,9 @@ namespace DotCompute.Plugins.Extensions
             // Configure options
             services.Configure<PluginOptions>(options =>
             {
-                #pragma warning disable IL2026, IL3050 // Members annotated with trimming attributes - Configuration binding requires dynamic code
+#pragma warning disable IL2026, IL3050 // Members annotated with trimming attributes - Configuration binding requires dynamic code
                 configuration.GetSection("Plugins").Bind(options);
-                #pragma warning restore IL2026, IL3050
+#pragma warning restore IL2026, IL3050
                 configureOptions?.Invoke(options);
             });
 

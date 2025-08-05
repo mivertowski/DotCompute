@@ -11,14 +11,14 @@ namespace DotCompute.Core.Pipelines;
 /// </summary>
 internal static class PerformanceMonitor
 {
-    private static readonly bool IsWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-    private static readonly bool IsLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-    private static readonly bool IsMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
+    private static readonly bool _isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
+    private static readonly bool _isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
+    private static readonly bool _isMacOS = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
 
-    private static readonly Process CurrentProcess = Process.GetCurrentProcess();
+    private static readonly Process _currentProcess = Process.GetCurrentProcess();
     private static DateTime _lastCpuTime = DateTime.UtcNow;
-    private static TimeSpan _lastTotalProcessorTime = CurrentProcess.TotalProcessorTime;
-    private static long _lastMemoryWorkingSet = CurrentProcess.WorkingSet64;
+    private static TimeSpan _lastTotalProcessorTime = _currentProcess.TotalProcessorTime;
+    private static long _lastMemoryWorkingSet = _currentProcess.WorkingSet64;
     private static readonly Lock _lock = new();
 
     /// <summary>
@@ -30,10 +30,10 @@ internal static class PerformanceMonitor
         {
             try
             {
-                CurrentProcess.Refresh();
+                _currentProcess.Refresh();
 
                 var currentTime = DateTime.UtcNow;
-                var currentTotalProcessorTime = CurrentProcess.TotalProcessorTime;
+                var currentTotalProcessorTime = _currentProcess.TotalProcessorTime;
 
                 var timeDiff = currentTime.Subtract(_lastCpuTime).TotalMilliseconds;
                 var cpuTimeDiff = currentTotalProcessorTime.Subtract(_lastTotalProcessorTime).TotalMilliseconds;
@@ -70,9 +70,9 @@ internal static class PerformanceMonitor
         {
             try
             {
-                CurrentProcess.Refresh();
+                _currentProcess.Refresh();
 
-                var currentMemoryWorkingSet = CurrentProcess.WorkingSet64;
+                var currentMemoryWorkingSet = _currentProcess.WorkingSet64;
                 var memoryDelta = Math.Abs(currentMemoryWorkingSet - _lastMemoryWorkingSet);
 
                 // Estimate bandwidth utilization based on memory access patterns
@@ -132,11 +132,11 @@ internal static class PerformanceMonitor
     /// </summary>
     public static (long workingSet, long privateMemory, long virtualMemory) GetMemoryStats()
     {
-        CurrentProcess.Refresh();
+        _currentProcess.Refresh();
         return (
-            CurrentProcess.WorkingSet64,
-            CurrentProcess.PrivateMemorySize64,
-            CurrentProcess.VirtualMemorySize64
+            _currentProcess.WorkingSet64,
+            _currentProcess.PrivateMemorySize64,
+            _currentProcess.VirtualMemorySize64
         );
     }
 
@@ -197,13 +197,13 @@ internal static class PerformanceMonitor
         // Simplified estimation of theoretical memory bandwidth
         // Real implementation would query system-specific information
 
-        if (IsWindows || IsLinux)
+        if (_isWindows || _isLinux)
         {
             // Modern DDR4/DDR5 systems typically have 25-50 GB/s bandwidth
             // This is a conservative estimate
             return 25.0;
         }
-        else if (IsMacOS)
+        else if (_isMacOS)
         {
             // Apple Silicon has higher bandwidth
             return 50.0;
@@ -224,7 +224,7 @@ internal static class PerformanceMonitor
         {
             var context = _context.Value!;
             context.StartTime = Stopwatch.GetTimestamp();
-            context.StartCpuTotal = CurrentProcess.TotalProcessorTime;
+            context.StartCpuTotal = _currentProcess.TotalProcessorTime;
             context.StartAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
         }
 
@@ -232,8 +232,8 @@ internal static class PerformanceMonitor
         {
             var context = _context.Value!;
             var endTime = Stopwatch.GetTimestamp();
-            CurrentProcess.Refresh();
-            var endCpuTotal = CurrentProcess.TotalProcessorTime;
+            _currentProcess.Refresh();
+            var endCpuTotal = _currentProcess.TotalProcessorTime;
             var endAllocatedBytes = GC.GetAllocatedBytesForCurrentThread();
 
             var elapsedMs = (endTime - context.StartTime) * 1000.0 / Stopwatch.Frequency;

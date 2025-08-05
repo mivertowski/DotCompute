@@ -126,15 +126,15 @@ internal static partial class CpuKernelCompiler
                 {
                     if (parameters[i] is IDictionary<string, object> param)
                     {
-                        if (!param.TryGetValue("Name", out var nameObj) || 
-                            nameObj is not string name || 
+                        if (!param.TryGetValue("Name", out var nameObj) ||
+                            nameObj is not string name ||
                             string.IsNullOrWhiteSpace(name))
                         {
                             return new ValidationResult(false, $"Parameter at index {i} must have a valid name");
                         }
 
-                        if (!param.TryGetValue("Type", out var typeObj) || 
-                            typeObj is not string type || 
+                        if (!param.TryGetValue("Type", out var typeObj) ||
+                            typeObj is not string type ||
                             string.IsNullOrWhiteSpace(type))
                         {
                             return new ValidationResult(false, $"Parameter '{name}' must have a valid type");

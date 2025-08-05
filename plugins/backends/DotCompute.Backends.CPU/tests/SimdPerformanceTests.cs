@@ -12,6 +12,7 @@ using System.Runtime.Intrinsics.X86;
 using BenchmarkDotNet.Attributes;
 using Xunit.Abstractions;
 
+#pragma warning disable CA1515 // Make types internal
 namespace DotCompute.Backends.CPU.Tests;
 
 /// <summary>

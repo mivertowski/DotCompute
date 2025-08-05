@@ -73,8 +73,8 @@ public sealed class MetalAccelerator : IAccelerator
             type: AcceleratorType.Metal,
             name: Marshal.PtrToStringAnsi(deviceInfo.Name) ?? "Unknown Metal Device",
             driverVersion: "1.0",
-            memorySize: deviceInfo.HasUnifiedMemory 
-                ? (long)deviceInfo.RecommendedMaxWorkingSetSize 
+            memorySize: deviceInfo.HasUnifiedMemory
+                ? (long)deviceInfo.RecommendedMaxWorkingSetSize
                 : (long)deviceInfo.MaxBufferLength,
             computeUnits: (int)deviceInfo.MaxThreadgroupSize,
             maxClockFrequency: 0, // Metal doesn't expose clock frequency

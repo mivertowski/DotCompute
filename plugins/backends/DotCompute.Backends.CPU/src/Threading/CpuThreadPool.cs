@@ -687,11 +687,11 @@ public sealed class CpuThreadPool : IAsyncDisposable
         }
 
         // Signal shutdown
-        #pragma warning disable CA1849 // Call async methods when in an async method - acceptable in DisposeAsync pattern
-        #pragma warning disable VSTHRD103 // Cancel synchronously blocks - acceptable in Dispose pattern
+#pragma warning disable CA1849 // Call async methods when in an async method - acceptable in DisposeAsync pattern
+#pragma warning disable VSTHRD103 // Cancel synchronously blocks - acceptable in Dispose pattern
         _shutdownCts.Cancel();
-        #pragma warning restore VSTHRD103
-        #pragma warning restore CA1849
+#pragma warning restore VSTHRD103
+#pragma warning restore CA1849
         _globalWorkQueue.Writer.TryComplete();
 
         // Wait for all threads to complete

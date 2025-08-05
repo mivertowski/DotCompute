@@ -30,12 +30,12 @@ public static class AdvancedSimdKernels
         // AVX-512 FMA path (16 floats per operation)
         if (Avx512F.IsSupported && Fma.IsSupported)
         {
-            const int VectorSize = 16;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 16;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = Avx512F.LoadVector512(a + offset);
                 var vb = Avx512F.LoadVector512(b + offset);
                 var vc = Avx512F.LoadVector512(c + offset);
@@ -44,17 +44,17 @@ public static class AdvancedSimdKernels
                 var vr = Avx512F.FusedMultiplyAdd(va, vb, vc);
                 Avx512F.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // AVX2/FMA path (8 floats per operation)
         else if (Avx2.IsSupported && Fma.IsSupported)
         {
-            const int VectorSize = 8;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 8;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = Avx.LoadVector256(a + offset);
                 var vb = Avx.LoadVector256(b + offset);
                 var vc = Avx.LoadVector256(c + offset);
@@ -63,17 +63,17 @@ public static class AdvancedSimdKernels
                 var vr = Fma.MultiplyAdd(va, vb, vc);
                 Avx.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // ARM NEON FMA path (4 floats per operation)
         else if (AdvSimd.IsSupported)
         {
-            const int VectorSize = 4;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 4;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = AdvSimd.LoadVector128(a + offset);
                 var vb = AdvSimd.LoadVector128(b + offset);
                 var vc = AdvSimd.LoadVector128(c + offset);
@@ -82,7 +82,7 @@ public static class AdvancedSimdKernels
                 var vr = AdvSimd.FusedMultiplyAdd(vc, va, vb); // Note: ARM FMA is addend + multiplicand * multiplier
                 AdvSimd.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
 
         // Scalar remainder with software FMA
@@ -104,12 +104,12 @@ public static class AdvancedSimdKernels
         // AVX-512 FMA path (8 doubles per operation)
         if (Avx512F.IsSupported && Fma.IsSupported)
         {
-            const int VectorSize = 8;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 8;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = Avx512F.LoadVector512(a + offset);
                 var vb = Avx512F.LoadVector512(b + offset);
                 var vc = Avx512F.LoadVector512(c + offset);
@@ -117,17 +117,17 @@ public static class AdvancedSimdKernels
                 var vr = Avx512F.FusedMultiplyAdd(va, vb, vc);
                 Avx512F.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // AVX2/FMA path (4 doubles per operation)
         else if (Avx2.IsSupported && Fma.IsSupported)
         {
-            const int VectorSize = 4;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 4;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = Avx.LoadVector256(a + offset);
                 var vb = Avx.LoadVector256(b + offset);
                 var vc = Avx.LoadVector256(c + offset);
@@ -135,17 +135,17 @@ public static class AdvancedSimdKernels
                 var vr = Fma.MultiplyAdd(va, vb, vc);
                 Avx.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // ARM NEON FMA path (2 doubles per operation)
         else if (AdvSimd.Arm64.IsSupported)
         {
-            const int VectorSize = 2;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 2;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = AdvSimd.LoadVector128(a + offset);
                 var vb = AdvSimd.LoadVector128(b + offset);
                 var vc = AdvSimd.LoadVector128(c + offset);
@@ -153,7 +153,7 @@ public static class AdvancedSimdKernels
                 var vr = AdvSimd.Arm64.FusedMultiplyAdd(vc, va, vb);
                 AdvSimd.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
 
         // Scalar remainder
@@ -179,50 +179,50 @@ public static class AdvancedSimdKernels
         // AVX-512 path (16 ints per operation)
         if (Avx512F.IsSupported)
         {
-            const int VectorSize = 16;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 16;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = Avx512F.LoadVector512(a + offset);
                 var vb = Avx512F.LoadVector512(b + offset);
                 var vr = Avx512F.Add(va, vb);
                 Avx512F.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // AVX2 path (8 ints per operation)
         else if (Avx2.IsSupported)
         {
-            const int VectorSize = 8;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 8;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = Avx2.LoadVector256(a + offset);
                 var vb = Avx2.LoadVector256(b + offset);
                 var vr = Avx2.Add(va, vb);
                 Avx2.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // ARM NEON path (4 ints per operation)
         else if (AdvSimd.IsSupported)
         {
-            const int VectorSize = 4;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 4;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = AdvSimd.LoadVector128(a + offset);
                 var vb = AdvSimd.LoadVector128(b + offset);
                 var vr = AdvSimd.Add(va, vb);
                 AdvSimd.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
 
         // Scalar remainder
@@ -244,29 +244,29 @@ public static class AdvancedSimdKernels
         // AVX-512 path (8 longs per operation)
         if (Avx512DQ.IsSupported)
         {
-            const int VectorSize = 8;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 8;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = Avx512F.LoadVector512(a + offset);
                 var vb = Avx512F.LoadVector512(b + offset);
                 // AVX-512DQ has native 64-bit multiply
                 var vr = Avx512DQ.MultiplyLow(va, vb);
                 Avx512F.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // AVX2 path (4 longs per operation) - Decompose 64-bit multiply
         else if (Avx2.IsSupported)
         {
-            const int VectorSize = 4;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 4;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
 
                 // Load 64-bit values
                 var va = Avx2.LoadVector256(a + offset);
@@ -292,17 +292,17 @@ public static class AdvancedSimdKernels
 
                 Avx2.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // ARM NEON path (2 longs per operation)
         else if (AdvSimd.Arm64.IsSupported)
         {
-            const int VectorSize = 2;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 2;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
 
                 // Load 64-bit values
                 var va = AdvSimd.LoadVector128(a + offset);
@@ -321,7 +321,7 @@ public static class AdvancedSimdKernels
                 var vr = Vector128.Create(r0, r1);
                 AdvSimd.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
 
         // Scalar remainder (and fallback for unsupported SIMD)
@@ -343,50 +343,50 @@ public static class AdvancedSimdKernels
         // AVX-512 path (32 shorts per operation)
         if (Avx512BW.IsSupported)
         {
-            const int VectorSize = 32;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 32;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = Avx512BW.LoadVector512(a + offset);
                 var vb = Avx512BW.LoadVector512(b + offset);
                 var vr = Avx512BW.Add(va, vb);
                 Avx512BW.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // AVX2 path (16 shorts per operation)
         else if (Avx2.IsSupported)
         {
-            const int VectorSize = 16;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 16;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = Avx2.LoadVector256(a + offset);
                 var vb = Avx2.LoadVector256(b + offset);
                 var vr = Avx2.Add(va, vb);
                 Avx2.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // ARM NEON path (8 shorts per operation)
         else if (AdvSimd.IsSupported)
         {
-            const int VectorSize = 8;
-            var vectorCount = elementCount / VectorSize;
+            const int vectorSize = 8;
+            var vectorCount = elementCount / vectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var va = AdvSimd.LoadVector128(a + offset);
                 var vb = AdvSimd.LoadVector128(b + offset);
                 var vr = AdvSimd.Add(va, vb);
                 AdvSimd.Store(result + offset, vr);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
 
         // Scalar remainder
@@ -426,12 +426,12 @@ public static class AdvancedSimdKernels
             return;
         }
 
-        const int VectorSize = 4;
-        var vectorCount = elementCount / VectorSize;
+        const int vectorSize = 4;
+        var vectorCount = elementCount / vectorSize;
 
         for (long v = 0; v < vectorCount; v++)
         {
-            var offset = v * VectorSize;
+            var offset = v * vectorSize;
             var va = AdvSimd.LoadVector128(a + offset);
             var vb = AdvSimd.LoadVector128(b + offset);
             var vc = c != null ? AdvSimd.LoadVector128(c + offset) : Vector128<float>.Zero;
@@ -455,7 +455,7 @@ public static class AdvancedSimdKernels
         }
 
         // Scalar remainder
-        var i = vectorCount * VectorSize;
+        var i = vectorCount * vectorSize;
         for (; i < elementCount; i++)
         {
             result[i] = operation switch
@@ -488,12 +488,12 @@ public static class AdvancedSimdKernels
         // AVX2 gather path (8 elements per operation)
         if (Avx2.IsSupported)
         {
-            const int VectorSize = 8;
-            var vectorCount = count / VectorSize;
+            const int vectorSize = 8;
+            var vectorCount = count / vectorSize;
 
             for (var v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var vindices = Avx2.LoadVector256(indices + offset);
 
                 // Scale indices by sizeof(float) = 4
@@ -503,26 +503,26 @@ public static class AdvancedSimdKernels
                 var gathered = Avx2.GatherVector256(basePtr, scaledIndices, sizeof(float));
                 Avx.Store(result + offset, gathered);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // AVX-512 has even more advanced gather operations
         else if (Avx512F.IsSupported)
         {
-            const int VectorSize = 16;
-            var vectorCount = count / VectorSize;
+            const int vectorSize = 16;
+            var vectorCount = count / vectorSize;
 
             for (var v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var vindices = Avx512F.LoadVector512(indices + offset);
 
                 // AVX-512 gather (using simpler approach for compatibility)
-                for (var j = 0; j < VectorSize; j++)
+                for (var j = 0; j < vectorSize; j++)
                 {
                     result[offset + j] = basePtr[indices[offset + j]];
                 }
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
 
         // Scalar remainder
@@ -544,22 +544,22 @@ public static class AdvancedSimdKernels
         // AVX-512 scatter path (16 elements per operation)
         if (Avx512F.IsSupported)
         {
-            const int VectorSize = 16;
-            var vectorCount = count / VectorSize;
+            const int vectorSize = 16;
+            var vectorCount = count / vectorSize;
 
             for (var v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var vvalues = Avx512F.LoadVector512(values + offset);
                 var vindices = Avx512F.LoadVector512(indices + offset);
 
                 // AVX-512 scatter (using simpler approach for compatibility)
-                for (var j = 0; j < VectorSize; j++)
+                for (var j = 0; j < vectorSize; j++)
                 {
                     basePtr[indices[offset + j]] = values[offset + j];
                 }
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
 
         // Scalar remainder (no AVX2 scatter available)
@@ -582,7 +582,7 @@ public static class AdvancedSimdKernels
         float* a, float* b, float* c, int m, int n, int k)
     {
         const int BlockSize = 64; // Cache-friendly block size
-        const int VectorSize = 8; // AVX2 vector size
+        const int vectorSize = 8; // AVX2 vector size
 
         // Clear result matrix
         for (var i = 0; i < m * n; i++)
@@ -613,7 +613,7 @@ public static class AdvancedSimdKernels
                             if (Fma.IsSupported && Avx2.IsSupported)
                             {
                                 var vaik = Vector256.Create(aik);
-                                for (; j + VectorSize <= jMax; j += VectorSize)
+                                for (; j + vectorSize <= jMax; j += vectorSize)
                                 {
                                     var vb = Avx.LoadVector256(b + kIdx * n + j);
                                     var vc = Avx.LoadVector256(c + i * n + j);
@@ -651,19 +651,19 @@ public static class AdvancedSimdKernels
         // AVX-512 reduction
         if (Avx512F.IsSupported)
         {
-            const int VectorSize = 16;
-            var vectorCount = count / VectorSize;
+            const int vectorSize = 16;
+            var vectorCount = count / vectorSize;
             var accumulator = Vector512<float>.Zero;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var vec = Avx512F.LoadVector512(data + v * VectorSize);
+                var vec = Avx512F.LoadVector512(data + v * vectorSize);
                 accumulator = Avx512F.Add(accumulator, vec);
             }
 
             // Horizontal sum of accumulator
             var sum = HorizontalSumAvx512(accumulator);
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
 
             // Add remainder
             for (; i < count; i++)
@@ -675,18 +675,18 @@ public static class AdvancedSimdKernels
         // AVX2 reduction
         else if (Avx2.IsSupported)
         {
-            const int VectorSize = 8;
-            var vectorCount = count / VectorSize;
+            const int vectorSize = 8;
+            var vectorCount = count / vectorSize;
             var accumulator = Vector256<float>.Zero;
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var vec = Avx.LoadVector256(data + v * VectorSize);
+                var vec = Avx.LoadVector256(data + v * vectorSize);
                 accumulator = Avx.Add(accumulator, vec);
             }
 
             var sum = HorizontalSumAvx256(accumulator);
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
 
             for (; i < count; i++)
             {
@@ -721,13 +721,13 @@ public static class AdvancedSimdKernels
         // AVX2 conditional selection
         if (Avx2.IsSupported)
         {
-            const int VectorSize = 8;
-            var vectorCount = count / VectorSize;
+            const int vectorSize = 8;
+            var vectorCount = count / vectorSize;
             var vthreshold = Vector256.Create(threshold);
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var vcond = Avx.LoadVector256(condition + offset);
                 var va = Avx.LoadVector256(a + offset);
                 var vb = Avx.LoadVector256(b + offset);
@@ -739,18 +739,18 @@ public static class AdvancedSimdKernels
                 var result_vec = Avx.BlendVariable(vb, va, mask);
                 Avx.Store(result + offset, result_vec);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
         // ARM NEON conditional selection
         else if (AdvSimd.IsSupported)
         {
-            const int VectorSize = 4;
-            var vectorCount = count / VectorSize;
+            const int vectorSize = 4;
+            var vectorCount = count / vectorSize;
             var vthreshold = Vector128.Create(threshold);
 
             for (long v = 0; v < vectorCount; v++)
             {
-                var offset = v * VectorSize;
+                var offset = v * vectorSize;
                 var vcond = AdvSimd.LoadVector128(condition + offset);
                 var va = AdvSimd.LoadVector128(a + offset);
                 var vb = AdvSimd.LoadVector128(b + offset);
@@ -760,7 +760,7 @@ public static class AdvancedSimdKernels
                 var result_vec = AdvSimd.BitwiseSelect(mask, va, vb);
                 AdvSimd.Store(result + offset, result_vec);
             }
-            i = vectorCount * VectorSize;
+            i = vectorCount * vectorSize;
         }
 
         // Scalar remainder

@@ -179,9 +179,9 @@ internal sealed class KernelStageBuilder(string name, ICompiledKernel kernel) : 
     private int _priority;
 
     /// <inheritdoc/>
-    public IKernelStageBuilder WithName(string name) =>
+    public IKernelStageBuilder WithName(string name)
         // Name is set in constructor and cannot be changed
-        this;
+        => this;
 
     /// <inheritdoc/>
     public IKernelStageBuilder WithWorkSize(params long[] globalWorkSize)

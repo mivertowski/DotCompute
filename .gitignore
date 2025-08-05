@@ -485,3 +485,6 @@ final_build.txt
 build_final2.txt
 FixRemainingErrors.ps1
 IMPLEMENTATION_DEPTH_ANALYSIS.md
+fix-code-quality.sh
+fix-remaining-issues.sh
+FixCodeQuality.ps1

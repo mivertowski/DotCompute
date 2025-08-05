@@ -267,13 +267,13 @@ namespace DotCompute.Plugins.Core
                     MemoryUsage = _metrics.MemoryUsage,
                     CpuUsage = _metrics.CpuUsage
                 };
-                
+
                 // Copy custom metrics
                 foreach (var kvp in _metrics.CustomMetrics)
                 {
                     result.CustomMetrics[kvp.Key] = kvp.Value;
                 }
-                
+
                 return result;
             }
         }
@@ -433,15 +433,15 @@ namespace DotCompute.Plugins.Core
                     {
                         try
                         {
-                            #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - acceptable in Dispose pattern
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - acceptable in Dispose pattern
                             StopAsync().GetAwaiter().GetResult();
-                            #pragma warning restore VSTHRD002
+#pragma warning restore VSTHRD002
                         }
                         catch (Exception ex)
                         {
-                            #pragma warning disable CA1848 // Use the LoggerMessage delegates - not required for simple disposal logging
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - not required for simple disposal logging
                             Logger?.LogError(ex, "Error stopping plugin {PluginId} during dispose", Id);
-                            #pragma warning restore CA1848
+#pragma warning restore CA1848
                         }
                     }
 

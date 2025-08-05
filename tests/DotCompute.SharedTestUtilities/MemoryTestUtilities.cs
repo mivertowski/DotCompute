@@ -326,7 +326,7 @@ public static class TestReporter
     private static readonly string ReportDirectory = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "DotCompute", "TestReports");
-    
+
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
     [RequiresUnreferencedCode("This method uses System.Text.Json serialization which may require dynamic code generation")]

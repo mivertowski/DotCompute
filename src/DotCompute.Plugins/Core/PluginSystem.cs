@@ -133,14 +133,14 @@ namespace DotCompute.Plugins.Core
                 var context = new PluginAssemblyLoadContext(assemblyPath);
 
                 // Load the assembly
-                #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic assembly loading
+#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic assembly loading
                 var assembly = context.LoadFromAssemblyPath(assemblyPath);
-                #pragma warning restore IL2026
+#pragma warning restore IL2026
 
                 // Find the plugin type
-                #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic type loading
+#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic type loading
                 var pluginType = assembly.GetType(pluginTypeName);
-                #pragma warning restore IL2026
+#pragma warning restore IL2026
                 if (pluginType == null)
                 {
                     _logger.LogError("Plugin type {Type} not found in assembly", pluginTypeName);
@@ -155,9 +155,9 @@ namespace DotCompute.Plugins.Core
                 }
 
                 // Create instance - use factory method for AOT compatibility
-                #pragma warning disable IL2072 // DynamicallyAccessedMembers - Plugin instantiation requires dynamic type handling
+#pragma warning disable IL2072 // DynamicallyAccessedMembers - Plugin instantiation requires dynamic type handling
                 var instance = CreatePluginInstance(pluginType);
-                #pragma warning restore IL2072
+#pragma warning restore IL2072
                 if (instance == null)
                 {
                     _logger.LogError("Failed to create instance of {Type}", pluginTypeName);
@@ -252,9 +252,9 @@ namespace DotCompute.Plugins.Core
         /// </summary>
         public static IEnumerable<Type> DiscoverPluginTypes(Assembly assembly)
         {
-            #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin discovery requires type enumeration
+#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin discovery requires type enumeration
             return assembly.GetTypes()
-            #pragma warning restore IL2026
+#pragma warning restore IL2026
                 .Where(t => !t.IsAbstract &&
                            !t.IsInterface &&
                            typeof(IBackendPlugin).IsAssignableFrom(t));
@@ -269,9 +269,9 @@ namespace DotCompute.Plugins.Core
             {
                 // Create temporary load context
                 var context = new PluginAssemblyLoadContext(assemblyPath);
-                #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic assembly loading
+#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin loading requires dynamic assembly loading
                 var assembly = context.LoadFromAssemblyPath(assemblyPath);
-                #pragma warning restore IL2026
+#pragma warning restore IL2026
 
                 var pluginTypes = DiscoverPluginTypes(assembly);
                 var firstType = pluginTypes.FirstOrDefault();
@@ -343,9 +343,9 @@ namespace DotCompute.Plugins.Core
                 {
                     foreach (var plugin in _plugins.ToList())
                     {
-                        #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - acceptable in Dispose pattern
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - acceptable in Dispose pattern
                         UnloadPluginAsync(plugin.Key).GetAwaiter().GetResult();
-                        #pragma warning restore VSTHRD002
+#pragma warning restore VSTHRD002
                     }
                 }
             }
@@ -381,9 +381,9 @@ namespace DotCompute.Plugins.Core
             var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
             if (assemblyPath != null)
             {
-                #pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin assembly loading requires dynamic loading
+#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' - Plugin assembly loading requires dynamic loading
                 return LoadFromAssemblyPath(assemblyPath);
-                #pragma warning restore IL2026
+#pragma warning restore IL2026
             }
 
             return null;

@@ -12,7 +12,7 @@ public static class TestDataGenerator
     private static readonly Random Random = new(42); // Deterministic for reproducible tests
 
     /// <summary>
-    /// Generates an array of random integers.
+    /// Generates an array of _random integers.
     /// </summary>
     public static int[] GenerateIntArray(int length, int minValue = int.MinValue, int maxValue = int.MaxValue)
     {
@@ -25,7 +25,7 @@ public static class TestDataGenerator
     }
 
     /// <summary>
-    /// Generates an array of random floats.
+    /// Generates an array of _random floats.
     /// </summary>
     public static float[] GenerateFloatArray(int length, float minValue = -1000f, float maxValue = 1000f)
     {
@@ -38,7 +38,7 @@ public static class TestDataGenerator
     }
 
     /// <summary>
-    /// Generates an array of random doubles.
+    /// Generates an array of _random doubles.
     /// </summary>
     public static double[] GenerateDoubleArray(int length, double minValue = -1000.0, double maxValue = 1000.0)
     {
@@ -85,7 +85,7 @@ public static class TestDataGenerator
 #pragma warning restore CA1024
 
     /// <summary>
-    /// Generates a 2D array with random values.
+    /// Generates a 2D array with _random values.
     /// </summary>
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional - Multidimensional arrays are required for matrix operations
     public static T[,] Generate2DArray<T>(int rows, int cols, Func<T> generator)
@@ -165,7 +165,7 @@ public static class TestDataGenerator
     }
 
     /// <summary>
-    /// Generates random bytes.
+    /// Generates _random bytes.
     /// </summary>
     public static byte[] GenerateRandomBytes(int length)
     {
@@ -175,12 +175,12 @@ public static class TestDataGenerator
     }
 
     /// <summary>
-    /// Generates random floats in specified range.
+    /// Generates _random floats in specified range.
     /// </summary>
     public static float[] GenerateRandomFloats(int length, float min = 0.0f, float max = 1.0f) => GenerateArray(length, i => (float)(Random.NextDouble() * (max - min) + min));
 
     /// <summary>
-    /// Generates random integers in specified range.
+    /// Generates _random integers in specified range.
     /// </summary>
     public static int[] GenerateRandomInts(int length, int min = 0, int max = 1000) => GenerateArray(length, i => Random.Next(min, max));
 

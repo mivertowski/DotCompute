@@ -536,10 +536,10 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
             var deviceBuffer = _memoryManager.AllocateAsync(SizeInBytes, Options)
                 .AsTask().GetAwaiter().GetResult();
 #pragma warning restore VSTHRD002
-            
+
             // Store the device buffer reference
             _deviceBuffer = deviceBuffer;
-            
+
             // Create a device memory handle
             _deviceMemory = new DeviceMemory(
                 IntPtr.Zero, // The actual device pointer is managed internally by the device buffer
@@ -689,7 +689,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
             // Allocate real device memory using the memory manager
             _deviceBuffer = await _memoryManager.AllocateAsync(SizeInBytes, Options, cancellationToken)
                 .ConfigureAwait(false);
-            
+
             // Create a device memory handle
             _deviceMemory = new DeviceMemory(
                 IntPtr.Zero, // The actual device pointer is managed internally by the device buffer
@@ -1300,9 +1300,9 @@ internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal
         var originalLength = (length * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>()) / System.Runtime.CompilerServices.Unsafe.SizeOf<TOriginal>();
 
         // The slice is wrapped by the view which manages its lifetime
-        #pragma warning disable CA2000 // Dispose objects before losing scope
+#pragma warning disable CA2000 // Dispose objects before losing scope
         var parentSlice = new UnifiedBufferSlice<TOriginal>(_parent, originalOffset, originalLength);
-        #pragma warning restore CA2000 // Dispose objects before losing scope
+#pragma warning restore CA2000 // Dispose objects before losing scope
         return new UnifiedBufferView<TOriginal, TNew>(parentSlice as UnifiedBuffer<TOriginal> ?? _parent, length);
     }
 

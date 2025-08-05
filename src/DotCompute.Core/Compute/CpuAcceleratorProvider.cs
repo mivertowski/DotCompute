@@ -23,7 +23,7 @@ public class CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger) : IA
     public string Name => "CPU";
 
     public AcceleratorType[] SupportedTypes => new[] { AcceleratorType.CPU };
-    private static readonly char[] separator = new[] { ' ' };
+    private static readonly char[] _separator = new[] { ' ' };
 
     public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
     {
@@ -184,7 +184,7 @@ public class CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger) : IA
                 var availableLine = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:"));
                 if (availableLine != null)
                 {
-                    var parts = availableLine.Split(separator, StringSplitOptions.RemoveEmptyEntries);
+                    var parts = availableLine.Split(_separator, StringSplitOptions.RemoveEmptyEntries);
                     if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
                     {
                         return kb * 1024; // Convert KB to bytes
@@ -353,9 +353,9 @@ internal class CpuAccelerator : IAccelerator
         return new CpuCompiledKernel(context.Definition.Name, context.Definition, compiledFunction);
     }
 
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) =>
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
         // CPU operations are synchronous by default
-        ValueTask.CompletedTask;
+        => ValueTask.CompletedTask;
 
     public ValueTask DisposeAsync()
     {
@@ -373,8 +373,6 @@ internal class CpuAccelerator : IAccelerator
 /// </summary>
 internal class CpuMemoryManager(IAccelerator accelerator, ILogger logger) : IMemoryManager, IDisposable
 {
-    private readonly IAccelerator _accelerator = accelerator;
-    private readonly ILogger _logger = logger;
     private readonly List<CpuMemoryBuffer> _allocatedBuffers = [];
 
     public ValueTask<IMemoryBuffer> AllocateAsync(
@@ -508,9 +506,9 @@ internal class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long len
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
 
-    public ValueTask DisposeAsync() =>
+    public ValueTask DisposeAsync()
         // Views don't own the memory
-        ValueTask.CompletedTask;
+        => ValueTask.CompletedTask;
 }
 
 /// <summary>
@@ -519,7 +517,6 @@ internal class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long len
 internal class CpuCompiledKernel(string name, KernelDefinition definition, Action<KernelExecutionContext>? compiledFunction = null) : ICompiledKernel
 {
     private readonly Action<KernelExecutionContext>? _compiledFunction = compiledFunction ?? DefaultKernelFunction;
-    private readonly KernelDefinition _definition = definition;
     private bool _disposed;
 
     public string Name { get; } = name;

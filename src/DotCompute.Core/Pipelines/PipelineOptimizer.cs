@@ -240,10 +240,10 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
                (stage2.Dependencies.Count == 0 || stage2.Dependencies.Contains(stage1.Id));
     }
 
-    private static IPipelineStage CreateFusedKernel(KernelStage stage1, KernelStage stage2) =>
+    private static IPipelineStage CreateFusedKernel(KernelStage stage1, KernelStage stage2)
         // Create a new fused kernel that combines both stages into a single execution unit
         // This optimization reduces kernel launch overhead and intermediate memory transfers
-        new FusedKernelStage(stage1, stage2);
+        => new FusedKernelStage(stage1, stage2);
 
     private static long EstimateIntermediateBufferSize(KernelStage stage1, KernelStage stage2)
     {
@@ -368,12 +368,12 @@ internal sealed class MemoryOptimizationStrategy : IOptimizationStrategy
         });
     }
 
-    private IPipelineStage CreateMemoryOptimizedStage(IPipelineStage stage) =>
+    private IPipelineStage CreateMemoryOptimizedStage(IPipelineStage stage)
         // Wrap the stage with memory optimization that includes:
         // - Memory pooling for reduced allocations
         // - Prefetching for improved cache performance
         // - Alignment optimizations for SIMD operations
-        new MemoryOptimizedStageWrapper(stage);
+        => new MemoryOptimizedStageWrapper(stage);
 }
 
 /// <summary>
@@ -526,13 +526,13 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
         });
     }
 
-    private static HashSet<string> FindUsedOutputs(List<IPipelineStage> stages) =>
+    private static HashSet<string> FindUsedOutputs(List<IPipelineStage> stages)
         // Simplified - in practice would analyze data flow
-        [.. stages.SelectMany(s => s.Dependencies)];
+        => [.. stages.SelectMany(s => s.Dependencies)];
 
-    private static bool HasUsefulOutput(IPipelineStage stage, HashSet<string> usedOutputs) =>
+    private static bool HasUsefulOutput(IPipelineStage stage, HashSet<string> usedOutputs)
         // Check if stage produces useful output or has side effects
-        usedOutputs.Contains(stage.Id) || stage.Type == PipelineStageType.Kernel;
+        => usedOutputs.Contains(stage.Id) || stage.Type == PipelineStageType.Kernel;
 }
 
 /// <summary>
@@ -627,9 +627,9 @@ internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) :
         };
     }
 
-    public IStageMetrics GetMetrics() =>
+    public IStageMetrics GetMetrics()
         // Combine metrics from both stages
-        _stage1.GetMetrics(); // Simplified
+        => _stage1.GetMetrics(); // Simplified
 
     private static MemoryUsageStats? CombineMemoryStats(MemoryUsageStats? stats1, MemoryUsageStats? stats2)
     {
@@ -690,13 +690,13 @@ internal sealed class MemoryOptimizedStageWrapper(IPipelineStage innerStage) : I
 
     public IStageMetrics GetMetrics() => _innerStage.GetMetrics();
 
-    private static async ValueTask OptimizeMemoryAsync(PipelineExecutionContext context) =>
+    private static async ValueTask OptimizeMemoryAsync(PipelineExecutionContext context)
         // Implement memory layout optimizations
-        await context.MemoryManager.CollectAsync();
+        => await context.MemoryManager.CollectAsync();
 
-    private static async ValueTask CleanupMemoryAsync(PipelineExecutionContext context) =>
+    private static async ValueTask CleanupMemoryAsync(PipelineExecutionContext context)
         // Clean up temporary memory
-        await context.MemoryManager.CollectAsync();
+        => await context.MemoryManager.CollectAsync();
 }
 
 /// <summary>
@@ -785,7 +785,7 @@ internal sealed class IntelligentBufferSizeCalculator
         return analysis;
     }
 
-    private long EstimateStageInputSize(KernelStage stage)
+    private static long EstimateStageInputSize(KernelStage stage)
     {
         // Extract work size from stage metadata or use heuristics
         if (TryGetWorkSize(stage, out var workSize))
@@ -872,7 +872,7 @@ internal sealed class IntelligentBufferSizeCalculator
         }
     }
 
-    private long OptimizeForGpuHierarchy(long baseSize)
+    private static long OptimizeForGpuHierarchy(long baseSize)
     {
         // Optimize for GPU memory hierarchy
         if (baseSize <= GPU_SHARED_MEMORY)
@@ -897,7 +897,7 @@ internal sealed class IntelligentBufferSizeCalculator
         }
     }
 
-    private long OptimizeForFpgaHierarchy(long baseSize)
+    private static long OptimizeForFpgaHierarchy(long baseSize)
     {
         // FPGA-specific optimizations
         // Align to burst boundaries for efficient DMA transfers
@@ -905,7 +905,7 @@ internal sealed class IntelligentBufferSizeCalculator
         return AlignToMemoryTransaction(baseSize, burstSize);
     }
 
-    private long OptimizeForSimdVectorSize(long baseSize)
+    private static long OptimizeForSimdVectorSize(long baseSize)
     {
         // Get SIMD capabilities
         var vectorWidth = GetOptimalVectorWidth();
@@ -1005,7 +1005,7 @@ internal sealed class IntelligentBufferSizeCalculator
         }
     }
 
-    private long GetAvailablePhysicalMemory()
+    private static long GetAvailablePhysicalMemory()
     {
         try
         {
@@ -1032,22 +1032,22 @@ internal sealed class IntelligentBufferSizeCalculator
         return 1 * GB;
     }
 
-    private static long GetWindowsAvailableMemory() =>
+    private static long GetWindowsAvailableMemory()
         // Use performance counters or WMI to get available memory
         // Simplified implementation - in practice would use Windows APIs
-        Environment.WorkingSet * 4; // Rough estimate
+        => Environment.WorkingSet * 4; // Rough estimate
 
-    private static long GetLinuxAvailableMemory() =>
+    private static long GetLinuxAvailableMemory()
         // Parse /proc/meminfo for available memory
         // Simplified implementation
-        Environment.WorkingSet * 4; // Rough estimate
+        => Environment.WorkingSet * 4; // Rough estimate
 
-    private static long GetMacOSAvailableMemory() =>
+    private static long GetMacOSAvailableMemory()
         // Use system calls to get memory information
         // Simplified implementation
-        Environment.WorkingSet * 4; // Rough estimate
+        => Environment.WorkingSet * 4; // Rough estimate
 
-    private long ApplyOperationHeuristics(long baseSize, KernelStage stage1, KernelStage stage2)
+    private static long ApplyOperationHeuristics(long baseSize, KernelStage stage1, KernelStage stage2)
     {
         var operation1 = GetOperationType(stage1);
         var operation2 = GetOperationType(stage2);
@@ -1077,10 +1077,10 @@ internal sealed class IntelligentBufferSizeCalculator
     private static long ClampToReasonableBounds(long calculatedSize)
     {
         // Ensure the calculated size is within reasonable bounds
-        const long MIN_BUFFER_SIZE = 1 * KB;     // Minimum 1KB
-        const long MAX_BUFFER_SIZE = 256 * MB;   // Maximum 256MB for intermediate buffers
+        const long minBufferSize = 1 * KB;     // Minimum 1KB
+        const long maxBufferSize = 256 * MB;   // Maximum 256MB for intermediate buffers
 
-        return Math.Clamp(calculatedSize, MIN_BUFFER_SIZE, MAX_BUFFER_SIZE);
+        return Math.Clamp(calculatedSize, minBufferSize, maxBufferSize);
     }
 
     private long GetConservativeEstimate(KernelStage stage1, KernelStage stage2)
@@ -1156,7 +1156,7 @@ internal sealed class IntelligentBufferSizeCalculator
         return 1; // Default assumption: 1 output
     }
 
-    private OperationComplexity GetOperationComplexity(KernelStage stage)
+    private static OperationComplexity GetOperationComplexity(KernelStage stage)
     {
         var operation = GetOperationType(stage);
 
@@ -1241,7 +1241,7 @@ internal sealed class IntelligentBufferSizeCalculator
         return complexity >= OperationComplexity.Complex;
     }
 
-    private long GetOperationBasedSizeEstimate(KernelStage stage, bool isInput)
+    private static long GetOperationBasedSizeEstimate(KernelStage stage, bool isInput)
     {
         var operation = GetOperationType(stage);
         var baseSize = 4 * KB; // 4KB base

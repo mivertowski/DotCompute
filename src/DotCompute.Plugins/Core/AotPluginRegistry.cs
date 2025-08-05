@@ -660,7 +660,7 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
     public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
-    
+
     private void OnStateChanged(PluginStateChangedEventArgs e) => StateChanged?.Invoke(this, e);
     private void OnErrorOccurred(PluginErrorEventArgs e) => ErrorOccurred?.Invoke(this, e);
     private void OnHealthChanged(PluginHealthChangedEventArgs e) => HealthChanged?.Invoke(this, e);

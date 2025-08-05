@@ -48,8 +48,8 @@ public static class StructureOfArrays
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private static unsafe void ConvertAoSToSoAVectorized(ReadOnlySpan<Point3D> points, Point3DSoA soa)
         {
-            const int VectorSize = 8; // AVX2 can process 8 floats at once
-            var vectorCount = points.Length / VectorSize;
+            const int vectorSize = 8; // AVX2 can process 8 floats at once
+            var vectorCount = points.Length / vectorSize;
 
             fixed (Point3D* pointsPtr = points)
             fixed (float* xPtr = soa.X)
@@ -58,7 +58,7 @@ public static class StructureOfArrays
             {
                 for (var i = 0; i < vectorCount; i++)
                 {
-                    var baseIndex = i * VectorSize;
+                    var baseIndex = i * vectorSize;
 
                     // Load 8 points (24 floats total)
                     var p0 = pointsPtr[baseIndex + 0];
@@ -83,10 +83,10 @@ public static class StructureOfArrays
             }
 
             // Handle remainder
-            var remainder = points.Length % VectorSize;
+            var remainder = points.Length % vectorSize;
             if (remainder > 0)
             {
-                var lastOffset = vectorCount * VectorSize;
+                var lastOffset = vectorCount * vectorSize;
                 for (var i = 0; i < remainder; i++)
                 {
                     var idx = lastOffset + i;
@@ -138,8 +138,8 @@ public static class StructureOfArrays
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private void CalculateDistancesVectorized(Vector256<float> refX, Vector256<float> refY, Vector256<float> refZ, Span<float> distances)
         {
-            const int VectorSize = 8;
-            var vectorCount = Length / VectorSize;
+            const int vectorSize = 8;
+            var vectorCount = Length / vectorSize;
 
             ref var xRef = ref MemoryMarshal.GetArrayDataReference(X);
             ref var yRef = ref MemoryMarshal.GetArrayDataReference(Y);
@@ -148,7 +148,7 @@ public static class StructureOfArrays
 
             for (var i = 0; i < vectorCount; i++)
             {
-                var offset = i * VectorSize;
+                var offset = i * vectorSize;
 
                 var x = Vector256.LoadUnsafe(ref Unsafe.Add(ref xRef, offset));
                 var y = Vector256.LoadUnsafe(ref Unsafe.Add(ref yRef, offset));
@@ -182,10 +182,10 @@ public static class StructureOfArrays
             }
 
             // Handle remainder
-            var remainder = Length % VectorSize;
+            var remainder = Length % vectorSize;
             if (remainder > 0)
             {
-                var lastOffset = vectorCount * VectorSize;
+                var lastOffset = vectorCount * vectorSize;
                 for (var i = 0; i < remainder; i++)
                 {
                     var idx = lastOffset + i;
@@ -249,8 +249,8 @@ public static class StructureOfArrays
         [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
         private static void MultiplyVectorized(ComplexSoA a, ComplexSoA b, ComplexSoA result)
         {
-            const int VectorSize = 8;
-            var vectorCount = a.Length / VectorSize;
+            const int vectorSize = 8;
+            var vectorCount = a.Length / vectorSize;
 
             ref var aRealRef = ref MemoryMarshal.GetArrayDataReference(a.Real);
             ref var aImagRef = ref MemoryMarshal.GetArrayDataReference(a.Imaginary);
@@ -261,7 +261,7 @@ public static class StructureOfArrays
 
             for (var i = 0; i < vectorCount; i++)
             {
-                var offset = i * VectorSize;
+                var offset = i * vectorSize;
 
                 var aReal = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRealRef, offset));
                 var aImag = Vector256.LoadUnsafe(ref Unsafe.Add(ref aImagRef, offset));
@@ -296,10 +296,10 @@ public static class StructureOfArrays
             }
 
             // Handle remainder
-            var remainder = a.Length % VectorSize;
+            var remainder = a.Length % vectorSize;
             if (remainder > 0)
             {
-                var lastOffset = vectorCount * VectorSize;
+                var lastOffset = vectorCount * vectorSize;
                 for (var i = 0; i < remainder; i++)
                 {
                     var idx = lastOffset + i;

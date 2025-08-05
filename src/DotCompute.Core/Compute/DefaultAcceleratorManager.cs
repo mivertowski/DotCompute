@@ -34,7 +34,7 @@ public class DefaultAcceleratorManager(ILogger<DefaultAcceleratorManager> logger
     public IReadOnlyList<IAccelerator> AvailableAccelerators => _accelerators.AsReadOnly();
 
     public int Count => _accelerators.Count;
-    private static readonly char[] separator = new[] { '-', '_' };
+    private static readonly char[] _separator = new[] { '-', '_' };
 
     public async ValueTask InitializeAsync(CancellationToken cancellationToken = default)
     {
@@ -159,7 +159,7 @@ public class DefaultAcceleratorManager(ILogger<DefaultAcceleratorManager> logger
 
         // For CPU accelerators, create a context with the thread ID as the handle
         // Try to extract a numeric device ID from the accelerator ID
-        var idParts = accelerator.Info.Id.Split(separator);
+        var idParts = accelerator.Info.Id.Split(_separator);
         var lastPart = idParts.LastOrDefault() ?? "0";
         // Try to parse the last part as a number, otherwise use 0
         if (!int.TryParse(lastPart, out var deviceId))

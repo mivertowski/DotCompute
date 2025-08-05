@@ -115,8 +115,8 @@ public static class PipelineUsageExample
 
         return Task.FromResult(pipeline);
     }
-    private static readonly float[] value = new[] { 0.485f, 0.456f, 0.406f };
-    private static readonly float[] valueArray = new[] { 0.229f, 0.224f, 0.225f };
+    private static readonly float[] _value = new[] { 0.485f, 0.456f, 0.406f };
+    private static readonly float[] _valueArray = new[] { 0.229f, 0.224f, 0.225f };
 
     /// <summary>
     /// Example: Machine learning inference pipeline with preprocessing and postprocessing.
@@ -135,8 +135,8 @@ public static class PipelineUsageExample
                 .WithWorkSize(224, 224, 3)  // Standard ML input size
                 .MapInput("raw_data", "input_tensor")
                 .MapOutput("normalized_data", "preprocessed_tensor")
-                .SetParameter("mean", value)
-                .SetParameter("std", valueArray)
+                .SetParameter("mean", _value)
+                .SetParameter("std", _valueArray)
                 .WithMemoryHint(MemoryHint.Sequential))
 
             // Inference stage

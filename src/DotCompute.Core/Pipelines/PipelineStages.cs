@@ -283,9 +283,9 @@ internal sealed class KernelStage(
     /// <inheritdoc/>
     public IStageMetrics GetMetrics() => _metrics;
 
-    private List<object> PrepareArguments(PipelineExecutionContext context) =>
+    private List<object> PrepareArguments(PipelineExecutionContext context)
         // Use the new BuildKernelParameters method
-        BuildKernelParameters(context);
+        => BuildKernelParameters(context);
 
     private Dictionary<string, object> PrepareOutputs(PipelineExecutionContext context, List<object> arguments)
     {
@@ -318,9 +318,9 @@ internal sealed class KernelStage(
         return PerformanceMonitor.GetComputeUtilization(executionTime, (long)workItems);
     }
 
-    private static double CalculateMemoryBandwidthUtilization() =>
+    private static double CalculateMemoryBandwidthUtilization()
         // Use performance monitor to get real memory bandwidth utilization
-        PerformanceMonitor.GetMemoryBandwidthUtilization();
+        => PerformanceMonitor.GetMemoryBandwidthUtilization();
 
     private double CalculateWorkItemsProcessed()
     {
@@ -349,7 +349,6 @@ internal sealed class ParallelStage(
     private readonly SynchronizationMode _synchronizationMode = synchronizationMode;
     private readonly bool _hasBarrier = hasBarrier;
     private readonly StageMetrics _metrics = new(id);
-    private readonly List<StageExecutionResult> results = [];
 
     /// <inheritdoc/>
     public string Id { get; } = id;
@@ -431,7 +430,7 @@ internal sealed class ParallelStage(
 
                 case SynchronizationMode.Custom:
                     // Custom synchronization implementation using configurable strategies
-                    await ExecuteCustomSynchronizationAsync(context, cancellationToken);
+                    await ExecuteCustomSynchronizationAsync(context, results, cancellationToken);
                     break;
             }
 
@@ -652,7 +651,7 @@ internal sealed class ParallelStage(
     /// <summary>
     /// Executes custom synchronization strategies for parallel stages.
     /// </summary>
-    private async Task ExecuteCustomSynchronizationAsync(PipelineExecutionContext context, CancellationToken cancellationToken)
+    private async Task ExecuteCustomSynchronizationAsync(PipelineExecutionContext context, List<StageExecutionResult> results, CancellationToken cancellationToken)
     {
         // Implementation of custom synchronization patterns
         var customStrategy = DetermineCustomStrategy(context);
@@ -660,15 +659,15 @@ internal sealed class ParallelStage(
         switch (customStrategy)
         {
             case CustomSyncStrategy.BarrierSync:
-                await ExecuteBarrierSynchronizationAsync(context, cancellationToken);
+                await ExecuteBarrierSynchronizationAsync(context, results, cancellationToken);
                 break;
 
             case CustomSyncStrategy.ProducerConsumer:
-                await ExecuteProducerConsumerPatternAsync(context, cancellationToken);
+                await ExecuteProducerConsumerPatternAsync(context, results, cancellationToken);
                 break;
 
             case CustomSyncStrategy.WorkStealing:
-                await ExecuteWorkStealingPatternAsync(context, cancellationToken);
+                await ExecuteWorkStealingPatternAsync(context, results, cancellationToken);
                 break;
 
             default:
@@ -699,7 +698,7 @@ internal sealed class ParallelStage(
         return CustomSyncStrategy.Default;
     }
 
-    private async Task ExecuteBarrierSynchronizationAsync(PipelineExecutionContext context, CancellationToken cancellationToken)
+    private async Task ExecuteBarrierSynchronizationAsync(PipelineExecutionContext context, List<StageExecutionResult> results, CancellationToken cancellationToken)
     {
         using var barrier = new Barrier(_parallelStages.Count);
         var tasks = new List<Task<StageExecutionResult>>();
@@ -720,7 +719,7 @@ internal sealed class ParallelStage(
         results.AddRange(stageResults);
     }
 
-    private async Task ExecuteProducerConsumerPatternAsync(PipelineExecutionContext context, CancellationToken cancellationToken)
+    private async Task ExecuteProducerConsumerPatternAsync(PipelineExecutionContext context, List<StageExecutionResult> results, CancellationToken cancellationToken)
     {
         var channel = System.Threading.Channels.Channel.CreateUnbounded<object>();
         var writer = channel.Writer;
@@ -759,7 +758,7 @@ internal sealed class ParallelStage(
         writer.Complete();
     }
 
-    private async Task ExecuteWorkStealingPatternAsync(PipelineExecutionContext context, CancellationToken cancellationToken)
+    private async Task ExecuteWorkStealingPatternAsync(PipelineExecutionContext context, List<StageExecutionResult> results, CancellationToken cancellationToken)
     {
         var workQueue = new System.Collections.Concurrent.ConcurrentQueue<IPipelineStage>(_parallelStages);
         var workerCount = Math.Min(_maxDegreeOfParallelism, Environment.ProcessorCount);
