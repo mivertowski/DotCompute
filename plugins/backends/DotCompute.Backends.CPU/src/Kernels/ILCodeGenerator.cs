@@ -61,7 +61,7 @@ internal sealed class ILCodeGenerator
         var workItemIdParam = Expression.Parameter(typeof(long[]), "workItemId");
 
         // Add work item ID to parameters
-        var allParams = parameters.Concat(new[] { workItemIdParam }).ToArray();
+        var allParams = parameters.Concat([workItemIdParam]).ToArray();
 
         // Create body expression
         var bodyExpressions = new List<Expression>();
@@ -83,7 +83,7 @@ internal sealed class ILCodeGenerator
         }
 
         // Create expression body
-        var body = Expression.Block(new[] { indexVar }, bodyExpressions);
+        var body = Expression.Block([indexVar], bodyExpressions);
 
         // Compile to delegate
 #pragma warning disable IL3050 // Using member 'Expression.Lambda' which requires dynamic code
@@ -111,7 +111,7 @@ internal sealed class ILCodeGenerator
         var parameters = CreateParameterExpressions(definition);
         var workItemIdParam = Expression.Parameter(typeof(long[]), "workItemId");
 
-        var allParams = parameters.Concat(new[] { workItemIdParam }).ToArray();
+        var allParams = parameters.Concat([workItemIdParam]).ToArray();
 
         // Create body expression
         var bodyExpressions = new List<Expression>();
@@ -133,7 +133,7 @@ internal sealed class ILCodeGenerator
         }
 
         // Create expression body
-        var body = Expression.Block(new[] { indexVar }, bodyExpressions);
+        var body = Expression.Block([indexVar], bodyExpressions);
 
         // Compile to delegate
 #pragma warning disable IL3050 // Using member 'Expression.Lambda' which requires dynamic code
@@ -249,12 +249,12 @@ internal sealed class ILCodeGenerator
 
         // Access elements
         var indexInt = Expression.Convert(indexExpr, typeof(int));
-        var value1 = Expression.MakeIndex(input1Span, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
-        var value2 = Expression.MakeIndex(input2Span, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
+        var value1 = Expression.MakeIndex(input1Span, typeof(Span<float>).GetProperty("Item"), [indexInt]);
+        var value2 = Expression.MakeIndex(input2Span, typeof(Span<float>).GetProperty("Item"), [indexInt]);
         var result = Expression.Add(value1, value2);
 
         // Store result
-        var outputElement = Expression.MakeIndex(outputSpan, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
+        var outputElement = Expression.MakeIndex(outputSpan, typeof(Span<float>).GetProperty("Item"), [indexInt]);
         expressions.Add(Expression.Assign(outputElement, result));
 
         return expressions;
@@ -289,12 +289,12 @@ internal sealed class ILCodeGenerator
 
         // Multiply elements
         var indexInt = Expression.Convert(indexExpr, typeof(int));
-        var value1 = Expression.MakeIndex(input1Span, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
-        var value2 = Expression.MakeIndex(input2Span, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
+        var value1 = Expression.MakeIndex(input1Span, typeof(Span<float>).GetProperty("Item"), [indexInt]);
+        var value2 = Expression.MakeIndex(input2Span, typeof(Span<float>).GetProperty("Item"), [indexInt]);
         var result = Expression.Multiply(value1, value2);
 
         // Store result
-        var outputElement = Expression.MakeIndex(outputSpan, typeof(Span<float>).GetProperty("Item"), new[] { indexInt });
+        var outputElement = Expression.MakeIndex(outputSpan, typeof(Span<float>).GetProperty("Item"), [indexInt]);
         expressions.Add(Expression.Assign(outputElement, result));
 
         return expressions;
@@ -361,5 +361,5 @@ internal sealed class CompiledKernelCode
     public bool IsVectorized { get; set; }
     public OptimizationLevel OptimizationLevel { get; set; }
     public long EstimatedCodeSize { get; set; }
-    public string[] OptimizationNotes { get; set; } = Array.Empty<string>();
+    public string[] OptimizationNotes { get; set; } = [];
 }

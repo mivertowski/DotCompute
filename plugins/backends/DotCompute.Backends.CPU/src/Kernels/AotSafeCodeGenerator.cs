@@ -61,7 +61,7 @@ internal sealed class AotSafeCodeGenerator
         _kernelImplementations["elementwise_multiply_float"] = ElementwiseMultiplyFloatKernelAsync;
     }
 
-    private static string GenerateKernelKey(KernelDefinition definition, KernelAst ast, KernelAnalysis analysis)
+    private string GenerateKernelKey(KernelDefinition definition, KernelAst ast, KernelAnalysis analysis)
     {
         // Generate a key based on kernel characteristics
         var operationTypeUpper = ast.Operations.FirstOrDefault()?.NodeType.ToString().ToUpperInvariant() ?? "UNKNOWN";
@@ -100,7 +100,7 @@ internal sealed class AotSafeCodeGenerator
         return $"{operationType}_{dataType}";
     }
 
-    private static Func<ExtendedKernelExecutionContext, Task> GenerateGenericImplementation(
+    private Func<ExtendedKernelExecutionContext, Task> GenerateGenericImplementation(
         KernelDefinition definition,
         KernelAst ast,
         KernelAnalysis analysis)
@@ -119,7 +119,7 @@ internal sealed class AotSafeCodeGenerator
         return ElementwiseAddFloatKernelAsync;
     }
 
-    private static Delegate CreateKernelDelegate(Func<ExtendedKernelExecutionContext, Task> implementation, KernelDefinition definition)
+    private Delegate CreateKernelDelegate(Func<ExtendedKernelExecutionContext, Task> implementation, KernelDefinition definition)
     {
         // Create a delegate that adapts the kernel execution context to the expected signature
         // The delegate signature varies based on parameter count and types
@@ -144,9 +144,7 @@ internal sealed class AotSafeCodeGenerator
                     context.SetParameter(3, workItemId);
 
                     // Execute synchronously for AOT compatibility
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT scenarios
                     implementation(context).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
                 });
 
             case 2: // Reduction case: input, output
@@ -157,9 +155,7 @@ internal sealed class AotSafeCodeGenerator
                     context.SetBuffer(1, output);
                     context.SetParameter(2, workItemId);
 
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT scenarios
                     implementation(context).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
                 });
 
             default:
@@ -173,9 +169,7 @@ internal sealed class AotSafeCodeGenerator
                     }
                     context.SetParameter(parameters.Length, workItemId);
 
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT scenarios
                     implementation(context).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
                 });
         }
     }
@@ -195,10 +189,10 @@ internal sealed class AotSafeCodeGenerator
         // Vectorized operation
         if (index + vectorSize <= a.Length)
         {
-            var va = new System.Numerics.Vector<float>(a.Span.Slice(index));
-            var vb = new System.Numerics.Vector<float>(b.Span.Slice(index));
+            var va = new System.Numerics.Vector<float>(a.Span[index..]);
+            var vb = new System.Numerics.Vector<float>(b.Span[index..]);
             var vc = va + vb;
-            vc.CopyTo(c.Span.Slice(index));
+            vc.CopyTo(c.Span[index..]);
         }
         else
         {
@@ -221,10 +215,10 @@ internal sealed class AotSafeCodeGenerator
 
         if (index + vectorSize <= a.Length)
         {
-            var va = new System.Numerics.Vector<float>(a.Span.Slice(index));
-            var vb = new System.Numerics.Vector<float>(b.Span.Slice(index));
+            var va = new System.Numerics.Vector<float>(a.Span[index..]);
+            var vb = new System.Numerics.Vector<float>(b.Span[index..]);
             var vc = va * vb;
-            vc.CopyTo(c.Span.Slice(index));
+            vc.CopyTo(c.Span[index..]);
         }
         else
         {
@@ -265,8 +259,7 @@ internal sealed class AotSafeCodeGenerator
         var a = context.GetBuffer<float>(0);
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
-        // m = rows in matrix A (not used in single work item computation)
-        _ = context.GetScalar<int>(3);
+        var m = context.GetScalar<int>(3);
         var n = context.GetScalar<int>(4);
         var k = context.GetScalar<int>(5);
         var workItemId = context.GetParameter(6) as long[] ?? new long[] { 0 };
@@ -301,7 +294,7 @@ internal sealed class AotSafeCodeGenerator
             var vsum = System.Numerics.Vector<float>.Zero;
             for (var i = 0; i < vectorCount; i++)
             {
-                var v = new System.Numerics.Vector<float>(input.Span.Slice(i * vectorSize));
+                var v = new System.Numerics.Vector<float>(input.Span[(i * vectorSize)..]);
                 vsum += v;
             }
 
@@ -325,7 +318,7 @@ internal sealed class AotSafeCodeGenerator
 
     #endregion
 
-    private static long EstimateCodeSize(KernelAst ast)
+    private long EstimateCodeSize(KernelAst ast)
     {
         // Rough estimation based on AST complexity
         long baseSize = 1024;
@@ -342,7 +335,7 @@ internal sealed class AotSafeCodeGenerator
         return baseSize;
     }
 
-    private static string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
+    private string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
     {
         var notes = new List<string>
         {

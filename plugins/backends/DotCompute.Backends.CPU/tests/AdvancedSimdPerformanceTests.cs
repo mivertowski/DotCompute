@@ -617,8 +617,8 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         _output.WriteLine($"Vector<T>.IsHardwareAccelerated: {Vector.IsHardwareAccelerated}");
         _output.WriteLine($"Vector<float>.Count: {Vector<float>.Count}");
 
-        if (RuntimeInformation.ProcessArchitecture == Architecture.X64 ||
-            RuntimeInformation.ProcessArchitecture == Architecture.X86)
+        if (RuntimeInformation.ProcessArchitecture is Architecture.X64 or
+            Architecture.X86)
         {
             _output.WriteLine($"SSE: {Sse.IsSupported}");
             _output.WriteLine($"SSE2: {Sse2.IsSupported}");

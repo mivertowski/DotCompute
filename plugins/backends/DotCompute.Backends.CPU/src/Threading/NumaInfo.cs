@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
@@ -138,7 +137,7 @@ public static partial class NumaInfo
             {
                 foreach (System.Management.ManagementObject node in results)
                 {
-                    var nodeId = Convert.ToInt32(node["NodeId"], CultureInfo.InvariantCulture);
+                    var nodeId = Convert.ToInt32(node["NodeId"]);
                     var processorMask = GetProcessorMaskFromWmi(node);
 
                     nodes.Add(new NumaNode
@@ -266,7 +265,7 @@ public static partial class NumaInfo
             if (Directory.Exists("/sys/devices/system/node"))
             {
                 var nodeDirs = Directory.GetDirectories("/sys/devices/system/node", "node*")
-                    .OrderBy(d => int.Parse(Path.GetFileName(d).AsSpan(4), CultureInfo.InvariantCulture))
+                    .OrderBy(d => int.Parse(Path.GetFileName(d)[4..]))
                     .ToArray();
 
                 var nodes = new List<NumaNode>();
@@ -280,7 +279,7 @@ public static partial class NumaInfo
                 for (var i = 0; i < nodeDirs.Length; i++)
                 {
                     var nodeDir = nodeDirs[i];
-                    var nodeId = int.Parse(Path.GetFileName(nodeDir).AsSpan(4), CultureInfo.InvariantCulture);
+                    var nodeId = int.Parse(Path.GetFileName(nodeDir)[4..]);
 
                     var cpuListFile = Path.Combine(nodeDir, "cpulist");
                     if (File.Exists(cpuListFile))
@@ -353,13 +352,11 @@ public static partial class NumaInfo
         var parts = cpuList.Split(',');
         foreach (var part in parts)
         {
-#pragma warning disable CA1307 // Specify StringComparison for clarity - Contains(char) doesn't have StringComparison overload
             if (part.Contains('-'))
-#pragma warning restore CA1307
             {
                 var range = part.Split('-');
-                var start = int.Parse(range[0], CultureInfo.InvariantCulture);
-                var end = int.Parse(range[1], CultureInfo.InvariantCulture);
+                var start = int.Parse(range[0]);
+                var end = int.Parse(range[1]);
 
                 for (var i = start; i <= end; i++)
                 {
@@ -369,7 +366,7 @@ public static partial class NumaInfo
             }
             else
             {
-                var cpu = int.Parse(part, CultureInfo.InvariantCulture);
+                var cpu = int.Parse(part);
                 mask |= (1UL << cpu);
                 count++;
             }
@@ -388,10 +385,10 @@ public static partial class NumaInfo
                 var lines = File.ReadAllLines(meminfoFile);
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith($"Node {Path.GetFileName(nodeDir).Substring(4)} MemTotal:", StringComparison.Ordinal))
+                    if (line.StartsWith($"Node {Path.GetFileName(nodeDir)[4..]} MemTotal:"))
                     {
                         var parts = line.Split(':')[1].Trim().Split(' ');
-                        return long.Parse(parts[0], CultureInfo.InvariantCulture) * 1024; // Convert from KB to bytes
+                        return long.Parse(parts[0]) * 1024; // Convert from KB to bytes
                     }
                 }
             }
@@ -418,22 +415,30 @@ public static partial class NumaInfo
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+#pragma warning disable IDE1006 // Naming Styles
     private static extern bool GetNumaNodeProcessorMaskEx(ushort Node, out GROUP_AFFINITY ProcessorMask);
+#pragma warning restore IDE1006 // Naming Styles
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+#pragma warning disable IDE1006 // Naming Styles
     private static extern bool GetNumaHighestNodeNumber(out uint HighestNodeNumber);
+#pragma warning restore IDE1006 // Naming Styles
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
     private static int GetNumaHighestNodeNumber() => GetNumaHighestNodeNumber(out var highest) ? (int)highest : 0;
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+#pragma warning disable IDE1006 // Naming Styles
     private static extern bool GetNumaNodeProcessorMask(byte Node, out ulong ProcessorMask);
+#pragma warning restore IDE1006 // Naming Styles
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
+#pragma warning disable IDE1006 // Naming Styles
     private static extern bool GetNumaAvailableMemoryNodeEx(ushort Node, out ulong AvailableBytes);
+#pragma warning restore IDE1006 // Naming Styles
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.System32)]
@@ -589,7 +594,7 @@ public static partial class NumaInfo
             var processorMask = node["ProcessorMask"];
             if (processorMask != null)
             {
-                return Convert.ToUInt64(processorMask, CultureInfo.InvariantCulture);
+                return Convert.ToUInt64(processorMask);
             }
         }
         catch
@@ -607,7 +612,7 @@ public static partial class NumaInfo
             var memorySize = node["MemorySize"];
             if (memorySize != null)
             {
-                return Convert.ToInt64(memorySize, CultureInfo.InvariantCulture);
+                return Convert.ToInt64(memorySize);
             }
         }
         catch
@@ -627,11 +632,17 @@ public static partial class NumaInfo
         return 0;
     }
 
-    private static int GetCacheCoherencyDomain(int nodeId) => nodeId; // For most systems, cache coherency domain matches NUMA node
+    private static int GetCacheCoherencyDomain(int nodeId) =>
+        // For most systems, cache coherency domain matches NUMA node
+        nodeId;
 
-    private static int GetNumaNodeDistance(int fromNode, int toNode) => fromNode == toNode ? 10 : 20; // Default NUMA distances if system doesn't provide them
+    private static int GetNumaNodeDistance(int fromNode, int toNode) =>
+        // Default NUMA distances if system doesn't provide them
+        fromNode == toNode ? 10 : 20;
 
-    private static int GetCacheLineSize() => 64; // Most modern processors use 64-byte cache lines
+    private static int GetCacheLineSize() =>
+        // Most modern processors use 64-byte cache lines
+        64;
 
     private static int GetPageSize()
     {
@@ -652,7 +663,7 @@ public static partial class NumaInfo
                 var lines = File.ReadAllLines(meminfoPath);
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith($"Node {nodeId} MemTotal:", StringComparison.Ordinal))
+                    if (line.StartsWith($"Node {nodeId} MemTotal:"))
                     {
                         var match = MemorySizeRegex().Match(line);
                         if (match.Success && long.TryParse(match.Groups[1].Value, out var kb))
@@ -821,9 +832,7 @@ public static partial class NumaInfo
         if (parts.Length > 0)
         {
             var firstPart = parts[0];
-#pragma warning disable CA1307 // Specify StringComparison for clarity - Contains(char) doesn't have StringComparison overload
             if (firstPart.Contains('-'))
-#pragma warning restore CA1307
             {
                 var range = firstPart.Split('-');
                 if (int.TryParse(range[0], out var start))
@@ -903,16 +912,12 @@ public sealed class NumaTopology
     /// <summary>
     /// Gets the NUMA nodes.
     /// </summary>
-#pragma warning disable CA1819 // Properties should not return arrays - Arrays are appropriate for initialization-only collections
     public required NumaNode[] Nodes { get; init; }
-#pragma warning restore CA1819
 
     /// <summary>
     /// Gets the NUMA distance matrix (relative latency between nodes).
     /// </summary>
-#pragma warning disable CA1819 // Properties should not return arrays - Arrays are appropriate for initialization-only collections
     public int[][]? DistanceMatrix { get; init; }
-#pragma warning restore CA1819
 
     /// <summary>
     /// Gets the cache line size in bytes.

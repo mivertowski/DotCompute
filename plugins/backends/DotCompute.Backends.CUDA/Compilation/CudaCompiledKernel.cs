@@ -154,7 +154,7 @@ public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
                     CudaRuntime.CheckError(result, "Kernel launch");
 
                     // Synchronize
-                    await Task.Run(() => _context.Synchronize(), cancellationToken).ConfigureAwait(false);
+                    await Task.Run(_context.Synchronize, cancellationToken).ConfigureAwait(false);
                 }
                 finally
                 {
@@ -177,10 +177,7 @@ public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public async ValueTask DisposeAsync()
     {

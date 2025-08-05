@@ -168,7 +168,7 @@ internal sealed class KernelStage(
             };
 
             // Execute kernel - convert to KernelArguments
-            var kernelArgs = new KernelArguments(kernelContext.Arguments ?? Array.Empty<object>());
+            var kernelArgs = new KernelArguments(kernelContext.Arguments ?? []);
             await _kernel.ExecuteAsync(kernelArgs, cancellationToken);
 
             stopwatch.Stop();

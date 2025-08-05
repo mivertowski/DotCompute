@@ -125,7 +125,7 @@ public class TextKernelSource : IKernelSource
         Name = name;
         Language = language;
         EntryPoint = entryPoint;
-        Dependencies = dependencies ?? Array.Empty<string>();
+        Dependencies = dependencies ?? [];
     }
 
     /// <inheritdoc/>
@@ -184,7 +184,7 @@ public class BytecodeKernelSource : IKernelSource
         Name = name;
         Language = language;
         EntryPoint = entryPoint;
-        Dependencies = dependencies ?? Array.Empty<string>();
+        Dependencies = dependencies ?? [];
     }
 
     /// <inheritdoc/>

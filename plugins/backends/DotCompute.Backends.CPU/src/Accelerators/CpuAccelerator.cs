@@ -257,7 +257,7 @@ public sealed class CpuAccelerator : IAccelerator
             name: definition.Name,
             language: KernelLanguage.CSharpIL,
             entryPoint: definition.EntryPoint ?? "main",
-            dependencies: Array.Empty<string>()
+            dependencies: []
         );
 
         var compilationOptions = new CompilationOptions

@@ -206,7 +206,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return new NumaMemoryPolicy
         {
             Strategy = _topology.NodeCount > 1 ? NumaAllocationStrategy.LocalPreferred : NumaAllocationStrategy.FirstFit,
-            PreferredNodes = Array.Empty<int>(),
+            PreferredNodes = [],
             FallbackStrategy = NumaFallbackStrategy.ClosestFirst
         };
     }
@@ -302,10 +302,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int sched_getcpu();
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed != 0, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed != 0, this);
 }
 
 /// <summary>
@@ -747,10 +744,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed != 0, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed != 0, this);
 }
 
 /// <summary>
@@ -805,10 +799,7 @@ internal sealed class NativeMemoryOwner : IMemoryOwner<byte>
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 }
 
 /// <summary>
@@ -988,10 +979,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     #region Windows NUMA API
 

@@ -70,7 +70,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
     private bool _disposed;
     
     // Cached JsonSerializerOptions to avoid CA1869
-    private static readonly System.Text.Json.JsonSerializerOptions s_jsonOptions = new()
+    private static readonly System.Text.Json.JsonSerializerOptions _jsonOptions = new()
     {
         WriteIndented = true
     };
@@ -968,7 +968,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
 
             await File.WriteAllBytesAsync(ptxFile, ptx);
 
-            var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata, s_jsonOptions);
+            var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata, _jsonOptions);
             await File.WriteAllTextAsync(metadataFile, metadataJson);
 
             LogPersistedKernelCache(_logger, ptxFile);
@@ -1099,10 +1099,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public void Dispose()
     {

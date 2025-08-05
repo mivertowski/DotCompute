@@ -817,7 +817,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
         }
 
         // If buffer is on device only, transfer to host
-        if (_state == BufferState.DeviceOnly || _state == BufferState.DeviceDirty)
+        if (_state is BufferState.DeviceOnly or BufferState.DeviceDirty)
         {
             await TransferFromDeviceAsync(cancellationToken).ConfigureAwait(false);
         }
@@ -1284,7 +1284,7 @@ internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal
         var newSpan = MemoryMarshal.Cast<TOriginal, TNew>(originalData.AsSpan());
         var destSpan = MemoryMarshal.Cast<TDestination, TNew>(destination.Span);
 
-        newSpan.Slice(0, Math.Min(newSpan.Length, destSpan.Length)).CopyTo(destSpan);
+        newSpan[..Math.Min(newSpan.Length, destSpan.Length)].CopyTo(destSpan);
     }
 
     public IBuffer<TNew> Slice(int offset, int length)
@@ -1353,7 +1353,7 @@ internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal
     public MappedMemory<TNew> Map(MapMode mode = MapMode.ReadWrite)
     {
         var parentMapped = _parent.Map(mode);
-        var viewMemory = MemoryMarshal.Cast<TOriginal, TNew>(parentMapped.Memory.Span).Slice(0, _length);
+        var viewMemory = MemoryMarshal.Cast<TOriginal, TNew>(parentMapped.Memory.Span)[.._length];
         return new MappedMemory<TNew>(this, viewMemory.ToArray().AsMemory(), mode);
     }
 
@@ -1372,7 +1372,7 @@ internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal
     public async ValueTask<MappedMemory<TNew>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         var parentMapped = await _parent.MapAsync(mode, cancellationToken);
-        var viewMemory = MemoryMarshal.Cast<TOriginal, TNew>(parentMapped.Memory.Span).Slice(0, _length);
+        var viewMemory = MemoryMarshal.Cast<TOriginal, TNew>(parentMapped.Memory.Span)[.._length];
         return new MappedMemory<TNew>(this, viewMemory.ToArray().AsMemory(), mode);
     }
 

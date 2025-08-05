@@ -33,7 +33,7 @@ kernel void vectorAdd(
             name: "vectorAdd",
             language: KernelLanguage.Metal,
             entryPoint: "vectorAdd",
-            dependencies: Array.Empty<string>()
+            dependencies: []
         );
 
         var compilationOptions = new CompilationOptions
@@ -92,7 +92,7 @@ kernel void matrixMultiply(
             name: "matrixMultiply",
             language: KernelLanguage.Metal,
             entryPoint: "matrixMultiply",
-            dependencies: Array.Empty<string>()
+            dependencies: []
         );
 
         var compilationOptions = new CompilationOptions
@@ -167,7 +167,7 @@ kernel void reduction{operation}(
             name: kernelName,
             language: KernelLanguage.Metal,
             entryPoint: kernelName,
-            dependencies: Array.Empty<string>()
+            dependencies: []
         );
 
         var compilationOptions = new CompilationOptions
@@ -248,7 +248,7 @@ kernel void convolution2D(
             name: "convolution2D",
             language: KernelLanguage.Metal,
             entryPoint: "convolution2D",
-            dependencies: Array.Empty<string>()
+            dependencies: []
         );
 
         var compilationOptions = new CompilationOptions
@@ -306,7 +306,7 @@ kernel void activation{activation}(
             name: kernelName,
             language: KernelLanguage.Metal,
             entryPoint: kernelName,
-            dependencies: Array.Empty<string>()
+            dependencies: []
         );
 
         var compilationOptions = new CompilationOptions
@@ -352,7 +352,7 @@ kernel void {operation}(
             name: operation,
             language: KernelLanguage.Metal,
             entryPoint: operation,
-            dependencies: Array.Empty<string>()
+            dependencies: []
         );
 
         var compilationOptions = new CompilationOptions

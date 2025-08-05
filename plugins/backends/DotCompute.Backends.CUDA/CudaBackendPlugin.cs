@@ -46,24 +46,21 @@ public sealed class CudaBackendPlugin : BackendPluginBase
         services.TryAddSingleton<CudaBackendFactory>();
 
         // Register multiple CUDA accelerators (one per device)
-        services.AddSingleton<IEnumerable<IAccelerator>>(provider =>
+        services.AddSingleton(provider =>
         {
             var factory = provider.GetRequiredService<CudaBackendFactory>();
             return factory.CreateAccelerators();
         });
 
         // Register a default CUDA accelerator
-        services.AddSingleton<IAccelerator>(provider =>
+        services.AddSingleton(provider =>
         {
             var factory = provider.GetRequiredService<CudaBackendFactory>();
             var defaultAccelerator = factory.CreateDefaultAccelerator();
 
-            if (defaultAccelerator == null)
-            {
-                throw new InvalidOperationException("Failed to create default CUDA accelerator");
-            }
-
-            return new NamedAcceleratorWrapper("cuda", defaultAccelerator);
+            return defaultAccelerator == null
+                ? throw new InvalidOperationException("Failed to create default CUDA accelerator")
+                : (IAccelerator)new NamedAcceleratorWrapper("cuda", defaultAccelerator);
         });
     }
 
@@ -259,12 +256,9 @@ public static class CudaBackendPluginExtensions
             var factory = provider.GetRequiredService<CudaBackendFactory>();
             var defaultAccelerator = factory.CreateDefaultAccelerator();
 
-            if (defaultAccelerator == null)
-            {
-                throw new InvalidOperationException("Failed to create default CUDA accelerator");
-            }
-
-            return new NamedAcceleratorWrapper("cuda", defaultAccelerator);
+            return defaultAccelerator == null
+                ? throw new InvalidOperationException("Failed to create default CUDA accelerator")
+                : (IAccelerator)new NamedAcceleratorWrapper("cuda", defaultAccelerator);
         });
 
         return services;

@@ -18,7 +18,6 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// </summary>
 internal static partial class CpuKernelCompiler
 {
-    private static readonly CpuRuntimeCodeGenerator CodeGenerator = new();
     /// <summary>
     /// Compiles a kernel for CPU execution.
     /// </summary>
@@ -396,7 +395,7 @@ internal static partial class CpuKernelCompiler
         if (kernelAst != null)
         {
             // Generate code from AST
-            return CodeGenerator.GenerateFromAst(kernelAst, definition, analysis, options);
+            return CpuRuntimeCodeGenerator.GenerateFromAst(kernelAst, definition, analysis, options);
         }
         else if (definition.Code != null && definition.Code.Length > 0)
         {
@@ -494,7 +493,7 @@ internal static partial class CpuKernelCompiler
             name: original.Name,
             language: KernelLanguage.CSharpIL,
             entryPoint: original.EntryPoint ?? "main",
-            dependencies: Array.Empty<string>()
+            dependencies: []
         );
 
         var compilationOptions = new CompilationOptions
@@ -676,7 +675,7 @@ internal sealed class CompiledCode
     public Delegate? CompiledDelegate { get; set; }
     public byte[]? Bytecode { get; set; }
     public long CodeSize { get; set; }
-    public string[] OptimizationNotes { get; set; } = Array.Empty<string>();
+    public string[] OptimizationNotes { get; set; } = [];
 }
 
 /// <summary>

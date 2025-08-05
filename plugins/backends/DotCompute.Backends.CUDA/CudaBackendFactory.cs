@@ -138,8 +138,8 @@ public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IB
             SupportsMultiDevice = true,
             SupportsUnifiedMemory = CheckUnifiedMemorySupport(),
             MaxDevices = GetMaxDevices(),
-            SupportedFeatures = new[]
-            {
+            SupportedFeatures =
+            [
                 "Tensor Cores",
                 "Dynamic Parallelism",
                 "Cooperative Groups",
@@ -148,7 +148,7 @@ public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IB
                 "Stream Capture",
                 "Multi-GPU",
                 "NVLink"
-            }
+            ]
         };
 
         return capabilities;

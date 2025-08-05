@@ -249,7 +249,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
     /// </summary>
     public ValueTask HandleMemoryPressureAsync(double pressure)
     {
-        if (pressure < 0.0 || pressure > 1.0)
+        if (pressure is < 0.0 or > 1.0)
         {
             throw new ArgumentOutOfRangeException(nameof(pressure));
         }
@@ -355,9 +355,9 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
     /// </summary>
     private async Task<MemoryBenchmarkResults> RunComprehensiveBenchmarksAsync(CancellationToken cancellationToken)
     {
-        const int WarmupIterations = 3;
-        const int BenchmarkIterations = 10;
-        const int TestDataSize = 1024 * 1024; // 1MB test buffers
+        const int warmupIterations = 3;
+        const int benchmarkIterations = 10;
+        const int testDataSize = 1024 * 1024; // 1MB test buffers
 
         var results = new MemoryBenchmarkResults
         {
@@ -369,19 +369,19 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         };
 
         // Warmup
-        for (var i = 0; i < WarmupIterations; i++)
+        for (var i = 0; i < warmupIterations; i++)
         {
-            await RunSingleBenchmarkIterationAsync(TestDataSize, cancellationToken);
+            await RunSingleBenchmarkIterationAsync(testDataSize, cancellationToken);
         }
 
         // Benchmark allocation overhead
         var allocationTimes = new List<double>();
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
-        for (var i = 0; i < BenchmarkIterations; i++)
+        for (var i = 0; i < benchmarkIterations; i++)
         {
             sw.Restart();
-            var buffer = await CreateUnifiedBufferAsync<float>(TestDataSize / sizeof(float), cancellationToken: cancellationToken);
+            var buffer = await CreateUnifiedBufferAsync<float>(testDataSize / sizeof(float), cancellationToken: cancellationToken);
             sw.Stop();
             allocationTimes.Add(sw.Elapsed.TotalMicroseconds);
             await buffer.DisposeAsync();
@@ -392,16 +392,16 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         {
             AllocationTime = TimeSpan.FromMicroseconds(allocationTimes.Average()),
             DeallocationTime = TimeSpan.FromMicroseconds(allocationTimes.Average() * 0.1),
-            AllocationCount = BenchmarkIterations,
-            TotalBytes = TestDataSize * BenchmarkIterations,
-            AllocationsPerSecond = BenchmarkIterations / TimeSpan.FromMicroseconds(allocationTimes.Sum()).TotalSeconds,
-            DeallocationsPerSecond = BenchmarkIterations / TimeSpan.FromMicroseconds(allocationTimes.Sum() * 0.1).TotalSeconds
+            AllocationCount = benchmarkIterations,
+            TotalBytes = testDataSize * benchmarkIterations,
+            AllocationsPerSecond = benchmarkIterations / TimeSpan.FromMicroseconds(allocationTimes.Sum()).TotalSeconds,
+            DeallocationsPerSecond = benchmarkIterations / TimeSpan.FromMicroseconds(allocationTimes.Sum() * 0.1).TotalSeconds
         };
 
         // Benchmark transfer bandwidth
         var transferTimes = new List<double>();
-        var buffer1 = await CreateUnifiedBufferAsync<float>(TestDataSize / sizeof(float), cancellationToken: cancellationToken);
-        var testData = new float[TestDataSize / sizeof(float)];
+        var buffer1 = await CreateUnifiedBufferAsync<float>(testDataSize / sizeof(float), cancellationToken: cancellationToken);
+        var testData = new float[testDataSize / sizeof(float)];
         #pragma warning disable CA5394 // Do not use insecure randomness
         var random = new Random(42); // Deterministic random for benchmarking
         for (var i = 0; i < testData.Length; i++)
@@ -410,7 +410,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         }
         #pragma warning restore CA5394
 
-        for (var i = 0; i < BenchmarkIterations; i++)
+        for (var i = 0; i < benchmarkIterations; i++)
         {
             sw.Restart();
             await buffer1.CopyFromAsync(testData, cancellationToken);
@@ -419,15 +419,15 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         }
 
         var avgTransferTime = transferTimes.Average();
-        var bandwidthMBps = (TestDataSize / (avgTransferTime / 1_000_000.0)) / (1024.0 * 1024.0);
+        var bandwidthMBps = (testDataSize / (avgTransferTime / 1_000_000.0)) / (1024.0 * 1024.0);
 
         // Set transfer bandwidth results with proper measurements
         results.TransferBandwidth.HostToDeviceMedium = new BandwidthMeasurement
         {
-            TotalBytes = TestDataSize * BenchmarkIterations,
+            TotalBytes = testDataSize * benchmarkIterations,
             ElapsedTime = TimeSpan.FromMicroseconds(transferTimes.Sum()),
             BandwidthGBps = bandwidthMBps / 1024.0, // Convert MB/s to GB/s
-            IterationCount = BenchmarkIterations
+            IterationCount = benchmarkIterations
         };
 
 
@@ -435,15 +435,15 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         var poolAllocTimes = new List<double>();
         var pool = GetPool<float>();
 
-        for (var i = 0; i < BenchmarkIterations; i++)
+        for (var i = 0; i < benchmarkIterations; i++)
         {
             sw.Restart();
             #pragma warning disable CA2000 // Dispose objects before losing scope
-            var rental = pool.Rent(TestDataSize / sizeof(float)); // Returned to pool below
+            var rental = pool.Rent(testDataSize / sizeof(float)); // Returned to pool below
             #pragma warning restore CA2000 // Dispose objects before losing scope
             sw.Stop();
             poolAllocTimes.Add(sw.Elapsed.TotalMicroseconds);
-            pool.Return(rental, TestDataSize / sizeof(float));
+            pool.Return(rental, testDataSize / sizeof(float));
         }
 
         // Set pool performance results with proper measurements
@@ -451,15 +451,15 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         results.PoolPerformance.AllocationEfficiency = new PoolEfficiencyMeasurement
         {
             AllocationTime = TimeSpan.FromMicroseconds(poolAllocTimes.Sum()),
-            AllocationCount = BenchmarkIterations,
+            AllocationCount = benchmarkIterations,
             EfficiencyRatio = 0.85, // Default efficiency ratio
-            TotalRetainedBytes = TestDataSize * BenchmarkIterations
+            TotalRetainedBytes = testDataSize * benchmarkIterations
         };
 
         var poolStats = pool.GetPerformanceStats();
         // Calculate and set pool efficiency
         var poolEfficiency = poolStats.ReuseCount > 0
-            ? (double)poolStats.ReuseCount / (poolStats.ReuseCount + poolStats.TotalAllocatedBytes / (TestDataSize / sizeof(float)))
+            ? (double)poolStats.ReuseCount / (poolStats.ReuseCount + poolStats.TotalAllocatedBytes / (testDataSize / sizeof(float)))
             : 0.0;
 
         results.PoolPerformance.ReuseRate = new PoolReuseMeasurement
@@ -481,7 +481,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         // Benchmark unified buffer operations
         var unifiedOpTimes = new List<double>();
 
-        for (var i = 0; i < BenchmarkIterations; i++)
+        for (var i = 0; i < benchmarkIterations; i++)
         {
             sw.Restart();
             #pragma warning disable CA1849 // Call async methods when in an async method
@@ -507,13 +507,13 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         {
             Transitions = new List<(BufferState, BufferState, TimeSpan)>(),
             AverageTransitionTime = TimeSpan.FromMicroseconds(avgUnifiedOpTime),
-            TotalTransitions = BenchmarkIterations * 3 // Host, Device, Sync
+            TotalTransitions = benchmarkIterations * 3 // Host, Device, Sync
         };
 
         results.UnifiedBufferPerformance.MemoryCoherencePerformance = new CoherenceMeasurement
         {
             TotalCoherenceTime = TimeSpan.FromMicroseconds(unifiedOpTimes.Sum()),
-            CoherenceOperations = BenchmarkIterations,
+            CoherenceOperations = benchmarkIterations,
             AverageCoherenceTime = TimeSpan.FromMicroseconds(avgUnifiedOpTime)
         };
 
@@ -533,9 +533,9 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         {
             ThreadCount = Environment.ProcessorCount,
             TotalTime = TimeSpan.FromMilliseconds(100),
-            TotalAllocations = BenchmarkIterations * Environment.ProcessorCount,
+            TotalAllocations = benchmarkIterations * Environment.ProcessorCount,
             TotalErrors = 0,
-            AllocationsPerSecond = (BenchmarkIterations * Environment.ProcessorCount) / 0.1 // 100ms = 0.1s
+            AllocationsPerSecond = (benchmarkIterations * Environment.ProcessorCount) / 0.1 // 100ms = 0.1s
         };
 
         results.MemoryUsagePatterns.MemoryPressureHandling = new MemoryPressureMeasurement

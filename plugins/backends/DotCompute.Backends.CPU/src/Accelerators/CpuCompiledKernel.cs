@@ -107,7 +107,8 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
         var stopwatch = Stopwatch.StartNew();
 
-        CpuCompiledKernelLoggerMessages.LogExecutingKernel(_logger, 
+        _logger.LogDebug(
+            "Executing kernel '{KernelName}' with global work size: [{WorkSize}], vectorization: {Vectorization}",
             _definition.Name,
             string.Join(", ", context.WorkDimensions),
             _executionPlan.UseVectorization ? $"{_executionPlan.VectorWidth}-bit" : "disabled");
@@ -148,9 +149,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
         // Determine work distribution with vectorization
         var workerCount = _threadPool.WorkerCount;
-        var vectorizedWorkItems = _executionPlan.UseVectorization
-            ? (totalWorkItems + _executionPlan.VectorizationFactor - 1) / _executionPlan.VectorizationFactor
-            : totalWorkItems;
+        var vectorizedWorkItems = _executionPlan.UseVectorization ? (totalWorkItems + _executionPlan.VectorizationFactor - 1) / _executionPlan.VectorizationFactor : totalWorkItems;
         var workItemsPerWorker = (vectorizedWorkItems + workerCount - 1) / workerCount;
 
         // Create tasks for parallel execution
@@ -199,14 +198,15 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
             newBits = BitConverter.DoubleToInt64Bits(newValue);
         } while (Interlocked.CompareExchange(ref Unsafe.As<double, long>(ref _totalExecutionTimeMs), newBits, currentBits) != currentBits);
 
-        CpuCompiledKernelLoggerMessages.LogKernelExecutionCompleted(_logger,
+        _logger.LogDebug("Kernel '{KernelName}' execution completed in {ElapsedMs:F2}ms",
             _definition.Name, stopwatch.Elapsed.TotalMilliseconds);
 
         // Log performance stats periodically
         if (_executionCount % 100 == 0)
         {
             var avgTime = _totalExecutionTimeMs / _executionCount;
-            CpuCompiledKernelLoggerMessages.LogKernelPerformance(_logger,
+            _logger.LogInformation(
+                "Kernel '{KernelName}' performance: {ExecutionCount} executions, avg time: {AvgTime:F2}ms",
                 _definition.Name, _executionCount, avgTime);
         }
     }
@@ -296,9 +296,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         int vectorWidth)
     {
         // Use the pre-compiled kernel executor if available
-#pragma warning disable CA2000 // Dispose objects before losing scope - buffers are owned by caller
         if (_kernelExecutor != null && TryGetBufferArguments(context.KernelContext, out var input1, out var input2, out var output))
-#pragma warning restore CA2000
         {
             // Calculate element count and execute using the optimized SIMD executor
             var elementCount = workItemIds.Length * context.ExecutionPlan.VectorizationFactor;
@@ -316,9 +314,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
                 var offset = (int)(baseIndex * sizeof(float));
 
                 // Create spans for the kernel executor
-                var input1Span = mem1.Span.Slice(offset);
-                var input2Span = mem2.Span.Slice(offset);
-                var outputSpan = memOut.Span.Slice(offset);
+                var input1Span = mem1.Span[offset..];
+                var input2Span = mem2.Span[offset..];
+                var outputSpan = memOut.Span[offset..];
 
                 // Execute using the optimized SIMD kernel
                 _kernelExecutor.Execute(
@@ -361,9 +359,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     private unsafe void ExecuteAvx512Kernel(VectorizedExecutionContext context, long[][] workItemIds)
     {
         // AVX512 vectorized execution (16 floats at once)
-#pragma warning disable CA2000 // Dispose objects before losing scope - buffers are owned by caller
         if (!TryGetBufferArguments(context.KernelContext, out var input1, out var input2, out var output))
-#pragma warning restore CA2000
         {
             // Fall back to scalar for non-buffer kernels
             foreach (var workItemId in workItemIds)
@@ -425,9 +421,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     private unsafe void ExecuteAvx2Kernel(VectorizedExecutionContext context, long[][] workItemIds)
     {
         // AVX2 vectorized execution (8 floats at once)
-#pragma warning disable CA2000 // Dispose objects before losing scope - buffers are owned by caller
         if (!TryGetBufferArguments(context.KernelContext, out var input1, out var input2, out var output))
-#pragma warning restore CA2000
         {
             // Fall back to scalar for non-buffer kernels
             foreach (var workItemId in workItemIds)
@@ -489,9 +483,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     private unsafe void ExecuteSseKernel(VectorizedExecutionContext context, long[][] workItemIds)
     {
         // SSE vectorized execution (4 floats at once)
-#pragma warning disable CA2000 // Dispose objects before losing scope - buffers are owned by caller
         if (!TryGetBufferArguments(context.KernelContext, out var input1, out var input2, out var output))
-#pragma warning restore CA2000
         {
             // Fall back to scalar for non-buffer kernels
             foreach (var workItemId in workItemIds)
@@ -595,7 +587,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
             }
             catch (Exception ex)
             {
-                CpuCompiledKernelLoggerMessages.LogFailedCompiledDelegate(_logger, ex);
+                _logger.LogWarning(ex, "Failed to execute compiled delegate, falling back to default implementation");
             }
         }
 
@@ -856,7 +848,10 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
     private void ThrowIfDisposed()
     {
-        ObjectDisposedException.ThrowIf(_disposed != 0, this);
+        if (_disposed != 0)
+        {
+            throw new ObjectDisposedException(nameof(CpuCompiledKernel));
+        }
     }
 
     private static bool IsSupportedArgumentType(Type type)

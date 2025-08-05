@@ -466,7 +466,7 @@ public readonly struct Dim3(int x, int y = 1, int z = 1) : IEquatable<Dim3>
 /// </summary>
 public struct KernelArguments(params object[] args) : IEquatable<KernelArguments>
 {
-    private readonly object[] _args = args ?? Array.Empty<object>();
+    private readonly object[] _args = args ?? [];
 
     /// <summary>
     /// Gets the arguments as a read-only span.

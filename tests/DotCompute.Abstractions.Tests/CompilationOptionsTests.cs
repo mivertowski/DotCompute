@@ -100,7 +100,7 @@ public class CompilationOptionsTests
     public void AdditionalFlags_CanBeEmpty()
     {
         // Act
-        var options = new CompilationOptions { AdditionalFlags = Array.Empty<string>() };
+        var options = new CompilationOptions { AdditionalFlags = [] };
 
         // Assert
         options.AdditionalFlags.Should().BeEmpty();

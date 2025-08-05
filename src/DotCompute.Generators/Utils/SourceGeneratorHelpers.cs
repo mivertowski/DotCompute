@@ -177,10 +177,10 @@ namespace DotCompute.Generators.Utils
 
         private static bool IsArithmeticOperation(SyntaxKind kind)
         {
-            return kind == SyntaxKind.AddExpression ||
-                   kind == SyntaxKind.SubtractExpression ||
-                   kind == SyntaxKind.MultiplyExpression ||
-                   kind == SyntaxKind.DivideExpression;
+            return kind is SyntaxKind.AddExpression or
+                   SyntaxKind.SubtractExpression or
+                   SyntaxKind.MultiplyExpression or
+                   SyntaxKind.DivideExpression;
         }
 
         private static bool IsVectorizableLoop(ForStatementSyntax loop)
@@ -192,7 +192,7 @@ namespace DotCompute.Generators.Utils
             }
 
             var incrementor = loop.Incrementors[0];
-            if (incrementor is not PostfixUnaryExpressionSyntax && incrementor is not PrefixUnaryExpressionSyntax)
+            if (incrementor is not PostfixUnaryExpressionSyntax and not PrefixUnaryExpressionSyntax)
             {
                 return false;
             }

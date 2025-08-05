@@ -311,26 +311,26 @@ public sealed class CpuThreadPool : IAsyncDisposable
                 try
                 {
                     // Use timeout to avoid blocking forever
-                    using (var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken))
-                    {
-                        cts.CancelAfter(100);
+                    using var cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                    cts.CancelAfter(100);
 
-                        var waitTask = globalReader.WaitToReadAsync(cts.Token).AsTask();
-                        try
+                    var waitTask = globalReader.WaitToReadAsync(cts.Token).AsTask();
+                    try
+                    {
+                        // ConfigureAwait(false) and GetAwaiter().GetResult() to avoid deadlock
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
+                        var canRead = waitTask.ConfigureAwait(false).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002 // Avoid problematic synchronous waits
+                        if (canRead && globalReader.TryRead(out workItem))
                         {
-                            // ConfigureAwait(false) and GetAwaiter().GetResult() to avoid deadlock
-                            var canRead = waitTask.ConfigureAwait(false).GetAwaiter().GetResult();
-                            if (canRead && globalReader.TryRead(out workItem))
-                            {
-                                ExecuteWorkItem(workItem);
-                                consecutiveStealFailures = 0;
-                            }
+                            ExecuteWorkItem(workItem);
+                            consecutiveStealFailures = 0;
                         }
-                        catch (OperationCanceledException) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
-                        {
-                            // Timeout - continue loop
-                            continue;
-                        }
+                    }
+                    catch (OperationCanceledException) when (cts.IsCancellationRequested && !cancellationToken.IsCancellationRequested)
+                    {
+                        // Timeout - continue loop
+                        continue;
                     }
                 }
                 catch (OperationCanceledException)
@@ -388,13 +388,13 @@ public sealed class CpuThreadPool : IAsyncDisposable
     {
         // Performance optimization: Use round-robin with load checking
         // This reduces contention on queue count checking
-        const int MaxChecks = 3;
+        const int maxChecks = 3;
         var startIndex = (int)(((uint)Environment.TickCount * 2654435761U) >> 22) % _localWorkQueues.Length;
         var minCount = int.MaxValue;
         var bestThread = -1;
 
         // Check up to MaxChecks threads starting from a pseudo-random position
-        for (var i = 0; i < Math.Min(MaxChecks, _localWorkQueues.Length); i++)
+        for (var i = 0; i < Math.Min(maxChecks, _localWorkQueues.Length); i++)
         {
             var threadIdx = (startIndex + i) % _localWorkQueues.Length;
             var count = _localWorkQueues[threadIdx].Count;
@@ -590,13 +590,17 @@ public sealed class CpuThreadPool : IAsyncDisposable
     #region Linux Thread Affinity API
 
     [StructLayout(LayoutKind.Sequential)]
+#pragma warning disable IDE1006 // Naming Styles
     private struct cpu_set_t
+#pragma warning restore IDE1006 // Naming Styles
     {
         private const int CPU_SETSIZE = 1024;
         private const int NCPUBITS = 8 * sizeof(ulong);
 
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = CPU_SETSIZE / NCPUBITS)]
+#pragma warning disable IDE1006 // Naming Styles
         public ulong[] __bits;
+#pragma warning restore IDE1006 // Naming Styles
 
         public cpu_set_t()
         {
@@ -608,7 +612,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
 
     private static void CPU_SET(int cpu, ref cpu_set_t set)
     {
-        if (cpu >= 0 && cpu < 1024)
+        if (cpu is >= 0 and < 1024)
         {
             var index = cpu / 64;
             var bit = cpu % 64;

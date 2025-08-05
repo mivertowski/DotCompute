@@ -11,15 +11,12 @@ namespace DotCompute.SharedTestUtilities;
 /// <summary>
 /// Consolidated memory testing utilities for all DotCompute test projects.
 /// </summary>
-#pragma warning disable CA1034 // Nested types should not be visible - Test utilities need nested types for organization
 public static class MemoryTestUtilities
 {
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
-
     /// <summary>
     /// Monitors memory usage during test execution.
     /// </summary>
-    public sealed class MemoryMonitor : IDisposable
+    public class MemoryMonitor : IDisposable
     {
         private readonly string _testName;
         private readonly Process _currentProcess;
@@ -131,7 +128,6 @@ public static class MemoryTestUtilities
 
             _disposed = true;
             _currentProcess?.Dispose();
-            GC.SuppressFinalize(this);
         }
     }
 
@@ -156,7 +152,7 @@ public static class MemoryTestUtilities
     public class MemoryReport
     {
         public string TestName { get; set; } = string.Empty;
-        public MemorySnapshot[] Snapshots { get; set; } = Array.Empty<MemorySnapshot>();
+        public MemorySnapshot[] Snapshots { get; set; } = [];
         public long PeakWorkingSetMB { get; set; }
         public int TotalGCCollections { get; set; }
         public bool MemoryLeakDetected { get; set; }
@@ -311,7 +307,7 @@ public static class MemoryTestUtilities
     /// </summary>
     public class BenchmarkSummary
     {
-        public BenchmarkResult[] Results { get; set; } = Array.Empty<BenchmarkResult>();
+        public BenchmarkResult[] Results { get; set; } = [];
         public int TotalOperations { get; set; }
         public double AverageOperationsPerSecond { get; set; }
         public double AverageThroughputMBps { get; set; }
@@ -335,7 +331,7 @@ public static class MemoryTestUtilities
             var fileName = $"memory_report_{report.TestName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             var filePath = Path.Combine(ReportDirectory, fileName);
 
-            var json = JsonSerializer.Serialize(report, JsonOptions);
+            var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(filePath, json);
         }
 
@@ -348,7 +344,7 @@ public static class MemoryTestUtilities
             var fileName = $"benchmark_report_{testName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             var filePath = Path.Combine(ReportDirectory, fileName);
 
-            var json = JsonSerializer.Serialize(summary, JsonOptions);
+            var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(filePath, json);
         }
 
@@ -358,7 +354,7 @@ public static class MemoryTestUtilities
         {
             if (!Directory.Exists(ReportDirectory))
             {
-                return Array.Empty<MemoryReport>();
+                return [];
             }
 
             var reports = new List<MemoryReport>();
@@ -443,4 +439,3 @@ public static class MemoryTestUtilities
         }
     }
 }
-#pragma warning restore CA1034

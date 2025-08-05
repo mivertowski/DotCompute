@@ -191,10 +191,7 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
         }, cancellationToken).ConfigureAwait(false);
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public async ValueTask DisposeAsync()
     {

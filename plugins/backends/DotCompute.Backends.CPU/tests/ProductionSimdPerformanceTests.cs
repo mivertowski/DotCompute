@@ -305,10 +305,10 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
         // Process vectors
         for (; i <= a.Length - vectorSize; i += vectorSize)
         {
-            var va = new Vector<float>(a.Slice(i));
-            var vb = new Vector<float>(b.Slice(i));
+            var va = new Vector<float>(a[i..]);
+            var vb = new Vector<float>(b[i..]);
             var vr = va + vb;
-            vr.CopyTo(result.Slice(i));
+            vr.CopyTo(result[i..]);
         }
 
         // Process remaining elements
@@ -438,7 +438,7 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
         // Process vectors
         for (; i <= data.Length - vectorSize; i += vectorSize)
         {
-            var vector = new Vector<float>(data.Slice(i));
+            var vector = new Vector<float>(data[i..]);
             sumVector += vector;
         }
 
@@ -461,7 +461,7 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
 
         for (var i = 0; i <= data.Length - vectorSize; i += vectorSize)
         {
-            var vector = new Vector<float>(data.Slice(i));
+            var vector = new Vector<float>(data[i..]);
             sum += vector;
         }
     }

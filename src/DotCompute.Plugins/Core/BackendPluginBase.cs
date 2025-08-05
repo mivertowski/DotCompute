@@ -105,7 +105,7 @@ namespace DotCompute.Plugins.Core
         {
             ThrowIfDisposed();
 
-            if (State != PluginState.Unknown && State != PluginState.Loaded)
+            if (State is not PluginState.Unknown and not PluginState.Loaded)
             {
                 throw new InvalidOperationException($"Cannot initialize plugin in state {State}");
             }
@@ -141,7 +141,7 @@ namespace DotCompute.Plugins.Core
         {
             ThrowIfDisposed();
 
-            if (State != PluginState.Initialized && State != PluginState.Stopped)
+            if (State is not PluginState.Initialized and not PluginState.Stopped)
             {
                 throw new InvalidOperationException($"Cannot start plugin in state {State}");
             }

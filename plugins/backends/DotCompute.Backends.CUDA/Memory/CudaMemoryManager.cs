@@ -298,10 +298,7 @@ public sealed class CudaMemoryManager(CudaContext context, ILogger logger) : ISy
         ValidateBuffer(destination, sizeInBytes, destinationOffset);
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     private void Dispose(bool disposing)
     {

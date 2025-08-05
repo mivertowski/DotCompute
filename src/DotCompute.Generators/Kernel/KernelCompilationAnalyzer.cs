@@ -32,7 +32,9 @@ namespace DotCompute.Generators.Kernel
             isEnabledByDefault: true,
             description: "Kernel methods must use supported primitive types or buffer types.");
 
+#pragma warning disable IDE1006 // Naming Styles
         private static readonly DiagnosticDescriptor MissingBufferParameterRule = new(
+#pragma warning restore IDE1006 // Naming Styles
             MissingBufferParameterId,
             "Kernel method missing buffer parameter",
             "Kernel method '{0}' must have at least one buffer parameter",
@@ -41,7 +43,9 @@ namespace DotCompute.Generators.Kernel
             isEnabledByDefault: true,
             description: "Kernel methods must operate on buffer data.");
 
+#pragma warning disable IDE1006 // Naming Styles
         private static readonly DiagnosticDescriptor InvalidVectorSizeRule = new(
+#pragma warning restore IDE1006 // Naming Styles
             InvalidVectorSizeId,
             "Invalid vector size",
             "Vector size {0} is not supported. Must be 4, 8, or 16.",
@@ -50,7 +54,9 @@ namespace DotCompute.Generators.Kernel
             isEnabledByDefault: true,
             description: "Vector size must correspond to valid SIMD register sizes.");
 
+#pragma warning disable IDE1006 // Naming Styles
         private static readonly DiagnosticDescriptor UnsafeCodeRequiredRule = new(
+#pragma warning restore IDE1006 // Naming Styles
             UnsafeCodeRequiredId,
             "Unsafe code context required",
             "Kernel method '{0}' requires unsafe context for optimal performance",
@@ -59,7 +65,9 @@ namespace DotCompute.Generators.Kernel
             isEnabledByDefault: true,
             description: "Kernel methods should be in unsafe context for best performance.");
 
+#pragma warning disable IDE1006 // Naming Styles
         private static readonly DiagnosticDescriptor PerformanceWarningRule = new(
+#pragma warning restore IDE1006 // Naming Styles
             PerformanceWarningId,
             "Potential performance issue",
             "{0}",
@@ -150,7 +158,7 @@ namespace DotCompute.Generators.Kernel
 
             if (vectorSizeArg.Value.Value is int vectorSize)
             {
-                if (vectorSize != 4 && vectorSize != 8 && vectorSize != 16)
+                if (vectorSize is not 4 and not 8 and not 16)
                 {
                     var diagnostic = Diagnostic.Create(
                         InvalidVectorSizeRule,
@@ -256,9 +264,9 @@ namespace DotCompute.Generators.Kernel
         private static bool IsSupportedType(ITypeSymbol type)
         {
             // Primitive types
-            if (type.SpecialType != SpecialType.None &&
-                type.SpecialType != SpecialType.System_Object &&
-                type.SpecialType != SpecialType.System_String)
+            if (type.SpecialType is not SpecialType.None and
+                not SpecialType.System_Object and
+                not SpecialType.System_String)
             {
                 return true;
             }

@@ -301,12 +301,8 @@ internal sealed class AotCompiledKernel(
 {
     private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
     private readonly Func<KernelExecutionContext, Task> _implementation = implementation ?? throw new ArgumentNullException(nameof(implementation));
-#pragma warning disable CA1823 // Avoid unused private fields - Reserved for future use
     private readonly KernelExecutionPlan _executionPlan = executionPlan ?? throw new ArgumentNullException(nameof(executionPlan));
-#pragma warning restore CA1823
-#pragma warning disable CA1823, CA2213 // Avoid unused private fields, Dispose IDisposable fields - Reserved for future use
     private readonly CpuThreadPool _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
-#pragma warning restore CA1823, CA2213
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public string Name => _definition.Name;
@@ -390,10 +386,10 @@ internal static class VectorizedMath
         for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * System.Numerics.Vector<float>.Count;
-            var va = new System.Numerics.Vector<float>(a.Slice(offset));
-            var vb = new System.Numerics.Vector<float>(b.Slice(offset));
+            var va = new System.Numerics.Vector<float>(a[offset..]);
+            var vb = new System.Numerics.Vector<float>(b[offset..]);
             var vr = va + vb;
-            vr.CopyTo(result.Slice(offset));
+            vr.CopyTo(result[offset..]);
         }
 
         // Scalar remainder
@@ -412,10 +408,10 @@ internal static class VectorizedMath
         for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * System.Numerics.Vector<float>.Count;
-            var va = new System.Numerics.Vector<float>(a.Slice(offset));
-            var vb = new System.Numerics.Vector<float>(b.Slice(offset));
+            var va = new System.Numerics.Vector<float>(a[offset..]);
+            var vb = new System.Numerics.Vector<float>(b[offset..]);
             var vr = va * vb;
-            vr.CopyTo(result.Slice(offset));
+            vr.CopyTo(result[offset..]);
         }
 
         var remainderStart = vectorCount * System.Numerics.Vector<float>.Count;
@@ -434,7 +430,7 @@ internal static class VectorizedMath
         for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * System.Numerics.Vector<float>.Count;
-            var v = new System.Numerics.Vector<float>(values.Slice(offset));
+            var v = new System.Numerics.Vector<float>(values[offset..]);
             sum += v;
         }
 
