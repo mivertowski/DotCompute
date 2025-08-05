@@ -301,8 +301,12 @@ internal sealed class AotCompiledKernel(
 {
     private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
     private readonly Func<KernelExecutionContext, Task> _implementation = implementation ?? throw new ArgumentNullException(nameof(implementation));
+#pragma warning disable CA1823 // Avoid unused private fields - Reserved for future use
     private readonly KernelExecutionPlan _executionPlan = executionPlan ?? throw new ArgumentNullException(nameof(executionPlan));
+#pragma warning restore CA1823
+#pragma warning disable CA1823, CA2213 // Avoid unused private fields, Dispose IDisposable fields - Reserved for future use
     private readonly CpuThreadPool _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
+#pragma warning restore CA1823, CA2213
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public string Name => _definition.Name;

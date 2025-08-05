@@ -850,10 +850,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
     private void ThrowIfDisposed()
     {
-        if (_disposed != 0)
-        {
-            throw new ObjectDisposedException(nameof(CpuCompiledKernel));
-        }
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
     }
 
     private static bool IsSupportedArgumentType(Type type)

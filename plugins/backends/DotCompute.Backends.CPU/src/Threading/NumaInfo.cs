@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
@@ -137,7 +138,7 @@ public static partial class NumaInfo
             {
                 foreach (System.Management.ManagementObject node in results)
                 {
-                    var nodeId = Convert.ToInt32(node["NodeId"]);
+                    var nodeId = Convert.ToInt32(node["NodeId"], CultureInfo.InvariantCulture);
                     var processorMask = GetProcessorMaskFromWmi(node);
 
                     nodes.Add(new NumaNode
@@ -265,7 +266,7 @@ public static partial class NumaInfo
             if (Directory.Exists("/sys/devices/system/node"))
             {
                 var nodeDirs = Directory.GetDirectories("/sys/devices/system/node", "node*")
-                    .OrderBy(d => int.Parse(Path.GetFileName(d).Substring(4)))
+                    .OrderBy(d => int.Parse(Path.GetFileName(d).Substring(4), CultureInfo.InvariantCulture))
                     .ToArray();
 
                 var nodes = new List<NumaNode>();
@@ -279,7 +280,7 @@ public static partial class NumaInfo
                 for (var i = 0; i < nodeDirs.Length; i++)
                 {
                     var nodeDir = nodeDirs[i];
-                    var nodeId = int.Parse(Path.GetFileName(nodeDir).Substring(4));
+                    var nodeId = int.Parse(Path.GetFileName(nodeDir).Substring(4), CultureInfo.InvariantCulture);
 
                     var cpuListFile = Path.Combine(nodeDir, "cpulist");
                     if (File.Exists(cpuListFile))
@@ -352,11 +353,13 @@ public static partial class NumaInfo
         var parts = cpuList.Split(',');
         foreach (var part in parts)
         {
+#pragma warning disable CA1307 // Specify StringComparison for clarity - Contains(char) doesn't have StringComparison overload
             if (part.Contains('-'))
+#pragma warning restore CA1307
             {
                 var range = part.Split('-');
-                var start = int.Parse(range[0]);
-                var end = int.Parse(range[1]);
+                var start = int.Parse(range[0], CultureInfo.InvariantCulture);
+                var end = int.Parse(range[1], CultureInfo.InvariantCulture);
 
                 for (var i = start; i <= end; i++)
                 {
@@ -366,7 +369,7 @@ public static partial class NumaInfo
             }
             else
             {
-                var cpu = int.Parse(part);
+                var cpu = int.Parse(part, CultureInfo.InvariantCulture);
                 mask |= (1UL << cpu);
                 count++;
             }
@@ -385,10 +388,10 @@ public static partial class NumaInfo
                 var lines = File.ReadAllLines(meminfoFile);
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith($"Node {Path.GetFileName(nodeDir).Substring(4)} MemTotal:"))
+                    if (line.StartsWith($"Node {Path.GetFileName(nodeDir).Substring(4)} MemTotal:", StringComparison.Ordinal))
                     {
                         var parts = line.Split(':')[1].Trim().Split(' ');
-                        return long.Parse(parts[0]) * 1024; // Convert from KB to bytes
+                        return long.Parse(parts[0], CultureInfo.InvariantCulture) * 1024; // Convert from KB to bytes
                     }
                 }
             }
@@ -586,7 +589,7 @@ public static partial class NumaInfo
             var processorMask = node["ProcessorMask"];
             if (processorMask != null)
             {
-                return Convert.ToUInt64(processorMask);
+                return Convert.ToUInt64(processorMask, CultureInfo.InvariantCulture);
             }
         }
         catch
@@ -604,7 +607,7 @@ public static partial class NumaInfo
             var memorySize = node["MemorySize"];
             if (memorySize != null)
             {
-                return Convert.ToInt64(memorySize);
+                return Convert.ToInt64(memorySize, CultureInfo.InvariantCulture);
             }
         }
         catch
@@ -626,11 +629,9 @@ public static partial class NumaInfo
 
     private static int GetCacheCoherencyDomain(int nodeId) => nodeId; // For most systems, cache coherency domain matches NUMA node
 
-    private static int GetNumaNodeDistance(int fromNode, int toNode) =>
-        fromNode == toNode ? 10 : 20; // Default NUMA distances if system doesn't provide them
+    private static int GetNumaNodeDistance(int fromNode, int toNode) => fromNode == toNode ? 10 : 20; // Default NUMA distances if system doesn't provide them
 
-    private static int GetCacheLineSize() =>
-        64; // Most modern processors use 64-byte cache lines
+    private static int GetCacheLineSize() => 64; // Most modern processors use 64-byte cache lines
 
     private static int GetPageSize()
     {
@@ -651,7 +652,7 @@ public static partial class NumaInfo
                 var lines = File.ReadAllLines(meminfoPath);
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith($"Node {nodeId} MemTotal:"))
+                    if (line.StartsWith($"Node {nodeId} MemTotal:", StringComparison.Ordinal))
                     {
                         var match = MemorySizeRegex().Match(line);
                         if (match.Success && long.TryParse(match.Groups[1].Value, out var kb))
@@ -820,7 +821,9 @@ public static partial class NumaInfo
         if (parts.Length > 0)
         {
             var firstPart = parts[0];
+#pragma warning disable CA1307 // Specify StringComparison for clarity - Contains(char) doesn't have StringComparison overload
             if (firstPart.Contains('-'))
+#pragma warning restore CA1307
             {
                 var range = firstPart.Split('-');
                 if (int.TryParse(range[0], out var start))

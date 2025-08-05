@@ -128,8 +128,8 @@ public sealed partial class CudaBackend : IDisposable
             if (runtimeVersion < 11000 || driverVersion < 11000)
             {
                 LogCudaVersionTooLow(_logger, deviceId,
-                    runtimeVersion.HasValue ? $"{runtimeVersion / 1000}.{(runtimeVersion % 1000) / 10}" : "unknown",
-                    driverVersion.HasValue ? $"{driverVersion / 1000}.{(driverVersion % 1000) / 10}" : "unknown");
+                    $"{runtimeVersion / 1000}.{(runtimeVersion % 1000) / 10}",
+                    $"{driverVersion / 1000}.{(driverVersion % 1000) / 10}");
                 return false;
             }
 
