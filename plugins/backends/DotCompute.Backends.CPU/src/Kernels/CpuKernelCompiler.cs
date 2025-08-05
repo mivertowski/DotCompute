@@ -18,6 +18,7 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// </summary>
 internal static partial class CpuKernelCompiler
 {
+    private static readonly CpuRuntimeCodeGenerator CodeGenerator = new();
     /// <summary>
     /// Compiles a kernel for CPU execution.
     /// </summary>
@@ -395,17 +396,17 @@ internal static partial class CpuKernelCompiler
         if (kernelAst != null)
         {
             // Generate code from AST
-            return CpuRuntimeCodeGenerator.GenerateFromAst(kernelAst, definition, analysis, options);
+            return CodeGenerator.GenerateFromAst(kernelAst, definition, analysis, options);
         }
         else if (definition.Code != null && definition.Code.Length > 0)
         {
             // JIT compile bytecode
-            return CpuRuntimeCodeGenerator.GenerateFromBytecode(definition.Code, definition, analysis, options);
+            return CodeGenerator.GenerateFromBytecode(definition.Code, definition, analysis, options);
         }
         else
         {
             // Generate default vectorized kernel based on operation type
-            return CpuRuntimeCodeGenerator.GenerateDefaultKernel(definition, analysis, options);
+            return CodeGenerator.GenerateDefaultKernel(definition, analysis, options);
         }
     }
 

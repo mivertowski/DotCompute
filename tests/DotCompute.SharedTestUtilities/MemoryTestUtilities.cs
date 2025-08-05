@@ -11,12 +11,15 @@ namespace DotCompute.SharedTestUtilities;
 /// <summary>
 /// Consolidated memory testing utilities for all DotCompute test projects.
 /// </summary>
+#pragma warning disable CA1034 // Nested types should not be visible - Test utilities need nested types for organization
 public static class MemoryTestUtilities
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+
     /// <summary>
     /// Monitors memory usage during test execution.
     /// </summary>
-    public class MemoryMonitor : IDisposable
+    public sealed class MemoryMonitor : IDisposable
     {
         private readonly string _testName;
         private readonly Process _currentProcess;
@@ -128,6 +131,7 @@ public static class MemoryTestUtilities
 
             _disposed = true;
             _currentProcess?.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 
@@ -331,7 +335,7 @@ public static class MemoryTestUtilities
             var fileName = $"memory_report_{report.TestName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             var filePath = Path.Combine(ReportDirectory, fileName);
 
-            var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(report, JsonOptions);
             await File.WriteAllTextAsync(filePath, json);
         }
 
@@ -344,7 +348,7 @@ public static class MemoryTestUtilities
             var fileName = $"benchmark_report_{testName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             var filePath = Path.Combine(ReportDirectory, fileName);
 
-            var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(summary, JsonOptions);
             await File.WriteAllTextAsync(filePath, json);
         }
 
@@ -439,3 +443,4 @@ public static class MemoryTestUtilities
         }
     }
 }
+#pragma warning restore CA1034

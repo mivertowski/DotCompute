@@ -6,6 +6,7 @@ namespace DotCompute.SharedTestUtilities;
 /// <summary>
 /// Provides consolidated test data generation utilities for all DotCompute test projects.
 /// </summary>
+#pragma warning disable CA5394 // Do not use insecure randomness - Test code uses deterministic Random for reproducible tests
 public static class TestDataGenerator
 {
     private static readonly Random Random = new(42); // Deterministic for reproducible tests
@@ -190,3 +191,4 @@ public static class TestDataGenerator
         return result;
     }
 }
+#pragma warning restore CA5394

@@ -205,7 +205,9 @@ public sealed class MemoryAllocator : IDisposable
 /// <typeparam name="T">The element type.</typeparam>
 internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanaged
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - Allocator is not owned by this instance
     private readonly MemoryAllocator _allocator;
+#pragma warning restore CA2213
     private readonly IntPtr _originalMemory;
     private readonly IntPtr _alignedMemory;
     private readonly int _length;
@@ -249,9 +251,10 @@ internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanage
 /// <typeparam name="T">The element type.</typeparam>
 internal sealed class PinnedMemoryOwner<T>(MemoryAllocator allocator, GCHandle handle, T[] array, long sizeInBytes) : IMemoryOwner<T> where T : unmanaged
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - Allocator is not owned by this instance
     private readonly MemoryAllocator _allocator = allocator;
+#pragma warning restore CA2213
     private readonly GCHandle _handle = handle;
-    private readonly T[] _array = array;
     private readonly long _sizeInBytes = sizeInBytes;
     private volatile bool _disposed;
 

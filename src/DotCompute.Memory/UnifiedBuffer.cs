@@ -1106,7 +1106,9 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 /// <typeparam name="T">The element type.</typeparam>
 internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset, int length) : IBuffer<T> where T : unmanaged
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - Slice doesn't own parent buffer
     private readonly UnifiedBuffer<T> _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+#pragma warning restore CA2213
     private readonly int _offset = offset;
     private readonly int _length = length;
 
@@ -1240,7 +1242,9 @@ internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal
     where TOriginal : unmanaged
     where TNew : unmanaged
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - View doesn't own parent buffer
     private readonly UnifiedBuffer<TOriginal> _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+#pragma warning restore CA2213
     private readonly int _length = length;
 
     public IAccelerator Accelerator => _parent.Accelerator;

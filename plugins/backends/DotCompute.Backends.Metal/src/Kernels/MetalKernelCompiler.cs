@@ -239,7 +239,6 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
             return new MetalCompiledKernel(
                 definition,
                 pipelineState,
-                function,
                 _commandQueue,
                 maxThreadsPerThreadgroup,
                 threadExecutionWidth,

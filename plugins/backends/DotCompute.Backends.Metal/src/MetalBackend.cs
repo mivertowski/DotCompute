@@ -12,7 +12,7 @@ namespace DotCompute.Backends.Metal;
 /// <summary>
 /// Main entry point for Metal compute backend
 /// </summary>
-public sealed class MetalBackend : IDisposable
+public sealed partial class MetalBackend : IDisposable
 {
     private readonly ILogger<MetalBackend> _logger;
     private readonly ILoggerFactory _loggerFactory;
@@ -72,7 +72,7 @@ public sealed class MetalBackend : IDisposable
         return new MetalDeviceInfo
         {
             Name = Marshal.StringToHGlobalAnsi(info.Name),
-            RegistryID = (ulong)info.Id.GetHashCode(),
+            RegistryID = (ulong)info.Id.GetHashCode(StringComparison.Ordinal),
             MaxThreadgroupSize = info.Capabilities?.TryGetValue("MaxThreadgroupSize", out var maxThreadgroup) == true ? (ulong)maxThreadgroup : 1024,
             MaxBufferLength = (ulong)info.TotalMemory,
             SupportedFamilies = Marshal.StringToHGlobalAnsi(info.Capabilities?.TryGetValue("SupportsFamily", out var families) == true ? families.ToString() : "Common")
@@ -173,23 +173,25 @@ public sealed class MetalBackend : IDisposable
     {
         if (!IsAvailable())
         {
+#pragma warning disable CA1848 // Use the LoggerMessage delegates
             _logger.LogWarning("Metal is not available on this platform");
+#pragma warning restore CA1848
             return;
         }
 
         try
         {
-            _logger.LogInformation("Discovering Metal devices...");
+            LogDiscoveringAccelerators(_logger);
 
             // 1. Enumerate Metal devices using MTLCopyAllDevices
             var deviceCount = MetalNative.GetDeviceCount();
             if (deviceCount == 0)
             {
-                _logger.LogInformation("No Metal devices found");
+                LogNoDevicesFound(_logger);
                 return;
             }
 
-            _logger.LogInformation("Found {DeviceCount} Metal device(s)", deviceCount);
+            LogDeviceCount(_logger, deviceCount);
 
             // 2. Query GPU families and feature sets for each device
             for (var deviceIndex = 0; deviceIndex < deviceCount; deviceIndex++)
@@ -199,7 +201,9 @@ public sealed class MetalBackend : IDisposable
                     var device = MetalNative.CreateDeviceAtIndex(deviceIndex);
                     if (device == IntPtr.Zero)
                     {
+#pragma warning disable CA1848 // Use the LoggerMessage delegates
                         _logger.LogWarning("Failed to create Metal device at index {DeviceIndex}", deviceIndex);
+#pragma warning restore CA1848
                         continue;
                     }
 
@@ -219,15 +223,15 @@ public sealed class MetalBackend : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to initialize Metal device {DeviceIndex}", deviceIndex);
+                    LogDeviceInitializationWarning(_logger, ex, deviceIndex);
                 }
             }
 
-            _logger.LogInformation("Metal device discovery completed - {AcceleratorCount} accelerators available", _accelerators.Count);
+            LogAcceleratorCount(_logger, _accelerators.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to discover Metal accelerators");
+            LogDiscoveryError(_logger, ex);
         }
     }
 
@@ -239,8 +243,7 @@ public sealed class MetalBackend : IDisposable
             var osVersion = Environment.OSVersion.Version;
             if (osVersion.Major < 11) // macOS 11.0 (Big Sur) minimum for modern Metal
             {
-                _logger.LogWarning("Metal device {DeviceIndex} requires macOS 11.0 or higher. Current: {OSVersion}",
-                    deviceIndex, osVersion);
+                LogMacOSVersionWarning(_logger, deviceIndex, osVersion);
                 return false;
             }
 
@@ -263,7 +266,7 @@ public sealed class MetalBackend : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error validating Metal device {DeviceIndex}", deviceIndex);
+            LogDeviceValidationError(_logger, ex, deviceIndex);
             return false;
         }
     }
@@ -275,7 +278,7 @@ public sealed class MetalBackend : IDisposable
             // Check if device supports compute operations
             if (deviceInfo.MaxThreadgroupSize == 0)
             {
-                _logger.LogWarning("Metal device {DeviceIndex} does not support compute operations", deviceIndex);
+                LogComputeSupportWarning(_logger, deviceIndex);
                 return false;
             }
 
@@ -283,22 +286,20 @@ public sealed class MetalBackend : IDisposable
             var familyString = Marshal.PtrToStringAnsi(deviceInfo.SupportedFamilies) ?? "";
 
             // Require at least Mac2 (Intel) or Apple4 (Apple Silicon) family support
-            var hasMinimumCapability = familyString.Contains("Mac2") ||
-                                      familyString.Contains("Apple") ||
-                                      familyString.Contains("Common");
+            var hasMinimumCapability = familyString.Contains("Mac2", StringComparison.Ordinal) ||
+                                      familyString.Contains("Apple", StringComparison.Ordinal) ||
+                                      familyString.Contains("Common", StringComparison.Ordinal);
 
             if (!hasMinimumCapability)
             {
-                _logger.LogWarning("Metal device {DeviceIndex} does not meet minimum GPU family requirements. Families: {Families}",
-                    deviceIndex, familyString);
+                LogGPUFamilyWarning(_logger, deviceIndex, familyString);
                 return false;
             }
 
             // Check memory constraints
             if (deviceInfo.MaxBufferLength < 1024 * 1024) // At least 1MB
             {
-                _logger.LogWarning("Metal device {DeviceIndex} has insufficient memory capacity: {MaxBuffer} bytes",
-                    deviceIndex, deviceInfo.MaxBufferLength);
+                LogInsufficientMemoryWarning(_logger, deviceIndex, deviceInfo.MaxBufferLength);
                 return false;
             }
 
@@ -306,7 +307,7 @@ public sealed class MetalBackend : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error validating compute support for Metal device {DeviceIndex}", deviceIndex);
+            LogComputeValidationError(_logger, ex, deviceIndex);
             return false;
         }
     }
@@ -333,7 +334,7 @@ public sealed class MetalBackend : IDisposable
             var library = MetalNative.CreateLibraryWithSource(device, testShaderSource);
             if (library == IntPtr.Zero)
             {
-                _logger.LogWarning("Metal device {DeviceIndex} failed shader compilation test", deviceIndex);
+                LogShaderCompilationWarning(_logger, deviceIndex, "Failed to create library from shader source");
                 return false;
             }
 
@@ -342,7 +343,7 @@ public sealed class MetalBackend : IDisposable
             if (function == IntPtr.Zero)
             {
                 MetalNative.ReleaseLibrary(library);
-                _logger.LogWarning("Metal device {DeviceIndex} failed to find test kernel function", deviceIndex);
+                LogShaderCompilationWarning(_logger, deviceIndex, "Failed to find test kernel function");
                 return false;
             }
 
@@ -360,14 +361,14 @@ public sealed class MetalBackend : IDisposable
 
             if (!success)
             {
-                _logger.LogWarning("Metal device {DeviceIndex} failed to create compute pipeline state", deviceIndex);
+                LogShaderCompilationWarning(_logger, deviceIndex, "Failed to create compute pipeline state");
             }
 
             return success;
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error testing shader compilation for Metal device {DeviceIndex}", deviceIndex);
+            LogShaderCompilationError(_logger, ex, deviceIndex);
             return false;
         }
     }
@@ -379,7 +380,7 @@ public sealed class MetalBackend : IDisposable
             var deviceInfo = MetalNative.GetDeviceInfo(device);
             var deviceName = Marshal.PtrToStringAnsi(deviceInfo.Name) ?? $"Metal Device {deviceIndex}";
 
-            _logger.LogDebug("Creating Metal accelerator for device: {DeviceName}", deviceName);
+            LogCreatingAccelerator(_logger, deviceName);
 
             // Create accelerator with the device
             // The MetalAccelerator will automatically discover and use the appropriate device
@@ -390,7 +391,7 @@ public sealed class MetalBackend : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create Metal accelerator for device {DeviceIndex}", deviceIndex);
+            LogAcceleratorCreationError(_logger, ex, deviceIndex);
             return null;
         }
     }
@@ -400,36 +401,35 @@ public sealed class MetalBackend : IDisposable
         var info = accelerator.Info;
         var capabilities = info.Capabilities ?? [];
 
-        _logger.LogInformation("Metal Device: {Name} (ID: {Id})", info.Name, info.Id);
-        _logger.LogInformation("  Device Type: {DeviceType}", info.DeviceType);
-        _logger.LogInformation("  Compute Capability: {ComputeCapability}", info.ComputeCapability);
-        _logger.LogInformation("  Total Memory: {TotalMemory:N0} bytes ({MemoryGB:F1} GB)",
-            info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024));
-        _logger.LogInformation("  Compute Units: {ComputeUnits}", info.ComputeUnits);
+        LogDeviceInfo(_logger, info.Name, info.Id);
+        LogDeviceType(_logger, info.DeviceType);
+        LogComputeCapability(_logger, info.ComputeCapability?.ToString() ?? "Unknown");
+        LogTotalMemory(_logger, info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024));
+        LogComputeUnits(_logger, info.ComputeUnits);
 
         if (capabilities.TryGetValue("MaxThreadgroupSize", out var maxThreadgroup))
         {
-            _logger.LogInformation("  Max Threadgroup Size: {MaxThreadgroup}", maxThreadgroup);
+            LogMaxThreadgroupSize(_logger, maxThreadgroup);
         }
 
         if (capabilities.TryGetValue("MaxThreadsPerThreadgroup", out var maxThreadsPerGroup))
         {
-            _logger.LogInformation("  Max Threads per Threadgroup: {MaxThreads}", maxThreadsPerGroup);
+            LogMaxThreadsPerThreadgroup(_logger, maxThreadsPerGroup);
         }
 
         if (capabilities.TryGetValue("UnifiedMemory", out var unified) && (bool)unified)
         {
-            _logger.LogInformation("  Unified Memory: Supported");
+            LogUnifiedMemorySupported(_logger);
         }
 
         if (capabilities.TryGetValue("SupportsFamily", out var families))
         {
-            _logger.LogInformation("  GPU Families: {Families}", families);
+            LogGPUFamilies(_logger, families);
         }
 
         if (capabilities.TryGetValue("Location", out var location))
         {
-            _logger.LogInformation("  Location: {Location}", location);
+            LogLocation(_logger, location);
         }
     }
 
@@ -442,7 +442,9 @@ public sealed class MetalBackend : IDisposable
 
         foreach (var accelerator in _accelerators)
         {
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required in synchronous Dispose
             accelerator?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
         }
 
         _accelerators.Clear();

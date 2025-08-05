@@ -280,7 +280,9 @@ internal sealed class MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryO
 /// </summary>
 internal sealed class MetalMemoryBufferView(MetalMemoryBuffer parent, long offset, long length) : IMemoryBuffer
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - View doesn't own parent buffer
     private readonly MetalMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+#pragma warning restore CA2213
     private readonly long _offset = offset;
 
     public long SizeInBytes { get; } = length;

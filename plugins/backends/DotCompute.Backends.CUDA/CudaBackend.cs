@@ -10,7 +10,7 @@ namespace DotCompute.Backends.CUDA;
 /// <summary>
 /// Main entry point for CUDA compute backend
 /// </summary>
-public class CudaBackend : IDisposable
+public sealed class CudaBackend : IDisposable
 {
     private readonly ILogger<CudaBackend> _logger;
     private readonly List<CudaAccelerator> _accelerators = [];
@@ -246,5 +246,6 @@ public class CudaBackend : IDisposable
 
         _accelerators.Clear();
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }

@@ -13,14 +13,12 @@ namespace DotCompute.Generators.Backend
     public class CpuCodeGenerator(
         string methodName,
         IReadOnlyList<(string name, string type, bool isBuffer)> parameters,
-        MethodDeclarationSyntax methodSyntax,
-        int vectorSize = 8)
+        MethodDeclarationSyntax methodSyntax)
     {
         private readonly string _methodName = methodName;
         private readonly IReadOnlyList<(string name, string type, bool isBuffer)> _parameters = parameters;
         private readonly MethodDeclarationSyntax _methodSyntax = methodSyntax;
         private readonly VectorizationInfo _vectorizationInfo = SourceGeneratorHelpers.AnalyzeVectorization(methodSyntax);
-        private readonly int _vectorSize = vectorSize;
 
         /// <summary>
         /// Generates the complete CPU implementation.

@@ -16,7 +16,6 @@ namespace DotCompute.Backends.Metal.Kernels;
 public sealed class MetalCompiledKernel(
     KernelDefinition definition,
     IntPtr pipelineState,
-    IntPtr function,
     IntPtr commandQueue,
     int maxTotalThreadsPerThreadgroup,
     (int x, int y, int z) threadExecutionWidth,
@@ -25,7 +24,6 @@ public sealed class MetalCompiledKernel(
 {
     private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
     private readonly IntPtr _pipelineState = pipelineState;
-    private readonly IntPtr _function = function;
     private readonly IntPtr _commandQueue = commandQueue;
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly int _maxTotalThreadsPerThreadgroup = maxTotalThreadsPerThreadgroup;

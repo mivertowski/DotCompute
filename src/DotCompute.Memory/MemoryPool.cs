@@ -96,19 +96,37 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
         var bucket = GetOrCreateBucket(bucketSize);
 
         // Try to get a buffer from the bucket
+#pragma warning disable CA2000 // Dispose objects before losing scope - Buffer ownership is transferred to PooledMemoryBuffer
         if (bucket.TryDequeue(out var buffer))
         {
-            Interlocked.Increment(ref _totalRentedBuffers);
-            return new PooledMemoryBuffer<T>(this, buffer, bucketSize);
+            try
+            {
+                Interlocked.Increment(ref _totalRentedBuffers);
+                return new PooledMemoryBuffer<T>(this, buffer, bucketSize);
+            }
+            catch
+            {
+                buffer.Dispose();
+                throw;
+            }
         }
 
         // Create a new buffer
         buffer = new UnifiedBuffer<T>(_memoryManager, bucketSize);
-        Interlocked.Increment(ref _totalAllocatedBuffers);
-        Interlocked.Increment(ref _totalRentedBuffers);
-        Interlocked.Add(ref _totalAllocatedBytes, buffer.SizeInBytes);
+        try
+        {
+            Interlocked.Increment(ref _totalAllocatedBuffers);
+            Interlocked.Increment(ref _totalRentedBuffers);
+            Interlocked.Add(ref _totalAllocatedBytes, buffer.SizeInBytes);
 
-        return new PooledMemoryBuffer<T>(this, buffer, bucketSize);
+            return new PooledMemoryBuffer<T>(this, buffer, bucketSize);
+        }
+        catch
+        {
+            buffer.Dispose();
+            throw;
+        }
+#pragma warning restore CA2000
     }
 
     /// <summary>
@@ -428,7 +446,9 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
 /// <typeparam name="T">The element type.</typeparam>
 internal sealed class PooledMemoryBuffer<T>(MemoryPool<T> pool, IMemoryBuffer<T> buffer, int bucketSize) : IMemoryBuffer<T> where T : unmanaged
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - Pool is not owned by this instance
     private readonly MemoryPool<T> _pool = pool;
+#pragma warning restore CA2213
     private readonly IMemoryBuffer<T> _buffer = buffer;
     private readonly int _bucketSize = bucketSize;
     private volatile bool _disposed;
