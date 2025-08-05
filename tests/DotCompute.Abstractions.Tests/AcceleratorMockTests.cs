@@ -2,6 +2,8 @@ using FluentAssertions;
 using NSubstitute;
 using Xunit;
 
+#pragma warning disable CA2012 // Use ValueTasks correctly - NSubstitute mock setup requires storing ValueTask
+
 namespace DotCompute.Abstractions.Tests;
 
 public class AcceleratorMockTests
@@ -354,3 +356,5 @@ public class MemoryBufferMockTests
         await buffer.Received(1).CopyToHostAsync(data, 0, Arg.Any<CancellationToken>());
     }
 }
+
+#pragma warning restore CA2012

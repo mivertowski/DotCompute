@@ -3,12 +3,16 @@
 
 namespace DotCompute.SharedTestUtilities;
 
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional - Matrix operations require 2D arrays for performance
+
 /// <summary>
 /// Provides consolidated test data generation utilities for all DotCompute test projects.
 /// </summary>
 public static class TestDataGenerator
 {
+    #pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for test data generation
     private static readonly Random Random = new(42); // Deterministic for reproducible tests
+    #pragma warning restore CA5394
 
     /// <summary>
     /// Generates an array of random integers.
@@ -18,7 +22,9 @@ public static class TestDataGenerator
         var data = new int[length];
         for (int i = 0; i < length; i++)
         {
+#pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for test data generation
             data[i] = Random.Next(minValue, maxValue);
+#pragma warning restore CA5394
         }
         return data;
     }
@@ -31,7 +37,9 @@ public static class TestDataGenerator
         var data = new float[length];
         for (int i = 0; i < length; i++)
         {
+#pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for test data generation
             data[i] = minValue + (float)(Random.NextDouble() * (maxValue - minValue));
+#pragma warning restore CA5394
         }
         return data;
     }
@@ -44,7 +52,9 @@ public static class TestDataGenerator
         var data = new double[length];
         for (int i = 0; i < length; i++)
         {
+#pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for test data generation
             data[i] = minValue + Random.NextDouble() * (maxValue - minValue);
+#pragma warning restore CA5394
         }
         return data;
     }
@@ -52,7 +62,9 @@ public static class TestDataGenerator
     /// <summary>
     /// Generates test cases for different array sizes.
     /// </summary>
+#pragma warning disable CA1024 // Use properties where appropriate - Test case generation method returns different values
     public static IEnumerable<object[]> GetArraySizeTestCases()
+#pragma warning restore CA1024
     {
         yield return new object[] { 1 };
         yield return new object[] { 16 };
@@ -66,7 +78,9 @@ public static class TestDataGenerator
     /// <summary>
     /// Generates test cases for edge case array sizes.
     /// </summary>
+#pragma warning disable CA1024 // Use properties where appropriate - Test case generation method returns different values
     public static IEnumerable<object[]> GetEdgeCaseArraySizes()
+#pragma warning restore CA1024
     {
         yield return new object[] { 0 };
         yield return new object[] { 1 };
@@ -100,8 +114,10 @@ public static class TestDataGenerator
     /// </summary>
     public static (float[,] a, float[,] b, float[,] expected) GenerateMatrixMultiplicationTestCase(int m, int n, int k)
     {
+#pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for test data generation
         var a = Generate2DArray(m, n, () => (float)Random.Next(-10, 10));
         var b = Generate2DArray(n, k, () => (float)Random.Next(-10, 10));
+#pragma warning restore CA5394
         var expected = new float[m, k];
 
         // Calculate expected result
@@ -128,7 +144,9 @@ public static class TestDataGenerator
     {
         var nonZeroCount = (int)(length * (1 - sparsity));
         var indices = Enumerable.Range(0, length)
+#pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for test data generation
             .OrderBy(_ => Random.Next())
+#pragma warning restore CA5394
             .Take(nonZeroCount)
             .OrderBy(x => x)
             .ToArray();
@@ -161,19 +179,25 @@ public static class TestDataGenerator
     public static byte[] GenerateRandomBytes(int length)
     {
         var result = new byte[length];
+#pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for test data generation
         Random.NextBytes(result);
+#pragma warning restore CA5394
         return result;
     }
 
     /// <summary>
     /// Generates random floats in specified range.
     /// </summary>
+#pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for test data generation
     public static float[] GenerateRandomFloats(int length, float min = 0.0f, float max = 1.0f) => GenerateArray(length, i => (float)(Random.NextDouble() * (max - min) + min));
+#pragma warning restore CA5394
 
     /// <summary>
     /// Generates random integers in specified range.
     /// </summary>
+#pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for test data generation
     public static int[] GenerateRandomInts(int length, int min = 0, int max = 1000) => GenerateArray(length, i => Random.Next(min, max));
+#pragma warning restore CA5394
 
     /// <summary>
     /// Generates sequential array with incremental values.

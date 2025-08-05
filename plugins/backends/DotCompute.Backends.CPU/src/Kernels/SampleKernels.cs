@@ -452,4 +452,6 @@ public static class CpuKernelExecutor
 /// <param name="source2">Second source buffer.</param>
 /// <param name="destination">Destination buffer (can be null for reduction operations).</param>
 /// <param name="count">Number of elements to process.</param>
+#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - Delegate is the appropriate suffix for a delegate type
 public unsafe delegate void VectorizedKernelDelegate<T>(T* source1, T* source2, T* destination, int count) where T : unmanaged;
+#pragma warning restore CA1711

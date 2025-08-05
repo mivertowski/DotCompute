@@ -7,6 +7,8 @@ using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
+
 namespace DotCompute.Backends.Metal;
 
 /// <summary>
@@ -72,7 +74,7 @@ public sealed class MetalBackend : IDisposable
         return new MetalDeviceInfo
         {
             Name = Marshal.StringToHGlobalAnsi(info.Name),
-            RegistryID = (ulong)info.Id.GetHashCode(),
+            RegistryID = (ulong)info.Id.GetHashCode(StringComparison.Ordinal),
             MaxThreadgroupSize = info.Capabilities?.TryGetValue("MaxThreadgroupSize", out var maxThreadgroup) == true ? (ulong)maxThreadgroup : 1024,
             MaxBufferLength = (ulong)info.TotalMemory,
             SupportedFamilies = Marshal.StringToHGlobalAnsi(info.Capabilities?.TryGetValue("SupportsFamily", out var families) == true ? families.ToString() : "Common")
@@ -283,9 +285,9 @@ public sealed class MetalBackend : IDisposable
             var familyString = Marshal.PtrToStringAnsi(deviceInfo.SupportedFamilies) ?? "";
 
             // Require at least Mac2 (Intel) or Apple4 (Apple Silicon) family support
-            bool hasMinimumCapability = familyString.Contains("Mac2") ||
-                                      familyString.Contains("Apple") ||
-                                      familyString.Contains("Common");
+            bool hasMinimumCapability = familyString.Contains("Mac2", StringComparison.Ordinal) ||
+                                      familyString.Contains("Apple", StringComparison.Ordinal) ||
+                                      familyString.Contains("Common", StringComparison.Ordinal);
 
             if (!hasMinimumCapability)
             {
@@ -442,7 +444,9 @@ public sealed class MetalBackend : IDisposable
 
         foreach (var accelerator in _accelerators)
         {
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Synchronous disposal is necessary in IDisposable.Dispose
             accelerator?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
         }
 
         _accelerators.Clear();

@@ -5,12 +5,14 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
+
 namespace DotCompute.Backends.CUDA.Memory;
 
 /// <summary>
 /// CUDA memory buffer implementation
 /// </summary>
-public class CudaMemoryBuffer : ISyncMemoryBuffer
+public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
@@ -191,10 +193,7 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaMemoryBuffer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public async ValueTask DisposeAsync()
@@ -238,38 +237,47 @@ public class CudaMemoryBuffer : ISyncMemoryBuffer
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
         if (_disposed)
         {
             return;
         }
 
-        try
+        if (disposing)
         {
-            if (_devicePointer != IntPtr.Zero)
+            try
             {
-                _context.MakeCurrent();
-                var result = CudaRuntime.cudaFree(_devicePointer);
-
-                if (result != CudaError.Success)
+                if (_devicePointer != IntPtr.Zero)
                 {
-                    _logger.LogWarning("Failed to free CUDA memory: {Error}",
-                        CudaRuntime.GetErrorString(result));
-                }
-                else
-                {
-                    _logger.LogDebug("Freed {Size} bytes at device pointer {Pointer:X}",
-                        SizeInBytes, _devicePointer.ToInt64());
-                }
+                    _context.MakeCurrent();
+                    var result = CudaRuntime.cudaFree(_devicePointer);
 
-                _devicePointer = IntPtr.Zero;
+                    if (result != CudaError.Success)
+                    {
+                        _logger.LogWarning("Failed to free CUDA memory: {Error}",
+                            CudaRuntime.GetErrorString(result));
+                    }
+                    else
+                    {
+                        _logger.LogDebug("Freed {Size} bytes at device pointer {Pointer:X}",
+                            SizeInBytes, _devicePointer.ToInt64());
+                    }
+
+                    _devicePointer = IntPtr.Zero;
+                }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during CUDA buffer disposal");
+            }
+        }
 
-            _disposed = true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during CUDA buffer disposal");
-        }
+        _disposed = true;
     }
 }
 
@@ -364,9 +372,7 @@ internal sealed class CudaMemoryBufferView : ISyncMemoryBuffer
         await _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken).ConfigureAwait(false);
     }
 
-    public ValueTask DisposeAsync() =>
-        // Views don't own the memory, so nothing to dispose
-        ValueTask.CompletedTask;
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask; // Views don't own the memory, so nothing to dispose
 
     public void Dispose()
     {

@@ -1,6 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#pragma warning disable CA5394 // Do not use insecure randomness - Random is used for performance testing, not security
+#pragma warning disable CA1822 // Mark members as static - Test methods cannot be static in xUnit
+
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.InteropServices;
@@ -15,7 +18,7 @@ namespace DotCompute.Backends.CPU.Tests;
 /// Production-level performance tests for advanced SIMD implementations.
 /// Validates critical path completion: FMA, integer SIMD, ARM NEON, and advanced operations.
 /// </summary>
-public class AdvancedSimdPerformanceTests
+public sealed class AdvancedSimdPerformanceTests
 {
     private readonly ITestOutputHelper _output;
 

@@ -6,12 +6,14 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
+
 namespace DotCompute.Backends.CUDA.Memory;
 
 /// <summary>
 /// CUDA memory manager implementation
 /// </summary>
-public class CudaMemoryManager : ISyncMemoryManager
+public sealed class CudaMemoryManager : ISyncMemoryManager
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
@@ -200,20 +202,14 @@ public class CudaMemoryManager : ISyncMemoryManager
     {
         ThrowIfDisposed();
 
-        if (buffer == null)
-        {
-            throw new ArgumentNullException(nameof(buffer));
-        }
+        ArgumentNullException.ThrowIfNull(buffer);
 
         Fill(buffer, 0, buffer.SizeInBytes);
     }
 
     public void Free(ISyncMemoryBuffer buffer)
     {
-        if (buffer == null)
-        {
-            throw new ArgumentNullException(nameof(buffer));
-        }
+        ArgumentNullException.ThrowIfNull(buffer);
 
         if (_buffers.TryRemove(buffer, out var cudaBuffer))
         {
@@ -272,10 +268,7 @@ public class CudaMemoryManager : ISyncMemoryManager
 
     private CudaMemoryBuffer GetCudaBuffer(ISyncMemoryBuffer buffer)
     {
-        if (buffer == null)
-        {
-            throw new ArgumentNullException(nameof(buffer));
-        }
+        ArgumentNullException.ThrowIfNull(buffer);
 
         if (_buffers.TryGetValue(buffer, out var cudaBuffer))
         {
@@ -287,10 +280,7 @@ public class CudaMemoryManager : ISyncMemoryManager
 
     private static void ValidateBuffer(ISyncMemoryBuffer buffer, long sizeInBytes, long offset)
     {
-        if (buffer == null)
-        {
-            throw new ArgumentNullException(nameof(buffer));
-        }
+        ArgumentNullException.ThrowIfNull(buffer);
 
         if (sizeInBytes <= 0)
         {
@@ -317,27 +307,34 @@ public class CudaMemoryManager : ISyncMemoryManager
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
-    public void Dispose()
+    private void Dispose(bool disposing)
     {
         if (_disposed)
         {
             return;
         }
 
-        try
+        if (disposing)
         {
-            Reset();
-            _disposed = true;
+            try
+            {
+                Reset();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during CUDA memory manager disposal");
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during CUDA memory manager disposal");
-        }
+
+        _disposed = true;
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
     }
 }

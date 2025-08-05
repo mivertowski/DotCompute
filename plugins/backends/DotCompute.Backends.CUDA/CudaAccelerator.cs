@@ -8,12 +8,14 @@ using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
+
 namespace DotCompute.Backends.CUDA;
 
 /// <summary>
 /// CUDA accelerator implementation for GPU compute operations
 /// </summary>
-public class CudaAccelerator : IAccelerator, IDisposable
+public sealed class CudaAccelerator : IAccelerator, IDisposable
 {
     private readonly ILogger<CudaAccelerator> _logger;
     private readonly CudaContext _context;
@@ -47,7 +49,9 @@ public class CudaAccelerator : IAccelerator, IDisposable
             _memoryAdapter = new CudaAsyncMemoryManagerAdapter(_memoryManager);
 
             // Create kernel compiler
+#pragma warning disable IL2026, IL3050 // CudaKernelCompiler uses runtime code generation which is not trimming/AOT compatible
             _kernelCompiler = new CudaKernelCompiler(_context, _logger);
+#pragma warning restore IL2026, IL3050
 
             // Build accelerator info
             _info = BuildAcceleratorInfo();
@@ -201,10 +205,7 @@ public class CudaAccelerator : IAccelerator, IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaAccelerator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     /// <inheritdoc/>
@@ -240,28 +241,37 @@ public class CudaAccelerator : IAccelerator, IDisposable
     /// </summary>
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
         if (_disposed)
         {
             return;
         }
 
-        try
+        if (disposing)
         {
-            _logger.LogInformation("Disposing CUDA accelerator");
+            try
+            {
+                _logger.LogInformation("Disposing CUDA accelerator");
 
-            // Synchronize before disposal
-            _context?.Synchronize();
+                // Synchronize before disposal
+                _context?.Synchronize();
 
-            // Dispose managed resources
-            _kernelCompiler?.Dispose();
-            _memoryManager?.Dispose();
-            _context?.Dispose();
-
-            _disposed = true;
+                // Dispose managed resources
+                _kernelCompiler?.Dispose();
+                _memoryManager?.Dispose();
+                _context?.Dispose();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error during CUDA accelerator disposal");
+            }
         }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during CUDA accelerator disposal");
-        }
+
+        _disposed = true;
     }
 }

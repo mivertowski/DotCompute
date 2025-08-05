@@ -3,6 +3,8 @@
 
 using DotCompute.Abstractions;
 
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - AOT scenarios require synchronous execution
+
 namespace DotCompute.Backends.CPU.Kernels;
 
 /// <summary>
@@ -61,7 +63,7 @@ internal sealed class AotSafeCodeGenerator
         _kernelImplementations["elementwise_multiply_float"] = ElementwiseMultiplyFloatKernelAsync;
     }
 
-    private string GenerateKernelKey(KernelDefinition definition, KernelAst ast, KernelAnalysis analysis)
+    private static string GenerateKernelKey(KernelDefinition definition, KernelAst ast, KernelAnalysis analysis)
     {
         // Generate a key based on kernel characteristics
         var operationTypeUpper = ast.Operations.FirstOrDefault()?.NodeType.ToString().ToUpperInvariant() ?? "UNKNOWN";
@@ -100,7 +102,7 @@ internal sealed class AotSafeCodeGenerator
         return $"{operationType}_{dataType}";
     }
 
-    private Func<ExtendedKernelExecutionContext, Task> GenerateGenericImplementation(
+    private static Func<ExtendedKernelExecutionContext, Task> GenerateGenericImplementation(
         KernelDefinition definition,
         KernelAst ast,
         KernelAnalysis analysis)
@@ -119,7 +121,7 @@ internal sealed class AotSafeCodeGenerator
         return ElementwiseAddFloatKernelAsync;
     }
 
-    private Delegate CreateKernelDelegate(Func<ExtendedKernelExecutionContext, Task> implementation, KernelDefinition definition)
+    private static Delegate CreateKernelDelegate(Func<ExtendedKernelExecutionContext, Task> implementation, KernelDefinition definition)
     {
         // Create a delegate that adapts the kernel execution context to the expected signature
         // The delegate signature varies based on parameter count and types
@@ -259,7 +261,8 @@ internal sealed class AotSafeCodeGenerator
         var a = context.GetBuffer<float>(0);
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
-        var m = context.GetScalar<int>(3);
+        // Matrix dimensions are used in the calculation below
+        _ = context.GetScalar<int>(3); // m - rows in A
         var n = context.GetScalar<int>(4);
         var k = context.GetScalar<int>(5);
         var workItemId = context.GetParameter(6) as long[] ?? new long[] { 0 };
@@ -318,7 +321,7 @@ internal sealed class AotSafeCodeGenerator
 
     #endregion
 
-    private long EstimateCodeSize(KernelAst ast)
+    private static long EstimateCodeSize(KernelAst ast)
     {
         // Rough estimation based on AST complexity
         long baseSize = 1024;
@@ -335,7 +338,7 @@ internal sealed class AotSafeCodeGenerator
         return baseSize;
     }
 
-    private string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
+    private static string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
     {
         var notes = new List<string>
         {

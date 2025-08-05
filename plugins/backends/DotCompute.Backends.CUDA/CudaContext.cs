@@ -9,7 +9,7 @@ namespace DotCompute.Backends.CUDA;
 /// <summary>
 /// Manages CUDA context lifecycle and operations
 /// </summary>
-public class CudaContext : IDisposable
+public sealed class CudaContext : IDisposable
 {
     private IntPtr _context;
     private IntPtr _stream;
@@ -104,20 +104,27 @@ public class CudaContext : IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaContext));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
     {
         if (_disposed)
         {
             return;
         }
 
-        Cleanup();
+        if (disposing)
+        {
+            Cleanup();
+        }
+
         _disposed = true;
     }
 }

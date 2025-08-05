@@ -203,7 +203,7 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
     /// <summary>
     /// Executes 3-operand FMA operation: result = a * b + c using AVX-512 FMA instructions.
     /// </summary>
-    public void ExecuteFMA(
+    public static void ExecuteFMA(
         ReadOnlySpan<byte> input1,
         ReadOnlySpan<byte> input2,
         ReadOnlySpan<byte> input3,
@@ -1670,7 +1670,7 @@ public static class VectorPatterns
     private static void VectorAddFloat32(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         int vectorSize = Vector<float>.Count;
-        int vectorizedLength = a.Length - (a.Length % vectorSize);
+        _ = a.Length - (a.Length % vectorSize);
 
         // Use platform-optimal SIMD
         if (Vector512.IsHardwareAccelerated && a.Length >= 16)

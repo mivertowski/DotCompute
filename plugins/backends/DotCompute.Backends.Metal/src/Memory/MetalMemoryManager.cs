@@ -44,10 +44,7 @@ public sealed class MetalMemoryManager : IMemoryManager
                 $"Requested size {sizeInBytes} exceeds maximum allocation size {_options.MaxMemoryAllocation}.");
         }
 
-        if (_disposed > 0)
-        {
-            throw new ObjectDisposedException(nameof(MetalMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
         return await Task.Run(() =>
         {
@@ -191,10 +188,7 @@ internal sealed class MetalMemoryBuffer : IMemoryBuffer
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_disposed > 0)
-        {
-            throw new ObjectDisposedException(nameof(MetalMemoryBuffer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
         if (offset < 0 || offset >= SizeInBytes)
         {
@@ -237,10 +231,7 @@ internal sealed class MetalMemoryBuffer : IMemoryBuffer
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_disposed > 0)
-        {
-            throw new ObjectDisposedException(nameof(MetalMemoryBuffer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
         if (offset < 0 || offset >= SizeInBytes)
         {
@@ -329,7 +320,5 @@ internal sealed class MetalMemoryBufferView : IMemoryBuffer
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
 
-    public ValueTask DisposeAsync() =>
-        // Views don't own the underlying buffer
-        ValueTask.CompletedTask;
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask; // Views don't own the underlying buffer
 }

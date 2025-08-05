@@ -16,6 +16,9 @@ using CoreKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 using IMemoryBuffer = DotCompute.Abstractions.IMemoryBuffer;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
+#pragma warning disable CA2000 // Dispose objects before losing scope - buffers are managed by the framework
+
 namespace DotCompute.Backends.CPU.Accelerators;
 
 /// <summary>
@@ -149,9 +152,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
         // Determine work distribution with vectorization
         var workerCount = _threadPool.WorkerCount;
-        var vectorizedWorkItems = _executionPlan.UseVectorization ?
-            (totalWorkItems + _executionPlan.VectorizationFactor - 1) / _executionPlan.VectorizationFactor :
-            totalWorkItems;
+        var vectorizedWorkItems = _executionPlan.UseVectorization
+            ? (totalWorkItems + _executionPlan.VectorizationFactor - 1) / _executionPlan.VectorizationFactor
+            : totalWorkItems;
         var workItemsPerWorker = (vectorizedWorkItems + workerCount - 1) / workerCount;
 
         // Create tasks for parallel execution
@@ -850,10 +853,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
     private void ThrowIfDisposed()
     {
-        if (_disposed != 0)
-        {
-            throw new ObjectDisposedException(nameof(CpuCompiledKernel));
-        }
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
     }
 
     private static bool IsSupportedArgumentType(Type type)

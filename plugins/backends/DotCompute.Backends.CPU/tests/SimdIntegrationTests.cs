@@ -1,6 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#pragma warning disable CA5394 // Do not use insecure randomness - Random is used for testing, not security
+#pragma warning disable CA1822 // Mark members as static - Test methods cannot be static in xUnit
+
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
@@ -14,7 +17,7 @@ namespace DotCompute.Backends.CPU.Tests;
 /// Integration tests validating the enhanced SIMD kernels work correctly
 /// with the existing CPU backend infrastructure and meet roadmap targets.
 /// </summary>
-public class SimdIntegrationTests
+public sealed class SimdIntegrationTests
 {
     private readonly ITestOutputHelper _output;
 

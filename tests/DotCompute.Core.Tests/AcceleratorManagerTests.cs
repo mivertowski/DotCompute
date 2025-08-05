@@ -17,10 +17,10 @@ public class AcceleratorManagerTests
     }
 
     [Fact]
-    public void RegisterProvider_WithValidProvider_ShouldSucceed()
+    public async Task RegisterProvider_WithValidProvider_ShouldSucceed()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
         var provider = Substitute.For<IAcceleratorProvider>();
         provider.Name.Returns("TestProvider");
 
@@ -32,10 +32,10 @@ public class AcceleratorManagerTests
     }
 
     [Fact]
-    public void RegisterProvider_WithNullProvider_ShouldThrowArgumentNullException()
+    public async Task RegisterProvider_WithNullProvider_ShouldThrowArgumentNullException()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
 
         // Act & Assert
         var act = () => manager.RegisterProvider(null!);
@@ -46,7 +46,7 @@ public class AcceleratorManagerTests
     public async Task RegisterProvider_AfterInitialization_ShouldThrowInvalidOperationException()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
         await manager.InitializeAsync();
         var provider = Substitute.For<IAcceleratorProvider>();
         provider.Name.Returns("TestProvider");
@@ -63,7 +63,7 @@ public class AcceleratorManagerTests
     public async Task GetAccelerator_ByIndex_ShouldReturnCorrectAccelerator()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
         var provider = Substitute.For<IAcceleratorProvider>();
         var accelerator = Substitute.For<IAccelerator>();
         var info = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024 * 1024 * 1024);
@@ -83,10 +83,10 @@ public class AcceleratorManagerTests
     }
 
     [Fact]
-    public void GetAccelerator_WithoutInitialization_ShouldThrowInvalidOperationException()
+    public async Task GetAccelerator_WithoutInitialization_ShouldThrowInvalidOperationException()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
 
         // Act
         var act = () => manager.GetAccelerator(0);
@@ -100,7 +100,7 @@ public class AcceleratorManagerTests
     public async Task GetAcceleratorById_WithExistingId_ShouldReturnAccelerator()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
         var provider = Substitute.For<IAcceleratorProvider>();
         var accelerator = Substitute.For<IAccelerator>();
         var info = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024 * 1024 * 1024);
@@ -123,7 +123,7 @@ public class AcceleratorManagerTests
     public async Task GetAcceleratorById_WithNonExistingId_ShouldReturnNull()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
         await manager.InitializeAsync();
 
         // Act
@@ -137,7 +137,7 @@ public class AcceleratorManagerTests
     public async Task GetAcceleratorsByType_ShouldReturnCorrectAccelerators()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
         var provider = Substitute.For<IAcceleratorProvider>();
         var cpuAccel = Substitute.For<IAccelerator>();
         var gpuAccel = Substitute.For<IAccelerator>();
@@ -169,7 +169,7 @@ public class AcceleratorManagerTests
     public async Task InitializeAsync_ShouldDiscoverFromAllProviders()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
         var provider1 = Substitute.For<IAcceleratorProvider>();
         var provider2 = Substitute.For<IAcceleratorProvider>();
 
@@ -207,7 +207,7 @@ public class AcceleratorManagerTests
     public async Task SelectBest_WithCriteria_ShouldReturnBestMatch()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
         var provider = Substitute.For<IAcceleratorProvider>();
 
         var accel1 = Substitute.For<IAccelerator>();
@@ -245,7 +245,7 @@ public class AcceleratorManagerTests
     public async Task CreateContext_WithValidAccelerator_ShouldReturnContext()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
         var provider = Substitute.For<IAcceleratorProvider>();
         var accelerator = Substitute.For<IAccelerator>();
         var info = new AcceleratorInfo(AcceleratorType.CPU, "CPU", "1.0", 1024 * 1024 * 1024);
@@ -269,7 +269,7 @@ public class AcceleratorManagerTests
     public async Task DisposeAsync_ShouldDisposeAllAccelerators()
     {
         // Arrange
-        var manager = new DefaultAcceleratorManager(_logger);
+        await using var manager = new DefaultAcceleratorManager(_logger);
         var provider = Substitute.For<IAcceleratorProvider>();
         var accel1 = Substitute.For<IAccelerator>();
         var accel2 = Substitute.For<IAccelerator>();

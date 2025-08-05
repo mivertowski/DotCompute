@@ -8,6 +8,8 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
+
 namespace DotCompute.Backends.Metal.Kernels;
 
 /// <summary>
@@ -35,11 +37,13 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
     public string Name => "Metal Shader Compiler";
 
     /// <inheritdoc/>
-    public KernelSourceType[] SupportedSourceTypes => new[]
+#pragma warning disable CA1819 // Properties should not return arrays - Required by IKernelCompiler interface
+    public KernelSourceType[] SupportedSourceTypes { get; } = new[]
     {
         KernelSourceType.Metal,
         KernelSourceType.Binary
     };
+#pragma warning restore CA1819
 
     /// <inheritdoc/>
     public async ValueTask<ICompiledKernel> CompileAsync(
@@ -50,10 +54,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
         ArgumentNullException.ThrowIfNull(definition);
         options ??= new CompilationOptions();
 
-        if (_disposed > 0)
-        {
-            throw new ObjectDisposedException(nameof(MetalKernelCompiler));
-        }
+        ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
         var validation = Validate(definition);
         if (!validation.IsValid)
@@ -112,7 +113,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
 
         // Check if this looks like Metal code or binary
         var codeString = Encoding.UTF8.GetString(definition.Code);
-        if (!codeString.Contains("kernel") && !codeString.Contains("metal") && !IsBinaryCode(definition.Code))
+        if (!codeString.Contains("kernel", StringComparison.Ordinal) && !codeString.Contains("metal", StringComparison.Ordinal) && !IsBinaryCode(definition.Code))
         {
             return ValidationResult.Failure("Code does not appear to be valid Metal shader language or compiled binary");
         }
@@ -120,7 +121,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
         return ValidationResult.Success();
     }
 
-    private string ExtractMetalCode(KernelDefinition definition)
+    private static string ExtractMetalCode(KernelDefinition definition)
     {
         // If it's binary code, we'll need to handle it differently
         if (IsBinaryCode(definition.Code))
@@ -132,7 +133,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
         var code = Encoding.UTF8.GetString(definition.Code);
 
         // If the code doesn't include Metal headers, add them
-        if (!code.Contains("#include <metal_stdlib>"))
+        if (!code.Contains("#include <metal_stdlib>", StringComparison.Ordinal))
         {
             var sb = new StringBuilder();
             sb.AppendLine("#include <metal_stdlib>");
@@ -146,7 +147,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
         return code;
     }
 
-    private bool IsBinaryCode(byte[] code)
+    private static bool IsBinaryCode(byte[] code)
     {
         // Check for common binary signatures
         if (code.Length < 4)
@@ -180,9 +181,9 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
 
                 if (library == IntPtr.Zero)
                 {
-                    var errorMessage = error != IntPtr.Zero ?
-                        Marshal.PtrToStringAnsi(MetalNative.GetErrorLocalizedDescription(error)) ?? "Unknown error" :
-                        "Failed to compile Metal library";
+                    var errorMessage = error != IntPtr.Zero
+                        ? Marshal.PtrToStringAnsi(MetalNative.GetErrorLocalizedDescription(error)) ?? "Unknown error"
+                        : "Failed to compile Metal library";
 
                     if (error != IntPtr.Zero)
                     {
@@ -221,9 +222,9 @@ public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
 
             if (pipelineState == IntPtr.Zero)
             {
-                var errorMessage = error != IntPtr.Zero ?
-                    Marshal.PtrToStringAnsi(MetalNative.GetErrorLocalizedDescription(error)) ?? "Unknown error" :
-                    "Failed to create compute pipeline state";
+                var errorMessage = error != IntPtr.Zero
+                    ? Marshal.PtrToStringAnsi(MetalNative.GetErrorLocalizedDescription(error)) ?? "Unknown error"
+                    : "Failed to create compute pipeline state";
 
                 if (error != IntPtr.Zero)
                 {

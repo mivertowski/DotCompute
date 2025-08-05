@@ -200,23 +200,23 @@ public static class SimdCapabilities
 /// </summary>
 public sealed class X86SimdInfo
 {
-    public bool HasSse => Sse.IsSupported;
-    public bool HasSse2 => Sse2.IsSupported;
-    public bool HasSse3 => Sse3.IsSupported;
-    public bool HasSsse3 => Ssse3.IsSupported;
-    public bool HasSse41 => Sse41.IsSupported;
-    public bool HasSse42 => Sse42.IsSupported;
-    public bool HasAvx => Avx.IsSupported;
-    public bool HasAvx2 => Avx2.IsSupported;
-    public bool HasAvx512F => Avx512F.IsSupported;
-    public bool HasAvx512BW => Avx512BW.IsSupported;
-    public bool HasFma => Fma.IsSupported;
-    public bool HasBmi1 => Bmi1.IsSupported;
-    public bool HasBmi2 => Bmi2.IsSupported;
-    public bool HasPopcnt => Popcnt.IsSupported;
-    public bool HasLzcnt => Lzcnt.IsSupported;
+    public static bool HasSse => Sse.IsSupported;
+    public static bool HasSse2 => Sse2.IsSupported;
+    public static bool HasSse3 => Sse3.IsSupported;
+    public static bool HasSsse3 => Ssse3.IsSupported;
+    public static bool HasSse41 => Sse41.IsSupported;
+    public static bool HasSse42 => Sse42.IsSupported;
+    public static bool HasAvx => Avx.IsSupported;
+    public static bool HasAvx2 => Avx2.IsSupported;
+    public static bool HasAvx512F => Avx512F.IsSupported;
+    public static bool HasAvx512BW => Avx512BW.IsSupported;
+    public static bool HasFma => Fma.IsSupported;
+    public static bool HasBmi1 => Bmi1.IsSupported;
+    public static bool HasBmi2 => Bmi2.IsSupported;
+    public static bool HasPopcnt => Popcnt.IsSupported;
+    public static bool HasLzcnt => Lzcnt.IsSupported;
 
-    public int MaxVectorWidth => HasAvx512F ? 512 : HasAvx ? 256 : HasSse ? 128 : 0;
+    public static int MaxVectorWidth => HasAvx512F ? 512 : HasAvx ? 256 : HasSse ? 128 : 0;
 }
 
 /// <summary>
@@ -224,16 +224,16 @@ public sealed class X86SimdInfo
 /// </summary>
 public sealed class ArmSimdInfo
 {
-    public bool HasNeon => AdvSimd.IsSupported;
-    public bool HasNeonArm64 => AdvSimd.Arm64.IsSupported;
-    public bool HasCrc32 => Crc32.IsSupported;
-    public bool HasAes => System.Runtime.Intrinsics.Arm.Aes.IsSupported;
-    public bool HasSha1 => Sha1.IsSupported;
-    public bool HasSha256 => Sha256.IsSupported;
-    public bool HasDp => Dp.IsSupported;
-    public bool HasRdm => Rdm.IsSupported;
+    public static bool HasNeon => AdvSimd.IsSupported;
+    public static bool HasNeonArm64 => AdvSimd.Arm64.IsSupported;
+    public static bool HasCrc32 => Crc32.IsSupported;
+    public static bool HasAes => System.Runtime.Intrinsics.Arm.Aes.IsSupported;
+    public static bool HasSha1 => Sha1.IsSupported;
+    public static bool HasSha256 => Sha256.IsSupported;
+    public static bool HasDp => Dp.IsSupported;
+    public static bool HasRdm => Rdm.IsSupported;
 
-    public int MaxVectorWidth => HasNeon ? 128 : 0;
+    public static int MaxVectorWidth => HasNeon ? 128 : 0;
 }
 
 /// <summary>

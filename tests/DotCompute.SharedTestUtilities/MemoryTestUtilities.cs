@@ -8,6 +8,8 @@ using DotCompute.Abstractions;
 
 namespace DotCompute.SharedTestUtilities;
 
+#pragma warning disable CA1034 // Nested types should not be visible - test utilities need nested structure
+
 /// <summary>
 /// Consolidated memory testing utilities for all DotCompute test projects.
 /// </summary>
@@ -121,13 +123,23 @@ public static class MemoryTestUtilities
 
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
             if (_disposed)
             {
                 return;
             }
 
+            if (disposing)
+            {
+                _currentProcess?.Dispose();
+            }
+
             _disposed = true;
-            _currentProcess?.Dispose();
         }
     }
 
@@ -321,6 +333,7 @@ public static class MemoryTestUtilities
         private static readonly string ReportDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "DotCompute", "TestReports");
+        private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
         [RequiresUnreferencedCode("This method uses System.Text.Json serialization which may require dynamic code generation")]
         [RequiresDynamicCode("This method uses System.Text.Json serialization which may require dynamic code generation")]
@@ -331,7 +344,7 @@ public static class MemoryTestUtilities
             var fileName = $"memory_report_{report.TestName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             var filePath = Path.Combine(ReportDirectory, fileName);
 
-            var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(report, JsonOptions);
             await File.WriteAllTextAsync(filePath, json);
         }
 
@@ -344,7 +357,7 @@ public static class MemoryTestUtilities
             var fileName = $"benchmark_report_{testName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             var filePath = Path.Combine(ReportDirectory, fileName);
 
-            var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
+            var json = JsonSerializer.Serialize(summary, JsonOptions);
             await File.WriteAllTextAsync(filePath, json);
         }
 

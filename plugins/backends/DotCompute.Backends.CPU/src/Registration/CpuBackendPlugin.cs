@@ -17,6 +17,8 @@ using AbstractionsIMemoryManager = DotCompute.Abstractions.IMemoryManager;
 using AbstractionsKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using IAccelerator = DotCompute.Abstractions.IAccelerator;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - Plugin lifecycle logging is minimal and not performance-critical
+
 namespace DotCompute.Backends.CPU.Registration;
 
 /// <summary>
@@ -255,3 +257,5 @@ internal sealed class NamedAcceleratorWrapper : AbstractionsIAccelerator
 
     public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
 }
+
+#pragma warning restore CA1848

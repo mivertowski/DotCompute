@@ -117,10 +117,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(work);
 
-        if (_disposed != 0)
-        {
-            throw new ObjectDisposedException(nameof(CpuThreadPool));
-        }
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
 
         var workItem = new WorkItem(work, cancellationToken);
 
@@ -146,10 +143,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(work);
 
-        if (_disposed != 0)
-        {
-            throw new ObjectDisposedException(nameof(CpuThreadPool));
-        }
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
 
         var tcs = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
 
@@ -187,10 +181,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
     {
         ArgumentNullException.ThrowIfNull(workItems);
 
-        if (_disposed != 0)
-        {
-            throw new ObjectDisposedException(nameof(CpuThreadPool));
-        }
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
 
         // Performance optimization: Convert to array once to avoid multiple enumeration
         var workArray = workItems as Action[] ?? workItems.ToArray();
@@ -528,7 +519,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private void SetThreadAffinityWindows(NumaThreadAffinityInfo affinityInfo)
+    private static void SetThreadAffinityWindows(NumaThreadAffinityInfo affinityInfo)
     {
         try
         {
@@ -546,7 +537,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("linux")]
-    private void SetThreadAffinityLinux(NumaThreadAffinityInfo affinityInfo)
+    private static void SetThreadAffinityLinux(NumaThreadAffinityInfo affinityInfo)
     {
         try
         {
@@ -681,7 +672,11 @@ public sealed class CpuThreadPool : IAsyncDisposable
         }
 
         // Signal shutdown
+        #pragma warning disable CA1849 // Call async methods when in an async method - acceptable in DisposeAsync pattern
+        #pragma warning disable VSTHRD103 // Cancel synchronously blocks - acceptable in Dispose pattern
         _shutdownCts.Cancel();
+        #pragma warning restore VSTHRD103
+        #pragma warning restore CA1849
         _globalWorkQueue.Writer.TryComplete();
 
         // Wait for all threads to complete
@@ -717,7 +712,9 @@ public sealed class ThreadPoolStatistics
 {
     public required int ThreadCount { get; init; }
     public required int GlobalQueueCount { get; init; }
+#pragma warning disable CA1819 // Properties should not return arrays - Required for work queue statistics
     public required int[] LocalQueueCounts { get; init; }
+#pragma warning restore CA1819
     public required int TotalQueuedItems { get; init; }
 
     public double AverageLocalQueueSize => LocalQueueCounts.Length > 0 ? LocalQueueCounts.Average() : 0;

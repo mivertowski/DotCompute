@@ -9,6 +9,8 @@ using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
+
 namespace DotCompute.Backends.Metal.Accelerators;
 
 /// <summary>
@@ -71,9 +73,9 @@ public sealed class MetalAccelerator : IAccelerator
             type: AcceleratorType.Metal,
             name: Marshal.PtrToStringAnsi(deviceInfo.Name) ?? "Unknown Metal Device",
             driverVersion: "1.0",
-            memorySize: deviceInfo.HasUnifiedMemory ?
-                (long)deviceInfo.RecommendedMaxWorkingSetSize :
-                (long)deviceInfo.MaxBufferLength,
+            memorySize: deviceInfo.HasUnifiedMemory 
+                ? (long)deviceInfo.RecommendedMaxWorkingSetSize 
+                : (long)deviceInfo.MaxBufferLength,
             computeUnits: (int)deviceInfo.MaxThreadgroupSize,
             maxClockFrequency: 0, // Metal doesn't expose clock frequency
             computeCapability: GetComputeCapability(deviceInfo),
@@ -127,10 +129,7 @@ public sealed class MetalAccelerator : IAccelerator
     /// <inheritdoc/>
     public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed > 0)
-        {
-            throw new ObjectDisposedException(nameof(MetalAccelerator));
-        }
+        ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
         _logger.LogTrace("Synchronizing Metal device");
 
@@ -252,22 +251,22 @@ public sealed class MetalAccelerator : IAccelerator
         var families = Marshal.PtrToStringAnsi(info.SupportedFamilies) ?? "";
 
         // Map Metal GPU families to compute capability versions
-        if (families.Contains("Apple8"))
+        if (families.Contains("Apple8", StringComparison.Ordinal))
         {
             return new Version(8, 0); // M2 family
         }
 
-        if (families.Contains("Apple7"))
+        if (families.Contains("Apple7", StringComparison.Ordinal))
         {
             return new Version(7, 0); // M1 family
         }
 
-        if (families.Contains("Apple6"))
+        if (families.Contains("Apple6", StringComparison.Ordinal))
         {
             return new Version(6, 0); // A14 family
         }
 
-        if (families.Contains("Mac2"))
+        if (families.Contains("Mac2", StringComparison.Ordinal))
         {
             return new Version(2, 0); // Intel Mac GPUs
         }

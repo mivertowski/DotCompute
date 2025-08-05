@@ -7,12 +7,14 @@ using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
+
 namespace DotCompute.Backends.CUDA.Compilation;
 
 /// <summary>
 /// Represents a compiled CUDA kernel ready for execution
 /// </summary>
-public class CudaCompiledKernel : ICompiledKernel, IDisposable
+public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
@@ -177,10 +179,7 @@ public class CudaCompiledKernel : ICompiledKernel, IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(CudaCompiledKernel));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public async ValueTask DisposeAsync()
@@ -213,26 +212,35 @@ public class CudaCompiledKernel : ICompiledKernel, IDisposable
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
         if (_disposed)
         {
             return;
         }
 
-        try
+        if (disposing)
         {
-            if (_module != IntPtr.Zero)
+            try
             {
-                _context.MakeCurrent();
-                CudaRuntime.cuModuleUnload(_module);
-                _module = IntPtr.Zero;
-                _function = IntPtr.Zero;
+                if (_module != IntPtr.Zero)
+                {
+                    _context.MakeCurrent();
+                    CudaRuntime.cuModuleUnload(_module);
+                    _module = IntPtr.Zero;
+                    _function = IntPtr.Zero;
+                }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unloading CUDA module");
+            }
+        }
 
-            _disposed = true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during CUDA compiled kernel disposal");
-        }
+        _disposed = true;
     }
 }

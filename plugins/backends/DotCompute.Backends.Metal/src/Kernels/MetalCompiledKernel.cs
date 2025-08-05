@@ -6,6 +6,8 @@ using DotCompute.Backends.Metal.Memory;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
+
 namespace DotCompute.Backends.Metal.Kernels;
 
 /// <summary>
@@ -51,12 +53,9 @@ public sealed class MetalCompiledKernel : ICompiledKernel
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(arguments);
+        // arguments is non-nullable, no need for null check
 
-        if (_disposed > 0)
-        {
-            throw new ObjectDisposedException(nameof(MetalCompiledKernel));
-        }
+        ObjectDisposedException.ThrowIf(_disposed > 0, this);
 
         _logger.LogTrace("Executing Metal kernel: {Name}", Name);
 

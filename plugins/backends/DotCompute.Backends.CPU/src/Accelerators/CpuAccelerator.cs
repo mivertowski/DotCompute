@@ -13,6 +13,8 @@ using CoreCompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using CoreICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using CoreKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
+
 namespace DotCompute.Backends.CPU.Accelerators;
 
 /// <summary>
@@ -102,7 +104,7 @@ public sealed class CpuAccelerator : IAccelerator
         // Compile the kernel with vectorization support
         // Use AOT-compatible compiler when dynamic code compilation is not available
         var coreCompiledKernel = System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled
-            ? await new CpuKernelCompiler().CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false)
+            ? await CpuKernelCompiler.CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false)
             : await new AotCpuKernelCompiler().CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false);
 
         _logger.LogDebug("Successfully compiled kernel '{KernelName}' with {VectorWidth}-bit vectorization",
@@ -113,9 +115,7 @@ public sealed class CpuAccelerator : IAccelerator
     }
 
     /// <inheritdoc/>
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) =>
-        // CPU operations are synchronous by default
-        ValueTask.CompletedTask;
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask; // CPU operations are synchronous by default
 
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
@@ -207,7 +207,7 @@ public sealed class CpuAccelerator : IAccelerator
             if (System.IO.File.Exists("/proc/meminfo"))
             {
                 var lines = System.IO.File.ReadAllLines("/proc/meminfo");
-                var totalLine = lines.FirstOrDefault(l => l.StartsWith("MemTotal:"));
+                var totalLine = lines.FirstOrDefault(l => l.StartsWith("MemTotal:", StringComparison.Ordinal));
                 if (totalLine != null)
                 {
                     var parts = totalLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -239,16 +239,11 @@ public sealed class CpuAccelerator : IAccelerator
         return 8L * 1024 * 1024 * 1024; // 8GB default
     }
 
-    private static long GetCacheSize() =>
-        // L3 cache size estimation
-        // In reality, you'd query this from the system
-        8 * 1024 * 1024; // 8MB default
+    private static long GetCacheSize() => 8 * 1024 * 1024; // L3 cache size estimation - 8MB default. In reality, you'd query this from the system
 
     private static int GetNumaNodeCount() => NumaInfo.Topology.NodeCount;
 
-    private static int GetCacheLineSize() =>
-        // Most modern CPUs use 64-byte cache lines
-        64;
+    private static int GetCacheLineSize() => 64; // Most modern CPUs use 64-byte cache lines
 
     private static CoreKernelDefinition ConvertToCoreKernelDefinition(KernelDefinition definition)
     {
@@ -312,9 +307,7 @@ internal sealed class CompiledKernelAdapter : ICompiledKernel
 
     public string Name => _coreKernel.Name;
 
-    public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) =>
-        // Direct pass-through to the core kernel (both use KernelArguments)
-        await _coreKernel.ExecuteAsync(arguments, cancellationToken).ConfigureAwait(false);
+    public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default) => await _coreKernel.ExecuteAsync(arguments, cancellationToken).ConfigureAwait(false);
 
     public ValueTask DisposeAsync() => _coreKernel.DisposeAsync();
 }

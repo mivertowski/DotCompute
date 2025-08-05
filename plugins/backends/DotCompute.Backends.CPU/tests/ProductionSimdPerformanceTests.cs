@@ -1,9 +1,13 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#pragma warning disable CA5394 // Do not use insecure randomness - Random is used for performance testing, not security
+#pragma warning disable CA1822 // Mark members as static - Test methods cannot be static in xUnit
+
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.Intrinsics;
+
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Optimization;
@@ -14,7 +18,7 @@ namespace DotCompute.Backends.CPU.Tests;
 /// <summary>
 /// Comprehensive production tests for SIMD performance and validation.
 /// </summary>
-public class ProductionSimdPerformanceTests
+public sealed class ProductionSimdPerformanceTests
 {
     private readonly ITestOutputHelper _output;
 
@@ -70,9 +74,7 @@ public class ProductionSimdPerformanceTests
         var resultScalar = new float[arraySize];
         var resultVectorized = new float[arraySize];
 
-#pragma warning disable CA5394 // Do not use insecure randomness
         var random = new Random(42);
-#pragma warning restore CA5394
         for (int i = 0; i < arraySize; i++)
         {
             a[i] = (float)random.NextDouble();
@@ -158,9 +160,7 @@ public class ProductionSimdPerformanceTests
         // Arrange
         const int arraySize = 10000;
         var data = new float[arraySize];
-#pragma warning disable CA5394 // Do not use insecure randomness
         var random = new Random(42);
-#pragma warning restore CA5394
 
         for (int i = 0; i < arraySize; i++)
         {
@@ -330,9 +330,7 @@ public class ProductionSimdPerformanceTests
         {
             matrix[i] = new float[cols];
         }
-#pragma warning disable CA5394 // Do not use insecure randomness
         var random = new Random(42);
-#pragma warning restore CA5394
 
         for (int i = 0; i < rows; i++)
         {

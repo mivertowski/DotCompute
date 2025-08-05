@@ -6,6 +6,8 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
+
 namespace DotCompute.Backends.CPU.Kernels;
 
 /// <summary>
@@ -317,8 +319,6 @@ internal sealed class AotCompiledKernel : ICompiledKernel
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(arguments);
-
         _logger.LogDebug("Executing AOT kernel: {KernelName}", Name);
 
         try
@@ -389,7 +389,7 @@ internal static class VectorizedMath
     public static void Add(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result, int length)
     {
         var vectorCount = length / System.Numerics.Vector<float>.Count;
-        var remainder = length % System.Numerics.Vector<float>.Count;
+        _ = length % System.Numerics.Vector<float>.Count;
 
         // Vectorized portion
         for (int i = 0; i < vectorCount; i++)

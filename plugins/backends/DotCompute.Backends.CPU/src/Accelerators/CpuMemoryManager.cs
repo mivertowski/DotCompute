@@ -45,7 +45,9 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         ThrowIfDisposed();
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(sizeInBytes);
 
+        #pragma warning disable CA2000 // Dispose objects before losing scope - buffer ownership is transferred to caller
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this);
+        #pragma warning restore CA2000
 
         lock (_lock)
         {
@@ -72,7 +74,9 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         policy ??= _defaultPolicy;
         var preferredNode = DetermineOptimalNode(policy, sizeInBytes);
 
+        #pragma warning disable CA2000 // Dispose objects before losing scope - buffer ownership is transferred to caller
         var buffer = new CpuMemoryBuffer(sizeInBytes, options, this, preferredNode, policy);
+        #pragma warning restore CA2000
 
         lock (_lock)
         {
@@ -231,13 +235,9 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return _topology.GetNodeForProcessor(currentCpu);
     }
 
-    private int GetFirstFitNode(long sizeInBytes) =>
-        // Simple first-fit allocation
-        0;
+    private static int GetFirstFitNode(long sizeInBytes) => 0; // Simple first-fit allocation
 
-    private int GetBestFitNode(long sizeInBytes) =>
-        // Select node with most available memory
-        _topology.GetNodesByAvailableMemory().FirstOrDefault();
+    private int GetBestFitNode(long sizeInBytes) => _topology.GetNodesByAvailableMemory().FirstOrDefault(); // Select node with most available memory
 
     private int GetInterleavedNode(NumaMemoryPolicy policy)
     {
@@ -250,7 +250,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return nodeArray[threadId % nodeArray.Length];
     }
 
-    private int GetExplicitNode(NumaMemoryPolicy policy) => policy.PreferredNodes.FirstOrDefault();
+    private static int GetExplicitNode(NumaMemoryPolicy policy) => policy.PreferredNodes.FirstOrDefault();
 
     private static int GetCurrentProcessorNumber()
     {
@@ -304,10 +304,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed != 0)
-        {
-            throw new ObjectDisposedException(nameof(CpuMemoryManager));
-        }
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
     }
 }
 
@@ -462,7 +459,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
 
         if (offset < 0 || length < 0 || offset + length > _viewLength)
         {
-            throw new ArgumentOutOfRangeException();
+            throw new ArgumentOutOfRangeException(offset < 0 || offset + length > _viewLength ? nameof(offset) : nameof(length), "Invalid buffer view range");
         }
 
         return new CpuMemoryBuffer(this, offset, length);
@@ -752,10 +749,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
 
     private void ThrowIfDisposed()
     {
-        if (_disposed != 0)
-        {
-            throw new ObjectDisposedException(nameof(CpuMemoryBuffer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed != 0, this);
     }
 }
 
@@ -771,10 +765,7 @@ internal sealed class NativeMemoryOwner : IMemoryOwner<byte>
 
     public unsafe NativeMemoryOwner(long size)
     {
-        if (size <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(size));
-        }
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(size);
 
         _size = size;
         _ptr = (byte*)NativeMemory.AlignedAlloc((nuint)size, 64); // 64-byte aligned for SIMD
@@ -816,10 +807,7 @@ internal sealed class NativeMemoryOwner : IMemoryOwner<byte>
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(NativeMemoryOwner));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 }
 
@@ -867,10 +855,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
 
     public unsafe NumaAwareMemoryOwner(long size, int preferredNode, NumaMemoryPolicy policy)
     {
-        if (size <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(size));
-        }
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(size);
 
         _size = size;
         _preferredNode = preferredNode;
@@ -900,7 +885,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
         }
     }
 
-    private unsafe byte* AllocateNumaMemory(long size, int preferredNode, NumaMemoryPolicy policy)
+    private static unsafe byte* AllocateNumaMemory(long size, int preferredNode, NumaMemoryPolicy policy)
     {
         // Try platform-specific NUMA allocation
         if (OperatingSystem.IsWindows())
@@ -917,7 +902,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("windows")]
-    private unsafe byte* AllocateNumaMemoryWindows(long size, int preferredNode)
+    private static unsafe byte* AllocateNumaMemoryWindows(long size, int preferredNode)
     {
         try
         {
@@ -940,7 +925,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
     }
 
     [System.Runtime.Versioning.SupportedOSPlatform("linux")]
-    private unsafe byte* AllocateNumaMemoryLinux(long size, int preferredNode, NumaMemoryPolicy policy)
+    private static unsafe byte* AllocateNumaMemoryLinux(long size, int preferredNode, NumaMemoryPolicy policy)
     {
         try
         {
@@ -1011,10 +996,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(NumaAwareMemoryOwner));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     #region Windows NUMA API
@@ -1070,7 +1052,9 @@ public sealed class NumaMemoryPolicy
     /// <summary>
     /// Gets or sets the preferred NUMA nodes for allocation.
     /// </summary>
+#pragma warning disable CA1819 // Properties should not return arrays - Required for NUMA policy configuration
     public required int[] PreferredNodes { get; init; }
+#pragma warning restore CA1819
 
     /// <summary>
     /// Gets or sets the fallback strategy when preferred nodes are unavailable.
@@ -1143,7 +1127,9 @@ public sealed class NumaMemoryStatistics
     /// <summary>
     /// Gets per-node statistics.
     /// </summary>
+#pragma warning disable CA1819 // Properties should not return arrays - Required for NUMA statistics representation
     public required NumaNodeStatistics[] NodeStatistics { get; init; }
+#pragma warning restore CA1819
 }
 
 /// <summary>

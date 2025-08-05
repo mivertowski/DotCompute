@@ -6,7 +6,7 @@ using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
-public class UnifiedBufferTests : IDisposable
+public sealed class UnifiedBufferTests : IDisposable
 {
     private readonly IMemoryManager _memoryManager;
 
@@ -18,6 +18,7 @@ public class UnifiedBufferTests : IDisposable
     public void Dispose()
     {
         // Cleanup if needed
+        GC.SuppressFinalize(this);
     }
 
     [Fact]
@@ -157,6 +158,7 @@ public class UnifiedBufferTests : IDisposable
     [InlineData(typeof(float), 4)]
     [InlineData(typeof(double), 8)]
     [RequiresDynamicCode("This test uses reflection and Activator.CreateInstance")]
+    [RequiresUnreferencedCode("This test uses reflection to create generic types")]
     public void SizeInBytes_ForDifferentTypes_ShouldBeCorrect(Type type, int expectedElementSize)
     {
         // Act

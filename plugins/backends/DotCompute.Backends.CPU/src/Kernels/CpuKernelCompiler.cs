@@ -9,17 +9,19 @@ using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
+
 namespace DotCompute.Backends.CPU.Kernels;
 
 /// <summary>
 /// Compiles kernels for CPU execution with vectorization support.
 /// </summary>
-internal sealed partial class CpuKernelCompiler
+internal static partial class CpuKernelCompiler
 {
     /// <summary>
     /// Compiles a kernel for CPU execution.
     /// </summary>
-    public async ValueTask<ICompiledKernel> CompileAsync(
+    public static async ValueTask<ICompiledKernel> CompileAsync(
         CpuKernelCompilationContext context,
         CancellationToken cancellationToken = default)
     {
@@ -88,7 +90,7 @@ internal sealed partial class CpuKernelCompiler
         }
     }
 
-    private ValidationResult ValidateKernelDefinition(KernelDefinition definition)
+    private static ValidationResult ValidateKernelDefinition(KernelDefinition definition)
     {
         if (string.IsNullOrWhiteSpace(definition.Name))
         {
@@ -124,12 +126,11 @@ internal sealed partial class CpuKernelCompiler
         return new ValidationResult(true, null);
     }
 
-    private async ValueTask<KernelAst> ParseKernelSourceAsync(string sourceCode, CancellationToken cancellationToken)
+    private static async ValueTask<KernelAst> ParseKernelSourceAsync(string sourceCode, CancellationToken cancellationToken)
     {
         await Task.Yield(); // Ensure async execution
 
-        var parser = new KernelSourceParser();
-        return parser.Parse(sourceCode, "C#"); // C# is the primary kernel language
+        return KernelSourceParser.Parse(sourceCode, "C#"); // C# is the primary kernel language
     }
 
     private static async ValueTask<KernelAnalysis> AnalyzeKernelAsync(
@@ -342,37 +343,37 @@ internal sealed partial class CpuKernelCompiler
     {
         await Task.Yield();
 
-        var optimizer = new KernelOptimizer();
+        // Use static methods directly
 
         // Apply optimization passes based on optimization level
         switch (options.OptimizationLevel)
         {
             case OptimizationLevel.None:
                 // Minimal optimization for debugging
-                ast = optimizer.ApplyBasicOptimizations(ast);
+                ast = KernelOptimizer.ApplyBasicOptimizations(ast);
                 break;
 
             case OptimizationLevel.Default:
                 // Standard optimizations
-                ast = optimizer.ApplyStandardOptimizations(ast);
+                ast = KernelOptimizer.ApplyStandardOptimizations(ast);
                 if (analysis.CanVectorize)
                 {
-                    ast = optimizer.ApplyVectorizationOptimizations(ast, analysis.VectorizationFactor);
+                    ast = KernelOptimizer.ApplyVectorizationOptimizations(ast, analysis.VectorizationFactor);
                 }
                 break;
 
             case OptimizationLevel.Maximum:
                 // Aggressive optimizations
-                ast = optimizer.ApplyAggressiveOptimizations(ast);
+                ast = KernelOptimizer.ApplyAggressiveOptimizations(ast);
                 if (analysis.CanVectorize)
                 {
-                    ast = optimizer.ApplyVectorizationOptimizations(ast, analysis.VectorizationFactor);
-                    ast = optimizer.ApplyLoopUnrolling(ast, analysis.VectorizationFactor);
+                    ast = KernelOptimizer.ApplyVectorizationOptimizations(ast, analysis.VectorizationFactor);
+                    ast = KernelOptimizer.ApplyLoopUnrolling(ast, analysis.VectorizationFactor);
                 }
                 // Fast math for maximum optimization
                 if (options.OptimizationLevel == OptimizationLevel.Maximum)
                 {
-                    ast = optimizer.ApplyFastMathOptimizations(ast);
+                    ast = KernelOptimizer.ApplyFastMathOptimizations(ast);
                 }
                 break;
         }
@@ -389,22 +390,22 @@ internal sealed partial class CpuKernelCompiler
     {
         await Task.Yield();
 
-        var codeGen = new CpuRuntimeCodeGenerator();
+        // Use static methods directly
 
         if (kernelAst != null)
         {
             // Generate code from AST
-            return codeGen.GenerateFromAst(kernelAst, definition, analysis, options);
+            return CpuRuntimeCodeGenerator.GenerateFromAst(kernelAst, definition, analysis, options);
         }
         else if (definition.Code != null && definition.Code.Length > 0)
         {
             // JIT compile bytecode
-            return codeGen.GenerateFromBytecode(definition.Code, definition, analysis, options);
+            return CpuRuntimeCodeGenerator.GenerateFromBytecode(definition.Code, definition, analysis, options);
         }
         else
         {
             // Generate default vectorized kernel based on operation type
-            return codeGen.GenerateDefaultKernel(definition, analysis, options);
+            return CpuRuntimeCodeGenerator.GenerateDefaultKernel(definition, analysis, options);
         }
     }
 
@@ -686,13 +687,13 @@ internal sealed class CompiledCode
 /// <summary>
 /// Parses kernel source code into AST.
 /// </summary>
-internal sealed class KernelSourceParser
+internal static class KernelSourceParser
 {
 #pragma warning disable SYSLIB1045 // Suppress GeneratedRegex warning for AOT compatibility
     private static readonly Regex _loadPatternRegex = new(@"(\w+)\[", RegexOptions.Compiled);
     private static readonly Regex _storePatternRegex = new(@"\[\w+\]\s*=", RegexOptions.Compiled);
 #pragma warning restore SYSLIB1045
-    public KernelAst Parse(string code, string language)
+    public static KernelAst Parse(string code, string language)
     {
         // Simple parser implementation for demonstration
         // In production, this would use a proper parser library or Roslyn for C#
@@ -700,41 +701,41 @@ internal sealed class KernelSourceParser
         var ast = new KernelAst();
 
         // Detect basic patterns
-        ast.HasConditionals = code.Contains("if") || code.Contains('?');
-        ast.HasLoops = code.Contains("for") || code.Contains("while");
+        ast.HasConditionals = code.Contains("if", StringComparison.Ordinal) || code.Contains('?', StringComparison.Ordinal);
+        ast.HasLoops = code.Contains("for", StringComparison.Ordinal) || code.Contains("while", StringComparison.Ordinal);
         ast.HasRecursion = false; // Would need deeper analysis
-        ast.HasIndirectMemoryAccess = code.Contains('[') && code.Contains(']');
+        ast.HasIndirectMemoryAccess = code.Contains('[', StringComparison.Ordinal) && code.Contains(']', StringComparison.Ordinal);
 
         // Parse operations (simplified)
-        if (code.Contains('+'))
+        if (code.Contains('+', StringComparison.Ordinal))
         {
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Add });
         }
 
-        if (code.Contains('-'))
+        if (code.Contains('-', StringComparison.Ordinal))
         {
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Subtract });
         }
 
-        if (code.Contains('*'))
+        if (code.Contains('*', StringComparison.Ordinal))
         {
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Multiply });
         }
 
-        if (code.Contains('/'))
+        if (code.Contains('/', StringComparison.Ordinal))
         {
             ast.Operations.Add(new AstNode { NodeType = AstNodeType.Divide });
         }
 
         // Detect memory operations
         var loadMatches = _loadPatternRegex.Matches(code);
-        foreach (Match match in loadMatches)
+        for (int i = 0; i < loadMatches.Count; i++)
         {
             ast.MemoryOperations.Add(new AstNode { NodeType = AstNodeType.Load });
         }
 
         var storeMatches = _storePatternRegex.Matches(code);
-        foreach (Match match in storeMatches)
+        for (int i = 0; i < storeMatches.Count; i++)
         {
             ast.MemoryOperations.Add(new AstNode { NodeType = AstNodeType.Store });
         }
@@ -746,35 +747,27 @@ internal sealed class KernelSourceParser
 /// <summary>
 /// Optimizes kernel AST.
 /// </summary>
-internal sealed partial class KernelOptimizer
+internal static partial class KernelOptimizer
 {
-    public KernelAst ApplyBasicOptimizations(KernelAst ast) =>
-        // Constant folding, dead code elimination
-        ast;
+    public static KernelAst ApplyBasicOptimizations(KernelAst ast) => ast; // Constant folding, dead code elimination
 
-    public KernelAst ApplyStandardOptimizations(KernelAst ast)
+    public static KernelAst ApplyStandardOptimizations(KernelAst ast)
     {
         // Common subexpression elimination, strength reduction
-        ast = ApplyBasicOptimizations(ast);
+        ast = KernelOptimizer.ApplyBasicOptimizations(ast);
         return ast;
     }
 
-    public KernelAst ApplyAggressiveOptimizations(KernelAst ast)
+    public static KernelAst ApplyAggressiveOptimizations(KernelAst ast)
     {
         // Loop transformations, function inlining
-        ast = ApplyStandardOptimizations(ast);
+        ast = KernelOptimizer.ApplyStandardOptimizations(ast);
         return ast;
     }
 
-    public KernelAst ApplyVectorizationOptimizations(KernelAst ast, int vectorizationFactor) =>
-        // Transform operations to use SIMD instructions
-        ast;
+    public static KernelAst ApplyVectorizationOptimizations(KernelAst ast, int vectorizationFactor) => ast; // Transform operations to use SIMD instructions
 
-    public KernelAst ApplyLoopUnrolling(KernelAst ast, int unrollFactor) =>
-        // Unroll loops by the specified factor
-        ast;
+    public static KernelAst ApplyLoopUnrolling(KernelAst ast, int unrollFactor) => ast; // Unroll loops by the specified factor
 
-    public KernelAst ApplyFastMathOptimizations(KernelAst ast) =>
-        // Relaxed floating-point operations for performance
-        ast;
+    public static KernelAst ApplyFastMathOptimizations(KernelAst ast) => ast; // Relaxed floating-point operations for performance
 }

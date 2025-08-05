@@ -1,6 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#pragma warning disable CA5394 // Do not use insecure randomness - Random is used for performance testing, not security
+#pragma warning disable CA1822 // Mark members as static - Test methods cannot be static in xUnit
+
 using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.CompilerServices;
@@ -14,7 +17,7 @@ namespace DotCompute.Backends.CPU.Tests;
 /// <summary>
 /// Performance tests demonstrating SIMD speedup for CPU backend.
 /// </summary>
-public class SimdPerformanceTests
+public sealed class SimdPerformanceTests
 {
     private readonly ITestOutputHelper _output;
 
@@ -354,9 +357,11 @@ public class SimdPerformanceTests
 /// <summary>
 /// Benchmark class for detailed performance analysis.
 /// </summary>
+#pragma warning disable CA1812 // Avoid uninstantiated internal classes - BenchmarkDotNet benchmark class
 [MemoryDiagnoser]
 [DisassemblyDiagnoser]
-public class SimdBenchmarks
+internal sealed class SimdBenchmarks
+#pragma warning restore CA1812
 {
     private float[] _a = null!;
     private float[] _b = null!;

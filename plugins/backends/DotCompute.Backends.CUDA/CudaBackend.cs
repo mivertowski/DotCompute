@@ -5,12 +5,14 @@ using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
+#pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
+
 namespace DotCompute.Backends.CUDA;
 
 /// <summary>
 /// Main entry point for CUDA compute backend
 /// </summary>
-public class CudaBackend : IDisposable
+public sealed class CudaBackend : IDisposable
 {
     private readonly ILogger<CudaBackend> _logger;
     private readonly List<CudaAccelerator> _accelerators = [];
@@ -234,17 +236,27 @@ public class CudaBackend : IDisposable
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
         if (_disposed)
         {
             return;
         }
 
-        foreach (var accelerator in _accelerators)
+        if (disposing)
         {
-            accelerator?.Dispose();
+            foreach (var accelerator in _accelerators)
+            {
+                accelerator?.Dispose();
+            }
+
+            _accelerators.Clear();
         }
 
-        _accelerators.Clear();
         _disposed = true;
     }
 }

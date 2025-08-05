@@ -53,7 +53,7 @@ public class KernelExecutionContextTests
             1 => new long[] { 256 },
             2 => new long[] { 256, 256 },
             3 => new long[] { 64, 64, 64 },
-            _ => throw new ArgumentException()
+            _ => throw new ArgumentException("Invalid dimensions", nameof(dimensions))
         };
 
         // Act
@@ -116,7 +116,7 @@ public class KernelExecutionContextTests
     public void CancellationToken_CanBeCancelled()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         var context = new KernelExecutionContext
         {
             Name = "TestKernel",

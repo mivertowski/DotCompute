@@ -8,14 +8,13 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// <summary>
 /// Generates CPU code from kernel representations.
 /// </summary>
-internal sealed class CpuRuntimeCodeGenerator
+internal static class CpuRuntimeCodeGenerator
 {
-    private readonly ILCodeGenerator _ilGenerator = new();
-
-    public CompiledCode GenerateFromAst(KernelAst ast, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
+    public static CompiledCode GenerateFromAst(KernelAst ast, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // Use advanced IL code generator
-        var kernelCode = _ilGenerator.GenerateKernel(definition, ast, analysis, options);
+        var ilGenerator = new ILCodeGenerator();
+        var kernelCode = ilGenerator.GenerateKernel(definition, ast, analysis, options);
 
         return new CompiledCode
         {
@@ -25,7 +24,7 @@ internal sealed class CpuRuntimeCodeGenerator
         };
     }
 
-    public CompiledCode GenerateFromBytecode(byte[] bytecode, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
+    public static CompiledCode GenerateFromBytecode(byte[] bytecode, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // JIT compile bytecode
         var compiledCode = new CompiledCode
@@ -38,7 +37,7 @@ internal sealed class CpuRuntimeCodeGenerator
         return compiledCode;
     }
 
-    public CompiledCode GenerateDefaultKernel(KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
+    public static CompiledCode GenerateDefaultKernel(KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // Generate a default vectorized kernel based on metadata
         var compiledCode = new CompiledCode();

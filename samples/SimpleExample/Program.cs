@@ -10,7 +10,7 @@ namespace SimpleExample
     /// </summary>
     internal sealed unsafe class Program
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             Console.WriteLine("DotCompute Simple Example");
             Console.WriteLine("========================");
@@ -52,12 +52,14 @@ namespace SimpleExample
 
         private static void InitializeData(Span<float> a, Span<float> b)
         {
+            #pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for example code
             var random = new Random(42);
             for (int i = 0; i < a.Length; i++)
             {
                 a[i] = (float)random.NextDouble() * 100;
                 b[i] = (float)random.NextDouble() * 100;
             }
+            #pragma warning restore CA5394
         }
 
         private static void AddVectors(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)

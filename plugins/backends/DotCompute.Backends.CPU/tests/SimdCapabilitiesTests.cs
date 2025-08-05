@@ -1,7 +1,9 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+
 using System.Numerics;
+
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
 using Xunit.Abstractions;
@@ -11,7 +13,7 @@ namespace DotCompute.Backends.CPU.Tests;
 /// <summary>
 /// Tests for SIMD capabilities detection and reporting.
 /// </summary>
-public class SimdCapabilitiesTests
+public sealed class SimdCapabilitiesTests
 {
     private readonly ITestOutputHelper _output;
 

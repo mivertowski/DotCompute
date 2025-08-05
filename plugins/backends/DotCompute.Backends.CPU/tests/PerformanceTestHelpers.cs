@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+
 using System.Runtime.InteropServices;
 
 namespace DotCompute.Backends.CPU.Tests;
@@ -8,7 +9,7 @@ namespace DotCompute.Backends.CPU.Tests;
 /// <summary>
 /// Helper methods for performance tests that account for different environments.
 /// </summary>
-public static class PerformanceTestHelpers
+internal static class PerformanceTestHelpers
 {
     /// <summary>
     /// Gets whether we're running in a virtualized environment like WSL.

@@ -5,7 +5,7 @@ using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
-public class MemoryPoolTests : IDisposable
+public sealed class MemoryPoolTests : IDisposable
 {
     private readonly IMemoryManager _memoryManager;
     private readonly MemoryPool<int> _pool;
@@ -16,7 +16,11 @@ public class MemoryPoolTests : IDisposable
         _pool = new MemoryPool<int>(_memoryManager);
     }
 
-    public void Dispose() => _pool.Dispose();
+    public void Dispose()
+    {
+        _pool.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
     [Fact]
     public void Rent_WithValidSize_ShouldReturnBuffer()
@@ -189,7 +193,7 @@ public class MemoryPoolTests : IDisposable
     }
 
     [Fact]
-    public void MultipleThreads_ShouldWorkConcurrently()
+    public async Task MultipleThreads_ShouldWorkConcurrently()
     {
         // Arrange
         var tasks = new List<Task>();
@@ -203,16 +207,18 @@ public class MemoryPoolTests : IDisposable
             {
                 for (int i = 0; i < bufferCount; i++)
                 {
+#pragma warning disable CA5394 // Do not use insecure randomness - test code with non-cryptographic needs
                     var buffer = _pool.Rent(Random.Shared.Next(100, 1000));
                     Thread.Sleep(Random.Shared.Next(0, 1));
+#pragma warning restore CA5394
                     buffer.Dispose();
                 }
             }));
         }
 
         // Assert
-        var act = async () => await Task.WhenAll(tasks);
-        act.Should().NotThrowAsync().Wait();
+        await Task.WhenAll(tasks);
+        // Test passes if no exceptions are thrown
     }
 
     [Fact]
