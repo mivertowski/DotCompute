@@ -266,7 +266,7 @@ public static partial class NumaInfo
             if (Directory.Exists("/sys/devices/system/node"))
             {
                 var nodeDirs = Directory.GetDirectories("/sys/devices/system/node", "node*")
-                    .OrderBy(d => int.Parse(Path.GetFileName(d).Substring(4), CultureInfo.InvariantCulture))
+                    .OrderBy(d => int.Parse(Path.GetFileName(d).AsSpan(4), CultureInfo.InvariantCulture))
                     .ToArray();
 
                 var nodes = new List<NumaNode>();
@@ -280,7 +280,7 @@ public static partial class NumaInfo
                 for (var i = 0; i < nodeDirs.Length; i++)
                 {
                     var nodeDir = nodeDirs[i];
-                    var nodeId = int.Parse(Path.GetFileName(nodeDir).Substring(4), CultureInfo.InvariantCulture);
+                    var nodeId = int.Parse(Path.GetFileName(nodeDir).AsSpan(4), CultureInfo.InvariantCulture);
 
                     var cpuListFile = Path.Combine(nodeDir, "cpulist");
                     if (File.Exists(cpuListFile))

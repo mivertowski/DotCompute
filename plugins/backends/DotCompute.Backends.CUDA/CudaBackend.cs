@@ -200,36 +200,35 @@ public sealed partial class CudaBackend : IDisposable
         var info = accelerator.Info;
         var capabilities = info.Capabilities;
 
-        _logger.LogInformation("CUDA Device: {Name} (ID: {Id})", info.Name, info.Id);
-        _logger.LogInformation("  Compute Capability: {ComputeCapability}", info.ComputeCapability);
-        _logger.LogInformation("  Total Memory: {TotalMemory:N0} bytes ({MemoryGB:F1} GB)",
-            info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024));
-        _logger.LogInformation("  Multiprocessors: {ComputeUnits}", info.ComputeUnits);
-        _logger.LogInformation("  Clock Rate: {ClockRate} MHz", info.MaxClockFrequency);
+        LogCudaDevice(_logger, info.Name, info.Id.ToString());
+        LogComputeCapability(_logger, info.ComputeCapability);
+        LogTotalMemory(_logger, info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024));
+        LogMultiprocessors(_logger, info.ComputeUnits);
+        LogClockRate(_logger, info.MaxClockFrequency);
 
         if (capabilities != null && capabilities.TryGetValue("SharedMemoryPerBlock", out var sharedMem) && sharedMem != null)
         {
-            _logger.LogInformation("  Shared Memory per Block: {SharedMem:N0} bytes", sharedMem);
+            LogSharedMemoryPerBlock(_logger, sharedMem);
         }
 
         if (capabilities != null && capabilities.TryGetValue("MaxThreadsPerBlock", out var maxThreads) && maxThreads != null)
         {
-            _logger.LogInformation("  Max Threads per Block: {MaxThreads}", maxThreads);
+            LogMaxThreadsPerBlock(_logger, maxThreads);
         }
 
         if (capabilities != null && capabilities.TryGetValue("WarpSize", out var warpSize) && warpSize != null)
         {
-            _logger.LogInformation("  Warp Size: {WarpSize}", warpSize);
+            LogWarpSize(_logger, warpSize);
         }
 
         if (capabilities != null && capabilities.TryGetValue("ECCEnabled", out var ecc) && ecc is bool eccEnabled && eccEnabled)
         {
-            _logger.LogInformation("  ECC Memory: Enabled");
+            LogEccMemoryEnabled(_logger);
         }
 
         if (capabilities != null && capabilities.TryGetValue("UnifiedAddressing", out var unified) && unified is bool unifiedEnabled && unifiedEnabled)
         {
-            _logger.LogInformation("  Unified Virtual Addressing: Supported");
+            LogUnifiedAddressingSupported(_logger);
         }
     }
 

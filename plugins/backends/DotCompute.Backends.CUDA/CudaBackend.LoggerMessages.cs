@@ -113,13 +113,13 @@ public partial class CudaBackend
         EventId = 2018,
         Level = LogLevel.Information,
         Message = "CUDA Device: {Name} (ID: {Id})")]
-    private static partial void LogCudaDevice(ILogger logger, string name, Guid id);
+    private static partial void LogCudaDevice(ILogger logger, string name, string id);
 
     [LoggerMessage(
         EventId = 2019,
         Level = LogLevel.Information,
         Message = "  Compute Capability: {ComputeCapability}")]
-    private static partial void LogComputeCapability(ILogger logger, string computeCapability);
+    private static partial void LogComputeCapability(ILogger logger, Version computeCapability);
 
     [LoggerMessage(
         EventId = 2020,
