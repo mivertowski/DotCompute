@@ -9,6 +9,7 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// AOT-safe code generator that uses pre-compiled delegates instead of Expression.Compile().
 /// This generator provides fallback implementations for Native AOT scenarios.
 /// </summary>
+#pragma warning disable CA1822 // Mark members as static - Methods use instance field _kernelImplementations indirectly
 internal sealed class AotSafeCodeGenerator
 {
     private readonly Dictionary<string, Func<ExtendedKernelExecutionContext, Task>> _kernelImplementations;
@@ -144,7 +145,9 @@ internal sealed class AotSafeCodeGenerator
                     context.SetParameter(3, workItemId);
 
                     // Execute synchronously for AOT compatibility
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT delegate signature compatibility
                     implementation(context).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 });
 
             case 2: // Reduction case: input, output
@@ -155,7 +158,9 @@ internal sealed class AotSafeCodeGenerator
                     context.SetBuffer(1, output);
                     context.SetParameter(2, workItemId);
 
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT delegate signature compatibility
                     implementation(context).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 });
 
             default:
@@ -169,7 +174,9 @@ internal sealed class AotSafeCodeGenerator
                     }
                     context.SetParameter(parameters.Length, workItemId);
 
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT delegate signature compatibility
                     implementation(context).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 });
         }
     }
@@ -259,7 +266,7 @@ internal sealed class AotSafeCodeGenerator
         var a = context.GetBuffer<float>(0);
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
-        var m = context.GetScalar<int>(3);
+        _ = context.GetScalar<int>(3); // m - rows, not used in this implementation
         var n = context.GetScalar<int>(4);
         var k = context.GetScalar<int>(5);
         var workItemId = context.GetParameter(6) as long[] ?? new long[] { 0 };
@@ -361,3 +368,4 @@ internal sealed class AotSafeCodeGenerator
         return [.. notes];
     }
 }
+#pragma warning restore CA1822

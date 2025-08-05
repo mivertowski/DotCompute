@@ -8,14 +8,13 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// <summary>
 /// Generates CPU code from kernel representations.
 /// </summary>
-internal sealed class CpuRuntimeCodeGenerator
+internal static class CpuRuntimeCodeGenerator
 {
-    private readonly ILCodeGenerator _ilGenerator = new();
-
-    public CompiledCode GenerateFromAst(KernelAst ast, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
+    public static CompiledCode GenerateFromAst(KernelAst ast, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // Use advanced IL code generator
-        var kernelCode = _ilGenerator.GenerateKernel(definition, ast, analysis, options);
+        var ilGenerator = new ILCodeGenerator();
+        var kernelCode = ilGenerator.GenerateKernel(definition, ast, analysis, options);
 
         return new CompiledCode
         {
