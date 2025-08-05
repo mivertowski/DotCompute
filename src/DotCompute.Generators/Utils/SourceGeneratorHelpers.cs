@@ -91,7 +91,7 @@ namespace DotCompute.Generators.Utils
                 sb.AppendLine($"for (int {indexVar} = 0; {indexVar} < limit; {indexVar} += {unrollFactor})");
                 sb.AppendLine("{");
 
-                for (int i = 0; i < unrollFactor; i++)
+                for (var i = 0; i < unrollFactor; i++)
                 {
                     var unrolledBody = body.Replace($"{{{indexVar}}}", $"{{{indexVar} + {i}}}");
                     sb.AppendLine($"    {unrolledBody}");

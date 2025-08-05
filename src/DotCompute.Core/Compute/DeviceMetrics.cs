@@ -90,7 +90,7 @@ public class MemoryTransferStats : IMemoryTransferStats
     private long _transfersToDevice;
     private long _transfersFromDevice;
     private long _totalTransferTimeMs;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     /// <inheritdoc/>
     public long BytesToDevice => _bytesToDevice;

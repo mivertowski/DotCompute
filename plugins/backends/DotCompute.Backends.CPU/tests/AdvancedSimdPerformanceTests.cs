@@ -18,14 +18,9 @@ namespace DotCompute.Backends.CPU.Tests;
 /// Production-level performance tests for advanced SIMD implementations.
 /// Validates critical path completion: FMA, integer SIMD, ARM NEON, and advanced operations.
 /// </summary>
-public sealed class AdvancedSimdPerformanceTests
+public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public AdvancedSimdPerformanceTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     #region FMA (Fused Multiply-Add) Performance Tests - CRITICAL
 
@@ -41,7 +36,7 @@ public sealed class AdvancedSimdPerformanceTests
 
         // Initialize with random data
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             a[i] = (float)random.NextDouble() * 10.0f;
             b[i] = (float)random.NextDouble() * 10.0f;
@@ -105,7 +100,7 @@ public sealed class AdvancedSimdPerformanceTests
 
         // Initialize with random data
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             a[i] = random.NextDouble() * 10.0;
             b[i] = random.NextDouble() * 10.0;
@@ -149,7 +144,7 @@ public sealed class AdvancedSimdPerformanceTests
 
         // Initialize with random data
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             a[i] = random.Next(-1000, 1000);
             b[i] = random.Next(-1000, 1000);
@@ -158,7 +153,7 @@ public sealed class AdvancedSimdPerformanceTests
         // Measure scalar integer addition
         var scalarTime = MeasureTime(() =>
         {
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 scalarResult[i] = a[i] + b[i];
             }
@@ -180,7 +175,7 @@ public sealed class AdvancedSimdPerformanceTests
         _output.WriteLine($"Integer SIMD speedup: {speedup:F2}x");
 
         // Validate correctness
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             Assert.Equal(scalarResult[i], result[i]);
         }
@@ -206,7 +201,7 @@ public sealed class AdvancedSimdPerformanceTests
 
         // Initialize with typical image data
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             a[i] = (short)random.Next(0, 256);
             b[i] = (short)random.Next(0, 256);
@@ -245,7 +240,7 @@ public sealed class AdvancedSimdPerformanceTests
 
         // Initialize data
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
@@ -304,7 +299,7 @@ public sealed class AdvancedSimdPerformanceTests
 
         // Initialize data
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             data[i] = (float)random.NextDouble();
             indices[i] = random.Next(0, elementCount); // Random indices for gather
@@ -369,7 +364,7 @@ public sealed class AdvancedSimdPerformanceTests
 
         // Initialize data
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             condition[i] = (float)random.NextDouble();
             a[i] = (float)random.NextDouble() * 10.0f;
@@ -379,7 +374,7 @@ public sealed class AdvancedSimdPerformanceTests
         // Measure scalar conditional selection
         var scalarTime = MeasureTime(() =>
         {
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 scalarResult[i] = condition[i] > threshold ? a[i] : b[i];
             }
@@ -415,7 +410,7 @@ public sealed class AdvancedSimdPerformanceTests
 
         // Initialize with random data
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             data[i] = (float)random.NextDouble();
         }
@@ -423,8 +418,8 @@ public sealed class AdvancedSimdPerformanceTests
         // Measure scalar sum
         var scalarTime = MeasureTime(() =>
         {
-            float sum = 0.0f;
-            for (int i = 0; i < elementCount; i++)
+            var sum = 0.0f;
+            for (var i = 0; i < elementCount; i++)
             {
                 sum += data[i];
             }
@@ -432,7 +427,7 @@ public sealed class AdvancedSimdPerformanceTests
         }, 20);
 
         // Measure SIMD horizontal sum
-        float simdSum = 0.0f;
+        var simdSum = 0.0f;
         var simdTime = MeasureTime(() =>
         {
             unsafe
@@ -467,7 +462,7 @@ public sealed class AdvancedSimdPerformanceTests
 
         // Initialize matrices
         var random = new Random(42);
-        for (int i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
@@ -547,7 +542,7 @@ public sealed class AdvancedSimdPerformanceTests
     private static double MeasureTime(Func<float> action, int iterations)
     {
         var sw = Stopwatch.StartNew();
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             action();
         }
@@ -558,7 +553,7 @@ public sealed class AdvancedSimdPerformanceTests
     private static double MeasureTime(Action action, int iterations)
     {
         var sw = Stopwatch.StartNew();
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             action();
         }
@@ -568,7 +563,7 @@ public sealed class AdvancedSimdPerformanceTests
 
     private static void FmaScalarFloat32(float[] a, float[] b, float[] c, float[] result)
     {
-        for (int i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             result[i] = MathF.FusedMultiplyAdd(a[i], b[i], c[i]);
         }
@@ -576,7 +571,7 @@ public sealed class AdvancedSimdPerformanceTests
 
     private static void FmaScalarFloat64(double[] a, double[] b, double[] c, double[] result)
     {
-        for (int i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             result[i] = Math.FusedMultiplyAdd(a[i], b[i], c[i]);
         }
@@ -585,11 +580,11 @@ public sealed class AdvancedSimdPerformanceTests
     private static void MatrixMultiplyScalar(float[] a, float[] b, float[] result, int size)
     {
         Array.Clear(result, 0, result.Length);
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
-            for (int j = 0; j < size; j++)
+            for (var j = 0; j < size; j++)
             {
-                for (int k = 0; k < size; k++)
+                for (var k = 0; k < size; k++)
                 {
                     result[i * size + j] += a[i * size + k] * b[k * size + j];
                 }
@@ -599,7 +594,7 @@ public sealed class AdvancedSimdPerformanceTests
 
     private static void ValidateResultsFloat32(float[] expected, float[] actual, int count, float tolerance)
     {
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var diff = Math.Abs(expected[i] - actual[i]);
             Assert.True(diff <= tolerance,
@@ -609,7 +604,7 @@ public sealed class AdvancedSimdPerformanceTests
 
     private static void ValidateResultsFloat64(double[] expected, double[] actual, int count, double tolerance)
     {
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var diff = Math.Abs(expected[i] - actual[i]);
             Assert.True(diff <= tolerance,
@@ -648,7 +643,7 @@ public sealed class AdvancedSimdPerformanceTests
         var scalarResult = new float[testSize];
 
         var random = new Random(42);
-        for (int i = 0; i < testSize; i++)
+        for (var i = 0; i < testSize; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
@@ -678,7 +673,7 @@ public sealed class AdvancedSimdPerformanceTests
         var scalarResult = new int[testSize];
 
         var random = new Random(42);
-        for (int i = 0; i < testSize; i++)
+        for (var i = 0; i < testSize; i++)
         {
             a[i] = random.Next(-1000, 1000);
             b[i] = random.Next(-1000, 1000);
@@ -686,7 +681,7 @@ public sealed class AdvancedSimdPerformanceTests
 
         var scalarTime = MeasureTime(() =>
         {
-            for (int i = 0; i < testSize; i++)
+            for (var i = 0; i < testSize; i++)
             {
                 scalarResult[i] = a[i] + b[i];
             }
@@ -708,8 +703,8 @@ public sealed class AdvancedSimdPerformanceTests
 
     private int TestCrossPlatformCompatibility()
     {
-        int score = 0;
-        int totalTests = 5;
+        var score = 0;
+        var totalTests = 5;
 
         // Test 1: Basic vector support
         if (Vector.IsHardwareAccelerated)

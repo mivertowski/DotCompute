@@ -5,7 +5,7 @@ using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
-public sealed class MemoryPoolTests : IDisposable
+public class MemoryPoolTests : IDisposable
 {
     private readonly IMemoryManager _memoryManager;
     private readonly MemoryPool<int> _pool;
@@ -16,11 +16,7 @@ public sealed class MemoryPoolTests : IDisposable
         _pool = new MemoryPool<int>(_memoryManager);
     }
 
-    public void Dispose()
-    {
-        _pool.Dispose();
-        GC.SuppressFinalize(this);
-    }
+    public void Dispose() => _pool.Dispose();
 
     [Fact]
     public void Rent_WithValidSize_ShouldReturnBuffer()
@@ -147,7 +143,7 @@ public sealed class MemoryPoolTests : IDisposable
     {
         // Arrange
         var buffers = new List<IMemoryBuffer<int>>();
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             buffers.Add(_pool.Rent(1024));
         }
@@ -172,7 +168,7 @@ public sealed class MemoryPoolTests : IDisposable
     {
         // Arrange
         var buffers = new List<IMemoryBuffer<int>>();
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var buffer = _pool.Rent(1024 * 1024); // 1MB each
             buffers.Add(buffer);
@@ -193,7 +189,7 @@ public sealed class MemoryPoolTests : IDisposable
     }
 
     [Fact]
-    public async Task MultipleThreads_ShouldWorkConcurrently()
+    public void MultipleThreads_ShouldWorkConcurrently()
     {
         // Arrange
         var tasks = new List<Task>();
@@ -201,24 +197,22 @@ public sealed class MemoryPoolTests : IDisposable
         var threadCount = 10;
 
         // Act
-        for (int t = 0; t < threadCount; t++)
+        for (var t = 0; t < threadCount; t++)
         {
             tasks.Add(Task.Run(() =>
             {
-                for (int i = 0; i < bufferCount; i++)
+                for (var i = 0; i < bufferCount; i++)
                 {
-#pragma warning disable CA5394 // Do not use insecure randomness - test code with non-cryptographic needs
                     var buffer = _pool.Rent(Random.Shared.Next(100, 1000));
                     Thread.Sleep(Random.Shared.Next(0, 1));
-#pragma warning restore CA5394
                     buffer.Dispose();
                 }
             }));
         }
 
         // Assert
-        await Task.WhenAll(tasks);
-        // Test passes if no exceptions are thrown
+        var act = async () => await Task.WhenAll(tasks);
+        act.Should().NotThrowAsync().Wait();
     }
 
     [Fact]

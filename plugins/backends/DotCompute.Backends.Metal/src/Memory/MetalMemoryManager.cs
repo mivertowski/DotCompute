@@ -12,20 +12,13 @@ namespace DotCompute.Backends.Metal.Memory;
 /// <summary>
 /// Memory manager for Metal GPU memory allocation and management.
 /// </summary>
-public sealed class MetalMemoryManager : IMemoryManager
+public sealed class MetalMemoryManager(IntPtr device, MetalAcceleratorOptions options) : IMemoryManager
 {
-    private readonly IntPtr _device;
-    private readonly MetalAcceleratorOptions _options;
-    private readonly ConcurrentDictionary<IMemoryBuffer, MetalMemoryBuffer> _allocations;
+    private readonly IntPtr _device = device;
+    private readonly MetalAcceleratorOptions _options = options ?? throw new ArgumentNullException(nameof(options));
+    private readonly ConcurrentDictionary<IMemoryBuffer, MetalMemoryBuffer> _allocations = new();
     private long _totalAllocated;
     private int _disposed;
-
-    public MetalMemoryManager(IntPtr device, MetalAcceleratorOptions options)
-    {
-        _device = device;
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _allocations = new ConcurrentDictionary<IMemoryBuffer, MetalMemoryBuffer>();
-    }
 
     /// <inheritdoc/>
     public async ValueTask<IMemoryBuffer> AllocateAsync(
@@ -162,26 +155,17 @@ public sealed class MetalMemoryManager : IMemoryManager
 /// <summary>
 /// Metal-specific memory buffer implementation.
 /// </summary>
-internal sealed class MetalMemoryBuffer : IMemoryBuffer
+internal sealed class MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryOptions options, MetalStorageMode storageMode, MetalMemoryManager manager) : IMemoryBuffer
 {
-    private readonly MetalMemoryManager _manager;
-    private readonly MetalStorageMode _storageMode;
+    private readonly MetalMemoryManager _manager = manager;
+    private readonly MetalStorageMode _storageMode = storageMode;
     private int _disposed;
 
-    public MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryOptions options, MetalStorageMode storageMode, MetalMemoryManager manager)
-    {
-        Buffer = buffer;
-        SizeInBytes = sizeInBytes;
-        Options = options;
-        _storageMode = storageMode;
-        _manager = manager;
-    }
+    public IntPtr Buffer { get; } = buffer;
 
-    public IntPtr Buffer { get; }
+    public long SizeInBytes { get; } = sizeInBytes;
 
-    public long SizeInBytes { get; }
-
-    public MemoryOptions Options { get; }
+    public MemoryOptions Options { get; } = options;
 
     public async ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
@@ -294,19 +278,12 @@ internal sealed class MetalMemoryBuffer : IMemoryBuffer
 /// <summary>
 /// View over a Metal memory buffer.
 /// </summary>
-internal sealed class MetalMemoryBufferView : IMemoryBuffer
+internal sealed class MetalMemoryBufferView(MetalMemoryBuffer parent, long offset, long length) : IMemoryBuffer
 {
-    private readonly MetalMemoryBuffer _parent;
-    private readonly long _offset;
+    private readonly MetalMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+    private readonly long _offset = offset;
 
-    public MetalMemoryBufferView(MetalMemoryBuffer parent, long offset, long length)
-    {
-        _parent = parent ?? throw new ArgumentNullException(nameof(parent));
-        _offset = offset;
-        SizeInBytes = length;
-    }
-
-    public long SizeInBytes { get; }
+    public long SizeInBytes { get; } = length;
 
     public MemoryOptions Options => _parent.Options;
 

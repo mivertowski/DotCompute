@@ -14,18 +14,13 @@ namespace DotCompute.Backends.CUDA;
 /// <summary>
 /// Factory for creating CUDA accelerator instances
 /// </summary>
-public class CudaBackendFactory : IBackendFactory
+public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IBackendFactory
 {
-    private readonly ILogger<CudaBackendFactory> _logger;
+    private readonly ILogger<CudaBackendFactory> _logger = logger ?? new NullLogger<CudaBackendFactory>();
 
     public string Name => "CUDA";
     public string Description => "NVIDIA CUDA GPU Backend";
     public Version Version => new(1, 0, 0);
-
-    public CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null)
-    {
-        _logger = logger ?? new NullLogger<CudaBackendFactory>();
-    }
 
     public bool IsAvailable()
     {
@@ -74,7 +69,7 @@ public class CudaBackendFactory : IBackendFactory
 
             _logger.LogInformation("Creating {DeviceCount} CUDA accelerator(s)", deviceCount);
 
-            for (int deviceId = 0; deviceId < deviceCount; deviceId++)
+            for (var deviceId = 0; deviceId < deviceCount; deviceId++)
             {
                 try
                 {

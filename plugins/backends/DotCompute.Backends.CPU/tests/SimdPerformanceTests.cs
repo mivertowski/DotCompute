@@ -17,14 +17,9 @@ namespace DotCompute.Backends.CPU.Tests;
 /// <summary>
 /// Performance tests demonstrating SIMD speedup for CPU backend.
 /// </summary>
-public sealed class SimdPerformanceTests
+public sealed class SimdPerformanceTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public SimdPerformanceTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     [Fact]
     public void VectorAdditionShowsSimdSpeedup()
@@ -36,7 +31,7 @@ public sealed class SimdPerformanceTests
 
         // Initialize with random data
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
@@ -72,7 +67,7 @@ public sealed class SimdPerformanceTests
 
         // Initialize matrices
         var random = new Random(42);
-        for (int i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
@@ -104,7 +99,7 @@ public sealed class SimdPerformanceTests
 
         // Initialize vectors
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
@@ -138,7 +133,7 @@ public sealed class SimdPerformanceTests
     private static double MeasureTime(Action action, int iterations)
     {
         var sw = Stopwatch.StartNew();
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             action();
         }
@@ -149,7 +144,7 @@ public sealed class SimdPerformanceTests
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void VectorAddScalar(float[] a, float[] b, float[] result)
     {
-        for (int i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -158,8 +153,8 @@ public sealed class SimdPerformanceTests
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static unsafe void VectorAddSimd(float[] a, float[] b, float[] result)
     {
-        int vectorSize = Vector<float>.Count;
-        int i = 0;
+        var vectorSize = Vector<float>.Count;
+        var i = 0;
 
         fixed (float* pA = a)
         fixed (float* pB = b)
@@ -211,12 +206,12 @@ public sealed class SimdPerformanceTests
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static void MatrixMultiplyScalar(float[] a, float[] b, float[] result, int size)
     {
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
-            for (int j = 0; j < size; j++)
+            for (var j = 0; j < size; j++)
             {
                 float sum = 0;
-                for (int k = 0; k < size; k++)
+                for (var k = 0; k < size; k++)
                 {
                     sum += a[i * size + k] * b[k * size + j];
                 }
@@ -238,23 +233,23 @@ public sealed class SimdPerformanceTests
             // Clear result matrix
             Array.Clear(result, 0, result.Length);
 
-            for (int i0 = 0; i0 < size; i0 += tileSize)
+            for (var i0 = 0; i0 < size; i0 += tileSize)
             {
-                for (int j0 = 0; j0 < size; j0 += tileSize)
+                for (var j0 = 0; j0 < size; j0 += tileSize)
                 {
-                    for (int k0 = 0; k0 < size; k0 += tileSize)
+                    for (var k0 = 0; k0 < size; k0 += tileSize)
                     {
                         // Process tile
-                        int iMax = Math.Min(i0 + tileSize, size);
-                        int jMax = Math.Min(j0 + tileSize, size);
-                        int kMax = Math.Min(k0 + tileSize, size);
+                        var iMax = Math.Min(i0 + tileSize, size);
+                        var jMax = Math.Min(j0 + tileSize, size);
+                        var kMax = Math.Min(k0 + tileSize, size);
 
-                        for (int i = i0; i < iMax; i++)
+                        for (var i = i0; i < iMax; i++)
                         {
-                            for (int k = k0; k < kMax; k++)
+                            for (var k = k0; k < kMax; k++)
                             {
                                 var aik = a[i * size + k];
-                                int j = j0;
+                                var j = j0;
 
                                 if (Avx2.IsSupported)
                                 {
@@ -285,7 +280,7 @@ public sealed class SimdPerformanceTests
     private static float DotProductScalar(float[] a, float[] b)
     {
         float sum = 0;
-        for (int i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             sum += a[i] * b[i];
         }
@@ -295,7 +290,7 @@ public sealed class SimdPerformanceTests
     [MethodImpl(MethodImplOptions.NoInlining)]
     private static unsafe float DotProductSimd(float[] a, float[] b)
     {
-        int i = 0;
+        var i = 0;
 
         if (Avx2.IsSupported)
         {
@@ -318,7 +313,7 @@ public sealed class SimdPerformanceTests
             sum128 = Sse.Add(sum128, Sse.Shuffle(sum128, sum128, 0x4E));
             sum128 = Sse.Add(sum128, Sse.Shuffle(sum128, sum128, 0xB1));
 
-            float sum = sum128.ToScalar();
+            var sum = sum128.ToScalar();
 
             // Process remaining elements
             for (; i < a.Length; i++)
@@ -341,7 +336,7 @@ public sealed class SimdPerformanceTests
                 sumVector += va * vb;
             }
 
-            float sum = Vector.Dot(sumVector, Vector<float>.One);
+            var sum = Vector.Dot(sumVector, Vector<float>.One);
 
             // Process remaining elements
             for (; i < a.Length; i++)
@@ -378,7 +373,7 @@ internal sealed class SimdBenchmarks
         _result = new float[Size];
 
         var random = new Random(42);
-        for (int i = 0; i < Size; i++)
+        for (var i = 0; i < Size; i++)
         {
             _a[i] = (float)random.NextDouble();
             _b[i] = (float)random.NextDouble();
@@ -388,7 +383,7 @@ internal sealed class SimdBenchmarks
     [Benchmark(Baseline = true)]
     public void VectorAddScalar()
     {
-        for (int i = 0; i < _a.Length; i++)
+        for (var i = 0; i < _a.Length; i++)
         {
             _result[i] = _a[i] + _b[i];
         }
@@ -397,8 +392,8 @@ internal sealed class SimdBenchmarks
     [Benchmark]
     public void VectorAddVector()
     {
-        int vectorSize = Vector<float>.Count;
-        int i = 0;
+        var vectorSize = Vector<float>.Count;
+        var i = 0;
 
         for (; i + vectorSize <= _a.Length; i += vectorSize)
         {
@@ -422,7 +417,7 @@ internal sealed class SimdBenchmarks
             return;
         }
 
-        int i = 0;
+        var i = 0;
         fixed (float* pA = _a)
         fixed (float* pB = _b)
         fixed (float* pResult = _result)

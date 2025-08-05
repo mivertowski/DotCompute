@@ -134,13 +134,13 @@ public class BasicApiTests
         var values = new object[] { 42, 3.14f, "test" };
 
         // Act
-        for (int i = 0; i < values.Length; i++)
+        for (var i = 0; i < values.Length; i++)
         {
             args.Set(i, values[i]);
         }
 
         // Assert
-        for (int i = 0; i < values.Length; i++)
+        for (var i = 0; i < values.Length; i++)
         {
             args.Get(i).Should().Be(values[i]);
         }

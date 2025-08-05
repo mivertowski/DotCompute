@@ -17,122 +17,120 @@ public static class CudaRuntime
     // Device Management
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaGetDeviceCount(out int count);
+    public static extern CudaError cudaGetDeviceCount(out int count);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaSetDevice(int device);
+    public static extern CudaError cudaSetDevice(int device);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaGetDevice(out int device);
+    public static extern CudaError cudaGetDevice(out int device);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaGetDeviceProperties(ref CudaDeviceProperties prop, int device);
+    public static extern CudaError cudaGetDeviceProperties(ref CudaDeviceProperties prop, int device);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaDeviceSynchronize();
+    public static extern CudaError cudaDeviceSynchronize();
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaDeviceReset();
+    public static extern CudaError cudaDeviceReset();
 
     // Context Management (Driver API)
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cuDevicePrimaryCtxRetain(ref IntPtr pctx, int dev);
+    public static extern CudaError cuDevicePrimaryCtxRetain(ref IntPtr pctx, int dev);
 
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cuDevicePrimaryCtxRelease(int dev);
+    public static extern CudaError cuDevicePrimaryCtxRelease(int dev);
 
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cuCtxSetCurrent(IntPtr ctx);
+    public static extern CudaError cuCtxSetCurrent(IntPtr ctx);
 
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cuCtxGetCurrent(ref IntPtr pctx);
+    public static extern CudaError cuCtxGetCurrent(ref IntPtr pctx);
 
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cuCtxSynchronize();
+    public static extern CudaError cuCtxSynchronize();
 
     // Memory Management
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaMalloc(ref IntPtr devPtr, ulong size);
+    public static extern CudaError cudaMalloc(ref IntPtr devPtr, ulong size);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaFree(IntPtr devPtr);
+    public static extern CudaError cudaFree(IntPtr devPtr);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaMemcpy(IntPtr dst, IntPtr src, ulong count, CudaMemcpyKind kind);
+    public static extern CudaError cudaMemcpy(IntPtr dst, IntPtr src, ulong count, CudaMemcpyKind kind);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaMemcpyAsync(IntPtr dst, IntPtr src, ulong count, CudaMemcpyKind kind, IntPtr stream);
+    public static extern CudaError cudaMemcpyAsync(IntPtr dst, IntPtr src, ulong count, CudaMemcpyKind kind, IntPtr stream);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaMemset(IntPtr devPtr, int value, ulong count);
+    public static extern CudaError cudaMemset(IntPtr devPtr, int value, ulong count);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaMemsetAsync(IntPtr devPtr, int value, ulong count, IntPtr stream);
+    public static extern CudaError cudaMemsetAsync(IntPtr devPtr, int value, ulong count, IntPtr stream);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaMemGetInfo(out ulong free, out ulong total);
+    public static extern CudaError cudaMemGetInfo(out ulong free, out ulong total);
 
     // Stream Management
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaStreamCreate(ref IntPtr pStream);
+    public static extern CudaError cudaStreamCreate(ref IntPtr pStream);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaStreamCreateWithFlags(ref IntPtr pStream, uint flags);
+    public static extern CudaError cudaStreamCreateWithFlags(ref IntPtr pStream, uint flags);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaStreamDestroy(IntPtr stream);
+    public static extern CudaError cudaStreamDestroy(IntPtr stream);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaStreamSynchronize(IntPtr stream);
+    public static extern CudaError cudaStreamSynchronize(IntPtr stream);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaStreamQuery(IntPtr stream);
+    public static extern CudaError cudaStreamQuery(IntPtr stream);
 
     // Module Management (Driver API)
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cuModuleLoadData(ref IntPtr module, IntPtr image);
+    public static extern CudaError cuModuleLoadData(ref IntPtr module, IntPtr image);
 
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cuModuleLoadDataEx(ref IntPtr module, IntPtr image, uint numOptions, IntPtr options, IntPtr optionValues);
+    public static extern CudaError cuModuleLoadDataEx(ref IntPtr module, IntPtr image, uint numOptions, IntPtr options, IntPtr optionValues);
 
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cuModuleUnload(IntPtr hmod);
+    public static extern CudaError cuModuleUnload(IntPtr hmod);
 
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - MarshalAs attribute is already specified
-    internal static extern CudaError cuModuleGetFunction(ref IntPtr hfunc, IntPtr hmod, [MarshalAs(UnmanagedType.LPStr)] string name);
-#pragma warning restore CA2101
+    public static extern CudaError cuModuleGetFunction(ref IntPtr hfunc, IntPtr hmod, [MarshalAs(UnmanagedType.LPStr)] string name);
 
     // Kernel Execution (Driver API)
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cuLaunchKernel(
+    public static extern CudaError cuLaunchKernel(
         IntPtr f,
         uint gridDimX, uint gridDimY, uint gridDimZ,
         uint blockDimX, uint blockDimY, uint blockDimZ,
@@ -144,24 +142,24 @@ public static class CudaRuntime
     // Version Information
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaRuntimeGetVersion(out int runtimeVersion);
+    public static extern CudaError cudaRuntimeGetVersion(out int runtimeVersion);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaDriverGetVersion(out int driverVersion);
+    public static extern CudaError cudaDriverGetVersion(out int driverVersion);
 
     // Error Handling
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern IntPtr cudaGetErrorString(CudaError error);
+    public static extern IntPtr cudaGetErrorString(CudaError error);
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaGetLastError();
+    public static extern CudaError cudaGetLastError();
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaPeekAtLastError();
+    public static extern CudaError cudaPeekAtLastError();
 
     // Helper Methods
     public static string GetErrorString(CudaError error)
@@ -189,7 +187,7 @@ public static class CudaRuntime
         try
         {
             // Try to get device count - this will fail if CUDA is not available
-            var result = cudaGetDeviceCount(out int deviceCount);
+            var result = cudaGetDeviceCount(out var deviceCount);
             return result == CudaError.Success && deviceCount > 0;
         }
         catch
@@ -293,9 +291,7 @@ public enum CudaMemcpyKind
 /// CUDA device properties
 /// </summary>
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
-#pragma warning disable CA1815 // Override equals and operator equals on value types - P/Invoke struct
 public struct CudaDeviceProperties
-#pragma warning restore CA1815
 {
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
     public string Name;
@@ -428,10 +424,6 @@ public class CudaException : Exception
     public CudaException(string message) : base(message)
     {
     }
-    
-    public CudaException(string message, Exception innerException) : base(message, innerException)
-    {
-    }
 }
 
 /// <summary>
@@ -443,63 +435,49 @@ public static class NvrtcRuntime
 
     // NVRTC Core Functions
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcVersion(out int major, out int minor);
+    public static extern NvrtcResult nvrtcVersion(out int major, out int minor);
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetSupportedArchs(out int[] supportedArchs);
+    public static extern NvrtcResult nvrtcGetSupportedArchs(out int[] supportedArchs);
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - MarshalAs attributes are already specified
-    internal static extern NvrtcResult nvrtcCreateProgram(
+    public static extern NvrtcResult nvrtcCreateProgram(
         out IntPtr prog,
         [MarshalAs(UnmanagedType.LPStr)] string src,
         [MarshalAs(UnmanagedType.LPStr)] string? name,
         int numHeaders,
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[]? headers,
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[]? includeNames);
-#pragma warning restore CA2101
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcDestroyProgram(ref IntPtr prog);
+    public static extern NvrtcResult nvrtcDestroyProgram(ref IntPtr prog);
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcCompileProgram(
+    public static extern NvrtcResult nvrtcCompileProgram(
         IntPtr prog,
         int numOptions,
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[]? options);
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetPTXSize(IntPtr prog, out IntPtr ptxSizeRet);
+    public static extern NvrtcResult nvrtcGetPTXSize(IntPtr prog, out IntPtr ptxSizeRet);
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetPTX(IntPtr prog, [Out] byte[] ptx);
+    public static extern NvrtcResult nvrtcGetPTX(IntPtr prog, [Out] StringBuilder ptx);
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetCUBINSize(IntPtr prog, out IntPtr cubinSizeRet);
+    public static extern NvrtcResult nvrtcGetCUBINSize(IntPtr prog, out IntPtr cubinSizeRet);
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetCUBIN(IntPtr prog, [Out] byte[] cubin);
+    public static extern NvrtcResult nvrtcGetCUBIN(IntPtr prog, [Out] byte[] cubin);
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetProgramLogSize(IntPtr prog, out IntPtr logSizeRet);
+    public static extern NvrtcResult nvrtcGetProgramLogSize(IntPtr prog, out IntPtr logSizeRet);
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, [Out] byte[] log);
+    public static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, [Out] StringBuilder log);
 
     [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern IntPtr nvrtcGetErrorString(NvrtcResult result);
+    public static extern IntPtr nvrtcGetErrorString(NvrtcResult result);
 
     // Helper Methods
     public static string GetErrorString(NvrtcResult result)
@@ -561,10 +539,6 @@ public class NvrtcException : Exception
     public NvrtcException(string message) : base(message)
     {
     }
-    
-    public NvrtcException(string message, Exception innerException) : base(message, innerException)
-    {
-    }
 }
 
 /// <summary>
@@ -583,21 +557,19 @@ public static class ComputeCapability
         CudaRuntime.CheckError(result, "getting device properties");
         return (props.Major, props.Minor);
     }
-}
 
-/// <summary>
-/// Common CUDA compute capabilities
-/// </summary>
-public static class CommonCapabilities
-{
-    public static readonly (int major, int minor) Kepler = (3, 5);
-    public static readonly (int major, int minor) Maxwell = (5, 0);
-    public static readonly (int major, int minor) Pascal = (6, 0);
-    public static readonly (int major, int minor) Volta = (7, 0);
-    public static readonly (int major, int minor) Turing = (7, 5);
-    public static readonly (int major, int minor) Ampere = (8, 0);
-    public static readonly (int major, int minor) Ada = (8, 9);
-    public static readonly (int major, int minor) Hopper = (9, 0);
+    // Common compute capabilities
+    public static class Common
+    {
+        public static readonly (int major, int minor) Kepler = (3, 5);
+        public static readonly (int major, int minor) Maxwell = (5, 0);
+        public static readonly (int major, int minor) Pascal = (6, 0);
+        public static readonly (int major, int minor) Volta = (7, 0);
+        public static readonly (int major, int minor) Turing = (7, 5);
+        public static readonly (int major, int minor) Ampere = (8, 0);
+        public static readonly (int major, int minor) Ada = (8, 9);
+        public static readonly (int major, int minor) Hopper = (9, 0);
+    }
 }
 
 /// <summary>

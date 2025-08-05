@@ -13,19 +13,12 @@ namespace DotCompute.Backends.CUDA.Memory;
 /// <summary>
 /// CUDA memory manager implementation
 /// </summary>
-public sealed class CudaMemoryManager : ISyncMemoryManager
+public sealed class CudaMemoryManager(CudaContext context, ILogger logger) : ISyncMemoryManager
 {
-    private readonly CudaContext _context;
-    private readonly ILogger _logger;
-    private readonly ConcurrentDictionary<ISyncMemoryBuffer, CudaMemoryBuffer> _buffers;
+    private readonly CudaContext _context = context ?? throw new ArgumentNullException(nameof(context));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly ConcurrentDictionary<ISyncMemoryBuffer, CudaMemoryBuffer> _buffers = new();
     private bool _disposed;
-
-    public CudaMemoryManager(CudaContext context, ILogger logger)
-    {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _buffers = new ConcurrentDictionary<ISyncMemoryBuffer, CudaMemoryBuffer>();
-    }
 
     public ISyncMemoryBuffer Allocate(long sizeInBytes, MemoryOptions options = MemoryOptions.None)
     {
@@ -51,7 +44,7 @@ public sealed class CudaMemoryManager : ISyncMemoryManager
             _logger.LogDebug("Successfully allocated CUDA buffer of {Size} bytes", sizeInBytes);
             return buffer;
         }
-        catch (Exception ex) when (!(ex is MemoryException))
+        catch (Exception ex) when (ex is not MemoryException)
         {
             _logger.LogError(ex, "Failed to allocate CUDA memory");
             throw new MemoryException($"Failed to allocate {sizeInBytes} bytes of CUDA memory", ex);
@@ -98,7 +91,7 @@ public sealed class CudaMemoryManager : ISyncMemoryManager
 
             CudaRuntime.CheckError(result, "GPU to GPU copy");
         }
-        catch (Exception ex) when (!(ex is MemoryException))
+        catch (Exception ex) when (ex is not MemoryException)
         {
             _logger.LogError(ex, "Failed to copy memory between GPU buffers");
             throw new MemoryException("Failed to copy memory between GPU buffers", ex);
@@ -132,7 +125,7 @@ public sealed class CudaMemoryManager : ISyncMemoryManager
 
             CudaRuntime.CheckError(result, "Host to GPU copy");
         }
-        catch (Exception ex) when (!(ex is MemoryException))
+        catch (Exception ex) when (ex is not MemoryException)
         {
             _logger.LogError(ex, "Failed to copy memory from host to GPU");
             throw new MemoryException("Failed to copy memory from host to GPU", ex);
@@ -169,7 +162,7 @@ public sealed class CudaMemoryManager : ISyncMemoryManager
             // Synchronize to ensure copy completes before returning
             _context.Synchronize();
         }
-        catch (Exception ex) when (!(ex is MemoryException))
+        catch (Exception ex) when (ex is not MemoryException)
         {
             _logger.LogError(ex, "Failed to copy memory from GPU to host");
             throw new MemoryException("Failed to copy memory from GPU to host", ex);
@@ -191,7 +184,7 @@ public sealed class CudaMemoryManager : ISyncMemoryManager
             var result = CudaRuntime.cudaMemsetAsync(ptr, value, (ulong)sizeInBytes, _context.Stream);
             CudaRuntime.CheckError(result, "Memory fill");
         }
-        catch (Exception ex) when (!(ex is MemoryException))
+        catch (Exception ex) when (ex is not MemoryException)
         {
             _logger.LogError(ex, "Failed to fill GPU memory");
             throw new MemoryException("Failed to fill GPU memory", ex);
@@ -227,7 +220,7 @@ public sealed class CudaMemoryManager : ISyncMemoryManager
             CudaRuntime.cudaMemGetInfo(out var free, out var total);
 
             long allocated = 0;
-            int allocationCount = 0;
+            var allocationCount = 0;
 
             foreach (var buffer in _buffers.Values)
             {

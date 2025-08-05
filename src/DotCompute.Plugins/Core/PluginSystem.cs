@@ -20,7 +20,7 @@ namespace DotCompute.Plugins.Core
     {
         private readonly ILogger<PluginSystem> _logger;
         private readonly Dictionary<string, LoadedPlugin> _plugins;
-        private readonly object _lock = new();
+        private readonly Lock _lock = new();
         private bool _disposed;
         private bool _isInitialized;
 
@@ -233,7 +233,7 @@ namespace DotCompute.Plugins.Core
         {
             lock (_lock)
             {
-                return _plugins.Values.Select(p => p.Plugin).ToList();
+                return [.. _plugins.Values.Select(p => p.Plugin)];
             }
         }
 
@@ -348,14 +348,9 @@ namespace DotCompute.Plugins.Core
     /// <summary>
     /// Assembly load context for plugin isolation.
     /// </summary>
-    public class PluginAssemblyLoadContext : AssemblyLoadContext
+    public class PluginAssemblyLoadContext(string pluginPath) : AssemblyLoadContext(isCollectible: true)
     {
-        private readonly AssemblyDependencyResolver _resolver;
-
-        public PluginAssemblyLoadContext(string pluginPath) : base(isCollectible: true)
-        {
-            _resolver = new AssemblyDependencyResolver(pluginPath);
-        }
+        private readonly AssemblyDependencyResolver _resolver = new(pluginPath);
 
         /// <summary>
         /// When overridden in a derived class, allows an assembly to be resolved based on its <see cref="System.Reflection.AssemblyName" />.

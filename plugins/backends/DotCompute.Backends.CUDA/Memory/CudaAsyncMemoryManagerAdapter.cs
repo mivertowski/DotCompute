@@ -8,14 +8,9 @@ namespace DotCompute.Backends.CUDA.Memory;
 /// <summary>
 /// Adapts the synchronous CudaMemoryManager to the async IMemoryManager interface.
 /// </summary>
-public class CudaAsyncMemoryManagerAdapter : IMemoryManager
+public class CudaAsyncMemoryManagerAdapter(CudaMemoryManager syncMemoryManager) : IMemoryManager
 {
-    private readonly CudaMemoryManager _syncMemoryManager;
-
-    public CudaAsyncMemoryManagerAdapter(CudaMemoryManager syncMemoryManager)
-    {
-        _syncMemoryManager = syncMemoryManager ?? throw new ArgumentNullException(nameof(syncMemoryManager));
-    }
+    private readonly CudaMemoryManager _syncMemoryManager = syncMemoryManager ?? throw new ArgumentNullException(nameof(syncMemoryManager));
 
     public ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,

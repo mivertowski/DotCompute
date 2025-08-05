@@ -9,13 +9,13 @@ namespace DotCompute.Core.Pipelines;
 /// <summary>
 /// Implementation of pipeline performance metrics.
 /// </summary>
-internal sealed class PipelineMetrics : IPipelineMetrics
+internal sealed class PipelineMetrics(string pipelineId) : IPipelineMetrics
 {
-    private readonly ConcurrentQueue<PipelineExecutionMetrics> _executions;
-    private readonly ConcurrentDictionary<string, StageMetrics> _stageMetrics;
-    private readonly ConcurrentQueue<TimeSeriesMetric> _timeSeries;
-    private readonly ConcurrentDictionary<string, double> _customMetrics;
-    private readonly object _lock = new();
+    private readonly ConcurrentQueue<PipelineExecutionMetrics> _executions = new();
+    private readonly ConcurrentDictionary<string, StageMetrics> _stageMetrics = new();
+    private readonly ConcurrentQueue<TimeSeriesMetric> _timeSeries = new();
+    private readonly ConcurrentDictionary<string, double> _customMetrics = new();
+    private readonly Lock _lock = new();
 
     private long _executionCount;
     private long _successfulExecutionCount;
@@ -26,17 +26,8 @@ internal sealed class PipelineMetrics : IPipelineMetrics
     private long _totalMemoryUsage;
     private long _peakMemoryUsage;
 
-    public PipelineMetrics(string pipelineId)
-    {
-        PipelineId = pipelineId;
-        _executions = new ConcurrentQueue<PipelineExecutionMetrics>();
-        _stageMetrics = new ConcurrentDictionary<string, StageMetrics>();
-        _timeSeries = new ConcurrentQueue<TimeSeriesMetric>();
-        _customMetrics = new ConcurrentDictionary<string, double>();
-    }
-
     /// <inheritdoc/>
-    public string PipelineId { get; }
+    public string PipelineId { get; } = pipelineId;
 
     /// <inheritdoc/>
     public long ExecutionCount => _executionCount;
@@ -110,7 +101,7 @@ internal sealed class PipelineMetrics : IPipelineMetrics
                 _timeSeries.Enqueue(metric);
             }
 
-            return recent.OrderBy(m => m.Timestamp).ToList();
+            return [.. recent.OrderBy(m => m.Timestamp)];
         }
     }
 
@@ -383,10 +374,10 @@ internal sealed class PipelineMetrics : IPipelineMetrics
 /// <summary>
 /// Implementation of stage metrics.
 /// </summary>
-internal sealed class StageMetrics : IStageMetrics
+internal sealed class StageMetrics(string stageId) : IStageMetrics
 {
-    private readonly object _lock = new();
-    private readonly ConcurrentDictionary<string, double> _customMetrics;
+    private readonly Lock _lock = new();
+    private readonly ConcurrentDictionary<string, double> _customMetrics = new();
 
     private long _executionCount;
     private long _errorCount;
@@ -395,13 +386,7 @@ internal sealed class StageMetrics : IStageMetrics
     private TimeSpan _maxExecutionTime = TimeSpan.MinValue;
     private long _totalMemoryUsage;
 
-    public StageMetrics(string stageId)
-    {
-        StageId = stageId;
-        _customMetrics = new ConcurrentDictionary<string, double>();
-    }
-
-    public string StageId { get; }
+    public string StageId { get; } = stageId;
 
     /// <inheritdoc/>
     public long ExecutionCount => _executionCount;

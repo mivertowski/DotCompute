@@ -195,7 +195,7 @@ internal sealed class KernelFusionStrategy : IOptimizationStrategy
         var memoryReduction = 0L;
 
         // Find consecutive kernel stages that can be fused
-        for (int i = 0; i < optimizedStages.Count - 1; i++)
+        for (var i = 0; i < optimizedStages.Count - 1; i++)
         {
             if (optimizedStages[i] is KernelStage kernelStage1 &&
                 optimizedStages[i + 1] is KernelStage kernelStage2)
@@ -279,7 +279,7 @@ internal sealed class StageReorderingStrategy : IOptimizationStrategy
         if (wasReordered)
         {
             optimizedStages = sorted;
-            reorderedStages = sorted.Select(s => s.Id).ToList();
+            reorderedStages = [.. sorted.Select(s => s.Id)];
         }
 
         var estimatedImpact = wasReordered ? 0.08 : 0.0; // 8% improvement from reordering
@@ -528,7 +528,7 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
 
     private static HashSet<string> FindUsedOutputs(List<IPipelineStage> stages) =>
         // Simplified - in practice would analyze data flow
-        stages.SelectMany(s => s.Dependencies).ToHashSet();
+        [.. stages.SelectMany(s => s.Dependencies)];
 
     private static bool HasUsefulOutput(IPipelineStage stage, HashSet<string> usedOutputs) =>
         // Check if stage produces useful output or has side effects
@@ -538,21 +538,13 @@ internal sealed class DeadCodeEliminationStrategy : IOptimizationStrategy
 /// <summary>
 /// Wrapper for fused kernels.
 /// </summary>
-internal sealed class FusedKernelStage : IPipelineStage
+internal sealed class FusedKernelStage(KernelStage stage1, KernelStage stage2) : IPipelineStage
 {
-    private readonly KernelStage _stage1;
-    private readonly KernelStage _stage2;
+    private readonly KernelStage _stage1 = stage1;
+    private readonly KernelStage _stage2 = stage2;
 
-    public FusedKernelStage(KernelStage stage1, KernelStage stage2)
-    {
-        _stage1 = stage1;
-        _stage2 = stage2;
-        Id = $"Fused_{stage1.Id}_{stage2.Id}";
-        Name = $"Fused({stage1.Name}, {stage2.Name})";
-    }
-
-    public string Id { get; }
-    public string Name { get; }
+    public string Id { get; } = $"Fused_{stage1.Id}_{stage2.Id}";
+    public string Name { get; } = $"Fused({stage1.Name}, {stage2.Name})";
     public PipelineStageType Type => PipelineStageType.Kernel;
     public IReadOnlyList<string> Dependencies => _stage1.Dependencies;
     public IReadOnlyDictionary<string, object> Metadata => _stage1.Metadata;
@@ -669,14 +661,9 @@ internal sealed class FusedKernelStage : IPipelineStage
 /// <summary>
 /// Wrapper for memory-optimized stages.
 /// </summary>
-internal sealed class MemoryOptimizedStageWrapper : IPipelineStage
+internal sealed class MemoryOptimizedStageWrapper(IPipelineStage innerStage) : IPipelineStage
 {
-    private readonly IPipelineStage _innerStage;
-
-    public MemoryOptimizedStageWrapper(IPipelineStage innerStage)
-    {
-        _innerStage = innerStage;
-    }
+    private readonly IPipelineStage _innerStage = innerStage;
 
     public string Id => _innerStage.Id;
     public string Name => _innerStage.Name;

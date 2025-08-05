@@ -45,7 +45,7 @@ internal sealed class Program
             var sw = Stopwatch.StartNew();
 
             // Simple computation (without actual kernels for now)
-            for (int i = 0; i < data.Length; i++)
+            for (var i = 0; i < data.Length; i++)
             {
                 result[i] = data[i] * 2.0f + 1.0f;
             }
@@ -59,7 +59,7 @@ internal sealed class Program
             var expected = new[] { 1.0f, 3.0f, 5.0f, 7.0f, 9.0f };
             var actual = result.Take(5).ToArray();
 
-            bool isCorrect = expected.SequenceEqual(actual);
+            var isCorrect = expected.SequenceEqual(actual);
             logger.LogInformation("Results verification: {IsCorrect}", isCorrect ? "PASSED" : "FAILED");
 
             if (!isCorrect)

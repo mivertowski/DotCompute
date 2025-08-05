@@ -16,14 +16,9 @@ namespace DotCompute.Core.Accelerators;
 /// <summary>
 /// Provides CPU accelerator instances.
 /// </summary>
-public class CpuAcceleratorProvider : IAcceleratorProvider
+public class CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger) : IAcceleratorProvider
 {
-    private readonly ILogger<CpuAcceleratorProvider> _logger;
-
-    public CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly ILogger<CpuAcceleratorProvider> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public string Name => "CPU";
 
@@ -376,17 +371,11 @@ internal class CpuAccelerator : IAccelerator
 /// <summary>
 /// Simple CPU memory manager implementation.
 /// </summary>
-internal class CpuMemoryManager : IMemoryManager, IDisposable
+internal class CpuMemoryManager(IAccelerator accelerator, ILogger logger) : IMemoryManager, IDisposable
 {
-    private readonly IAccelerator _accelerator;
-    private readonly ILogger _logger;
+    private readonly IAccelerator _accelerator = accelerator;
+    private readonly ILogger _logger = logger;
     private readonly List<CpuMemoryBuffer> _allocatedBuffers = [];
-
-    public CpuMemoryManager(IAccelerator accelerator, ILogger logger)
-    {
-        _accelerator = accelerator;
-        _logger = logger;
-    }
 
     public ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,
@@ -500,22 +489,14 @@ internal class CpuMemoryBuffer : IMemoryBuffer
 /// <summary>
 /// View over a CPU memory buffer.
 /// </summary>
-internal class CpuMemoryBufferView : IMemoryBuffer
+internal class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long length) : IMemoryBuffer
 {
-    private readonly CpuMemoryBuffer _parent;
-    private readonly long _offset;
+    private readonly CpuMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+    private readonly long _offset = offset;
 
-    public CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long length)
-    {
-        _parent = parent ?? throw new ArgumentNullException(nameof(parent));
-        _offset = offset;
-        SizeInBytes = length;
-        Options = parent.Options;
-    }
+    public long SizeInBytes { get; } = length;
 
-    public long SizeInBytes { get; }
-
-    public MemoryOptions Options { get; }
+    public MemoryOptions Options { get; } = parent.Options;
 
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
@@ -535,20 +516,13 @@ internal class CpuMemoryBufferView : IMemoryBuffer
 /// <summary>
 /// Production CPU compiled kernel with full execution support.
 /// </summary>
-internal class CpuCompiledKernel : ICompiledKernel
+internal class CpuCompiledKernel(string name, KernelDefinition definition, Action<KernelExecutionContext>? compiledFunction = null) : ICompiledKernel
 {
-    private readonly Action<KernelExecutionContext>? _compiledFunction;
-    private readonly KernelDefinition _definition;
+    private readonly Action<KernelExecutionContext>? _compiledFunction = compiledFunction ?? DefaultKernelFunction;
+    private readonly KernelDefinition _definition = definition;
     private bool _disposed;
 
-    public CpuCompiledKernel(string name, KernelDefinition definition, Action<KernelExecutionContext>? compiledFunction = null)
-    {
-        Name = name;
-        _definition = definition;
-        _compiledFunction = compiledFunction ?? DefaultKernelFunction;
-    }
-
-    public string Name { get; }
+    public string Name { get; } = name;
 
     private static void DefaultKernelFunction(KernelExecutionContext context)
     {

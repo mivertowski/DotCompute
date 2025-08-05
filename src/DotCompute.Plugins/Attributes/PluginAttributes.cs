@@ -106,13 +106,17 @@ namespace DotCompute.Plugins.Attributes
     /// <summary>
     /// Specifies a dependency on another plugin.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the PluginDependencyAttribute class.
+    /// </remarks>
+    /// <param name="pluginId">The ID of the required plugin.</param>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-    public sealed class PluginDependencyAttribute : Attribute
+    public sealed class PluginDependencyAttribute(string pluginId) : Attribute
     {
         /// <summary>
         /// Gets the ID of the required plugin.
         /// </summary>
-        public string PluginId { get; }
+        public string PluginId { get; } = pluginId ?? throw new ArgumentNullException(nameof(pluginId));
 
         /// <summary>
         /// Gets or sets the minimum version required.
@@ -128,15 +132,6 @@ namespace DotCompute.Plugins.Attributes
         /// Gets or sets whether the dependency is optional.
         /// </summary>
         public bool IsOptional { get; set; }
-
-        /// <summary>
-        /// Initializes a new instance of the PluginDependencyAttribute class.
-        /// </summary>
-        /// <param name="pluginId">The ID of the required plugin.</param>
-        public PluginDependencyAttribute(string pluginId)
-        {
-            PluginId = pluginId ?? throw new ArgumentNullException(nameof(pluginId));
-        }
     }
 
     /// <summary>
@@ -169,13 +164,17 @@ namespace DotCompute.Plugins.Attributes
     /// <summary>
     /// Marks a method as a plugin lifecycle hook.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the PluginLifecycleHookAttribute class.
+    /// </remarks>
+    /// <param name="stage">The lifecycle stage for this hook.</param>
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = false, Inherited = false)]
-    public sealed class PluginLifecycleHookAttribute : Attribute
+    public sealed class PluginLifecycleHookAttribute(PluginLifecycleStage stage) : Attribute
     {
         /// <summary>
         /// Gets the lifecycle stage for this hook.
         /// </summary>
-        public PluginLifecycleStage Stage { get; }
+        public PluginLifecycleStage Stage { get; } = stage;
 
         /// <summary>
         /// Gets or sets the priority for hook execution (higher = executed first).
@@ -186,15 +185,6 @@ namespace DotCompute.Plugins.Attributes
         /// Gets or sets whether errors in this hook should prevent plugin loading.
         /// </summary>
         public bool IsCritical { get; set; }
-
-        /// <summary>
-        /// Initializes a new instance of the PluginLifecycleHookAttribute class.
-        /// </summary>
-        /// <param name="stage">The lifecycle stage for this hook.</param>
-        public PluginLifecycleHookAttribute(PluginLifecycleStage stage)
-        {
-            Stage = stage;
-        }
     }
 
     /// <summary>
@@ -271,13 +261,17 @@ namespace DotCompute.Plugins.Attributes
     /// <summary>
     /// Specifies a capability provided by the plugin.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the PluginCapabilityAttribute class.
+    /// </remarks>
+    /// <param name="name">The capability name.</param>
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true, Inherited = false)]
-    public sealed class PluginCapabilityAttribute : Attribute
+    public sealed class PluginCapabilityAttribute(string name) : Attribute
     {
         /// <summary>
         /// Gets the capability name.
         /// </summary>
-        public string Name { get; }
+        public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
         /// <summary>
         /// Gets or sets the capability version.
@@ -288,15 +282,6 @@ namespace DotCompute.Plugins.Attributes
         /// Gets or sets additional metadata for the capability.
         /// </summary>
         public string? Metadata { get; set; }
-
-        /// <summary>
-        /// Initializes a new instance of the PluginCapabilityAttribute class.
-        /// </summary>
-        /// <param name="name">The capability name.</param>
-        public PluginCapabilityAttribute(string name)
-        {
-            Name = name ?? throw new ArgumentNullException(nameof(name));
-        }
     }
 
     /// <summary>

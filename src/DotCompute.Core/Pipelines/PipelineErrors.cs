@@ -202,11 +202,30 @@ public class PipelineException : Exception
         StageId = stageId;
         Context = context;
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineException"/> class.
+    /// </summary>
     public PipelineException()
     {
         ErrorCode = "UNKNOWN_ERROR";
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public PipelineException(string message) : base(message)
+    {
+        ErrorCode = "UNKNOWN_ERROR";
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public PipelineException(string message, Exception innerException) : base(message, innerException)
     {
         ErrorCode = "UNKNOWN_ERROR";
     }
@@ -239,11 +258,30 @@ public sealed class PipelineValidationException : PipelineException
         Errors = errors;
         Warnings = warnings;
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineValidationException"/> class.
+    /// </summary>
     public PipelineValidationException()
     {
         Errors = [];
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineValidationException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public PipelineValidationException(string message) : base(message)
+    {
+        Errors = [];
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineValidationException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public PipelineValidationException(string message, Exception innerException) : base(message, "PIPELINE_VALIDATION_FAILED", innerException)
     {
         Errors = [];
     }
@@ -278,11 +316,30 @@ public sealed class PipelineExecutionException : PipelineException
         Errors = errors;
         PartialResult = partialResult;
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineExecutionException"/> class.
+    /// </summary>
     public PipelineExecutionException()
     {
         Errors = [];
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineExecutionException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public PipelineExecutionException(string message) : base(message)
+    {
+        Errors = [];
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineExecutionException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public PipelineExecutionException(string message, Exception innerException) : base(message, "PIPELINE_EXECUTION_FAILED", innerException)
     {
         Errors = [];
     }
@@ -317,12 +374,32 @@ public sealed class PipelineOptimizationException : PipelineException
         FailedOptimization = failedOptimization;
         Reason = reason;
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineOptimizationException"/> class.
+    /// </summary>
     public PipelineOptimizationException()
     {
         FailedOptimization = OptimizationType.KernelFusion;
         Reason = "Unknown reason";
     }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineOptimizationException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
     public PipelineOptimizationException(string message) : base(message)
+    {
+        FailedOptimization = OptimizationType.KernelFusion;
+        Reason = "Unknown reason";
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PipelineOptimizationException"/> class.
+    /// </summary>
+    /// <param name="message">The message.</param>
+    /// <param name="innerException">The inner exception.</param>
+    public PipelineOptimizationException(string message, Exception innerException) : base(message, "PIPELINE_OPTIMIZATION_FAILED", innerException)
     {
         FailedOptimization = OptimizationType.KernelFusion;
         Reason = "Unknown reason";

@@ -26,10 +26,10 @@ public static class SampleKernels
         float* destination,
         int count)
     {
-        int vectorSize = Vector256<float>.Count;
-        int vectorizedCount = count - (count % vectorSize);
+        var vectorSize = Vector256<float>.Count;
+        var vectorizedCount = count - (count % vectorSize);
 
-        int i = 0;
+        var i = 0;
 
         // Process vectors of 8 floats using AVX2
         if (Avx2.IsSupported && vectorizedCount >= vectorSize)
@@ -74,10 +74,10 @@ public static class SampleKernels
         float* destination,
         int count)
     {
-        int vectorSize = Vector256<float>.Count;
-        int vectorizedCount = count - (count % vectorSize);
+        var vectorSize = Vector256<float>.Count;
+        var vectorizedCount = count - (count % vectorSize);
 
-        int i = 0;
+        var i = 0;
 
         // Process vectors of 8 floats using AVX2
         if (Avx2.IsSupported && vectorizedCount >= vectorSize)
@@ -121,10 +121,10 @@ public static class SampleKernels
         float* source2,
         int count)
     {
-        int vectorSize = Vector256<float>.Count;
-        int vectorizedCount = count - (count % vectorSize);
+        var vectorSize = Vector256<float>.Count;
+        var vectorizedCount = count - (count % vectorSize);
 
-        int i = 0;
+        var i = 0;
         var sumVector = Vector256<float>.Zero;
 
         // Process vectors of 8 floats using AVX2
@@ -177,7 +177,7 @@ public static class SampleKernels
         }
 
         // Scalar fallback
-        float scalarSum = 0.0f;
+        var scalarSum = 0.0f;
         for (; i < count; i++)
         {
             scalarSum += source1[i] * source2[i];
@@ -199,19 +199,19 @@ public static class SampleKernels
         int commonDim)
     {
         // Simple row-major matrix multiplication with vectorization
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 var sum = 0.0f;
 
                 // Vectorized dot product for this element
-                float* rowA = matrixA + i * commonDim;
-                float* colB = matrixB + j; // Column-major access would be more complex
+                var rowA = matrixA + i * commonDim;
+                var colB = matrixB + j; // Column-major access would be more complex
 
                 // For simplicity, we'll do a scalar version here
                 // In practice, you'd want to reorganize the data or use more sophisticated algorithms
-                for (int k = 0; k < commonDim; k++)
+                for (var k = 0; k < commonDim; k++)
                 {
                     sum += rowA[k] * colB[k * cols];
                 }
@@ -227,10 +227,10 @@ public static class SampleKernels
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe float VectorSumFloat32(float* source, int count)
     {
-        int vectorSize = Vector256<float>.Count;
-        int vectorizedCount = count - (count % vectorSize);
+        var vectorSize = Vector256<float>.Count;
+        var vectorizedCount = count - (count % vectorSize);
 
-        int i = 0;
+        var i = 0;
         var sumVector = Vector256<float>.Zero;
 
         // Process vectors of 8 floats using AVX2
@@ -279,7 +279,7 @@ public static class SampleKernels
         }
 
         // Scalar fallback
-        float scalarSum = 0.0f;
+        var scalarSum = 0.0f;
         for (; i < count; i++)
         {
             scalarSum += source[i];
@@ -301,17 +301,17 @@ public static class SampleKernels
         if (!AdvSimd.IsSupported)
         {
             // Fall back to scalar
-            for (int j = 0; j < count; j++)
+            for (var j = 0; j < count; j++)
             {
                 destination[j] = source1[j] + source2[j];
             }
             return;
         }
 
-        int vectorSize = Vector128<float>.Count;
-        int vectorizedCount = count - (count % vectorSize);
+        var vectorSize = Vector128<float>.Count;
+        var vectorizedCount = count - (count % vectorSize);
 
-        int i = 0;
+        var i = 0;
 
         // Process vectors of 4 floats using NEON
         for (; i < vectorizedCount; i += vectorSize)
@@ -452,6 +452,4 @@ public static class CpuKernelExecutor
 /// <param name="source2">Second source buffer.</param>
 /// <param name="destination">Destination buffer (can be null for reduction operations).</param>
 /// <param name="count">Number of elements to process.</param>
-#pragma warning disable CA1711 // Identifiers should not have incorrect suffix - Delegate is the appropriate suffix for a delegate type
 public unsafe delegate void VectorizedKernelDelegate<T>(T* source1, T* source2, T* destination, int count) where T : unmanaged;
-#pragma warning restore CA1711

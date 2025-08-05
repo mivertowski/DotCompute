@@ -35,45 +35,35 @@ public interface IKernel
 /// <summary>
 /// Represents a kernel parameter.
 /// </summary>
-public sealed class KernelParameter
+public sealed class KernelParameter(string name, Type type, int index, bool isInput = true, bool isOutput = false, bool isConstant = false)
 {
     /// <summary>
     /// Gets the parameter name.
     /// </summary>
-    public string Name { get; }
+    public string Name { get; } = name ?? throw new ArgumentNullException(nameof(name));
 
     /// <summary>
     /// Gets the parameter type.
     /// </summary>
-    public Type Type { get; }
+    public Type Type { get; } = type ?? throw new ArgumentNullException(nameof(type));
 
     /// <summary>
     /// Gets whether this is an input parameter.
     /// </summary>
-    public bool IsInput { get; }
+    public bool IsInput { get; } = isInput;
 
     /// <summary>
     /// Gets whether this is an output parameter.
     /// </summary>
-    public bool IsOutput { get; }
+    public bool IsOutput { get; } = isOutput;
 
     /// <summary>
     /// Gets the parameter index.
     /// </summary>
-    public int Index { get; }
+    public int Index { get; } = index;
 
     /// <summary>
     /// Gets whether this is a constant parameter that should never be null.
     /// </summary>
-    public bool IsConstant { get; }
-
-    public KernelParameter(string name, Type type, int index, bool isInput = true, bool isOutput = false, bool isConstant = false)
-    {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
-        Type = type ?? throw new ArgumentNullException(nameof(type));
-        Index = index;
-        IsInput = isInput;
-        IsOutput = isOutput;
-        IsConstant = isConstant;
-    }
+    public bool IsConstant { get; } = isConstant;
 }

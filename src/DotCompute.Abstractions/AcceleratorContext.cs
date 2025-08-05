@@ -7,33 +7,27 @@ namespace DotCompute.Abstractions;
 /// Represents an accelerator context for managing device state.
 /// This is a value type for AOT compatibility and zero allocations.
 /// </summary>
-public readonly struct AcceleratorContext : IEquatable<AcceleratorContext>
+/// <remarks>
+/// Creates a new accelerator context.
+/// </remarks>
+/// <param name="handle">The context handle.</param>
+/// <param name="deviceId">The device ID.</param>
+public readonly struct AcceleratorContext(IntPtr handle, int deviceId) : IEquatable<AcceleratorContext>
 {
     /// <summary>
     /// Gets the context handle.
     /// </summary>
-    public IntPtr Handle { get; }
+    public IntPtr Handle { get; } = handle;
 
     /// <summary>
     /// Gets the device ID associated with this context.
     /// </summary>
-    public int DeviceId { get; }
+    public int DeviceId { get; } = deviceId;
 
     /// <summary>
     /// Gets whether this is a valid context.
     /// </summary>
     public bool IsValid => Handle != IntPtr.Zero;
-
-    /// <summary>
-    /// Creates a new accelerator context.
-    /// </summary>
-    /// <param name="handle">The context handle.</param>
-    /// <param name="deviceId">The device ID.</param>
-    public AcceleratorContext(IntPtr handle, int deviceId)
-    {
-        Handle = handle;
-        DeviceId = deviceId;
-    }
 
     /// <summary>
     /// Creates an invalid context.

@@ -85,13 +85,13 @@ public sealed class CpuThreadPool : IAsyncDisposable
 
         // Initialize local work queues for work-stealing
         _localWorkQueues = new ConcurrentQueue<WorkItem>[threadCount];
-        for (int i = 0; i < threadCount; i++)
+        for (var i = 0; i < threadCount; i++)
         {
             _localWorkQueues[i] = new ConcurrentQueue<WorkItem>();
         }
 
         // Start worker threads
-        for (int i = 0; i < threadCount; i++)
+        for (var i = 0; i < threadCount; i++)
         {
             var thread = new Thread(WorkerThreadProc)
             {
@@ -184,7 +184,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         ObjectDisposedException.ThrowIf(_disposed != 0, this);
 
         // Performance optimization: Convert to array once to avoid multiple enumeration
-        var workArray = workItems as Action[] ?? workItems.ToArray();
+        var workArray = workItems as Action[] ?? [.. workItems];
 
         if (workArray.Length == 0)
         {
@@ -207,7 +207,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
             var itemsPerThread = Math.Max(1, workArray.Length / _localWorkQueues.Length);
             var currentIndex = 0;
 
-            for (int threadIdx = 0; threadIdx < _localWorkQueues.Length && currentIndex < workArray.Length; threadIdx++)
+            for (var threadIdx = 0; threadIdx < _localWorkQueues.Length && currentIndex < workArray.Length; threadIdx++)
             {
                 var count = Math.Min(itemsPerThread, workArray.Length - currentIndex);
                 if (threadIdx == _localWorkQueues.Length - 1)
@@ -216,7 +216,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
                     count = workArray.Length - currentIndex;
                 }
 
-                for (int i = 0; i < count && currentIndex < workArray.Length; i++)
+                for (var i = 0; i < count && currentIndex < workArray.Length; i++)
                 {
                     var workItem = new WorkItem(workArray[currentIndex++], cancellationToken);
                     _localWorkQueues[threadIdx].Enqueue(workItem);
@@ -253,10 +253,10 @@ public sealed class CpuThreadPool : IAsyncDisposable
         {
             while (!cancellationToken.IsCancellationRequested)
             {
-                bool hasWork = false;
+                var hasWork = false;
 
                 // 1. Try local queue first (no contention)
-                if (localQueue.TryDequeue(out WorkItem workItem))
+                if (localQueue.TryDequeue(out var workItem))
                 {
                     hasWork = true;
                     consecutiveStealFailures = 0;
@@ -394,7 +394,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         var bestThread = -1;
 
         // Check up to MaxChecks threads starting from a pseudo-random position
-        for (int i = 0; i < Math.Min(MaxChecks, _localWorkQueues.Length); i++)
+        for (var i = 0; i < Math.Min(MaxChecks, _localWorkQueues.Length); i++)
         {
             var threadIdx = (startIndex + i) % _localWorkQueues.Length;
             var count = _localWorkQueues[threadIdx].Count;
@@ -438,7 +438,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         }
 
         // Then try random threads
-        for (int i = 2; i < attempts; i++)
+        for (var i = 2; i < attempts; i++)
         {
             // Fast pseudo-random using multiplicative hash
             hash = hash * 1664525U + 1013904223U;
@@ -610,8 +610,8 @@ public sealed class CpuThreadPool : IAsyncDisposable
     {
         if (cpu >= 0 && cpu < 1024)
         {
-            int index = cpu / 64;
-            int bit = cpu % 64;
+            var index = cpu / 64;
+            var bit = cpu % 64;
             if (index < set.__bits.Length)
             {
                 set.__bits[index] |= 1UL << bit;
@@ -650,7 +650,7 @@ public sealed class CpuThreadPool : IAsyncDisposable
         }
 
         var localQueueCounts = new int[_localWorkQueues.Length];
-        for (int i = 0; i < _localWorkQueues.Length; i++)
+        for (var i = 0; i < _localWorkQueues.Length; i++)
         {
             localQueueCounts[i] = _localWorkQueues[i].Count;
         }
@@ -692,16 +692,10 @@ public sealed class CpuThreadPool : IAsyncDisposable
         _shutdownTcs.SetResult();
     }
 
-    private readonly struct WorkItem
+    private readonly struct WorkItem(Action work, CancellationToken cancellationToken)
     {
-        public readonly Action Work;
-        public readonly CancellationToken CancellationToken;
-
-        public WorkItem(Action work, CancellationToken cancellationToken)
-        {
-            Work = work;
-            CancellationToken = cancellationToken;
-        }
+        public readonly Action Work = work;
+        public readonly CancellationToken CancellationToken = cancellationToken;
     }
 }
 

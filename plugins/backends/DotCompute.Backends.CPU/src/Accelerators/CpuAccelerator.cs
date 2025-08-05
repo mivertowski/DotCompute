@@ -296,14 +296,9 @@ public sealed class CpuAccelerator : IAccelerator
 /// <summary>
 /// Adapter that wraps a Core.ICompiledKernel to implement Abstractions.ICompiledKernel.
 /// </summary>
-internal sealed class CompiledKernelAdapter : ICompiledKernel
+internal sealed class CompiledKernelAdapter(CoreICompiledKernel coreKernel) : ICompiledKernel
 {
-    private readonly CoreICompiledKernel _coreKernel;
-
-    public CompiledKernelAdapter(CoreICompiledKernel coreKernel)
-    {
-        _coreKernel = coreKernel ?? throw new ArgumentNullException(nameof(coreKernel));
-    }
+    private readonly CoreICompiledKernel _coreKernel = coreKernel ?? throw new ArgumentNullException(nameof(coreKernel));
 
     public string Name => _coreKernel.Name;
 

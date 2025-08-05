@@ -163,31 +163,20 @@ public sealed class KernelPipelineBuilder : IKernelPipelineBuilder
 /// <summary>
 /// Builder for kernel stages.
 /// </summary>
-internal sealed class KernelStageBuilder : IKernelStageBuilder
+internal sealed class KernelStageBuilder(string name, ICompiledKernel kernel) : IKernelStageBuilder
 {
-    private readonly string _name;
-    private readonly ICompiledKernel _kernel;
-    private readonly List<string> _dependencies;
-    private readonly Dictionary<string, object> _metadata;
-    private readonly Dictionary<string, string> _inputMappings;
-    private readonly Dictionary<string, string> _outputMappings;
-    private readonly Dictionary<string, object> _parameters;
+    private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
+    private readonly ICompiledKernel _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+    private readonly List<string> _dependencies = [];
+    private readonly Dictionary<string, object> _metadata = [];
+    private readonly Dictionary<string, string> _inputMappings = [];
+    private readonly Dictionary<string, string> _outputMappings = [];
+    private readonly Dictionary<string, object> _parameters = [];
 
     private long[]? _globalWorkSize;
     private long[]? _localWorkSize;
     private MemoryHint _memoryHint = MemoryHint.None;
     private int _priority;
-
-    public KernelStageBuilder(string name, ICompiledKernel kernel)
-    {
-        _name = name ?? throw new ArgumentNullException(nameof(name));
-        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
-        _dependencies = [];
-        _metadata = [];
-        _inputMappings = [];
-        _outputMappings = [];
-        _parameters = [];
-    }
 
     /// <inheritdoc/>
     public IKernelStageBuilder WithName(string name) =>

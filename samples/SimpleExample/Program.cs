@@ -10,7 +10,7 @@ namespace SimpleExample
     /// </summary>
     internal sealed unsafe class Program
     {
-        public static void Main(string[] args)
+        static void Main(string[] args)
         {
             Console.WriteLine("DotCompute Simple Example");
             Console.WriteLine("========================");
@@ -52,19 +52,17 @@ namespace SimpleExample
 
         private static void InitializeData(Span<float> a, Span<float> b)
         {
-            #pragma warning disable CA5394 // Do not use insecure randomness - deterministic random for example code
             var random = new Random(42);
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 a[i] = (float)random.NextDouble() * 100;
                 b[i] = (float)random.NextDouble() * 100;
             }
-            #pragma warning restore CA5394
         }
 
         private static void AddVectors(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
         {
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -73,8 +71,8 @@ namespace SimpleExample
         private static void VerifyResults(ReadOnlySpan<float> a, ReadOnlySpan<float> b, ReadOnlySpan<float> result)
         {
             Console.WriteLine("\nVerifying results...");
-            int errors = 0;
-            for (int i = 0; i < Math.Min(10, a.Length); i++)
+            var errors = 0;
+            for (var i = 0; i < Math.Min(10, a.Length); i++)
             {
                 var expected = a[i] + b[i];
                 var actual = result[i];

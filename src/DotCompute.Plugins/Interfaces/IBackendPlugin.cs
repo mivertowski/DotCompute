@@ -184,8 +184,8 @@ namespace DotCompute.Plugins.Interfaces
     public class PluginValidationResult
     {
         public bool IsValid { get; set; }
-        public IList<string> Errors { get; } = new List<string>();
-        public IList<string> Warnings { get; } = new List<string>();
+        public IList<string> Errors { get; } = [];
+        public IList<string> Warnings { get; } = [];
         public Dictionary<string, object> Metadata { get; } = [];
     }
 
@@ -207,59 +207,34 @@ namespace DotCompute.Plugins.Interfaces
     /// <summary>
     /// Event arguments for plugin state changes.
     /// </summary>
-    public class PluginStateChangedEventArgs : EventArgs
+    public class PluginStateChangedEventArgs(PluginState oldState, PluginState newState, string? reason = null) : EventArgs
     {
-        public PluginState OldState { get; }
-        public PluginState NewState { get; }
-        public DateTime Timestamp { get; }
-        public string? Reason { get; }
-
-        public PluginStateChangedEventArgs(PluginState oldState, PluginState newState, string? reason = null)
-        {
-            OldState = oldState;
-            NewState = newState;
-            Timestamp = DateTime.UtcNow;
-            Reason = reason;
-        }
+        public PluginState OldState { get; } = oldState;
+        public PluginState NewState { get; } = newState;
+        public DateTime Timestamp { get; } = DateTime.UtcNow;
+        public string? Reason { get; } = reason;
     }
 
     /// <summary>
     /// Event arguments for plugin errors.
     /// </summary>
-    public class PluginErrorEventArgs : EventArgs
+    public class PluginErrorEventArgs(Exception exception, string context, Dictionary<string, object>? additionalData = null) : EventArgs
     {
-        public Exception Exception { get; }
-        public string Context { get; }
-        public DateTime Timestamp { get; }
-        public Dictionary<string, object> AdditionalData { get; }
-
-        public PluginErrorEventArgs(Exception exception, string context, Dictionary<string, object>? additionalData = null)
-        {
-            Exception = exception;
-            Context = context;
-            Timestamp = DateTime.UtcNow;
-            AdditionalData = additionalData ?? [];
-        }
+        public Exception Exception { get; } = exception;
+        public string Context { get; } = context;
+        public DateTime Timestamp { get; } = DateTime.UtcNow;
+        public Dictionary<string, object> AdditionalData { get; } = additionalData ?? [];
     }
 
     /// <summary>
     /// Event arguments for plugin health changes.
     /// </summary>
-    public class PluginHealthChangedEventArgs : EventArgs
+    public class PluginHealthChangedEventArgs(PluginHealth oldHealth, PluginHealth newHealth, string? reason = null, Dictionary<string, object>? healthData = null) : EventArgs
     {
-        public PluginHealth OldHealth { get; }
-        public PluginHealth NewHealth { get; }
-        public DateTime Timestamp { get; }
-        public string? Reason { get; }
-        public Dictionary<string, object> HealthData { get; }
-
-        public PluginHealthChangedEventArgs(PluginHealth oldHealth, PluginHealth newHealth, string? reason = null, Dictionary<string, object>? healthData = null)
-        {
-            OldHealth = oldHealth;
-            NewHealth = newHealth;
-            Timestamp = DateTime.UtcNow;
-            Reason = reason;
-            HealthData = healthData ?? [];
-        }
+        public PluginHealth OldHealth { get; } = oldHealth;
+        public PluginHealth NewHealth { get; } = newHealth;
+        public DateTime Timestamp { get; } = DateTime.UtcNow;
+        public string? Reason { get; } = reason;
+        public Dictionary<string, object> HealthData { get; } = healthData ?? [];
     }
 }

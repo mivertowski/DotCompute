@@ -21,44 +21,27 @@ internal enum CustomSyncStrategy
 /// <summary>
 /// Stage that executes a single kernel.
 /// </summary>
-internal sealed class KernelStage : IPipelineStage
+internal sealed class KernelStage(
+    string id,
+    string name,
+    ICompiledKernel kernel,
+    long[]? globalWorkSize,
+    long[]? localWorkSize,
+    Dictionary<string, string> inputMappings,
+    Dictionary<string, string> outputMappings,
+    Dictionary<string, object> parameters,
+    List<string> dependencies,
+    Dictionary<string, object> metadata,
+    MemoryHint memoryHint,
+    int priority) : IPipelineStage
 {
-    private readonly ICompiledKernel _kernel;
-    private readonly long[]? _globalWorkSize;
-    private readonly long[]? _localWorkSize;
-    private readonly Dictionary<string, string> _inputMappings;
-    private readonly Dictionary<string, string> _outputMappings;
-    private readonly Dictionary<string, object> _parameters;
-    private readonly StageMetrics _metrics;
-
-    public KernelStage(
-        string id,
-        string name,
-        ICompiledKernel kernel,
-        long[]? globalWorkSize,
-        long[]? localWorkSize,
-        Dictionary<string, string> inputMappings,
-        Dictionary<string, string> outputMappings,
-        Dictionary<string, object> parameters,
-        List<string> dependencies,
-        Dictionary<string, object> metadata,
-        MemoryHint memoryHint,
-        int priority)
-    {
-        Id = id;
-        Name = name;
-        _kernel = kernel;
-        _globalWorkSize = globalWorkSize;
-        _localWorkSize = localWorkSize;
-        _inputMappings = inputMappings;
-        _outputMappings = outputMappings;
-        _parameters = parameters;
-        Dependencies = dependencies;
-        Metadata = metadata;
-        MemoryHint = memoryHint;
-        Priority = priority;
-        _metrics = new StageMetrics(id);
-    }
+    private readonly ICompiledKernel _kernel = kernel;
+    private readonly long[]? _globalWorkSize = globalWorkSize;
+    private readonly long[]? _localWorkSize = localWorkSize;
+    private readonly Dictionary<string, string> _inputMappings = inputMappings;
+    private readonly Dictionary<string, string> _outputMappings = outputMappings;
+    private readonly Dictionary<string, object> _parameters = parameters;
+    private readonly StageMetrics _metrics = new(id);
 
     /// <summary>
     /// Builds kernel parameters from input mappings, direct inputs, and parameter overrides.
@@ -112,7 +95,7 @@ internal sealed class KernelStage : IPipelineStage
         // Since we don't have KernelDefinition.Parameters, we'll use the order
         // established by BuildKernelParameters method
 
-        int index = 0;
+        var index = 0;
 
         // Check input mappings first (these come first in BuildKernelParameters)
         foreach (var (mappingParam, _) in _inputMappings)
@@ -141,22 +124,22 @@ internal sealed class KernelStage : IPipelineStage
     }
 
     /// <inheritdoc/>
-    public string Id { get; }
+    public string Id { get; } = id;
 
     /// <inheritdoc/>
-    public string Name { get; }
+    public string Name { get; } = name;
 
     /// <inheritdoc/>
     public PipelineStageType Type => PipelineStageType.Kernel;
 
     /// <inheritdoc/>
-    public IReadOnlyList<string> Dependencies { get; }
+    public IReadOnlyList<string> Dependencies { get; } = dependencies;
 
     /// <inheritdoc/>
-    public IReadOnlyDictionary<string, object> Metadata { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; } = metadata;
 
-    public MemoryHint MemoryHint { get; }
-    public int Priority { get; }
+    public MemoryHint MemoryHint { get; } = memoryHint;
+    public int Priority { get; } = priority;
 
     /// <inheritdoc/>
     public async ValueTask<StageExecutionResult> ExecuteAsync(
@@ -180,7 +163,7 @@ internal sealed class KernelStage : IPipelineStage
                 Name = _kernel.Name,
                 WorkDimensions = _globalWorkSize ?? new[] { 1L },
                 LocalWorkSize = _localWorkSize != null ? _localWorkSize : null,
-                Arguments = arguments.ToArray(),
+                Arguments = [.. arguments],
                 CancellationToken = cancellationToken
             };
 
@@ -353,37 +336,26 @@ internal sealed class KernelStage : IPipelineStage
 /// <summary>
 /// Stage that executes multiple stages in parallel.
 /// </summary>
-internal sealed class ParallelStage : IPipelineStage
+internal sealed class ParallelStage(
+    string id,
+    string name,
+    List<IPipelineStage> parallelStages,
+    int maxDegreeOfParallelism,
+    SynchronizationMode synchronizationMode,
+    bool hasBarrier) : IPipelineStage
 {
-    private readonly List<IPipelineStage> _parallelStages;
-    private readonly int _maxDegreeOfParallelism;
-    private readonly SynchronizationMode _synchronizationMode;
-    private readonly bool _hasBarrier;
-    private readonly StageMetrics _metrics;
+    private readonly List<IPipelineStage> _parallelStages = parallelStages;
+    private readonly int _maxDegreeOfParallelism = maxDegreeOfParallelism;
+    private readonly SynchronizationMode _synchronizationMode = synchronizationMode;
+    private readonly bool _hasBarrier = hasBarrier;
+    private readonly StageMetrics _metrics = new(id);
     private readonly List<StageExecutionResult> results = [];
 
-    public ParallelStage(
-        string id,
-        string name,
-        List<IPipelineStage> parallelStages,
-        int maxDegreeOfParallelism,
-        SynchronizationMode synchronizationMode,
-        bool hasBarrier)
-    {
-        Id = id;
-        Name = name;
-        _parallelStages = parallelStages;
-        _maxDegreeOfParallelism = maxDegreeOfParallelism;
-        _synchronizationMode = synchronizationMode;
-        _hasBarrier = hasBarrier;
-        _metrics = new StageMetrics(id);
-    }
+    /// <inheritdoc/>
+    public string Id { get; } = id;
 
     /// <inheritdoc/>
-    public string Id { get; }
-
-    /// <inheritdoc/>
-    public string Name { get; }
+    public string Name { get; } = name;
 
     /// <inheritdoc/>
     public PipelineStageType Type => PipelineStageType.Parallel;
@@ -422,7 +394,7 @@ internal sealed class ParallelStage : IPipelineStage
                 case SynchronizationMode.WaitAll:
                     // Performance optimization: Use pre-allocated array for better performance
                     var tasks = new Task<StageExecutionResult>[_parallelStages.Count];
-                    for (int i = 0; i < _parallelStages.Count; i++)
+                    for (var i = 0; i < _parallelStages.Count; i++)
                     {
                         var stage = _parallelStages[i];
                         tasks[i] = ExecuteStageAsync(stage, context, cancellationToken);
@@ -793,7 +765,7 @@ internal sealed class ParallelStage : IPipelineStage
         var workerCount = Math.Min(_maxDegreeOfParallelism, Environment.ProcessorCount);
         var workers = new List<Task<List<StageExecutionResult>>>();
 
-        for (int i = 0; i < workerCount; i++)
+        for (var i = 0; i < workerCount; i++)
         {
             var worker = Task.Run(async () =>
             {
@@ -822,32 +794,22 @@ internal sealed class ParallelStage : IPipelineStage
 /// <summary>
 /// Stage that executes conditional branches.
 /// </summary>
-internal sealed class BranchStage : IPipelineStage
+internal sealed class BranchStage(
+    string id,
+    Func<PipelineExecutionContext, bool> condition,
+    List<IPipelineStage> trueStages,
+    List<IPipelineStage>? falseStages) : IPipelineStage
 {
-    private readonly Func<PipelineExecutionContext, bool> _condition;
-    private readonly List<IPipelineStage> _trueStages;
-    private readonly List<IPipelineStage>? _falseStages;
-    private readonly StageMetrics _metrics;
-
-    public BranchStage(
-        string id,
-        Func<PipelineExecutionContext, bool> condition,
-        List<IPipelineStage> trueStages,
-        List<IPipelineStage>? falseStages)
-    {
-        Id = id;
-        Name = "Branch";
-        _condition = condition;
-        _trueStages = trueStages;
-        _falseStages = falseStages;
-        _metrics = new StageMetrics(id);
-    }
+    private readonly Func<PipelineExecutionContext, bool> _condition = condition;
+    private readonly List<IPipelineStage> _trueStages = trueStages;
+    private readonly List<IPipelineStage>? _falseStages = falseStages;
+    private readonly StageMetrics _metrics = new(id);
 
     /// <inheritdoc/>
-    public string Id { get; }
+    public string Id { get; } = id;
 
     /// <inheritdoc/>
-    public string Name { get; }
+    public string Name { get; } = "Branch";
 
     /// <inheritdoc/>
     public PipelineStageType Type => PipelineStageType.Branch;
@@ -970,29 +932,20 @@ internal sealed class BranchStage : IPipelineStage
 /// <summary>
 /// Stage that executes loops.
 /// </summary>
-internal sealed class LoopStage : IPipelineStage
+internal sealed class LoopStage(
+    string id,
+    Func<PipelineExecutionContext, int, bool> condition,
+    List<IPipelineStage> bodyStages) : IPipelineStage
 {
-    private readonly Func<PipelineExecutionContext, int, bool> _condition;
-    private readonly List<IPipelineStage> _bodyStages;
-    private readonly StageMetrics _metrics;
-
-    public LoopStage(
-        string id,
-        Func<PipelineExecutionContext, int, bool> condition,
-        List<IPipelineStage> bodyStages)
-    {
-        Id = id;
-        Name = "Loop";
-        _condition = condition;
-        _bodyStages = bodyStages;
-        _metrics = new StageMetrics(id);
-    }
+    private readonly Func<PipelineExecutionContext, int, bool> _condition = condition;
+    private readonly List<IPipelineStage> _bodyStages = bodyStages;
+    private readonly StageMetrics _metrics = new(id);
 
     /// <inheritdoc/>
-    public string Id { get; }
+    public string Id { get; } = id;
 
     /// <inheritdoc/>
-    public string Name { get; }
+    public string Name { get; } = "Loop";
 
     /// <inheritdoc/>
     public PipelineStageType Type => PipelineStageType.Loop;
@@ -1115,24 +1068,16 @@ internal sealed class LoopStage : IPipelineStage
 /// <summary>
 /// Stage that wraps a pipeline as a stage.
 /// </summary>
-internal sealed class PipelineWrapperStage : IPipelineStage
+internal sealed class PipelineWrapperStage(string id, string name, IKernelPipeline pipeline) : IPipelineStage
 {
-    private readonly IKernelPipeline _pipeline;
-    private readonly StageMetrics _metrics;
-
-    public PipelineWrapperStage(string id, string name, IKernelPipeline pipeline)
-    {
-        Id = id;
-        Name = name;
-        _pipeline = pipeline;
-        _metrics = new StageMetrics(id);
-    }
+    private readonly IKernelPipeline _pipeline = pipeline;
+    private readonly StageMetrics _metrics = new(id);
 
     /// <inheritdoc/>
-    public string Id { get; }
+    public string Id { get; } = id;
 
     /// <inheritdoc/>
-    public string Name { get; }
+    public string Name { get; } = name;
 
     /// <inheritdoc/>
     public PipelineStageType Type => PipelineStageType.Custom;

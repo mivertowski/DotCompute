@@ -31,7 +31,7 @@ public static class AdvancedSimdKernels
         if (Avx512F.IsSupported && Fma.IsSupported)
         {
             const int VectorSize = 16;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -50,7 +50,7 @@ public static class AdvancedSimdKernels
         else if (Avx2.IsSupported && Fma.IsSupported)
         {
             const int VectorSize = 8;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -69,7 +69,7 @@ public static class AdvancedSimdKernels
         else if (AdvSimd.IsSupported)
         {
             const int VectorSize = 4;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -105,7 +105,7 @@ public static class AdvancedSimdKernels
         if (Avx512F.IsSupported && Fma.IsSupported)
         {
             const int VectorSize = 8;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -123,7 +123,7 @@ public static class AdvancedSimdKernels
         else if (Avx2.IsSupported && Fma.IsSupported)
         {
             const int VectorSize = 4;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -141,7 +141,7 @@ public static class AdvancedSimdKernels
         else if (AdvSimd.Arm64.IsSupported)
         {
             const int VectorSize = 2;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -180,7 +180,7 @@ public static class AdvancedSimdKernels
         if (Avx512F.IsSupported)
         {
             const int VectorSize = 16;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -196,7 +196,7 @@ public static class AdvancedSimdKernels
         else if (Avx2.IsSupported)
         {
             const int VectorSize = 8;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -212,7 +212,7 @@ public static class AdvancedSimdKernels
         else if (AdvSimd.IsSupported)
         {
             const int VectorSize = 4;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -245,7 +245,7 @@ public static class AdvancedSimdKernels
         if (Avx512DQ.IsSupported)
         {
             const int VectorSize = 8;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -262,7 +262,7 @@ public static class AdvancedSimdKernels
         else if (Avx2.IsSupported)
         {
             const int VectorSize = 4;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -298,7 +298,7 @@ public static class AdvancedSimdKernels
         else if (AdvSimd.Arm64.IsSupported)
         {
             const int VectorSize = 2;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -344,7 +344,7 @@ public static class AdvancedSimdKernels
         if (Avx512BW.IsSupported)
         {
             const int VectorSize = 32;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -360,7 +360,7 @@ public static class AdvancedSimdKernels
         else if (Avx2.IsSupported)
         {
             const int VectorSize = 16;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -376,7 +376,7 @@ public static class AdvancedSimdKernels
         else if (AdvSimd.IsSupported)
         {
             const int VectorSize = 8;
-            long vectorCount = elementCount / VectorSize;
+            var vectorCount = elementCount / VectorSize;
 
             for (long v = 0; v < vectorCount; v++)
             {
@@ -427,7 +427,7 @@ public static class AdvancedSimdKernels
         }
 
         const int VectorSize = 4;
-        long vectorCount = elementCount / VectorSize;
+        var vectorCount = elementCount / VectorSize;
 
         for (long v = 0; v < vectorCount; v++)
         {
@@ -455,7 +455,7 @@ public static class AdvancedSimdKernels
         }
 
         // Scalar remainder
-        long i = vectorCount * VectorSize;
+        var i = vectorCount * VectorSize;
         for (; i < elementCount; i++)
         {
             result[i] = operation switch
@@ -483,15 +483,15 @@ public static class AdvancedSimdKernels
     public static unsafe void VectorGatherFloat32(
         float* basePtr, int* indices, float* result, int count)
     {
-        int i = 0;
+        var i = 0;
 
         // AVX2 gather path (8 elements per operation)
         if (Avx2.IsSupported)
         {
             const int VectorSize = 8;
-            int vectorCount = count / VectorSize;
+            var vectorCount = count / VectorSize;
 
-            for (int v = 0; v < vectorCount; v++)
+            for (var v = 0; v < vectorCount; v++)
             {
                 var offset = v * VectorSize;
                 var vindices = Avx2.LoadVector256(indices + offset);
@@ -509,15 +509,15 @@ public static class AdvancedSimdKernels
         else if (Avx512F.IsSupported)
         {
             const int VectorSize = 16;
-            int vectorCount = count / VectorSize;
+            var vectorCount = count / VectorSize;
 
-            for (int v = 0; v < vectorCount; v++)
+            for (var v = 0; v < vectorCount; v++)
             {
                 var offset = v * VectorSize;
                 var vindices = Avx512F.LoadVector512(indices + offset);
 
                 // AVX-512 gather (using simpler approach for compatibility)
-                for (int j = 0; j < VectorSize; j++)
+                for (var j = 0; j < VectorSize; j++)
                 {
                     result[offset + j] = basePtr[indices[offset + j]];
                 }
@@ -539,22 +539,22 @@ public static class AdvancedSimdKernels
     public static unsafe void VectorScatterFloat32(
         float* values, int* indices, float* basePtr, int count)
     {
-        int i = 0;
+        var i = 0;
 
         // AVX-512 scatter path (16 elements per operation)
         if (Avx512F.IsSupported)
         {
             const int VectorSize = 16;
-            int vectorCount = count / VectorSize;
+            var vectorCount = count / VectorSize;
 
-            for (int v = 0; v < vectorCount; v++)
+            for (var v = 0; v < vectorCount; v++)
             {
                 var offset = v * VectorSize;
                 var vvalues = Avx512F.LoadVector512(values + offset);
                 var vindices = Avx512F.LoadVector512(indices + offset);
 
                 // AVX-512 scatter (using simpler approach for compatibility)
-                for (int j = 0; j < VectorSize; j++)
+                for (var j = 0; j < VectorSize; j++)
                 {
                     basePtr[indices[offset + j]] = values[offset + j];
                 }
@@ -585,29 +585,29 @@ public static class AdvancedSimdKernels
         const int VectorSize = 8; // AVX2 vector size
 
         // Clear result matrix
-        for (int i = 0; i < m * n; i++)
+        for (var i = 0; i < m * n; i++)
         {
             c[i] = 0.0f;
         }
 
         // Blocked matrix multiplication
-        for (int ii = 0; ii < m; ii += BlockSize)
+        for (var ii = 0; ii < m; ii += BlockSize)
         {
-            for (int jj = 0; jj < n; jj += BlockSize)
+            for (var jj = 0; jj < n; jj += BlockSize)
             {
-                for (int kk = 0; kk < k; kk += BlockSize)
+                for (var kk = 0; kk < k; kk += BlockSize)
                 {
-                    int iMax = Math.Min(ii + BlockSize, m);
-                    int jMax = Math.Min(jj + BlockSize, n);
-                    int kMax = Math.Min(kk + BlockSize, k);
+                    var iMax = Math.Min(ii + BlockSize, m);
+                    var jMax = Math.Min(jj + BlockSize, n);
+                    var kMax = Math.Min(kk + BlockSize, k);
 
                     // Micro-kernel with vectorization
-                    for (int i = ii; i < iMax; i++)
+                    for (var i = ii; i < iMax; i++)
                     {
-                        for (int kIdx = kk; kIdx < kMax; kIdx++)
+                        for (var kIdx = kk; kIdx < kMax; kIdx++)
                         {
-                            float aik = a[i * k + kIdx];
-                            int j = jj;
+                            var aik = a[i * k + kIdx];
+                            var j = jj;
 
                             // Vectorized inner loop with FMA
                             if (Fma.IsSupported && Avx2.IsSupported)
@@ -652,7 +652,7 @@ public static class AdvancedSimdKernels
         if (Avx512F.IsSupported)
         {
             const int VectorSize = 16;
-            long vectorCount = count / VectorSize;
+            var vectorCount = count / VectorSize;
             var accumulator = Vector512<float>.Zero;
 
             for (long v = 0; v < vectorCount; v++)
@@ -676,7 +676,7 @@ public static class AdvancedSimdKernels
         else if (Avx2.IsSupported)
         {
             const int VectorSize = 8;
-            long vectorCount = count / VectorSize;
+            var vectorCount = count / VectorSize;
             var accumulator = Vector256<float>.Zero;
 
             for (long v = 0; v < vectorCount; v++)
@@ -696,7 +696,7 @@ public static class AdvancedSimdKernels
         }
 
         // Scalar fallback
-        float scalarSum = 0.0f;
+        var scalarSum = 0.0f;
         for (; i < count; i++)
         {
             scalarSum += data[i];
@@ -722,7 +722,7 @@ public static class AdvancedSimdKernels
         if (Avx2.IsSupported)
         {
             const int VectorSize = 8;
-            long vectorCount = count / VectorSize;
+            var vectorCount = count / VectorSize;
             var vthreshold = Vector256.Create(threshold);
 
             for (long v = 0; v < vectorCount; v++)
@@ -745,7 +745,7 @@ public static class AdvancedSimdKernels
         else if (AdvSimd.IsSupported)
         {
             const int VectorSize = 4;
-            long vectorCount = count / VectorSize;
+            var vectorCount = count / VectorSize;
             var vthreshold = Vector128.Create(threshold);
 
             for (long v = 0; v < vectorCount; v++)

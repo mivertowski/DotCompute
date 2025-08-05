@@ -13,12 +13,16 @@ namespace DotCompute.Memory;
 /// Unified memory manager implementation that coordinates host and device memory
 /// with efficient pooling and lazy synchronization.
 /// </summary>
-public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposable
+/// <remarks>
+/// Initializes a new instance of the UnifiedMemoryManager.
+/// </remarks>
+/// <param name="baseMemoryManager">The base memory manager to wrap.</param>
+public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUnifiedMemoryManager, IAsyncDisposable
 {
-    private readonly IMemoryManager _baseMemoryManager;
+    private readonly IMemoryManager _baseMemoryManager = baseMemoryManager ?? throw new ArgumentNullException(nameof(baseMemoryManager));
     private readonly ConcurrentDictionary<Type, object> _pools = new();
     private readonly ConcurrentDictionary<object, WeakReference> _activeBuffers = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     // Performance optimization: Use thread-safe counters with padding to avoid false sharing
     private struct AlignedCounter
@@ -36,17 +40,6 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
 
     private readonly AlignedCounter _totalAllocations;
     private bool _isDisposed;
-
-    // Note: Removed accelerator property as it's not available in the new interface
-
-    /// <summary>
-    /// Initializes a new instance of the UnifiedMemoryManager.
-    /// </summary>
-    /// <param name="baseMemoryManager">The base memory manager to wrap.</param>
-    public UnifiedMemoryManager(IMemoryManager baseMemoryManager)
-    {
-        _baseMemoryManager = baseMemoryManager ?? throw new ArgumentNullException(nameof(baseMemoryManager));
-    }
 
     /// <summary>
     /// Creates a unified buffer with both host and device memory coordination.
@@ -177,7 +170,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         long totalAllocatedBytes = 0;
         long totalRetainedBytes = 0;
         long totalReuses = 0;
-        int activePoolCount = 0;
+        var activePoolCount = 0;
 
         foreach (var kvp in _pools)
         {
@@ -376,7 +369,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         };
 
         // Warmup
-        for (int i = 0; i < WarmupIterations; i++)
+        for (var i = 0; i < WarmupIterations; i++)
         {
             await RunSingleBenchmarkIterationAsync(TestDataSize, cancellationToken);
         }
@@ -385,7 +378,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         var allocationTimes = new List<double>();
         var sw = System.Diagnostics.Stopwatch.StartNew();
 
-        for (int i = 0; i < BenchmarkIterations; i++)
+        for (var i = 0; i < BenchmarkIterations; i++)
         {
             sw.Restart();
             var buffer = await CreateUnifiedBufferAsync<float>(TestDataSize / sizeof(float), cancellationToken: cancellationToken);
@@ -411,13 +404,13 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         var testData = new float[TestDataSize / sizeof(float)];
         #pragma warning disable CA5394 // Do not use insecure randomness
         var random = new Random(42); // Deterministic random for benchmarking
-        for (int i = 0; i < testData.Length; i++)
+        for (var i = 0; i < testData.Length; i++)
         {
             testData[i] = random.NextSingle(); // Fill with test data
         }
         #pragma warning restore CA5394
 
-        for (int i = 0; i < BenchmarkIterations; i++)
+        for (var i = 0; i < BenchmarkIterations; i++)
         {
             sw.Restart();
             await buffer1.CopyFromAsync(testData, cancellationToken);
@@ -442,7 +435,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         var poolAllocTimes = new List<double>();
         var pool = GetPool<float>();
 
-        for (int i = 0; i < BenchmarkIterations; i++)
+        for (var i = 0; i < BenchmarkIterations; i++)
         {
             sw.Restart();
             #pragma warning disable CA2000 // Dispose objects before losing scope
@@ -488,7 +481,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
         // Benchmark unified buffer operations
         var unifiedOpTimes = new List<double>();
 
-        for (int i = 0; i < BenchmarkIterations; i++)
+        for (var i = 0; i < BenchmarkIterations; i++)
         {
             sw.Restart();
             #pragma warning disable CA1849 // Call async methods when in an async method
@@ -637,7 +630,7 @@ public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposab
                 }
             }
 
-            for (int i = 0; i < removeCount; i++)
+            for (var i = 0; i < removeCount; i++)
             {
                 _activeBuffers.TryRemove(keysToRemove[i], out _);
             }
@@ -789,14 +782,9 @@ public enum MemoryOptions
 /// <summary>
 /// Implementation of IMemoryStatistics interface.
 /// </summary>
-internal sealed class MemoryStatisticsImpl : IMemoryStatistics
+internal sealed class MemoryStatisticsImpl(MemoryManagerStats stats) : IMemoryStatistics
 {
-    private readonly MemoryManagerStats _stats;
-
-    public MemoryStatisticsImpl(MemoryManagerStats stats)
-    {
-        _stats = stats;
-    }
+    private readonly MemoryManagerStats _stats = stats;
 
     public long TotalAllocatedBytes => _stats.TotalAllocatedBytes;
     public long AvailableBytes => _stats.AvailableDeviceMemory;

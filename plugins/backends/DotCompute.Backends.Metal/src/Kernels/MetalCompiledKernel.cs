@@ -13,37 +13,25 @@ namespace DotCompute.Backends.Metal.Kernels;
 /// <summary>
 /// Represents a compiled Metal kernel ready for execution.
 /// </summary>
-public sealed class MetalCompiledKernel : ICompiledKernel
+public sealed class MetalCompiledKernel(
+    KernelDefinition definition,
+    IntPtr pipelineState,
+    IntPtr function,
+    IntPtr commandQueue,
+    int maxTotalThreadsPerThreadgroup,
+    (int x, int y, int z) threadExecutionWidth,
+    CompilationMetadata metadata,
+    ILogger logger) : ICompiledKernel
 {
-    private readonly KernelDefinition _definition;
-    private readonly IntPtr _pipelineState;
-    private readonly IntPtr _function;
-    private readonly IntPtr _commandQueue;
-    private readonly ILogger _logger;
-    private readonly int _maxTotalThreadsPerThreadgroup;
-    private readonly (int x, int y, int z) _threadExecutionWidth;
-    private readonly CompilationMetadata _metadata;
+    private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
+    private readonly IntPtr _pipelineState = pipelineState;
+    private readonly IntPtr _function = function;
+    private readonly IntPtr _commandQueue = commandQueue;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly int _maxTotalThreadsPerThreadgroup = maxTotalThreadsPerThreadgroup;
+    private readonly (int x, int y, int z) _threadExecutionWidth = threadExecutionWidth;
+    private readonly CompilationMetadata _metadata = metadata;
     private int _disposed;
-
-    public MetalCompiledKernel(
-        KernelDefinition definition,
-        IntPtr pipelineState,
-        IntPtr function,
-        IntPtr commandQueue,
-        int maxTotalThreadsPerThreadgroup,
-        (int x, int y, int z) threadExecutionWidth,
-        CompilationMetadata metadata,
-        ILogger logger)
-    {
-        _definition = definition ?? throw new ArgumentNullException(nameof(definition));
-        _pipelineState = pipelineState;
-        _function = function;
-        _commandQueue = commandQueue;
-        _maxTotalThreadsPerThreadgroup = maxTotalThreadsPerThreadgroup;
-        _threadExecutionWidth = threadExecutionWidth;
-        _metadata = metadata;
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     /// <inheritdoc/>
     public string Name => _definition.Name;
@@ -164,9 +152,9 @@ public sealed class MetalCompiledKernel : ICompiledKernel
                 // Handle dimensions as three separate uint arguments
                 unsafe
                 {
-                    uint x = (uint)dim3.X;
-                    uint y = (uint)dim3.Y;
-                    uint z = (uint)dim3.Z;
+                    var x = (uint)dim3.X;
+                    var y = (uint)dim3.Y;
+                    var z = (uint)dim3.Z;
 
                     MetalNative.SetBytes(encoder, (IntPtr)(&x), sizeof(uint), bufferIndex++);
                     MetalNative.SetBytes(encoder, (IntPtr)(&y), sizeof(uint), bufferIndex++);

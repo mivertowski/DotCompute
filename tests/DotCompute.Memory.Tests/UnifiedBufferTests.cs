@@ -6,7 +6,7 @@ using Xunit;
 
 namespace DotCompute.Memory.Tests;
 
-public sealed class UnifiedBufferTests : IDisposable
+public class UnifiedBufferTests : IDisposable
 {
     private readonly IMemoryManager _memoryManager;
 
@@ -18,7 +18,6 @@ public sealed class UnifiedBufferTests : IDisposable
     public void Dispose()
     {
         // Cleanup if needed
-        GC.SuppressFinalize(this);
     }
 
     [Fact]
@@ -60,7 +59,7 @@ public sealed class UnifiedBufferTests : IDisposable
         // Assert
         buffer.Length.Should().Be(5);
         var span = buffer.AsSpan();
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             span[i].Should().Be(data[i]);
         }
@@ -144,7 +143,7 @@ public sealed class UnifiedBufferTests : IDisposable
 
         // Assert
         var destSpan = destination.AsSpan();
-        for (int i = 0; i < sourceData.Length; i++)
+        for (var i = 0; i < sourceData.Length; i++)
         {
             destSpan[i].Should().Be(sourceData[i]);
         }
@@ -158,7 +157,6 @@ public sealed class UnifiedBufferTests : IDisposable
     [InlineData(typeof(float), 4)]
     [InlineData(typeof(double), 8)]
     [RequiresDynamicCode("This test uses reflection and Activator.CreateInstance")]
-    [RequiresUnreferencedCode("This test uses reflection to create generic types")]
     public void SizeInBytes_ForDifferentTypes_ShouldBeCorrect(Type type, int expectedElementSize)
     {
         // Act
@@ -214,14 +212,14 @@ public sealed class UnifiedBufferTests : IDisposable
         var span2 = buffer2.AsSpan();
 
         // Act
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             span1[i] = i;
             span2[i] = i * 10;
         }
 
         // Assert
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             span1[i].Should().Be(i);
             span2[i].Should().Be(i * 10);

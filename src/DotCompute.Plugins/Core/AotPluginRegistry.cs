@@ -19,7 +19,7 @@ public sealed class AotPluginRegistry : IDisposable
     private readonly ILogger<AotPluginRegistry> _logger;
     private readonly Dictionary<string, IBackendPlugin> _plugins;
     private readonly Dictionary<string, Func<IBackendPlugin>> _factories;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private bool _disposed;
 
     public AotPluginRegistry(ILogger<AotPluginRegistry> logger)
@@ -160,7 +160,7 @@ public sealed class AotPluginRegistry : IDisposable
 
         lock (_lock)
         {
-            return _plugins.Values.ToList();
+            return [.. _plugins.Values];
         }
     }
 
@@ -171,7 +171,7 @@ public sealed class AotPluginRegistry : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        return _factories.Keys.ToList();
+        return [.. _factories.Keys];
     }
 
     /// <summary>
@@ -380,7 +380,7 @@ public static class AotPluginHelpers
 /// </summary>
 internal sealed class AotCpuBackendPlugin : IBackendPlugin
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 #pragma warning disable IDE0044 // Make field readonly - these fields are intentionally mutable as they track plugin state
     private PluginState _state = PluginState.Loaded;
     private PluginHealth _health = PluginHealth.Healthy;
@@ -458,7 +458,7 @@ internal sealed class AotCpuBackendPlugin : IBackendPlugin
 /// </summary>
 internal sealed class AotCudaBackendPlugin : IBackendPlugin
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 #pragma warning disable IDE0044 // Make field readonly - these fields are intentionally mutable as they track plugin state
     private PluginState _state = PluginState.Loaded;
     private PluginHealth _health = PluginHealth.Unknown;
@@ -628,7 +628,7 @@ internal sealed class AotCudaBackendPlugin : IBackendPlugin
 /// </summary>
 internal sealed class AotMetalBackendPlugin : IBackendPlugin
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 #pragma warning disable IDE0044 // Make field readonly - these fields are intentionally mutable as they track plugin state
     private PluginState _state = PluginState.Loaded;
     private PluginHealth _health = PluginHealth.Unknown;

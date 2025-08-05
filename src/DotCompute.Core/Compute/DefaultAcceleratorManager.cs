@@ -9,19 +9,14 @@ namespace DotCompute.Core.Accelerators;
 /// <summary>
 /// Default implementation of IAcceleratorManager.
 /// </summary>
-public class DefaultAcceleratorManager : IAcceleratorManager
+public class DefaultAcceleratorManager(ILogger<DefaultAcceleratorManager> logger) : IAcceleratorManager
 {
-    private readonly ILogger<DefaultAcceleratorManager> _logger;
+    private readonly ILogger<DefaultAcceleratorManager> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     private readonly List<IAcceleratorProvider> _providers = [];
     private readonly List<IAccelerator> _accelerators = [];
     private IAccelerator? _default;
     private bool _initialized;
     private bool _disposed;
-
-    public DefaultAcceleratorManager(ILogger<DefaultAcceleratorManager> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
 
     public IAccelerator Default
     {
@@ -233,9 +228,6 @@ public class DefaultAcceleratorManager : IAcceleratorManager
 /// <summary>
 /// Production implementation of AcceleratorManager with additional features.
 /// </summary>
-public class ProductionAcceleratorManager : DefaultAcceleratorManager
+public class ProductionAcceleratorManager(ILogger<ProductionAcceleratorManager> logger) : DefaultAcceleratorManager(logger)
 {
-    public ProductionAcceleratorManager(ILogger<ProductionAcceleratorManager> logger) : base(logger)
-    {
-    }
 }

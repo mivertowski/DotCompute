@@ -70,7 +70,7 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
                 }
             }
         }
-        catch (Exception ex) when (!(ex is MemoryException))
+        catch (Exception ex) when (ex is not MemoryException)
         {
             throw new MemoryException($"Failed to allocate {SizeInBytes} bytes of CUDA memory", ex);
         }
@@ -284,25 +284,17 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
 /// <summary>
 /// A view into a CUDA memory buffer (for slicing)
 /// </summary>
-internal sealed class CudaMemoryBufferView : ISyncMemoryBuffer
+internal sealed class CudaMemoryBufferView(CudaMemoryBuffer parent, long offset, long length, ILogger logger) : ISyncMemoryBuffer
 {
-    private readonly CudaMemoryBuffer _parent;
-    private readonly long _offset;
-    private readonly ILogger _logger;
+    private readonly CudaMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+    private readonly long _offset = offset;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-    public long SizeInBytes { get; }
+    public long SizeInBytes { get; } = length;
     public MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
 
     internal IntPtr DevicePointer => new(_parent.DevicePointer.ToInt64() + _offset);
-
-    public CudaMemoryBufferView(CudaMemoryBuffer parent, long offset, long length, ILogger logger)
-    {
-        _parent = parent ?? throw new ArgumentNullException(nameof(parent));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _offset = offset;
-        SizeInBytes = length;
-    }
 
     public unsafe void* GetHostPointer() => throw new NotSupportedException("Direct host access to CUDA device memory is not supported. Use memory copy operations instead.");
 

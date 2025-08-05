@@ -50,7 +50,7 @@ internal sealed class ILCodeGenerator
         }
     }
 
-    private static CompiledKernelCode GenerateVectorizedKernel(
+    private CompiledKernelCode GenerateVectorizedKernel(
         KernelDefinition definition,
         KernelAst ast,
         KernelAnalysis analysis,
@@ -101,7 +101,7 @@ internal sealed class ILCodeGenerator
         };
     }
 
-    private static CompiledKernelCode GenerateScalarKernel(
+    private CompiledKernelCode GenerateScalarKernel(
         KernelDefinition definition,
         KernelAst ast,
         KernelAnalysis analysis,
@@ -151,13 +151,13 @@ internal sealed class ILCodeGenerator
         };
     }
 
-    private static List<ParameterExpression> CreateParameterExpressions(KernelDefinition definition)
+    private List<ParameterExpression> CreateParameterExpressions(KernelDefinition definition)
     {
         var parameters = new List<ParameterExpression>();
 
         // Create default parameters based on common kernel patterns
         // This supports the most common scenarios of binary operations with an output buffer
-        for (int i = 0; i < 3; i++)
+        for (var i = 0; i < 3; i++)
         {
             // Default to Memory<float> for all parameters
             var paramType = typeof(Memory<>).MakeGenericType(typeof(float));
@@ -174,7 +174,7 @@ internal sealed class ILCodeGenerator
         return parameters;
     }
 
-    private static List<Expression> GenerateVectorizedOperations(
+    private List<Expression> GenerateVectorizedOperations(
         KernelAst ast,
         List<ParameterExpression> parameters,
         Expression indexExpr,
@@ -202,7 +202,7 @@ internal sealed class ILCodeGenerator
         return expressions;
     }
 
-    private static List<Expression> GenerateScalarOperations(
+    private List<Expression> GenerateScalarOperations(
         KernelAst ast,
         List<ParameterExpression> parameters,
         Expression indexExpr)
@@ -226,7 +226,7 @@ internal sealed class ILCodeGenerator
         return expressions;
     }
 
-    private static List<Expression> GenerateDefaultVectorAddition(List<ParameterExpression> parameters, Expression indexExpr)
+    private List<Expression> GenerateDefaultVectorAddition(List<ParameterExpression> parameters, Expression indexExpr)
     {
         // Default implementation for C = A + B using Memory<float>
         if (parameters.Count < 3)
@@ -260,15 +260,20 @@ internal sealed class ILCodeGenerator
         return expressions;
     }
 
-    private static List<Expression> GenerateDefaultScalarAddition(List<ParameterExpression> parameters, Expression indexExpr) => GenerateDefaultVectorAddition(parameters, indexExpr); // Same as vector addition but without SIMD
+    private List<Expression> GenerateDefaultScalarAddition(List<ParameterExpression> parameters, Expression indexExpr) =>
+        // Same as vector addition but without SIMD
+        GenerateDefaultVectorAddition(parameters, indexExpr);
 
-    private static List<Expression> GenerateVectorAdd(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarAdd(parameters, indexExpr); // For simplicity, delegate to scalar addition. In a full implementation, this would use System.Numerics.Vector<T>
+    private List<Expression> GenerateVectorAdd(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) =>
+        // For simplicity, delegate to scalar addition
+        // In a full implementation, this would use System.Numerics.Vector<T>
+        GenerateScalarAdd(parameters, indexExpr);
 
-    private static List<Expression> GenerateVectorMultiply(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarMultiply(parameters, indexExpr);
+    private List<Expression> GenerateVectorMultiply(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarMultiply(parameters, indexExpr);
 
-    private static List<Expression> GenerateScalarAdd(List<ParameterExpression> parameters, Expression indexExpr) => GenerateDefaultScalarAddition(parameters, indexExpr);
+    private List<Expression> GenerateScalarAdd(List<ParameterExpression> parameters, Expression indexExpr) => GenerateDefaultScalarAddition(parameters, indexExpr);
 
-    private static List<Expression> GenerateScalarMultiply(List<ParameterExpression> parameters, Expression indexExpr)
+    private List<Expression> GenerateScalarMultiply(List<ParameterExpression> parameters, Expression indexExpr)
     {
         if (parameters.Count < 3)
         {
@@ -300,7 +305,7 @@ internal sealed class ILCodeGenerator
         return expressions;
     }
 
-    private static long EstimateCodeSize(KernelAst ast)
+    private long EstimateCodeSize(KernelAst ast)
     {
         // Rough estimation based on AST complexity
         long baseSize = 1024;
@@ -317,7 +322,7 @@ internal sealed class ILCodeGenerator
         return baseSize;
     }
 
-    private static string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
+    private string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
     {
         var notes = new List<string>
         {
@@ -348,7 +353,7 @@ internal sealed class ILCodeGenerator
             notes.Add("Applied loop unrolling");
         }
 
-        return notes.ToArray();
+        return [.. notes];
     }
 }
 

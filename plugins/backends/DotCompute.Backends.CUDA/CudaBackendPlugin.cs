@@ -113,7 +113,7 @@ public sealed class CudaBackendPlugin : BackendPluginBase
                 result.Metadata["CudaDeviceCount"] = deviceCount;
 
                 // Check device capabilities
-                for (int i = 0; i < deviceCount; i++)
+                for (var i = 0; i < deviceCount; i++)
                 {
                     var props = new CudaDeviceProperties();
                     var propResult = CudaRuntime.cudaGetDeviceProperties(ref props, i);
@@ -291,16 +291,10 @@ public static class CudaBackendPluginExtensions
 /// <summary>
 /// Wrapper to provide named accelerator support.
 /// </summary>
-internal sealed class NamedAcceleratorWrapper : IAccelerator
+internal sealed class NamedAcceleratorWrapper(string name, IAccelerator accelerator) : IAccelerator
 {
-    private readonly string _name;
-    private readonly IAccelerator _accelerator;
-
-    public NamedAcceleratorWrapper(string name, IAccelerator accelerator)
-    {
-        _name = name ?? throw new ArgumentNullException(nameof(name));
-        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-    }
+    private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
+    private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
 
     public string Name => _name;
 

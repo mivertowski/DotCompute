@@ -128,7 +128,7 @@ namespace DotCompute.Generators.Kernel
 
         private static void CheckBufferParameters(SyntaxNodeAnalysisContext context, IMethodSymbol method)
         {
-            bool hasBufferParameter = method.Parameters.Any(p => IsBufferType(p.Type));
+            var hasBufferParameter = method.Parameters.Any(p => IsBufferType(p.Type));
 
             if (!hasBufferParameter)
             {
@@ -167,7 +167,7 @@ namespace DotCompute.Generators.Kernel
             MethodDeclarationSyntax methodDeclaration)
         {
             // Check if method or containing type has unsafe modifier
-            bool isUnsafe = methodDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.UnsafeKeyword));
+            var isUnsafe = methodDeclaration.Modifiers.Any(m => m.IsKind(SyntaxKind.UnsafeKeyword));
 
             if (!isUnsafe && method.ContainingType != null)
             {

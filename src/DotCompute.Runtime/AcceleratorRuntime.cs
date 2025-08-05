@@ -12,19 +12,13 @@ namespace DotCompute.Runtime;
 /// Main runtime for accelerator management and execution
 /// </summary>
 [SuppressMessage("Performance", "CA1848:Use the LoggerMessage delegates", Justification = "Simple logging in runtime layer")]
-public class AcceleratorRuntime : IDisposable, IAsyncDisposable
+public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<AcceleratorRuntime> logger) : IDisposable, IAsyncDisposable
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<AcceleratorRuntime> _logger;
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly ILogger<AcceleratorRuntime> _logger = logger;
     private readonly List<IAccelerator> _accelerators = [];
     private readonly SemaphoreSlim _disposeLock = new(1, 1);
     private bool _disposed;
-
-    public AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<AcceleratorRuntime> logger)
-    {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-    }
 
     /// <summary>
     /// Initialize the runtime and discover available accelerators

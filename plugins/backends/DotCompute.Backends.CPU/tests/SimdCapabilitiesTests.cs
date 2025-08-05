@@ -13,14 +13,9 @@ namespace DotCompute.Backends.CPU.Tests;
 /// <summary>
 /// Tests for SIMD capabilities detection and reporting.
 /// </summary>
-public sealed class SimdCapabilitiesTests
+public sealed class SimdCapabilitiesTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public SimdCapabilitiesTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     [Fact]
     public void DetectCapabilitiesReturnsValidSummary()
@@ -149,7 +144,7 @@ public sealed class SimdCapabilitiesTests
         if (Vector.IsHardwareAccelerated)
         {
             var vectorSize = Vector<float>.Count;
-            for (int i = 0; i < count; i += vectorSize)
+            for (var i = 0; i < count; i += vectorSize)
             {
                 var va = new Vector<float>(a, i);
                 var vb = new Vector<float>(b, i);
@@ -158,7 +153,7 @@ public sealed class SimdCapabilitiesTests
             }
 
             // All results should be 9
-            for (int i = 0; i < Math.Min(count, vectorSize); i++)
+            for (var i = 0; i < Math.Min(count, vectorSize); i++)
             {
                 Assert.Equal(9.0f, result[i], 0.0001f);
             }

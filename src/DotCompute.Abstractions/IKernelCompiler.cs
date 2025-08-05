@@ -172,46 +172,37 @@ public enum KernelSourceType
 /// <summary>
 /// Metadata about a kernel compilation.
 /// </summary>
-public readonly struct CompilationMetadata : IEquatable<CompilationMetadata>
+public readonly struct CompilationMetadata(
+    TimeSpan compilationTime,
+    long codeSize,
+    int registersPerThread,
+    long sharedMemoryPerBlock,
+    string[]? optimizationNotes = null) : IEquatable<CompilationMetadata>
 {
     /// <summary>
     /// Gets the time taken to compile.
     /// </summary>
-    public TimeSpan CompilationTime { get; }
+    public TimeSpan CompilationTime { get; } = compilationTime;
 
     /// <summary>
     /// Gets the size of the compiled code in bytes.
     /// </summary>
-    public long CodeSize { get; }
+    public long CodeSize { get; } = codeSize;
 
     /// <summary>
     /// Gets the register usage per thread.
     /// </summary>
-    public int RegistersPerThread { get; }
+    public int RegistersPerThread { get; } = registersPerThread;
 
     /// <summary>
     /// Gets the shared memory usage per block.
     /// </summary>
-    public long SharedMemoryPerBlock { get; }
+    public long SharedMemoryPerBlock { get; } = sharedMemoryPerBlock;
 
     /// <summary>
     /// Gets any optimization notes from the compiler.
     /// </summary>
-    public string[]? OptimizationNotes { get; }
-
-    public CompilationMetadata(
-        TimeSpan compilationTime,
-        long codeSize,
-        int registersPerThread,
-        long sharedMemoryPerBlock,
-        string[]? optimizationNotes = null)
-    {
-        CompilationTime = compilationTime;
-        CodeSize = codeSize;
-        RegistersPerThread = registersPerThread;
-        SharedMemoryPerBlock = sharedMemoryPerBlock;
-        OptimizationNotes = optimizationNotes;
-    }
+    public string[]? OptimizationNotes { get; } = optimizationNotes;
 
     public override bool Equals(object? obj) => throw new NotImplementedException();
 

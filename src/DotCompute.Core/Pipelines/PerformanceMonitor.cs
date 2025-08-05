@@ -19,7 +19,7 @@ internal static class PerformanceMonitor
     private static DateTime _lastCpuTime = DateTime.UtcNow;
     private static TimeSpan _lastTotalProcessorTime = CurrentProcess.TotalProcessorTime;
     private static long _lastMemoryWorkingSet = CurrentProcess.WorkingSet64;
-    private static readonly object _lock = new();
+    private static readonly Lock _lock = new();
 
     /// <summary>
     /// Gets the current CPU utilization (0.0 to 1.0).
@@ -145,8 +145,8 @@ internal static class PerformanceMonitor
     /// </summary>
     public static (int workerThreads, int completionPortThreads, int availableWorkerThreads, int availableCompletionPortThreads) GetThreadPoolStats()
     {
-        ThreadPool.GetMaxThreads(out int maxWorkerThreads, out int maxCompletionPortThreads);
-        ThreadPool.GetAvailableThreads(out int availableWorkerThreads, out int availableCompletionPortThreads);
+        ThreadPool.GetMaxThreads(out var maxWorkerThreads, out var maxCompletionPortThreads);
+        ThreadPool.GetAvailableThreads(out var availableWorkerThreads, out var availableCompletionPortThreads);
 
         var activeWorkerThreads = maxWorkerThreads - availableWorkerThreads;
         var activeCompletionPortThreads = maxCompletionPortThreads - availableCompletionPortThreads;

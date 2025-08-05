@@ -16,9 +16,6 @@ using CoreKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 using IMemoryBuffer = DotCompute.Abstractions.IMemoryBuffer;
 
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
-#pragma warning disable CA2000 // Dispose objects before losing scope - buffers are managed by the framework
-
 namespace DotCompute.Backends.CPU.Accelerators;
 
 /// <summary>
@@ -148,20 +145,20 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         }
 
         // Calculate total work items
-        long totalWorkItems = GetTotalWorkItems(context.WorkDimensions);
+        var totalWorkItems = GetTotalWorkItems(context.WorkDimensions);
 
         // Determine work distribution with vectorization
         var workerCount = _threadPool.WorkerCount;
-        var vectorizedWorkItems = _executionPlan.UseVectorization
-            ? (totalWorkItems + _executionPlan.VectorizationFactor - 1) / _executionPlan.VectorizationFactor
-            : totalWorkItems;
+        var vectorizedWorkItems = _executionPlan.UseVectorization ?
+            (totalWorkItems + _executionPlan.VectorizationFactor - 1) / _executionPlan.VectorizationFactor :
+            totalWorkItems;
         var workItemsPerWorker = (vectorizedWorkItems + workerCount - 1) / workerCount;
 
         // Create tasks for parallel execution
         var tasks = new Task[workerCount];
         var barrier = new Barrier(workerCount);
 
-        for (int workerId = 0; workerId < workerCount; workerId++)
+        for (var workerId = 0; workerId < workerCount; workerId++)
         {
             var localWorkerId = workerId;
             var startIndex = localWorkerId * workItemsPerWorker;
@@ -259,7 +256,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         long startIndex,
         long endIndex)
     {
-        for (long i = startIndex; i < endIndex && !context.CancellationToken.IsCancellationRequested; i++)
+        for (var i = startIndex; i < endIndex && !context.CancellationToken.IsCancellationRequested; i++)
         {
             var workItemId = GetWorkItemId(i, context.KernelContext.WorkDimensions ?? Array.Empty<long>());
             ExecuteSingleWorkItem(context.KernelContext, workItemId);
@@ -274,13 +271,13 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         var vectorFactor = context.ExecutionPlan.VectorizationFactor;
         var vectorWidth = context.ExecutionPlan.VectorWidth;
 
-        for (long i = startIndex; i < endIndex && !context.CancellationToken.IsCancellationRequested; i++)
+        for (var i = startIndex; i < endIndex && !context.CancellationToken.IsCancellationRequested; i++)
         {
             var baseIndex = i * vectorFactor;
             var workItemIds = new long[vectorFactor][];
 
             // Prepare vectorized work items
-            for (int v = 0; v < vectorFactor; v++)
+            for (var v = 0; v < vectorFactor; v++)
             {
                 var actualIndex = baseIndex + v;
                 if (actualIndex < GetTotalWorkItems(context.KernelContext.WorkDimensions ?? Array.Empty<long>()))
@@ -551,7 +548,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         var dimensions = globalWorkSize.Count;
         var workItemId = new long[dimensions];
 
-        for (int i = dimensions - 1; i >= 0; i--)
+        for (var i = dimensions - 1; i >= 0; i--)
         {
             workItemId[i] = linearIndex % globalWorkSize[i];
             linearIndex /= globalWorkSize[i];
@@ -613,10 +610,10 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         // In production, this would dispatch to the actual compiled kernel code
 
         // Calculate linear index from work item ID
-        long linearIndex = workItemId[0];
+        var linearIndex = workItemId[0];
         if (context.WorkDimensions != null)
         {
-            for (int i = 1; i < workItemId.Length; i++)
+            for (var i = 1; i < workItemId.Length; i++)
             {
                 linearIndex = linearIndex * context.WorkDimensions[i] + workItemId[i];
             }
@@ -853,7 +850,10 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
 
     private void ThrowIfDisposed()
     {
-        ObjectDisposedException.ThrowIf(_disposed != 0, this);
+        if (_disposed != 0)
+        {
+            throw new ObjectDisposedException(nameof(CpuCompiledKernel));
+        }
     }
 
     private static bool IsSupportedArgumentType(Type type)

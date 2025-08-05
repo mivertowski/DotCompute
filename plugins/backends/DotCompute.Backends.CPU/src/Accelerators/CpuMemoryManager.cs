@@ -17,7 +17,7 @@ namespace DotCompute.Backends.CPU.Accelerators;
 /// </summary>
 public sealed class CpuMemoryManager : IMemoryManager, IDisposable
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly List<WeakReference<CpuMemoryBuffer>> _buffers = [];
     private readonly NumaTopology _topology;
     private readonly NumaMemoryPolicy _defaultPolicy;
@@ -176,7 +176,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return new NumaMemoryStatistics
         {
             TotalAllocatedBytes = TotalAllocatedBytes,
-            NodeStatistics = nodeStats.Values.ToArray()
+            NodeStatistics = [.. nodeStats.Values]
         };
     }
 
@@ -554,7 +554,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
                 var length = Math.Min(source.Length, destination.Length);
                 var prefetchLines = Math.Min(maxPrefetchLines, (length + prefetchDistance - 1) / prefetchDistance);
 
-                for (int i = 0; i < prefetchLines; i++)
+                for (var i = 0; i < prefetchLines; i++)
                 {
                     var offset = i * prefetchDistance;
                     if (offset < length)
@@ -586,17 +586,17 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     private static void MemoryCopyAvx512(ReadOnlySpan<byte> source, Span<byte> destination)
     {
         const int VectorSize = 64; // 512 bits = 64 bytes
-        int vectorCount = source.Length / VectorSize;
+        var vectorCount = source.Length / VectorSize;
 
         ref var srcRef = ref MemoryMarshal.GetReference(source);
         ref var dstRef = ref MemoryMarshal.GetReference(destination);
 
         // Performance optimization: Unroll loop for better throughput
-        int unrolledCount = vectorCount / 4;
-        int remainingVectors = vectorCount % 4;
+        var unrolledCount = vectorCount / 4;
+        var remainingVectors = vectorCount % 4;
 
         // Process 4 vectors at a time (256 bytes)
-        for (int i = 0; i < unrolledCount; i++)
+        for (var i = 0; i < unrolledCount; i++)
         {
             var baseOffset = i * VectorSize * 4;
 
@@ -615,7 +615,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
 
         // Process remaining vectors
         var remainingOffset = unrolledCount * VectorSize * 4;
-        for (int i = 0; i < remainingVectors; i++)
+        for (var i = 0; i < remainingVectors; i++)
         {
             var offset = remainingOffset + i * VectorSize;
             var data = Vector512.LoadUnsafe(ref Unsafe.Add(ref srcRef, offset));
@@ -623,10 +623,10 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         }
 
         // Handle remainder bytes
-        int remainder = source.Length % VectorSize;
+        var remainder = source.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
+            var lastOffset = vectorCount * VectorSize;
             var remainingSource = source.Slice(lastOffset, remainder);
             var remainingDest = destination.Slice(lastOffset, remainder);
 
@@ -650,17 +650,17 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     private static void MemoryCopyAvx2(ReadOnlySpan<byte> source, Span<byte> destination)
     {
         const int VectorSize = 32; // 256 bits = 32 bytes
-        int vectorCount = source.Length / VectorSize;
+        var vectorCount = source.Length / VectorSize;
 
         ref var srcRef = ref MemoryMarshal.GetReference(source);
         ref var dstRef = ref MemoryMarshal.GetReference(destination);
 
         // Performance optimization: Unroll by 2 for AVX2
-        int unrolledCount = vectorCount / 2;
-        int remainingVectors = vectorCount % 2;
+        var unrolledCount = vectorCount / 2;
+        var remainingVectors = vectorCount % 2;
 
         // Process 2 vectors at a time (64 bytes)
-        for (int i = 0; i < unrolledCount; i++)
+        for (var i = 0; i < unrolledCount; i++)
         {
             var baseOffset = i * VectorSize * 2;
 
@@ -680,10 +680,10 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         }
 
         // Handle remainder
-        int remainder = source.Length % VectorSize;
+        var remainder = source.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
+            var lastOffset = vectorCount * VectorSize;
             var remainingSource = source.Slice(lastOffset, remainder);
             var remainingDest = destination.Slice(lastOffset, remainder);
 
@@ -702,13 +702,13 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
     private static void MemoryCopyVector128(ReadOnlySpan<byte> source, Span<byte> destination)
     {
         const int VectorSize = 16; // 128 bits = 16 bytes
-        int vectorCount = source.Length / VectorSize;
+        var vectorCount = source.Length / VectorSize;
 
         ref var srcRef = ref MemoryMarshal.GetReference(source);
         ref var dstRef = ref MemoryMarshal.GetReference(destination);
 
         // Copy 16 bytes at a time using SSE/NEON
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var data = Vector128.LoadUnsafe(ref Unsafe.Add(ref srcRef, offset));
@@ -716,10 +716,10 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
         }
 
         // Handle remainder
-        int remainder = source.Length % VectorSize;
+        var remainder = source.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
+            var lastOffset = vectorCount * VectorSize;
             var remainingSource = source.Slice(lastOffset, remainder);
             var remainingDest = destination.Slice(lastOffset, remainder);
             remainingSource.CopyTo(remainingDest);
@@ -814,16 +814,10 @@ internal sealed class NativeMemoryOwner : IMemoryOwner<byte>
 /// <summary>
 /// Memory manager for unmanaged memory pointers.
 /// </summary>
-internal sealed unsafe class UnmanagedMemoryManager<T> : MemoryManager<T> where T : unmanaged
+internal sealed unsafe class UnmanagedMemoryManager<T>(T* ptr, int length) : MemoryManager<T> where T : unmanaged
 {
-    private readonly T* _ptr;
-    private readonly int _length;
-
-    public UnmanagedMemoryManager(T* ptr, int length)
-    {
-        _ptr = ptr;
-        _length = length;
-    }
+    private readonly T* _ptr = ptr;
+    private readonly int _length = length;
 
     public override Span<T> GetSpan() => new(_ptr, _length);
 
@@ -950,7 +944,7 @@ internal sealed class NumaAwareMemoryOwner : IMemoryOwner<byte>
         const int pageSize = 4096; // Standard page size
         var pages = (int)((_size + pageSize - 1) / pageSize);
 
-        for (int i = 0; i < pages; i++)
+        for (var i = 0; i < pages; i++)
         {
             var offset = i * pageSize;
             if (offset < _size)

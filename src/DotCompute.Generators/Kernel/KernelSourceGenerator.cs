@@ -137,7 +137,7 @@ namespace DotCompute.Generators.Kernel
             {
                 Name = classSymbol.Name,
                 Namespace = classSymbol.ContainingNamespace.ToDisplayString(),
-                KernelMethodNames = kernelMethods.Select(m => m.Name).ToList()
+                KernelMethodNames = [.. kernelMethods.Select(m => m.Name)]
             };
         }
 
@@ -394,7 +394,7 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine();
             source.AppendLine("            // Cast arguments");
 
-            for (int i = 0; i < method.Parameters.Count; i++)
+            for (var i = 0; i < method.Parameters.Count; i++)
             {
                 var param = method.Parameters[i];
                 source.AppendLine($"            var {param.Name} = ({param.Type})args[{i}];");
@@ -461,13 +461,13 @@ namespace DotCompute.Generators.Kernel
 
         private static List<ParameterInfo> GetParameterInfo(IMethodSymbol method)
         {
-            return method.Parameters.Select(p => new ParameterInfo
+            return [.. method.Parameters.Select(p => new ParameterInfo
             {
                 Name = p.Name,
                 Type = p.Type.ToDisplayString(),
                 IsBuffer = IsBufferType(p.Type),
                 IsReadOnly = p.RefKind == RefKind.In || p.Type.IsReadOnly
-            }).ToList();
+            })];
         }
 
         private static bool IsBufferType(ITypeSymbol type)
@@ -546,7 +546,7 @@ namespace DotCompute.Generators.Kernel
 
             // Generate kernel function
             source.AppendLine($"extern \"C\" __global__ void {method.Name}_cuda_kernel(");
-            for (int i = 0; i < method.Parameters.Count; i++)
+            for (var i = 0; i < method.Parameters.Count; i++)
             {
                 var param = method.Parameters[i];
                 var cudaType = ConvertToCudaType(param.Type);
@@ -589,7 +589,7 @@ namespace DotCompute.Generators.Kernel
 
             // Generate kernel function
             source.AppendLine($"kernel void {method.Name}_metal_kernel(");
-            for (int i = 0; i < method.Parameters.Count; i++)
+            for (var i = 0; i < method.Parameters.Count; i++)
             {
                 var param = method.Parameters[i];
                 var metalType = ConvertToMetalType(param.Type);
@@ -627,7 +627,7 @@ namespace DotCompute.Generators.Kernel
 
             // Generate kernel function
             source.AppendLine($"__kernel void {method.Name}_opencl_kernel(");
-            for (int i = 0; i < method.Parameters.Count; i++)
+            for (var i = 0; i < method.Parameters.Count; i++)
             {
                 var param = method.Parameters[i];
                 var openclType = ConvertToOpenCLType(param.Type);
@@ -751,7 +751,7 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine("    void** args, int length, int blockSize, int gridSize)");
             source.AppendLine("{");
             source.AppendLine($"    {method.Name}_cuda_kernel<<<gridSize, blockSize>>>(");
-            for (int i = 0; i < method.Parameters.Count; i++)
+            for (var i = 0; i < method.Parameters.Count; i++)
             {
                 source.Append($"        ({ConvertToCudaType(method.Parameters[i].Type)}*)args[{i}]");
                 if (i < method.Parameters.Count - 1)

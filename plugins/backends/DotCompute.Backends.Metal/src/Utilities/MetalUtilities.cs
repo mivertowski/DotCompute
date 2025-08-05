@@ -59,7 +59,7 @@ public static class MetalUtilities
         var count = GetDeviceCount();
         var devices = new MetalDeviceInfoWrapper[count];
 
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var device = MetalNative.CreateDeviceAtIndex(i);
             if (device != IntPtr.Zero)
@@ -97,7 +97,7 @@ public static class MetalUtilities
     {
         string[] sizes = { "B", "KB", "MB", "GB", "TB" };
         double len = bytes;
-        int order = 0;
+        var order = 0;
 
         while (len >= 1024 && order < sizes.Length - 1)
         {

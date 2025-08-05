@@ -231,16 +231,10 @@ public static class CpuBackendPluginExtensions
 /// <summary>
 /// Wrapper to provide named accelerator support.
 /// </summary>
-internal sealed class NamedAcceleratorWrapper : AbstractionsIAccelerator
+internal sealed class NamedAcceleratorWrapper(string name, AbstractionsIAccelerator accelerator) : AbstractionsIAccelerator
 {
-    private readonly string _name;
-    private readonly AbstractionsIAccelerator _accelerator;
-
-    public NamedAcceleratorWrapper(string name, AbstractionsIAccelerator accelerator)
-    {
-        _name = name ?? throw new ArgumentNullException(nameof(name));
-        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-    }
+    private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
+    private readonly AbstractionsIAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
 
     public string Name => _name;
 

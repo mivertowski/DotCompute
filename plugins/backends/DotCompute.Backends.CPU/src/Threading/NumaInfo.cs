@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
@@ -80,15 +79,15 @@ public static partial class NumaInfo
         var nodeCount = GetNumaHighestNodeNumber() + 1;
         var processorCount = Environment.ProcessorCount;
         var distanceMatrix = new int[nodeCount][];
-        for (int i = 0; i < nodeCount; i++)
+        for (var i = 0; i < nodeCount; i++)
         {
             distanceMatrix[i] = new int[nodeCount];
         }
 
-        for (int nodeId = 0; nodeId < nodeCount; nodeId++)
+        for (var nodeId = 0; nodeId < nodeCount; nodeId++)
         {
             // Get processor mask for this node
-            if (GetNumaNodeProcessorMaskEx((ushort)nodeId, out GROUP_AFFINITY affinity))
+            if (GetNumaNodeProcessorMaskEx((ushort)nodeId, out var affinity))
             {
                 var memorySize = GetNumaNodeMemorySize(nodeId);
 
@@ -104,7 +103,7 @@ public static partial class NumaInfo
             }
 
             // Build distance matrix
-            for (int otherNodeId = 0; otherNodeId < nodeCount; otherNodeId++)
+            for (var otherNodeId = 0; otherNodeId < nodeCount; otherNodeId++)
             {
                 distanceMatrix[nodeId][otherNodeId] = GetNumaNodeDistance(nodeId, otherNodeId);
             }
@@ -114,7 +113,7 @@ public static partial class NumaInfo
         {
             NodeCount = nodeCount,
             ProcessorCount = processorCount,
-            Nodes = nodes.ToArray(),
+            Nodes = [.. nodes],
             DistanceMatrix = distanceMatrix,
             CacheLineSize = GetCacheLineSize(),
             PageSize = GetPageSize()
@@ -138,7 +137,7 @@ public static partial class NumaInfo
             {
                 foreach (System.Management.ManagementObject node in results)
                 {
-                    var nodeId = Convert.ToInt32(node["NodeId"], CultureInfo.InvariantCulture);
+                    var nodeId = Convert.ToInt32(node["NodeId"]);
                     var processorMask = GetProcessorMaskFromWmi(node);
 
                     nodes.Add(new NumaNode
@@ -171,7 +170,7 @@ public static partial class NumaInfo
         {
             NodeCount = nodeCount,
             ProcessorCount = processorCount,
-            Nodes = nodes.ToArray(),
+            Nodes = [.. nodes],
             DistanceMatrix = distanceMatrix,
             CacheLineSize = 64, // Standard cache line size
             PageSize = 4096 // Standard page size
@@ -205,12 +204,12 @@ public static partial class NumaInfo
         {
             var nodeCount = numa_max_node() + 1;
             var distanceMatrix = new int[nodeCount][];
-            for (int i = 0; i < nodeCount; i++)
+            for (var i = 0; i < nodeCount; i++)
             {
                 distanceMatrix[i] = new int[nodeCount];
             }
 
-            for (int nodeId = 0; nodeId < nodeCount; nodeId++)
+            for (var nodeId = 0; nodeId < nodeCount; nodeId++)
             {
                 if (numa_node_to_cpus(nodeId, out var cpuMask, out var cpuCount))
                 {
@@ -232,7 +231,7 @@ public static partial class NumaInfo
                 }
 
                 // Build distance matrix using libnuma
-                for (int otherNodeId = 0; otherNodeId < nodeCount; otherNodeId++)
+                for (var otherNodeId = 0; otherNodeId < nodeCount; otherNodeId++)
                 {
                     distanceMatrix[nodeId][otherNodeId] = numa_distance(nodeId, otherNodeId);
                 }
@@ -242,7 +241,7 @@ public static partial class NumaInfo
             {
                 NodeCount = nodeCount,
                 ProcessorCount = processorCount,
-                Nodes = nodes.ToArray(),
+                Nodes = [.. nodes],
                 DistanceMatrix = distanceMatrix,
                 CacheLineSize = GetLinuxCacheLineSize(),
                 PageSize = GetLinuxPageSize(),
@@ -266,21 +265,21 @@ public static partial class NumaInfo
             if (Directory.Exists("/sys/devices/system/node"))
             {
                 var nodeDirs = Directory.GetDirectories("/sys/devices/system/node", "node*")
-                    .OrderBy(d => int.Parse(Path.GetFileName(d).AsSpan(4), CultureInfo.InvariantCulture))
+                    .OrderBy(d => int.Parse(Path.GetFileName(d).Substring(4)))
                     .ToArray();
 
                 var nodes = new List<NumaNode>();
                 var nodeCount = nodeDirs.Length;
                 var distanceMatrix = new int[nodeCount][];
-                for (int i = 0; i < nodeCount; i++)
+                for (var i = 0; i < nodeCount; i++)
                 {
                     distanceMatrix[i] = new int[nodeCount];
                 }
 
-                for (int i = 0; i < nodeDirs.Length; i++)
+                for (var i = 0; i < nodeDirs.Length; i++)
                 {
                     var nodeDir = nodeDirs[i];
-                    var nodeId = int.Parse(Path.GetFileName(nodeDir).AsSpan(4), CultureInfo.InvariantCulture);
+                    var nodeId = int.Parse(Path.GetFileName(nodeDir).Substring(4));
 
                     var cpuListFile = Path.Combine(nodeDir, "cpulist");
                     if (File.Exists(cpuListFile))
@@ -309,7 +308,7 @@ public static partial class NumaInfo
                     if (File.Exists(distanceFile))
                     {
                         var distances = File.ReadAllText(distanceFile).Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                        for (int j = 0; j < Math.Min(distances.Length, nodeCount); j++)
+                        for (var j = 0; j < Math.Min(distances.Length, nodeCount); j++)
                         {
                             if (int.TryParse(distances[j], out var distance))
                             {
@@ -325,7 +324,7 @@ public static partial class NumaInfo
                     {
                         NodeCount = nodes.Count,
                         ProcessorCount = processorCount,
-                        Nodes = nodes.ToArray(),
+                        Nodes = [.. nodes],
                         DistanceMatrix = distanceMatrix,
                         CacheLineSize = GetLinuxCacheLineSize(),
                         PageSize = GetLinuxPageSize(),
@@ -348,18 +347,18 @@ public static partial class NumaInfo
     {
         // Parse Linux CPU list format: "0-3,8-11"
         ulong mask = 0;
-        int count = 0;
+        var count = 0;
 
         var parts = cpuList.Split(',');
         foreach (var part in parts)
         {
-            if (part.Contains('-', StringComparison.Ordinal))
+            if (part.Contains('-'))
             {
                 var range = part.Split('-');
-                var start = int.Parse(range[0], CultureInfo.InvariantCulture);
-                var end = int.Parse(range[1], CultureInfo.InvariantCulture);
+                var start = int.Parse(range[0]);
+                var end = int.Parse(range[1]);
 
-                for (int i = start; i <= end; i++)
+                for (var i = start; i <= end; i++)
                 {
                     mask |= (1UL << i);
                     count++;
@@ -367,7 +366,7 @@ public static partial class NumaInfo
             }
             else
             {
-                var cpu = int.Parse(part, CultureInfo.InvariantCulture);
+                var cpu = int.Parse(part);
                 mask |= (1UL << cpu);
                 count++;
             }
@@ -386,10 +385,10 @@ public static partial class NumaInfo
                 var lines = File.ReadAllLines(meminfoFile);
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith($"Node {Path.GetFileName(nodeDir).Substring(4)} MemTotal:", StringComparison.Ordinal))
+                    if (line.StartsWith($"Node {Path.GetFileName(nodeDir).Substring(4)} MemTotal:"))
                     {
                         var parts = line.Split(':')[1].Trim().Split(' ');
-                        return long.Parse(parts[0], CultureInfo.InvariantCulture) * 1024; // Convert from KB to bytes
+                        return long.Parse(parts[0]) * 1024; // Convert from KB to bytes
                     }
                 }
             }
@@ -555,10 +554,10 @@ public static partial class NumaInfo
     private static int[][] EstimateDistanceMatrix(int nodeCount)
     {
         var matrix = new int[nodeCount][];
-        for (int i = 0; i < nodeCount; i++)
+        for (var i = 0; i < nodeCount; i++)
         {
             matrix[i] = new int[nodeCount];
-            for (int j = 0; j < nodeCount; j++)
+            for (var j = 0; j < nodeCount; j++)
             {
                 matrix[i][j] = i == j ? 10 : 20; // Standard NUMA distances
             }
@@ -569,7 +568,7 @@ public static partial class NumaInfo
     private static int PopCount(ulong value)
     {
         // Population count (number of set bits)
-        int count = 0;
+        var count = 0;
         while (value != 0)
         {
             count++;
@@ -587,7 +586,7 @@ public static partial class NumaInfo
             var processorMask = node["ProcessorMask"];
             if (processorMask != null)
             {
-                return Convert.ToUInt64(processorMask, CultureInfo.InvariantCulture);
+                return Convert.ToUInt64(processorMask);
             }
         }
         catch
@@ -605,7 +604,7 @@ public static partial class NumaInfo
             var memorySize = node["MemorySize"];
             if (memorySize != null)
             {
-                return Convert.ToInt64(memorySize, CultureInfo.InvariantCulture);
+                return Convert.ToInt64(memorySize);
             }
         }
         catch
@@ -625,11 +624,17 @@ public static partial class NumaInfo
         return 0;
     }
 
-    private static int GetCacheCoherencyDomain(int nodeId) => nodeId; // For most systems, cache coherency domain matches NUMA node
+    private static int GetCacheCoherencyDomain(int nodeId) =>
+        // For most systems, cache coherency domain matches NUMA node
+        nodeId;
 
-    private static int GetNumaNodeDistance(int fromNode, int toNode) => fromNode == toNode ? 10 : 20; // Default NUMA distances if system doesn't provide them
+    private static int GetNumaNodeDistance(int fromNode, int toNode) =>
+        // Default NUMA distances if system doesn't provide them
+        fromNode == toNode ? 10 : 20;
 
-    private static int GetCacheLineSize() => 64; // Most modern processors use 64-byte cache lines
+    private static int GetCacheLineSize() =>
+        // Most modern processors use 64-byte cache lines
+        64;
 
     private static int GetPageSize()
     {
@@ -650,7 +655,7 @@ public static partial class NumaInfo
                 var lines = File.ReadAllLines(meminfoPath);
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith($"Node {nodeId} MemTotal:", StringComparison.Ordinal))
+                    if (line.StartsWith($"Node {nodeId} MemTotal:"))
                     {
                         var match = MemorySizeRegex().Match(line);
                         if (match.Success && long.TryParse(match.Groups[1].Value, out var kb))
@@ -819,7 +824,7 @@ public static partial class NumaInfo
         if (parts.Length > 0)
         {
             var firstPart = parts[0];
-            if (firstPart.Contains('-', StringComparison.Ordinal))
+            if (firstPart.Contains('-'))
             {
                 var range = firstPart.Split('-');
                 if (int.TryParse(range[0], out var start))
@@ -899,16 +904,12 @@ public sealed class NumaTopology
     /// <summary>
     /// Gets the NUMA nodes.
     /// </summary>
-#pragma warning disable CA1819 // Properties should not return arrays - Required for NUMA topology representation
     public required NumaNode[] Nodes { get; init; }
-#pragma warning restore CA1819
 
     /// <summary>
     /// Gets the NUMA distance matrix (relative latency between nodes).
     /// </summary>
-#pragma warning disable CA1819 // Properties should not return arrays - Required for NUMA topology representation
     public int[][]? DistanceMatrix { get; init; }
-#pragma warning restore CA1819
 
     /// <summary>
     /// Gets the cache line size in bytes.
@@ -935,7 +936,7 @@ public sealed class NumaTopology
     /// </summary>
     public int GetNodeForProcessor(int processorId)
     {
-        for (int i = 0; i < Nodes.Length; i++)
+        for (var i = 0; i < Nodes.Length; i++)
         {
             if ((Nodes[i].ProcessorMask & (1UL << processorId)) != 0)
             {
@@ -956,7 +957,7 @@ public sealed class NumaTopology
         }
 
         var mask = Nodes[nodeId].ProcessorMask;
-        for (int i = 0; i < 64; i++)
+        for (var i = 0; i < 64; i++)
         {
             if ((mask & (1UL << i)) != 0)
             {
@@ -991,7 +992,7 @@ public sealed class NumaTopology
         }
 
         var distances = new List<(int node, int distance)>();
-        for (int i = 0; i < NodeCount; i++)
+        for (var i = 0; i < NodeCount; i++)
         {
             if (i != nodeId)
             {
@@ -1029,7 +1030,7 @@ public sealed class NumaTopology
         // Return node with most processors
         var maxCount = 0;
         var bestNode = 0;
-        for (int i = 0; i < NodeCount; i++)
+        for (var i = 0; i < NodeCount; i++)
         {
             if (nodeProcessorCounts[i] > maxCount)
             {
@@ -1105,7 +1106,7 @@ public sealed class NumaNode
     {
         get
         {
-            for (int i = 0; i < 64; i++)
+            for (var i = 0; i < 64; i++)
             {
                 if ((ProcessorMask & (1UL << i)) != 0)
                 {

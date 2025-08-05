@@ -15,7 +15,7 @@ namespace DotCompute.Plugins.Core
     /// </summary>
     public abstract class BackendPluginBase : IBackendPlugin
     {
-        private readonly object _stateLock = new();
+        private readonly Lock _stateLock = new();
         private PluginState _state = PluginState.Unknown;
         private PluginHealth _health = PluginHealth.Unknown;
         private readonly PluginMetrics _metrics = new();

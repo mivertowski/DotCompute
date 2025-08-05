@@ -17,14 +17,9 @@ namespace DotCompute.Backends.CPU.Tests;
 /// Integration tests validating the enhanced SIMD kernels work correctly
 /// with the existing CPU backend infrastructure and meet roadmap targets.
 /// </summary>
-public sealed class SimdIntegrationTests
+public sealed class SimdIntegrationTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public SimdIntegrationTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     [Fact]
     public void SimdCapabilitiesAreDetectedCorrectly()
@@ -62,7 +57,7 @@ public sealed class SimdIntegrationTests
 
         // Initialize test data
         var random = new Random(42);
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
@@ -79,7 +74,7 @@ public sealed class SimdIntegrationTests
         }
 
         // Validate results
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             var expected = MathF.FusedMultiplyAdd(a[i], b[i], c[i]);
             var actual = result[i];
@@ -101,7 +96,7 @@ public sealed class SimdIntegrationTests
 
         // Initialize test data
         var random = new Random(42);
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             a[i] = random.Next(-1000, 1000);
             b[i] = random.Next(-1000, 1000);
@@ -117,7 +112,7 @@ public sealed class SimdIntegrationTests
         }
 
         // Validate results
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             var expected = a[i] + b[i];
             var actual = result[i];
@@ -151,7 +146,7 @@ public sealed class SimdIntegrationTests
 
         // Initialize test data
         var random = new Random(42);
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
@@ -179,7 +174,7 @@ public sealed class SimdIntegrationTests
             }
 
             // Basic validation that results are reasonable
-            for (int i = 0; i < 10; i++) // Check first 10 elements
+            for (var i = 0; i < 10; i++) // Check first 10 elements
             {
                 Assert.True(float.IsFinite(result[i]), $"ARM NEON {operation} produced invalid result at index {i}: {result[i]}");
             }
@@ -205,7 +200,7 @@ public sealed class SimdIntegrationTests
 
         // Initialize test data
         var random = new Random(42);
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             data[i] = (float)random.NextDouble();
             indices[i] = random.Next(0, size);
@@ -223,7 +218,7 @@ public sealed class SimdIntegrationTests
         }
 
         // Validate gather results
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             var expected = data[indices[i]];
             var actual = gathered[i];
@@ -244,7 +239,7 @@ public sealed class SimdIntegrationTests
             }
 
             // Validate scatter results
-            for (int i = 0; i < size; i++)
+            for (var i = 0; i < size; i++)
             {
                 var expected = values[i];
                 var actual = data[size + indices[i]];
@@ -270,7 +265,7 @@ public sealed class SimdIntegrationTests
 
         // Initialize test data
         var random = new Random(42);
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             condition[i] = (float)random.NextDouble();
             a[i] = (float)random.NextDouble() * 10.0f;
@@ -288,7 +283,7 @@ public sealed class SimdIntegrationTests
         }
 
         // Validate results
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             Assert.Equal(expected[i], result[i]);
         }
@@ -307,7 +302,7 @@ public sealed class SimdIntegrationTests
 
         // Initialize matrices
         var random = new Random(42);
-        for (int i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
@@ -315,11 +310,11 @@ public sealed class SimdIntegrationTests
 
         // Compute expected result with simple algorithm
         Array.Clear(expected, 0, expected.Length);
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
-            for (int j = 0; j < size; j++)
+            for (var j = 0; j < size; j++)
             {
-                for (int k = 0; k < size; k++)
+                for (var k = 0; k < size; k++)
                 {
                     expected[i * size + j] += a[i * size + k] * b[k * size + j];
                 }
@@ -336,7 +331,7 @@ public sealed class SimdIntegrationTests
         }
 
         // Validate results (allowing for floating-point precision differences)
-        for (int i = 0; i < result.Length; i++)
+        for (var i = 0; i < result.Length; i++)
         {
             var error = Math.Abs(expected[i] - result[i]);
             Assert.True(error < 1e-4f, $"Matrix multiply result mismatch at index {i}: expected {expected[i]}, got {result[i]}");
@@ -353,8 +348,8 @@ public sealed class SimdIntegrationTests
 
         // Initialize with known values for validation
         var random = new Random(42);
-        double expectedSum = 0.0;
-        for (int i = 0; i < size; i++)
+        var expectedSum = 0.0;
+        for (var i = 0; i < size; i++)
         {
             data[i] = (float)random.NextDouble();
             expectedSum += data[i];

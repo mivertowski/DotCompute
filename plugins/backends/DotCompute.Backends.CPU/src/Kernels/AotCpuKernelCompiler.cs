@@ -292,27 +292,18 @@ internal sealed class KernelMetadata
 /// <summary>
 /// AOT-compatible compiled kernel implementation.
 /// </summary>
-internal sealed class AotCompiledKernel : ICompiledKernel
+internal sealed class AotCompiledKernel(
+    KernelDefinition definition,
+    Func<KernelExecutionContext, Task> implementation,
+    KernelExecutionPlan executionPlan,
+    CpuThreadPool threadPool,
+    ILogger logger) : ICompiledKernel
 {
-    private readonly KernelDefinition _definition;
-    private readonly Func<KernelExecutionContext, Task> _implementation;
-    private readonly KernelExecutionPlan _executionPlan;
-    private readonly CpuThreadPool _threadPool;
-    private readonly ILogger _logger;
-
-    public AotCompiledKernel(
-        KernelDefinition definition,
-        Func<KernelExecutionContext, Task> implementation,
-        KernelExecutionPlan executionPlan,
-        CpuThreadPool threadPool,
-        ILogger logger)
-    {
-        _definition = definition ?? throw new ArgumentNullException(nameof(definition));
-        _implementation = implementation ?? throw new ArgumentNullException(nameof(implementation));
-        _executionPlan = executionPlan ?? throw new ArgumentNullException(nameof(executionPlan));
-        _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
+    private readonly Func<KernelExecutionContext, Task> _implementation = implementation ?? throw new ArgumentNullException(nameof(implementation));
+    private readonly KernelExecutionPlan _executionPlan = executionPlan ?? throw new ArgumentNullException(nameof(executionPlan));
+    private readonly CpuThreadPool _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     public string Name => _definition.Name;
     public KernelDefinition Definition => _definition;
@@ -325,7 +316,7 @@ internal sealed class AotCompiledKernel : ICompiledKernel
         {
             // Convert KernelArguments to KernelExecutionContext for internal processing
             var context = new KernelExecutionContext();
-            for (int i = 0; i < arguments.Arguments.Length; i++)
+            for (var i = 0; i < arguments.Arguments.Length; i++)
             {
                 context.SetParameter(i, arguments.Arguments[i]);
             }
@@ -392,7 +383,7 @@ internal static class VectorizedMath
         _ = length % System.Numerics.Vector<float>.Count;
 
         // Vectorized portion
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * System.Numerics.Vector<float>.Count;
             var va = new System.Numerics.Vector<float>(a.Slice(offset));
@@ -403,7 +394,7 @@ internal static class VectorizedMath
 
         // Scalar remainder
         var remainderStart = vectorCount * System.Numerics.Vector<float>.Count;
-        for (int i = remainderStart; i < length; i++)
+        for (var i = remainderStart; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -414,7 +405,7 @@ internal static class VectorizedMath
     {
         var vectorCount = length / System.Numerics.Vector<float>.Count;
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * System.Numerics.Vector<float>.Count;
             var va = new System.Numerics.Vector<float>(a.Slice(offset));
@@ -424,7 +415,7 @@ internal static class VectorizedMath
         }
 
         var remainderStart = vectorCount * System.Numerics.Vector<float>.Count;
-        for (int i = remainderStart; i < length; i++)
+        for (var i = remainderStart; i < length; i++)
         {
             result[i] = a[i] * b[i];
         }
@@ -436,7 +427,7 @@ internal static class VectorizedMath
         var vectorCount = values.Length / System.Numerics.Vector<float>.Count;
         var sum = System.Numerics.Vector<float>.Zero;
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * System.Numerics.Vector<float>.Count;
             var v = new System.Numerics.Vector<float>(values.Slice(offset));
@@ -446,7 +437,7 @@ internal static class VectorizedMath
         var result = System.Numerics.Vector.Dot(sum, System.Numerics.Vector<float>.One);
 
         var remainderStart = vectorCount * System.Numerics.Vector<float>.Count;
-        for (int i = remainderStart; i < values.Length; i++)
+        for (var i = remainderStart; i < values.Length; i++)
         {
             result += values[i];
         }
@@ -461,12 +452,12 @@ internal static class VectorizedMath
     {
         // Simple blocked matrix multiplication
         // This could be further optimized with cache-friendly blocking
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 float sum = 0;
-                for (int k = 0; k < inner; k++)
+                for (var k = 0; k < inner; k++)
                 {
                     sum += a[i * inner + k] * b[k * cols + j];
                 }

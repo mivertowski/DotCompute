@@ -5,14 +5,12 @@ using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
-
 namespace DotCompute.Backends.CUDA;
 
 /// <summary>
 /// Main entry point for CUDA compute backend
 /// </summary>
-public sealed class CudaBackend : IDisposable
+public class CudaBackend : IDisposable
 {
     private readonly ILogger<CudaBackend> _logger;
     private readonly List<CudaAccelerator> _accelerators = [];
@@ -63,7 +61,7 @@ public sealed class CudaBackend : IDisposable
             _logger.LogInformation("Discovering CUDA devices...");
 
             // 1. Enumerate CUDA devices using cuDeviceGet
-            var deviceCountResult = CudaRuntime.cudaGetDeviceCount(out int deviceCount);
+            var deviceCountResult = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
             if (deviceCountResult != CudaError.Success)
             {
                 _logger.LogError("Failed to get CUDA device count: {Error}", CudaRuntime.GetErrorString(deviceCountResult));
@@ -79,7 +77,7 @@ public sealed class CudaBackend : IDisposable
             _logger.LogInformation("Found {DeviceCount} CUDA device(s)", deviceCount);
 
             // 2. Query device properties for each device
-            for (int deviceId = 0; deviceId < deviceCount; deviceId++)
+            for (var deviceId = 0; deviceId < deviceCount; deviceId++)
             {
                 try
                 {
@@ -112,14 +110,14 @@ public sealed class CudaBackend : IDisposable
         try
         {
             // 3. Check CUDA runtime version compatibility
-            var runtimeVersionResult = CudaRuntime.cudaRuntimeGetVersion(out int runtimeVersion);
+            var runtimeVersionResult = CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion);
             if (runtimeVersionResult != CudaError.Success)
             {
                 _logger.LogWarning("Could not determine CUDA runtime version for device {DeviceId}", deviceId);
                 return false;
             }
 
-            var driverVersionResult = CudaRuntime.cudaDriverGetVersion(out int driverVersion);
+            var driverVersionResult = CudaRuntime.cudaDriverGetVersion(out var driverVersion);
             if (driverVersionResult != CudaError.Success)
             {
                 _logger.LogWarning("Could not determine CUDA driver version for device {DeviceId}", deviceId);
@@ -236,27 +234,17 @@ public sealed class CudaBackend : IDisposable
 
     public void Dispose()
     {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    private void Dispose(bool disposing)
-    {
         if (_disposed)
         {
             return;
         }
 
-        if (disposing)
+        foreach (var accelerator in _accelerators)
         {
-            foreach (var accelerator in _accelerators)
-            {
-                accelerator?.Dispose();
-            }
-
-            _accelerators.Clear();
+            accelerator?.Dispose();
         }
 
+        _accelerators.Clear();
         _disposed = true;
     }
 }

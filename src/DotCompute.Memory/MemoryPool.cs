@@ -16,7 +16,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
 {
     private readonly IMemoryManager _memoryManager;
     private readonly ConcurrentDictionary<int, ConcurrentQueue<IMemoryBuffer<T>>> _buckets;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private readonly Timer _cleanupTimer;
 
     private volatile bool _disposed;
@@ -264,7 +264,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
             {
                 var itemsToRemove = Math.Min(bucket.Count / 2, 10); // Remove up to 50% or 10 items
 
-                for (int i = 0; i < itemsToRemove && bytesReleased < maxBytesToRelease; i++)
+                for (var i = 0; i < itemsToRemove && bytesReleased < maxBytesToRelease; i++)
                 {
                     if (bucket.TryDequeue(out var buffer))
                     {
@@ -407,7 +407,7 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
             {
                 var itemsToRemove = bucket.Count / 4; // Remove 25% of buffers
 
-                for (int i = 0; i < itemsToRemove; i++)
+                for (var i = 0; i < itemsToRemove; i++)
                 {
                     if (bucket.TryDequeue(out var buffer))
                     {
@@ -426,11 +426,11 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
 /// A pooled memory buffer that automatically returns itself to the pool when disposed.
 /// </summary>
 /// <typeparam name="T">The element type.</typeparam>
-internal sealed class PooledMemoryBuffer<T> : IMemoryBuffer<T> where T : unmanaged
+internal sealed class PooledMemoryBuffer<T>(MemoryPool<T> pool, IMemoryBuffer<T> buffer, int bucketSize) : IMemoryBuffer<T> where T : unmanaged
 {
-    private readonly MemoryPool<T> _pool;
-    private readonly IMemoryBuffer<T> _buffer;
-    private readonly int _bucketSize;
+    private readonly MemoryPool<T> _pool = pool;
+    private readonly IMemoryBuffer<T> _buffer = buffer;
+    private readonly int _bucketSize = bucketSize;
     private volatile bool _disposed;
 
     public int Length => _buffer.Length;
@@ -439,13 +439,6 @@ internal sealed class PooledMemoryBuffer<T> : IMemoryBuffer<T> where T : unmanag
     public bool IsOnDevice => _buffer.IsOnDevice;
     public bool IsDirty => _buffer.IsDirty;
     public BufferState State => _buffer.State;
-
-    public PooledMemoryBuffer(MemoryPool<T> pool, IMemoryBuffer<T> buffer, int bucketSize)
-    {
-        _pool = pool;
-        _buffer = buffer;
-        _bucketSize = bucketSize;
-    }
 
     public Span<T> AsSpan()
     {

@@ -9,8 +9,6 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
-
 namespace DotCompute.Backends.CUDA.Compilation;
 
 // Internal types for kernel compilation
@@ -60,7 +58,7 @@ public class CacheStatistics
 /// <summary>
 /// CUDA kernel compiler implementation using NVRTC
 /// </summary>
-public sealed class CudaKernelCompiler : IDisposable
+public class CudaKernelCompiler : IDisposable
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
@@ -69,11 +67,6 @@ public sealed class CudaKernelCompiler : IDisposable
     private readonly string _tempDirectory;
     private readonly string _cacheDirectory;
     private bool _disposed;
-    
-    private static readonly System.Text.Json.JsonSerializerOptions JsonOptions = new()
-    {
-        WriteIndented = true
-    };
 
     [RequiresUnreferencedCode("This type uses runtime code generation and reflection")]
     [RequiresDynamicCode("This type uses runtime code generation for CUDA kernel compilation")]
@@ -107,7 +100,10 @@ public sealed class CudaKernelCompiler : IDisposable
     {
         ThrowIfDisposed();
 
-        ArgumentNullException.ThrowIfNull(definition);
+        if (definition == null)
+        {
+            throw new ArgumentNullException(nameof(definition));
+        }
 
         try
         {
@@ -203,11 +199,7 @@ public sealed class CudaKernelCompiler : IDisposable
             _cacheMetadata.TryAdd(cacheKey, metadata);
 
             // Persist to disk asynchronously
-#pragma warning disable IL2026 // Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code
-#pragma warning disable IL3050 // Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling
             _ = Task.Run(() => PersistKernelToDiskAsync(cacheKey, compiledCode, metadata), cancellationToken);
-#pragma warning restore IL3050
-#pragma warning restore IL2026
 
             _logger.LogInformation("Successfully compiled CUDA kernel: {KernelName}", source.Name);
             return compiledKernel;
@@ -223,7 +215,10 @@ public sealed class CudaKernelCompiler : IDisposable
     {
         ThrowIfDisposed();
 
-        ArgumentNullException.ThrowIfNull(definitions);
+        if (definitions == null)
+        {
+            throw new ArgumentNullException(nameof(definitions));
+        }
 
         // Compile kernels in parallel
         var tasks = definitions.Select(def => CompileAsync(def, options, cancellationToken)).ToArray();
@@ -260,9 +255,9 @@ public sealed class CudaKernelCompiler : IDisposable
         var builder = new StringBuilder();
 
         // Add header with compilation metadata
-        builder.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"// Auto-generated CUDA kernel: {source.Name}");
-        builder.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"// Generated on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
-        builder.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"// Optimization level: {options?.OptimizationLevel ?? OptimizationLevel.Default}");
+        builder.AppendLine($"// Auto-generated CUDA kernel: {source.Name}");
+        builder.AppendLine($"// Generated on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
+        builder.AppendLine($"// Optimization level: {options?.OptimizationLevel ?? OptimizationLevel.Default}");
         builder.AppendLine();
 
         // Add essential CUDA headers
@@ -277,7 +272,7 @@ public sealed class CudaKernelCompiler : IDisposable
         }
 
         // Add mathematical libraries if needed
-        if (source.Code.Contains("sin", StringComparison.Ordinal) || source.Code.Contains("cos", StringComparison.Ordinal) || source.Code.Contains("exp", StringComparison.Ordinal))
+        if (source.Code.Contains("sin") || source.Code.Contains("cos") || source.Code.Contains("exp"))
         {
             builder.AppendLine("#include <math_functions.h>");
         }
@@ -313,7 +308,7 @@ public sealed class CudaKernelCompiler : IDisposable
 
         // Add compute capability specific optimizations
         var (major, minor) = GetTargetComputeCapability();
-        builder.AppendLine(System.Globalization.CultureInfo.InvariantCulture, $"// Target compute capability: {major}.{minor}");
+        builder.AppendLine($"// Target compute capability: {major}.{minor}");
 
         if (major >= 7) // Volta and newer
         {
@@ -353,11 +348,8 @@ public sealed class CudaKernelCompiler : IDisposable
         var cudaCode = openClCode;
 
         // Replace OpenCL keywords with CUDA equivalents
-#pragma warning disable CA1307 // Specify StringComparison for clarity - String.Replace doesn't have StringComparison overload in .NET 9
         cudaCode = cudaCode.Replace("__kernel", "__global__");
         cudaCode = cudaCode.Replace("__global", "__device__");
-#pragma warning restore CA1307
-#pragma warning disable CA1307 // Specify StringComparison for clarity - String.Replace doesn't have StringComparison overload in .NET 9
         cudaCode = cudaCode.Replace("__local", "__shared__");
         cudaCode = cudaCode.Replace("__constant", "__constant__");
         cudaCode = cudaCode.Replace("get_global_id(0)", "blockIdx.x * blockDim.x + threadIdx.x");
@@ -370,7 +362,6 @@ public sealed class CudaKernelCompiler : IDisposable
         cudaCode = cudaCode.Replace("get_group_id(1)", "blockIdx.y");
         cudaCode = cudaCode.Replace("get_group_id(2)", "blockIdx.z");
         cudaCode = cudaCode.Replace("barrier(CLK_LOCAL_MEM_FENCE)", "__syncthreads()");
-#pragma warning restore CA1307
 
         return cudaCode;
     }
@@ -378,7 +369,7 @@ public sealed class CudaKernelCompiler : IDisposable
     private async Task<byte[]> CompileToPtxAsync(string cudaSource, string kernelName, CompilationOptions? options)
     {
         var stopwatch = Stopwatch.StartNew();
-        IntPtr program = IntPtr.Zero;
+        var program = IntPtr.Zero;
 
         try
         {
@@ -434,9 +425,12 @@ public sealed class CudaKernelCompiler : IDisposable
             NvrtcRuntime.CheckResult(result, "getting PTX size");
 
             // Get PTX code
-            var ptxBytes = new byte[(int)ptxSize];
-            result = NvrtcRuntime.nvrtcGetPTX(program, ptxBytes);
+            var ptxBuilder = new StringBuilder((int)ptxSize);
+            result = NvrtcRuntime.nvrtcGetPTX(program, ptxBuilder);
             NvrtcRuntime.CheckResult(result, "getting PTX code");
+
+            var ptxString = ptxBuilder.ToString();
+            var ptxBytes = Encoding.UTF8.GetBytes(ptxString);
 
             stopwatch.Stop();
             _logger.LogInformation(
@@ -447,7 +441,7 @@ public sealed class CudaKernelCompiler : IDisposable
 
             return ptxBytes;
         }
-        catch (Exception ex) when (!(ex is KernelCompilationException))
+        catch (Exception ex) when (ex is not KernelCompilationException)
         {
             _logger.LogError(ex, "Unexpected error during NVRTC compilation of kernel: {KernelName}", kernelName);
             throw new KernelCompilationException($"NVRTC compilation failed for kernel '{kernelName}'", ex);
@@ -481,14 +475,14 @@ public sealed class CudaKernelCompiler : IDisposable
             }
 
             // Get log content
-            var logBytes = new byte[(int)logSize];
-            result = NvrtcRuntime.nvrtcGetProgramLog(program, logBytes);
+            var logBuilder = new StringBuilder((int)logSize);
+            result = NvrtcRuntime.nvrtcGetProgramLog(program, logBuilder);
             if (result != NvrtcResult.Success)
             {
                 return Task.FromResult("Failed to retrieve compilation log");
             }
 
-            return Task.FromResult(Encoding.UTF8.GetString(logBytes).Trim());
+            return Task.FromResult(logBuilder.ToString().Trim());
         }
         catch (Exception ex)
         {
@@ -548,7 +542,7 @@ public sealed class CudaKernelCompiler : IDisposable
             optionsList.AddRange(options.AdditionalFlags);
         }
 
-        return optionsList.ToArray();
+        return [.. optionsList];
     }
 
     private (int major, int minor) GetTargetComputeCapability()
@@ -568,7 +562,7 @@ public sealed class CudaKernelCompiler : IDisposable
         }
 
         // Default to a widely supported compute capability (Maxwell generation)
-        return CommonCapabilities.Maxwell;
+        return ComputeCapability.Common.Maxwell;
     }
 
     /// <summary>
@@ -577,7 +571,7 @@ public sealed class CudaKernelCompiler : IDisposable
     private async Task<byte[]> CompileToCubinAsync(string cudaSource, string kernelName, CompilationOptions? options)
     {
         var stopwatch = Stopwatch.StartNew();
-        IntPtr program = IntPtr.Zero;
+        var program = IntPtr.Zero;
 
         try
         {
@@ -646,7 +640,7 @@ public sealed class CudaKernelCompiler : IDisposable
 
             return cubinData;
         }
-        catch (Exception ex) when (!(ex is KernelCompilationException))
+        catch (Exception ex) when (ex is not KernelCompilationException)
         {
             _logger.LogError(ex, "Unexpected error during NVRTC CUBIN compilation of kernel: {KernelName}", kernelName);
             throw new KernelCompilationException($"NVRTC CUBIN compilation failed for kernel '{kernelName}'", ex);
@@ -725,7 +719,7 @@ public sealed class CudaKernelCompiler : IDisposable
             optionsList.AddRange(options.AdditionalFlags);
         }
 
-        return optionsList.ToArray();
+        return [.. optionsList];
     }
 
     /// <summary>
@@ -763,36 +757,36 @@ public sealed class CudaKernelCompiler : IDisposable
         try
         {
             // Check for basic CUDA kernel structure
-            if (!cudaSource.Contains("__global__", StringComparison.Ordinal) && !cudaSource.Contains("__device__", StringComparison.Ordinal))
+            if (!cudaSource.Contains("__global__") && !cudaSource.Contains("__device__"))
             {
                 return ValidationResult.Failure("CUDA source must contain at least one __global__ or __device__ function");
             }
 
             // Check for potential issues
-            if (cudaSource.Contains("printf", StringComparison.Ordinal) && !cudaSource.Contains("#include <cstdio>", StringComparison.Ordinal))
+            if (cudaSource.Contains("printf") && !cudaSource.Contains("#include <cstdio>"))
             {
                 warnings.Add("Using printf without including <cstdio> may cause compilation issues");
             }
 
-            if (cudaSource.Contains("__syncthreads()", StringComparison.Ordinal) && !cudaSource.Contains("__shared__", StringComparison.Ordinal))
+            if (cudaSource.Contains("__syncthreads()") && !cudaSource.Contains("__shared__"))
             {
                 warnings.Add("Using __syncthreads() without shared memory may indicate inefficient synchronization");
             }
 
             // Check for deprecated functions
-            if (cudaSource.Contains("__threadfence_system", StringComparison.Ordinal))
+            if (cudaSource.Contains("__threadfence_system"))
             {
                 warnings.Add("__threadfence_system is deprecated, consider using __threadfence() or memory fences");
             }
 
             // Check for potential memory issues
-            if (cudaSource.Contains("malloc", StringComparison.Ordinal) || cudaSource.Contains("free", StringComparison.Ordinal))
+            if (cudaSource.Contains("malloc") || cudaSource.Contains("free"))
             {
                 warnings.Add("Dynamic memory allocation in kernels can impact performance and may not be supported on all devices");
             }
 
             return warnings.Count > 0
-                ? ValidationResult.SuccessWithWarnings(warnings.ToArray())
+                ? ValidationResult.SuccessWithWarnings([.. warnings])
                 : ValidationResult.Success();
         }
         catch (Exception ex)
@@ -817,10 +811,10 @@ public sealed class CudaKernelCompiler : IDisposable
 
             // Basic PTX validation
             var codeString = Encoding.UTF8.GetString(compiledCode);
-            if (codeString.StartsWith(".version", StringComparison.Ordinal) || codeString.StartsWith("//", StringComparison.Ordinal))
+            if (codeString.StartsWith(".version") || codeString.StartsWith("//"))
             {
                 // Looks like PTX
-                if (!codeString.Contains(".entry", StringComparison.Ordinal))
+                if (!codeString.Contains(".entry"))
                 {
                     _logger.LogWarning("PTX code does not contain .entry directive for kernel: {KernelName}", kernelName);
                     return false;
@@ -925,7 +919,7 @@ public sealed class CudaKernelCompiler : IDisposable
                     }
 
                     var metadataJson = await File.ReadAllTextAsync(metadataFile);
-                    var metadata = System.Text.Json.JsonSerializer.Deserialize<KernelCacheMetadata>(metadataJson, JsonOptions);
+                    var metadata = System.Text.Json.JsonSerializer.Deserialize<KernelCacheMetadata>(metadataJson);
 
                     if (metadata == null || IsCacheEntryExpired(metadata))
                     {
@@ -979,7 +973,10 @@ public sealed class CudaKernelCompiler : IDisposable
 
             await File.WriteAllBytesAsync(ptxFile, ptx);
 
-            var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata, JsonOptions);
+            var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
+            });
             await File.WriteAllTextAsync(metadataFile, metadataJson);
 
             _logger.LogDebug("Persisted kernel cache to disk: {File}", ptxFile);
@@ -1112,47 +1109,41 @@ public sealed class CudaKernelCompiler : IDisposable
 
     private void ThrowIfDisposed()
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(CudaKernelCompiler));
+        }
     }
 
     public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
-    private void Dispose(bool disposing)
     {
         if (_disposed)
         {
             return;
         }
 
-        if (disposing)
+        try
         {
-            try
-            {
-                ClearCache();
+            ClearCache();
 
-                // Clean up temp directory
-                if (Directory.Exists(_tempDirectory))
+            // Clean up temp directory
+            if (Directory.Exists(_tempDirectory))
+            {
+                try
                 {
-                    try
-                    {
-                        Directory.Delete(_tempDirectory, true);
-                    }
-                    catch { /* Ignore cleanup errors */ }
+                    Directory.Delete(_tempDirectory, true);
                 }
+                catch { /* Ignore cleanup errors */ }
 
                 // Clean up expired entries from disk cache
                 CleanupExpiredEntries();
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during CUDA kernel compiler disposal");
-            }
-        }
 
-        _disposed = true;
+            _disposed = true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error during CUDA kernel compiler disposal");
+        }
     }
 }

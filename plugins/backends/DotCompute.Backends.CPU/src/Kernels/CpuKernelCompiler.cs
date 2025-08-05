@@ -587,16 +587,10 @@ internal enum ComputeIntensity
 /// <summary>
 /// Represents a validation result for kernel compilation.
 /// </summary>
-internal readonly struct ValidationResult
+internal readonly struct ValidationResult(bool isValid, string? errorMessage)
 {
-    public bool IsValid { get; }
-    public string? ErrorMessage { get; }
-
-    public ValidationResult(bool isValid, string? errorMessage)
-    {
-        IsValid = isValid;
-        ErrorMessage = errorMessage;
-    }
+    public bool IsValid { get; } = isValid;
+    public string? ErrorMessage { get; } = errorMessage;
 }
 
 /// <summary>
@@ -729,13 +723,13 @@ internal static class KernelSourceParser
 
         // Detect memory operations
         var loadMatches = _loadPatternRegex.Matches(code);
-        for (int i = 0; i < loadMatches.Count; i++)
+        for (var i = 0; i < loadMatches.Count; i++)
         {
             ast.MemoryOperations.Add(new AstNode { NodeType = AstNodeType.Load });
         }
 
         var storeMatches = _storePatternRegex.Matches(code);
-        for (int i = 0; i < storeMatches.Count; i++)
+        for (var i = 0; i < storeMatches.Count; i++)
         {
             ast.MemoryOperations.Add(new AstNode { NodeType = AstNodeType.Store });
         }

@@ -16,7 +16,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 {
     private readonly IMemoryManager _memoryManager;
     private readonly SemaphoreSlim _asyncLock = new(1, 1);
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     private GCHandle _pinnedHandle;
     private T[]? _hostArray;
@@ -1104,18 +1104,11 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 /// Represents a slice of a unified buffer.
 /// </summary>
 /// <typeparam name="T">The element type.</typeparam>
-internal sealed class UnifiedBufferSlice<T> : IBuffer<T> where T : unmanaged
+internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset, int length) : IBuffer<T> where T : unmanaged
 {
-    private readonly UnifiedBuffer<T> _parent;
-    private readonly int _offset;
-    private readonly int _length;
-
-    public UnifiedBufferSlice(UnifiedBuffer<T> parent, int offset, int length)
-    {
-        _parent = parent ?? throw new ArgumentNullException(nameof(parent));
-        _offset = offset;
-        _length = length;
-    }
+    private readonly UnifiedBuffer<T> _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+    private readonly int _offset = offset;
+    private readonly int _length = length;
 
     public IAccelerator Accelerator => _parent.Accelerator;
     public long SizeInBytes => _length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
@@ -1243,18 +1236,12 @@ internal sealed class UnifiedBufferSlice<T> : IBuffer<T> where T : unmanaged
 /// </summary>
 /// <typeparam name="TOriginal">The original element type.</typeparam>
 /// <typeparam name="TNew">The new element type.</typeparam>
-internal sealed class UnifiedBufferView<TOriginal, TNew> : IBuffer<TNew>
+internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal> parent, int length) : IBuffer<TNew>
     where TOriginal : unmanaged
     where TNew : unmanaged
 {
-    private readonly UnifiedBuffer<TOriginal> _parent;
-    private readonly int _length;
-
-    public UnifiedBufferView(UnifiedBuffer<TOriginal> parent, int length)
-    {
-        _parent = parent ?? throw new ArgumentNullException(nameof(parent));
-        _length = length;
-    }
+    private readonly UnifiedBuffer<TOriginal> _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+    private readonly int _length = length;
 
     public IAccelerator Accelerator => _parent.Accelerator;
     public long SizeInBytes => _length * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();

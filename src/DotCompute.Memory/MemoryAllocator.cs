@@ -14,7 +14,7 @@ namespace DotCompute.Memory;
 /// </summary>
 public sealed class MemoryAllocator : IDisposable
 {
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private volatile bool _disposed;
     private long _totalAllocatedBytes;
     private long _totalAllocations;
@@ -247,25 +247,15 @@ internal sealed class AlignedMemoryOwner<T> : IMemoryOwner<T> where T : unmanage
 /// A memory owner for pinned memory allocations.
 /// </summary>
 /// <typeparam name="T">The element type.</typeparam>
-internal sealed class PinnedMemoryOwner<T> : IMemoryOwner<T> where T : unmanaged
+internal sealed class PinnedMemoryOwner<T>(MemoryAllocator allocator, GCHandle handle, T[] array, long sizeInBytes) : IMemoryOwner<T> where T : unmanaged
 {
-    private readonly MemoryAllocator _allocator;
-    private readonly GCHandle _handle;
-    private readonly T[] _array;
-    private readonly long _sizeInBytes;
+    private readonly MemoryAllocator _allocator = allocator;
+    private readonly GCHandle _handle = handle;
+    private readonly T[] _array = array;
+    private readonly long _sizeInBytes = sizeInBytes;
     private volatile bool _disposed;
 
-    public Memory<T> Memory { get; }
-
-    public PinnedMemoryOwner(MemoryAllocator allocator, GCHandle handle, T[] array, long sizeInBytes)
-    {
-        _allocator = allocator;
-        _handle = handle;
-        _array = array;
-        _sizeInBytes = sizeInBytes;
-
-        Memory = new Memory<T>(array);
-    }
+    public Memory<T> Memory { get; } = new Memory<T>(array);
 
     public void Dispose()
     {

@@ -19,20 +19,12 @@ public static class StructureOfArrays
     /// <summary>
     /// Represents a 3D point in SoA layout for optimal SIMD processing.
     /// </summary>
-    internal sealed class Point3DSoA : IDisposable
+    internal sealed class Point3DSoA(int capacity) : IDisposable
     {
-        public float[] X { get; }
-        public float[] Y { get; }
-        public float[] Z { get; }
-        public int Length { get; }
-
-        public Point3DSoA(int capacity)
-        {
-            Length = capacity;
-            X = new float[capacity];
-            Y = new float[capacity];
-            Z = new float[capacity];
-        }
+        public float[] X { get; } = new float[capacity];
+        public float[] Y { get; } = new float[capacity];
+        public float[] Z { get; } = new float[capacity];
+        public int Length { get; } = capacity;
 
         /// <summary>
         /// Converts from Array of Structures to Structure of Arrays.
@@ -57,16 +49,16 @@ public static class StructureOfArrays
         private static unsafe void ConvertAoSToSoAVectorized(ReadOnlySpan<Point3D> points, Point3DSoA soa)
         {
             const int VectorSize = 8; // AVX2 can process 8 floats at once
-            int vectorCount = points.Length / VectorSize;
+            var vectorCount = points.Length / VectorSize;
 
             fixed (Point3D* pointsPtr = points)
             fixed (float* xPtr = soa.X)
             fixed (float* yPtr = soa.Y)
             fixed (float* zPtr = soa.Z)
             {
-                for (int i = 0; i < vectorCount; i++)
+                for (var i = 0; i < vectorCount; i++)
                 {
-                    int baseIndex = i * VectorSize;
+                    var baseIndex = i * VectorSize;
 
                     // Load 8 points (24 floats total)
                     var p0 = pointsPtr[baseIndex + 0];
@@ -91,11 +83,11 @@ public static class StructureOfArrays
             }
 
             // Handle remainder
-            int remainder = points.Length % VectorSize;
+            var remainder = points.Length % VectorSize;
             if (remainder > 0)
             {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
+                var lastOffset = vectorCount * VectorSize;
+                for (var i = 0; i < remainder; i++)
                 {
                     var idx = lastOffset + i;
                     var point = points[idx];
@@ -109,7 +101,7 @@ public static class StructureOfArrays
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void ConvertAoSToSoAScalar(ReadOnlySpan<Point3D> points, Point3DSoA soa)
         {
-            for (int i = 0; i < points.Length; i++)
+            for (var i = 0; i < points.Length; i++)
             {
                 var point = points[i];
                 soa.X[i] = point.X;
@@ -147,14 +139,14 @@ public static class StructureOfArrays
         private void CalculateDistancesVectorized(Vector256<float> refX, Vector256<float> refY, Vector256<float> refZ, Span<float> distances)
         {
             const int VectorSize = 8;
-            int vectorCount = Length / VectorSize;
+            var vectorCount = Length / VectorSize;
 
             ref var xRef = ref MemoryMarshal.GetArrayDataReference(X);
             ref var yRef = ref MemoryMarshal.GetArrayDataReference(Y);
             ref var zRef = ref MemoryMarshal.GetArrayDataReference(Z);
             ref var distRef = ref MemoryMarshal.GetReference(distances);
 
-            for (int i = 0; i < vectorCount; i++)
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = i * VectorSize;
 
@@ -190,11 +182,11 @@ public static class StructureOfArrays
             }
 
             // Handle remainder
-            int remainder = Length % VectorSize;
+            var remainder = Length % VectorSize;
             if (remainder > 0)
             {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
+                var lastOffset = vectorCount * VectorSize;
+                for (var i = 0; i < remainder; i++)
                 {
                     var idx = lastOffset + i;
                     var dx = X[idx] - refX[0];
@@ -208,7 +200,7 @@ public static class StructureOfArrays
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CalculateDistancesScalar(Point3D reference, Span<float> distances)
         {
-            for (int i = 0; i < Length; i++)
+            for (var i = 0; i < Length; i++)
             {
                 var dx = X[i] - reference.X;
                 var dy = Y[i] - reference.Y;
@@ -227,18 +219,11 @@ public static class StructureOfArrays
     /// Represents a complex number in SoA layout for optimal SIMD processing.
     /// </summary>
     [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "CA1812:Avoid uninstantiated internal classes", Justification = "Used for demonstration and may be instantiated via reflection")]
-    internal sealed class ComplexSoA : IDisposable
+    internal sealed class ComplexSoA(int capacity) : IDisposable
     {
-        public float[] Real { get; }
-        public float[] Imaginary { get; }
-        public int Length { get; }
-
-        public ComplexSoA(int capacity)
-        {
-            Length = capacity;
-            Real = new float[capacity];
-            Imaginary = new float[capacity];
-        }
+        public float[] Real { get; } = new float[capacity];
+        public float[] Imaginary { get; } = new float[capacity];
+        public int Length { get; } = capacity;
 
         /// <summary>
         /// Performs vectorized complex multiplication: (a + bi) * (c + di) = (ac - bd) + (ad + bc)i
@@ -265,7 +250,7 @@ public static class StructureOfArrays
         private static void MultiplyVectorized(ComplexSoA a, ComplexSoA b, ComplexSoA result)
         {
             const int VectorSize = 8;
-            int vectorCount = a.Length / VectorSize;
+            var vectorCount = a.Length / VectorSize;
 
             ref var aRealRef = ref MemoryMarshal.GetArrayDataReference(a.Real);
             ref var aImagRef = ref MemoryMarshal.GetArrayDataReference(a.Imaginary);
@@ -274,7 +259,7 @@ public static class StructureOfArrays
             ref var resultRealRef = ref MemoryMarshal.GetArrayDataReference(result.Real);
             ref var resultImagRef = ref MemoryMarshal.GetArrayDataReference(result.Imaginary);
 
-            for (int i = 0; i < vectorCount; i++)
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = i * VectorSize;
 
@@ -311,11 +296,11 @@ public static class StructureOfArrays
             }
 
             // Handle remainder
-            int remainder = a.Length % VectorSize;
+            var remainder = a.Length % VectorSize;
             if (remainder > 0)
             {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
+                var lastOffset = vectorCount * VectorSize;
+                for (var i = 0; i < remainder; i++)
                 {
                     var idx = lastOffset + i;
                     var aR = a.Real[idx];
@@ -332,7 +317,7 @@ public static class StructureOfArrays
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void MultiplyScalar(ComplexSoA a, ComplexSoA b, ComplexSoA result)
         {
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 var aR = a.Real[i];
                 var aI = a.Imaginary[i];
@@ -431,9 +416,9 @@ public static class StructureOfArrays
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void TransposeMatrix4x4Scalar(ReadOnlySpan<float> source, Span<float> destination)
         {
-            for (int row = 0; row < 4; row++)
+            for (var row = 0; row < 4; row++)
             {
-                for (int col = 0; col < 4; col++)
+                for (var col = 0; col < 4; col++)
                 {
                     destination[col * 4 + row] = source[row * 4 + col];
                 }
@@ -446,18 +431,11 @@ public static class StructureOfArrays
 /// Simple 3D point structure for demonstration.
 /// </summary>
 [StructLayout(LayoutKind.Sequential)]
-public readonly struct Point3D : IEquatable<Point3D>
+public readonly struct Point3D(float x, float y, float z) : IEquatable<Point3D>
 {
-    public readonly float X;
-    public readonly float Y;
-    public readonly float Z;
-
-    public Point3D(float x, float y, float z)
-    {
-        X = x;
-        Y = y;
-        Z = z;
-    }
+    public readonly float X = x;
+    public readonly float Y = y;
+    public readonly float Z = z;
 
     public override bool Equals(object? obj) => obj is Point3D other && Equals(other);
 

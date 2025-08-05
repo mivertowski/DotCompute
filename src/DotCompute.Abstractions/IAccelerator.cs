@@ -296,35 +296,27 @@ public class KernelDefinition
 /// Represents a compiled kernel ready for execution.
 /// This is a value type for AOT compatibility and performance.
 /// </summary>
-public readonly struct CompiledKernel : IEquatable<CompiledKernel>
+public readonly struct CompiledKernel(Guid id, IntPtr nativeHandle, int sharedMemorySize, KernelConfiguration configuration) : IEquatable<CompiledKernel>
 {
     /// <summary>
     /// Gets the unique identifier for this kernel.
     /// </summary>
-    public Guid Id { get; }
+    public Guid Id { get; } = id;
 
     /// <summary>
     /// Gets the native handle to the compiled kernel code.
     /// </summary>
-    public IntPtr NativeHandle { get; }
+    public IntPtr NativeHandle { get; } = nativeHandle;
 
     /// <summary>
     /// Gets the kernel's required shared memory size in bytes.
     /// </summary>
-    public int SharedMemorySize { get; }
+    public int SharedMemorySize { get; } = sharedMemorySize;
 
     /// <summary>
     /// Gets the kernel's thread configuration.
     /// </summary>
-    public KernelConfiguration Configuration { get; }
-
-    public CompiledKernel(Guid id, IntPtr nativeHandle, int sharedMemorySize, KernelConfiguration configuration)
-    {
-        Id = id;
-        NativeHandle = nativeHandle;
-        SharedMemorySize = sharedMemorySize;
-        Configuration = configuration;
-    }
+    public KernelConfiguration Configuration { get; } = configuration;
 
     /// <summary>
     /// Determines whether this instance is equal to another CompiledKernel.
@@ -365,23 +357,17 @@ public readonly struct CompiledKernel : IEquatable<CompiledKernel>
 /// <summary>
 /// Represents kernel execution configuration.
 /// </summary>
-public readonly struct KernelConfiguration : IEquatable<KernelConfiguration>
+public readonly struct KernelConfiguration(Dim3 gridDimensions, Dim3 blockDimensions) : IEquatable<KernelConfiguration>
 {
     /// <summary>
     /// Gets the number of thread blocks in each dimension.
     /// </summary>
-    public Dim3 GridDimensions { get; }
+    public Dim3 GridDimensions { get; } = gridDimensions;
 
     /// <summary>
     /// Gets the number of threads per block in each dimension.
     /// </summary>
-    public Dim3 BlockDimensions { get; }
-
-    public KernelConfiguration(Dim3 gridDimensions, Dim3 blockDimensions)
-    {
-        GridDimensions = gridDimensions;
-        BlockDimensions = blockDimensions;
-    }
+    public Dim3 BlockDimensions { get; } = blockDimensions;
 
     /// <summary>
     /// Determines whether this instance is equal to another KernelConfiguration.
@@ -418,18 +404,11 @@ public readonly struct KernelConfiguration : IEquatable<KernelConfiguration>
 /// <summary>
 /// Represents 3D dimensions for kernel configuration.
 /// </summary>
-public readonly struct Dim3 : IEquatable<Dim3>
+public readonly struct Dim3(int x, int y = 1, int z = 1) : IEquatable<Dim3>
 {
-    public int X { get; }
-    public int Y { get; }
-    public int Z { get; }
-
-    public Dim3(int x, int y = 1, int z = 1)
-    {
-        X = x;
-        Y = y;
-        Z = z;
-    }
+    public int X { get; } = x;
+    public int Y { get; } = y;
+    public int Z { get; } = z;
 
     public static implicit operator Dim3(int value) => new(value);
     public static implicit operator Dim3((int x, int y) value) => new(value.x, value.y);
@@ -485,14 +464,9 @@ public readonly struct Dim3 : IEquatable<Dim3>
 /// <summary>
 /// Represents arguments to pass to a kernel.
 /// </summary>
-public struct KernelArguments : IEquatable<KernelArguments>
+public struct KernelArguments(params object[] args) : IEquatable<KernelArguments>
 {
-    private readonly object[] _args;
-
-    public KernelArguments(params object[] args)
-    {
-        _args = args ?? Array.Empty<object>();
-    }
+    private readonly object[] _args = args ?? Array.Empty<object>();
 
     /// <summary>
     /// Gets the arguments as a read-only span.
@@ -569,7 +543,7 @@ public struct KernelArguments : IEquatable<KernelArguments>
             return false;
         }
 
-        for (int i = 0; i < _args.Length; i++)
+        for (var i = 0; i < _args.Length; i++)
         {
             if (!Equals(_args[i], other._args[i]))
             {

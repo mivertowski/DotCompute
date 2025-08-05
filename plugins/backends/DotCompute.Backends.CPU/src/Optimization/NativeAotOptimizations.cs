@@ -43,13 +43,13 @@ public static class NativeAotOptimizations
             throw new ArgumentException("All spans must have the same length");
         }
 
-        int length = a.Length;
-        int i = 0;
+        var length = a.Length;
+        var i = 0;
 
         // AVX-512 path (16 floats at once)
         if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated && length >= 16)
         {
-            int vectorLength = Vector512<float>.Count;
+            var vectorLength = Vector512<float>.Count;
             for (; i <= length - vectorLength; i += vectorLength)
             {
                 var va = Vector512.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
@@ -61,7 +61,7 @@ public static class NativeAotOptimizations
         // AVX2 path (8 floats at once)
         else if (Avx2.IsSupported && Vector256.IsHardwareAccelerated && length >= 8)
         {
-            int vectorLength = Vector256<float>.Count;
+            var vectorLength = Vector256<float>.Count;
             for (; i <= length - vectorLength; i += vectorLength)
             {
                 var va = Vector256.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
@@ -73,7 +73,7 @@ public static class NativeAotOptimizations
         // NEON path (4 floats at once)
         else if (AdvSimd.IsSupported && length >= 4)
         {
-            int vectorLength = Vector128<float>.Count;
+            var vectorLength = Vector128<float>.Count;
             for (; i <= length - vectorLength; i += vectorLength)
             {
                 var va = Vector128.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
@@ -101,13 +101,13 @@ public static class NativeAotOptimizations
             throw new ArgumentException("All spans must have the same length");
         }
 
-        int length = a.Length;
-        int i = 0;
+        var length = a.Length;
+        var i = 0;
 
         // AVX-512 path (8 doubles at once)
         if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated && length >= 8)
         {
-            int vectorLength = Vector512<double>.Count;
+            var vectorLength = Vector512<double>.Count;
             for (; i <= length - vectorLength; i += vectorLength)
             {
                 var va = Vector512.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
@@ -119,7 +119,7 @@ public static class NativeAotOptimizations
         // AVX2 path (4 doubles at once)
         else if (Avx2.IsSupported && Vector256.IsHardwareAccelerated && length >= 4)
         {
-            int vectorLength = Vector256<double>.Count;
+            var vectorLength = Vector256<double>.Count;
             for (; i <= length - vectorLength; i += vectorLength)
             {
                 var va = Vector256.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
@@ -131,7 +131,7 @@ public static class NativeAotOptimizations
         // NEON path (2 doubles at once)
         else if (AdvSimd.IsSupported && length >= 2)
         {
-            int vectorLength = Vector128<double>.Count;
+            var vectorLength = Vector128<double>.Count;
             for (; i <= length - vectorLength; i += vectorLength)
             {
                 var va = Vector128.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
@@ -237,8 +237,8 @@ public static class NativeAotOptimizations
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static double DotProductDoubleScalar(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
     {
-        double result = 0.0;
-        for (int i = 0; i < a.Length; i++)
+        var result = 0.0;
+        for (var i = 0; i < a.Length; i++)
         {
             result += a[i] * b[i];
         }
@@ -249,14 +249,14 @@ public static class NativeAotOptimizations
     private static double DotProductDoubleAvx512(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
     {
         const int VectorSize = 8;
-        int vectorCount = a.Length / VectorSize;
+        var vectorCount = a.Length / VectorSize;
 
         ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
         ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
 
         var sum = Vector512<double>.Zero;
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
@@ -272,13 +272,13 @@ public static class NativeAotOptimizations
             }
         }
 
-        double result = Vector512.Sum(sum);
+        var result = Vector512.Sum(sum);
 
-        int remainder = a.Length % VectorSize;
+        var remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
-            for (int i = 0; i < remainder; i++)
+            var lastOffset = vectorCount * VectorSize;
+            for (var i = 0; i < remainder; i++)
             {
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
@@ -291,14 +291,14 @@ public static class NativeAotOptimizations
     private static double DotProductDoubleAvx2(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
     {
         const int VectorSize = 4;
-        int vectorCount = a.Length / VectorSize;
+        var vectorCount = a.Length / VectorSize;
 
         ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
         ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
 
         var sum = Vector256<double>.Zero;
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
@@ -314,13 +314,13 @@ public static class NativeAotOptimizations
             }
         }
 
-        double result = Vector256.Sum(sum);
+        var result = Vector256.Sum(sum);
 
-        int remainder = a.Length % VectorSize;
+        var remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
-            for (int i = 0; i < remainder; i++)
+            var lastOffset = vectorCount * VectorSize;
+            for (var i = 0; i < remainder; i++)
             {
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
@@ -333,14 +333,14 @@ public static class NativeAotOptimizations
     private static double DotProductDoubleNeon(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
     {
         const int VectorSize = 2;
-        int vectorCount = a.Length / VectorSize;
+        var vectorCount = a.Length / VectorSize;
 
         ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
         ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
 
         var sum = Vector128<double>.Zero;
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
@@ -349,13 +349,13 @@ public static class NativeAotOptimizations
             sum = AdvSimd.Arm64.FusedMultiplyAdd(sum, va, vb);
         }
 
-        double result = Vector128.Sum(sum);
+        var result = Vector128.Sum(sum);
 
-        int remainder = a.Length % VectorSize;
+        var remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
-            for (int i = 0; i < remainder; i++)
+            var lastOffset = vectorCount * VectorSize;
+            for (var i = 0; i < remainder; i++)
             {
                 result += a[lastOffset + i] * b[lastOffset + i];
             }
@@ -368,14 +368,14 @@ public static class NativeAotOptimizations
     private static double DotProductDoubleSse(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
     {
         const int VectorSize = 2;
-        int vectorCount = a.Length / VectorSize;
+        var vectorCount = a.Length / VectorSize;
 
         ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
         ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
 
         var sum = Vector128<double>.Zero;
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * VectorSize;
             var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
@@ -384,13 +384,13 @@ public static class NativeAotOptimizations
             sum = Sse2.Add(sum, Sse2.Multiply(va, vb));
         }
 
-        double result = Vector128.Sum(sum);
+        var result = Vector128.Sum(sum);
 
-        int remainder = a.Length % VectorSize;
+        var remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
-            for (int i = 0; i < remainder; i++)
+            var lastOffset = vectorCount * VectorSize;
+            for (var i = 0; i < remainder; i++)
             {
                 result += a[lastOffset + i] * b[lastOffset + i];
             }

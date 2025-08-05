@@ -15,15 +15,10 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// <summary>
 /// Generates optimized SIMD code for kernel execution using Native AOT-compatible approaches.
 /// </summary>
-internal sealed class SimdCodeGenerator
+internal sealed class SimdCodeGenerator(SimdSummary simdCapabilities)
 {
     private readonly Dictionary<string, SimdKernelExecutor> _executorCache = [];
-    private readonly SimdSummary _simdCapabilities;
-
-    public SimdCodeGenerator(SimdSummary simdCapabilities)
-    {
-        _simdCapabilities = simdCapabilities ?? throw new ArgumentNullException(nameof(simdCapabilities));
-    }
+    private readonly SimdSummary _simdCapabilities = simdCapabilities ?? throw new ArgumentNullException(nameof(simdCapabilities));
 
     /// <summary>
     /// Gets or creates a vectorized kernel executor.
@@ -64,16 +59,10 @@ internal sealed class SimdCodeGenerator
 /// <summary>
 /// Base class for SIMD kernel executors.
 /// </summary>
-internal abstract class SimdKernelExecutor
+internal abstract class SimdKernelExecutor(DotCompute.Abstractions.KernelDefinition definition, KernelExecutionPlan executionPlan)
 {
-    protected readonly KernelDefinition Definition;
-    protected readonly KernelExecutionPlan ExecutionPlan;
-
-    protected SimdKernelExecutor(DotCompute.Abstractions.KernelDefinition definition, KernelExecutionPlan executionPlan)
-    {
-        Definition = definition;
-        ExecutionPlan = executionPlan;
-    }
+    protected readonly KernelDefinition Definition = definition;
+    protected readonly KernelExecutionPlan ExecutionPlan = executionPlan;
 
     /// <summary>
     /// Executes the kernel with the given buffers.
@@ -136,13 +125,8 @@ internal enum KernelOperation
 /// <summary>
 /// AVX-512 kernel executor implementation.
 /// </summary>
-internal sealed class Avx512KernelExecutor : SimdKernelExecutor
+internal sealed class Avx512KernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan) : SimdKernelExecutor(definition, executionPlan)
 {
-    public Avx512KernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
-        : base(definition, executionPlan)
-    {
-    }
-
     public override void Execute(
         ReadOnlySpan<byte> input1,
         ReadOnlySpan<byte> input2,
@@ -271,7 +255,7 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
             }
 
             // Process remaining full vectors
-            for (long i = unrolledCount * UnrollFactor; i < vectorCount; i++)
+            for (var i = unrolledCount * UnrollFactor; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
                 var vec1 = Vector512.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
@@ -603,13 +587,8 @@ internal sealed class Avx512KernelExecutor : SimdKernelExecutor
 /// <summary>
 /// AVX2 kernel executor implementation.
 /// </summary>
-internal sealed class Avx2KernelExecutor : SimdKernelExecutor
+internal sealed class Avx2KernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan) : SimdKernelExecutor(definition, executionPlan)
 {
-    public Avx2KernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
-        : base(definition, executionPlan)
-    {
-    }
-
     public override void Execute(
         ReadOnlySpan<byte> input1,
         ReadOnlySpan<byte> input2,
@@ -683,7 +662,7 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
         }
 
         // Process remaining full vectors
-        for (long i = unrolledCount * UnrollFactor; i < vectorCount; i++)
+        for (var i = unrolledCount * UnrollFactor; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
             var vec1 = Vector256.LoadUnsafe(ref Unsafe.Add(ref input1Ref, offset));
@@ -961,13 +940,8 @@ internal sealed class Avx2KernelExecutor : SimdKernelExecutor
 /// <summary>
 /// SSE kernel executor implementation.
 /// </summary>
-internal sealed class SseKernelExecutor : SimdKernelExecutor
+internal sealed class SseKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan) : SimdKernelExecutor(definition, executionPlan)
 {
-    public SseKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
-        : base(definition, executionPlan)
-    {
-    }
-
     public override void Execute(
         ReadOnlySpan<byte> input1,
         ReadOnlySpan<byte> input2,
@@ -1176,13 +1150,8 @@ internal sealed class SseKernelExecutor : SimdKernelExecutor
 /// <summary>
 /// ARM NEON kernel executor implementation for cross-platform support.
 /// </summary>
-internal sealed class NeonKernelExecutor : SimdKernelExecutor
+internal sealed class NeonKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan) : SimdKernelExecutor(definition, executionPlan)
 {
-    public NeonKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
-        : base(definition, executionPlan)
-    {
-    }
-
     public override void Execute(
         ReadOnlySpan<byte> input1,
         ReadOnlySpan<byte> input2,
@@ -1531,13 +1500,8 @@ internal sealed class NeonKernelExecutor : SimdKernelExecutor
 /// <summary>
 /// Scalar kernel executor implementation (fallback).
 /// </summary>
-internal sealed class ScalarKernelExecutor : SimdKernelExecutor
+internal sealed class ScalarKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan) : SimdKernelExecutor(definition, executionPlan)
 {
-    public ScalarKernelExecutor(KernelDefinition definition, KernelExecutionPlan executionPlan)
-        : base(definition, executionPlan)
-    {
-    }
-
     public override void Execute(
         ReadOnlySpan<byte> input1,
         ReadOnlySpan<byte> input2,
@@ -1669,7 +1633,7 @@ public static class VectorPatterns
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
     private static void VectorAddFloat32(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
-        int vectorSize = Vector<float>.Count;
+        var vectorSize = Vector<float>.Count;
         _ = a.Length - (a.Length % vectorSize);
 
         // Use platform-optimal SIMD
@@ -1688,7 +1652,7 @@ public static class VectorPatterns
         else
         {
             // Scalar fallback
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -1699,13 +1663,13 @@ public static class VectorPatterns
     private static void VectorAddFloat32_Avx512(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         const int VectorSize = 16;
-        int vectorCount = a.Length / VectorSize;
+        var vectorCount = a.Length / VectorSize;
 
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
         ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
             var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -1715,11 +1679,11 @@ public static class VectorPatterns
         }
 
         // Handle remainder
-        int remainder = a.Length % VectorSize;
+        var remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
-            for (int i = 0; i < remainder; i++)
+            var lastOffset = vectorCount * VectorSize;
+            for (var i = 0; i < remainder; i++)
             {
                 result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
             }
@@ -1730,13 +1694,13 @@ public static class VectorPatterns
     private static void VectorAddFloat32_Avx2(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         const int VectorSize = 8;
-        int vectorCount = a.Length / VectorSize;
+        var vectorCount = a.Length / VectorSize;
 
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
         ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
             var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -1746,11 +1710,11 @@ public static class VectorPatterns
         }
 
         // Handle remainder
-        int remainder = a.Length % VectorSize;
+        var remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
-            for (int i = 0; i < remainder; i++)
+            var lastOffset = vectorCount * VectorSize;
+            for (var i = 0; i < remainder; i++)
             {
                 result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
             }
@@ -1761,13 +1725,13 @@ public static class VectorPatterns
     private static void VectorAddFloat32_Sse(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
     {
         const int VectorSize = 4;
-        int vectorCount = a.Length / VectorSize;
+        var vectorCount = a.Length / VectorSize;
 
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
         ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
             var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -1777,11 +1741,11 @@ public static class VectorPatterns
         }
 
         // Handle remainder
-        int remainder = a.Length % VectorSize;
+        var remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
-            for (int i = 0; i < remainder; i++)
+            var lastOffset = vectorCount * VectorSize;
+            for (var i = 0; i < remainder; i++)
             {
                 result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
             }
@@ -1806,7 +1770,7 @@ public static class VectorPatterns
         else
         {
             // Scalar fallback
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -1817,13 +1781,13 @@ public static class VectorPatterns
     private static void VectorAddFloat64_Avx512(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
     {
         const int VectorSize = 8;
-        int vectorCount = a.Length / VectorSize;
+        var vectorCount = a.Length / VectorSize;
 
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
         ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
             var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -1833,11 +1797,11 @@ public static class VectorPatterns
         }
 
         // Handle remainder
-        int remainder = a.Length % VectorSize;
+        var remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
-            for (int i = 0; i < remainder; i++)
+            var lastOffset = vectorCount * VectorSize;
+            for (var i = 0; i < remainder; i++)
             {
                 result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
             }
@@ -1848,13 +1812,13 @@ public static class VectorPatterns
     private static void VectorAddFloat64_Avx2(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
     {
         const int VectorSize = 4;
-        int vectorCount = a.Length / VectorSize;
+        var vectorCount = a.Length / VectorSize;
 
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
         ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
             var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -1864,11 +1828,11 @@ public static class VectorPatterns
         }
 
         // Handle remainder
-        int remainder = a.Length % VectorSize;
+        var remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
-            for (int i = 0; i < remainder; i++)
+            var lastOffset = vectorCount * VectorSize;
+            for (var i = 0; i < remainder; i++)
             {
                 result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
             }
@@ -1879,13 +1843,13 @@ public static class VectorPatterns
     private static void VectorAddFloat64_Sse(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
     {
         const int VectorSize = 2;
-        int vectorCount = a.Length / VectorSize;
+        var vectorCount = a.Length / VectorSize;
 
         ref var aRef = ref MemoryMarshal.GetReference(a);
         ref var bRef = ref MemoryMarshal.GetReference(b);
         ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = (int)(i * VectorSize);
             var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -1895,11 +1859,11 @@ public static class VectorPatterns
         }
 
         // Handle remainder
-        int remainder = a.Length % VectorSize;
+        var remainder = a.Length % VectorSize;
         if (remainder > 0)
         {
-            int lastOffset = vectorCount * VectorSize;
-            for (int i = 0; i < remainder; i++)
+            var lastOffset = vectorCount * VectorSize;
+            for (var i = 0; i < remainder; i++)
             {
                 result[lastOffset + i] = a[lastOffset + i] + b[lastOffset + i];
             }
@@ -1910,11 +1874,11 @@ public static class VectorPatterns
     private static void VectorAddGeneric<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
         where T : unmanaged
     {
-        int vectorSize = Vector<T>.Count;
-        int vectorizedLength = a.Length - (a.Length % vectorSize);
+        var vectorSize = Vector<T>.Count;
+        var vectorizedLength = a.Length - (a.Length % vectorSize);
 
         // Process vectors
-        for (int i = 0; i < vectorizedLength; i += vectorSize)
+        for (var i = 0; i < vectorizedLength; i += vectorSize)
         {
             var va = new Vector<T>(a.Slice(i, vectorSize));
             var vb = new Vector<T>(b.Slice(i, vectorSize));
@@ -1923,7 +1887,7 @@ public static class VectorPatterns
         }
 
         // Process remaining elements
-        for (int i = vectorizedLength; i < a.Length; i++)
+        for (var i = vectorizedLength; i < a.Length; i++)
         {
             // Use dynamic dispatch for generic arithmetic
             result[i] = AddGeneric(a[i], b[i]);
@@ -1990,13 +1954,13 @@ public static class VectorPatterns
         if (Vector512.IsHardwareAccelerated && a.Length >= 16)
         {
             const int VectorSize = 16;
-            int vectorCount = a.Length / VectorSize;
+            var vectorCount = a.Length / VectorSize;
 
             ref var aRef = ref MemoryMarshal.GetReference(a);
             ref var bRef = ref MemoryMarshal.GetReference(b);
             ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-            for (int i = 0; i < vectorCount; i++)
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
                 var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -2006,11 +1970,11 @@ public static class VectorPatterns
             }
 
             // Handle remainder
-            int remainder = a.Length % VectorSize;
+            var remainder = a.Length % VectorSize;
             if (remainder > 0)
             {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
+                var lastOffset = vectorCount * VectorSize;
+                for (var i = 0; i < remainder; i++)
                 {
                     result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
                 }
@@ -2019,13 +1983,13 @@ public static class VectorPatterns
         else if (Vector256.IsHardwareAccelerated && a.Length >= 8)
         {
             const int VectorSize = 8;
-            int vectorCount = a.Length / VectorSize;
+            var vectorCount = a.Length / VectorSize;
 
             ref var aRef = ref MemoryMarshal.GetReference(a);
             ref var bRef = ref MemoryMarshal.GetReference(b);
             ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-            for (int i = 0; i < vectorCount; i++)
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
                 var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -2035,11 +1999,11 @@ public static class VectorPatterns
             }
 
             // Handle remainder
-            int remainder = a.Length % VectorSize;
+            var remainder = a.Length % VectorSize;
             if (remainder > 0)
             {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
+                var lastOffset = vectorCount * VectorSize;
+                for (var i = 0; i < remainder; i++)
                 {
                     result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
                 }
@@ -2048,13 +2012,13 @@ public static class VectorPatterns
         else if (Vector128.IsHardwareAccelerated && a.Length >= 4)
         {
             const int VectorSize = 4;
-            int vectorCount = a.Length / VectorSize;
+            var vectorCount = a.Length / VectorSize;
 
             ref var aRef = ref MemoryMarshal.GetReference(a);
             ref var bRef = ref MemoryMarshal.GetReference(b);
             ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-            for (int i = 0; i < vectorCount; i++)
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
                 var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -2064,11 +2028,11 @@ public static class VectorPatterns
             }
 
             // Handle remainder
-            int remainder = a.Length % VectorSize;
+            var remainder = a.Length % VectorSize;
             if (remainder > 0)
             {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
+                var lastOffset = vectorCount * VectorSize;
+                for (var i = 0; i < remainder; i++)
                 {
                     result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
                 }
@@ -2077,7 +2041,7 @@ public static class VectorPatterns
         else
         {
             // Scalar fallback
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] * b[i];
             }
@@ -2090,13 +2054,13 @@ public static class VectorPatterns
         if (Vector512.IsHardwareAccelerated && a.Length >= 8)
         {
             const int VectorSize = 8;
-            int vectorCount = a.Length / VectorSize;
+            var vectorCount = a.Length / VectorSize;
 
             ref var aRef = ref MemoryMarshal.GetReference(a);
             ref var bRef = ref MemoryMarshal.GetReference(b);
             ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-            for (int i = 0; i < vectorCount; i++)
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
                 var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -2106,11 +2070,11 @@ public static class VectorPatterns
             }
 
             // Handle remainder
-            int remainder = a.Length % VectorSize;
+            var remainder = a.Length % VectorSize;
             if (remainder > 0)
             {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
+                var lastOffset = vectorCount * VectorSize;
+                for (var i = 0; i < remainder; i++)
                 {
                     result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
                 }
@@ -2119,13 +2083,13 @@ public static class VectorPatterns
         else if (Vector256.IsHardwareAccelerated && a.Length >= 4)
         {
             const int VectorSize = 4;
-            int vectorCount = a.Length / VectorSize;
+            var vectorCount = a.Length / VectorSize;
 
             ref var aRef = ref MemoryMarshal.GetReference(a);
             ref var bRef = ref MemoryMarshal.GetReference(b);
             ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-            for (int i = 0; i < vectorCount; i++)
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
                 var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -2135,11 +2099,11 @@ public static class VectorPatterns
             }
 
             // Handle remainder
-            int remainder = a.Length % VectorSize;
+            var remainder = a.Length % VectorSize;
             if (remainder > 0)
             {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
+                var lastOffset = vectorCount * VectorSize;
+                for (var i = 0; i < remainder; i++)
                 {
                     result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
                 }
@@ -2148,13 +2112,13 @@ public static class VectorPatterns
         else if (Vector128.IsHardwareAccelerated && a.Length >= 2)
         {
             const int VectorSize = 2;
-            int vectorCount = a.Length / VectorSize;
+            var vectorCount = a.Length / VectorSize;
 
             ref var aRef = ref MemoryMarshal.GetReference(a);
             ref var bRef = ref MemoryMarshal.GetReference(b);
             ref var resultRef = ref MemoryMarshal.GetReference(result);
 
-            for (int i = 0; i < vectorCount; i++)
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = (int)(i * VectorSize);
                 var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, (int)offset));
@@ -2164,11 +2128,11 @@ public static class VectorPatterns
             }
 
             // Handle remainder
-            int remainder = a.Length % VectorSize;
+            var remainder = a.Length % VectorSize;
             if (remainder > 0)
             {
-                int lastOffset = vectorCount * VectorSize;
-                for (int i = 0; i < remainder; i++)
+                var lastOffset = vectorCount * VectorSize;
+                for (var i = 0; i < remainder; i++)
                 {
                     result[lastOffset + i] = a[lastOffset + i] * b[lastOffset + i];
                 }
@@ -2177,7 +2141,7 @@ public static class VectorPatterns
         else
         {
             // Scalar fallback
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] * b[i];
             }
@@ -2188,11 +2152,11 @@ public static class VectorPatterns
     private static void VectorMultiplyGeneric<T>(ReadOnlySpan<T> a, ReadOnlySpan<T> b, Span<T> result)
         where T : unmanaged
     {
-        int vectorSize = Vector<T>.Count;
-        int vectorizedLength = a.Length - (a.Length % vectorSize);
+        var vectorSize = Vector<T>.Count;
+        var vectorizedLength = a.Length - (a.Length % vectorSize);
 
         // Process vectors
-        for (int i = 0; i < vectorizedLength; i += vectorSize)
+        for (var i = 0; i < vectorizedLength; i += vectorSize)
         {
             var va = new Vector<T>(a.Slice(i, vectorSize));
             var vb = new Vector<T>(b.Slice(i, vectorSize));
@@ -2201,7 +2165,7 @@ public static class VectorPatterns
         }
 
         // Process remaining elements
-        for (int i = vectorizedLength; i < a.Length; i++)
+        for (var i = vectorizedLength; i < a.Length; i++)
         {
             result[i] = MultiplyGeneric(a[i], b[i]);
         }
@@ -2263,7 +2227,7 @@ public static class VectorPatterns
         else
         {
             // Generic fallback
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = AddGeneric(MultiplyGeneric(a[i], b[i]), c[i]);
             }
@@ -2289,7 +2253,7 @@ public static class VectorPatterns
         else
         {
             // Fallback to scalar FMA
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = MathF.FusedMultiplyAdd(a[i], b[i], c[i]);
             }
@@ -2315,7 +2279,7 @@ public static class VectorPatterns
         else
         {
             // Fallback to scalar FMA
-            for (int i = 0; i < a.Length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = Math.FusedMultiplyAdd(a[i], b[i], c[i]);
             }

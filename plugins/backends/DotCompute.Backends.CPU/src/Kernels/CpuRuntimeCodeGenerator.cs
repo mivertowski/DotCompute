@@ -8,13 +8,14 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// <summary>
 /// Generates CPU code from kernel representations.
 /// </summary>
-internal static class CpuRuntimeCodeGenerator
+internal sealed class CpuRuntimeCodeGenerator
 {
-    public static CompiledCode GenerateFromAst(KernelAst ast, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
+    private readonly ILCodeGenerator _ilGenerator = new();
+
+    public CompiledCode GenerateFromAst(KernelAst ast, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // Use advanced IL code generator
-        var ilGenerator = new ILCodeGenerator();
-        var kernelCode = ilGenerator.GenerateKernel(definition, ast, analysis, options);
+        var kernelCode = _ilGenerator.GenerateKernel(definition, ast, analysis, options);
 
         return new CompiledCode
         {
@@ -24,12 +25,12 @@ internal static class CpuRuntimeCodeGenerator
         };
     }
 
-    public static CompiledCode GenerateFromBytecode(byte[] bytecode, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
+    public CompiledCode GenerateFromBytecode(byte[] bytecode, KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // JIT compile bytecode
         var compiledCode = new CompiledCode
         {
-            Bytecode = bytecode.ToArray(),
+            Bytecode = [.. bytecode],
             CodeSize = bytecode.Length,
             OptimizationNotes = new[] { "JIT compiled from bytecode" }
         };
@@ -37,7 +38,7 @@ internal static class CpuRuntimeCodeGenerator
         return compiledCode;
     }
 
-    public static CompiledCode GenerateDefaultKernel(KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
+    public CompiledCode GenerateDefaultKernel(KernelDefinition definition, KernelAnalysis analysis, CompilationOptions options)
     {
         // Generate a default vectorized kernel based on metadata
         var compiledCode = new CompiledCode();

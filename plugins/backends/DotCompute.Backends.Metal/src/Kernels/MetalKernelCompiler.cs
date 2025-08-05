@@ -15,23 +15,14 @@ namespace DotCompute.Backends.Metal.Kernels;
 /// <summary>
 /// Compiles kernels to Metal Shading Language and creates compute pipeline states.
 /// </summary>
-public sealed class MetalKernelCompiler : IKernelCompiler, IDisposable
+public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILogger logger) : IKernelCompiler, IDisposable
 {
-    private readonly IntPtr _device;
-    private readonly IntPtr _commandQueue;
-    private readonly ILogger _logger;
-    private readonly Dictionary<string, IntPtr> _libraryCache;
-    private readonly SemaphoreSlim _compilationSemaphore;
+    private readonly IntPtr _device = device;
+    private readonly IntPtr _commandQueue = commandQueue;
+    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly Dictionary<string, IntPtr> _libraryCache = [];
+    private readonly SemaphoreSlim _compilationSemaphore = new(1, 1);
     private int _disposed;
-
-    public MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILogger logger)
-    {
-        _device = device;
-        _commandQueue = commandQueue;
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _libraryCache = [];
-        _compilationSemaphore = new SemaphoreSlim(1, 1);
-    }
 
     /// <inheritdoc/>
     public string Name => "Metal Shader Compiler";

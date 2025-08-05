@@ -8,8 +8,6 @@ using DotCompute.Abstractions;
 
 namespace DotCompute.SharedTestUtilities;
 
-#pragma warning disable CA1034 // Nested types should not be visible - test utilities need nested structure
-
 /// <summary>
 /// Consolidated memory testing utilities for all DotCompute test projects.
 /// </summary>
@@ -69,7 +67,7 @@ public static class MemoryTestUtilities
             return new MemoryReport
             {
                 TestName = _testName,
-                Snapshots = _snapshots.ToArray(),
+                Snapshots = [.. _snapshots],
                 PeakWorkingSetMB = GetPeakWorkingSet(),
                 TotalGCCollections = GetTotalGCCollections(),
                 MemoryLeakDetected = DetectMemoryLeak()
@@ -123,23 +121,13 @@ public static class MemoryTestUtilities
 
         public void Dispose()
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
             if (_disposed)
             {
                 return;
             }
 
-            if (disposing)
-            {
-                _currentProcess?.Dispose();
-            }
-
             _disposed = true;
+            _currentProcess?.Dispose();
         }
     }
 
@@ -189,7 +177,7 @@ public static class MemoryTestUtilities
 
             try
             {
-                for (int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     var buffer = await memoryManager.AllocateAsync(bufferSize);
                     buffers.Add(buffer);
@@ -228,7 +216,7 @@ public static class MemoryTestUtilities
             {
                 var stopwatch = Stopwatch.StartNew();
 
-                for (int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     await buffer.CopyToHostAsync<byte>(hostData);
                 }
@@ -263,7 +251,7 @@ public static class MemoryTestUtilities
             {
                 var stopwatch = Stopwatch.StartNew();
 
-                for (int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     await buffer.CopyFromHostAsync<byte>(hostData);
                 }
@@ -293,7 +281,7 @@ public static class MemoryTestUtilities
         {
             return new BenchmarkSummary
             {
-                Results = _results.ToArray(),
+                Results = [.. _results],
                 TotalOperations = _results.Count,
                 AverageOperationsPerSecond = _results.Count > 0 ? _results.Average(r => r.OperationsPerSecond) : 0,
                 AverageThroughputMBps = _results.Count > 0 ? _results.Average(r => r.ThroughputMBps) : 0
@@ -333,7 +321,6 @@ public static class MemoryTestUtilities
         private static readonly string ReportDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "DotCompute", "TestReports");
-        private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
         [RequiresUnreferencedCode("This method uses System.Text.Json serialization which may require dynamic code generation")]
         [RequiresDynamicCode("This method uses System.Text.Json serialization which may require dynamic code generation")]
@@ -344,7 +331,7 @@ public static class MemoryTestUtilities
             var fileName = $"memory_report_{report.TestName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             var filePath = Path.Combine(ReportDirectory, fileName);
 
-            var json = JsonSerializer.Serialize(report, JsonOptions);
+            var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(filePath, json);
         }
 
@@ -357,7 +344,7 @@ public static class MemoryTestUtilities
             var fileName = $"benchmark_report_{testName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
             var filePath = Path.Combine(ReportDirectory, fileName);
 
-            var json = JsonSerializer.Serialize(summary, JsonOptions);
+            var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
             await File.WriteAllTextAsync(filePath, json);
         }
 
@@ -390,7 +377,7 @@ public static class MemoryTestUtilities
                 }
             }
 
-            return reports.ToArray();
+            return [.. reports];
         }
 
         public static void CleanupOldReports(int maxDays = 30)

@@ -283,16 +283,10 @@ public enum MetalDeviceSelector
 /// <summary>
 /// Wrapper to provide named accelerator support.
 /// </summary>
-internal sealed class NamedAcceleratorWrapper : IAccelerator
+internal sealed class NamedAcceleratorWrapper(string name, IAccelerator accelerator) : IAccelerator
 {
-    private readonly string _name;
-    private readonly IAccelerator _accelerator;
-
-    public NamedAcceleratorWrapper(string name, IAccelerator accelerator)
-    {
-        _name = name ?? throw new ArgumentNullException(nameof(name));
-        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-    }
+    private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
+    private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
 
     public string Name => _name;
 
