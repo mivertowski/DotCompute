@@ -260,14 +260,9 @@ internal sealed class ILCodeGenerator
         return expressions;
     }
 
-    private List<Expression> GenerateDefaultScalarAddition(List<ParameterExpression> parameters, Expression indexExpr) =>
-        // Same as vector addition but without SIMD
-        GenerateDefaultVectorAddition(parameters, indexExpr);
+    private List<Expression> GenerateDefaultScalarAddition(List<ParameterExpression> parameters, Expression indexExpr) => GenerateDefaultVectorAddition(parameters, indexExpr); // Same as vector addition but without SIMD
 
-    private List<Expression> GenerateVectorAdd(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) =>
-        // For simplicity, delegate to scalar addition
-        // In a full implementation, this would use System.Numerics.Vector<T>
-        GenerateScalarAdd(parameters, indexExpr);
+    private List<Expression> GenerateVectorAdd(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarAdd(parameters, indexExpr); // For simplicity, delegate to scalar addition. In a full implementation, this would use System.Numerics.Vector<T>
 
     private List<Expression> GenerateVectorMultiply(List<ParameterExpression> parameters, Expression indexExpr, int vectorizationFactor) => GenerateScalarMultiply(parameters, indexExpr);
 

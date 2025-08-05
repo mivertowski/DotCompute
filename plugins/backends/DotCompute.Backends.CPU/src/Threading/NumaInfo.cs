@@ -624,9 +624,7 @@ public static partial class NumaInfo
         return 0;
     }
 
-    private static int GetCacheCoherencyDomain(int nodeId) =>
-        // For most systems, cache coherency domain matches NUMA node
-        nodeId;
+    private static int GetCacheCoherencyDomain(int nodeId) => nodeId; // For most systems, cache coherency domain matches NUMA node
 
     private static int GetNumaNodeDistance(int fromNode, int toNode) =>
         // Default NUMA distances if system doesn't provide them
@@ -904,12 +902,16 @@ public sealed class NumaTopology
     /// <summary>
     /// Gets the NUMA nodes.
     /// </summary>
+#pragma warning disable CA1819 // Properties should not return arrays - Arrays are appropriate for initialization-only collections
     public required NumaNode[] Nodes { get; init; }
+#pragma warning restore CA1819
 
     /// <summary>
     /// Gets the NUMA distance matrix (relative latency between nodes).
     /// </summary>
+#pragma warning disable CA1819 // Properties should not return arrays - Arrays are appropriate for initialization-only collections
     public int[][]? DistanceMatrix { get; init; }
+#pragma warning restore CA1819
 
     /// <summary>
     /// Gets the cache line size in bytes.

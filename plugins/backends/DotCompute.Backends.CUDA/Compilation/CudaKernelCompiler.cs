@@ -58,7 +58,7 @@ public class CacheStatistics
 /// <summary>
 /// CUDA kernel compiler implementation using NVRTC
 /// </summary>
-public class CudaKernelCompiler : IDisposable
+public sealed partial class CudaKernelCompiler : IDisposable
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
@@ -206,7 +206,7 @@ public class CudaKernelCompiler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to compile CUDA kernel: {KernelName}", definition.Name);
+            LogKernelCompilationError(_logger, ex, definition.Name);
             throw new InvalidOperationException($"Failed to compile CUDA kernel '{definition.Name}'", ex);
         }
     }
@@ -408,7 +408,7 @@ public class CudaKernelCompiler : IDisposable
                 }
                 else
                 {
-                    _logger.LogError("NVRTC compilation failed for {KernelName}: {Log}", kernelName, compilerLog);
+                    LogNvrtcCompilationError(_logger, kernelName, compilerLog);
                 }
             }
 
@@ -443,7 +443,7 @@ public class CudaKernelCompiler : IDisposable
         }
         catch (Exception ex) when (ex is not KernelCompilationException)
         {
-            _logger.LogError(ex, "Unexpected error during NVRTC compilation of kernel: {KernelName}", kernelName);
+            LogKernelCompilationError(_logger, ex, kernelName);
             throw new KernelCompilationException($"NVRTC compilation failed for kernel '{kernelName}'", ex);
         }
         finally
@@ -610,7 +610,7 @@ public class CudaKernelCompiler : IDisposable
                 }
                 else
                 {
-                    _logger.LogError("NVRTC CUBIN compilation failed for {KernelName}: {Log}", kernelName, compilerLog);
+                    LogNvrtcCompilationError(_logger, kernelName, compilerLog);
                 }
             }
 
@@ -642,7 +642,7 @@ public class CudaKernelCompiler : IDisposable
         }
         catch (Exception ex) when (ex is not KernelCompilationException)
         {
-            _logger.LogError(ex, "Unexpected error during NVRTC CUBIN compilation of kernel: {KernelName}", kernelName);
+            LogKernelCompilationError(_logger, ex, kernelName);
             throw new KernelCompilationException($"NVRTC CUBIN compilation failed for kernel '{kernelName}'", ex);
         }
         finally
@@ -768,19 +768,19 @@ public class CudaKernelCompiler : IDisposable
                 warnings.Add("Using printf without including <cstdio> may cause compilation issues");
             }
 
-            if (cudaSource.Contains("__syncthreads()") && !cudaSource.Contains("__shared__"))
+            if (cudaSource.Contains("__syncthreads()", StringComparison.Ordinal) && !cudaSource.Contains("__shared__", StringComparison.Ordinal))
             {
                 warnings.Add("Using __syncthreads() without shared memory may indicate inefficient synchronization");
             }
 
             // Check for deprecated functions
-            if (cudaSource.Contains("__threadfence_system"))
+            if (cudaSource.Contains("__threadfence_system", StringComparison.Ordinal))
             {
                 warnings.Add("__threadfence_system is deprecated, consider using __threadfence() or memory fences");
             }
 
             // Check for potential memory issues
-            if (cudaSource.Contains("malloc") || cudaSource.Contains("free"))
+            if (cudaSource.Contains("malloc", StringComparison.Ordinal) || cudaSource.Contains("free", StringComparison.Ordinal))
             {
                 warnings.Add("Dynamic memory allocation in kernels can impact performance and may not be supported on all devices");
             }
@@ -805,7 +805,7 @@ public class CudaKernelCompiler : IDisposable
         {
             if (compiledCode == null || compiledCode.Length == 0)
             {
-                _logger.LogError("Compiled code is null or empty for kernel: {KernelName}", kernelName);
+                LogEmptyCompiledCode(_logger, kernelName);
                 return false;
             }
 
@@ -961,8 +961,8 @@ public class CudaKernelCompiler : IDisposable
         }
     }
 
-    [RequiresUnreferencedCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
-    [RequiresDynamicCode("Calls System.Text.Json.JsonSerializer.Serialize<TValue>(TValue, JsonSerializerOptions)")]
+    [RequiresUnreferencedCode("Uses System.Text.Json serialization which may require dynamic code generation")]
+    [RequiresDynamicCode("Uses System.Text.Json serialization which may require dynamic code generation")]
     private async Task PersistKernelToDiskAsync(string cacheKey, byte[] ptx, KernelCacheMetadata metadata)
     {
         try
@@ -1103,7 +1103,7 @@ public class CudaKernelCompiler : IDisposable
 
         if (expiredKeys.Count > 0)
         {
-            _logger.LogInformation("Cleaned up {Count} expired cache entries", expiredKeys.Count);
+            LogCacheClear(_logger, expiredKeys.Count);
         }
     }
 
@@ -1143,7 +1143,7 @@ public class CudaKernelCompiler : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during CUDA kernel compiler disposal");
+            LogDisposalError(_logger, ex);
         }
     }
 }

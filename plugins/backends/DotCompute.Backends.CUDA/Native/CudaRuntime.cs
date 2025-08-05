@@ -291,7 +291,9 @@ public enum CudaMemcpyKind
 /// CUDA device properties
 /// </summary>
 [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+#pragma warning disable CA1815 // Override equals and operator equals on value types - P/Invoke struct doesn't need equality
 public struct CudaDeviceProperties
+#pragma warning restore CA1815
 {
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
     public string Name;
@@ -414,15 +416,21 @@ public class CudaException : Exception
 {
     public CudaError ErrorCode { get; }
 
+    public CudaException() : base()
+    {
+    }
+
+    public CudaException(string message) : base(message)
+    {
+    }
+
+    public CudaException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
     public CudaException(string message, CudaError errorCode) : base(message)
     {
         ErrorCode = errorCode;
-    }
-    public CudaException()
-    {
-    }
-    public CudaException(string message) : base(message)
-    {
     }
 }
 
@@ -524,6 +532,18 @@ public class NvrtcException : Exception
 {
     public NvrtcResult ResultCode { get; }
 
+    public NvrtcException() : base()
+    {
+    }
+
+    public NvrtcException(string message) : base(message)
+    {
+    }
+
+    public NvrtcException(string message, Exception innerException) : base(message, innerException)
+    {
+    }
+
     public NvrtcException(string message, NvrtcResult resultCode) : base(message)
     {
         ResultCode = resultCode;
@@ -532,12 +552,6 @@ public class NvrtcException : Exception
     public NvrtcException(string message, NvrtcResult resultCode, Exception innerException) : base(message, innerException)
     {
         ResultCode = resultCode;
-    }
-    public NvrtcException()
-    {
-    }
-    public NvrtcException(string message) : base(message)
-    {
     }
 }
 
@@ -559,6 +573,8 @@ public static class ComputeCapability
     }
 
     // Common compute capabilities
+#pragma warning disable CA1724 // Type names should not match namespaces - Common is a descriptive nested class name in this context
+#pragma warning disable CA1034 // Nested types should not be visible - Common is appropriately nested within ComputeCapability
     public static class Common
     {
         public static readonly (int major, int minor) Kepler = (3, 5);
@@ -570,6 +586,8 @@ public static class ComputeCapability
         public static readonly (int major, int minor) Ada = (8, 9);
         public static readonly (int major, int minor) Hopper = (9, 0);
     }
+#pragma warning restore CA1034
+#pragma warning restore CA1724
 }
 
 /// <summary>

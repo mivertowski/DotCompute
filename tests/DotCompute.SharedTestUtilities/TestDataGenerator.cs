@@ -53,6 +53,7 @@ public static class TestDataGenerator
     /// <summary>
     /// Generates test cases for different array sizes.
     /// </summary>
+#pragma warning disable CA1024 // Use properties where appropriate - This method uses yield return which cannot be a property
     public static IEnumerable<object[]> GetArraySizeTestCases()
     {
         yield return new object[] { 1 };
@@ -63,10 +64,12 @@ public static class TestDataGenerator
         yield return new object[] { 16384 };
         yield return new object[] { 65536 };
     }
+#pragma warning restore CA1024
 
     /// <summary>
     /// Generates test cases for edge case array sizes.
     /// </summary>
+#pragma warning disable CA1024 // Use properties where appropriate - This method uses yield return which cannot be a property
     public static IEnumerable<object[]> GetEdgeCaseArraySizes()
     {
         yield return new object[] { 0 };
@@ -79,10 +82,12 @@ public static class TestDataGenerator
         yield return new object[] { 32 };
         yield return new object[] { 33 };
     }
+#pragma warning restore CA1024
 
     /// <summary>
     /// Generates a 2D array with random values.
     /// </summary>
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional - Multidimensional arrays are required for matrix operations
     public static T[,] Generate2DArray<T>(int rows, int cols, Func<T> generator)
     {
         var array = new T[rows, cols];
@@ -95,10 +100,12 @@ public static class TestDataGenerator
         }
         return array;
     }
+#pragma warning restore CA1814
 
     /// <summary>
     /// Generates test matrices for multiplication.
     /// </summary>
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional - Multidimensional arrays are required for matrix operations
     public static (float[,] a, float[,] b, float[,] expected) GenerateMatrixMultiplicationTestCase(int m, int n, int k)
     {
         var a = Generate2DArray(m, n, () => (float)Random.Next(-10, 10));
@@ -121,6 +128,7 @@ public static class TestDataGenerator
 
         return (a, b, expected);
     }
+#pragma warning restore CA1814
 
     /// <summary>
     /// Generates sparse array data.
