@@ -52,29 +52,29 @@ public sealed partial class CudaBackend : IDisposable
     {
         if (!IsAvailable())
         {
-            _logger.LogWarning("CUDA is not available on this platform");
+            LogCudaNotAvailable(_logger);
             return;
         }
 
         try
         {
-            _logger.LogInformation("Discovering CUDA devices...");
+            LogDiscoveringCudaDevices(_logger);
 
             // 1. Enumerate CUDA devices using cuDeviceGet
             var deviceCountResult = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
             if (deviceCountResult != CudaError.Success)
             {
-                _logger.LogError("Failed to get CUDA device count: {Error}", CudaRuntime.GetErrorString(deviceCountResult));
+                LogFailedToGetDeviceCount(_logger, CudaRuntime.GetErrorString(deviceCountResult));
                 return;
             }
 
             if (deviceCount == 0)
             {
-                _logger.LogInformation("No CUDA devices found");
+                LogNoCudaDevicesFound(_logger);
                 return;
             }
 
-            _logger.LogInformation("Found {DeviceCount} CUDA device(s)", deviceCount);
+            LogFoundCudaDevices(_logger, deviceCount);
 
             // 2. Query device properties for each device
             for (var deviceId = 0; deviceId < deviceCount; deviceId++)
@@ -93,15 +93,15 @@ public sealed partial class CudaBackend : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to initialize CUDA device {DeviceId}", deviceId);
+                    LogFailedToInitializeDevice(_logger, ex, deviceId);
                 }
             }
 
-            _logger.LogInformation("CUDA device discovery completed - {AcceleratorCount} accelerators available", _accelerators.Count);
+            LogDeviceDiscoveryCompleted(_logger, _accelerators.Count);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to discover CUDA accelerators");
+            LogFailedToDiscoverAccelerators(_logger, ex);
         }
     }
 
@@ -113,14 +113,14 @@ public sealed partial class CudaBackend : IDisposable
             var runtimeVersionResult = CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion);
             if (runtimeVersionResult != CudaError.Success)
             {
-                _logger.LogWarning("Could not determine CUDA runtime version for device {DeviceId}", deviceId);
+                LogCouldNotDetermineRuntimeVersion(_logger, deviceId);
                 return false;
             }
 
             var driverVersionResult = CudaRuntime.cudaDriverGetVersion(out var driverVersion);
             if (driverVersionResult != CudaError.Success)
             {
-                _logger.LogWarning("Could not determine CUDA driver version for device {DeviceId}", deviceId);
+                LogCouldNotDetermineDriverVersion(_logger, deviceId);
                 return false;
             }
 
@@ -137,8 +137,7 @@ public sealed partial class CudaBackend : IDisposable
             var setDeviceResult = CudaRuntime.cudaSetDevice(deviceId);
             if (setDeviceResult != CudaError.Success)
             {
-                _logger.LogWarning("Cannot access CUDA device {DeviceId}: {Error}",
-                    deviceId, CudaRuntime.GetErrorString(setDeviceResult));
+                LogCannotAccessDevice(_logger, deviceId, CudaRuntime.GetErrorString(setDeviceResult));
                 return false;
             }
 
@@ -146,8 +145,7 @@ public sealed partial class CudaBackend : IDisposable
             var syncResult = CudaRuntime.cudaDeviceSynchronize();
             if (syncResult != CudaError.Success)
             {
-                _logger.LogWarning("CUDA device {DeviceId} failed synchronization test: {Error}",
-                    deviceId, CudaRuntime.GetErrorString(syncResult));
+                LogDeviceFailedSynchronization(_logger, deviceId, CudaRuntime.GetErrorString(syncResult));
                 return false;
             }
 
@@ -155,7 +153,7 @@ public sealed partial class CudaBackend : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error validating CUDA device {DeviceId} accessibility", deviceId);
+            LogErrorValidatingDevice(_logger, ex, deviceId);
             return false;
         }
     }
@@ -169,16 +167,14 @@ public sealed partial class CudaBackend : IDisposable
 
             if (result != CudaError.Success)
             {
-                _logger.LogError("Failed to get properties for CUDA device {DeviceId}: {Error}",
-                    deviceId, CudaRuntime.GetErrorString(result));
+                LogFailedToGetDeviceProperties(_logger, deviceId, CudaRuntime.GetErrorString(result));
                 return null;
             }
 
             // Check compute capability (require 5.0+)
             if (deviceProps.Major < 5)
             {
-                _logger.LogInformation("Skipping CUDA device {DeviceId} ({Name}) - compute capability {Major}.{Minor} is below minimum 5.0",
-                    deviceId, deviceProps.Name, deviceProps.Major, deviceProps.Minor);
+                LogSkippingDeviceLowComputeCapability(_logger, deviceId, deviceProps.Name, deviceProps.Major, deviceProps.Minor);
                 return null;
             }
 
@@ -190,7 +186,7 @@ public sealed partial class CudaBackend : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to create accelerator for CUDA device {DeviceId}", deviceId);
+            LogFailedToCreateAccelerator(_logger, ex, deviceId);
             return null;
         }
     }

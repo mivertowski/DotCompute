@@ -286,7 +286,9 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
 /// </summary>
 internal sealed class CudaMemoryBufferView(CudaMemoryBuffer parent, long offset, long length, ILogger logger) : ISyncMemoryBuffer
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - View doesn't own the parent buffer, so it shouldn't dispose it
     private readonly CudaMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+#pragma warning restore CA2213
     private readonly long _offset = offset;
     private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 

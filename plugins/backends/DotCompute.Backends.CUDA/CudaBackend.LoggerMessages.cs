@@ -119,7 +119,7 @@ public partial class CudaBackend
         EventId = 2019,
         Level = LogLevel.Information,
         Message = "  Compute Capability: {ComputeCapability}")]
-    private static partial void LogComputeCapability(ILogger logger, Version computeCapability);
+    private static partial void LogComputeCapability(ILogger logger, Version? computeCapability);
 
     [LoggerMessage(
         EventId = 2020,

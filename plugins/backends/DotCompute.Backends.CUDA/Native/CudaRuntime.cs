@@ -125,7 +125,9 @@ public static class CudaRuntime
 
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - Explicit marshaling is already specified
     internal static extern CudaError cuModuleGetFunction(ref IntPtr hfunc, IntPtr hmod, [MarshalAs(UnmanagedType.LPUTF8Str)] string name);
+#pragma warning restore CA2101
 
     // Kernel Execution (Driver API)
     [DllImport(CUDA_DRIVER_LIBRARY)]
@@ -452,6 +454,7 @@ public static class NvrtcRuntime
 
     [DllImport(NVRTC_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - Explicit marshaling is already specified
     internal static extern NvrtcResult nvrtcCreateProgram(
         out IntPtr prog,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string src,
@@ -459,6 +462,7 @@ public static class NvrtcRuntime
         int numHeaders,
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPUTF8Str)] string[]? headers,
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPUTF8Str)] string[]? includeNames);
+#pragma warning restore CA2101
 
     [DllImport(NVRTC_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -478,7 +482,9 @@ public static class NvrtcRuntime
     [DllImport(NVRTC_LIBRARY, CharSet = CharSet.Ansi)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
 #pragma warning disable CA1838 // Avoid 'StringBuilder' parameters for P/Invokes - Performance optimization is handled by the caller
-    internal static extern NvrtcResult nvrtcGetPTX(IntPtr prog, [Out] StringBuilder ptx);
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is implicit
+    internal static extern NvrtcResult nvrtcGetPTX(IntPtr prog, [Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder ptx);
+#pragma warning restore CA2101
 #pragma warning restore CA1838
 
     [DllImport(NVRTC_LIBRARY)]
@@ -496,7 +502,9 @@ public static class NvrtcRuntime
     [DllImport(NVRTC_LIBRARY, CharSet = CharSet.Ansi)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
 #pragma warning disable CA1838 // Avoid 'StringBuilder' parameters for P/Invokes - Performance optimization is handled by the caller
-    internal static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, [Out] StringBuilder log);
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is implicit
+    internal static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, [Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder log);
+#pragma warning restore CA2101
 #pragma warning restore CA1838
 
     [DllImport(NVRTC_LIBRARY)]

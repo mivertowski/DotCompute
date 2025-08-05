@@ -325,7 +325,7 @@ internal sealed class AotSafeCodeGenerator
 
     #endregion
 
-    private long EstimateCodeSize(KernelAst ast)
+    private static long EstimateCodeSize(KernelAst ast)
     {
         // Rough estimation based on AST complexity
         long baseSize = 1024;
@@ -342,7 +342,7 @@ internal sealed class AotSafeCodeGenerator
         return baseSize;
     }
 
-    private string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
+    private static string[] GenerateOptimizationNotes(KernelAst ast, KernelAnalysis analysis, CompilationOptions options)
     {
         var notes = new List<string>
         {
