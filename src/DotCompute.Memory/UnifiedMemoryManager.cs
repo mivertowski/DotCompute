@@ -37,8 +37,9 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         public readonly void Increment() => Interlocked.Increment(ref Unsafe.AsRef(in _value));
         public readonly void Add(long value) => Interlocked.Add(ref Unsafe.AsRef(in _value), value);
     }
-
+#pragma warning disable CS0649
     private readonly AlignedCounter _totalAllocations;
+#pragma warning restore CS0649
     private bool _isDisposed;
 
     /// <summary>

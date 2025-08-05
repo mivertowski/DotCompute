@@ -858,10 +858,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         return new KernelArguments();
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed != 0, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed != 0, this);
 
     private static bool IsSupportedArgumentType(Type type)
     {
