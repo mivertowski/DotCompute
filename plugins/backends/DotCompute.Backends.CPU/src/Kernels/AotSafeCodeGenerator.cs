@@ -61,7 +61,7 @@ internal sealed class AotSafeCodeGenerator
         _kernelImplementations["elementwise_multiply_float"] = ElementwiseMultiplyFloatKernelAsync;
     }
 
-    private string GenerateKernelKey(KernelDefinition definition, KernelAst ast, KernelAnalysis analysis)
+    private static string GenerateKernelKey(KernelDefinition definition, KernelAst ast, KernelAnalysis analysis)
     {
         // Generate a key based on kernel characteristics
         var operationTypeUpper = ast.Operations.FirstOrDefault()?.NodeType.ToString().ToUpperInvariant() ?? "UNKNOWN";
@@ -100,7 +100,7 @@ internal sealed class AotSafeCodeGenerator
         return $"{operationType}_{dataType}";
     }
 
-    private Func<ExtendedKernelExecutionContext, Task> GenerateGenericImplementation(
+    private static Func<ExtendedKernelExecutionContext, Task> GenerateGenericImplementation(
         KernelDefinition definition,
         KernelAst ast,
         KernelAnalysis analysis)
@@ -119,7 +119,7 @@ internal sealed class AotSafeCodeGenerator
         return ElementwiseAddFloatKernelAsync;
     }
 
-    private Delegate CreateKernelDelegate(Func<ExtendedKernelExecutionContext, Task> implementation, KernelDefinition definition)
+    private static Delegate CreateKernelDelegate(Func<ExtendedKernelExecutionContext, Task> implementation, KernelDefinition definition)
     {
         // Create a delegate that adapts the kernel execution context to the expected signature
         // The delegate signature varies based on parameter count and types
@@ -144,7 +144,9 @@ internal sealed class AotSafeCodeGenerator
                     context.SetParameter(3, workItemId);
 
                     // Execute synchronously for AOT compatibility
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT scenarios
                     implementation(context).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 });
 
             case 2: // Reduction case: input, output
@@ -155,7 +157,9 @@ internal sealed class AotSafeCodeGenerator
                     context.SetBuffer(1, output);
                     context.SetParameter(2, workItemId);
 
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT scenarios
                     implementation(context).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 });
 
             default:
@@ -169,7 +173,9 @@ internal sealed class AotSafeCodeGenerator
                     }
                     context.SetParameter(parameters.Length, workItemId);
 
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT scenarios
                     implementation(context).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
                 });
         }
     }

@@ -296,7 +296,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
         int vectorWidth)
     {
         // Use the pre-compiled kernel executor if available
+#pragma warning disable CA2000 // Dispose objects before losing scope - buffers are owned by caller
         if (_kernelExecutor != null && TryGetBufferArguments(context.KernelContext, out var input1, out var input2, out var output))
+#pragma warning restore CA2000
         {
             // Calculate element count and execute using the optimized SIMD executor
             var elementCount = workItemIds.Length * context.ExecutionPlan.VectorizationFactor;
@@ -359,7 +361,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     private unsafe void ExecuteAvx512Kernel(VectorizedExecutionContext context, long[][] workItemIds)
     {
         // AVX512 vectorized execution (16 floats at once)
+#pragma warning disable CA2000 // Dispose objects before losing scope - buffers are owned by caller
         if (!TryGetBufferArguments(context.KernelContext, out var input1, out var input2, out var output))
+#pragma warning restore CA2000
         {
             // Fall back to scalar for non-buffer kernels
             foreach (var workItemId in workItemIds)
@@ -421,7 +425,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     private unsafe void ExecuteAvx2Kernel(VectorizedExecutionContext context, long[][] workItemIds)
     {
         // AVX2 vectorized execution (8 floats at once)
+#pragma warning disable CA2000 // Dispose objects before losing scope - buffers are owned by caller
         if (!TryGetBufferArguments(context.KernelContext, out var input1, out var input2, out var output))
+#pragma warning restore CA2000
         {
             // Fall back to scalar for non-buffer kernels
             foreach (var workItemId in workItemIds)
@@ -483,7 +489,9 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
     private unsafe void ExecuteSseKernel(VectorizedExecutionContext context, long[][] workItemIds)
     {
         // SSE vectorized execution (4 floats at once)
+#pragma warning disable CA2000 // Dispose objects before losing scope - buffers are owned by caller
         if (!TryGetBufferArguments(context.KernelContext, out var input1, out var input2, out var output))
+#pragma warning restore CA2000
         {
             // Fall back to scalar for non-buffer kernels
             foreach (var workItemId in workItemIds)

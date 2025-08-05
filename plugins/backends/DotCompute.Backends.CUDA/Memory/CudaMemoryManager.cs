@@ -315,6 +315,7 @@ public sealed class CudaMemoryManager(CudaContext context, ILogger logger) : ISy
             try
             {
                 Reset();
+                _context?.Dispose();
             }
             catch (Exception ex)
             {

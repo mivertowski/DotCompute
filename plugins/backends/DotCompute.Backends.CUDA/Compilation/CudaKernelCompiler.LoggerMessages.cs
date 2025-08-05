@@ -111,4 +111,10 @@ public sealed partial class CudaKernelCompiler
         Level = LogLevel.Warning,
         Message = "Failed to persist kernel cache for: {CacheKey}")]
     private static partial void LogFailedToPersistCache(ILogger logger, Exception ex, string cacheKey);
+
+    [LoggerMessage(
+        EventId = 1017,
+        Level = LogLevel.Warning,
+        Message = "Failed to load cached kernel from: {File}")]
+    private static partial void LogFailedToLoadCachedKernel(ILogger logger, Exception ex, string file);
 }

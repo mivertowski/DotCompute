@@ -763,13 +763,13 @@ public sealed partial class CudaKernelCompiler : IDisposable
         try
         {
             // Check for basic CUDA kernel structure
-            if (!cudaSource.Contains("__global__") && !cudaSource.Contains("__device__"))
+            if (!cudaSource.Contains("__global__", StringComparison.Ordinal) && !cudaSource.Contains("__device__", StringComparison.Ordinal))
             {
                 return ValidationResult.Failure("CUDA source must contain at least one __global__ or __device__ function");
             }
 
             // Check for potential issues
-            if (cudaSource.Contains("printf") && !cudaSource.Contains("#include <cstdio>"))
+            if (cudaSource.Contains("printf", StringComparison.Ordinal) && !cudaSource.Contains("#include <cstdio>", StringComparison.Ordinal))
             {
                 warnings.Add("Using printf without including <cstdio> may cause compilation issues");
             }
@@ -820,7 +820,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             if (codeString.StartsWith(".version") || codeString.StartsWith("//"))
             {
                 // Looks like PTX
-                if (!codeString.Contains(".entry"))
+                if (!codeString.Contains(".entry", StringComparison.Ordinal))
                 {
                     _logger.LogWarning("PTX code does not contain .entry directive for kernel: {KernelName}", kernelName);
                     return false;
@@ -952,7 +952,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to load cached kernel from: {File}", ptxFile);
+                    LogFailedToLoadCachedKernel(_logger, ex, ptxFile);
                 }
             }
 
