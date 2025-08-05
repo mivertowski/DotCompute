@@ -102,26 +102,51 @@ internal static partial class CpuKernelCompiler
             return new ValidationResult(false, "Kernel code cannot be null or empty");
         }
 
-        // TODO: Add work dimensions validation when available in KernelDefinition
-        // if (definition.WorkDimensions < 1 || definition.WorkDimensions > 3)
-        // {
-        //     return new ValidationResult(false, "Work dimensions must be between 1 and 3");
-        // }
+        // Validate work dimensions if available in metadata
+        if (definition.Metadata?.TryGetValue("WorkDimensions", out var workDimsObj) == true)
+        {
+            if (workDimsObj is int workDimensions && (workDimensions < 1 || workDimensions > 3))
+            {
+                return new ValidationResult(false, "Work dimensions must be between 1 and 3");
+            }
+        }
 
-        // TODO: Add parameter validation when available in KernelDefinition
-        // if (definition.Parameters == null || definition.Parameters.Count == 0)
-        // {
-        //     return new ValidationResult(false, "Kernel must have at least one parameter");
-        // }
+        // Validate parameters if available in metadata
+        if (definition.Metadata?.TryGetValue("Parameters", out var paramsObj) == true)
+        {
+            if (paramsObj is IList<object> parameters)
+            {
+                if (parameters.Count == 0)
+                {
+                    return new ValidationResult(false, "Kernel must have at least one parameter");
+                }
 
-        // TODO: Validate parameter types when available in KernelDefinition
-        // foreach (var param in definition.Parameters)
-        // {
-        //     if (string.IsNullOrWhiteSpace(param.Name))
-        //     {
-        //         return new ValidationResult(false, "All kernel parameters must have names");
-        //     }
-        // }
+                // Validate each parameter
+                for (int i = 0; i < parameters.Count; i++)
+                {
+                    if (parameters[i] is IDictionary<string, object> param)
+                    {
+                        if (!param.TryGetValue("Name", out var nameObj) || 
+                            nameObj is not string name || 
+                            string.IsNullOrWhiteSpace(name))
+                        {
+                            return new ValidationResult(false, $"Parameter at index {i} must have a valid name");
+                        }
+
+                        if (!param.TryGetValue("Type", out var typeObj) || 
+                            typeObj is not string type || 
+                            string.IsNullOrWhiteSpace(type))
+                        {
+                            return new ValidationResult(false, $"Parameter '{name}' must have a valid type");
+                        }
+                    }
+                    else
+                    {
+                        return new ValidationResult(false, $"Invalid parameter format at index {i}");
+                    }
+                }
+            }
+        }
 
         return new ValidationResult(true, null);
     }

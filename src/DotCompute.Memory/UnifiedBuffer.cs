@@ -21,6 +21,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     private GCHandle _pinnedHandle;
     private T[]? _hostArray;
     private DeviceMemory _deviceMemory;
+    private IMemoryBuffer? _deviceBuffer;
     private BufferState _state;
     private volatile bool _disposed;
 
@@ -496,10 +497,11 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
             // Free device memory
             if (_deviceMemory.IsValid)
             {
-                // Free device memory using modern disposal pattern
-                // In a complete implementation, the memory manager would provide
-                // a Free method or handle cleanup through its disposal patterns.
-                // For CPU-only mode, the device memory is just a logical handle.
+                // Dispose the device buffer if allocated
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for synchronous disposal
+                _deviceBuffer?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
+                _deviceBuffer = null;
                 _deviceMemory = DeviceMemory.Invalid;
             }
 
@@ -529,15 +531,18 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     {
         if (!_deviceMemory.IsValid)
         {
-            // CPU-only implementation for Phase 2:
-            // Since we don't have actual device memory in Phase 2, we simulate it
-            // by creating a device memory handle that points to the host memory.
-            // This allows the buffer state machine to work correctly.
-
-            // Create a device memory handle that represents our "device" allocation
-            // In Phase 2, this is just a logical construct since we're CPU-only
+            // Allocate real device memory using the memory manager
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for synchronous allocation
+            var deviceBuffer = _memoryManager.AllocateAsync(SizeInBytes, Options)
+                .AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
+            
+            // Store the device buffer reference
+            _deviceBuffer = deviceBuffer;
+            
+            // Create a device memory handle
             _deviceMemory = new DeviceMemory(
-                _pinnedHandle.AddrOfPinnedObject(),
+                IntPtr.Zero, // The actual device pointer is managed internally by the device buffer
                 SizeInBytes
             );
         }
@@ -558,13 +563,16 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
             throw new InvalidOperationException("Host array is not allocated");
         }
 
-        // CPU-only implementation for Phase 2:
-        // In a CPU-only environment, "device" memory is actually just host memory.
-        // The transfer is a no-op since both host and device point to the same memory.
-        // This method exists to maintain the proper state machine transitions.
+        if (_deviceBuffer == null)
+        {
+            throw new InvalidOperationException("Device buffer is not allocated");
+        }
 
-        // No actual copy needed - host and device share the same memory in CPU-only mode
-        // The state transition will be handled by the caller
+        // Transfer data from host to device using the memory manager
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for synchronous transfer
+        _deviceBuffer.CopyFromHostAsync<T>(_hostArray.AsMemory())
+            .AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
     }
 
     private void TransferDeviceToHost()
@@ -574,13 +582,16 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
             throw new InvalidOperationException("Host array is not allocated");
         }
 
-        // CPU-only implementation for Phase 2:
-        // In a CPU-only environment, "device" memory is actually just host memory.
-        // The transfer is a no-op since both host and device point to the same memory.
-        // This method exists to maintain the proper state machine transitions.
+        if (_deviceBuffer == null)
+        {
+            throw new InvalidOperationException("Device buffer is not allocated");
+        }
 
-        // No actual copy needed - host and device share the same memory in CPU-only mode
-        // The state transition will be handled by the caller
+        // Transfer data from device to host using the memory manager
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for synchronous transfer
+        _deviceBuffer.CopyToHostAsync<T>(_hostArray.AsMemory())
+            .AsTask().GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
     }
 
     /// <summary>
@@ -595,22 +606,19 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
             throw new InvalidOperationException("Host array is not allocated");
         }
 
+        if (_deviceBuffer == null)
+        {
+            throw new InvalidOperationException("Device buffer is not allocated");
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
-            // CPU-only implementation for Phase 2:
-            // In a CPU-only environment, "device" memory is actually just host memory.
-            // For real device implementations, this would be an async DMA transfer.
-            // We simulate async behavior to maintain proper async patterns.
+            // Transfer data from host to device using the actual device buffer
+            await _deviceBuffer.CopyFromHostAsync<T>(_hostArray.AsMemory(), 0, cancellationToken).ConfigureAwait(false);
 
-            // Simulate async transfer with yielding control
-            await Task.Yield();
-
-            // In a real GPU implementation, this would be:
-            // await _memoryManager.CopyToDeviceAsync(_hostArray.AsMemory(), _deviceMemory, cancellationToken);
-
-            // Check cancellation after "transfer"
+            // Check cancellation after transfer
             cancellationToken.ThrowIfCancellationRequested();
         }
         catch (OperationCanceledException)
@@ -636,22 +644,19 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
             throw new InvalidOperationException("Host array is not allocated");
         }
 
+        if (_deviceBuffer == null)
+        {
+            throw new InvalidOperationException("Device buffer is not allocated");
+        }
+
         cancellationToken.ThrowIfCancellationRequested();
 
         try
         {
-            // CPU-only implementation for Phase 2:
-            // In a CPU-only environment, "device" memory is actually just host memory.
-            // For real device implementations, this would be an async DMA transfer.
-            // We simulate async behavior to maintain proper async patterns.
+            // Transfer data from device to host using the actual device buffer
+            await _deviceBuffer.CopyToHostAsync<T>(_hostArray.AsMemory(), 0, cancellationToken).ConfigureAwait(false);
 
-            // Simulate async transfer with yielding control
-            await Task.Yield();
-
-            // In a real GPU implementation, this would be:
-            // await _memoryManager.CopyFromDeviceAsync(_deviceMemory, _hostArray.AsMemory(), cancellationToken);
-
-            // Check cancellation after "transfer"
+            // Check cancellation after transfer
             cancellationToken.ThrowIfCancellationRequested();
         }
         catch (OperationCanceledException)
@@ -681,18 +686,13 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 
         try
         {
-            // Simulate async allocation
-            await Task.Yield();
-
-            // CPU-only implementation for Phase 2:
-            // Since we don't have actual device memory in Phase 2, we simulate it
-            // by creating a device memory handle that points to the host memory.
-            // This allows the buffer state machine to work correctly.
-
-            // Create a device memory handle that represents our "device" allocation
-            // In Phase 2, this is just a logical construct since we're CPU-only
+            // Allocate real device memory using the memory manager
+            _deviceBuffer = await _memoryManager.AllocateAsync(SizeInBytes, Options, cancellationToken)
+                .ConfigureAwait(false);
+            
+            // Create a device memory handle
             _deviceMemory = new DeviceMemory(
-                _pinnedHandle.AddrOfPinnedObject(),
+                IntPtr.Zero, // The actual device pointer is managed internally by the device buffer
                 SizeInBytes
             );
 
@@ -830,7 +830,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// </summary>
     private async ValueTask TransferFromDeviceAsync(CancellationToken cancellationToken = default)
     {
-        if (!_deviceMemory.IsValid || _hostArray == null)
+        if (!_deviceMemory.IsValid || _hostArray == null || _deviceBuffer == null)
         {
             return;
         }
@@ -838,8 +838,8 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
         try
         {
             var hostMemory = new Memory<T>(_hostArray);
-            // Simulate device to host transfer - in a real implementation this would use device-specific APIs
-            await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+            // Transfer data from device to host using the actual device buffer
+            await _deviceBuffer.CopyToHostAsync<T>(hostMemory, 0, cancellationToken).ConfigureAwait(false);
 
             lock (_lock)
             {
@@ -1075,10 +1075,12 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
             // Free device memory
             if (_deviceMemory.IsValid)
             {
-                // Free device memory using modern disposal pattern
-                // In a complete implementation, the memory manager would provide
-                // a Free method or handle cleanup through its disposal patterns.
-                // For CPU-only mode, the device memory is just a logical handle.
+                // Dispose the device buffer if allocated
+                if (_deviceBuffer != null)
+                {
+                    await _deviceBuffer.DisposeAsync().ConfigureAwait(false);
+                    _deviceBuffer = null;
+                }
                 _deviceMemory = DeviceMemory.Invalid;
             }
 
