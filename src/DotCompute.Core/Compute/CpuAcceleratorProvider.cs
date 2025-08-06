@@ -373,6 +373,8 @@ internal class CpuAccelerator : IAccelerator
 /// </summary>
 internal class CpuMemoryManager(IAccelerator accelerator, ILogger logger) : IMemoryManager, IDisposable
 {
+    private readonly IAccelerator _accelerator = accelerator;
+    private readonly ILogger _logger = logger;
     private readonly List<CpuMemoryBuffer> _allocatedBuffers = [];
 
     public ValueTask<IMemoryBuffer> AllocateAsync(
@@ -516,6 +518,7 @@ internal class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long len
 /// </summary>
 internal class CpuCompiledKernel(string name, KernelDefinition definition, Action<KernelExecutionContext>? compiledFunction = null) : ICompiledKernel
 {
+    private readonly KernelDefinition _definition = definition;
     private readonly Action<KernelExecutionContext>? _compiledFunction = compiledFunction ?? DefaultKernelFunction;
     private bool _disposed;
 
