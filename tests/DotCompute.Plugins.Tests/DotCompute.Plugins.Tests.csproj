@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
     <ProjectReference Include="..\..\src\DotCompute.Plugins\DotCompute.Plugins.csproj" />
     <ProjectReference Include="..\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
   </ItemGroup>
