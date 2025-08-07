@@ -1,0 +1,81 @@
+{
+  "Id": "com.example.algorithms.advanced",
+  "Name": "Advanced Algorithm Plugin Pack",
+  "Version": "2.1.0",
+  "Description": "A collection of advanced mathematical and signal processing algorithms optimized for GPU acceleration.",
+  "Author": "Example Corporation",
+  "AssemblyPath": "./plugins/AdvancedAlgorithms.dll",
+  "LoadTime": "2025-01-15T10:30:00Z",
+  "RequiredFrameworkVersion": "9.0.0",
+  "Dependencies": [
+    "DotCompute.Core >= 1.0.0",
+    "DotCompute.Algorithms >= 1.0.0",
+    "System.Numerics.Vectors >= 4.5.0"
+  ],
+  "AdditionalMetadata": {
+    "Category": "Mathematics",
+    "Tags": ["GPU", "SIMD", "Parallel", "High-Performance"],
+    "SupportedPlatforms": ["Windows", "Linux", "macOS"],
+    "MinimumMemory": 512000000,
+    "RecommendedMemory": 2147483648,
+    "RequiresGPU": false,
+    "OptimizedForGPU": true,
+    "ThreadSafe": true,
+    "ConfigurationSchema": {
+      "type": "object",
+      "properties": {
+        "MaxThreads": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1024,
+          "default": 256
+        },
+        "UseSimd": {
+          "type": "boolean",
+          "default": true
+        },
+        "Precision": {
+          "type": "string",
+          "enum": ["Single", "Double"],
+          "default": "Single"
+        }
+      }
+    },
+    "Performance": {
+      "BenchmarkResults": {
+        "MatrixMultiplication": {
+          "Size1024x1024": {
+            "CPU": "125.3ms",
+            "GPU": "12.7ms",
+            "Speedup": "9.9x"
+          },
+          "Size2048x2048": {
+            "CPU": "1023.5ms",
+            "GPU": "45.2ms",
+            "Speedup": "22.6x"
+          }
+        },
+        "FFT": {
+          "Size1024": {
+            "CPU": "0.8ms",
+            "GPU": "0.3ms",
+            "Speedup": "2.7x"
+          },
+          "Size8192": {
+            "CPU": "15.2ms",
+            "GPU": "2.1ms",
+            "Speedup": "7.2x"
+          }
+        }
+      }
+    },
+    "Security": {
+      "PermissionsRequired": [
+        "FileSystem.ReadTemp",
+        "Network.None"
+      ],
+      "Sandboxed": true,
+      "TrustedPublisher": false
+    }
+  }
+}

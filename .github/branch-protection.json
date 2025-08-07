@@ -1,0 +1,56 @@
+{
+  "main": {
+    "protection_rules": {
+      "required_status_checks": {
+        "strict": true,
+        "contexts": [
+          "Build & Test (ubuntu-latest - Release)",
+          "Build & Test (windows-latest - Release)",
+          "Build & Test (macos-latest - Release)",
+          "Security & Quality Scan",
+          "CodeQL / Analyze (csharp)"
+        ]
+      },
+      "enforce_admins": false,
+      "required_pull_request_reviews": {
+        "dismissal_restrictions": {},
+        "dismiss_stale_reviews": true,
+        "require_code_owner_reviews": true,
+        "required_approving_review_count": 1,
+        "require_last_push_approval": false
+      },
+      "restrictions": null,
+      "allow_force_pushes": false,
+      "allow_deletions": false,
+      "block_creations": false,
+      "required_conversation_resolution": true,
+      "lock_branch": false,
+      "allow_fork_syncing": true
+    }
+  },
+  "develop": {
+    "protection_rules": {
+      "required_status_checks": {
+        "strict": false,
+        "contexts": [
+          "Build & Test (ubuntu-latest - Debug)",
+          "Security & Quality Scan"
+        ]
+      },
+      "enforce_admins": false,
+      "required_pull_request_reviews": {
+        "dismissal_restrictions": {},
+        "dismiss_stale_reviews": false,
+        "require_code_owner_reviews": false,
+        "required_approving_review_count": 0
+      },
+      "restrictions": null,
+      "allow_force_pushes": false,
+      "allow_deletions": false,
+      "block_creations": false,
+      "required_conversation_resolution": false,
+      "lock_branch": false,
+      "allow_fork_syncing": true
+    }
+  }
+}

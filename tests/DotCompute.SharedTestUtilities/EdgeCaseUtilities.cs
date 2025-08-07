@@ -74,11 +74,13 @@ public static class EdgeCaseUtilities
     /// </summary>
     public static IEnumerable<float> FloatBoundaryValues
     {
-        yield return 0.0f;
-        yield return -0.0f;
-        yield return 1.0f;
-        yield return -1.0f;
-        yield return float.MinValue;
+        get
+        {
+            yield return 0.0f;
+            yield return -0.0f;
+            yield return 1.0f;
+            yield return -1.0f;
+            yield return float.MinValue;
         yield return float.MaxValue;
         yield return float.Epsilon;
         yield return -float.Epsilon;
@@ -93,6 +95,7 @@ public static class EdgeCaseUtilities
         yield return -1e10f;
         yield return 1e38f;
         yield return -1e38f;
+        }
     }
 
     /// <summary>

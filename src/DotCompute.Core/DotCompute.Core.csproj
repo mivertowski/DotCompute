@@ -11,6 +11,19 @@
     <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
   </PropertyGroup>
 
+  <!-- Conditional compilation for CUDA support -->
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="$([MSBuild]::IsOSPlatform('Linux'))">
+    <DefineConstants>$(DefineConstants);LINUX</DefineConstants>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(EnableCUDA)' == 'true'">
+    <DefineConstants>$(DefineConstants);CUDA_ENABLED</DefineConstants>
+  </PropertyGroup>
+
   <PropertyGroup>
     <AssemblyName>DotCompute.Core</AssemblyName>
     <RootNamespace>DotCompute.Core</RootNamespace>

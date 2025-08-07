@@ -1,0 +1,48 @@
+# DotCompute Code Owners
+# These owners will be the default owners for everything in the repo.
+
+# Global Owners
+* @mivertowski
+
+# Core Components
+/src/DotCompute.Core/ @mivertowski
+/src/DotCompute.Abstractions/ @mivertowski
+/src/DotCompute.Runtime/ @mivertowski
+
+# GPU Backends
+/src/DotCompute.Core/Kernels/CUDA* @mivertowski
+/src/DotCompute.Core/Kernels/OpenCL* @mivertowski
+/src/DotCompute.Core/Kernels/DirectCompute* @mivertowski
+/plugins/backends/ @mivertowski
+
+# Security Components
+/src/DotCompute.Algorithms/Security/ @mivertowski
+/src/DotCompute.Core/Kernels/Security* @mivertowski
+
+# Linear Algebra
+/src/DotCompute.Algorithms/LinearAlgebra* @mivertowski
+/src/DotCompute.Algorithms/Kernels/ @mivertowski
+
+# Plugin System
+/src/DotCompute.Plugins/ @mivertowski
+/src/DotCompute.Algorithms/Management/NuGet* @mivertowski
+
+# Tests
+/tests/ @mivertowski
+*.Tests.csproj @mivertowski
+
+# CI/CD
+/.github/workflows/ @mivertowski
+/.github/actions/ @mivertowski
+/GitVersion.yml @mivertowski
+
+# Documentation
+/README.md @mivertowski
+/docs/ @mivertowski
+*.md @mivertowski
+
+# Build Configuration
+/Directory.Build.props @mivertowski
+/Directory.Build.targets @mivertowski
+/global.json @mivertowski
+/*.sln @mivertowski
