@@ -32,12 +32,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DotCompute.Generators\DotCompute.Generators.csproj" />
-    <ProjectReference Include="..\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\..\src\DotCompute.Generators\DotCompute.Generators.csproj" />
+    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Analyzer Include="..\..\src\DotCompute.Generators\bin\Debug\netstandard2.0\DotCompute.Generators.dll" />
+    <Analyzer Include="..\..\..\src\DotCompute.Generators\bin\Debug\netstandard2.0\DotCompute.Generators.dll" />
   </ItemGroup>
 
   <ItemGroup>

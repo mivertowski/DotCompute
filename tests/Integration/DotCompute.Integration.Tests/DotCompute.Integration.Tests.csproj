@@ -20,13 +20,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
-    <ProjectReference Include="..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
-    <ProjectReference Include="..\..\src\DotCompute.Memory\DotCompute.Memory.csproj" />
-    <ProjectReference Include="..\..\src\DotCompute.Plugins\DotCompute.Plugins.csproj" />
-    <ProjectReference Include="..\..\plugins\backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
-    <ProjectReference Include="..\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
-    <ProjectReference Include="..\DotCompute.Tests.Implementations\DotCompute.Tests.Implementations.csproj" />
+    <ProjectReference Include="..\..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\DotCompute.Memory\DotCompute.Memory.csproj" />
+    <ProjectReference Include="..\..\..\src\DotCompute.Plugins\DotCompute.Plugins.csproj" />
+    <ProjectReference Include="..\..\..\plugins\backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
+    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Implementations\DotCompute.Tests.Implementations.csproj" />
   </ItemGroup>
 
   <ItemGroup>
