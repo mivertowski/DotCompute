@@ -13,9 +13,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
-using CompiledKernel = DotCompute.SharedTestUtilities.CompiledKernel;
-using KernelArgument = DotCompute.SharedTestUtilities.KernelArgument;
-using KernelConfiguration = DotCompute.SharedTestUtilities.KernelConfiguration;
+using CompiledKernel = DotCompute.Tests.Common.CompiledKernel;
+using KernelArgument = DotCompute.Tests.Common.KernelArgument;
+using KernelConfiguration = DotCompute.Tests.Common.KernelConfiguration;
 
 namespace DotCompute.Core.Tests;
 
@@ -221,7 +221,7 @@ public class CUDAKernelExecutorTests : IDisposable
         Assert.NotEmpty(config.GlobalWorkSize!);
         Assert.NotEmpty(config.LocalWorkSize!);
         Assert.True(config.GlobalWorkSize[0] >= problemSize[0]);
-        Assert.True(config.LocalWorkSize[0] > 0);
+        Assert.True(config.LocalWorkSize![0] > 0);
         Assert.True(config.CaptureTimings);
     }
 
@@ -464,7 +464,7 @@ public class CUDAKernelExecutorTests : IDisposable
             EntryPoint = name,
             NativeHandle = new IntPtr(0x12345678), // Mock handle
             IsCompiled = true,
-            Language = KernelLanguage.CUDA,
+            Language = DotCompute.Tests.Common.KernelLanguage.Cuda,
             Metadata = new Dictionary<string, string>
             {
                 ["compute_capability"] = "75",
@@ -487,7 +487,7 @@ public class CUDAKernelExecutorTests : IDisposable
         var kernel = CreateValidCompiledKernel("shared_memory_kernel");
         kernel.SharedMemorySize = 4096; // 4KB shared memory
         kernel.Metadata["shared_memory_bytes"] = "4096";
-        kernel.Configuration.SharedMemorySize = 4096;
+        kernel.Configuration!.SharedMemorySize = 4096;
         return kernel;
     }
 
@@ -496,7 +496,7 @@ public class CUDAKernelExecutorTests : IDisposable
         var kernel = CreateValidCompiledKernel("large_kernel");
         kernel.SharedMemorySize = 32768; // 32KB shared memory
         kernel.Metadata["registers_per_thread"] = "128"; // High register usage
-        kernel.Configuration.BlockDimensions = new Dimensions3D(1024, 1, 1);
+        kernel.Configuration!.BlockDimensions = new Dimensions3D(1024, 1, 1);
         return kernel;
     }
 

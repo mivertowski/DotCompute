@@ -238,7 +238,11 @@ public sealed class ComputeEngineTests : IDisposable
 
     public void Dispose()
     {
-        // No resources to dispose in this test class
-        GC.SuppressFinalize(this);
+        if (!_disposed)
+        {
+            // No resources to dispose in this test class
+            _disposed = true;
+            GC.SuppressFinalize(this);
+        }
     }
 }

@@ -61,6 +61,8 @@ public class AdvancedIntegrationTests : IAsyncLifetime
             _output.WriteLine($"  - {accelerator.Info.Name}: {accelerator.Info.DeviceType}, " +
                             $"Memory: {accelerator.Info.TotalMemory / (1024 * 1024)}MB");
         }
+        
+        await Task.CompletedTask;
     }
 
     [Fact]
@@ -84,6 +86,8 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         _output.WriteLine($"Selected accelerator: {bestAccelerator.Info.Name}");
         _output.WriteLine($"  Type: {bestAccelerator.Info.DeviceType}");
         _output.WriteLine($"  Memory: {bestAccelerator.Info.TotalMemory / (1024 * 1024)}MB");
+        
+        await Task.CompletedTask;
     }
 
     [Fact]

@@ -297,7 +297,7 @@ public class CUDAKernelCompilerTests : IDisposable
         Assert.NotNull(result);
         Assert.NotNull(result.Binary);
         // The kernel uses shared memory, so metadata should reflect this
-        Assert.NotEmpty(result.Metadata);
+        Assert.NotEmpty(result.Metadata!);
     }
 
     [Fact]

@@ -13,9 +13,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
-using CompiledKernel = DotCompute.SharedTestUtilities.CompiledKernel;
-using KernelArgument = DotCompute.SharedTestUtilities.KernelArgument;
-using KernelConfiguration = DotCompute.SharedTestUtilities.KernelConfiguration;
+using CompiledKernel = DotCompute.Tests.Common.CompiledKernel;
+using KernelArgument = DotCompute.Tests.Common.KernelArgument;
+using KernelConfiguration = DotCompute.Tests.Common.KernelConfiguration;
 
 namespace DotCompute.Core.Tests;
 
@@ -461,7 +461,7 @@ public class OpenCLKernelExecutorTests : IDisposable
             EntryPoint = name,
             NativeHandle = new IntPtr(0x12345678), // Mock handle
             IsCompiled = true,
-            Language = KernelLanguage.OpenCL,
+            Language = DotCompute.Tests.Common.KernelLanguage.OpenCL,
             Metadata = new Dictionary<string, string>
             {
                 ["preferred_work_group_size"] = "256",
@@ -484,7 +484,7 @@ public class OpenCLKernelExecutorTests : IDisposable
         var kernel = CreateValidCompiledKernel("local_memory_kernel");
         kernel.Metadata["uses_local_memory"] = "true";
         kernel.Metadata["local_memory_size"] = "2048";
-        kernel.Configuration.SharedMemorySize = 2048;
+        kernel.Configuration!.SharedMemorySize = 2048;
         return kernel;
     }
 

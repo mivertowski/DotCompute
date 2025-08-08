@@ -2,47 +2,9 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
-using System.Collections.Generic;
 using DotCompute.Abstractions;
 
 namespace DotCompute.SharedTestUtilities;
-
-/// <summary>
-/// Test kernel configuration for unit tests.
-/// </summary>
-public class KernelConfiguration
-{
-    public string? Name { get; set; }
-    public Dictionary<string, object> Parameters { get; set; } = new();
-    public int MaxThreadsPerBlock { get; set; } = 256;
-    public int SharedMemorySize { get; set; }
-}
-
-/// <summary>
-/// Test kernel argument for unit tests.
-/// </summary>
-public class KernelArgument
-{
-    public string Name { get; set; } = string.Empty;
-    public object? Value { get; set; }
-    public Type Type { get; set; } = typeof(object);
-    public bool IsOutput { get; set; }
-}
-
-/// <summary>
-/// Test compiled kernel for unit tests.
-/// </summary>
-public class CompiledKernel
-{
-    public string Name { get; set; } = string.Empty;
-    public byte[]? ByteCode { get; set; }
-    public KernelConfiguration Configuration { get; set; } = new();
-    public Dictionary<string, object> Metadata { get; set; } = new();
-}
-
-/// <summary>
-/// Kernel language enumeration for tests.
-/// </summary>
 /// <summary>
 /// Memory test utilities.
 /// </summary>
@@ -92,10 +54,13 @@ public static class EdgeCaseUtilities
 }
 
 /// <summary>
-/// Test kernel types for mocking.
+/// Kernel factory methods for creating production types in tests.
 /// </summary>
-public static class TestKernelTypes
+public static class KernelFactory
 {
+    /// <summary>
+    /// Creates a simple CUDA kernel definition for testing.
+    /// </summary>
     public static KernelDefinition CreateSimpleKernel(string name = "TestKernel")
     {
         var code = @"
@@ -118,6 +83,9 @@ public static class TestKernelTypes
             new CompilationOptions());
     }
 
+    /// <summary>
+    /// Creates test kernel arguments.
+    /// </summary>
     public static KernelArguments CreateTestArguments()
     {
         var args = KernelArguments.Create(3);
@@ -125,5 +93,26 @@ public static class TestKernelTypes
         args.Set(1, new float[3]);
         args.Set(2, 3);
         return args;
+    }
+
+    /// <summary>
+    /// Creates a compiled kernel for testing.
+    /// </summary>
+    public static CompiledKernel CreateCompiledKernel(
+        Guid? id = null,
+        IntPtr nativeHandle = default,
+        int sharedMemorySize = 0)
+    {
+        var kernelId = id ?? Guid.NewGuid();
+        var configuration = new KernelConfiguration(
+            new Dim3(1), // Grid dimensions
+            new Dim3(256) // Block dimensions
+        );
+        
+        return new CompiledKernel(
+            kernelId,
+            nativeHandle,
+            sharedMemorySize,
+            configuration);
     }
 }

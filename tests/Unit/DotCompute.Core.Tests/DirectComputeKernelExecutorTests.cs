@@ -13,9 +13,9 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
-using CompiledKernel = DotCompute.SharedTestUtilities.CompiledKernel;
-using KernelArgument = DotCompute.SharedTestUtilities.KernelArgument;
-using KernelConfiguration = DotCompute.SharedTestUtilities.KernelConfiguration;
+using CompiledKernel = DotCompute.Tests.Common.CompiledKernel;
+using KernelArgument = DotCompute.Tests.Common.KernelArgument;
+using KernelConfiguration = DotCompute.Tests.Common.KernelConfiguration;
 
 namespace DotCompute.Core.Tests;
 
@@ -460,7 +460,7 @@ public class DirectComputeKernelExecutorTests : IDisposable
             EntryPoint = name,
             NativeHandle = new IntPtr(0x12345678), // Mock handle
             IsCompiled = true,
-            Language = KernelLanguage.HLSL, // DirectCompute uses HLSL
+            Language = DotCompute.Tests.Common.KernelLanguage.HLSL, // DirectCompute uses HLSL
             Metadata = new Dictionary<string, string>
             {
                 ["shader_model"] = "5.0",
@@ -493,7 +493,7 @@ public class DirectComputeKernelExecutorTests : IDisposable
         kernel.SharedMemorySize = 4096; // 4KB group shared memory
         kernel.Metadata["shared_memory_size"] = "4096";
         kernel.Metadata["uses_group_shared"] = "true";
-        kernel.Configuration.SharedMemorySize = 4096;
+        kernel.Configuration!.SharedMemorySize = 4096;
         return kernel;
     }
 

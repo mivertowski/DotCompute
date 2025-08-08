@@ -176,7 +176,31 @@ public class KernelArgument
             Value = Value ?? new object(),
             IsDeviceMemory = IsDeviceMemory,
             MemoryBuffer = null,
-            SizeInBytes = SizeInBytes > 0 ? SizeInBytes : Size
+            SizeInBytes = SizeInBytes > 0 ? SizeInBytes : EstimateSizeFromValue(Value)
+        };
+    }
+
+    /// <summary>
+    /// Estimates size from the value if SizeInBytes wasn't set.
+    /// </summary>
+    private long EstimateSizeFromValue(object? value)
+    {
+        if (value == null) return 0;
+
+        return value switch
+        {
+            byte[] bytes => bytes.Length,
+            float[] floats => floats.Length * sizeof(float),
+            double[] doubles => doubles.Length * sizeof(double),
+            int[] ints => ints.Length * sizeof(int),
+            long[] longs => longs.Length * sizeof(long),
+            bool[] bools => bools.Length * sizeof(bool),
+            int => sizeof(int),
+            float => sizeof(float),
+            double => sizeof(double),
+            long => sizeof(long),
+            bool => sizeof(bool),
+            _ => Size > 0 ? Size : IntPtr.Size
         };
     }
 
@@ -206,7 +230,7 @@ public enum KernelLanguage
     /// <summary>
     /// CUDA C/C++ source code.
     /// </summary>
-    CUDA,
+    Cuda,
 
     /// <summary>
     /// OpenCL C source code.
@@ -301,6 +325,126 @@ public enum KernelArgumentType
 }
 
 /// <summary>
+/// Factory methods for creating test types with production compatibility.
+/// </summary>
+public static class TestKernelFactory
+{
+    /// <summary>
+    /// Creates a test CompiledKernel with proper defaults.
+    /// </summary>
+    public static CompiledKernel CreateCompiledKernel(
+        string name = "TestKernel",
+        string entryPoint = "TestKernel",
+        KernelLanguage language = KernelLanguage.Cuda,
+        Guid? id = null,
+        Guid? kernelId = null,
+        IntPtr nativeHandle = default,
+        int sharedMemorySize = 0,
+        bool isCompiled = true,
+        DateTimeOffset? compilationTimestamp = null,
+        Dimensions3D? blockDimensions = null)
+    {
+        return new CompiledKernel
+        {
+            Id = id ?? Guid.NewGuid(),
+            KernelId = kernelId ?? Guid.NewGuid(),
+            Name = name,
+            EntryPoint = entryPoint,
+            NativeHandle = nativeHandle,
+            IsCompiled = isCompiled,
+            Language = language,
+            SharedMemorySize = sharedMemorySize,
+            CompilationTimestamp = compilationTimestamp ?? DateTimeOffset.UtcNow,
+            Configuration = new KernelConfiguration
+            {
+                BlockDimensions = blockDimensions ?? new Dimensions3D(256),
+                SharedMemorySize = sharedMemorySize
+            }
+        };
+    }
+
+    /// <summary>
+    /// Creates a test KernelArgument with proper defaults.
+    /// </summary>
+    public static KernelArgument CreateKernelArgument(
+        string name,
+        object value,
+        Type? type = null,
+        bool isInput = true,
+        bool isOutput = false,
+        bool isDeviceMemory = false,
+        long sizeInBytes = 0,
+        KernelArgumentType argumentType = KernelArgumentType.Value)
+    {
+        return new KernelArgument
+        {
+            Name = name,
+            Value = value,
+            Type = type ?? value?.GetType() ?? typeof(object),
+            IsInput = isInput,
+            IsOutput = isOutput,
+            IsDeviceMemory = isDeviceMemory,
+            SizeInBytes = sizeInBytes > 0 ? sizeInBytes : EstimateSizeInBytes(value),
+            ArgumentType = argumentType
+        };
+    }
+
+    /// <summary>
+    /// Creates a test KernelConfiguration with proper defaults.
+    /// </summary>
+    public static KernelConfiguration CreateKernelConfiguration(
+        Dimensions3D? blockDimensions = null,
+        int sharedMemorySize = 0)
+    {
+        return new KernelConfiguration
+        {
+            BlockDimensions = blockDimensions ?? new Dimensions3D(256),
+            SharedMemorySize = sharedMemorySize
+        };
+    }
+
+    /// <summary>
+    /// Creates a batch of test KernelArguments for common scenarios.
+    /// </summary>
+    public static KernelArgument[] CreateStandardKernelArguments(int arraySize = 1024)
+    {
+        return new[]
+        {
+            CreateKernelArgument("input", new float[arraySize], typeof(float[]), 
+                isInput: true, isDeviceMemory: true, argumentType: KernelArgumentType.Buffer),
+            CreateKernelArgument("output", new float[arraySize], typeof(float[]), 
+                isInput: false, isOutput: true, isDeviceMemory: true, argumentType: KernelArgumentType.Buffer),
+            CreateKernelArgument("size", arraySize, typeof(int), 
+                argumentType: KernelArgumentType.Scalar)
+        };
+    }
+
+    /// <summary>
+    /// Estimates the size in bytes for a value.
+    /// </summary>
+    private static long EstimateSizeInBytes(object? value)
+    {
+        if (value == null) return 0;
+
+        return value switch
+        {
+            byte[] bytes => bytes.Length,
+            float[] floats => floats.Length * sizeof(float),
+            double[] doubles => doubles.Length * sizeof(double),
+            int[] ints => ints.Length * sizeof(int),
+            long[] longs => longs.Length * sizeof(long),
+            bool[] bools => bools.Length * sizeof(bool),
+            int => sizeof(int),
+            float => sizeof(float),
+            double => sizeof(double),
+            long => sizeof(long),
+            bool => sizeof(bool),
+            _ => IntPtr.Size // Default pointer size for unknown types
+        };
+    }
+}
+
+/// <summary>
 /// Extension methods and conversion helpers for test types.
 /// </summary>
 public static class TestTypeConversions
@@ -319,5 +463,47 @@ public static class TestTypeConversions
     public static DotCompute.Abstractions.CompiledKernel ToAbstractionsCompiledKernel(this CompiledKernel testKernel)
     {
         return (DotCompute.Abstractions.CompiledKernel)testKernel;
+    }
+
+    /// <summary>
+    /// Converts test KernelLanguage to production KernelLanguage.
+    /// </summary>
+    public static Abstractions.KernelLanguage ToAbstractionsKernelLanguage(this KernelLanguage testLanguage)
+    {
+        return testLanguage switch
+        {
+            KernelLanguage.Cuda => Abstractions.KernelLanguage.Cuda,
+            KernelLanguage.OpenCL => Abstractions.KernelLanguage.OpenCL,
+            KernelLanguage.Ptx => Abstractions.KernelLanguage.Ptx,
+            KernelLanguage.HLSL => Abstractions.KernelLanguage.HLSL,
+            KernelLanguage.SPIRV => Abstractions.KernelLanguage.SPIRV,
+            KernelLanguage.Metal => Abstractions.KernelLanguage.Metal,
+            KernelLanguage.HIP => Abstractions.KernelLanguage.HIP,
+            KernelLanguage.SYCL => Abstractions.KernelLanguage.SYCL,
+            KernelLanguage.CSharpIL => Abstractions.KernelLanguage.CSharpIL,
+            KernelLanguage.Binary => Abstractions.KernelLanguage.Binary,
+            _ => Abstractions.KernelLanguage.CSharpIL
+        };
+    }
+
+    /// <summary>
+    /// Converts production KernelLanguage to test KernelLanguage.
+    /// </summary>
+    public static KernelLanguage FromAbstractionsKernelLanguage(Abstractions.KernelLanguage productionLanguage)
+    {
+        return productionLanguage switch
+        {
+            Abstractions.KernelLanguage.Cuda => KernelLanguage.Cuda,
+            Abstractions.KernelLanguage.OpenCL => KernelLanguage.OpenCL,
+            Abstractions.KernelLanguage.Ptx => KernelLanguage.Ptx,
+            Abstractions.KernelLanguage.HLSL => KernelLanguage.HLSL,
+            Abstractions.KernelLanguage.SPIRV => KernelLanguage.SPIRV,
+            Abstractions.KernelLanguage.Metal => KernelLanguage.Metal,
+            Abstractions.KernelLanguage.HIP => KernelLanguage.HIP,
+            Abstractions.KernelLanguage.SYCL => KernelLanguage.SYCL,
+            Abstractions.KernelLanguage.CSharpIL => KernelLanguage.CSharpIL,
+            Abstractions.KernelLanguage.Binary => KernelLanguage.Binary,
+            _ => KernelLanguage.CSharpIL
+        };
     }
 }

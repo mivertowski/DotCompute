@@ -10,7 +10,7 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Registration;
 using DotCompute.Backends.Metal.Utilities;
-using DotCompute.SharedTestUtilities;
+using DotCompute.Tests.Common;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
