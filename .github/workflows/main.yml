@@ -44,7 +44,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     
     outputs:
-      version: ${{ steps.gitversion.outputs.SemVer }}
+      version: ${{ steps.gitversion.outputs.SemVer || '1.0.0-preview' }}
     
     steps:
     - name: 📥 Checkout repository
@@ -94,6 +94,7 @@ jobs:
       uses: gittools/actions/gitversion/execute@v0
       with:
         useConfigFile: true
+      continue-on-error: true
     
     - name: 📥 Restore dependencies
       run: dotnet restore DotCompute.sln
