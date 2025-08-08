@@ -583,20 +583,20 @@ jobs:
     
     steps:
     - name: 📥 Download NuGet packages
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         name: nuget-packages
         path: ./nupkgs
     
     - name: 📥 Download Test Results
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         pattern: test-results-*
         path: ./test-results
         merge-multiple: true
     
     - name: 📥 Download Coverage Reports
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v5
       with:
         pattern: coverage-report-*
         path: ./coverage
