@@ -17,14 +17,14 @@ public interface IQueryCompiler
     /// </summary>
     /// <param name="context">The compilation context containing the expression and accelerator.</param>
     /// <returns>A compute plan that can be executed on the accelerator.</returns>
-    IComputePlan Compile(CompilationContext context);
+    public IComputePlan Compile(CompilationContext context);
 
     /// <summary>
     /// Validates whether an expression can be compiled for GPU execution.
     /// </summary>
     /// <param name="expression">The expression to validate.</param>
     /// <returns>A validation result indicating whether compilation is possible.</returns>
-    ValidationResult Validate(Expression expression);
+    public ValidationResult Validate(Expression expression);
 }
 
 /// <summary>

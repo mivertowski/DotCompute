@@ -24,6 +24,7 @@ public interface IKernelCompiler
     /// <returns>The compiled kernel.</returns>
     ValueTask<ManagedCompiledKernel> CompileAsync(GeneratedKernel kernel, CompilationOptions options, CancellationToken cancellationToken = default);
 
+
     /// <summary>
     /// Validates kernel source code.
     /// </summary>
@@ -36,6 +37,50 @@ public interface IKernelCompiler
     /// </summary>
     /// <returns>Default compilation options.</returns>
     CompilationOptions GetDefaultOptions();
+}
+
+/// <summary>
+/// Extension methods for IKernelCompiler to provide compatibility with Abstractions types.
+/// </summary>
+public static class KernelCompilerExtensions
+{
+    /// <summary>
+    /// Compiles a kernel from source code (Abstractions compatibility).
+    /// </summary>
+    /// <param name="compiler">The kernel compiler.</param>
+    /// <param name="kernel">The generated kernel to compile.</param>
+    /// <param name="options">Compilation options.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The compiled kernel.</returns>
+    public static ValueTask<ManagedCompiledKernel> CompileAsync(this IKernelCompiler compiler, GeneratedKernel kernel, DotCompute.Abstractions.CompilationOptions options, CancellationToken cancellationToken = default)
+    {
+        // Convert Abstractions.CompilationOptions to Core.CompilationOptions
+        var coreOptions = new CompilationOptions
+        {
+            OptimizationLevel = ConvertOptimizationLevel(options.OptimizationLevel),
+            GenerateDebugInfo = options.EnableDebugInfo,
+            EnableFastMath = options.FastMath,
+            EnableUnsafeOptimizations = false, // Default
+            AdditionalFlags = options.AdditionalFlags?.ToList() ?? new List<string>(),
+            Defines = options.Defines?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, string>()
+        };
+        
+        return compiler.CompileAsync(kernel, coreOptions, cancellationToken);
+    }
+
+    private static OptimizationLevel ConvertOptimizationLevel(DotCompute.Abstractions.OptimizationLevel level)
+    {
+        return level switch
+        {
+            DotCompute.Abstractions.OptimizationLevel.None => OptimizationLevel.O0,
+            DotCompute.Abstractions.OptimizationLevel.Debug => OptimizationLevel.O1,
+            DotCompute.Abstractions.OptimizationLevel.Default => OptimizationLevel.O2,
+            DotCompute.Abstractions.OptimizationLevel.Release => OptimizationLevel.O2,
+            DotCompute.Abstractions.OptimizationLevel.Maximum => OptimizationLevel.O3,
+            DotCompute.Abstractions.OptimizationLevel.Aggressive => OptimizationLevel.O3,
+            _ => OptimizationLevel.O2
+        };
+    }
 }
 
 /// <summary>
@@ -84,6 +129,16 @@ public sealed class ManagedCompiledKernel : IDisposable
     /// Gets performance metadata from compilation.
     /// </summary>
     public Dictionary<string, object>? PerformanceMetadata { get; init; }
+
+    /// <summary>
+    /// Gets whether the kernel is compiled.
+    /// </summary>
+    public bool IsCompiled => Handle != IntPtr.Zero && Binary.Length > 0;
+
+    /// <summary>
+    /// Gets the kernel metadata.
+    /// </summary>
+    public Dictionary<string, object>? Metadata => PerformanceMetadata;
 
     /// <summary>
     /// Disposes the compiled kernel.

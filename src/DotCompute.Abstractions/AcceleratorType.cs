@@ -44,6 +44,21 @@ public enum AcceleratorType
     DirectML = 7,
 
     /// <summary>
+    /// Generic GPU device.
+    /// </summary>
+    GPU = 8,
+
+    /// <summary>
+    /// Field-Programmable Gate Array.
+    /// </summary>
+    FPGA = 9,
+
+    /// <summary>
+    /// Tensor Processing Unit.
+    /// </summary>
+    TPU = 10,
+
+    /// <summary>
     /// Custom or unknown accelerator type.
     /// </summary>
     Custom = 100

@@ -201,7 +201,12 @@ public enum KernelExecutionFlags
     /// <summary>
     /// High priority execution
     /// </summary>
-    HighPriority = 16
+    HighPriority = 16,
+
+    /// <summary>
+    /// Optimize for throughput over latency
+    /// </summary>
+    OptimizeForThroughput = 32
 }
 
 /// <summary>

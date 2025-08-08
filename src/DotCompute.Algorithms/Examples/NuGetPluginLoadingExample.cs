@@ -4,6 +4,7 @@
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Management;
+using DotCompute.Algorithms.Security;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Algorithms.Examples;
@@ -49,7 +50,8 @@ public sealed class NuGetPluginLoadingExample
         options.AllowedPluginDirectories.Add(Path.Combine(Environment.CurrentDirectory, "plugins"));
         options.AllowedPluginDirectories.Add(Path.Combine(Path.GetTempPath(), "DotComputeNuGetCache"));
 
-        _pluginManager = new AlgorithmPluginManager(accelerator, logger, options);
+        var pluginManagerLogger = logger as ILogger<AlgorithmPluginManager> ?? throw new ArgumentException("Logger must be for AlgorithmPluginManager");
+        _pluginManager = new AlgorithmPluginManager(accelerator, pluginManagerLogger, options);
     }
 
     /// <summary>

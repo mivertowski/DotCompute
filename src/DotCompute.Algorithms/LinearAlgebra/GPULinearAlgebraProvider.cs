@@ -3,8 +3,12 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Algorithms.Kernels;
+using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
+using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.HardwareInfo;
+using LAKernelParams = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.KernelExecutionParameters;
 
 namespace DotCompute.Algorithms.LinearAlgebra;
 
@@ -44,7 +48,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
 
         var matrixProperties = AnalyzeMatrixProperties(a, b);
         var hardwareInfo = GetHardwareInfo(accelerator);
-        var config = GetOptimalKernelConfig(LinearAlgebraOperation.MatrixMultiply, matrixProperties, hardwareInfo);
+        var config = GetOptimalKernelConfig(LinearAlgebraOp.MatrixMultiply, matrixProperties, hardwareInfo);
 
         try
         {
@@ -154,9 +158,9 @@ public sealed class GPULinearAlgebraProvider : IDisposable
 
     #region Private Implementation Methods
 
-    private async Task<Matrix> ExecuteMatrixMultiplicationAsync(Matrix a, Matrix b, IAccelerator accelerator, KernelExecutionParameters config, CancellationToken cancellationToken)
+    private async Task<Matrix> ExecuteMatrixMultiplicationAsync(Matrix a, Matrix b, IAccelerator accelerator, LAKernelParams config, CancellationToken cancellationToken)
     {
-        var kernelSource = LinearAlgebraKernels.GetKernelSource(LinearAlgebraOperation.MatrixMultiply, accelerator.Info.DeviceType);
+        var kernelSource = LinearAlgebraKernels.GetKernelSource(LinearAlgebraOp.MatrixMultiply, accelerator.Info.DeviceType);
         var kernel = await GetOrCompileKernelAsync("MatrixMultiply", kernelSource, accelerator, cancellationToken).ConfigureAwait(false);
 
         var result = new Matrix(a.Rows, b.Columns);
@@ -200,7 +204,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
             await bufferC.ReadAsync(resultData, 0, cancellationToken).ConfigureAwait(false);
             CopyArrayToMatrix(resultData, result);
 
-            _logger.LogDebug("GPU matrix multiplication completed in {ElapsedMs}ms", executionResult.ElapsedMilliseconds);
+            _logger.LogDebug("GPU matrix multiplication completed in {ElapsedMs}ms", executionResult.Timings?.KernelTimeMs ?? 0);
 
             return result;
         }
@@ -212,19 +216,19 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         }
     }
 
-    private async Task<(Matrix Q, Matrix R)> ExecuteQRDecompositionAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, HardwareInfo hardware, CancellationToken cancellationToken)
+    private async Task<(Matrix Q, Matrix R)> ExecuteQRDecompositionAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken)
     {
         // Implementation would use the GPU kernels from LinearAlgebraKernels
         // This is a simplified version - full implementation would handle the iterative Householder process
-        var householderKernelSource = LinearAlgebraKernels.GetKernelSource(LinearAlgebraOperation.HouseholderVector, accelerator.Info.DeviceType);
-        var transformKernelSource = LinearAlgebraKernels.GetKernelSource(LinearAlgebraOperation.HouseholderTransform, accelerator.Info.DeviceType);
+        var householderKernelSource = LinearAlgebraKernels.GetKernelSource(LinearAlgebraOp.HouseholderVector, accelerator.Info.DeviceType);
+        var transformKernelSource = LinearAlgebraKernels.GetKernelSource(LinearAlgebraOp.HouseholderTransform, accelerator.Info.DeviceType);
 
         // For brevity, falling back to the existing CPU implementation
         // In a full implementation, this would orchestrate multiple GPU kernel calls
         return await FallbackQRDecompositionAsync(matrix, cancellationToken).ConfigureAwait(false);
     }
 
-    private async Task<(Matrix U, Matrix S, Matrix VT)> ExecuteSVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, HardwareInfo hardware, CancellationToken cancellationToken)
+    private async Task<(Matrix U, Matrix S, Matrix VT)> ExecuteSVDAsync(Matrix matrix, IAccelerator accelerator, MatrixProperties properties, LAHardwareInfo hardware, CancellationToken cancellationToken)
     {
         // Implementation would use Jacobi SVD kernels
         // For brevity, falling back to CPU implementation
@@ -279,7 +283,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
             typeof(float[]),
             accelerator,
             context,
-            kernelSource,
+            null,
             cancellationToken).ConfigureAwait(false);
 
         _kernelCache[cacheKey] = kernel;
@@ -310,18 +314,18 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         };
     }
 
-    private static HardwareInfo GetHardwareInfo(IAccelerator accelerator)
+    private static LAHardwareInfo GetHardwareInfo(IAccelerator accelerator)
     {
-        return new HardwareInfo
+        return new LAHardwareInfo
         {
-            GlobalMemorySize = accelerator.Info.GlobalMemorySize,
-            SharedMemorySize = accelerator.Info.LocalMemorySize,
-            MaxWorkGroupSize = accelerator.Info.MaxWorkGroupSize,
+            GlobalMemorySize = accelerator.Info.TotalMemory,
+            SharedMemorySize = (int)accelerator.Info.MaxSharedMemoryPerBlock,
+            MaxWorkGroupSize = accelerator.Info.MaxThreadsPerBlock,
             ComputeUnits = accelerator.Info.ComputeUnits
         };
     }
 
-    private static KernelExecutionParameters GetOptimalKernelConfig(LinearAlgebraOperation operation, MatrixProperties properties, HardwareInfo hardware)
+    private static LAKernelParams GetOptimalKernelConfig(LinearAlgebraOp operation, MatrixProperties properties, LAHardwareInfo hardware)
     {
         return LinearAlgebraKernels.GetOptimizedParameters(operation, ((int)Math.Sqrt(properties.Size), (int)Math.Sqrt(properties.Size)), hardware.ToString() ?? "Unknown");
     }

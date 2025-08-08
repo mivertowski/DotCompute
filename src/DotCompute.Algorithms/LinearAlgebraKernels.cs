@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Core.Kernels;
+using DotCompute.Algorithms.Kernels;
 using System.Text;
 
 namespace DotCompute.Algorithms.LinearAlgebra;

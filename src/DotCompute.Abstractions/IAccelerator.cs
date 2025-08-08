@@ -184,6 +184,39 @@ public class AcceleratorInfo
 
     /// <summary>Gets or sets device-specific capabilities.</summary>
     public Dictionary<string, object>? Capabilities { get; init; }
+
+    /// <summary>
+    /// Parameterless constructor for test compatibility.
+    /// Creates a default AcceleratorInfo for testing.
+    /// </summary>
+    [System.Diagnostics.CodeAnalysis.SetsRequiredMembers]
+    public AcceleratorInfo()
+    {
+        Id = "test_device";
+        Name = "Test Device";
+        DeviceType = "Test";
+        Vendor = "Test Vendor";
+        DriverVersion = "1.0.0";
+        TotalMemory = 1024 * 1024 * 1024; // 1 GB
+        AvailableMemory = 1024 * 1024 * 1024;
+        MaxSharedMemoryPerBlock = 48 * 1024; // 48 KB
+        MaxMemoryAllocationSize = 1024 * 1024 * 1024;
+        LocalMemorySize = 64 * 1024; // 64 KB
+        IsUnifiedMemory = false;
+        ComputeUnits = 8;
+        MaxClockFrequency = 1500;
+        MaxThreadsPerBlock = 1024;
+        ComputeCapability = new Version(7, 5);
+    }
+
+    /// <summary>
+    /// Gets or sets the maximum work group size (alias for MaxThreadsPerBlock).
+    /// </summary>
+    public int MaxWorkGroupSize
+    {
+        get => MaxThreadsPerBlock;
+        init => MaxThreadsPerBlock = value;
+    }
 }
 
 /// <summary>
@@ -232,11 +265,20 @@ public enum OptimizationLevel
     /// <summary>No optimization.</summary>
     None,
 
+    /// <summary>Debug mode with minimal optimization.</summary>
+    Debug,
+
     /// <summary>Default optimization level.</summary>
     Default,
 
+    /// <summary>Release mode with standard optimization.</summary>
+    Release,
+
     /// <summary>Maximum optimization.</summary>
-    Maximum
+    Maximum,
+
+    /// <summary>Aggressive optimization for performance-critical code.</summary>
+    Aggressive
 }
 
 /// <summary>

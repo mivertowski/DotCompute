@@ -7,11 +7,16 @@
     <IsPackable>false</IsPackable>
     
     <!-- Suppress warnings that are common in test projects -->
-    <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CA1001</NoWarn>
+    <NoWarn>$(NoWarn);CA1707;CA1515;CA1819;CA1001;CA5394;CA2265;xUnit1031;VSTHRD002;IDE0011</NoWarn>
     
     <!-- CA1707: Identifiers should not contain underscores (test method naming) -->
     <!-- CA1515: Make internal types that are not accessed outside the assembly internal -->
     <!-- CA1819: Properties should not return arrays (test data) -->
     <!-- CA1001: Types that own disposable fields should be disposable (test fixtures) -->
+    <!-- CA5394: Random is insecure (test data generation) -->
+    <!-- CA2265: Comparing span to null (test patterns) -->
+    <!-- xUnit1031: Blocking task operations (test scenarios) -->
+    <!-- VSTHRD002: Synchronous wait (test scenarios) -->
+    <!-- IDE0011: Add braces (test readability preference) -->
   </PropertyGroup>
 </Project>

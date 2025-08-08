@@ -31,8 +31,8 @@
     <RepositoryUrl>https://github.com/dotcompute/dotcompute</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageTags>GPU;Compute;CUDA;Metal;Vulkan;OpenCL;GPGPU;HPC;AOT</PackageTags>
-    <PackageIcon>icon.png</PackageIcon>
-    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <!-- <PackageIcon>icon.png</PackageIcon> -->
+    <!-- <PackageReadmeFile>README.md</PackageReadmeFile> -->
   </PropertyGroup>
 
   <!-- Versioning -->
@@ -46,7 +46,8 @@
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn></NoWarn>
-    <DebugType>embedded</DebugType>
+    <DebugType>full</DebugType>
+    <DebugSymbols>true</DebugSymbols>
     <EmbedAllSources>true</EmbedAllSources>
     <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
     <Deterministic>true</Deterministic>

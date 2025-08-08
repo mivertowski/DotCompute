@@ -3,6 +3,7 @@
 
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
+using DotCompute.Core.Execution;
 
 namespace DotCompute.Core.Kernels;
 
@@ -124,6 +125,51 @@ public sealed class GeneratedKernel
     /// Gets or sets optimization metadata.
     /// </summary>
     public Dictionary<string, object>? OptimizationMetadata { get; init; }
+
+    // Legacy compatibility properties for tests
+    
+    /// <summary>
+    /// Gets the kernel ID (alias for Name as Guid).
+    /// </summary>
+    public Guid Id => Name != null ? GenerateIdFromName(Name) : Guid.Empty;
+    
+    /// <summary>
+    /// Gets the source code (alias for Source).
+    /// </summary>
+    public string SourceCode => Source;
+    
+    /// <summary>
+    /// Gets the entry point name (defaults to Name).
+    /// </summary>
+    public string EntryPoint => Name;
+    
+    /// <summary>
+    /// Gets the kernel metadata (alias for OptimizationMetadata).
+    /// </summary>
+    public KernelMetadata? Metadata => OptimizationMetadata != null ? CreateMetadataFromDict(OptimizationMetadata) : null;
+    
+    private static Guid GenerateIdFromName(string name)
+    {
+        // Generate a deterministic GUID from the name
+        var bytes = System.Text.Encoding.UTF8.GetBytes(name);
+        var hash = System.Security.Cryptography.SHA1.Create().ComputeHash(bytes);
+        var guid = new byte[16];
+        Array.Copy(hash, guid, 16);
+        return new Guid(guid);
+    }
+    
+    private static KernelMetadata CreateMetadataFromDict(Dictionary<string, object> dict)
+    {
+        return new KernelMetadata
+        {
+            DeviceId = dict.GetValueOrDefault("DeviceId", "unknown")?.ToString() ?? "unknown",
+            DeviceType = dict.GetValueOrDefault("DeviceType", "unknown")?.ToString() ?? "unknown",
+            KernelName = dict.GetValueOrDefault("KernelName", "kernel")?.ToString() ?? "kernel",
+            CachedAt = DateTimeOffset.UtcNow,
+            AccessCount = 0,
+            LastAccessed = DateTimeOffset.UtcNow
+        };
+    }
 }
 
 /// <summary>

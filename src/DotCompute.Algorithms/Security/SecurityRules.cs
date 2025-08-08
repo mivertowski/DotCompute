@@ -281,7 +281,7 @@ public sealed class MetadataAnalysisSecurityRule : SecurityRule
         try
         {
             // Load assembly for metadata analysis
-            using var assembly = Assembly.LoadFrom(context.AssemblyPath);
+            var assembly = Assembly.LoadFrom(context.AssemblyPath);
             
             // Analyze types and their namespaces
             foreach (var type in assembly.GetTypes())

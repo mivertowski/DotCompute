@@ -1,0 +1,458 @@
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using DotCompute.Abstractions;
+using DotCompute.SharedTestUtilities;
+using DotCompute.SharedTestUtilities.TestFixtures;
+using DotCompute.TestImplementations.Accelerators;
+using DotCompute.TestImplementations.Kernels;
+using DotCompute.TestImplementations.Memory;
+using Xunit;
+using Xunit.Abstractions;
+using KernelLanguage = DotCompute.Abstractions.KernelLanguage;
+
+namespace DotCompute.Integration.Tests;
+
+/// <summary>
+/// Comprehensive integration tests covering all major system components.
+/// </summary>
+public class ComprehensiveIntegrationTests : IAsyncLifetime
+{
+    private readonly ITestOutputHelper _output;
+    private TestAcceleratorManager _acceleratorManager = null!;
+    private TestMemoryManager _memoryManager = null!;
+    private TestKernelExecutor _kernelExecutor = null!;
+    private readonly Dictionary<DotCompute.Abstractions.KernelLanguage, TestKernelCompilerBase> _compilers = new();
+
+    public ComprehensiveIntegrationTests(ITestOutputHelper output)
+    {
+        _output = output;
+    }
+
+    public async Task InitializeAsync()
+    {
+        _output.WriteLine("Initializing comprehensive test suite...");
+        
+        // Initialize components
+        _acceleratorManager = new TestAcceleratorManager();
+        await _acceleratorManager.InitializeAsync();
+        
+        _memoryManager = new TestMemoryManager();
+        _kernelExecutor = new TestKernelExecutor();
+        
+        // Initialize compilers for different languages
+        _compilers[DotCompute.Abstractions.KernelLanguage.Cuda] = new TestCudaKernelCompiler();
+        _compilers[DotCompute.Abstractions.KernelLanguage.OpenCL] = new TestOpenCLKernelCompiler();
+        _compilers[DotCompute.Abstractions.KernelLanguage.HLSL] = new TestDirectComputeCompiler();
+        
+        _output.WriteLine($"Initialized with {_acceleratorManager.Count} accelerators");
+    }
+
+    public async Task DisposeAsync()
+    {
+        _kernelExecutor?.Dispose();
+        _memoryManager?.Dispose();
+        await _acceleratorManager.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task EndToEnd_SimpleComputation_WorksCorrectly()
+    {
+        _output.WriteLine("=== End-to-End Simple Computation Test ===");
+        
+        // Step 1: Select accelerator
+        var accelerator = _acceleratorManager.Default;
+        Assert.NotNull(accelerator);
+        _output.WriteLine($"Using accelerator: {accelerator.Info.Name}");
+        
+        // Step 2: Allocate memory
+        const int dataSize = 1024;
+        var bufferA = await _memoryManager.AllocateAsync(dataSize * sizeof(float));
+        var bufferB = await _memoryManager.AllocateAsync(dataSize * sizeof(float));
+        var bufferC = await _memoryManager.AllocateAsync(dataSize * sizeof(float));
+        
+        // Step 3: Initialize data
+        var hostA = TestDataGenerators.GenerateRandomVector(dataSize);
+        var hostB = TestDataGenerators.GenerateRandomVector(dataSize);
+        
+        await bufferA.CopyFromHostAsync<float>(hostA.AsMemory());
+        await bufferB.CopyFromHostAsync<float>(hostB.AsMemory());
+        
+        // Step 4: Compile kernel
+        var kernelSource = new TestKernelSource
+        {
+            Name = "VectorAdd",
+            Code = "__kernel void vector_add(__global float* a, __global float* b, __global float* c) { int i = get_global_id(0); c[i] = a[i] + b[i]; }",
+            Language = KernelLanguage.OpenCL,
+            EntryPoint = "vector_add"
+        };
+        
+        var compiledInfo = await _compilers[KernelLanguage.OpenCL].CompileAsync(kernelSource, new CompilationOptions());
+        var kernel = new TestCompiledKernel(compiledInfo.Name, compiledInfo.Assembly, compiledInfo.Options);
+        
+        // Step 5: Execute kernel
+        var args = new KernelArguments(bufferA, bufferB, bufferC);
+        var config = new KernelConfiguration(new Dim3(dataSize / 256), new Dim3(256));
+        
+        var execResult = await _kernelExecutor.ExecuteAsync(kernel, args, config);
+        Assert.True(execResult.Success);
+        
+        // Step 6: Verify results
+        var hostC = new float[dataSize];
+        await bufferC.CopyToHostAsync<float>(hostC.AsMemory());
+        
+        Assert.True(TestDataGenerators.ValidateVectorAddition(hostA, hostB, hostC));
+        
+        _output.WriteLine($"✓ Computation completed successfully");
+        _output.WriteLine($"  Execution time: {execResult.ExecutionTimeMs:F2}ms");
+        _output.WriteLine($"  Threads executed: {execResult.ThreadsExecuted:N0}");
+        
+        // Cleanup
+        await _memoryManager.DeallocateAsync(bufferA);
+        await _memoryManager.DeallocateAsync(bufferB);
+        await _memoryManager.DeallocateAsync(bufferC);
+    }
+
+    [Fact]
+    public async Task MultiLanguage_KernelCompilation_ProducesSameResults()
+    {
+        _output.WriteLine("=== Multi-Language Kernel Compilation Test ===");
+        
+        const string kernelName = "Multiply";
+        var results = new Dictionary<KernelLanguage, string>();
+        
+        foreach (var (language, compiler) in _compilers)
+        {
+            var source = new TestKernelSource
+            {
+                Name = kernelName,
+                Code = $"{language} kernel code",
+                Language = language,
+                EntryPoint = "main"
+            };
+            
+            var compiledInfo = await compiler.CompileAsync(source, new CompilationOptions
+            {
+                OptimizationLevel = OptimizationLevel.Maximum
+            });
+            
+            results[language] = compiledInfo.Assembly;
+            
+            _output.WriteLine($"{language}: Generated {compiledInfo.Assembly.Length} chars");
+        }
+        
+        // Verify all compilers produced output
+        Assert.All(results.Values, assembly => Assert.NotEmpty(assembly));
+        
+        // Verify language-specific markers
+        Assert.Contains("PTX", results[KernelLanguage.Cuda]);
+        Assert.Contains("SPIR-V", results[KernelLanguage.OpenCL]);
+        Assert.Contains("DXIL", results[KernelLanguage.HLSL]);
+    }
+
+    [Fact]
+    public async Task ConcurrentOperations_StressTest_MaintainsCorrectness()
+    {
+        _output.WriteLine("=== Concurrent Operations Stress Test ===");
+        
+        const int numOperations = 100;
+        const int concurrency = 10;
+        
+        var tasks = new List<Task<bool>>();
+        var semaphore = new SemaphoreSlim(concurrency, concurrency);
+        
+        for (int i = 0; i < numOperations; i++)
+        {
+            int operationId = i;
+            tasks.Add(Task.Run(async () =>
+            {
+                await semaphore.WaitAsync();
+                try
+                {
+                    // Allocate memory
+                    var buffer = await _memoryManager.AllocateAsync(1024 * sizeof(float));
+                    
+                    // Compile kernel
+                    var source = new TestKernelSource
+                    {
+                        Name = $"Kernel_{operationId}",
+                        Code = "test",
+                        Language = KernelLanguage.OpenCL
+                    };
+                    
+                    var compiler = new TestOpenCLKernelCompiler();
+                    var compiledInfo = await compiler.CompileAsync(source, new CompilationOptions());
+                    
+                    // Execute kernel
+                    var kernel = new TestCompiledKernel(compiledInfo.Name, compiledInfo.Assembly, compiledInfo.Options);
+                    var result = await _kernelExecutor.ExecuteAsync(
+                        kernel,
+                        new KernelArguments(buffer),
+                        new KernelConfiguration(new Dim3(4), new Dim3(256)));
+                    
+                    // Cleanup
+                    await _memoryManager.DeallocateAsync(buffer);
+                    
+                    return result.Success;
+                }
+                finally
+                {
+                    semaphore.Release();
+                }
+            }));
+        }
+        
+        var results = await Task.WhenAll(tasks);
+        
+        Assert.All(results, r => Assert.True(r));
+        
+        _output.WriteLine($"✓ All {numOperations} concurrent operations completed successfully");
+        _output.WriteLine($"  Total executions: {_kernelExecutor.TotalExecutions}");
+        _output.WriteLine($"  Queue peak size: {_kernelExecutor.QueuedExecutions}");
+    }
+
+    [Fact]
+    public async Task MemoryManagement_AllocationPatterns_HandledCorrectly()
+    {
+        _output.WriteLine("=== Memory Management Patterns Test ===");
+        
+        var allocations = new List<IMemoryBuffer>();
+        
+        // Pattern 1: Many small allocations
+        _output.WriteLine("Testing many small allocations...");
+        for (int i = 0; i < 100; i++)
+        {
+            var buffer = await _memoryManager.AllocateAsync(1024); // 1KB each
+            allocations.Add(buffer);
+        }
+        
+        // Pattern 2: Few large allocations
+        _output.WriteLine("Testing few large allocations...");
+        for (int i = 0; i < 5; i++)
+        {
+            var buffer = await _memoryManager.AllocateAsync(10 * 1024 * 1024); // 10MB each
+            allocations.Add(buffer);
+        }
+        
+        // Pattern 3: Mixed sizes
+        _output.WriteLine("Testing mixed size allocations...");
+        var random = new Random(42);
+        for (int i = 0; i < 20; i++)
+        {
+            var size = random.Next(1024, 1024 * 1024);
+            var buffer = await _memoryManager.AllocateAsync(size);
+            allocations.Add(buffer);
+        }
+        
+        var stats = _memoryManager.GetStatistics();
+        _output.WriteLine($"Memory Statistics:");
+        _output.WriteLine($"  Total allocated: {stats.TotalBytesAllocated / (1024 * 1024)}MB");
+        _output.WriteLine($"  Current usage: {stats.CurrentBytesInUse / (1024 * 1024)}MB");
+        _output.WriteLine($"  Allocation count: {stats.AllocationCount}");
+        
+        // Pattern 4: Deallocate in different order
+        _output.WriteLine("Testing deallocation patterns...");
+        
+        // Deallocate every other buffer
+        for (int i = 0; i < allocations.Count; i += 2)
+        {
+            await _memoryManager.DeallocateAsync(allocations[i]);
+        }
+        
+        // Deallocate remaining
+        for (int i = 1; i < allocations.Count; i += 2)
+        {
+            await _memoryManager.DeallocateAsync(allocations[i]);
+        }
+        
+        var finalStats = _memoryManager.GetStatistics();
+        Assert.Equal(0, finalStats.CurrentBytesInUse);
+        
+        _output.WriteLine($"✓ All memory properly deallocated");
+    }
+
+    [Fact]
+    public async Task AcceleratorSelection_Criteria_WorksCorrectly()
+    {
+        _output.WriteLine("=== Accelerator Selection Criteria Test ===");
+        
+        // Register additional test accelerators
+        var gpuProvider = new TestGpuAcceleratorProvider(3);
+        _acceleratorManager.RegisterProvider(gpuProvider);
+        await _acceleratorManager.RefreshAsync();
+        
+        // Test different selection criteria
+        var testCases = new[]
+        {
+            new
+            {
+                Name = "High Memory Requirement",
+                Criteria = new AcceleratorSelectionCriteria
+                {
+                    MinimumMemory = 4L * 1024 * 1024 * 1024, // 4GB
+                    PreferredType = AcceleratorType.CUDA
+                }
+            },
+            new
+            {
+                Name = "CPU Only",
+                Criteria = new AcceleratorSelectionCriteria
+                {
+                    PreferredType = AcceleratorType.CPU
+                }
+            },
+            new
+            {
+                Name = "Maximum Compute Units",
+                Criteria = new AcceleratorSelectionCriteria
+                {
+                    CustomScorer = a => a.Info.ComputeUnits
+                }
+            },
+            new
+            {
+                Name = "Best Performance Score",
+                Criteria = new AcceleratorSelectionCriteria
+                {
+                    CustomScorer = a => a.Info.ComputeUnits * a.Info.MaxClockFrequency
+                }
+            }
+        };
+        
+        foreach (var testCase in testCases)
+        {
+            var selected = _acceleratorManager.SelectBest(testCase.Criteria);
+            
+            if (selected != null)
+            {
+                _output.WriteLine($"{testCase.Name}:");
+                _output.WriteLine($"  Selected: {selected.Info.Name}");
+                _output.WriteLine($"  Type: {selected.Info.DeviceType}");
+                _output.WriteLine($"  Memory: {selected.Info.TotalMemory / (1024 * 1024)}MB");
+                _output.WriteLine($"  Compute Units: {selected.Info.ComputeUnits}");
+            }
+            else
+            {
+                _output.WriteLine($"{testCase.Name}: No matching accelerator found");
+            }
+        }
+    }
+
+    [Fact]
+    public async Task KernelExecution_ErrorHandling_GracefulRecovery()
+    {
+        _output.WriteLine("=== Kernel Execution Error Handling Test ===");
+        
+        // Test various error scenarios
+        
+        // Scenario 1: Invalid kernel
+        try
+        {
+            var invalidKernel = new TestCompiledKernel("Invalid", new byte[0], new CompilationOptions());
+            var result = await _kernelExecutor.ExecuteAsync(
+                invalidKernel,
+                new KernelArguments(),
+                null);
+            
+            // Should still return a result (possibly with Success = false)
+            Assert.NotNull(result);
+            _output.WriteLine($"Invalid kernel handled: Success={result.Success}");
+        }
+        catch (Exception ex)
+        {
+            _output.WriteLine($"Invalid kernel exception: {ex.Message}");
+        }
+        
+        // Scenario 2: Null arguments
+        try
+        {
+            var kernel = new TestCompiledKernel("Test", new byte[100], new CompilationOptions());
+            var result = await _kernelExecutor.ExecuteAsync(
+                kernel,
+                null!,
+                new KernelConfiguration(new Dim3(1), new Dim3(1)));
+            
+            Assert.NotNull(result);
+            _output.WriteLine($"Null arguments handled: Success={result.Success}");
+        }
+        catch (Exception ex)
+        {
+            _output.WriteLine($"Null arguments exception: {ex.Message}");
+        }
+        
+        // Scenario 3: Extreme configuration
+        var extremeKernel = new TestCompiledKernel("Extreme", new byte[100], new CompilationOptions());
+        var extremeConfig = new KernelConfiguration(
+            new Dim3(int.MaxValue, 1, 1),
+            new Dim3(1024, 1, 1));
+        
+        var extremeResult = await _kernelExecutor.ExecuteAsync(
+            extremeKernel,
+            new KernelArguments(),
+            extremeConfig);
+        
+        Assert.NotNull(extremeResult);
+        _output.WriteLine($"Extreme configuration handled: Success={extremeResult.Success}");
+        
+        _output.WriteLine("✓ All error scenarios handled gracefully");
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(100)]
+    [InlineData(1000)]
+    public async Task Performance_Scaling_Analysis(int workloadSize)
+    {
+        _output.WriteLine($"=== Performance Scaling Test (Size={workloadSize}) ===");
+        
+        var accelerator = _acceleratorManager.Default;
+        var dataSize = workloadSize * 1024; // KB to elements
+        
+        // Allocate buffers
+        var inputBuffer = await _memoryManager.AllocateAsync(dataSize * sizeof(float));
+        var outputBuffer = await _memoryManager.AllocateAsync(dataSize * sizeof(float));
+        
+        // Initialize input data
+        var inputData = TestDataGenerators.GenerateRandomVector(dataSize);
+        await inputBuffer.CopyFromHostAsync<float>(inputData.AsMemory());
+        
+        // Compile kernel
+        var source = new TestKernelSource
+        {
+            Name = $"Scale_{workloadSize}",
+            Code = "scale kernel",
+            Language = KernelLanguage.OpenCL
+        };
+        
+        var compiledInfo = await _compilers[KernelLanguage.OpenCL].CompileAsync(source, new CompilationOptions());
+        var kernel = new TestCompiledKernel(compiledInfo.Name, compiledInfo.Assembly, compiledInfo.Options);
+        
+        // Execute and measure
+        var stopwatch = Stopwatch.StartNew();
+        
+        var args = new KernelArguments(inputBuffer, outputBuffer, dataSize);
+        var config = new KernelConfiguration(
+            new Dim3(Math.Max(1, dataSize / 256)),
+            new Dim3(Math.Min(256, dataSize)));
+        
+        var result = await _kernelExecutor.ExecuteAsync(kernel, args, config);
+        
+        stopwatch.Stop();
+        
+        Assert.True(result.Success);
+        
+        var throughput = dataSize * sizeof(float) * 2 / (stopwatch.Elapsed.TotalSeconds * 1e9);
+        
+        _output.WriteLine($"  Data size: {dataSize:N0} elements");
+        _output.WriteLine($"  Execution time: {stopwatch.ElapsedMilliseconds}ms");
+        _output.WriteLine($"  Throughput: {throughput:F2} GB/s");
+        _output.WriteLine($"  Threads: {result.ThreadsExecuted:N0}");
+        
+        // Cleanup
+        await _memoryManager.DeallocateAsync(inputBuffer);
+        await _memoryManager.DeallocateAsync(outputBuffer);
+    }
+}

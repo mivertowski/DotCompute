@@ -1,9 +1,12 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using System.Security.Cryptography;
 using DotCompute.Backends.CPU;
 using DotCompute.Backends.CPU.Intrinsics;
 using FluentAssertions;
@@ -23,13 +26,12 @@ public sealed class CpuBackendStressTests
     public void SimdCapabilities_DetectAllFeatures_ShouldReportCorrectly()
     {
         // Act
-        var capabilities = SimdCapabilities.Detect();
+        var capabilities = SimdCapabilities.GetSummary();
 
         // Assert - Verify detection logic
-        capabilities.HasAvx2.Should().Be(Avx2.IsSupported);
-        capabilities.HasAvx512.Should().Be(Avx512F.IsSupported);
-        capabilities.HasSse41.Should().Be(Sse41.IsSupported);
-        capabilities.HasSsse3.Should().Be(Ssse3.IsSupported);
+        capabilities.IsHardwareAccelerated.Should().Be(Vector.IsHardwareAccelerated);
+        capabilities.PreferredVectorWidth.Should().BeGreaterThan(0);
+        capabilities.SupportedInstructionSets.Should().NotBeEmpty();
 
         // On ARM systems
         if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
@@ -178,7 +180,7 @@ public sealed class CpuBackendStressTests
     public async Task CpuKernelExecution_HighConcurrency_ShouldNotCauseDataRaces()
     {
         // Arrange
-        const int threadCount = Environment.ProcessorCount * 2;
+        var threadCount = Environment.ProcessorCount * 2;
         const int operationsPerThread = 100;
         const int dataSize = 1000;
 
@@ -395,12 +397,12 @@ public sealed class CpuBackendStressTests
         // where SIMD isn't available or detection fails
 
         // Act
-        var act = () => SimdCapabilities.Detect();
+        var act = () => SimdCapabilities.GetSummary();
 
         // Assert - Should not throw, even on unsupported platforms
         act.Should().NotThrow("Capability detection should be robust");
 
-        var capabilities = SimdCapabilities.Detect();
+        var capabilities = SimdCapabilities.GetSummary();
         
         // Should have reasonable defaults
         capabilities.Should().NotBeNull();

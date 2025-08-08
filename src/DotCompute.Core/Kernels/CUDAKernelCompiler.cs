@@ -84,6 +84,11 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
 
             return compiledKernel;
         }
+        catch (OperationCanceledException)
+        {
+            _logger.LogInformation("CUDA kernel compilation for '{KernelName}' was cancelled", kernel.Name);
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to compile CUDA kernel '{KernelName}'", kernel.Name);

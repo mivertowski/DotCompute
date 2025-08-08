@@ -10,6 +10,7 @@ using DotCompute.Algorithms.Kernels;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
+using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
 
 namespace DotCompute.Algorithms.LinearAlgebra;
 
@@ -1423,7 +1424,7 @@ public static class MatrixMath
                     typeof(float[]),
                     accelerator,
                     context,
-                    LinearAlgebraKernels.GetKernelSource(LinearAlgebraOperation.HouseholderVector, accelerator.Info.DeviceType),
+                    null,
                     cancellationToken).ConfigureAwait(false);
 
                 var columnBuffer = await accelerator.Memory.AllocateAsync(columnData.Length * sizeof(float), 
@@ -1447,7 +1448,7 @@ public static class MatrixMath
                     };
 
                     var parameters = LinearAlgebraKernels.GetOptimizedParameters(
-                        LinearAlgebraOperation.HouseholderVector,
+                        LinearAlgebraOp.HouseholderVector,
                         (m - k, 1),
                         accelerator.Info.Name);
 
@@ -1476,7 +1477,7 @@ public static class MatrixMath
                         typeof(float[]),
                         accelerator,
                         context,
-                        LinearAlgebraKernels.GetKernelSource(LinearAlgebraOperation.HouseholderTransform, accelerator.Info.DeviceType),
+                        null,
                         cancellationToken).ConfigureAwait(false);
 
                     var matrixData = a.ToArray();
@@ -1621,7 +1622,7 @@ public static class MatrixMath
                     typeof(float[]),
                     accelerator,
                     context,
-                    LinearAlgebraKernels.GetKernelSource(LinearAlgebraOperation.JacobiSVD, accelerator.Info.DeviceType),
+                    null,
                     cancellationToken).ConfigureAwait(false);
 
                 // Jacobi SVD iterations
@@ -1650,7 +1651,7 @@ public static class MatrixMath
                             };
 
                             var parameters = LinearAlgebraKernels.GetOptimizedParameters(
-                                LinearAlgebraOperation.JacobiSVD,
+                                LinearAlgebraOp.JacobiSVD,
                                 (Math.Min(m, n), Math.Min(m, n)),
                                 accelerator.Info.Name);
 
@@ -1687,7 +1688,7 @@ public static class MatrixMath
                     typeof(float[]),
                     accelerator,
                     context,
-                    LinearAlgebraKernels.GetKernelSource(LinearAlgebraOperation.JacobiSVD, accelerator.Info.DeviceType).Replace("jacobi_svd_rotation_cuda", "extract_singular_values"),
+                    null,
                     cancellationToken).ConfigureAwait(false);
 
                 var sData = new float[Math.Min(m, n) * Math.Min(m, n)];

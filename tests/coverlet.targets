@@ -1,0 +1,47 @@
+<Project>
+  <!-- Coverlet MSBuild integration for code coverage -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <!-- Enable coverage collection -->
+    <CollectCoverage>true</CollectCoverage>
+    
+    <!-- Coverage output format -->
+    <CoverletOutputFormat>cobertura,opencover,json</CoverletOutputFormat>
+    
+    <!-- Coverage output path -->
+    <CoverletOutput>$(MSBuildThisFileDirectory)..\TestResults\$(MSBuildProjectName)\</CoverletOutput>
+    
+    <!-- Include source assemblies -->
+    <Include>[DotCompute.*]*</Include>
+    
+    <!-- Exclude test assemblies and third-party -->
+    <Exclude>[*.Tests]*,[*.TestImplementations]*,[*.SharedTestUtilities]*,[*.Benchmarks]*,[xunit.*]*,[NSubstitute]*,[FluentAssertions]*,[Moq]*</Exclude>
+    
+    <!-- Exclude by attributes -->
+    <ExcludeByAttribute>Obsolete,GeneratedCode,CompilerGenerated,ExcludeFromCodeCoverage</ExcludeByAttribute>
+    
+    <!-- Exclude generated files -->
+    <ExcludeByFile>**/obj/**/*,**/bin/**/*,**/*.g.cs,**/*.Designer.cs,**/*.Generated.cs</ExcludeByFile>
+    
+    <!-- Threshold requirements (disabled for now to get reports) -->
+    <!-- <Threshold>75</Threshold>
+    <ThresholdType>line,branch,method</ThresholdType>
+    <ThresholdStat>total</ThresholdStat> -->
+    
+    <!-- Skip auto-implemented properties -->
+    <SkipAutoProps>true</SkipAutoProps>
+    
+    <!-- Use source link for better reports -->
+    <UseSourceLink>true</UseSourceLink>
+    
+    <!-- Include test assembly to verify correct exclusion -->
+    <IncludeTestAssembly>false</IncludeTestAssembly>
+  </PropertyGroup>
+
+  <!-- Add coverlet.msbuild package reference for MSBuild integration -->
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <PackageReference Include="coverlet.msbuild" Version="6.0.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>

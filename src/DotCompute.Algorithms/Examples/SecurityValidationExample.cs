@@ -28,7 +28,7 @@ public static class SecurityValidationExample
         // Create host with dependency injection
         using var host = CreateHostBuilder(args).Build();
         
-        var logger = host.Services.GetRequiredService<ILogger<SecurityValidationExample>>();
+        var logger = host.Services.GetRequiredService<ILogger>();
         var accelerator = host.Services.GetRequiredService<IAccelerator>();
         
         logger.LogInformation("Starting Security Validation Example");
@@ -175,12 +175,8 @@ public static class SecurityValidationExample
         var malwareOptions = new MalwareScanningOptions
         {
             EnableWindowsDefender = true,
-            EnablePatternMatching = true,
-            EnableBehavioralAnalysis = true,
             MaxConcurrentScans = 2,
-            ScanTimeout = TimeSpan.FromMinutes(1),
-            SuspiciousPatternThreshold = 3,
-            BehavioralRiskThreshold = 20
+            ScanTimeout = TimeSpan.FromMinutes(1)
         };
 
         // Add custom suspicious patterns
@@ -311,8 +307,7 @@ public static class SecurityValidationExample
             if (zone == SecurityZone.Unknown) continue;
 
             var permissionSet = casManager.CreateRestrictedPermissionSet(testAssemblyPath + $"-{zone}", zone);
-            logger.LogInformation("Zone {Zone}: Created permission set with {PermissionCount} permissions",
-                zone, permissionSet.Count);
+            logger.LogInformation("Zone {Zone}: Created permission set", zone);
 
             // Test different operations
             var operations = new[]
@@ -390,8 +385,9 @@ public static class SecurityValidationExample
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "MyApp", "plugins")
         });
 
-        var pluginManagerLogger = new LoggerFactory().CreateLogger<AlgorithmPluginManager>();
-        using var pluginManager = new AlgorithmPluginManager(accelerator, pluginManagerLogger, securityOptions);
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var pluginManagerLogger = loggerFactory.CreateLogger<AlgorithmPluginManager>();
+        await using var pluginManager = new AlgorithmPluginManager(accelerator, pluginManagerLogger, securityOptions);
 
         logger.LogInformation("Plugin manager initialized with comprehensive security settings");
 
@@ -476,36 +472,116 @@ public static class SecurityValidationExample
     /// </summary>
     private class MockAccelerator : IAccelerator
     {
-        public AcceleratorType AcceleratorType => AcceleratorType.CPU;
-        public bool IsSupported => true;
-        public string Name => "Mock CPU Accelerator";
-        public string Version => "1.0.0";
+        public AcceleratorInfo Info { get; } = new AcceleratorInfo(
+            AcceleratorType.CPU, 
+            "Mock CPU Accelerator", 
+            "1.0.0", 
+            1024 * 1024 * 1024); // 1GB
 
-        public void Dispose()
+        public IMemoryManager Memory { get; } = new MockMemoryManager();
+
+        public ValueTask<ICompiledKernel> CompileKernelAsync(
+            KernelDefinition definition, 
+            CompilationOptions? options = null, 
+            CancellationToken cancellationToken = default)
         {
-            // Mock implementation - nothing to dispose
+            var mockKernel = new MockCompiledKernel(definition.Name);
+            return ValueTask.FromResult<ICompiledKernel>(mockKernel);
+        }
+
+        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
         }
 
         public ValueTask DisposeAsync()
         {
             return ValueTask.CompletedTask;
         }
+    }
 
-        // Implement other IAccelerator members as needed for the example
-        public void Initialize()
+    /// <summary>
+    /// Mock memory manager for the example.
+    /// </summary>
+    private class MockMemoryManager : IMemoryManager
+    {
+        public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+        {
+            var buffer = new MockMemoryBuffer(sizeInBytes, options);
+            return ValueTask.FromResult<IMemoryBuffer>(buffer);
+        }
+
+        public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            unsafe
+            {
+                var buffer = new MockMemoryBuffer(source.Length * sizeof(T), options);
+                return ValueTask.FromResult<IMemoryBuffer>(buffer);
+            }
+        }
+
+        public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+        {
+            return new MockMemoryBuffer(length, buffer.Options);
+        }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Mock memory buffer for the example.
+    /// </summary>
+    private class MockMemoryBuffer : IMemoryBuffer
+    {
+        private readonly byte[] _data;
+
+        public MockMemoryBuffer(long sizeInBytes, MemoryOptions options = MemoryOptions.None)
+        {
+            _data = new byte[sizeInBytes];
+            SizeInBytes = sizeInBytes;
+            Options = options;
+        }
+
+        public long SizeInBytes { get; }
+        
+        public MemoryOptions Options { get; }
+
+        public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default)
+            where T : unmanaged
         {
             // Mock implementation
+            return ValueTask.CompletedTask;
         }
 
-        public bool SupportsType(Type type)
-        {
-            return type == typeof(float) || type == typeof(double) || type == typeof(int);
-        }
-
-        public void Synchronize()
+        public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default)
+            where T : unmanaged
         {
             // Mock implementation
+            return ValueTask.CompletedTask;
         }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Mock compiled kernel for the example.
+    /// </summary>
+    private class MockCompiledKernel : ICompiledKernel
+    {
+        public MockCompiledKernel(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
+
+        public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+        {
+            // Mock implementation
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 }
 

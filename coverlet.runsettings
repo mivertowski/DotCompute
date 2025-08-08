@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <Format>cobertura,opencover,json</Format>
+          
+          <!-- Include source code files -->
+          <Include>[DotCompute.*]*</Include>
+          
+          <!-- Exclude test projects and utilities -->
+          <Exclude>[*.Tests]*,[*.TestImplementations]*,[*.SharedTestUtilities]*,[*.Benchmarks]*,[xunit.*]*,[NSubstitute]*,[FluentAssertions]*,[Moq]*</Exclude>
+          
+          <!-- Exclude generated code and designer files -->
+          <ExcludeByFile>**/obj/**,**/bin/**,**/*.g.cs,**/*.Designer.cs,**/*.Generated.cs</ExcludeByFile>
+          
+          <!-- Exclude attributes -->
+          <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+          
+          <!-- Set output path -->
+          <Output>./TestResults/coverage.cobertura.xml</Output>
+          
+          <!-- Additional settings -->
+          <UseSourceLink>true</UseSourceLink>
+          <SingleHit>false</SingleHit>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+          <SkipAutoProps>true</SkipAutoProps>
+          <DeterministicReport>true</DeterministicReport>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

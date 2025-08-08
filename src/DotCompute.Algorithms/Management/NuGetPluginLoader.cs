@@ -329,7 +329,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
                 
                 using var downloadResult = await downloadResource.GetDownloadResourceResultAsync(
                     identity,
-                    new PackageDownloadContext(new NullCache()),
+                    new PackageDownloadContext(NullSourceCacheContext.Instance),
                     _options.CacheDirectory,
                     new NuGetLogger(_logger),
                     cancellationToken).ConfigureAwait(false);

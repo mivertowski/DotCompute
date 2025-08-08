@@ -1675,6 +1675,11 @@ public sealed class AlgorithmPluginManagerOptions
     /// Gets or sets whether Windows Defender scanning is enabled.
     /// </summary>
     public bool EnableWindowsDefenderScanning { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether malware scanning is enabled.
+    /// </summary>
+    public bool EnableMalwareScanning { get; set; } = true;
 }
 
 /// <summary>

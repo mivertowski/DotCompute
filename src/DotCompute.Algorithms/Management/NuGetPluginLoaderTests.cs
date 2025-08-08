@@ -4,6 +4,7 @@
 using System.IO.Compression;
 using System.Text;
 using System.Xml.Linq;
+using DotCompute.Algorithms.Security;
 using Microsoft.Extensions.Logging;
 using NuGet.Packaging.Core;
 using NuGet.Versioning;
