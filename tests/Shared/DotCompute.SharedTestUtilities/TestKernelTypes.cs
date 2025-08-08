@@ -107,26 +107,32 @@ public static class TestKernelTypes
 {
     public static KernelDefinition CreateSimpleKernel(string name = "TestKernel")
     {
-        return new KernelDefinition
-        {
-            Name = name,
-            Source = @"
+        var code = @"
                 __global__ void TestKernel(float* input, float* output, int n) {
                     int idx = blockIdx.x * blockDim.x + threadIdx.x;
                     if (idx < n) {
                         output[idx] = input[idx] * 2.0f;
                     }
-                }",
-            Language = "CUDA"
-        };
+                }";
+        
+        var kernelSource = new TextKernelSource(
+            code: code,
+            name: name,
+            language: KernelLanguage.CUDA,
+            entryPoint: "TestKernel");
+        
+        return new KernelDefinition(
+            name, 
+            kernelSource, 
+            new CompilationOptions());
     }
 
     public static KernelArguments CreateTestArguments()
     {
-        var args = new KernelArguments();
-        args.Set("input", new float[] { 1.0f, 2.0f, 3.0f });
-        args.Set("output", new float[3]);
-        args.Set("n", 3);
+        var args = KernelArguments.Create(3);
+        args.Set(0, new float[] { 1.0f, 2.0f, 3.0f });
+        args.Set(1, new float[3]);
+        args.Set(2, 3);
         return args;
     }
 }
