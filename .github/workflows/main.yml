@@ -115,6 +115,7 @@ jobs:
     - name: 🧪 Run Unit Tests
       id: test
       run: |
+        mkdir -p ./TestResults
         dotnet test DotCompute.sln \
           --configuration ${{ matrix.configuration }} \
           --no-build \
@@ -126,6 +127,10 @@ jobs:
           --logger "html;LogFileName=${{ matrix.os-name }}-${{ matrix.configuration }}.html" \
           --filter "Category!=RequiresGPU&Category!=LongRunning&Category!=Integration" \
           -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+        
+        # Display test results for debugging
+        echo "Test results generated:"
+        ls -la ./TestResults/*.trx 2>/dev/null || echo "No TRX files found"
       continue-on-error: true
     
     - name: 📊 Generate Test Report
