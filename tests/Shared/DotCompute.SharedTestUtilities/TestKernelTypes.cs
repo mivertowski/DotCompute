@@ -43,15 +43,6 @@ public class CompiledKernel
 /// <summary>
 /// Kernel language enumeration for tests.
 /// </summary>
-public enum KernelLanguage
-{
-    CUDA,
-    OpenCL,
-    HLSL,
-    Metal,
-    SPIRV
-}
-
 /// <summary>
 /// Memory test utilities.
 /// </summary>
@@ -118,7 +109,7 @@ public static class TestKernelTypes
         var kernelSource = new TextKernelSource(
             code: code,
             name: name,
-            language: KernelLanguage.CUDA,
+            language: Abstractions.KernelLanguage.Cuda,
             entryPoint: "TestKernel");
         
         return new KernelDefinition(

@@ -16,7 +16,6 @@ using Xunit;
 using CompiledKernel = DotCompute.SharedTestUtilities.CompiledKernel;
 using KernelArgument = DotCompute.SharedTestUtilities.KernelArgument;
 using KernelConfiguration = DotCompute.SharedTestUtilities.KernelConfiguration;
-using KernelLanguage = DotCompute.SharedTestUtilities.KernelLanguage;
 
 namespace DotCompute.Core.Tests;
 
