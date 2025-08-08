@@ -1,6 +1,6 @@
 # DotCompute Cheat Sheet 🚀
 
-> **Phase 4 Complete!** 🎉 Full production-ready GPU acceleration with CUDA, OpenCL, DirectCompute backends, comprehensive security validation, advanced linear algebra operations, LINQ GPU acceleration, and 78% test coverage!
+> **Week 4 Production Ready!** 🎉 Full production-ready GPU acceleration with CUDA, OpenCL, DirectCompute backends, comprehensive security validation, advanced linear algebra operations, LINQ GPU acceleration, professional test structure, BenchmarkDotNet performance profiling, and 75% test coverage!
 
 ## Quick Start Guide
 
@@ -558,6 +558,91 @@ if (stats.ActiveAllocations > 0)
 {
     Console.WriteLine($"Leaked buffers: {stats.ActiveAllocations}");
     Console.WriteLine($"Leaked bytes: {stats.ActiveBytes}");
+}
+```
+
+## Testing & Benchmarking 🧪
+
+### Test Structure
+```
+tests/
+├── Unit/                    # Hardware-independent tests
+├── Integration/             # End-to-end workflows
+├── Hardware/                # GPU-specific tests
+│   ├── Cuda.Tests/
+│   ├── OpenCL.Tests/
+│   └── DirectCompute.Tests/
+└── Shared/                  # Test utilities & mocks
+```
+
+### Running Tests
+```bash
+# Run all tests with coverage
+dotnet test --collect:"XPlat Code Coverage" --settings coverlet.runsettings
+
+# Run specific test categories
+dotnet test tests/Unit/**/*.csproj              # Unit tests only
+dotnet test tests/Integration/**/*.csproj       # Integration tests
+dotnet test tests/Hardware/**/*.csproj          # Hardware tests (GPU required)
+
+# Run tests by trait
+dotnet test --filter "Category!=RequiresGPU"    # Skip GPU tests
+dotnet test --filter "Category=CUDA"            # CUDA tests only
+
+# Generate coverage report
+reportgenerator -reports:TestResults/**/coverage.cobertura.xml -targetdir:CoverageReport -reporttypes:Html
+```
+
+### Running Benchmarks
+```bash
+# Run all benchmarks
+dotnet run -c Release --project benchmarks/DotCompute.Benchmarks
+
+# Run specific benchmarks
+dotnet run -c Release --project benchmarks/DotCompute.Benchmarks -- --filter "*Memory*"
+
+# Run with detailed results
+dotnet run -c Release --project benchmarks/DotCompute.Benchmarks -- --exporters json html --artifacts ./results
+
+# Run with profiling
+dotnet run -c Release --project benchmarks/DotCompute.Benchmarks -- --profiler ETW --filter "*Kernel*"
+```
+
+### Hardware Test Setup
+```bash
+# CUDA tests (Linux/WSL)
+export LD_LIBRARY_PATH=/usr/lib/wsl/lib:$LD_LIBRARY_PATH
+dotnet test tests/Hardware/DotCompute.Hardware.Cuda.Tests
+
+# OpenCL tests
+# Ensure OpenCL drivers installed
+dotnet test tests/Hardware/DotCompute.Hardware.OpenCL.Tests
+
+# DirectCompute tests (Windows only)
+dotnet test tests/Hardware/DotCompute.Hardware.DirectCompute.Tests
+```
+
+### Writing Tests
+```csharp
+// Use SkippableFact for hardware tests
+[SkippableFact]
+public async Task Should_Execute_On_GPU()
+{
+    Skip.IfNot(CudaHelper.IsCudaAvailable(), "CUDA not available");
+    
+    // Test GPU functionality
+    var accelerator = await GetCudaAccelerator();
+    var result = await ExecuteKernel(accelerator);
+    Assert.Equal(expected, result);
+}
+
+// Use test categories
+[Fact]
+[Category("RequiresGPU")]
+[Category("CUDA")]
+public async Task CudaKernel_Should_Execute()
+{
+    // Test implementation
 }
 ```
 
