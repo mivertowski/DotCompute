@@ -658,6 +658,26 @@ internal static unsafe class CUDAInterop
     public struct CUstream { public IntPtr Pointer; }
 
     /// <summary>
+    /// Stub struct for CUDA event handle.
+    /// </summary>
+    public struct CUevent { public IntPtr Pointer; }
+
+    /// <summary>
+    /// Stub struct for CUDA function handle.
+    /// </summary>
+    public struct CUfunction { public IntPtr Pointer; }
+
+    /// <summary>
+    /// Stub enum for CUDA event flags.
+    /// </summary>
+    [Flags]
+    public enum CUevent_flags : uint
+    {
+        CU_EVENT_DEFAULT = 0,
+        CU_EVENT_DISABLE_TIMING = 2
+    }
+
+    /// <summary>
     /// Stub enum for CUDA context flags.
     /// </summary>
     [Flags]
@@ -847,6 +867,34 @@ internal static unsafe class CUDAInterop
     public static CUresult cuModuleUnload(CUmodule hmod)
     {
         return CUresult.CUDA_SUCCESS;
+    }
+
+    public static CUresult cuEventCreate(out CUevent phEvent, CUevent_flags flags)
+    {
+        phEvent = new CUevent { Pointer = IntPtr.Zero };
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuEventRecord(CUevent hEvent, CUstream hStream)
+    {
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuEventDestroy(CUevent hEvent)
+    {
+        return CUresult.CUDA_SUCCESS;
+    }
+
+    public static CUresult cuLaunchKernel(
+        CUfunction f,
+        uint gridDimX, uint gridDimY, uint gridDimZ,
+        uint blockDimX, uint blockDimY, uint blockDimZ,
+        uint sharedMemBytes,
+        CUstream hStream,
+        void** kernelParams,
+        void** extra)
+    {
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
     }
 }
 
