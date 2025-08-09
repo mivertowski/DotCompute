@@ -643,6 +643,59 @@ internal static unsafe class CUDAInterop
     public struct CUmodule { public IntPtr Pointer; }
 
     /// <summary>
+    /// Stub struct for CUDA device handle.
+    /// </summary>
+    public struct CUdevice { public int Ordinal; }
+
+    /// <summary>
+    /// Stub struct for CUDA context handle.
+    /// </summary>
+    public struct CUcontext { public IntPtr Pointer; }
+
+    /// <summary>
+    /// Stub struct for CUDA stream handle.
+    /// </summary>
+    public struct CUstream { public IntPtr Pointer; }
+
+    /// <summary>
+    /// Stub enum for CUDA context flags.
+    /// </summary>
+    [Flags]
+    public enum CUctx_flags : uint
+    {
+        CU_CTX_SCHED_AUTO = 0,
+        CU_CTX_MAP_HOST = 8
+    }
+
+    /// <summary>
+    /// Stub enum for CUDA stream flags.
+    /// </summary>
+    [Flags]
+    public enum CUstream_flags : uint
+    {
+        CU_STREAM_DEFAULT = 0,
+        CU_STREAM_NON_BLOCKING = 1
+    }
+
+    /// <summary>
+    /// Stub enum for CUDA device attributes.
+    /// </summary>
+    public enum CUdevice_attribute : int
+    {
+        CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK = 1,
+        CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_X = 2,
+        CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Y = 3,
+        CU_DEVICE_ATTRIBUTE_MAX_BLOCK_DIM_Z = 4,
+        CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_X = 5,
+        CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Y = 6,
+        CU_DEVICE_ATTRIBUTE_MAX_GRID_DIM_Z = 7,
+        CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK = 8,
+        CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK = 12,
+        CU_DEVICE_ATTRIBUTE_WARP_SIZE = 10,
+        CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT = 16
+    }
+
+    /// <summary>
     /// Stub enum for NVRTC result codes.
     /// </summary>
     public enum nvrtcResult : uint
@@ -756,6 +809,35 @@ internal static unsafe class CUDAInterop
     }
 
     // Stub CUDA Driver methods
+    public static CUresult cuInit(uint flags)
+    {
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuDeviceGet(out CUdevice device, int ordinal)
+    {
+        device = new CUdevice { Ordinal = ordinal };
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuCtxCreate(out CUcontext pctx, CUctx_flags flags, CUdevice dev)
+    {
+        pctx = new CUcontext { Pointer = IntPtr.Zero };
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuStreamCreate(out CUstream phStream, CUstream_flags flags)
+    {
+        phStream = new CUstream { Pointer = IntPtr.Zero };
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuDeviceGetAttribute(out int pi, CUdevice_attribute attrib, CUdevice dev)
+    {
+        pi = 0;
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
     public static CUresult cuModuleLoadData(out CUmodule module, byte* image)
     {
         module = new CUmodule { Pointer = IntPtr.Zero };
