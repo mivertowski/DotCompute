@@ -630,8 +630,48 @@ internal static unsafe class CUDAInterop
 /// <summary>
 /// CUDA Driver API stub for platforms without CUDA support.
 /// </summary>
-internal static class CUDAInterop
+internal static unsafe class CUDAInterop
 {
+    /// <summary>
+    /// Stub struct for NVRTC program handle.
+    /// </summary>
+    public struct nvrtcProgram { public IntPtr Pointer; }
+
+    /// <summary>
+    /// Stub struct for CUDA module handle.
+    /// </summary>
+    public struct CUmodule { public IntPtr Pointer; }
+
+    /// <summary>
+    /// Stub enum for NVRTC result codes.
+    /// </summary>
+    public enum nvrtcResult : uint
+    {
+        NVRTC_SUCCESS = 0,
+        NVRTC_ERROR_OUT_OF_MEMORY = 1,
+        NVRTC_ERROR_PROGRAM_CREATION_FAILURE = 2,
+        NVRTC_ERROR_INVALID_INPUT = 3,
+        NVRTC_ERROR_INVALID_PROGRAM = 4,
+        NVRTC_ERROR_INVALID_OPTION = 5,
+        NVRTC_ERROR_COMPILATION = 6,
+        NVRTC_ERROR_BUILTIN_OPERATION_FAILURE = 7,
+        NVRTC_ERROR_NO_NAME_EXPRESSIONS_AFTER_COMPILATION = 8,
+        NVRTC_ERROR_NO_LOWERED_NAMES_BEFORE_COMPILATION = 9,
+        NVRTC_ERROR_NAME_EXPRESSION_NOT_VALID = 10,
+        NVRTC_ERROR_INTERNAL_ERROR = 11
+    }
+
+    /// <summary>
+    /// Stub enum for CUDA result codes.
+    /// </summary>
+    public enum CUresult : uint
+    {
+        CUDA_SUCCESS = 0,
+        CUDA_ERROR_INVALID_VALUE = 1,
+        CUDA_ERROR_OUT_OF_MEMORY = 2,
+        CUDA_ERROR_NOT_INITIALIZED = 3
+    }
+
     /// <summary>
     /// Checks if CUDA is available on this system.
     /// </summary>
@@ -673,6 +713,58 @@ internal static class CUDAInterop
         Array.Copy(bytes, result, bytes.Length);
         result[bytes.Length] = 0; // null terminator
         return result;
+    }
+
+    // Stub NVRTC methods
+    public static nvrtcResult nvrtcCreateProgram(out nvrtcProgram prog, byte* src, byte* name, int numHeaders, byte** headers, byte** includeNames)
+    {
+        prog = new nvrtcProgram { Pointer = IntPtr.Zero };
+        return nvrtcResult.NVRTC_ERROR_PROGRAM_CREATION_FAILURE;
+    }
+
+    public static nvrtcResult nvrtcDestroyProgram(out nvrtcProgram prog)
+    {
+        prog = new nvrtcProgram { Pointer = IntPtr.Zero };
+        return nvrtcResult.NVRTC_SUCCESS;
+    }
+
+    public static nvrtcResult nvrtcCompileProgram(nvrtcProgram prog, int numOptions, byte** options)
+    {
+        return nvrtcResult.NVRTC_ERROR_COMPILATION;
+    }
+
+    public static nvrtcResult nvrtcGetPTXSize(nvrtcProgram prog, out nuint ptxSizeRet)
+    {
+        ptxSizeRet = 0;
+        return nvrtcResult.NVRTC_ERROR_INVALID_PROGRAM;
+    }
+
+    public static nvrtcResult nvrtcGetPTX(nvrtcProgram prog, byte* ptx)
+    {
+        return nvrtcResult.NVRTC_ERROR_INVALID_PROGRAM;
+    }
+
+    public static nvrtcResult nvrtcGetProgramLogSize(nvrtcProgram prog, out nuint logSizeRet)
+    {
+        logSizeRet = 0;
+        return nvrtcResult.NVRTC_ERROR_INVALID_PROGRAM;
+    }
+
+    public static nvrtcResult nvrtcGetProgramLog(nvrtcProgram prog, byte* log)
+    {
+        return nvrtcResult.NVRTC_ERROR_INVALID_PROGRAM;
+    }
+
+    // Stub CUDA Driver methods
+    public static CUresult cuModuleLoadData(out CUmodule module, byte* image)
+    {
+        module = new CUmodule { Pointer = IntPtr.Zero };
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuModuleUnload(CUmodule hmod)
+    {
+        return CUresult.CUDA_SUCCESS;
     }
 }
 
