@@ -18,7 +18,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
 {
     private readonly ILogger<ParallelExecutionStrategy> _logger;
     private readonly IAcceleratorManager _acceleratorManager;
-    private readonly KernelManager _kernelManager;
+    private readonly IKernelManager _kernelManager;
     private readonly MultiGpuMemoryManager _memoryManager;
     private readonly ExecutionCoordinator _coordinator;
     private readonly PerformanceMonitor _performanceMonitor;
@@ -31,7 +31,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
     public ParallelExecutionStrategy(
         ILogger<ParallelExecutionStrategy> logger,
         IAcceleratorManager acceleratorManager,
-        KernelManager kernelManager,
+        IKernelManager kernelManager,
         ILoggerFactory? loggerFactory = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));

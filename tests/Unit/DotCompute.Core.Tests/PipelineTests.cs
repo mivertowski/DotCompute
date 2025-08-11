@@ -284,7 +284,7 @@ public sealed class PipelineTests
     }
 
     [Fact]
-    public void KernelPipeline_Validate_WithEmptyStages_ReturnsValid()
+    public void KernelPipeline_Validate_WithEmptyStages_ReturnsInvalid()
     {
         // Arrange
         var pipeline = KernelPipelineBuilder.Create()
@@ -295,8 +295,9 @@ public sealed class PipelineTests
         var result = pipeline.Validate();
 
         // Assert
-        Assert.True(result.IsValid);
-        Assert.Null(result.Errors);
+        Assert.False(result.IsValid);  // Empty pipeline should be invalid
+        Assert.NotNull(result.Errors);
+        Assert.Contains(result.Errors, e => e.Code == "NO_STAGES");
     }
 
     [Fact]
