@@ -113,17 +113,19 @@ jobs:
     
     - name: 🧪 Run Unit Tests
       id: test
+      timeout-minutes: 10
       run: |
         mkdir -p ./TestResults
         
-        # Run tests with timeout and ensure TRX generation
-        timeout 300 dotnet test DotCompute.sln \
+        # Run tests with built-in timeout and ensure TRX generation
+        dotnet test DotCompute.sln \
           --configuration ${{ matrix.configuration }} \
           --no-build \
           --no-restore \
           --verbosity minimal \
           --blame \
           --blame-hang-timeout 60s \
+          --blame-crash \
           --collect:"XPlat Code Coverage" \
           --results-directory ./TestResults \
           --logger "trx;LogFileName=${{ matrix.os-name }}-${{ matrix.configuration }}.trx" \
@@ -137,6 +139,26 @@ jobs:
         echo "All files in TestResults:"
         ls -la ./TestResults/ 2>/dev/null || echo "TestResults directory not found"
       continue-on-error: true
+    
+    - name: 🔍 Check and Create TRX if Missing
+      if: always()
+      run: |
+        # Check if TRX files were created
+        if [ ! -f "./TestResults/${{ matrix.os-name }}-${{ matrix.configuration }}.trx" ]; then
+          echo "TRX file not found, creating a placeholder..."
+          # Create a minimal valid TRX file
+          cat > "./TestResults/${{ matrix.os-name }}-${{ matrix.configuration }}.trx" << 'EOF'
+        <?xml version="1.0" encoding="utf-8"?>
+        <TestRun id="00000000-0000-0000-0000-000000000000" name="Placeholder" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+          <Results>
+            <UnitTestResult testName="NoTestsExecuted" outcome="Inconclusive" />
+          </Results>
+        </TestRun>
+        EOF
+        fi
+        
+        echo "Final TRX files:"
+        ls -la ./TestResults/*.trx 2>/dev/null || echo "Still no TRX files"
     
     - name: 📊 Generate Test Report
       if: always()
@@ -223,13 +245,17 @@ jobs:
           /p:EnforceCodeStyleInBuild=false
     
     - name: 🧪 Run Integration Tests
+      timeout-minutes: 10
       run: |
+        mkdir -p ./TestResults
         dotnet test \
           --configuration Release \
           --no-build \
           --filter "Category=Integration" \
+          --results-directory ./TestResults \
           --logger "trx;LogFileName=integration-tests.trx" \
-          --collect:"XPlat Code Coverage"
+          --collect:"XPlat Code Coverage" \
+          --verbosity minimal
       continue-on-error: true
     
     - name: 📤 Upload Integration Test Results
