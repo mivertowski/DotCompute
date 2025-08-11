@@ -115,7 +115,10 @@ public sealed class AotPluginRegistry : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        ArgumentException.ThrowIfNullOrEmpty(pluginTypeName);
+        if (string.IsNullOrWhiteSpace(pluginTypeName))
+        {
+            throw new ArgumentException("Plugin type name cannot be null, empty, or whitespace.", nameof(pluginTypeName));
+        }
 
         lock (_lock)
         {
@@ -186,7 +189,10 @@ public sealed class AotPluginRegistry : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        ArgumentException.ThrowIfNullOrEmpty(pluginId);
+        if (string.IsNullOrWhiteSpace(pluginId))
+        {
+            throw new ArgumentException("Plugin ID cannot be null, empty, or whitespace.", nameof(pluginId));
+        }
 
         lock (_lock)
         {
@@ -220,7 +226,10 @@ public sealed class AotPluginRegistry : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        ArgumentException.ThrowIfNullOrEmpty(pluginTypeName);
+        if (string.IsNullOrWhiteSpace(pluginTypeName))
+        {
+            throw new ArgumentException("Plugin type name cannot be null, empty, or whitespace.", nameof(pluginTypeName));
+        }
         ArgumentNullException.ThrowIfNull(factory);
 
         lock (_lock)

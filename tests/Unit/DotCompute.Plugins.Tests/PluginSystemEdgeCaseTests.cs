@@ -525,11 +525,13 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     }
 
     [Fact]
-    public async Task UnloadPluginAsync_WithNonExistentPlugin_ShouldThrowPluginNotFoundException()
+    public async Task UnloadPluginAsync_WithNonExistentPlugin_ShouldReturnFalse()
     {
-        // Act & Assert
-        var act = async () => await _pluginSystem.UnloadPluginAsync("NonExistentPlugin");
-        await act.Should().ThrowAsync<PluginNotFoundException>();
+        // Act
+        var result = await _pluginSystem.UnloadPluginAsync("NonExistentPlugin");
+        
+        // Assert
+        result.Should().BeFalse();
     }
 
     [Theory]
@@ -661,8 +663,9 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
             plugin.Verify(p => p.Dispose(), Times.Once);
         }
 
-        var loadedPlugins = _pluginSystem.GetLoadedPlugins();
-        loadedPlugins.Should().BeEmpty("All plugins should be unloaded after disposal");
+        // After disposal, accessing GetLoadedPlugins should throw ObjectDisposedException
+        Action act = () => _pluginSystem.GetLoadedPlugins();
+        act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]

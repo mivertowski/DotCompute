@@ -74,15 +74,26 @@ namespace DotCompute.Plugins.Configuration
     /// </summary>
     public class PluginConfig
     {
+        private string _assemblyPath = "";
+        private string _typeName = "";
+
         /// <summary>
         /// Gets or sets the plugin assembly path.
         /// </summary>
-        public string AssemblyPath { get; set; } = "";
+        public string AssemblyPath
+        {
+            get => _assemblyPath;
+            set => _assemblyPath = value ?? "";
+        }
 
         /// <summary>
         /// Gets or sets the plugin type name.
         /// </summary>
-        public string TypeName { get; set; } = "";
+        public string TypeName
+        {
+            get => _typeName;
+            set => _typeName = value ?? "";
+        }
 
         /// <summary>
         /// Gets or sets whether the plugin is enabled.

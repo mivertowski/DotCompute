@@ -365,10 +365,26 @@ namespace DotCompute.Plugins.Core
 
         /// <summary>
         /// Loads the plugin asynchronously.
+        /// This method requires a service provider to be passed since it's used before initialization.
+        /// </summary>
+        public async Task LoadAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(serviceProvider);
+            await InitializeAsync(serviceProvider, cancellationToken);
+            await StartAsync(cancellationToken);
+        }
+
+        /// <summary>
+        /// Loads the plugin asynchronously using the already initialized service provider.
+        /// This overload can only be called after the plugin has been initialized.
         /// </summary>
         public async Task LoadAsync(CancellationToken cancellationToken = default)
         {
-            await InitializeAsync(ServiceProvider!, cancellationToken);
+            if (ServiceProvider == null)
+            {
+                throw new InvalidOperationException("Cannot load plugin without service provider. Use LoadAsync(IServiceProvider, CancellationToken) overload or initialize the plugin first.");
+            }
+            await InitializeAsync(ServiceProvider, cancellationToken);
             await StartAsync(cancellationToken);
         }
 
@@ -411,6 +427,12 @@ namespace DotCompute.Plugins.Core
         /// Throws if the plugin has been disposed.
         /// </summary>
         protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, GetType().Name);
+
+        /// <summary>
+        /// Sets the plugin state. This is used internally by the plugin system.
+        /// </summary>
+        /// <param name="newState">The new state to set.</param>
+        internal void SetState(PluginState newState) => State = newState;
 
         /// <inheritdoc/>
         public void Dispose()

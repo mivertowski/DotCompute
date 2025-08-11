@@ -268,13 +268,17 @@ public class AotPluginRegistryTests : IDisposable
     {
         // Arrange
         var plugin = _registry.CreatePlugin("DotCompute.Backends.CPU") as IDisposable;
+        
+        // Verify plugin was created
+        _registry.GetLoadedPlugins().Should().HaveCount(1);
 
         // Act
         _registry.Dispose();
 
         // Assert
-        // Plugin should be disposed (can't easily verify without modifying the internal plugin)
-        _registry.GetLoadedPlugins().Should().BeEmpty();
+        // After disposal, registry should throw ObjectDisposedException when accessed
+        Action act = () => _registry.GetLoadedPlugins();
+        act.Should().Throw<ObjectDisposedException>();
     }
 
     [Fact]

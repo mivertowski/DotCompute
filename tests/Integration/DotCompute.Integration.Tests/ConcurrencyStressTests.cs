@@ -21,10 +21,16 @@ namespace DotCompute.Integration.Tests;
 /// </summary>
 public sealed class ConcurrencyStressTests : IntegrationTestBase
 {
-    private readonly ILogger<ConcurrencyStressTests> _logger;
+    private ILogger<ConcurrencyStressTests>? _logger;
 
     public ConcurrencyStressTests(ITestOutputHelper output) : base(output)
     {
+        // Don't access ServiceProvider in constructor - it's not initialized yet
+    }
+
+    public new async Task InitializeAsync()
+    {
+        await base.InitializeAsync();
         _logger = ServiceProvider.GetRequiredService<ILogger<ConcurrencyStressTests>>();
     }
 
@@ -43,7 +49,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         var exceptions = new ConcurrentBag<Exception>();
         var completedOperations = new ConcurrentBag<int>();
 
-        _logger.LogInformation("Starting high-concurrency memory operations test with {ThreadCount} threads", threadCount);
+        _logger?.LogInformation("Starting high-concurrency memory operations test with {ThreadCount} threads", threadCount);
 
         // Act - Multiple threads performing memory operations concurrently
         var tasks = Enumerable.Range(0, threadCount).Select(threadId =>
@@ -108,20 +114,22 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error in thread {ThreadId}", threadId);
+                    _logger?.LogError(ex, "Error in thread {ThreadId}", threadId);
                     exceptions.Add(ex);
                 }
             })).ToArray();
 
+        var allTasks = Task.WhenAll(tasks);
         var timeoutTask = Task.Delay(TimeSpan.FromMinutes(2)); // 2-minute timeout
-        var completedTask = await Task.WhenAny(Task.WhenAll(tasks), timeoutTask);
+        var completedTask = await Task.WhenAny(allTasks, timeoutTask);
 
         // Assert
-        completedTask.Should().Be(Task.WhenAll(tasks), "Operations should complete without deadlock");
+        completedTask.Should().NotBe(timeoutTask, "Operations should complete without deadlock");
+        allTasks.IsCompletedSuccessfully.Should().BeTrue("All operations should complete successfully");
         exceptions.Should().BeEmpty("No exceptions should occur during concurrent operations");
         completedOperations.Count.Should().Be(threadCount * operationsPerThread);
 
-        _logger.LogInformation("Completed {OperationCount} concurrent memory operations", completedOperations.Count);
+        _logger?.LogInformation("Completed {OperationCount} concurrent memory operations", completedOperations.Count);
     }
 
     [Fact]
@@ -136,7 +144,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         var allocations = new ConcurrentBag<IMemoryBuffer>();
         var exceptions = new ConcurrentBag<Exception>();
 
-        _logger.LogInformation("Testing memory allocation under pressure");
+        _logger?.LogInformation("Testing memory allocation under pressure");
 
         // Act - Try to allocate many large buffers concurrently
         var tasks = Enumerable.Range(0, maxConcurrentAllocations).Select(i =>
@@ -181,13 +189,13 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Failed to free buffer during cleanup");
+                _logger?.LogWarning(ex, "Failed to free buffer during cleanup");
             }
         });
 
         await Task.WhenAll(cleanupTasks);
 
-        _logger.LogInformation("Allocated {Count} buffers, encountered {ExceptionCount} exceptions",
+        _logger?.LogInformation("Allocated {Count} buffers, encountered {ExceptionCount} exceptions",
             allocations.Count, exceptions.Count);
     }
 
@@ -206,7 +214,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         var exceptions = new ConcurrentBag<Exception>();
         var results = new ConcurrentBag<(int KernelId, bool Success)>();
 
-        _logger.LogInformation("Testing concurrent kernel execution with {KernelCount} kernels", kernelCount);
+        _logger?.LogInformation("Testing concurrent kernel execution with {KernelCount} kernels", kernelCount);
 
         // Act - Execute multiple kernels concurrently
         var tasks = Enumerable.Range(0, kernelCount).Select(kernelId =>
@@ -266,7 +274,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error in kernel {KernelId}", kernelId);
+                    _logger?.LogError(ex, "Error in kernel {KernelId}", kernelId);
                     exceptions.Add(ex);
                     results.Add((kernelId, false));
                 }
@@ -279,7 +287,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         results.Count.Should().Be(kernelCount);
         results.Should().OnlyContain(r => r.Success, "All kernels should execute correctly");
 
-        _logger.LogInformation("Successfully executed {Count} concurrent kernels", 
+        _logger?.LogInformation("Successfully executed {Count} concurrent kernels", 
             results.Count(r => r.Success));
     }
 
@@ -373,11 +381,13 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                 }
             })).ToArray();
 
+        var allTasks = Task.WhenAll(tasks);
         var timeoutTask = Task.Delay(TimeSpan.FromMinutes(3));
-        var completedTask = await Task.WhenAny(Task.WhenAll(tasks), timeoutTask);
+        var completedTask = await Task.WhenAny(allTasks, timeoutTask);
 
         // Assert
-        completedTask.Should().Be(Task.WhenAll(tasks), "Should not deadlock under resource contention");
+        completedTask.Should().NotBe(timeoutTask, "Should not deadlock under resource contention");
+        allTasks.IsCompletedSuccessfully.Should().BeTrue("All operations should complete successfully");
         exceptions.Should().BeEmpty("Resource contention should be handled gracefully");
         completedComponents.Count.Should().Be(componentCount);
     }
@@ -414,7 +424,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Unexpected exception during allocation {i}", i);
+                _logger?.LogWarning(ex, "Unexpected exception during allocation {i}", i);
                 failureCount++;
                 break;
             }
@@ -437,7 +447,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to recover after cleanup");
+            _logger?.LogWarning(ex, "Failed to recover after cleanup");
         }
 
         // Final cleanup
@@ -449,7 +459,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error during final cleanup");
+                _logger?.LogWarning(ex, "Error during final cleanup");
             }
         }
 
@@ -457,7 +467,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         successCount.Should().BeGreaterThan(0, "Should succeed with some allocations");
         recoverySuccess.Should().BeTrue("System should recover after freeing memory");
 
-        _logger.LogInformation("Successfully allocated {SuccessCount} buffers before hitting limits", successCount);
+        _logger?.LogInformation("Successfully allocated {SuccessCount} buffers before hitting limits", successCount);
     }
 
     #endregion

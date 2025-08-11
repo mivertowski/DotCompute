@@ -358,29 +358,49 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
     {
         var vectorSize = Vector<float>.Count;
 
+        // Initialize result matrix
         for (var i = 0; i < size; i++)
         {
             for (var j = 0; j < size; j++)
             {
-                var sum = Vector<float>.Zero;
-                var k = 0;
+                result[i][j] = 0.0f;
+            }
+        }
 
-                // Vectorized inner loop
+        for (var i = 0; i < size; i++)
+        {
+            for (var j = 0; j < size; j++)
+            {
+                // Use simple vectorized dot product for better accuracy
+                var k = 0;
+                var sum = 0.0f;
+
+                // Process in vector chunks
                 for (; k <= size - vectorSize; k += vectorSize)
                 {
-                    var aVec = LoadVectorFromMatrix(a, i, k, vectorSize);
-                    var bVec = LoadVectorFromMatrix(b, k, j, vectorSize, true);
-                    sum += aVec * bVec;
+                    var aValues = new float[vectorSize];
+                    var bValues = new float[vectorSize];
+                    
+                    // Load values from A row and B column
+                    for (var v = 0; v < vectorSize; v++)
+                    {
+                        aValues[v] = a[i][k + v];
+                        bValues[v] = b[k + v][j];
+                    }
+                    
+                    // Use Vector.Dot for accurate computation
+                    var aVec = new Vector<float>(aValues);
+                    var bVec = new Vector<float>(bValues);
+                    sum += Vector.Dot(aVec, bVec);
                 }
 
-                // Sum the vector elements
-                result[i][j] = Vector.Dot(sum, Vector<float>.One);
-
-                // Handle remaining elements
+                // Handle remainder elements
                 for (; k < size; k++)
                 {
-                    result[i][j] += a[i][k] * b[k][j];
+                    sum += a[i][k] * b[k][j];
                 }
+
+                result[i][j] = sum;
             }
         }
     }
@@ -392,14 +412,16 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
 
         if (!transpose)
         {
+            // Loading from a row: matrix[row][startCol..startCol+vectorSize-1]
             for (var i = 0; i < vectorSize; i++)
             {
                 var col = startCol + i;
-                values[i] = col < matrixSize ? matrix[row][col] : 0f;
+                values[i] = (row < matrixSize && col < matrix[row].Length) ? matrix[row][col] : 0f;
             }
         }
         else
         {
+            // Loading from a column (transpose): matrix[startCol+i][row] for each i
             for (var i = 0; i < vectorSize; i++)
             {
                 var matrixRow = startCol + i;

@@ -324,7 +324,7 @@ public class BackendPluginBaseTests : IDisposable
     public async Task LoadAsync_InitializesAndStarts()
     {
         // Act
-        await _plugin.LoadAsync();
+        await _plugin.LoadAsync(_serviceProvider);
 
         // Assert
         _plugin.State.Should().Be(PluginState.Running);
@@ -334,7 +334,7 @@ public class BackendPluginBaseTests : IDisposable
     public async Task UnloadAsync_StopsPlugin()
     {
         // Arrange
-        await _plugin.LoadAsync();
+        await _plugin.LoadAsync(_serviceProvider);
 
         // Act
         await _plugin.UnloadAsync();

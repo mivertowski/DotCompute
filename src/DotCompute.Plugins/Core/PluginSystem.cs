@@ -108,6 +108,12 @@ namespace DotCompute.Plugins.Core
                     };
                 }
 
+                // Set plugin state to Loaded if it implements BackendPluginBase
+                if (plugin is BackendPluginBase basePlugin)
+                {
+                    basePlugin.SetState(PluginState.Loaded);
+                }
+
                 _logger?.LogInformation("Successfully loaded plugin {Id} ({Name})", plugin.Id, plugin.Name);
                 return Task.FromResult<IBackendPlugin?>(plugin);
             }
@@ -176,6 +182,12 @@ namespace DotCompute.Plugins.Core
                     };
                 }
 
+                // Set plugin state to Loaded if it implements BackendPluginBase
+                if (instance is BackendPluginBase basePlugin)
+                {
+                    basePlugin.SetState(PluginState.Loaded);
+                }
+
                 _logger.LogInformation("Successfully loaded plugin {Id} ({Name})", instance.Id, instance.Name);
                 return Task.FromResult<IBackendPlugin?>(instance);
             }
@@ -192,6 +204,11 @@ namespace DotCompute.Plugins.Core
         public Task<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
+            
+            if (string.IsNullOrWhiteSpace(pluginId))
+            {
+                throw new ArgumentException("Plugin ID cannot be null, empty, or whitespace.", nameof(pluginId));
+            }
 
             lock (_lock)
             {
@@ -241,6 +258,8 @@ namespace DotCompute.Plugins.Core
         /// </summary>
         public IEnumerable<IBackendPlugin> GetLoadedPlugins()
         {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            
             lock (_lock)
             {
                 return [.. _plugins.Values.Select(p => p.Plugin)];

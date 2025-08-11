@@ -562,3 +562,5 @@ scripts/update-test-projects.sh
 tests/Unit/DotCompute.Plugins.Tests/.claude-flow/metrics/agent-metrics.json
 tests/Unit/DotCompute.Plugins.Tests/.claude-flow/metrics/performance.json
 tests/Unit/DotCompute.Plugins.Tests/.swarm/memory.db
+full_test_output.txt
+test_results.txt

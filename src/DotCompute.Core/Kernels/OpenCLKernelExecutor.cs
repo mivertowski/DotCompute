@@ -51,6 +51,11 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         KernelExecutionConfig executionConfig,
         CancellationToken cancellationToken = default)
     {
+        if (_disposed) throw new ObjectDisposedException(nameof(OpenCLKernelExecutor));
+        ArgumentNullException.ThrowIfNull(kernel);
+        ArgumentNullException.ThrowIfNull(arguments);
+        ArgumentNullException.ThrowIfNull(executionConfig);
+        
         var handle = EnqueueExecution(kernel, arguments, executionConfig);
         return await WaitForCompletionAsync(handle, cancellationToken);
     }
@@ -72,7 +77,7 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         KernelExecutionConfig executionConfig)
     {
         if (_disposed) throw new ObjectDisposedException(nameof(OpenCLKernelExecutor));
-        ArgumentNullException.ThrowIfNull(kernel);
+        if (kernel.Id == Guid.Empty) throw new ArgumentNullException(nameof(kernel), "Kernel cannot be default/empty");
         ArgumentNullException.ThrowIfNull(arguments);
         ArgumentNullException.ThrowIfNull(executionConfig);
 
@@ -196,7 +201,12 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         catch (OperationCanceledException)
         {
             _logger.LogInformation("OpenCL kernel execution {ExecutionId} was cancelled", handle.Id);
-            throw;
+            return new KernelExecutionResult
+            {
+                Success = false,
+                Handle = handle,
+                ErrorMessage = "Execution was cancelled"
+            };
         }
         catch (Exception ex)
         {

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Core.Accelerators;
 using DotCompute.Core.Compute;
@@ -573,11 +574,13 @@ public class TestOutputLoggerProvider : ILoggerProvider
 }
 
 /// <summary>
-/// Simple memory manager for testing purposes.
+/// Simple memory manager for testing purposes with thread-safe tracking.
 /// </summary>
 internal class SimpleMemoryManager : IMemoryManager
 {
     private readonly ILogger<IMemoryManager> _logger;
+    private readonly ConcurrentBag<WeakReference<SimpleMemoryBuffer>> _allocatedBuffers = new();
+    private long _totalAllocated;
 
     public SimpleMemoryManager(ILogger<IMemoryManager> logger)
     {
@@ -590,6 +593,8 @@ internal class SimpleMemoryManager : IMemoryManager
         CancellationToken cancellationToken = default)
     {
         var buffer = new SimpleMemoryBuffer(sizeInBytes, options);
+        _allocatedBuffers.Add(new WeakReference<SimpleMemoryBuffer>(buffer));
+        Interlocked.Add(ref _totalAllocated, sizeInBytes);
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
 
@@ -602,7 +607,31 @@ internal class SimpleMemoryManager : IMemoryManager
         var buffer = new SimpleMemoryBuffer(sizeInBytes, options);
         var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(source.Span);
         sourceBytes.CopyTo(buffer._data.AsSpan());
+        _allocatedBuffers.Add(new WeakReference<SimpleMemoryBuffer>(buffer));
+        Interlocked.Add(ref _totalAllocated, sizeInBytes);
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
+    }
+
+    /// <summary>
+    /// Gets the total allocated bytes across all buffers (for debugging).
+    /// </summary>
+    public long TotalAllocated => Interlocked.Read(ref _totalAllocated);
+
+    /// <summary>
+    /// Gets the count of active buffers (for debugging).
+    /// </summary>
+    public int ActiveBufferCount
+    {
+        get
+        {
+            var count = 0;
+            foreach (var weakRef in _allocatedBuffers)
+            {
+                if (weakRef.TryGetTarget(out _))
+                    count++;
+            }
+            return count;
+        }
     }
 
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
@@ -617,11 +646,13 @@ internal class SimpleMemoryManager : IMemoryManager
 
 /// <summary>
 /// Simple memory buffer implementation for testing.
+/// Thread-safe implementation for concurrent stress tests.
 /// </summary>
 internal class SimpleMemoryBuffer : IMemoryBuffer
 {
     internal readonly byte[] _data;
-    private bool _disposed;
+    private volatile bool _disposed;
+    private readonly object _lock = new();
 
     public SimpleMemoryBuffer(long sizeInBytes, MemoryOptions options)
     {
@@ -643,10 +674,13 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        ThrowIfDisposed();
-        var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(source.Span);
-        sourceBytes.CopyTo(_data.AsSpan((int)offset));
-        return ValueTask.CompletedTask;
+        lock (_lock)
+        {
+            ThrowIfDisposed();
+            var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(source.Span);
+            sourceBytes.CopyTo(_data.AsSpan((int)offset));
+            return ValueTask.CompletedTask;
+        }
     }
 
     public ValueTask CopyToHostAsync<T>(
@@ -654,12 +688,15 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        ThrowIfDisposed();
-        var dataSpan = _data.AsSpan((int)offset);
-        var destBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(destination.Span);
-        var bytesToCopy = Math.Min(dataSpan.Length, destBytes.Length);
-        dataSpan.Slice(0, bytesToCopy).CopyTo(destBytes);
-        return ValueTask.CompletedTask;
+        lock (_lock)
+        {
+            ThrowIfDisposed();
+            var dataSpan = _data.AsSpan((int)offset);
+            var destBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(destination.Span);
+            var bytesToCopy = Math.Min(dataSpan.Length, destBytes.Length);
+            dataSpan.Slice(0, bytesToCopy).CopyTo(destBytes);
+            return ValueTask.CompletedTask;
+        }
     }
 
     private void ThrowIfDisposed()
@@ -670,7 +707,10 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
 
     public ValueTask DisposeAsync()
     {
-        _disposed = true;
-        return ValueTask.CompletedTask;
+        lock (_lock)
+        {
+            _disposed = true;
+            return ValueTask.CompletedTask;
+        }
     }
 }

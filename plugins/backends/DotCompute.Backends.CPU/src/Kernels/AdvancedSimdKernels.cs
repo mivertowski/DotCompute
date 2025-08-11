@@ -494,18 +494,18 @@ public static class AdvancedSimdKernels
             for (var v = 0; v < vectorCount; v++)
             {
                 var offset = v * vectorSize;
-                var vindices = Avx2.LoadVector256(indices + offset);
-
-                // Scale indices by sizeof(float) = 4
-                var scaledIndices = Avx2.ShiftLeftLogical(vindices, 2);
-
-                // Gather using scaled indices
-                var gathered = Avx2.GatherVector256(basePtr, scaledIndices, sizeof(float));
-                Avx.Store(result + offset, gathered);
+                
+                // Use scalar approach for gather as AVX2 gather has specific requirements
+                // that may not be met with arbitrary index arrays
+                for (var j = 0; j < vectorSize && (offset + j) < count; j++)
+                {
+                    var index = indices[offset + j];
+                    result[offset + j] = basePtr[index];
+                }
             }
             i = vectorCount * vectorSize;
         }
-        // AVX-512 has even more advanced gather operations
+        // AVX-512 gather operations
         else if (Avx512F.IsSupported)
         {
             const int vectorSize = 16;
@@ -514,12 +514,12 @@ public static class AdvancedSimdKernels
             for (var v = 0; v < vectorCount; v++)
             {
                 var offset = v * vectorSize;
-                var vindices = Avx512F.LoadVector512(indices + offset);
 
-                // AVX-512 gather (using simpler approach for compatibility)
-                for (var j = 0; j < vectorSize; j++)
+                // Scalar implementation for reliability
+                for (var j = 0; j < vectorSize && (offset + j) < count; j++)
                 {
-                    result[offset + j] = basePtr[indices[offset + j]];
+                    var index = indices[offset + j];
+                    result[offset + j] = basePtr[index];
                 }
             }
             i = vectorCount * vectorSize;
@@ -609,18 +609,27 @@ public static class AdvancedSimdKernels
                             var aik = a[i * k + kIdx];
                             var j = jj;
 
-                            // Vectorized inner loop with FMA
-                            if (Fma.IsSupported && Avx2.IsSupported)
+                            // Vectorized inner loop with FMA (only if alignment is good)
+                            if (Fma.IsSupported && Avx2.IsSupported && (jMax - j) >= vectorSize)
                             {
                                 var vaik = Vector256.Create(aik);
                                 for (; j + vectorSize <= jMax; j += vectorSize)
                                 {
-                                    var vb = Avx.LoadVector256(b + kIdx * n + j);
-                                    var vc = Avx.LoadVector256(c + i * n + j);
+                                    // Ensure we don't go out of bounds
+                                    if (kIdx * n + j + vectorSize <= k * n && i * n + j + vectorSize <= m * n)
+                                    {
+                                        var vb = Avx.LoadVector256(b + kIdx * n + j);
+                                        var vc = Avx.LoadVector256(c + i * n + j);
 
-                                    // FMA: c[i,j] += a[i,k] * b[k,j]
-                                    var result = Fma.MultiplyAdd(vaik, vb, vc);
-                                    Avx.Store(c + i * n + j, result);
+                                        // FMA: c[i,j] += a[i,k] * b[k,j]
+                                        var result = Fma.MultiplyAdd(vaik, vb, vc);
+                                        Avx.Store(c + i * n + j, result);
+                                    }
+                                    else
+                                    {
+                                        // Fall back to scalar for boundary cases
+                                        break;
+                                    }
                                 }
                             }
 
