@@ -23,6 +23,7 @@ namespace DotCompute.Plugins.Core
         private readonly Lock _lock = new();
         private bool _disposed;
         private bool _isInitialized;
+        private IServiceProvider? _serviceProvider;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PluginSystem"/> class.
@@ -32,6 +33,19 @@ namespace DotCompute.Plugins.Core
         public PluginSystem(ILogger<PluginSystem> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _plugins = [];
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="PluginSystem"/> class.
+        /// </summary>
+        /// <param name="logger">The logger.</param>
+        /// <param name="serviceProvider">The service provider.</param>
+        /// <exception cref="System.ArgumentNullException">logger</exception>
+        public PluginSystem(ILogger<PluginSystem> logger, IServiceProvider serviceProvider)
+        {
+            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _plugins = [];
         }
 
@@ -79,7 +93,7 @@ namespace DotCompute.Plugins.Core
         /// <summary>
         /// Loads a plugin instance directly.
         /// </summary>
-        public Task<IBackendPlugin?> LoadPluginAsync(IBackendPlugin plugin, CancellationToken cancellationToken = default)
+        public async Task<IBackendPlugin?> LoadPluginAsync(IBackendPlugin plugin, CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
 
@@ -114,11 +128,37 @@ namespace DotCompute.Plugins.Core
                     basePlugin.SetState(PluginState.Loaded);
                 }
 
+                // Initialize the plugin with cancellation support
+                if (_serviceProvider != null)
+                {
+                    await plugin.InitializeAsync(_serviceProvider, cancellationToken);
+                }
+
                 _logger?.LogInformation("Successfully loaded plugin {Id} ({Name})", plugin.Id, plugin.Name);
-                return Task.FromResult<IBackendPlugin?>(plugin);
+                return plugin;
+            }
+            catch (PluginLoadException)
+            {
+                // Re-throw plugin load exceptions without wrapping
+                throw;
+            }
+            catch (OperationCanceledException)
+            {
+                // Remove plugin from collection if initialization was cancelled
+                lock (_lock)
+                {
+                    _plugins.Remove(plugin.Id);
+                }
+                _logger?.LogWarning("Plugin {Id} loading was cancelled", plugin.Id);
+                throw;
             }
             catch (Exception ex)
             {
+                // Remove plugin from collection on any failure
+                lock (_lock)
+                {
+                    _plugins.Remove(plugin.Id);
+                }
                 _logger?.LogError(ex, "Failed to load plugin {Id}", plugin.Id);
                 throw new PluginLoadException($"Failed to load plugin {plugin.Id}", plugin.Id, "", ex);
             }
@@ -222,21 +262,64 @@ namespace DotCompute.Plugins.Core
                 {
                     _logger.LogInformation("Unloading plugin {Id}", pluginId);
 
-                    // Dispose the plugin
-                    loadedPlugin.Plugin.Dispose();
+                    var disposalSucceeded = true;
+                    var contextUnloadSucceeded = true;
 
-                    // Remove from collection
+                    // Try to dispose the plugin
+                    try
+                    {
+                        loadedPlugin.Plugin.Dispose();
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to dispose plugin {Id}, continuing with unload", pluginId);
+                        disposalSucceeded = false;
+                    }
+
+                    // Remove from collection regardless of disposal result
                     _plugins.Remove(pluginId);
 
-                    // Unload the context
-                    loadedPlugin.LoadContext.Unload();
+                    // Try to unload the context if it exists
+                    try
+                    {
+                        if (loadedPlugin.LoadContext != null)
+                        {
+                            loadedPlugin.LoadContext.Unload();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Failed to unload context for plugin {Id}, continuing", pluginId);
+                        contextUnloadSucceeded = false;
+                    }
 
-                    _logger.LogInformation("Successfully unloaded plugin {Id}", pluginId);
-                    return Task.FromResult(true);
+                    var success = disposalSucceeded && contextUnloadSucceeded;
+                    
+                    if (success)
+                    {
+                        _logger.LogInformation("Successfully unloaded plugin {Id}", pluginId);
+                    }
+                    else
+                    {
+                        _logger.LogWarning("Plugin {Id} was removed but disposal/context unload had issues", pluginId);
+                    }
+                    
+                    return Task.FromResult(success);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to unload plugin {Id}", pluginId);
+                    _logger.LogError(ex, "Critical error during plugin {Id} unload", pluginId);
+                    
+                    // Try to remove from collection as last resort
+                    try
+                    {
+                        _plugins.Remove(pluginId);
+                    }
+                    catch
+                    {
+                        // Ignore - we tried our best
+                    }
+                    
                     return Task.FromResult(false);
                 }
             }

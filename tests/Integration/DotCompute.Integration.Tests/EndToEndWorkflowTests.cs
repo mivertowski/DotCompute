@@ -248,6 +248,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         // 2. Memory Management
         var buffers = new List<IMemoryBuffer>();
         var arguments = new List<object>();
+        IMemoryBuffer? outputBuffer = null;
 
         foreach (var input in inputs)
         {
@@ -262,6 +263,14 @@ public class EndToEndWorkflowTests : IntegrationTestBase
                 // Handle scalar inputs directly
                 arguments.Add(input);
             }
+        }
+        
+        // For kernels that need an output buffer (like vector_add), create it
+        if (kernelName.Contains("add") || kernelName.Contains("mul") || kernelName.Contains("scale") || kernelName.Contains("transform"))
+        {
+            outputBuffer = await CreateOutputBuffer<float>(memoryManager, workSize);
+            buffers.Add(outputBuffer);
+            arguments.Add(outputBuffer);
         }
 
         // 3. Kernel Execution
@@ -281,9 +290,15 @@ public class EndToEndWorkflowTests : IntegrationTestBase
 
         // 4. Result Collection
         var results = new Dictionary<string, object>();
-        if (buffers.Count > 0)
+        if (outputBuffer != null)
         {
-            var resultData = await ReadBufferAsync<float>((IMemoryBuffer)buffers[0]);
+            var resultData = await ReadBufferAsync<float>(outputBuffer);
+            results["result"] = resultData;
+        }
+        else if (buffers.Count > 0)
+        {
+            // For single input/output kernels, use the last buffer
+            var resultData = await ReadBufferAsync<float>(buffers.Last());
             results["result"] = resultData;
         }
 
