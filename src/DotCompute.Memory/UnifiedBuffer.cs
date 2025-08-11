@@ -993,10 +993,10 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// </summary>
     /// <param name="mode">The mapping mode.</param>
     /// <returns>A mapped memory region.</returns>
-    public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
+    public DotCompute.Abstractions.MappedMemory<T> Map(DotCompute.Abstractions.MapMode mode = DotCompute.Abstractions.MapMode.ReadWrite)
     {
         EnsureOnHost();
-        return new MappedMemory<T>(this, AsMemory(), mode);
+        return new DotCompute.Abstractions.MappedMemory<T>(this, AsMemory(), mode);
     }
 
     /// <summary>
@@ -1006,7 +1006,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// <param name="length">The number of elements to map.</param>
     /// <param name="mode">The mapping mode.</param>
     /// <returns>A mapped memory region.</returns>
-    public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+    public DotCompute.Abstractions.MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.MapMode mode = DotCompute.Abstractions.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -1014,7 +1014,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 
         EnsureOnHost();
         var memory = new Memory<T>(_hostArray, offset, length);
-        return new MappedMemory<T>(this, memory, mode);
+        return new DotCompute.Abstractions.MappedMemory<T>(this, memory, mode);
     }
 
     /// <summary>
@@ -1023,10 +1023,10 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// <param name="mode">The mapping mode.</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task that returns the mapped memory region.</returns>
-    public async ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<DotCompute.Abstractions.MappedMemory<T>> MapAsync(DotCompute.Abstractions.MapMode mode = DotCompute.Abstractions.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         await EnsureOnHostAsync(cancellationToken).ConfigureAwait(false);
-        return new MappedMemory<T>(this, AsMemory(), mode);
+        return new DotCompute.Abstractions.MappedMemory<T>(this, AsMemory(), mode);
     }
 
     #endregion
@@ -1239,14 +1239,14 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
         await _parent.WriteAsync(fillData, _offset + offset, cancellationToken);
     }
 
-    public MappedMemory<T> Map(MapMode mode = MapMode.ReadWrite)
+    public DotCompute.Abstractions.MappedMemory<T> Map(DotCompute.Abstractions.MapMode mode = DotCompute.Abstractions.MapMode.ReadWrite)
     {
         var parentMapped = _parent.Map(mode);
         var sliceMemory = parentMapped.Memory.Slice(_offset, _length);
-        return new MappedMemory<T>(this, sliceMemory, mode);
+        return new DotCompute.Abstractions.MappedMemory<T>(this, sliceMemory, mode);
     }
 
-    public MappedMemory<T> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+    public DotCompute.Abstractions.MappedMemory<T> MapRange(int offset, int length, DotCompute.Abstractions.MapMode mode = DotCompute.Abstractions.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -1254,14 +1254,14 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
 
         var parentMapped = _parent.Map(mode);
         var rangeMemory = parentMapped.Memory.Slice(_offset + offset, length);
-        return new MappedMemory<T>(this, rangeMemory, mode);
+        return new DotCompute.Abstractions.MappedMemory<T>(this, rangeMemory, mode);
     }
 
-    public async ValueTask<MappedMemory<T>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<DotCompute.Abstractions.MappedMemory<T>> MapAsync(DotCompute.Abstractions.MapMode mode = DotCompute.Abstractions.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         var parentMapped = await _parent.MapAsync(mode, cancellationToken);
         var sliceMemory = parentMapped.Memory.Slice(_offset, _length);
-        return new MappedMemory<T>(this, sliceMemory, mode);
+        return new DotCompute.Abstractions.MappedMemory<T>(this, sliceMemory, mode);
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
@@ -1384,14 +1384,14 @@ internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal
         await CopyFromHostAsync<TNew>(fillData.AsMemory(), offset * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>(), cancellationToken);
     }
 
-    public MappedMemory<TNew> Map(MapMode mode = MapMode.ReadWrite)
+    public DotCompute.Abstractions.MappedMemory<TNew> Map(DotCompute.Abstractions.MapMode mode = DotCompute.Abstractions.MapMode.ReadWrite)
     {
         var parentMapped = _parent.Map(mode);
         var viewMemory = MemoryMarshal.Cast<TOriginal, TNew>(parentMapped.Memory.Span)[.._length];
-        return new MappedMemory<TNew>(this, viewMemory.ToArray().AsMemory(), mode);
+        return new DotCompute.Abstractions.MappedMemory<TNew>(this, viewMemory.ToArray().AsMemory(), mode);
     }
 
-    public MappedMemory<TNew> MapRange(int offset, int length, MapMode mode = MapMode.ReadWrite)
+    public DotCompute.Abstractions.MappedMemory<TNew> MapRange(int offset, int length, DotCompute.Abstractions.MapMode mode = DotCompute.Abstractions.MapMode.ReadWrite)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -1400,14 +1400,14 @@ internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal
         var parentMapped = _parent.Map(mode);
         var viewMemory = MemoryMarshal.Cast<TOriginal, TNew>(parentMapped.Memory.Span);
         var rangeMemory = viewMemory.Slice(offset, length);
-        return new MappedMemory<TNew>(this, rangeMemory.ToArray().AsMemory(), mode);
+        return new DotCompute.Abstractions.MappedMemory<TNew>(this, rangeMemory.ToArray().AsMemory(), mode);
     }
 
-    public async ValueTask<MappedMemory<TNew>> MapAsync(MapMode mode = MapMode.ReadWrite, CancellationToken cancellationToken = default)
+    public async ValueTask<DotCompute.Abstractions.MappedMemory<TNew>> MapAsync(DotCompute.Abstractions.MapMode mode = DotCompute.Abstractions.MapMode.ReadWrite, CancellationToken cancellationToken = default)
     {
         var parentMapped = await _parent.MapAsync(mode, cancellationToken);
         var viewMemory = MemoryMarshal.Cast<TOriginal, TNew>(parentMapped.Memory.Span)[.._length];
-        return new MappedMemory<TNew>(this, viewMemory.ToArray().AsMemory(), mode);
+        return new DotCompute.Abstractions.MappedMemory<TNew>(this, viewMemory.ToArray().AsMemory(), mode);
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;

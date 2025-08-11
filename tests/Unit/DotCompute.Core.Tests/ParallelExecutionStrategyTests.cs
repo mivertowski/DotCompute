@@ -557,8 +557,58 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
 
     private ModelParallelWorkload<T> CreateMockModelParallelWorkload<T>() where T : unmanaged
     {
-        // Create a simple mock kernel for the layer
-        var mockKernel = new Mock<ManagedCompiledKernel>();
+        // Create actual ManagedCompiledKernel instances instead of mocking them
+        var kernel1 = new ManagedCompiledKernel
+        {
+            Name = "linear_kernel",
+            Binary = new byte[] { 0x01, 0x02, 0x03, 0x04 },
+            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
+            {
+                new DotCompute.Core.Kernels.KernelParameter 
+                { 
+                    Name = "input", 
+                    Type = typeof(T), 
+                    IsInput = true,
+                    IsOutput = false
+                },
+                new DotCompute.Core.Kernels.KernelParameter 
+                { 
+                    Name = "output", 
+                    Type = typeof(T), 
+                    IsInput = false,
+                    IsOutput = true
+                }
+            },
+            Handle = IntPtr.Zero,
+            RequiredWorkGroupSize = new[] { 256, 1, 1 },
+            SharedMemorySize = 1024
+        };
+
+        var kernel2 = new ManagedCompiledKernel
+        {
+            Name = "relu_kernel",
+            Binary = new byte[] { 0x05, 0x06, 0x07, 0x08 },
+            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
+            {
+                new DotCompute.Core.Kernels.KernelParameter 
+                { 
+                    Name = "input", 
+                    Type = typeof(T), 
+                    IsInput = true,
+                    IsOutput = false
+                },
+                new DotCompute.Core.Kernels.KernelParameter 
+                { 
+                    Name = "output", 
+                    Type = typeof(T), 
+                    IsInput = false,
+                    IsOutput = true
+                }
+            },
+            Handle = IntPtr.Zero,
+            RequiredWorkGroupSize = new[] { 256, 1, 1 },
+            SharedMemorySize = 512
+        };
         
         return new ModelParallelWorkload<T>
         {
@@ -568,7 +618,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                 { 
                     LayerId = 0, 
                     Name = "Linear", 
-                    Kernel = mockKernel.Object, 
+                    Kernel = kernel1, 
                     InputTensors = new[] { new TensorDescription<T> { Name = "input", Dimensions = new[] { 512, 1024 }, DataType = typeof(T) } },
                     OutputTensors = new[] { new TensorDescription<T> { Name = "output", Dimensions = new[] { 512, 512 }, DataType = typeof(T) } }
                 },
@@ -576,7 +626,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                 { 
                     LayerId = 1, 
                     Name = "ReLU", 
-                    Kernel = mockKernel.Object,
+                    Kernel = kernel2,
                     InputTensors = new[] { new TensorDescription<T> { Name = "input", Dimensions = new[] { 512, 512 }, DataType = typeof(T) } },
                     OutputTensors = new[] { new TensorDescription<T> { Name = "output", Dimensions = new[] { 512, 512 }, DataType = typeof(T) } }
                 }

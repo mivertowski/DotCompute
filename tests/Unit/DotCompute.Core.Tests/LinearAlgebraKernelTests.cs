@@ -3,6 +3,7 @@
 
 using System;
 using System.Linq;
+using System.Numerics;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
@@ -344,8 +345,10 @@ public class LinearAlgebraKernelTests : IDisposable
     #region Numerical Methods Tests
 
     [Theory]
-    [InlineData(new float[] { 1.0f, -3.0f, 2.0f }, 1.5f)] // x² - 3x + 2 = 0, root between 1 and 2
-    [InlineData(new float[] { 1.0f, 0.0f, -1.0f }, 1.0f)] // x² - 1 = 0, root at x = 1
+    [InlineData(new float[] { 1.0f, -3.0f, 2.0f }, 1.0f)] // x² - 3x + 2 = 0, roots at x = 1 and x = 2
+    [InlineData(new float[] { 1.0f, -3.0f, 2.0f }, 2.0f)] // x² - 3x + 2 = 0, roots at x = 1 and x = 2
+    [InlineData(new float[] { 1.0f, 0.0f, -1.0f }, 1.0f)] // x² - 1 = 0, roots at x = ±1
+    [InlineData(new float[] { 1.0f, 0.0f, -1.0f }, -1.0f)] // x² - 1 = 0, roots at x = ±1
     public async Task FindPolynomialRootsAsync_WithQuadratic_ShouldFindRoots(float[] coefficients, float expectedRoot)
     {
         // Act
@@ -358,9 +361,73 @@ public class LinearAlgebraKernelTests : IDisposable
     }
 
     [Theory]
-    [InlineData(0.0f, 1.0f, 1e-6f)] // ∫₀¹ x dx = 0.5
+    [InlineData(new float[] { 1.0f, -6.0f, 11.0f, -6.0f })] // x³ - 6x² + 11x - 6 = 0, roots: 1, 2, 3
+    [InlineData(new float[] { 1.0f, 0.0f, -1.0f, 0.0f })]   // x³ - x = 0, roots: -1, 0, 1
+    public async Task FindPolynomialRootsAsync_WithCubic_ShouldFindMultipleRoots(float[] coefficients)
+    {
+        // Act
+        var roots = await _kernels.FindPolynomialRootsAsync(coefficients);
+
+        // Assert - for cubic, we expect up to 3 real roots
+        Assert.NotEmpty(roots);
+        Assert.True(roots.Length <= 3);
+        
+        // Verify each root by substitution
+        foreach (var root in roots)
+        {
+            var result = EvaluatePolynomialAt(coefficients, root);
+            Assert.True(Math.Abs(result) < 1e-4f, $"Root {root} verification failed: f({root}) = {result}");
+        }
+    }
+
+    [Theory]
+    [InlineData(new float[] { 2.0f, 1.0f })] // 2x + 1 = 0, root: -0.5
+    [InlineData(new float[] { -3.0f, 6.0f })] // -3x + 6 = 0, root: 2
+    public async Task FindPolynomialRootsAsync_WithLinear_ShouldFindExactRoot(float[] coefficients)
+    {
+        // Act
+        var roots = await _kernels.FindPolynomialRootsAsync(coefficients);
+
+        // Assert
+        Assert.Single(roots);
+        var expectedRoot = -coefficients[1] / coefficients[0];
+        Assert.True(Math.Abs(roots[0] - expectedRoot) < 1e-10f);
+    }
+
+    [Fact]
+    public async Task FindPolynomialRootsAsync_WithHighDegree_ShouldHandleComplexCases()
+    {
+        // Test polynomial: (x-1)(x-2)(x-3)(x-4) = x⁴ - 10x³ + 35x² - 50x + 24
+        var coefficients = new float[] { 1.0f, -10.0f, 35.0f, -50.0f, 24.0f };
+        var expectedRoots = new[] { 1.0f, 2.0f, 3.0f, 4.0f };
+
+        // Act
+        var roots = await _kernels.FindPolynomialRootsAsync(coefficients);
+
+        // Assert
+        Assert.NotEmpty(roots);
+        foreach (var expectedRoot in expectedRoots)
+        {
+            var found = roots.Any(r => Math.Abs(r - expectedRoot) < 1e-3f);
+            Assert.True(found, $"Expected root {expectedRoot} not found in computed roots");
+        }
+    }
+    
+    private float EvaluatePolynomialAt(float[] coefficients, float x)
+    {
+        // Horner's method for polynomial evaluation
+        float result = coefficients[0];
+        for (int i = 1; i < coefficients.Length; i++)
+        {
+            result = result * x + coefficients[i];
+        }
+        return result;
+    }
+
+    [Theory]
+    [InlineData(0.0f, 1.0f, 1e-6f)] // ∫₀¹ x² dx = 1/3
     [InlineData(-1.0f, 1.0f, 1e-6f)] // ∫₋₁¹ x² dx = 2/3
-    public async Task NumericalIntegrationAsync_WithSimpleFunction_ShouldComputeCorrectly(float a, float b, float tolerance)
+    public async Task NumericalIntegrationAsync_WithQuadraticFunction_ShouldComputeCorrectly(float a, float b, float tolerance)
     {
         // Arrange
         var functionValues = GenerateFunctionValues(x => x * x, a, b, 1000); // f(x) = x²
@@ -370,8 +437,38 @@ public class LinearAlgebraKernelTests : IDisposable
 
         // Assert
         var expected = (b * b * b - a * a * a) / 3.0f; // Analytical result for ∫ x² dx
-        Assert.True(Math.Abs(result - expected) < 0.1f, // Allow some numerical error
+        Assert.True(Math.Abs(result - expected) < 0.01f, // Tighter tolerance for our advanced algorithm
             $"Expected integral ≈ {expected}, got {result}");
+    }
+
+    [Theory]
+    [InlineData(0.0f, (float)Math.PI, 2.0f)] // ∫₀^π sin(x) dx = 2
+    [InlineData(0.0f, (float)(Math.PI/2), 1.0f)] // ∫₀^(π/2) sin(x) dx = 1
+    public async Task NumericalIntegrationAsync_WithTrigFunction_ShouldHandleOscillatory(float a, float b, float expected)
+    {
+        // Arrange
+        var functionValues = GenerateFunctionValues(x => (float)Math.Sin(x), a, b, 2000);
+
+        // Act  
+        var result = await _kernels.NumericalIntegrationAsync(functionValues, a, b);
+
+        // Assert
+        Assert.True(Math.Abs(result - expected) < 0.05f, 
+            $"Expected integral ≈ {expected}, got {result}");
+    }
+
+    [Fact]
+    public async Task NumericalIntegrationAsync_WithHighPrecisionSampling_ShouldUseAdvancedQuadrature()
+    {
+        // Test that our Simpson's rules are being used for high sample counts
+        var functionValues = GenerateFunctionValues(x => x * x * x * x, 0.0f, 2.0f, 1000); // x⁴
+        
+        var result = await _kernels.NumericalIntegrationAsync(functionValues, 0.0f, 2.0f);
+        
+        // ∫₀² x⁴ dx = x⁵/5 |₀² = 32/5 = 6.4
+        var expected = 32.0f / 5.0f;
+        Assert.True(Math.Abs(result - expected) < 0.01f,
+            $"High-degree polynomial integration failed. Expected: {expected}, Got: {result}");
     }
 
     [Theory]
@@ -804,27 +901,214 @@ public class LinearAlgebraKernels : IDisposable
         
         await Task.Delay(coefficients.Length * 10); // Simulate computation
         
-        // Return mock roots based on coefficients
-        var roots = new List<float>();
-        if (coefficients.Length == 3) // Quadratic
+        var degree = coefficients.Length - 1;
+        if (degree <= 0) return Array.Empty<float>();
+        
+        return degree switch
         {
-            var a = coefficients[0];
-            var b = coefficients[1];
-            var c = coefficients[2];
-            
-            if (Math.Abs(a) > 1e-6f)
+            1 => SolveLinearPolynomial(coefficients),
+            2 => SolveQuadraticPolynomial(coefficients), 
+            3 => SolveCubicPolynomial(coefficients),
+            4 => SolveQuarticPolynomial(coefficients),
+            _ => SolveHighDegreePolynomial(coefficients)
+        };
+    }
+    
+    private float[] SolveLinearPolynomial(float[] coefficients)
+    {
+        // ax + b = 0 => x = -b/a
+        var a = coefficients[0];
+        var b = coefficients[1];
+        
+        if (Math.Abs(a) < 1e-10f) return Array.Empty<float>();
+        return new[] { -b / a };
+    }
+    
+    private float[] SolveQuadraticPolynomial(float[] coefficients)
+    {
+        // ax² + bx + c = 0
+        var a = coefficients[0];
+        var b = coefficients[1];
+        var c = coefficients[2];
+        
+        if (Math.Abs(a) < 1e-10f) return SolveLinearPolynomial(new[] { b, c });
+        
+        var discriminant = b * b - 4 * a * c;
+        var roots = new List<float>();
+        
+        if (discriminant > 0)
+        {
+            var sqrt_d = (float)Math.Sqrt(discriminant);
+            // Use numerically stable formulation, handle b=0 case
+            if (Math.Abs(b) < 1e-10f)
             {
-                var discriminant = b * b - 4 * a * c;
-                if (discriminant >= 0)
-                {
-                    var sqrt_d = (float)Math.Sqrt(discriminant);
-                    roots.Add((-b + sqrt_d) / (2 * a));
-                    roots.Add((-b - sqrt_d) / (2 * a));
-                }
+                // When b=0, use standard formula: x = ±√(-c/a)
+                roots.Add(sqrt_d / (2 * a));
+                roots.Add(-sqrt_d / (2 * a));
+            }
+            else
+            {
+                var q = -0.5f * (b + Math.Sign(b) * sqrt_d);
+                roots.Add(q / a);
+                roots.Add(c / q);
+            }
+        }
+        else if (Math.Abs(discriminant) < 1e-10f)
+        {
+            roots.Add(-b / (2 * a));
+        }
+        // Complex roots not returned for float array
+        
+        return roots.ToArray();
+    }
+    
+    private float[] SolveCubicPolynomial(float[] coefficients)
+    {
+        // Cardano's formula for ax³ + bx² + cx + d = 0
+        var a = coefficients[0];
+        var b = coefficients[1];
+        var c = coefficients[2];
+        var d = coefficients[3];
+        
+        if (Math.Abs(a) < 1e-10f) return SolveQuadraticPolynomial(new[] { b, c, d });
+        
+        // Normalize to x³ + px² + qx + r = 0
+        var p = b / a;
+        var q = c / a;
+        var r = d / a;
+        
+        // Depressed cubic substitution: x = t - p/3
+        var p_over_3 = p / 3.0f;
+        var Q = (3 * q - p * p) / 9.0f;
+        var R = (9 * p * q - 27 * r - 2 * p * p * p) / 54.0f;
+        var discriminant = Q * Q * Q + R * R;
+        
+        var roots = new List<float>();
+        
+        if (discriminant > 0)
+        {
+            // One real root
+            var S = (float)Math.Pow(R + Math.Sqrt(discriminant), 1.0/3.0) * Math.Sign(R + Math.Sqrt(discriminant));
+            var T = (Math.Abs(S) > 1e-10f) ? Q / S : 0.0f;
+            roots.Add(S + T - p_over_3);
+        }
+        else if (Math.Abs(discriminant) < 1e-10f)
+        {
+            // Three real roots (two or three equal)
+            var S = (float)Math.Pow(R, 1.0/3.0) * Math.Sign(R);
+            roots.Add(2 * S - p_over_3);
+            roots.Add(-S - p_over_3);
+        }
+        else
+        {
+            // Three distinct real roots
+            var theta = (float)Math.Acos(R / Math.Pow(-Q, 1.5));
+            var sqrt_Q = (float)Math.Sqrt(-Q);
+            
+            for (int k = 0; k < 3; k++)
+            {
+                var angle = (theta + 2 * Math.PI * k) / 3.0f;
+                roots.Add(2 * sqrt_Q * (float)Math.Cos(angle) - p_over_3);
             }
         }
         
         return roots.ToArray();
+    }
+    
+    private float[] SolveQuarticPolynomial(float[] coefficients)
+    {
+        // Ferrari's method for ax⁴ + bx³ + cx² + dx + e = 0
+        var a = coefficients[0];
+        if (Math.Abs(a) < 1e-10f) return SolveCubicPolynomial(new[] { coefficients[1], coefficients[2], coefficients[3], coefficients[4] });
+        
+        // Normalize and use depressed quartic
+        var b = coefficients[1] / a;
+        var c = coefficients[2] / a;
+        var d = coefficients[3] / a;
+        var e = coefficients[4] / a;
+        
+        // Simplified implementation - use numerical method for general case
+        return SolveHighDegreePolynomial(coefficients);
+    }
+    
+    private float[] SolveHighDegreePolynomial(float[] coefficients)
+    {
+        // Use Durand-Kerner method for high-degree polynomials
+        const int maxIterations = 1000;
+        const float tolerance = 1e-10f;
+        
+        var degree = coefficients.Length - 1;
+        var roots = new Complex[degree];
+        var newRoots = new Complex[degree];
+        
+        // Initialize roots in complex plane (using golden ratio spacing)
+        var goldenRatio = (1.0f + (float)Math.Sqrt(5)) / 2.0f;
+        for (int i = 0; i < degree; i++)
+        {
+            var angle = 2.0 * Math.PI * i / degree;
+            var radius = Math.Pow(goldenRatio, i % 4);
+            roots[i] = new Complex((float)(radius * Math.Cos(angle)), (float)(radius * Math.Sin(angle)));
+        }
+        
+        for (int iteration = 0; iteration < maxIterations; iteration++)
+        {
+            var maxChange = 0.0f;
+            
+            for (int i = 0; i < degree; i++)
+            {
+                var numerator = EvaluatePolynomial(coefficients, roots[i]);
+                var denominator = Complex.One;
+                
+                for (int j = 0; j < degree; j++)
+                {
+                    if (i != j)
+                    {
+                        denominator *= (roots[i] - roots[j]);
+                    }
+                }
+                
+                if (denominator.Magnitude > 1e-15)
+                {
+                    newRoots[i] = roots[i] - numerator / denominator;
+                }
+                else
+                {
+                    newRoots[i] = roots[i];
+                }
+                
+                var change = (newRoots[i] - roots[i]).Magnitude;
+                maxChange = (float)Math.Max(maxChange, (double)change);
+            }
+            
+            Array.Copy(newRoots, roots, degree);
+            
+            if (maxChange < (double)tolerance) break;
+        }
+        
+        // Extract real roots with small imaginary parts
+        var realRoots = new List<float>();
+        for (int i = 0; i < degree; i++)
+        {
+            if (Math.Abs(roots[i].Imaginary) < tolerance)
+            {
+                realRoots.Add((float)roots[i].Real);
+            }
+        }
+        
+        // Sort roots for consistency
+        realRoots.Sort();
+        return realRoots.ToArray();
+    }
+    
+    private Complex EvaluatePolynomial(float[] coefficients, Complex x)
+    {
+        // Horner's method
+        Complex result = coefficients[0];
+        for (int i = 1; i < coefficients.Length; i++)
+        {
+            result = result * x + coefficients[i];
+        }
+        return result;
     }
 
     public async Task<float> NumericalIntegrationAsync(float[] functionValues, float a, float b)
@@ -833,16 +1117,87 @@ public class LinearAlgebraKernels : IDisposable
         
         await Task.Delay(functionValues.Length / 100 + 1); // Simulate computation
         
-        // Simple trapezoidal rule
-        var h = (b - a) / (functionValues.Length - 1);
-        var integral = 0.5f * (functionValues[0] + functionValues[functionValues.Length - 1]);
+        var n = functionValues.Length;
+        if (n < 2) return 0.0f;
         
-        for (int i = 1; i < functionValues.Length - 1; i++)
+        var h = (b - a) / (n - 1);
+        
+        // Use adaptive quadrature based on function values
+        if (n >= 4)
         {
-            integral += functionValues[i];
+            // Simpson's 3/8 rule for better accuracy
+            return SimpsonsRule38(functionValues, h);
+        }
+        else if (n >= 3)
+        {
+            // Simpson's 1/3 rule
+            return SimpsonsRule13(functionValues, h);
+        }
+        else
+        {
+            // Fallback to trapezoidal rule
+            return TrapezoidalRule(functionValues, h);
+        }
+    }
+    
+    private float TrapezoidalRule(float[] values, float h)
+    {
+        var sum = 0.5f * (values[0] + values[values.Length - 1]);
+        for (int i = 1; i < values.Length - 1; i++)
+        {
+            sum += values[i];
+        }
+        return sum * h;
+    }
+    
+    private float SimpsonsRule13(float[] values, float h)
+    {
+        if (values.Length % 2 == 0)
+        {
+            // Even number of points - use composite Simpson's rule
+            var sum = values[0] + values[values.Length - 1];
+            for (int i = 1; i < values.Length - 1; i++)
+            {
+                var multiplier = (i % 2 == 1) ? 4.0f : 2.0f;
+                sum += multiplier * values[i];
+            }
+            return sum * h / 3.0f;
+        }
+        else
+        {
+            // Odd number of points - direct Simpson's rule
+            var n = values.Length - 1;
+            var sum = values[0] + values[n];
+            
+            for (int i = 1; i < n; i++)
+            {
+                var multiplier = (i % 2 == 1) ? 4.0f : 2.0f;
+                sum += multiplier * values[i];
+            }
+            return sum * h / 3.0f;
+        }
+    }
+    
+    private float SimpsonsRule38(float[] values, float h)
+    {
+        // Simpson's 3/8 rule for improved accuracy
+        var n = values.Length - 1;
+        if (n % 3 != 0)
+        {
+            // Fallback to Simpson's 1/3 rule if not divisible by 3
+            return SimpsonsRule13(values, h);
         }
         
-        return integral * h;
+        var sum = values[0] + values[n];
+        
+        for (int i = 1; i < n; i++)
+        {
+            float multiplier = 3.0f;
+            if (i % 3 == 0) multiplier = 2.0f;
+            sum += multiplier * values[i];
+        }
+        
+        return sum * 3.0f * h / 8.0f;
     }
 
     public async Task<(float[] magnitudes, float[] phases)> FFTAsync(float[] signal)
@@ -851,17 +1206,85 @@ public class LinearAlgebraKernels : IDisposable
         
         await Task.Delay(signal.Length / 10 + 1); // Simulate computation
         
-        // Mock FFT results
-        var magnitudes = new float[signal.Length];
-        var phases = new float[signal.Length];
+        var n = signal.Length;
         
-        for (int i = 0; i < signal.Length; i++)
+        // Convert to complex array
+        var complexSignal = new Complex[n];
+        for (int i = 0; i < n; i++)
         {
-            magnitudes[i] = Math.Abs(signal[i]);
-            phases[i] = (float)Math.Atan2(0, signal[i]); // Simplified phase
+            complexSignal[i] = new Complex(signal[i], 0);
+        }
+        
+        // Perform FFT using Cooley-Tukey algorithm
+        var fftResult = CooleyTukeyFFT(complexSignal);
+        
+        // Extract magnitudes and phases
+        var magnitudes = new float[n];
+        var phases = new float[n];
+        
+        for (int i = 0; i < n; i++)
+        {
+            magnitudes[i] = (float)fftResult[i].Magnitude;
+            phases[i] = (float)fftResult[i].Phase;
         }
         
         return (magnitudes, phases);
+    }
+    
+    private Complex[] CooleyTukeyFFT(Complex[] x)
+    {
+        var n = x.Length;
+        
+        if (n <= 1) return x;
+        
+        // For non-power-of-2 sizes, use DFT
+        if ((n & (n - 1)) != 0)
+        {
+            return DirectDFT(x);
+        }
+        
+        // Recursive Cooley-Tukey FFT for power-of-2 sizes
+        var even = new Complex[n / 2];
+        var odd = new Complex[n / 2];
+        
+        for (int i = 0; i < n / 2; i++)
+        {
+            even[i] = x[2 * i];
+            odd[i] = x[2 * i + 1];
+        }
+        
+        var evenFft = CooleyTukeyFFT(even);
+        var oddFft = CooleyTukeyFFT(odd);
+        
+        var result = new Complex[n];
+        for (int k = 0; k < n / 2; k++)
+        {
+            var t = Complex.FromPolarCoordinates(1.0, -2.0 * Math.PI * k / n) * oddFft[k];
+            result[k] = evenFft[k] + t;
+            result[k + n / 2] = evenFft[k] - t;
+        }
+        
+        return result;
+    }
+    
+    private Complex[] DirectDFT(Complex[] x)
+    {
+        var n = x.Length;
+        var result = new Complex[n];
+        
+        for (int k = 0; k < n; k++)
+        {
+            Complex sum = Complex.Zero;
+            for (int j = 0; j < n; j++)
+            {
+                var angle = -2.0 * Math.PI * k * j / n;
+                var twiddle = new Complex(Math.Cos(angle), Math.Sin(angle));
+                sum += x[j] * twiddle;
+            }
+            result[k] = sum;
+        }
+        
+        return result;
     }
 
     public void Dispose()

@@ -630,7 +630,7 @@ public struct KernelArguments(params object[] args) : IEquatable<KernelArguments
     /// </summary>
     public static bool operator !=(KernelArguments left, KernelArguments right)
     {
-        return !(left == right);
+        return !left.Equals(right);
     }
 }
 

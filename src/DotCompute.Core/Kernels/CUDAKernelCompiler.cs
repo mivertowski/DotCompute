@@ -69,17 +69,7 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
                 RequiredWorkGroupSize = kernel.RequiredWorkGroupSize,
                 SharedMemorySize = kernel.SharedMemorySize,
                 CompilationLog = ptxResult.Log + (cubinResult?.Log ?? ""),
-                PerformanceMetadata = new Dictionary<string, object>
-                {
-                    ["CompilationTime"] = ptxResult.CompilationTime + (cubinResult?.CompilationTime ?? 0),
-                    ["RegistersUsed"] = ptxResult.RegistersUsed,
-                    ["SharedMemoryUsed"] = kernel.SharedMemorySize,
-                    ["OptimizationLevel"] = options.OptimizationLevel.ToString(),
-                    ["TargetArchitecture"] = options.TargetArchitecture ?? "default",
-                    ["HasCUBIN"] = cubinResult != null,
-                    ["PTXSize"] = ptxResult.PTX.Length,
-                    ["BinarySize"] = cubinResult?.Binary.Length ?? ptxResult.Binary.Length
-                }
+                PerformanceMetadata = CreateAdvancedPerformanceMetadata(kernel, options, ptxResult, cubinResult)
             };
 
             _logger.LogInformation("Successfully compiled CUDA kernel '{KernelName}' in {CompilationTime:F2}ms (Registers: {Registers})",
@@ -1038,6 +1028,103 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
     }
 
     /// <summary>
+    /// Creates comprehensive performance metadata with advanced features analysis.
+    /// </summary>
+    private static Dictionary<string, object> CreateAdvancedPerformanceMetadata(
+        GeneratedKernel kernel, CompilationOptions options, 
+        CUDAPTXCompilationResult ptxResult, CUDACUBINCompilationResult? cubinResult)
+    {
+        var metadata = new Dictionary<string, object>
+        {
+            ["CompilationTime"] = ptxResult.CompilationTime + (cubinResult?.CompilationTime ?? 0),
+            ["RegistersUsed"] = ptxResult.RegistersUsed,
+            ["SharedMemoryUsed"] = kernel.SharedMemorySize,
+            ["OptimizationLevel"] = options.OptimizationLevel.ToString(),
+            ["TargetArchitecture"] = options.TargetArchitecture ?? "default",
+            ["HasCUBIN"] = cubinResult != null,
+            ["PTXSize"] = ptxResult.PTX.Length,
+            ["BinarySize"] = cubinResult?.Binary.Length ?? ptxResult.Binary.Length
+        };
+
+        // Advanced CUDA feature analysis
+        var advancedFeatures = AnalyzeAdvancedCUDAFeatures(kernel, options);
+        foreach (var feature in advancedFeatures)
+        {
+            metadata[feature.Key] = feature.Value;
+        }
+
+        return metadata;
+    }
+
+    /// <summary>
+    /// Analyzes advanced CUDA kernel features and provides detailed metadata.
+    /// </summary>
+    private static Dictionary<string, object> AnalyzeAdvancedCUDAFeatures(GeneratedKernel kernel, CompilationOptions options)
+    {
+        var features = new Dictionary<string, object>();
+        var source = kernel.Source;
+
+        // Shared Memory Analysis
+        var sharedMemoryAnalysis = AnalyzeSharedMemoryUsage(source, kernel.SharedMemorySize);
+        features["shared_memory_size"] = sharedMemoryAnalysis.TotalSize;
+        features["shared_memory_banks"] = sharedMemoryAnalysis.BankConflictPotential;
+        features["shared_memory_optimization"] = sharedMemoryAnalysis.OptimizationLevel;
+
+        // Register Analysis (detailed per-thread estimation)
+        var registerAnalysis = AnalyzeRegisterUsage(source, kernel.Parameters);
+        features["registers_per_thread"] = registerAnalysis.RegistersPerThread;
+        features["register_spilling_risk"] = registerAnalysis.SpillingRisk;
+        features["register_pressure"] = registerAnalysis.Pressure;
+
+        // Texture Memory Analysis
+        var textureAnalysis = AnalyzeTextureMemoryUsage(source);
+        if (textureAnalysis.UsesTextures)
+        {
+            features["uses_texture_memory"] = true;
+            features["texture_cache_efficiency"] = textureAnalysis.CacheEfficiency;
+            features["texture_memory_accesses"] = textureAnalysis.AccessCount;
+        }
+
+        // Memory Coalescing Analysis
+        var coalescingAnalysis = AnalyzeMemoryCoalescing(source, kernel.Parameters);
+        features["memory_coalescing_efficiency"] = coalescingAnalysis.Efficiency;
+        features["uncoalesced_accesses"] = coalescingAnalysis.UncoalescedCount;
+
+        // Occupancy Analysis
+        var occupancyAnalysis = AnalyzeOccupancy(kernel, registerAnalysis.RegistersPerThread, sharedMemoryAnalysis.TotalSize, options.TargetArchitecture);
+        features["theoretical_occupancy"] = occupancyAnalysis.TheoreticalOccupancy;
+        features["occupancy_limited_by"] = occupancyAnalysis.LimitingFactor;
+        features["max_blocks_per_sm"] = occupancyAnalysis.MaxBlocksPerSM;
+
+        // Thread Synchronization Analysis
+        var syncAnalysis = AnalyzeSynchronizationPatterns(source);
+        features["synchronization_complexity"] = syncAnalysis.Complexity;
+        features["divergence_risk"] = syncAnalysis.DivergenceRisk;
+        if (syncAnalysis.HasBarriers)
+        {
+            features["uses_barriers"] = true;
+            features["barrier_efficiency"] = syncAnalysis.BarrierEfficiency;
+        }
+
+        // Warp-level Operations Analysis
+        var warpAnalysis = AnalyzeWarpLevelOperations(source);
+        if (warpAnalysis.HasWarpIntrinsics)
+        {
+            features["uses_warp_intrinsics"] = true;
+            features["warp_utilization"] = warpAnalysis.Utilization;
+        }
+
+        // Compute Capability Specific Features
+        var archFeatures = AnalyzeArchitectureSpecificFeatures(source, options.TargetArchitecture);
+        foreach (var feature in archFeatures)
+        {
+            features[feature.Key] = feature.Value;
+        }
+
+        return features;
+    }
+
+    /// <summary>
     /// Checks if type is valid for CUDA kernels.
     /// </summary>
     private static bool IsValidCUDAType(Type type)
@@ -1075,4 +1162,460 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
         public required string Log { get; init; }
         public required double CompilationTime { get; init; }
     }
+
+    #region Advanced Feature Analysis Types
+
+    /// <summary>
+    /// Shared memory usage analysis result.
+    /// </summary>
+    private sealed record SharedMemoryAnalysis(
+        int TotalSize,
+        string BankConflictPotential,
+        string OptimizationLevel
+    );
+
+    /// <summary>
+    /// Register usage analysis result.
+    /// </summary>
+    private sealed record RegisterAnalysis(
+        int RegistersPerThread,
+        string SpillingRisk,
+        string Pressure
+    );
+
+    /// <summary>
+    /// Texture memory analysis result.
+    /// </summary>
+    private sealed record TextureMemoryAnalysis(
+        bool UsesTextures,
+        string CacheEfficiency,
+        int AccessCount
+    );
+
+    /// <summary>
+    /// Memory coalescing analysis result.
+    /// </summary>
+    private sealed record MemoryCoalescingAnalysis(
+        string Efficiency,
+        int UncoalescedCount
+    );
+
+    /// <summary>
+    /// Occupancy analysis result.
+    /// </summary>
+    private sealed record OccupancyAnalysis(
+        double TheoreticalOccupancy,
+        string LimitingFactor,
+        int MaxBlocksPerSM
+    );
+
+    /// <summary>
+    /// Synchronization pattern analysis result.
+    /// </summary>
+    private sealed record SynchronizationAnalysis(
+        string Complexity,
+        string DivergenceRisk,
+        bool HasBarriers,
+        string BarrierEfficiency
+    );
+
+    /// <summary>
+    /// Warp-level operations analysis result.
+    /// </summary>
+    private sealed record WarpAnalysis(
+        bool HasWarpIntrinsics,
+        string Utilization
+    );
+
+    #endregion
+
+    #region Advanced Feature Analysis Methods
+
+    /// <summary>
+    /// Analyzes shared memory usage patterns and optimization opportunities.
+    /// </summary>
+    private static SharedMemoryAnalysis AnalyzeSharedMemoryUsage(string source, int declaredSize)
+    {
+        var totalSize = declaredSize;
+        var bankConflictPotential = "Low";
+        var optimizationLevel = "Good";
+
+        // Detect shared memory declarations
+        var sharedMemMatches = System.Text.RegularExpressions.Regex.Matches(source, @"__shared__\s+\w+\s+(\w+)\s*\[([^\]]+)\]");
+        var dynamicSharedMem = source.Contains("extern __shared__");
+
+        if (sharedMemMatches.Count > 0 || dynamicSharedMem)
+        {
+            // Estimate shared memory usage from static declarations
+            foreach (System.Text.RegularExpressions.Match match in sharedMemMatches)
+            {
+                var sizeExpr = match.Groups[2].Value;
+                if (int.TryParse(sizeExpr, out var size))
+                {
+                    totalSize += size * 4; // Assume 4-byte elements
+                }
+            }
+
+            // Analyze bank conflict potential
+            if (source.Contains("[threadIdx.x]") || source.Contains("[tid]"))
+            {
+                bankConflictPotential = "Low"; // Good access pattern
+            }
+            else if (System.Text.RegularExpressions.Regex.IsMatch(source, @"\[\s*threadIdx\.x\s*\*\s*\d+\s*\]"))
+            {
+                bankConflictPotential = "High"; // Strided access
+            }
+            else if (source.Contains("threadIdx.y") && source.Contains("["))
+            {
+                bankConflictPotential = "Medium"; // 2D access patterns
+            }
+
+            // Optimization level based on usage patterns
+            if (source.Contains("__syncthreads") && sharedMemMatches.Count > 1)
+            {
+                optimizationLevel = "Excellent"; // Proper sync with multiple arrays
+            }
+            else if (source.Contains("__syncthreads"))
+            {
+                optimizationLevel = "Good";
+            }
+            else
+            {
+                optimizationLevel = "Poor"; // No synchronization
+            }
+        }
+
+        return new SharedMemoryAnalysis(totalSize, bankConflictPotential, optimizationLevel);
+    }
+
+    /// <summary>
+    /// Analyzes register usage and estimates per-thread requirements.
+    /// </summary>
+    private static RegisterAnalysis AnalyzeRegisterUsage(string source, KernelParameter[] parameters)
+    {
+        var baseRegisters = 8; // Base CUDA overhead
+        var registersPerThread = baseRegisters;
+        var spillingRisk = "Low";
+        var pressure = "Low";
+
+        // Parameter registers
+        registersPerThread += parameters.Length;
+
+        // Variable declarations (rough estimation)
+        var varDeclarations = System.Text.RegularExpressions.Regex.Matches(source, @"\b(int|float|double|uint)\s+\w+");
+        registersPerThread += varDeclarations.Count;
+
+        // Array subscript calculations
+        var arrayAccesses = System.Text.RegularExpressions.Regex.Matches(source, @"\[[^\]]+\]");
+        registersPerThread += arrayAccesses.Count / 4; // Multiple accesses can share address calculations
+
+        // Complex expressions
+        var complexOps = source.Count(c => c == '*' || c == '/' || c == '%');
+        registersPerThread += complexOps / 3;
+
+        // Loop variables
+        var loops = System.Text.RegularExpressions.Regex.Matches(source, @"\b(for|while)\s*\(");
+        registersPerThread += loops.Count * 2;
+
+        // Conditional branches add register pressure
+        var branches = source.Count(c => c == '?') + System.Text.RegularExpressions.Regex.Matches(source, @"\bif\s*\(").Count;
+        registersPerThread += branches;
+
+        // Math function calls
+        var mathCalls = System.Text.RegularExpressions.Regex.Matches(source, @"\b(sqrt|sin|cos|exp|log|pow)\s*\(");
+        registersPerThread += mathCalls.Count * 2;
+
+        // Determine spilling risk and pressure
+        if (registersPerThread > 32)
+        {
+            spillingRisk = "High";
+            pressure = "High";
+        }
+        else if (registersPerThread > 24)
+        {
+            spillingRisk = "Medium";
+            pressure = "Medium";
+        }
+        else if (registersPerThread > 16)
+        {
+            pressure = "Medium";
+        }
+
+        return new RegisterAnalysis(Math.Min(registersPerThread, 255), spillingRisk, pressure);
+    }
+
+    /// <summary>
+    /// Analyzes texture memory usage patterns.
+    /// </summary>
+    private static TextureMemoryAnalysis AnalyzeTextureMemoryUsage(string source)
+    {
+        var usesTextures = source.Contains("tex1D") || source.Contains("tex2D") || source.Contains("tex3D") ||
+                          source.Contains("__ldg") || source.Contains("texture");
+
+        var cacheEfficiency = "Good";
+        var accessCount = 0;
+
+        if (usesTextures)
+        {
+            // Count texture accesses
+            accessCount = System.Text.RegularExpressions.Regex.Matches(source, @"tex\d+D|__ldg").Count;
+
+            // Analyze access patterns for cache efficiency
+            if (source.Contains("tex2D") && source.Contains("threadIdx"))
+            {
+                cacheEfficiency = "Excellent"; // Spatial locality
+            }
+            else if (accessCount > 5)
+            {
+                cacheEfficiency = "Good";
+            }
+            else
+            {
+                cacheEfficiency = "Fair";
+            }
+        }
+
+        return new TextureMemoryAnalysis(usesTextures, cacheEfficiency, accessCount);
+    }
+
+    /// <summary>
+    /// Analyzes global memory access patterns for coalescing efficiency.
+    /// </summary>
+    private static MemoryCoalescingAnalysis AnalyzeMemoryCoalescing(string source, KernelParameter[] parameters)
+    {
+        var efficiency = "Good";
+        var uncoalescedCount = 0;
+
+        // Look for good coalescing patterns
+        var coalescedPatterns = System.Text.RegularExpressions.Regex.Matches(source, @"\w+\s*\[\s*(?:blockIdx\.x\s*\*\s*blockDim\.x\s*\+\s*)?threadIdx\.x\s*\]");
+
+        // Look for bad coalescing patterns (strided access)
+        var stridedPatterns = System.Text.RegularExpressions.Regex.Matches(source, @"\w+\s*\[\s*threadIdx\.x\s*\*\s*\d+\s*\]");
+        
+        // Look for 2D array access patterns
+        var array2DPatterns = System.Text.RegularExpressions.Regex.Matches(source, @"\w+\s*\[\s*\w+\s*\*\s*\w+\s*\+\s*\w+\s*\]");
+
+        uncoalescedCount = stridedPatterns.Count;
+
+        if (coalescedPatterns.Count > 0 && stridedPatterns.Count == 0)
+        {
+            efficiency = "Excellent";
+        }
+        else if (stridedPatterns.Count > coalescedPatterns.Count)
+        {
+            efficiency = "Poor";
+        }
+        else if (array2DPatterns.Count > 0)
+        {
+            efficiency = "Fair"; // 2D patterns can be complex
+        }
+
+        return new MemoryCoalescingAnalysis(efficiency, uncoalescedCount);
+    }
+
+    /// <summary>
+    /// Analyzes kernel occupancy based on resource usage.
+    /// </summary>
+    private static OccupancyAnalysis AnalyzeOccupancy(GeneratedKernel kernel, int registersPerThread, int sharedMemorySize, string? targetArch)
+    {
+        // CUDA device limits (using typical values)
+        var maxRegistersPerBlock = 65536;
+        var maxSharedMemoryPerBlock = 49152; // 48KB
+        var maxThreadsPerBlock = 1024;
+        var maxBlocksPerSM = 16;
+
+        // Calculate limiting factors
+        var blockSize = kernel.RequiredWorkGroupSize?.Aggregate(1, (a, b) => a * b) ?? 256;
+        
+        var registerLimitedBlocks = maxRegistersPerBlock / (registersPerThread * blockSize);
+        var sharedMemLimitedBlocks = sharedMemorySize > 0 ? maxSharedMemoryPerBlock / sharedMemorySize : maxBlocksPerSM;
+        var threadLimitedBlocks = maxThreadsPerBlock / blockSize;
+
+        var actualBlocksPerSM = Math.Min(Math.Min(registerLimitedBlocks, sharedMemLimitedBlocks), Math.Min(threadLimitedBlocks, maxBlocksPerSM));
+        actualBlocksPerSM = Math.Max(1, actualBlocksPerSM);
+
+        var theoreticalOccupancy = (double)actualBlocksPerSM / maxBlocksPerSM;
+
+        string limitingFactor;
+        if (registerLimitedBlocks <= sharedMemLimitedBlocks && registerLimitedBlocks <= threadLimitedBlocks)
+        {
+            limitingFactor = "Registers";
+        }
+        else if (sharedMemLimitedBlocks <= threadLimitedBlocks)
+        {
+            limitingFactor = "SharedMemory";
+        }
+        else
+        {
+            limitingFactor = "BlockSize";
+        }
+
+        return new OccupancyAnalysis(theoreticalOccupancy, limitingFactor, actualBlocksPerSM);
+    }
+
+    /// <summary>
+    /// Analyzes thread synchronization and divergence patterns.
+    /// </summary>
+    private static SynchronizationAnalysis AnalyzeSynchronizationPatterns(string source)
+    {
+        var hasBarriers = source.Contains("__syncthreads");
+        var complexity = "Low";
+        var divergenceRisk = "Low";
+        var barrierEfficiency = "Good";
+
+        // Count synchronization points
+        var syncCount = System.Text.RegularExpressions.Regex.Matches(source, @"__syncthreads\(\)").Count;
+        
+        // Analyze control flow complexity
+        var branchCount = System.Text.RegularExpressions.Regex.Matches(source, @"\b(if|else|switch)\b").Count;
+        var loopCount = System.Text.RegularExpressions.Regex.Matches(source, @"\b(for|while|do)\b").Count;
+
+        if (syncCount > 3 || (branchCount > 2 && hasBarriers))
+        {
+            complexity = "High";
+        }
+        else if (syncCount > 1 || branchCount > 1)
+        {
+            complexity = "Medium";
+        }
+
+        // Analyze divergence risk
+        if (hasBarriers && branchCount > 0)
+        {
+            if (source.Contains("if") && source.Contains("threadIdx"))
+            {
+                divergenceRisk = "High"; // Thread-dependent branches with sync
+            }
+            else if (branchCount > 1)
+            {
+                divergenceRisk = "Medium";
+            }
+        }
+
+        // Barrier efficiency
+        if (hasBarriers)
+        {
+            if (syncCount == 1 && source.Contains("__shared__"))
+            {
+                barrierEfficiency = "Excellent";
+            }
+            else if (syncCount <= 2)
+            {
+                barrierEfficiency = "Good";
+            }
+            else
+            {
+                barrierEfficiency = "Fair";
+            }
+        }
+
+        return new SynchronizationAnalysis(complexity, divergenceRisk, hasBarriers, barrierEfficiency);
+    }
+
+    /// <summary>
+    /// Analyzes warp-level operations and intrinsics usage.
+    /// </summary>
+    private static WarpAnalysis AnalyzeWarpLevelOperations(string source)
+    {
+        var warpIntrinsics = new[] { "__shfl", "__ballot", "__any", "__all", "__popc", "__clz", "__ffs" };
+        var hasWarpIntrinsics = warpIntrinsics.Any(intrinsic => source.Contains(intrinsic));
+        
+        var utilization = "Good";
+        if (hasWarpIntrinsics)
+        {
+            var intrinsicCount = warpIntrinsics.Sum(intrinsic => System.Text.RegularExpressions.Regex.Matches(source, $@"\b{System.Text.RegularExpressions.Regex.Escape(intrinsic)}").Count);
+            
+            if (intrinsicCount > 3)
+            {
+                utilization = "Excellent";
+            }
+            else if (intrinsicCount > 1)
+            {
+                utilization = "Good";
+            }
+            else
+            {
+                utilization = "Fair";
+            }
+        }
+
+        return new WarpAnalysis(hasWarpIntrinsics, utilization);
+    }
+
+    /// <summary>
+    /// Analyzes compute capability specific features.
+    /// </summary>
+    private static Dictionary<string, object> AnalyzeArchitectureSpecificFeatures(string source, string? targetArch)
+    {
+        var features = new Dictionary<string, object>();
+
+        if (string.IsNullOrEmpty(targetArch))
+            return features;
+
+        // Extract compute capability version
+        var archVersion = 75; // Default
+        if (ComputeCapabilityVersions.TryGetValue(targetArch, out var version))
+        {
+            archVersion = version;
+        }
+
+        features["compute_capability"] = $"{archVersion / 10}.{archVersion % 10}";
+
+        // Tensor Core support (Volta+ sm_70+)
+        if (archVersion >= 70)
+        {
+            features["supports_tensor_cores"] = true;
+            if (source.Contains("wmma") || source.Contains("mma"))
+            {
+                features["uses_tensor_cores"] = true;
+            }
+        }
+
+        // Cooperative Groups (Volta+ sm_60+)
+        if (archVersion >= 60)
+        {
+            features["supports_cooperative_groups"] = true;
+            if (source.Contains("cooperative_groups") || source.Contains("cg::"))
+            {
+                features["uses_cooperative_groups"] = true;
+            }
+        }
+
+        // Dynamic Parallelism (Kepler+ sm_35+)
+        if (archVersion >= 35)
+        {
+            features["supports_dynamic_parallelism"] = true;
+            if (source.Contains("cudaDeviceSync") || source.Contains("<<<"))
+            {
+                features["uses_dynamic_parallelism"] = true;
+            }
+        }
+
+        // Unified Memory (Kepler+ sm_30+)
+        if (archVersion >= 30)
+        {
+            features["supports_unified_memory"] = true;
+        }
+
+        // Memory hierarchy optimizations based on architecture
+        if (archVersion >= 80) // Ampere
+        {
+            features["l2_cache_size"] = "40MB";
+            features["shared_memory_capacity"] = "164KB";
+        }
+        else if (archVersion >= 75) // Turing
+        {
+            features["l2_cache_size"] = "5.5MB";
+            features["shared_memory_capacity"] = "96KB";
+        }
+        else if (archVersion >= 70) // Volta
+        {
+            features["l2_cache_size"] = "6MB";
+            features["shared_memory_capacity"] = "96KB";
+        }
+
+        return features;
+    }
+
+    #endregion
 }

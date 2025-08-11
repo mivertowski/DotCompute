@@ -145,8 +145,8 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         var context = new PipelineExecutionContext
         {
             Inputs = new Dictionary<string, object> { ["input"] = input },
-            Device = (DotCompute.Core.IComputeDevice)ServiceProvider.GetRequiredService<IAcceleratorManager>().Default,
-            MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)ServiceProvider.GetRequiredService<IMemoryManager>(),
+            Device = ServiceProvider.GetRequiredService<DotCompute.Core.IComputeDevice>(),
+            MemoryManager = ServiceProvider.GetRequiredService<DotCompute.Core.Pipelines.IPipelineMemoryManager>(),
             Options = new PipelineExecutionOptions { ContinueOnError = false }
         };
 
@@ -251,9 +251,17 @@ public class EndToEndWorkflowTests : IntegrationTestBase
 
         foreach (var input in inputs)
         {
-            var buffer = await CreateInputBuffer<float>(memoryManager, (float[])input);
-            buffers.Add(buffer);
-            arguments.Add(buffer);
+            if (input is float[] arrayInput)
+            {
+                var buffer = await CreateInputBuffer<float>(memoryManager, arrayInput);
+                buffers.Add(buffer);
+                arguments.Add(buffer);
+            }
+            else
+            {
+                // Handle scalar inputs directly
+                arguments.Add(input);
+            }
         }
 
         // 3. Kernel Execution

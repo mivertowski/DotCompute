@@ -73,10 +73,24 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                 });
 
                 // Add core DotCompute services  
-                services.AddSingleton<IAcceleratorProvider, CpuAcceleratorProvider>();
+                services.AddSingleton<IAcceleratorProvider, HighPerformanceCpuAcceleratorProvider>();
                 services.AddSingleton<IAcceleratorManager, DefaultAcceleratorManager>();
                 services.AddSingleton<PluginSystem>();
                 services.AddSingleton<IComputeEngine, DefaultComputeEngine>();
+                
+                // Add adapters for pipeline integration
+                services.AddSingleton<DotCompute.Core.IComputeDevice>(provider =>
+                {
+                    var acceleratorManager = provider.GetRequiredService<IAcceleratorManager>();
+                    return new DotCompute.Core.ComputeDeviceAdapter(acceleratorManager.Default);
+                });
+                
+                services.AddSingleton<DotCompute.Core.Pipelines.IPipelineMemoryManager>(provider =>
+                {
+                    var memoryManager = provider.GetRequiredService<IMemoryManager>();
+                    var computeDevice = provider.GetRequiredService<DotCompute.Core.IComputeDevice>();
+                    return new DotCompute.Core.Pipelines.PipelineMemoryManager(memoryManager, computeDevice);
+                });
                 
                 // Add a simple memory manager factory
                 services.AddSingleton<IMemoryManager>(sp =>
@@ -110,10 +124,35 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     /// </summary>
     protected async Task<IMemoryBuffer> CreateInputBuffer<T>(IMemoryManager memoryManager, T[] data) where T : unmanaged
     {
-        var sizeInBytes = data.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
-        var buffer = await memoryManager.AllocateAsync(sizeInBytes);
-        await buffer.CopyFromHostAsync<byte>(System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(data).ToArray().AsMemory());
-        return buffer;
+        try
+        {
+            var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
+            var sizeInBytes = data.Length * elementSize;
+            
+            Logger.LogInformation($"CreateInputBuffer: Allocating {sizeInBytes} bytes for {data.Length} elements of type {typeof(T).Name}");
+            
+            if (sizeInBytes <= 0 || data.Length <= 0)
+            {
+                throw new ArgumentException($"Invalid data size: {data.Length} elements, {sizeInBytes} bytes");
+            }
+            
+            var buffer = await memoryManager.AllocateAsync(sizeInBytes);
+            Logger.LogInformation("Buffer allocated successfully");
+            
+            // Convert to bytes more safely
+            var byteData = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(data).ToArray();
+            Logger.LogInformation($"Data converted to {byteData.Length} bytes");
+            
+            await buffer.CopyFromHostAsync<byte>(byteData.AsMemory());
+            Logger.LogInformation("Data copied to buffer successfully");
+            
+            return buffer;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, $"Failed to create input buffer for {data?.Length ?? 0} elements of type {typeof(T).Name}");
+            throw;
+        }
     }
 
     /// <summary>
@@ -132,9 +171,53 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     {
         var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
         var elementCount = (int)(buffer.SizeInBytes / elementSize);
+        
+        // Validate that the buffer size is reasonable and aligned
+        if (buffer.SizeInBytes <= 0 || buffer.SizeInBytes > int.MaxValue)
+        {
+            throw new ArgumentException($"Invalid buffer size: {buffer.SizeInBytes}");
+        }
+        
+        if (buffer.SizeInBytes % elementSize != 0)
+        {
+            throw new ArgumentException($"Buffer size {buffer.SizeInBytes} is not aligned to element size {elementSize}");
+        }
+        
+        // For very large buffers, use chunked reading to avoid large memory allocations
+        const int MaxChunkSize = 16 * 1024 * 1024; // 16MB chunks
+        if (buffer.SizeInBytes > MaxChunkSize)
+        {
+            return await ReadLargeBufferInChunksAsync<T>(buffer, elementCount, elementSize);
+        }
+        
         var byteData = new byte[buffer.SizeInBytes];
         await buffer.CopyToHostAsync(byteData.AsMemory());
         return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(byteData).ToArray();
+    }
+    
+    /// <summary>
+    /// Reads a large buffer in chunks to avoid excessive memory allocation.
+    /// </summary>
+    private async Task<T[]> ReadLargeBufferInChunksAsync<T>(IMemoryBuffer buffer, int elementCount, int elementSize) where T : unmanaged
+    {
+        var result = new T[elementCount];
+        const int MaxChunkSize = 16 * 1024 * 1024; // 16MB chunks
+        var elementsPerChunk = MaxChunkSize / elementSize;
+        
+        for (int offset = 0; offset < elementCount; offset += elementsPerChunk)
+        {
+            var remainingElements = Math.Min(elementsPerChunk, elementCount - offset);
+            var chunkSizeInBytes = remainingElements * elementSize;
+            var byteOffset = offset * elementSize;
+            
+            var chunkBytes = new byte[chunkSizeInBytes];
+            await buffer.CopyToHostAsync(chunkBytes.AsMemory(), byteOffset);
+            
+            var chunkData = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(chunkBytes);
+            chunkData.CopyTo(result.AsSpan(offset, remainingElements));
+        }
+        
+        return result;
     }
 
     /// <summary>

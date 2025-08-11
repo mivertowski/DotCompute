@@ -351,7 +351,9 @@ public class MemoryTransferTests : IntegrationTestBase
             return;
         }
 
+        Logger.LogInformation($"Generating test data for {largeDataSize / sizeof(float)} elements");
         var largeTestData = GenerateTestData(largeDataSize / sizeof(float));
+        Logger.LogInformation($"Test data generated successfully: {largeTestData.Length} elements");
 
         // Act
         var largeTransferResult = await PerformLargeDataTransfer(
@@ -526,10 +528,28 @@ public class MemoryTransferTests : IntegrationTestBase
         IAccelerator accelerator,
         float[][] testDataSets)
     {
+        // Use limited concurrency to avoid resource contention
+        var maxConcurrency = Math.Max(2, Environment.ProcessorCount / 2);
+        var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
+        
         var tasks = testDataSets.Select(async testData =>
-            await PerformHostToDeviceTransfer(memoryManager, accelerator, testData));
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                // Add small delay to better simulate async behavior
+                await Task.Delay(1);
+                return await PerformHostToDeviceTransfer(memoryManager, accelerator, testData);
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+        });
 
-        return (await Task.WhenAll(tasks)).ToList();
+        var results = await Task.WhenAll(tasks);
+        semaphore.Dispose();
+        return results.ToList();
     }
 
     private async Task<TransferResult> PerformRegularMemoryTransfer(
@@ -646,12 +666,14 @@ public class MemoryTransferTests : IntegrationTestBase
         
         try
         {
+            Logger.LogInformation($"Attempting to create input buffer for {largeTestData.Length} elements ({largeTestData.Length * sizeof(float) / (1024 * 1024)}MB)");
             var buffer = await CreateInputBuffer(memoryManager, largeTestData);
+            Logger.LogInformation("Input buffer created successfully");
             
             // For large data, we'll verify a sample rather than the entire array
             var sampleSize = Math.Min(1000, largeTestData.Length);
             var sampleIndices = Enumerable.Range(0, sampleSize)
-                .Select(i => i * largeTestData.Length / sampleSize)
+                .Select(i => Math.Min(i * largeTestData.Length / sampleSize, largeTestData.Length - 1))
                 .ToArray();
             
             var readData = await ReadBufferAsync<float>(buffer);
@@ -660,12 +682,22 @@ public class MemoryTransferTests : IntegrationTestBase
             var integrity = readData != null && readData.Length == largeTestData.Length;
             if (integrity && readData != null)
             {
-                // Spot check data integrity
+                // Spot check data integrity with bounds checking
                 for (int i = 0; i < sampleIndices.Length; i++)
                 {
                     var index = sampleIndices[i];
-                    if (Math.Abs(readData[index] - largeTestData[index]) > 0.001f)
+                    // Extra safety: ensure index is within bounds of both arrays
+                    if (index >= 0 && index < readData.Length && index < largeTestData.Length)
                     {
+                        if (Math.Abs(readData[index] - largeTestData[index]) > 0.001f)
+                        {
+                            integrity = false;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        // If index is out of bounds, fail integrity check
                         integrity = false;
                         break;
                     }

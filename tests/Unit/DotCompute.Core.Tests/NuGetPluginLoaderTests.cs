@@ -172,7 +172,7 @@ public class NuGetPluginLoaderTests : IDisposable
 
         // Assert
         Assert.False(result.IsValid);
-        Assert.Contains(result.ValidationErrors, e => e.Contains("dependency"));
+        Assert.Contains(result.ValidationErrors, e => e.Contains("Dependency"));
     }
 
     [Fact]

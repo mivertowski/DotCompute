@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Plugins.Interfaces;
+using DotCompute.Plugins.Platform;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -58,16 +59,9 @@ public sealed class AotPluginRegistry : IDisposable
         {
             _logger.LogDebug("Creating CUDA backend plugin");
 
-            // Check if CUDA is available at runtime
-            if (IsCudaAvailable())
-            {
-                return new AotCudaBackendPlugin();
-            }
-            else
-            {
-                _logger.LogWarning("CUDA backend requested but CUDA runtime is not available");
-                throw new PlatformNotSupportedException("CUDA runtime is not available on this system");
-            }
+            // Use comprehensive platform detection for CUDA availability
+            PlatformDetection.ValidateBackendAvailability(ComputeBackendType.CUDA);
+            return new AotCudaBackendPlugin();
         };
 
         // Register Metal backend (when available)
@@ -75,16 +69,39 @@ public sealed class AotPluginRegistry : IDisposable
         {
             _logger.LogDebug("Creating Metal backend plugin");
 
-            // Metal is only available on macOS/iOS
-            if (OperatingSystem.IsMacOS() || OperatingSystem.IsIOS())
-            {
-                return new AotMetalBackendPlugin();
-            }
-            else
-            {
-                _logger.LogWarning("Metal backend requested but not available on this platform");
-                throw new PlatformNotSupportedException("Metal backend is only available on macOS and iOS");
-            }
+            // Use comprehensive platform detection for Metal availability
+            PlatformDetection.ValidateBackendAvailability(ComputeBackendType.Metal);
+            return new AotMetalBackendPlugin();
+        };
+
+        // Register OpenCL backend (when available)
+        _factories["DotCompute.Backends.OpenCL"] = () =>
+        {
+            _logger.LogDebug("Creating OpenCL backend plugin");
+
+            // Use comprehensive platform detection for OpenCL availability
+            PlatformDetection.ValidateBackendAvailability(ComputeBackendType.OpenCL);
+            return new AotOpenClBackendPlugin();
+        };
+
+        // Register DirectCompute backend (when available)
+        _factories["DotCompute.Backends.DirectCompute"] = () =>
+        {
+            _logger.LogDebug("Creating DirectCompute backend plugin");
+
+            // Use comprehensive platform detection for DirectCompute availability
+            PlatformDetection.ValidateBackendAvailability(ComputeBackendType.DirectCompute);
+            return new AotDirectComputeBackendPlugin();
+        };
+
+        // Register Vulkan compute backend (when available)
+        _factories["DotCompute.Backends.Vulkan"] = () =>
+        {
+            _logger.LogDebug("Creating Vulkan compute backend plugin");
+
+            // Use comprehensive platform detection for Vulkan availability
+            PlatformDetection.ValidateBackendAvailability(ComputeBackendType.Vulkan);
+            return new AotVulkanBackendPlugin();
         };
 
         _logger.LogInformation("Registered {Count} plugin factories", _factories.Count);
@@ -137,6 +154,11 @@ public sealed class AotPluginRegistry : IDisposable
 
                 _logger.LogWarning("No factory found for plugin type: {Type}", pluginTypeName);
                 return null;
+            }
+            catch (PlatformNotSupportedException)
+            {
+                // Re-throw platform not supported exceptions so callers can handle them appropriately
+                throw;
             }
             catch (Exception ex)
             {
@@ -410,7 +432,7 @@ internal sealed class AotCpuBackendPlugin : IBackendPlugin
 
     public string Id => "DotCompute.Backends.CPU";
     public string Name => "CPU Backend";
-    public string Description => "Multi-threaded CPU compute backend with SIMD acceleration";
+    public string Description => GetCpuBackendDescription();
     public Version Version => new(1, 0, 0);
     public string Author => "DotCompute Team";
     public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
@@ -469,6 +491,32 @@ internal sealed class AotCpuBackendPlugin : IBackendPlugin
 
     public PluginMetrics GetMetrics() => new();
 
+    private static string GetCpuBackendDescription()
+    {
+        var hardware = PlatformDetection.Hardware;
+        var capabilities = new List<string> { "Multi-threaded CPU compute backend" };
+        
+        // Add SIMD capabilities
+        var simdFeatures = new List<string>();
+        if (hardware.SupportsAvx512F) simdFeatures.Add("AVX-512");
+        else if (hardware.SupportsAvx2) simdFeatures.Add("AVX2");
+        else if (hardware.SupportsAvx) simdFeatures.Add("AVX");
+        else if (hardware.SupportsSse42) simdFeatures.Add("SSE4.2");
+        else if (hardware.SupportsSse2) simdFeatures.Add("SSE2");
+        
+        if (hardware.SupportsArmBase) simdFeatures.Add("NEON");
+        
+        if (simdFeatures.Count > 0)
+        {
+            capabilities.Add($"SIMD acceleration ({string.Join(", ", simdFeatures)})");
+        }
+        
+        capabilities.Add($"Vector size: {hardware.VectorSizeBytes} bytes");
+        capabilities.Add($"{PlatformDetection.Current.ProcessorCount} threads");
+        
+        return string.Join(" | ", capabilities);
+    }
+    
     public void Dispose()
     {
         // No resources to dispose
@@ -755,4 +803,277 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
     }
 
     private static bool IsMetalAvailable() => OperatingSystem.IsMacOS() || OperatingSystem.IsIOS();
+}
+
+/// <summary>
+/// Minimal OpenCL backend plugin implementation for AOT compatibility.
+/// </summary>
+internal sealed class AotOpenClBackendPlugin : IBackendPlugin
+{
+    private readonly Lock _lock = new();
+    private PluginState _state = PluginState.Loaded;
+    private PluginHealth _health = PluginHealth.Unknown;
+    private bool _disposed;
+
+    public string Id => "DotCompute.Backends.OpenCL";
+    public string Name => "OpenCL Backend";
+    public string Description => "Cross-platform OpenCL compute backend";
+    public Version Version => new(1, 0, 0);
+    public string Author => "DotCompute Team";
+    public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
+    public PluginState State => _state;
+    public PluginHealth Health => _health;
+
+    public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+    public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+    public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+
+    public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
+
+    public async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            var oldState = _state;
+            if (PlatformDetection.IsBackendAvailable(ComputeBackendType.OpenCL))
+            {
+                _state = PluginState.Initialized;
+                _health = PluginHealth.Healthy;
+            }
+            else
+            {
+                _state = PluginState.Failed;
+                _health = PluginHealth.Unhealthy;
+            }
+            StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
+        }
+        await Task.CompletedTask;
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            if (_health != PluginHealth.Healthy)
+                return Task.CompletedTask;
+
+            var oldState = _state;
+            _state = PluginState.Running;
+            StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            var oldState = _state;
+            _state = PluginState.Stopped;
+            StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
+        }
+        return Task.CompletedTask;
+    }
+
+    public PluginValidationResult Validate()
+    {
+        var result = new PluginValidationResult { IsValid = PlatformDetection.IsBackendAvailable(ComputeBackendType.OpenCL) };
+        if (!result.IsValid)
+        {
+            result.Errors.Add("OpenCL runtime not found or no compatible devices available");
+        }
+        return result;
+    }
+
+    public string GetConfigurationSchema() => "{}";
+    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public PluginMetrics GetMetrics() => new();
+    
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+    }
+}
+
+/// <summary>
+/// Minimal DirectCompute backend plugin implementation for AOT compatibility.
+/// </summary>
+internal sealed class AotDirectComputeBackendPlugin : IBackendPlugin
+{
+    private readonly Lock _lock = new();
+    private PluginState _state = PluginState.Loaded;
+    private PluginHealth _health = PluginHealth.Unknown;
+    private bool _disposed;
+
+    public string Id => "DotCompute.Backends.DirectCompute";
+    public string Name => "DirectCompute Backend";
+    public string Description => "Windows DirectCompute backend using DirectX compute shaders";
+    public Version Version => new(1, 0, 0);
+    public string Author => "DotCompute Team";
+    public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
+    public PluginState State => _state;
+    public PluginHealth Health => _health;
+
+    public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+    public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+    public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+
+    public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
+
+    public async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            var oldState = _state;
+            if (PlatformDetection.IsBackendAvailable(ComputeBackendType.DirectCompute))
+            {
+                _state = PluginState.Initialized;
+                _health = PluginHealth.Healthy;
+            }
+            else
+            {
+                _state = PluginState.Failed;
+                _health = PluginHealth.Unhealthy;
+            }
+            StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
+        }
+        await Task.CompletedTask;
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            if (_health != PluginHealth.Healthy)
+                return Task.CompletedTask;
+
+            var oldState = _state;
+            _state = PluginState.Running;
+            StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            var oldState = _state;
+            _state = PluginState.Stopped;
+            StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
+        }
+        return Task.CompletedTask;
+    }
+
+    public PluginValidationResult Validate()
+    {
+        var result = new PluginValidationResult { IsValid = PlatformDetection.IsBackendAvailable(ComputeBackendType.DirectCompute) };
+        if (!result.IsValid)
+        {
+            result.Errors.Add("DirectCompute is only available on Windows with DirectX 11+ support");
+        }
+        return result;
+    }
+
+    public string GetConfigurationSchema() => "{}";
+    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public PluginMetrics GetMetrics() => new();
+    
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+    }
+}
+
+/// <summary>
+/// Minimal Vulkan compute backend plugin implementation for AOT compatibility.
+/// </summary>
+internal sealed class AotVulkanBackendPlugin : IBackendPlugin
+{
+    private readonly Lock _lock = new();
+    private PluginState _state = PluginState.Loaded;
+    private PluginHealth _health = PluginHealth.Unknown;
+    private bool _disposed;
+
+    public string Id => "DotCompute.Backends.Vulkan";
+    public string Name => "Vulkan Compute Backend";
+    public string Description => "Cross-platform Vulkan compute backend";
+    public Version Version => new(1, 0, 0);
+    public string Author => "DotCompute Team";
+    public PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
+    public PluginState State => _state;
+    public PluginHealth Health => _health;
+
+    public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+    public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+    public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+
+    public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
+
+    public async Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            var oldState = _state;
+            if (PlatformDetection.IsBackendAvailable(ComputeBackendType.Vulkan))
+            {
+                _state = PluginState.Initialized;
+                _health = PluginHealth.Healthy;
+            }
+            else
+            {
+                _state = PluginState.Failed;
+                _health = PluginHealth.Unhealthy;
+            }
+            StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
+        }
+        await Task.CompletedTask;
+    }
+
+    public Task StartAsync(CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            if (_health != PluginHealth.Healthy)
+                return Task.CompletedTask;
+
+            var oldState = _state;
+            _state = PluginState.Running;
+            StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken = default)
+    {
+        lock (_lock)
+        {
+            var oldState = _state;
+            _state = PluginState.Stopped;
+            StateChanged?.Invoke(this, new PluginStateChangedEventArgs(oldState, _state));
+        }
+        return Task.CompletedTask;
+    }
+
+    public PluginValidationResult Validate()
+    {
+        var result = new PluginValidationResult { IsValid = PlatformDetection.IsBackendAvailable(ComputeBackendType.Vulkan) };
+        if (!result.IsValid)
+        {
+            result.Errors.Add("Vulkan compute runtime not found or no compatible devices available");
+        }
+        return result;
+    }
+
+    public string GetConfigurationSchema() => "{}";
+    public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    public PluginMetrics GetMetrics() => new();
+    
+    public void Dispose()
+    {
+        if (_disposed) return;
+        _disposed = true;
+    }
 }

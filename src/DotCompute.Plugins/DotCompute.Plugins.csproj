@@ -22,6 +22,17 @@
     <PackageReference Include="System.Runtime.Loader" Version="4.3.0" />
     <PackageReference Include="System.Composition" Version="9.0.8" />
     <PackageReference Include="McMaster.NETCore.Plugins" Version="2.0.0" />
+    <!-- NuGet and Security Dependencies -->
+    <PackageReference Include="NuGet.Common" Version="6.12.0" />
+    <PackageReference Include="NuGet.Configuration" Version="6.12.0" />
+    <PackageReference Include="NuGet.Frameworks" Version="6.12.0" />
+    <PackageReference Include="NuGet.Packaging" Version="6.12.0" />
+    <PackageReference Include="NuGet.Protocol" Version="6.12.0" />
+    <PackageReference Include="NuGet.Resolver" Version="6.12.0" />
+    <PackageReference Include="NuGet.Versioning" Version="6.12.0" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="9.0.0" />
+    <PackageReference Include="System.Security.Cryptography.X509Certificates" Version="4.3.2" />
+    <PackageReference Include="System.Text.Json" Version="9.0.0" />
   </ItemGroup>
 
   <ItemGroup>
