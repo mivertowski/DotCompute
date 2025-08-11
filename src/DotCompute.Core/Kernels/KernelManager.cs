@@ -11,7 +11,7 @@ namespace DotCompute.Core.Kernels;
 /// <summary>
 /// Manages kernel generation, compilation, caching, and execution.
 /// </summary>
-public sealed partial class KernelManager : IDisposable
+public sealed partial class KernelManager : IKernelManager
 {
     private readonly ILogger<KernelManager> _logger;
     private readonly Dictionary<AcceleratorType, IKernelGenerator> _generators;

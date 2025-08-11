@@ -65,6 +65,10 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         KernelExecutionConfig executionConfig,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(kernel);
+        ArgumentNullException.ThrowIfNull(arguments);
+        ArgumentNullException.ThrowIfNull(executionConfig);
+        
         if (_disposed) throw new ObjectDisposedException(nameof(DirectComputeKernelExecutor));
 
         var handle = EnqueueExecution(kernel, arguments, executionConfig);

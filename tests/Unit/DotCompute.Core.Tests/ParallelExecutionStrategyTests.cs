@@ -28,7 +28,7 @@ namespace DotCompute.Core.Tests;
 public class ParallelExecutionStrategyTests : IAsyncDisposable
 {
     private readonly Mock<IAcceleratorManager> _mockAcceleratorManager;
-    private readonly Mock<KernelManager> _mockKernelManager;
+    private readonly Mock<IKernelManager> _mockKernelManager;
     private readonly NullLoggerFactory _loggerFactory;
     private readonly NullLogger<ParallelExecutionStrategy> _logger;
     private readonly List<Mock<IAccelerator>> _mockAccelerators;
@@ -39,7 +39,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
         _loggerFactory = new NullLoggerFactory();
         _logger = new NullLogger<ParallelExecutionStrategy>();
         _mockAcceleratorManager = new Mock<IAcceleratorManager>();
-        _mockKernelManager = new Mock<KernelManager>();
+        _mockKernelManager = new Mock<IKernelManager>();
         
         // Create mock GPU accelerators
         _mockAccelerators = CreateMockGPUAccelerators(4);

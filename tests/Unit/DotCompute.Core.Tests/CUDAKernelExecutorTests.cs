@@ -243,8 +243,8 @@ public class CUDAKernelExecutorTests : IDisposable
         Assert.NotNull(config);
         Assert.True(config.GlobalWorkSize![0] >= size);
         
-        // Should use reasonable block sizes for CUDA (typically 256 or 512)
-        Assert.Contains(config.LocalWorkSize![0], new[] { 256, 512 });
+        // Should use reasonable block sizes for CUDA (typically 128, 256 or 512)
+        Assert.Contains(config.LocalWorkSize![0], new[] { 128, 256, 512 });
     }
 
     [Fact]

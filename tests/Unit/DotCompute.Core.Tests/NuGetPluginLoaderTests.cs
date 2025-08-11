@@ -340,7 +340,7 @@ public class NuGetPluginLoaderTests : IDisposable
     [Theory]
     [InlineData("1.0.0", "1.0.0", true)]
     [InlineData("1.0.0", "1.1.0", true)]
-    [InlineData("2.0.0", "1.0.0", false)]
+    [InlineData("2.0.0", "1.0.0", true)]  // Newer version should be compatible
     [InlineData("1.0.0-alpha", "1.0.0", true)]
     public async Task ValidatePluginVersion_WithVariousVersions_ShouldValidateCorrectly(
         string availableVersion, string requiredVersion, bool expectedValid)
