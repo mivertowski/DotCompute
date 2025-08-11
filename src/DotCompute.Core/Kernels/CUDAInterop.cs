@@ -712,7 +712,10 @@ internal static unsafe class CUDAInterop
         CU_DEVICE_ATTRIBUTE_MAX_SHARED_MEMORY_PER_BLOCK = 8,
         CU_DEVICE_ATTRIBUTE_MAX_REGISTERS_PER_BLOCK = 12,
         CU_DEVICE_ATTRIBUTE_WARP_SIZE = 10,
-        CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT = 16
+        CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT = 16,
+        CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR = 39,
+        CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR = 75,
+        CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR = 76
     }
 
     /// <summary>
@@ -894,6 +897,35 @@ internal static unsafe class CUDAInterop
         void** kernelParams,
         void** extra)
     {
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuStreamDestroy(CUstream hStream)
+    {
+        return CUresult.CUDA_SUCCESS;
+    }
+
+    public static CUresult cuStreamQuery(CUstream hStream)
+    {
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuEventElapsedTime(out float pMilliseconds, CUevent hStart, CUevent hEnd)
+    {
+        pMilliseconds = 0.0f;
+        return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuOccupancyMaxPotentialBlockSize(
+        out int minGridSize,
+        out int blockSize,
+        CUfunction func,
+        IntPtr blockSizeToDynamicSMemSize,
+        nuint dynamicSMemSize,
+        int blockSizeLimit)
+    {
+        minGridSize = 0;
+        blockSize = 0;
         return CUresult.CUDA_ERROR_NOT_INITIALIZED;
     }
 }
