@@ -368,15 +368,10 @@ public static class AdvancedPolynomialSolver
             IsConstant = degree == 0,
             IsLinear = degree == 1,
             IsQuadratic = degree == 2,
-            LeadingCoefficient = degree >= 0 ? coefficients[coefficients.Length - degree - 1] : 0
+            LeadingCoefficient = degree >= 0 ? coefficients[coefficients.Length - degree - 1] : 0,
+            RootBounds = degree > 0 ? EstimateRootBounds(coefficients, degree) : (0f, 0f),
+            ConditionNumber = degree > 0 ? EstimateConditionNumber(coefficients) : 1f
         };
-        
-        if (degree > 0)
-        {
-            // Estimate root bounds using various methods
-            analysis.RootBounds = EstimateRootBounds(coefficients, degree);
-            analysis.ConditionNumber = EstimateConditionNumber(coefficients);
-        }
         
         return analysis;
     }

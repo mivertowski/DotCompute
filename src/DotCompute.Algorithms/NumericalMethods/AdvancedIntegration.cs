@@ -296,9 +296,9 @@ public static class AdvancedIntegration
         // Nodes and weights for [-1,1], then transform to [a,b]
         var nodes = new float[] {
             0.0f,
-            ±0.4058451513773972f,
-            ±0.7415311855993944f,
-            ±0.9491079123427585f
+            0.4058451513773972f, -0.4058451513773972f,
+            0.7415311855993944f, -0.7415311855993944f,
+            0.9491079123427585f, -0.9491079123427585f
         };
         
         var weights = new float[] {

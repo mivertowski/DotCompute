@@ -23,7 +23,6 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     private readonly Timer _pressureMonitor;
     
     // Performance optimization constants
-    private const int DefaultChunkSize = 4 * 1024 * 1024; // 4MB chunks
     private static readonly int MaxConcurrentTransfers = Environment.ProcessorCount * 2;
     private const int LargeDatasetThreshold = 64 * 1024 * 1024; // 64MB
     private const double MemoryPressureThreshold = 0.85;
@@ -76,8 +75,6 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             };
 
             IMemoryBuffer? buffer = null;
-            MemoryMappedFile? mmf = null;
-            MemoryMappedViewAccessor? accessor = null;
 
             try
             {
@@ -128,10 +125,6 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             }
             finally
             {
-                // Cleanup memory-mapped resources
-                accessor?.Dispose();
-                mmf?.Dispose();
-                
                 // Don't dispose buffer - caller owns it
             }
         }
@@ -258,7 +251,9 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             try
             {
                 if (File.Exists(tempFileName))
+                {
                     File.Delete(tempFileName);
+                }
             }
             catch
             {
@@ -313,7 +308,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Processes a single chunk of data during streaming transfer.
     /// </summary>
-    private async Task ProcessChunkAsync<T>(
+    private static async Task ProcessChunkAsync<T>(
         T[] data,
         IMemoryBuffer buffer,
         int chunkIndex,
@@ -329,7 +324,10 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             var endIndex = Math.Min(startIndex + (chunkSize / elementSize), data.Length);
             var actualChunkSize = endIndex - startIndex;
             
-            if (actualChunkSize <= 0) return;
+            if (actualChunkSize <= 0)
+            {
+                return;
+            }
             
             var chunkData = new T[actualChunkSize];
             Array.Copy(data, startIndex, chunkData, 0, actualChunkSize);
@@ -346,7 +344,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Verifies data integrity using optimized sampling for large datasets.
     /// </summary>
-    private async Task<bool> VerifyDataIntegrityAsync<T>(
+    private static async Task<bool> VerifyDataIntegrityAsync<T>(
         IMemoryBuffer buffer,
         T[] originalData,
         TransferOptions options,
@@ -359,7 +357,9 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
         var readData = MemoryMarshal.Cast<byte, T>(readBuffer);
         
         if (readData.Length != originalData.Length)
+        {
             return false;
+        }
         
         // For large datasets, use statistical sampling for efficiency
         if (originalData.Length > 100000)
@@ -376,18 +376,24 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Verifies data integrity using statistical sampling (fixed bounds checking).
     /// </summary>
-    private bool VerifyDataIntegrityWithSampling<T>(T[] original, ReadOnlySpan<T> transferred, int sampleSize) where T : unmanaged
+    private static bool VerifyDataIntegrityWithSampling<T>(T[] original, ReadOnlySpan<T> transferred, int sampleSize) where T : unmanaged
     {
         var actualSampleSize = Math.Min(sampleSize, Math.Min(original.Length, transferred.Length));
-        var random = new Random(42); // Deterministic for consistent testing
+#pragma warning disable CA5394 // Random is acceptable for non-security testing
+        var random = Random.Shared; // Use thread-safe shared instance
+#pragma warning restore CA5394
         
         for (int i = 0; i < actualSampleSize; i++)
         {
             // Use proper random sampling with bounds checking
+#pragma warning disable CA5394 // Random is acceptable for non-security testing
             var index = random.Next(0, Math.Min(original.Length, transferred.Length));
+#pragma warning restore CA5394
             
             if (!original[index].Equals(transferred[index]))
+            {
                 return false;
+            }
         }
         
         return true;
@@ -396,10 +402,12 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Verifies complete data integrity for smaller datasets.
     /// </summary>
-    private bool VerifyDataIntegrityFull<T>(T[] original, ReadOnlySpan<T> transferred) where T : unmanaged
+    private static bool VerifyDataIntegrityFull<T>(T[] original, ReadOnlySpan<T> transferred) where T : unmanaged
     {
         if (original.Length != transferred.Length)
+        {
             return false;
+        }
             
         return original.AsSpan().SequenceEqual(transferred);
     }
@@ -407,7 +415,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Calculates transfer efficiency ratio based on theoretical vs actual performance.
     /// </summary>
-    private double CalculateEfficiencyRatio(AdvancedTransferResult result)
+    private static double CalculateEfficiencyRatio(AdvancedTransferResult result)
     {
         // Theoretical maximum based on system memory bandwidth (assume ~25GB/s for DDR4)
         const double theoreticalMaxBandwidthMBps = 25 * 1024; // 25GB/s in MB/s
@@ -419,12 +427,15 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Calculates the benefit gained from concurrent execution.
     /// </summary>
-    private double CalculateConcurrencyBenefit(AdvancedTransferResult[] results, TimeSpan totalTime)
+    private static double CalculateConcurrencyBenefit(IReadOnlyCollection<AdvancedTransferResult> results, TimeSpan totalTime)
     {
         var sequentialTime = results.Sum(r => r.Duration.TotalMilliseconds);
         var concurrentTime = totalTime.TotalMilliseconds;
         
-        if (concurrentTime <= 0) return 0;
+        if (concurrentTime <= 0)
+        {
+            return 0;
+        }
         
         return Math.Max(0, (sequentialTime - concurrentTime) / sequentialTime);
     }
@@ -491,7 +502,9 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Gets comprehensive transfer statistics.
     /// </summary>
-    public TransferStatistics GetStatistics()
+    public TransferStatistics Statistics => GetStatistics();
+
+    private TransferStatistics GetStatistics()
     {
         lock (_statsLock)
         {
@@ -508,10 +521,13 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
         _disposed = true;
         
-        _shutdownCts.Cancel();
+        await _shutdownCts.CancelAsync();
         await _pressureMonitor.DisposeAsync();
         _concurrencyLimiter.Dispose();
         _shutdownCts.Dispose();
@@ -550,7 +566,7 @@ public class ConcurrentTransferResult
     public int TransferCount { get; set; }
     public int SuccessfulTransfers { get; set; }
     public int FailedTransfers { get; set; }
-    public AdvancedTransferResult[] Results { get; set; } = Array.Empty<AdvancedTransferResult>();
+    public IReadOnlyCollection<AdvancedTransferResult> Results { get; set; } = Array.Empty<AdvancedTransferResult>();
     public long TotalBytes { get; set; }
     public double AverageThroughputMBps { get; set; }
     public double ConcurrencyBenefit { get; set; }
@@ -563,7 +579,7 @@ public class TransferOptions
 {
     public static TransferOptions Default => new();
     
-    public bool EnableCompression { get; set; } = false;
+    public bool EnableCompression { get; set; }
     public bool EnableMemoryMapping { get; set; } = true;
     public bool VerifyIntegrity { get; set; } = true;
     public int ChunkSize { get; set; } = 4 * 1024 * 1024; // 4MB
@@ -579,7 +595,7 @@ public class ConcurrentTransferOptions
     public static ConcurrentTransferOptions Default => new();
     
     public int MaxConcurrency { get; set; } = Environment.ProcessorCount;
-    public bool EnableCompression { get; set; } = false;
+    public bool EnableCompression { get; set; }
     public bool EnableMemoryMapping { get; set; } = true;
     public bool VerifyIntegrity { get; set; } = true;
     public int ChunkSize { get; set; } = 4 * 1024 * 1024; // 4MB

@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.Loader;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Plugins.Loaders
@@ -144,10 +145,10 @@ namespace DotCompute.Plugins.Loaders
                 var currentOS = _runtimeEnvironment.OSDescription;
                 var currentArch = _runtimeEnvironment.Architecture.ToString();
 
-                var isOSCompatible = manifest.SupportedPlatforms.Any(platform => 
+                var isOSCompatible = manifest.SupportedPlatforms.Any(platform =>
                     IsOperatingSystemCompatible(currentOS, platform));
 
-                var isArchCompatible = manifest.SupportedPlatforms.Any(platform => 
+                var isArchCompatible = manifest.SupportedPlatforms.Any(platform =>
                     IsArchitectureCompatible(currentArch, platform));
 
                 if (!isOSCompatible)
@@ -335,7 +336,7 @@ namespace DotCompute.Plugins.Loaders
         {
             // Simplified compatibility check
             // In a real implementation, this would use NuGet.Frameworks library
-            
+
             var currentFramework = _runtimeEnvironment.FrameworkDescription;
 
             // Handle common TFM patterns
@@ -344,7 +345,7 @@ namespace DotCompute.Plugins.Loaders
                 targetFramework.StartsWith("net7.0", StringComparison.OrdinalIgnoreCase) ||
                 targetFramework.StartsWith("net6.0", StringComparison.OrdinalIgnoreCase))
             {
-                return currentFramework.Contains(".NET 9.") || 
+                return currentFramework.Contains(".NET 9.") ||
                        currentFramework.Contains(".NET 8.") ||
                        currentFramework.Contains(".NET 7.") ||
                        currentFramework.Contains(".NET 6.");
@@ -364,16 +365,13 @@ namespace DotCompute.Plugins.Loaders
         /// </summary>
         private bool IsOperatingSystemCompatible(string currentOS, string platform)
         {
-            var platformLower = platform.ToLowerInvariant();
-            var osLower = currentOS.ToLowerInvariant();
-
-            return platformLower switch
+            return platform switch
             {
-                "windows" or "win" => osLower.Contains("windows"),
-                "linux" => osLower.Contains("linux"),
-                "macos" or "osx" => osLower.Contains("darwin") || osLower.Contains("macos"),
+                string p when p.Equals("windows", StringComparison.OrdinalIgnoreCase) || p.Equals("win", StringComparison.OrdinalIgnoreCase) => currentOS.Contains("windows", StringComparison.OrdinalIgnoreCase),
+                string p when p.Equals("linux", StringComparison.OrdinalIgnoreCase) => currentOS.Contains("linux", StringComparison.OrdinalIgnoreCase),
+                string p when p.Equals("macos", StringComparison.OrdinalIgnoreCase) || p.Equals("osx", StringComparison.OrdinalIgnoreCase) => currentOS.Contains("darwin", StringComparison.OrdinalIgnoreCase) || currentOS.Contains("macos", StringComparison.OrdinalIgnoreCase),
                 "any" or "*" => true,
-                _ => osLower.Contains(platformLower)
+                _ => currentOS.Contains(platform, StringComparison.OrdinalIgnoreCase)
             };
         }
 
@@ -382,20 +380,17 @@ namespace DotCompute.Plugins.Loaders
         /// </summary>
         private bool IsArchitectureCompatible(string currentArch, string platform)
         {
-            var platformLower = platform.ToLowerInvariant();
-            var archLower = currentArch.ToLowerInvariant();
+            if (platform.Contains("x64", StringComparison.OrdinalIgnoreCase) || platform.Contains("x86_64", StringComparison.OrdinalIgnoreCase))
+                return currentArch.Contains("x64", StringComparison.OrdinalIgnoreCase) || currentArch.Contains("x86_64", StringComparison.OrdinalIgnoreCase);
 
-            if (platformLower.Contains("x64") || platformLower.Contains("x86_64"))
-                return archLower.Contains("x64") || archLower.Contains("x86_64");
+            if (platform.Contains("x86", StringComparison.OrdinalIgnoreCase))
+                return currentArch.Contains("x86", StringComparison.OrdinalIgnoreCase);
 
-            if (platformLower.Contains("x86"))
-                return archLower.Contains("x86");
+            if (platform.Contains("arm64", StringComparison.OrdinalIgnoreCase))
+                return currentArch.Contains("arm64", StringComparison.OrdinalIgnoreCase);
 
-            if (platformLower.Contains("arm64"))
-                return archLower.Contains("arm64");
-
-            if (platformLower.Contains("arm"))
-                return archLower.Contains("arm");
+            if (platform.Contains("arm", StringComparison.OrdinalIgnoreCase))
+                return currentArch.Contains("arm", StringComparison.OrdinalIgnoreCase);
 
             // Default to compatible if we can't determine
             return true;
@@ -409,21 +404,21 @@ namespace DotCompute.Plugins.Loaders
             await Task.CompletedTask; // Placeholder for async signature
 
             // Check for Windows-specific features
-            if (manifest.Metadata?.ContainsKey("RequiresWindows") == true && 
+            if (manifest.Metadata?.ContainsKey("RequiresWindows") == true &&
                 !RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 result.CompatibilityErrors.Add("Plugin requires Windows platform");
             }
 
             // Check for Linux-specific features
-            if (manifest.Metadata?.ContainsKey("RequiresLinux") == true && 
+            if (manifest.Metadata?.ContainsKey("RequiresLinux") == true &&
                 !RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 result.CompatibilityErrors.Add("Plugin requires Linux platform");
             }
 
             // Check for macOS-specific features
-            if (manifest.Metadata?.ContainsKey("RequiresMacOS") == true && 
+            if (manifest.Metadata?.ContainsKey("RequiresMacOS") == true &&
                 !RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 result.CompatibilityErrors.Add("Plugin requires macOS platform");
@@ -445,8 +440,8 @@ namespace DotCompute.Plugins.Loaders
 
             // Check for known AOT-incompatible features in metadata
             var aotIncompatibleFeatures = new[] { "UsesDynamicCode", "UsesReflection", "UsesEmit" };
-            if (aotIncompatibleFeatures.Any(feature => 
-                manifest.Metadata?.ContainsKey(feature) == true && 
+            if (aotIncompatibleFeatures.Any(feature =>
+                manifest.Metadata?.ContainsKey(feature) == true &&
                 bool.TryParse(manifest.Metadata[feature], out var uses) && uses))
             {
                 return false;
@@ -482,8 +477,8 @@ namespace DotCompute.Plugins.Loaders
 
             // Check for features that require JIT
             var jitRequiredFeatures = new[] { "UsesDynamicCode", "UsesEmit", "UsesExpression" };
-            return jitRequiredFeatures.Any(feature => 
-                manifest.Metadata?.ContainsKey(feature) == true && 
+            return jitRequiredFeatures.Any(feature =>
+                manifest.Metadata?.ContainsKey(feature) == true &&
                 bool.TryParse(manifest.Metadata[feature], out var uses) && uses);
         }
 
@@ -496,32 +491,37 @@ namespace DotCompute.Plugins.Loaders
 
             try
             {
-                // Load assembly for reflection (without executing)
-                var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyPath);
-                
-                // Get target framework from assembly attributes
-                var targetFrameworkAttr = assembly.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>();
-                if (targetFrameworkAttr != null)
+                // Use a custom AssemblyLoadContext for safe assembly inspection
+                var loadContext = new AnalysisAssemblyLoadContext();
+                try
                 {
-                    info.TargetFramework = targetFrameworkAttr.FrameworkName;
+                    var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
+
+                    // Get target framework from assembly attributes
+                    var targetFrameworkAttr = assembly.GetCustomAttributesData()
+                        .FirstOrDefault(a => a.AttributeType.FullName == "System.Runtime.Versioning.TargetFrameworkAttribute");
+                    if (targetFrameworkAttr?.ConstructorArguments.Count > 0)
+                    {
+                        info.TargetFramework = targetFrameworkAttr.ConstructorArguments[0].Value?.ToString();
+                    }
+
+                    // Check for unsafe code usage by examining metadata
+                    info.UsesUnsafeCode = HasUnsafeCodeMetadata(assembly);
+
+                    // Check for reflection usage (simplified)
+                    info.UsesReflection = HasReflectionUsageMetadata(assembly);
+
+                    // Check for dynamic code generation
+                    var systemReflectionEmit = "System.Reflection.Emit";
+                    info.UsesDynamicCodeGeneration = assembly.GetReferencedAssemblies()
+                        .Any(a => a.Name?.Contains(systemReflectionEmit, StringComparison.OrdinalIgnoreCase) == true);
+
+                    info.IsCompatible = !info.UsesUnsafeCode; // Simplified compatibility check
                 }
-
-                // Check for unsafe code usage
-                info.UsesUnsafeCode = assembly.GetTypes().Any(t => 
-                    t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static)
-                     .Any(m => m.GetMethodBody()?.LocalVariables?.Any(v => v.LocalType.IsPointer) == true));
-
-                // Check for reflection usage (simplified)
-                info.UsesReflection = assembly.GetTypes().Any(t => 
-                    t.GetMethods().Any(m => m.ReturnType == typeof(Type) || 
-                                           m.GetParameters().Any(p => p.ParameterType == typeof(Type))));
-
-                // Check for dynamic code generation
-                var systemReflectionEmit = "System.Reflection.Emit";
-                info.UsesDynamicCodeGeneration = assembly.GetReferencedAssemblies()
-                    .Any(a => a.Name?.Contains(systemReflectionEmit, StringComparison.OrdinalIgnoreCase) == true);
-
-                info.IsCompatible = !info.UsesUnsafeCode; // Simplified compatibility check
+                finally
+                {
+                    loadContext.Unload();
+                }
             }
             catch (Exception ex)
             {
@@ -531,6 +531,42 @@ namespace DotCompute.Plugins.Loaders
 
             await Task.CompletedTask;
             return info;
+        }
+
+        /// <summary>
+        /// Checks if an assembly contains unsafe code by examining metadata.
+        /// </summary>
+        private static bool HasUnsafeCodeMetadata(Assembly assembly)
+        {
+            try
+            {
+                // Check if assembly allows unsafe blocks
+                return assembly.GetCustomAttributesData()
+                    .Any(attr => attr.AttributeType.Name.Contains("UnverifiableCodeAttribute", StringComparison.OrdinalIgnoreCase)) ||
+                    assembly.GetName().Name?.Contains("unsafe", StringComparison.OrdinalIgnoreCase) == true;
+            }
+            catch
+            {
+                // If we can't analyze, assume it doesn't use unsafe code
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Checks if an assembly uses reflection by examining referenced assemblies and metadata.
+        /// </summary>
+        private static bool HasReflectionUsageMetadata(Assembly assembly)
+        {
+            try
+            {
+                return assembly.GetReferencedAssemblies()
+                    .Any(refAssembly => refAssembly.Name?.Contains("System.Reflection", StringComparison.OrdinalIgnoreCase) == true);
+            }
+            catch
+            {
+                // If we can't analyze, assume it doesn't use reflection
+                return false;
+            }
         }
 
         /// <summary>
@@ -581,7 +617,7 @@ namespace DotCompute.Plugins.Loaders
         /// <summary>
         /// Gets or sets whether to fail on framework mismatch.
         /// </summary>
-        public bool FailOnFrameworkMismatch { get; set; } = false;
+        public bool FailOnFrameworkMismatch { get; set; }
 
         /// <summary>
         /// Gets or sets whether to check AOT compatibility.
@@ -591,7 +627,7 @@ namespace DotCompute.Plugins.Loaders
         /// <summary>
         /// Gets or sets whether to fail on AOT incompatibility.
         /// </summary>
-        public bool FailOnAotIncompatibility { get; set; } = false;
+        public bool FailOnAotIncompatibility { get; set; }
 
         /// <summary>
         /// Gets or sets whether to check trimming compatibility.
@@ -601,7 +637,7 @@ namespace DotCompute.Plugins.Loaders
         /// <summary>
         /// Gets or sets whether to allow unsafe code.
         /// </summary>
-        public bool AllowUnsafeCode { get; set; } = false;
+        public bool AllowUnsafeCode { get; set; }
 
         /// <summary>
         /// Gets or sets the compatibility check timeout.
@@ -808,7 +844,7 @@ namespace DotCompute.Plugins.Loaders
     /// <summary>
     /// Compatibility matrix for caching results.
     /// </summary>
-    internal class CompatibilityMatrix
+    internal sealed class CompatibilityMatrix
     {
         public FrameworkCompatibilityInfo FrameworkCompatibility { get; set; } = new();
     }
@@ -816,7 +852,7 @@ namespace DotCompute.Plugins.Loaders
     /// <summary>
     /// Runtime environment information.
     /// </summary>
-    internal class RuntimeEnvironment
+    internal sealed class RuntimeEnvironment
     {
         public Version FrameworkVersion { get; } = Environment.Version;
         public string FrameworkDescription { get; } = RuntimeInformation.FrameworkDescription;
@@ -824,5 +860,21 @@ namespace DotCompute.Plugins.Loaders
         public Architecture Architecture { get; } = RuntimeInformation.OSArchitecture;
         public string RuntimeIdentifier { get; } = RuntimeInformation.RuntimeIdentifier;
         public bool IsAotRuntime { get; } = !System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled;
+    }
+
+    /// <summary>
+    /// Custom AssemblyLoadContext for safely loading assemblies for analysis without executing them.
+    /// </summary>
+    internal sealed class AnalysisAssemblyLoadContext : AssemblyLoadContext
+    {
+        public AnalysisAssemblyLoadContext() : base(isCollectible: true)
+        {
+        }
+
+        protected override Assembly? Load(AssemblyName assemblyName)
+        {
+            // Don't automatically load dependencies - only load what we explicitly request
+            return null;
+        }
     }
 }

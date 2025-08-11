@@ -495,28 +495,46 @@ internal sealed class AotCpuBackendPlugin : IBackendPlugin
     {
         var hardware = PlatformDetection.Hardware;
         var capabilities = new List<string> { "Multi-threaded CPU compute backend" };
-        
+
         // Add SIMD capabilities
         var simdFeatures = new List<string>();
-        if (hardware.SupportsAvx512F) simdFeatures.Add("AVX-512");
-        else if (hardware.SupportsAvx2) simdFeatures.Add("AVX2");
-        else if (hardware.SupportsAvx) simdFeatures.Add("AVX");
-        else if (hardware.SupportsSse42) simdFeatures.Add("SSE4.2");
-        else if (hardware.SupportsSse2) simdFeatures.Add("SSE2");
-        
-        if (hardware.SupportsArmBase) simdFeatures.Add("NEON");
-        
+        if (hardware.SupportsAvx512F)
+        {
+            simdFeatures.Add("AVX-512");
+        }
+        else if (hardware.SupportsAvx2)
+        {
+            simdFeatures.Add("AVX2");
+        }
+        else if (hardware.SupportsAvx)
+        {
+            simdFeatures.Add("AVX");
+        }
+        else if (hardware.SupportsSse42)
+        {
+            simdFeatures.Add("SSE4.2");
+        }
+        else if (hardware.SupportsSse2)
+        {
+            simdFeatures.Add("SSE2");
+        }
+
+        if (hardware.SupportsArmBase)
+        {
+            simdFeatures.Add("NEON");
+        }
+
         if (simdFeatures.Count > 0)
         {
             capabilities.Add($"SIMD acceleration ({string.Join(", ", simdFeatures)})");
         }
-        
+
         capabilities.Add($"Vector size: {hardware.VectorSizeBytes} bytes");
         capabilities.Add($"{PlatformDetection.Current.ProcessorCount} threads");
-        
+
         return string.Join(" | ", capabilities);
     }
-    
+
     public void Dispose()
     {
         // No resources to dispose
@@ -722,7 +740,6 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
     private void OnErrorOccurred(PluginErrorEventArgs e) => ErrorOccurred?.Invoke(this, e);
     private void OnHealthChanged(PluginHealthChangedEventArgs e) => HealthChanged?.Invoke(this, e);
 
-
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration)
     {
         // Minimal implementation for AOT
@@ -811,9 +828,11 @@ internal sealed class AotMetalBackendPlugin : IBackendPlugin
 internal sealed class AotOpenClBackendPlugin : IBackendPlugin
 {
     private readonly Lock _lock = new();
+#pragma warning disable IDE0044 // Make field readonly - these fields are intentionally mutable as they track plugin state
     private PluginState _state = PluginState.Loaded;
     private PluginHealth _health = PluginHealth.Unknown;
     private bool _disposed;
+#pragma warning restore IDE0044
 
     public string Id => "DotCompute.Backends.OpenCL";
     public string Name => "OpenCL Backend";
@@ -825,8 +844,10 @@ internal sealed class AotOpenClBackendPlugin : IBackendPlugin
     public PluginHealth Health => _health;
 
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+#pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
     public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+#pragma warning restore CS0067
 
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
 
@@ -855,7 +876,9 @@ internal sealed class AotOpenClBackendPlugin : IBackendPlugin
         lock (_lock)
         {
             if (_health != PluginHealth.Healthy)
+            {
                 return Task.CompletedTask;
+            }
 
             var oldState = _state;
             _state = PluginState.Running;
@@ -888,10 +911,13 @@ internal sealed class AotOpenClBackendPlugin : IBackendPlugin
     public string GetConfigurationSchema() => "{}";
     public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public PluginMetrics GetMetrics() => new();
-    
+
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
         _disposed = true;
     }
 }
@@ -902,9 +928,11 @@ internal sealed class AotOpenClBackendPlugin : IBackendPlugin
 internal sealed class AotDirectComputeBackendPlugin : IBackendPlugin
 {
     private readonly Lock _lock = new();
+#pragma warning disable IDE0044 // Make field readonly - these fields are intentionally mutable as they track plugin state
     private PluginState _state = PluginState.Loaded;
     private PluginHealth _health = PluginHealth.Unknown;
     private bool _disposed;
+#pragma warning restore IDE0044
 
     public string Id => "DotCompute.Backends.DirectCompute";
     public string Name => "DirectCompute Backend";
@@ -916,8 +944,10 @@ internal sealed class AotDirectComputeBackendPlugin : IBackendPlugin
     public PluginHealth Health => _health;
 
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+#pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
     public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+#pragma warning restore CS0067
 
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
 
@@ -946,7 +976,9 @@ internal sealed class AotDirectComputeBackendPlugin : IBackendPlugin
         lock (_lock)
         {
             if (_health != PluginHealth.Healthy)
+            {
                 return Task.CompletedTask;
+            }
 
             var oldState = _state;
             _state = PluginState.Running;
@@ -979,10 +1011,13 @@ internal sealed class AotDirectComputeBackendPlugin : IBackendPlugin
     public string GetConfigurationSchema() => "{}";
     public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public PluginMetrics GetMetrics() => new();
-    
+
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
         _disposed = true;
     }
 }
@@ -993,9 +1028,11 @@ internal sealed class AotDirectComputeBackendPlugin : IBackendPlugin
 internal sealed class AotVulkanBackendPlugin : IBackendPlugin
 {
     private readonly Lock _lock = new();
+#pragma warning disable IDE0044 // Make field readonly - these fields are intentionally mutable as they track plugin state
     private PluginState _state = PluginState.Loaded;
     private PluginHealth _health = PluginHealth.Unknown;
     private bool _disposed;
+#pragma warning restore IDE0044
 
     public string Id => "DotCompute.Backends.Vulkan";
     public string Name => "Vulkan Compute Backend";
@@ -1007,8 +1044,10 @@ internal sealed class AotVulkanBackendPlugin : IBackendPlugin
     public PluginHealth Health => _health;
 
     public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+#pragma warning disable CS0067 // Event is never used - minimal implementation for AOT compatibility
     public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
     public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+#pragma warning restore CS0067
 
     public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
 
@@ -1037,7 +1076,9 @@ internal sealed class AotVulkanBackendPlugin : IBackendPlugin
         lock (_lock)
         {
             if (_health != PluginHealth.Healthy)
+            {
                 return Task.CompletedTask;
+            }
 
             var oldState = _state;
             _state = PluginState.Running;
@@ -1070,10 +1111,13 @@ internal sealed class AotVulkanBackendPlugin : IBackendPlugin
     public string GetConfigurationSchema() => "{}";
     public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
     public PluginMetrics GetMetrics() => new();
-    
+
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
         _disposed = true;
     }
 }

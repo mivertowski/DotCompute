@@ -13,15 +13,15 @@ public class HardwareAbstractionLayer
 {
     private readonly ILogger<HardwareAbstractionLayer> _logger;
     private readonly Dictionary<ComputeBackendType, BackendCapabilityInfo> _backendCapabilities;
-    
+
     public HardwareAbstractionLayer(ILogger<HardwareAbstractionLayer> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _backendCapabilities = new Dictionary<ComputeBackendType, BackendCapabilityInfo>();
-        
+
         AnalyzeHardwareCapabilities();
     }
-    
+
     /// <summary>
     /// Gets the optimal compute backend configuration for the current hardware.
     /// </summary>
@@ -29,14 +29,14 @@ public class HardwareAbstractionLayer
     {
         var platformInfo = PlatformDetection.Current;
         var hardware = PlatformDetection.Hardware;
-        
+
         _logger.LogInformation("Analyzing optimal compute configuration for {OS} {Arch} with {CPUs} cores",
             platformInfo.OperatingSystem, platformInfo.Architecture, platformInfo.ProcessorCount);
-            
+
         // Find the best available backend
         var primaryBackend = SelectPrimaryBackend();
         var fallbackBackends = GetFallbackBackends(primaryBackend);
-        
+
         var config = new ComputeConfiguration
         {
             PrimaryBackend = primaryBackend,
@@ -46,13 +46,13 @@ public class HardwareAbstractionLayer
             SIMDConfiguration = GetSIMDConfiguration(),
             BackendSpecificSettings = GetBackendSpecificSettings(primaryBackend)
         };
-        
+
         _logger.LogInformation("Selected configuration: Primary={Primary}, Fallbacks=[{Fallbacks}], Parallelism={Parallelism}",
             config.PrimaryBackend, string.Join(", ", config.FallbackBackends), config.MaxParallelism);
-            
+
         return config;
     }
-    
+
     /// <summary>
     /// Validates if a specific backend configuration is supported on the current platform.
     /// </summary>
@@ -63,7 +63,7 @@ public class HardwareAbstractionLayer
             BackendType = backendType,
             IsSupported = PlatformDetection.IsBackendAvailable(backendType)
         };
-        
+
         if (!result.IsSupported)
         {
             try
@@ -75,24 +75,24 @@ public class HardwareAbstractionLayer
                 result.ValidationErrors.Add(ex.Message);
             }
         }
-        
+
         if (result.IsSupported && _backendCapabilities.TryGetValue(backendType, out var capabilities))
         {
             result.EstimatedPerformance = capabilities.RelativePerformance;
             result.MemoryRequirements = capabilities.MemoryRequirements;
             result.SupportedFeatures = capabilities.SupportedFeatures.ToList();
         }
-        
+
         return result;
     }
-    
+
     /// <summary>
     /// Gets performance benchmarking information for all available backends.
     /// </summary>
     public IReadOnlyDictionary<ComputeBackendType, BackendBenchmark> GetBenchmarkInfo()
     {
         var benchmarks = new Dictionary<ComputeBackendType, BackendBenchmark>();
-        
+
         foreach (var backendType in Enum.GetValues<ComputeBackendType>())
         {
             if (PlatformDetection.IsBackendAvailable(backendType))
@@ -100,37 +100,37 @@ public class HardwareAbstractionLayer
                 benchmarks[backendType] = CreateBenchmarkInfo(backendType);
             }
         }
-        
+
         return benchmarks;
     }
-    
+
     private void AnalyzeHardwareCapabilities()
     {
         var platformInfo = PlatformDetection.Current;
         var hardware = PlatformDetection.Hardware;
-        
+
         _logger.LogDebug("Analyzing hardware capabilities...");
         _logger.LogDebug("Platform: {OS} {Arch}, CPUs: {CPUs}, Memory: {Memory:N0} MB",
-            platformInfo.OperatingSystem, platformInfo.Architecture, 
+            platformInfo.OperatingSystem, platformInfo.Architecture,
             platformInfo.ProcessorCount, hardware.TotalPhysicalMemory / (1024 * 1024));
-            
+
         // Analyze each backend
         foreach (var backendType in Enum.GetValues<ComputeBackendType>())
         {
             if (PlatformDetection.IsBackendAvailable(backendType))
             {
                 _backendCapabilities[backendType] = AnalyzeBackendCapabilities(backendType);
-                _logger.LogDebug("Backend {Backend}: Performance={Perf}, Memory={Mem} MB", 
+                _logger.LogDebug("Backend {Backend}: Performance={Perf}, Memory={Mem} MB",
                     backendType, _backendCapabilities[backendType].RelativePerformance,
                     _backendCapabilities[backendType].MemoryRequirements / (1024 * 1024));
             }
         }
     }
-    
+
     private BackendCapabilityInfo AnalyzeBackendCapabilities(ComputeBackendType backendType)
     {
         var hardware = PlatformDetection.Hardware;
-        
+
         return backendType switch
         {
             ComputeBackendType.CPU => new BackendCapabilityInfo
@@ -141,7 +141,7 @@ public class HardwareAbstractionLayer
                 OptimalWorkgroupSize = Math.Min(1024, hardware.ProcessorCount * 4),
                 MaxMemoryAllocation = hardware.AvailablePhysicalMemory / 2
             },
-            
+
             ComputeBackendType.CUDA => new BackendCapabilityInfo
             {
                 RelativePerformance = hardware.HasNvidiaGpu ? 10.0f : 0.0f, // 10x CPU performance estimate
@@ -150,7 +150,7 @@ public class HardwareAbstractionLayer
                 OptimalWorkgroupSize = 256, // CUDA warp size optimization
                 MaxMemoryAllocation = EstimateGpuMemory()
             },
-            
+
             ComputeBackendType.Metal => new BackendCapabilityInfo
             {
                 RelativePerformance = 8.0f, // Slightly lower than CUDA
@@ -159,7 +159,7 @@ public class HardwareAbstractionLayer
                 OptimalWorkgroupSize = 128, // Apple GPU optimization
                 MaxMemoryAllocation = EstimateGpuMemory()
             },
-            
+
             ComputeBackendType.OpenCL => new BackendCapabilityInfo
             {
                 RelativePerformance = hardware.HasGpu ? 6.0f : 2.0f, // GPU or CPU OpenCL
@@ -168,7 +168,7 @@ public class HardwareAbstractionLayer
                 OptimalWorkgroupSize = hardware.HasGpu ? 64 : 16,
                 MaxMemoryAllocation = EstimateOpenClMemory()
             },
-            
+
             ComputeBackendType.DirectCompute => new BackendCapabilityInfo
             {
                 RelativePerformance = 7.0f, // Good performance on Windows
@@ -177,7 +177,7 @@ public class HardwareAbstractionLayer
                 OptimalWorkgroupSize = 64, // DirectX optimization
                 MaxMemoryAllocation = EstimateGpuMemory()
             },
-            
+
             ComputeBackendType.Vulkan => new BackendCapabilityInfo
             {
                 RelativePerformance = 9.0f, // High performance, modern API
@@ -186,7 +186,7 @@ public class HardwareAbstractionLayer
                 OptimalWorkgroupSize = 128, // Vulkan compute optimization
                 MaxMemoryAllocation = EstimateGpuMemory()
             },
-            
+
             _ => new BackendCapabilityInfo
             {
                 RelativePerformance = 0.0f,
@@ -197,51 +197,51 @@ public class HardwareAbstractionLayer
             }
         };
     }
-    
+
     private ComputeBackendType SelectPrimaryBackend()
     {
         var availableBackends = _backendCapabilities.OrderByDescending(kvp => kvp.Value.RelativePerformance);
-        
+
         foreach (var (backendType, capabilities) in availableBackends)
         {
             if (capabilities.RelativePerformance > 0)
             {
-                _logger.LogInformation("Selected {Backend} as primary backend (performance score: {Score})", 
+                _logger.LogInformation("Selected {Backend} as primary backend (performance score: {Score})",
                     backendType, capabilities.RelativePerformance);
                 return backendType;
             }
         }
-        
+
         // Fallback to CPU if nothing else is available
         return ComputeBackendType.CPU;
     }
-    
+
     private List<ComputeBackendType> GetFallbackBackends(ComputeBackendType primaryBackend)
     {
         var fallbacks = new List<ComputeBackendType>();
-        
+
         // Always include CPU as final fallback
         if (primaryBackend != ComputeBackendType.CPU)
         {
             fallbacks.Add(ComputeBackendType.CPU);
         }
-        
+
         // Add other available backends as intermediate fallbacks
         var otherBackends = _backendCapabilities
             .Where(kvp => kvp.Key != primaryBackend && kvp.Key != ComputeBackendType.CPU && kvp.Value.RelativePerformance > 0)
             .OrderByDescending(kvp => kvp.Value.RelativePerformance)
             .Select(kvp => kvp.Key)
             .Take(2); // Limit to 2 additional fallbacks
-            
+
         fallbacks.InsertRange(0, otherBackends);
-        
+
         return fallbacks;
     }
-    
+
     private int CalculateOptimalParallelism(ComputeBackendType backendType)
     {
         var hardware = PlatformDetection.Hardware;
-        
+
         return backendType switch
         {
             ComputeBackendType.CPU => hardware.ProcessorCount,
@@ -253,11 +253,11 @@ public class HardwareAbstractionLayer
             _ => hardware.ProcessorCount
         };
     }
-    
+
     private MemoryConfiguration GetMemoryConfiguration()
     {
         var hardware = PlatformDetection.Hardware;
-        
+
         return new MemoryConfiguration
         {
             TotalSystemMemory = hardware.TotalPhysicalMemory,
@@ -268,11 +268,11 @@ public class HardwareAbstractionLayer
             UseMemoryPools = hardware.TotalPhysicalMemory > 8L * 1024 * 1024 * 1024 // Use pools for systems >8GB
         };
     }
-    
+
     private SIMDConfiguration GetSIMDConfiguration()
     {
         var hardware = PlatformDetection.Hardware;
-        
+
         return new SIMDConfiguration
         {
             PreferredVectorWidth = hardware.VectorSizeBytes,
@@ -282,7 +282,7 @@ public class HardwareAbstractionLayer
             OptimizeForArch = DetermineArchitectureOptimization()
         };
     }
-    
+
     private Dictionary<string, object> GetBackendSpecificSettings(ComputeBackendType backendType)
     {
         return backendType switch
@@ -294,29 +294,29 @@ public class HardwareAbstractionLayer
                 ["stream_priority"] = "high",
                 ["enable_peer_access"] = true
             },
-            
+
             ComputeBackendType.OpenCL => new Dictionary<string, object>
             {
                 ["platform_preference"] = "gpu_first",
                 ["work_group_size"] = _backendCapabilities.GetValueOrDefault(backendType)?.OptimalWorkgroupSize ?? 64,
                 ["enable_profiling"] = false
             },
-            
+
             ComputeBackendType.Metal => new Dictionary<string, object>
             {
                 ["command_buffer_size"] = 64,
                 ["resource_options"] = "storage_mode_shared",
                 ["enable_validation"] = false
             },
-            
+
             _ => new Dictionary<string, object>()
         };
     }
-    
+
     private BackendBenchmark CreateBenchmarkInfo(ComputeBackendType backendType)
     {
         var capabilities = _backendCapabilities.GetValueOrDefault(backendType);
-        
+
         return new BackendBenchmark
         {
             BackendType = backendType,
@@ -327,14 +327,14 @@ public class HardwareAbstractionLayer
             PowerEfficiency = EstimatePowerEfficiency(backendType)
         };
     }
-    
+
     #region Feature Detection Methods
-    
+
     private HashSet<string> GetCpuFeatures()
     {
         var hardware = PlatformDetection.Hardware;
         var features = new HashSet<string>();
-        
+
         if (hardware.SupportsSse) features.Add("SSE");
         if (hardware.SupportsSse2) features.Add("SSE2");
         if (hardware.SupportsSse3) features.Add("SSE3");
@@ -347,20 +347,20 @@ public class HardwareAbstractionLayer
         if (hardware.SupportsAes) features.Add("AES-NI");
         if (hardware.SupportsFma) features.Add("FMA");
         if (hardware.SupportsArmBase) features.Add("NEON");
-        
+
         return features;
     }
-    
-    private HashSet<string> GetCudaFeatures()
+
+    private static HashSet<string> GetCudaFeatures()
     {
         return new HashSet<string>
         {
-            "CUDA_CORES", "TENSOR_CORES", "RT_CORES", "UNIFIED_MEMORY", 
+            "CUDA_CORES", "TENSOR_CORES", "RT_CORES", "UNIFIED_MEMORY",
             "DYNAMIC_PARALLELISM", "COOPERATIVE_GROUPS", "WARP_FUNCTIONS"
         };
     }
-    
-    private HashSet<string> GetMetalFeatures()
+
+    private static HashSet<string> GetMetalFeatures()
     {
         return new HashSet<string>
         {
@@ -368,8 +368,8 @@ public class HardwareAbstractionLayer
             "ARGUMENT_BUFFERS", "RASTER_ORDER_GROUPS", "TILE_SHADERS"
         };
     }
-    
-    private HashSet<string> GetOpenClFeatures()
+
+    private static HashSet<string> GetOpenClFeatures()
     {
         return new HashSet<string>
         {
@@ -377,17 +377,17 @@ public class HardwareAbstractionLayer
             "PIPES", "SVM", "DEVICE_ENQUEUE", "PRINTF"
         };
     }
-    
-    private HashSet<string> GetDirectComputeFeatures()
+
+    private static HashSet<string> GetDirectComputeFeatures()
     {
         return new HashSet<string>
         {
-            "COMPUTE_SHADERS_5_0", "UAV", "STRUCTURED_BUFFERS", 
+            "COMPUTE_SHADERS_5_0", "UAV", "STRUCTURED_BUFFERS",
             "ATOMIC_OPERATIONS", "APPEND_CONSUME_BUFFERS"
         };
     }
-    
-    private HashSet<string> GetVulkanFeatures()
+
+    private static HashSet<string> GetVulkanFeatures()
     {
         return new HashSet<string>
         {
@@ -395,24 +395,24 @@ public class HardwareAbstractionLayer
             "SUBGROUPS", "VARIABLE_POINTERS", "STORAGE_BUFFER_16BIT"
         };
     }
-    
+
     #endregion
-    
+
     #region Performance Estimation Methods
-    
-    private long EstimateGpuMemory()
+
+    private static long EstimateGpuMemory()
     {
         // Conservative estimate - would be better to query actual GPU memory
         return 2L * 1024 * 1024 * 1024; // 2GB default
     }
-    
-    private long EstimateOpenClMemory()
+
+    private static long EstimateOpenClMemory()
     {
         var hardware = PlatformDetection.Hardware;
         return hardware.HasGpu ? EstimateGpuMemory() : hardware.AvailablePhysicalMemory / 4;
     }
-    
-    private float EstimateMemoryBandwidth(ComputeBackendType backendType)
+
+    private static float EstimateMemoryBandwidth(ComputeBackendType backendType)
     {
         return backendType switch
         {
@@ -425,11 +425,11 @@ public class HardwareAbstractionLayer
             _ => 10.0f
         };
     }
-    
-    private float EstimateComputeThroughput(ComputeBackendType backendType)
+
+    private static float EstimateComputeThroughput(ComputeBackendType backendType)
     {
         var hardware = PlatformDetection.Hardware;
-        
+
         return backendType switch
         {
             ComputeBackendType.CPU => hardware.ProcessorCount * 2.5f, // GHz estimate
@@ -441,8 +441,8 @@ public class HardwareAbstractionLayer
             _ => 1.0f
         };
     }
-    
-    private float EstimateLatency(ComputeBackendType backendType)
+
+    private static float EstimateLatency(ComputeBackendType backendType)
     {
         return backendType switch
         {
@@ -455,8 +455,8 @@ public class HardwareAbstractionLayer
             _ => 10.0f
         };
     }
-    
-    private float EstimatePowerEfficiency(ComputeBackendType backendType)
+
+    private static float EstimatePowerEfficiency(ComputeBackendType backendType)
     {
         return backendType switch
         {
@@ -469,26 +469,26 @@ public class HardwareAbstractionLayer
             _ => 1.0f
         };
     }
-    
-    private List<string> GetSupportedSimdInstructions()
+
+    private static List<string> GetSupportedSimdInstructions()
     {
         var hardware = PlatformDetection.Hardware;
         var instructions = new List<string>();
-        
+
         if (hardware.SupportsSse) instructions.Add("SSE");
         if (hardware.SupportsSse2) instructions.Add("SSE2");
         if (hardware.SupportsAvx) instructions.Add("AVX");
         if (hardware.SupportsAvx2) instructions.Add("AVX2");
         if (hardware.SupportsAvx512F) instructions.Add("AVX512F");
         if (hardware.SupportsArmBase) instructions.Add("NEON");
-        
+
         return instructions;
     }
-    
-    private string DetermineArchitectureOptimization()
+
+    private static string DetermineArchitectureOptimization()
     {
         var platform = PlatformDetection.Current;
-        
+
         return platform.ProcessArchitecture switch
         {
             System.Runtime.InteropServices.Architecture.X64 => "x86_64",
@@ -498,7 +498,7 @@ public class HardwareAbstractionLayer
             _ => "generic"
         };
     }
-    
+
     #endregion
 }
 

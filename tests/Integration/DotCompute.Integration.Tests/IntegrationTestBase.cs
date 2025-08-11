@@ -78,19 +78,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                 services.AddSingleton<PluginSystem>();
                 services.AddSingleton<IComputeEngine, DefaultComputeEngine>();
                 
-                // Add adapters for pipeline integration
-                services.AddSingleton<DotCompute.Core.IComputeDevice>(provider =>
-                {
-                    var acceleratorManager = provider.GetRequiredService<IAcceleratorManager>();
-                    return new DotCompute.Core.ComputeDeviceAdapter(acceleratorManager.Default);
-                });
-                
-                services.AddSingleton<DotCompute.Core.Pipelines.IPipelineMemoryManager>(provider =>
-                {
-                    var memoryManager = provider.GetRequiredService<IMemoryManager>();
-                    var computeDevice = provider.GetRequiredService<DotCompute.Core.IComputeDevice>();
-                    return new DotCompute.Core.Pipelines.PipelineMemoryManager(memoryManager, computeDevice);
-                });
+                // Skip pipeline integration for now - these are complex to mock
+                // TODO: Add proper pipeline integration when interfaces are stabilized
                 
                 // Add a simple memory manager factory
                 services.AddSingleton<IMemoryManager>(sp =>

@@ -564,3 +564,7 @@ tests/Unit/DotCompute.Plugins.Tests/.claude-flow/metrics/performance.json
 tests/Unit/DotCompute.Plugins.Tests/.swarm/memory.db
 full_test_output.txt
 test_results.txt
+src/DotCompute.Plugins/apply_fixes.py
+src/DotCompute.Plugins/bulk_fix.sh
+src/DotCompute.Plugins/BulkFixScript.ps1
+src/DotCompute.Plugins/fix_incorrect_insertions.py

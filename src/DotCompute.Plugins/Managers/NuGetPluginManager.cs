@@ -33,7 +33,7 @@ namespace DotCompute.Plugins.Managers
         {
             _logger = logger ?? new NullLogger<NuGetPluginManager>();
             _options = options ?? new NuGetPluginManagerOptions();
-            
+
             var loaderOptions = new NuGetPluginLoaderOptions
             {
                 PluginDirectories = _options.PluginDirectories,
@@ -41,13 +41,13 @@ namespace DotCompute.Plugins.Managers
                 DependencyResolution = _options.DependencyResolution,
                 CompatibilitySettings = _options.CompatibilitySettings
             };
-            
-            _pluginLoader = new NuGetPluginLoader(_logger, loaderOptions);
+
+            _pluginLoader = new NuGetPluginLoader(null, loaderOptions);
             _healthMonitor = new PluginHealthMonitor(_logger);
             _metricsCollector = new PluginMetricsCollector(_logger);
-            
+
             // Set up periodic maintenance
-            _periodicMaintenanceTimer = new Timer(PeriodicMaintenance, null, Timeout.Infinite, Timeout.Infinite);
+            _periodicMaintenanceTimer = new Timer(state => _ = PeriodicMaintenanceAsync(state), null, Timeout.Infinite, Timeout.Infinite);
         }
 
         /// <summary>
@@ -96,10 +96,10 @@ namespace DotCompute.Plugins.Managers
             try
             {
                 // Start health monitoring
-                await _healthMonitor.StartAsync(cancellationToken);
+                await _healthMonitor.StartAsync(cancellationToken).ConfigureAwait(false);
 
                 // Start metrics collection
-                await _metricsCollector.StartAsync(cancellationToken);
+                await _metricsCollector.StartAsync(cancellationToken).ConfigureAwait(false);
 
                 // Start periodic maintenance
                 _periodicMaintenanceTimer.Change(_options.MaintenanceInterval, _options.MaintenanceInterval);
@@ -107,7 +107,7 @@ namespace DotCompute.Plugins.Managers
                 // Auto-discover and load plugins if enabled
                 if (_options.AutoDiscoverPlugins)
                 {
-                    await DiscoverAndLoadPluginsAsync(cancellationToken);
+                    await DiscoverAndLoadPluginsAsync(cancellationToken).ConfigureAwait(false);
                 }
 
                 _isInitialized = true;
@@ -128,7 +128,7 @@ namespace DotCompute.Plugins.Managers
 
             _logger.LogInformation("Starting plugin discovery and loading");
 
-            var manifests = await _pluginLoader.DiscoverPluginsAsync(cancellationToken);
+            var manifests = await _pluginLoader.DiscoverPluginsAsync(cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Discovered {Count} plugins", manifests.Count);
 
             var loadTasks = new List<Task<(string PluginId, bool Success)>>();
@@ -144,7 +144,7 @@ namespace DotCompute.Plugins.Managers
                 loadTasks.Add(LoadPluginSafeAsync(manifest, cancellationToken));
             }
 
-            var results = await Task.WhenAll(loadTasks);
+            var results = await Task.WhenAll(loadTasks).ConfigureAwait(false);
             var successCount = results.Count(r => r.Success);
 
             _logger.LogInformation("Plugin discovery and loading completed. Loaded: {Loaded}/{Total}",
@@ -168,7 +168,7 @@ namespace DotCompute.Plugins.Managers
             _logger.LogInformation("Loading plugin: {PluginId}", pluginId);
 
             // Discover plugins to find the requested one
-            var manifests = await _pluginLoader.DiscoverPluginsAsync(cancellationToken);
+            var manifests = await _pluginLoader.DiscoverPluginsAsync(cancellationToken).ConfigureAwait(false);
             var manifest = manifests.FirstOrDefault(m => m.Id.Equals(pluginId, StringComparison.OrdinalIgnoreCase));
 
             if (manifest == null)
@@ -177,7 +177,7 @@ namespace DotCompute.Plugins.Managers
                 return false;
             }
 
-            var (_, success) = await LoadPluginSafeAsync(manifest, cancellationToken);
+            var (_, success) = await LoadPluginSafeAsync(manifest, cancellationToken).ConfigureAwait(false);
             return success;
         }
 
@@ -203,11 +203,11 @@ namespace DotCompute.Plugins.Managers
                 // Stop the plugin if it's running
                 if (managedPlugin.Plugin?.State == PluginState.Running)
                 {
-                    await managedPlugin.Plugin.StopAsync(cancellationToken);
+                    await managedPlugin.Plugin.StopAsync(cancellationToken).ConfigureAwait(false);
                 }
 
                 // Unload from the loader
-                await _pluginLoader.UnloadPluginAsync(pluginId, cancellationToken);
+                await _pluginLoader.UnloadPluginAsync(pluginId, cancellationToken).ConfigureAwait(false);
 
                 // Remove from managed plugins
                 _managedPlugins.TryRemove(pluginId, out _);
@@ -249,7 +249,7 @@ namespace DotCompute.Plugins.Managers
             }
 
             // Unload the plugin
-            var unloadSuccess = await UnloadPluginAsync(pluginId, cancellationToken);
+            var unloadSuccess = await UnloadPluginAsync(pluginId, cancellationToken).ConfigureAwait(false);
             if (!unloadSuccess)
             {
                 _logger.LogError("Failed to unload plugin for reload: {PluginId}", pluginId);
@@ -257,7 +257,7 @@ namespace DotCompute.Plugins.Managers
             }
 
             // Load the plugin again
-            var loadSuccess = await LoadPluginAsync(pluginId, cancellationToken);
+            var loadSuccess = await LoadPluginAsync(pluginId, cancellationToken).ConfigureAwait(false);
             if (!loadSuccess)
             {
                 _logger.LogError("Failed to load plugin after reload: {PluginId}", pluginId);
@@ -269,7 +269,7 @@ namespace DotCompute.Plugins.Managers
             {
                 try
                 {
-                    await newManagedPlugin.Plugin!.StartAsync(cancellationToken);
+                    await newManagedPlugin.Plugin!.StartAsync(cancellationToken).ConfigureAwait(false);
                     _logger.LogInformation("Plugin reloaded and started successfully: {PluginId}", pluginId);
                 }
                 catch (Exception ex)
@@ -312,7 +312,7 @@ namespace DotCompute.Plugins.Managers
 
             try
             {
-                await managedPlugin.Plugin.StartAsync(cancellationToken);
+                await managedPlugin.Plugin.StartAsync(cancellationToken).ConfigureAwait(false);
                 _logger.LogInformation("Plugin started successfully: {PluginId}", pluginId);
                 return true;
             }
@@ -353,7 +353,7 @@ namespace DotCompute.Plugins.Managers
 
             try
             {
-                await managedPlugin.Plugin.StopAsync(cancellationToken);
+                await managedPlugin.Plugin.StopAsync(cancellationToken).ConfigureAwait(false);
                 _logger.LogInformation("Plugin stopped successfully: {PluginId}", pluginId);
                 return true;
             }
@@ -402,7 +402,7 @@ namespace DotCompute.Plugins.Managers
         public async Task<PluginHealthReport> GetHealthReportAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            return await _healthMonitor.GenerateHealthReportAsync(_managedPlugins.Values, cancellationToken);
+            return await _healthMonitor.GenerateHealthReportAsync(_managedPlugins.Values, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -411,7 +411,7 @@ namespace DotCompute.Plugins.Managers
         public async Task<PluginMetricsReport> GetMetricsReportAsync(CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            return await _metricsCollector.GenerateMetricsReportAsync(_managedPlugins.Values, cancellationToken);
+            return await _metricsCollector.GenerateMetricsReportAsync(_managedPlugins.Values, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -435,14 +435,14 @@ namespace DotCompute.Plugins.Managers
                 {
                     try
                     {
-                        var scanResult = await _pluginLoader.ScanForVulnerabilitiesAsync(cancellationToken);
+                        var scanResult = await _pluginLoader.ScanForVulnerabilitiesAsync(cancellationToken).ConfigureAwait(false);
                         if (plugin.LoadedPluginInfo!.Manifest.Id == scanResult.PluginId)
                         {
                             report.PluginScans.Add(scanResult);
-                            
+
                             if (scanResult.HasCriticalVulnerabilities)
                                 report.CriticalVulnerabilityCount += scanResult.CriticalVulnerabilities.Count;
-                            
+
                             if (scanResult.HasHighRiskVulnerabilities)
                                 report.HighRiskVulnerabilityCount += scanResult.HighRiskVulnerabilities.Count;
                         }
@@ -454,7 +454,7 @@ namespace DotCompute.Plugins.Managers
                     }
                 });
 
-            await Task.WhenAll(scanTasks);
+            await Task.WhenAll(scanTasks).ConfigureAwait(false);
 
             report.ScanDuration = DateTimeOffset.UtcNow - report.ScanDate;
 
@@ -473,8 +473,8 @@ namespace DotCompute.Plugins.Managers
             {
                 _logger.LogDebug("Loading plugin: {PluginId}", manifest.Id);
 
-                var loadResult = await _pluginLoader.LoadPluginAsync(manifest, cancellationToken);
-                
+                var loadResult = await _pluginLoader.LoadPluginAsync(manifest, cancellationToken).ConfigureAwait(false);
+
                 if (!loadResult.IsLoaded || loadResult.Plugin == null)
                 {
                     _logger.LogError("Failed to load plugin {PluginId}: {Error}", manifest.Id, loadResult.ErrorMessage);
@@ -519,14 +519,14 @@ namespace DotCompute.Plugins.Managers
         /// <summary>
         /// Periodic maintenance tasks.
         /// </summary>
-        private async void PeriodicMaintenance(object? state)
+        private async Task PeriodicMaintenanceAsync(object? state)
         {
             try
             {
                 _logger.LogDebug("Starting periodic maintenance");
 
                 // Check plugin health
-                await CheckPluginHealthAsync();
+                await CheckPluginHealthAsync().ConfigureAwait(false);
 
                 // Clean up metrics
                 _metricsCollector.CleanupOldMetrics();
@@ -534,7 +534,7 @@ namespace DotCompute.Plugins.Managers
                 // Check for plugin updates if enabled
                 if (_options.CheckForUpdates)
                 {
-                    await CheckForPluginUpdatesAsync();
+                    await CheckForPluginUpdatesAsync().ConfigureAwait(false);
                 }
 
                 _logger.LogDebug("Periodic maintenance completed");
@@ -554,14 +554,14 @@ namespace DotCompute.Plugins.Managers
             {
                 try
                 {
-                    var health = await _healthMonitor.CheckPluginHealthAsync(pluginId, managedPlugin);
+                    var health = await _healthMonitor.CheckPluginHealthAsync(pluginId, managedPlugin).ConfigureAwait(false);
                     managedPlugin.Health = health.Health;
                     managedPlugin.LastHealthCheck = DateTimeOffset.UtcNow;
 
                     if (health.Health == PluginHealth.Critical && _options.AutoRestartFailedPlugins)
                     {
                         _logger.LogWarning("Plugin {PluginId} is critical, attempting restart", pluginId);
-                        await ReloadPluginAsync(pluginId);
+                        await ReloadPluginAsync(pluginId).ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)
@@ -619,18 +619,28 @@ namespace DotCompute.Plugins.Managers
             _disposed = true;
 
             _periodicMaintenanceTimer?.Dispose();
-            
+
             // Unload all plugins
+            var unloadTasks = new List<Task>();
             foreach (var (pluginId, _) in _managedPlugins.ToList())
             {
                 try
                 {
-                    UnloadPluginAsync(pluginId).GetAwaiter().GetResult();
+                    unloadTasks.Add(UnloadPluginAsync(pluginId, CancellationToken.None));
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error unloading plugin during dispose: {PluginId}", pluginId);
+                    _logger.LogError(ex, "Error creating unload task during dispose: {PluginId}", pluginId);
                 }
+            }
+
+            try
+            {
+                Task.WaitAll([.. unloadTasks], TimeSpan.FromSeconds(30));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error waiting for plugin unload tasks during dispose");
             }
 
             _pluginLoader?.Dispose();

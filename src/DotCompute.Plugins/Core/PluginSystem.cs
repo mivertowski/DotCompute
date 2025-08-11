@@ -204,7 +204,7 @@ namespace DotCompute.Plugins.Core
         public Task<bool> UnloadPluginAsync(string pluginId, CancellationToken cancellationToken = default)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            
+
             if (string.IsNullOrWhiteSpace(pluginId))
             {
                 throw new ArgumentException("Plugin ID cannot be null, empty, or whitespace.", nameof(pluginId));
@@ -259,7 +259,7 @@ namespace DotCompute.Plugins.Core
         public IEnumerable<IBackendPlugin> GetLoadedPlugins()
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            
+
             lock (_lock)
             {
                 return [.. _plugins.Values.Select(p => p.Plugin)];

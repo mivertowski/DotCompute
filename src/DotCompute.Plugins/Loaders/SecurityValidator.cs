@@ -119,10 +119,10 @@ namespace DotCompute.Plugins.Loaders
                 await CheckVulnerabilityDatabaseAsync(manifest, scanResult, cancellationToken);
 
                 // Cache the scan result
-                _scanCache.TryAdd(cacheKey, new SecurityScanCache 
-                { 
-                    ScanResult = scanResult, 
-                    CachedAt = DateTimeOffset.UtcNow 
+                _scanCache.TryAdd(cacheKey, new SecurityScanCache
+                {
+                    ScanResult = scanResult,
+                    CachedAt = DateTimeOffset.UtcNow
                 });
 
                 _logger.LogInformation("Vulnerability scan completed for plugin: {PluginId}. Vulnerabilities found: {Count}",
@@ -148,7 +148,7 @@ namespace DotCompute.Plugins.Loaders
             // Check if plugin is from allowed sources
             if (_securityPolicy.AllowedSources?.Any() == true)
             {
-                if (string.IsNullOrEmpty(manifest.PackageSource) || 
+                if (string.IsNullOrEmpty(manifest.PackageSource) ||
                     !_securityPolicy.AllowedSources.Contains(manifest.PackageSource, StringComparer.OrdinalIgnoreCase))
                 {
                     result.ValidationErrors.Add($"Plugin source '{manifest.PackageSource}' is not in the allowed sources list");
@@ -158,7 +158,7 @@ namespace DotCompute.Plugins.Loaders
             // Check if plugin is from blocked sources
             if (_securityPolicy.BlockedSources?.Any() == true)
             {
-                if (!string.IsNullOrEmpty(manifest.PackageSource) && 
+                if (!string.IsNullOrEmpty(manifest.PackageSource) &&
                     _securityPolicy.BlockedSources.Contains(manifest.PackageSource, StringComparer.OrdinalIgnoreCase))
                 {
                     result.ValidationErrors.Add($"Plugin source '{manifest.PackageSource}' is blocked");
@@ -176,7 +176,7 @@ namespace DotCompute.Plugins.Loaders
             }
 
             // Check for unsafe features
-            if (_securityPolicy.BlockUnsafeCode && manifest.Metadata?.ContainsKey("AllowUnsafeBlocks") == true && 
+            if (_securityPolicy.BlockUnsafeCode && manifest.Metadata?.ContainsKey("AllowUnsafeBlocks") == true &&
                 manifest.Metadata["AllowUnsafeBlocks"].Equals("true", StringComparison.OrdinalIgnoreCase))
             {
                 result.ValidationErrors.Add("Plugin uses unsafe code which is not allowed");
@@ -219,7 +219,7 @@ namespace DotCompute.Plugins.Loaders
                     // Check against trusted publishers
                     if (_securityPolicy.TrustedPublishers?.Any() == true)
                     {
-                        if (string.IsNullOrEmpty(signatureInfo.Publisher) || 
+                        if (string.IsNullOrEmpty(signatureInfo.Publisher) ||
                             !_securityPolicy.TrustedPublishers.Contains(signatureInfo.Publisher, StringComparer.OrdinalIgnoreCase))
                         {
                             result.ValidationErrors.Add($"Assembly publisher '{signatureInfo.Publisher}' is not in the trusted publishers list");
@@ -249,7 +249,7 @@ namespace DotCompute.Plugins.Loaders
                 // In a real system, you would use AuthenticodeTools or similar
                 var signature = new PluginSignature { IsSigned = false, IsValid = false };
 
-                using var certificate = X509Certificate.CreateFromSignedFile(assemblyPath);
+                using var certificate = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
                 if (certificate != null)
                 {
                     signature.IsSigned = true;
@@ -282,7 +282,7 @@ namespace DotCompute.Plugins.Loaders
             try
             {
                 var analysis = await _codeAnalyzer.AnalyzeAssemblyAsync(manifest.AssemblyPath, cancellationToken);
-                
+
                 foreach (var finding in analysis.SuspiciousPatterns)
                 {
                     switch (finding.Severity)
@@ -335,7 +335,7 @@ namespace DotCompute.Plugins.Loaders
         private async Task ScanPackageAsync(string packageId, string version, SecurityScanResult scanResult, CancellationToken cancellationToken)
         {
             var vulnerabilities = await _vulnerabilityDatabase.GetVulnerabilitiesAsync(packageId, version, cancellationToken);
-            
+
             foreach (var vulnerability in vulnerabilities)
             {
                 switch (vulnerability.Severity)
@@ -363,7 +363,7 @@ namespace DotCompute.Plugins.Loaders
         {
             // Parse version range to get specific versions to scan
             var versionsToScan = await GetVersionsToScanAsync(dependency, cancellationToken);
-            
+
             foreach (var version in versionsToScan)
             {
                 await ScanPackageAsync(dependency.Id, version, scanResult, cancellationToken);
@@ -500,7 +500,7 @@ namespace DotCompute.Plugins.Loaders
         /// <summary>
         /// Gets all vulnerabilities found.
         /// </summary>
-        public IEnumerable<SecurityVulnerability> AllVulnerabilities => 
+        public IEnumerable<SecurityVulnerability> AllVulnerabilities =>
             CriticalVulnerabilities.Concat(HighRiskVulnerabilities)
                 .Concat(MediumRiskVulnerabilities)
                 .Concat(LowRiskVulnerabilities);
@@ -611,7 +611,7 @@ namespace DotCompute.Plugins.Loaders
     /// <summary>
     /// Cache entry for security scan results.
     /// </summary>
-    internal class SecurityScanCache
+    internal sealed class SecurityScanCache
     {
         public required SecurityScanResult ScanResult { get; set; }
         public DateTimeOffset CachedAt { get; set; }
@@ -621,7 +621,7 @@ namespace DotCompute.Plugins.Loaders
     /// <summary>
     /// Vulnerability database for checking known security issues.
     /// </summary>
-    internal class VulnerabilityDatabase
+    internal sealed class VulnerabilityDatabase
     {
         private readonly ILogger _logger;
 
@@ -634,11 +634,11 @@ namespace DotCompute.Plugins.Loaders
         {
             // This would query a real vulnerability database (NVD, GitHub Advisory Database, etc.)
             await Task.Delay(10, cancellationToken);
-            
+
             // Return mock vulnerabilities for testing
-            return packageId.ToUpperInvariant() switch
+            if (string.Equals(packageId, "VulnerablePackage", StringComparison.OrdinalIgnoreCase))
             {
-                "VULNERABLEPACKAGE" => [
+                return [
                     new SecurityVulnerability
                     {
                         Id = "CVE-2023-12345",
@@ -650,9 +650,10 @@ namespace DotCompute.Plugins.Loaders
                         AffectedVersionRange = "[1.0.0,2.0.0)",
                         FixedVersion = "2.0.0"
                     }
-                ],
-                _ => []
-            };
+                ];
+            }
+
+            return [];
         }
 
         public async Task CheckPluginAsync(NuGetPluginManifest manifest, SecurityScanResult scanResult, CancellationToken cancellationToken)
@@ -665,7 +666,7 @@ namespace DotCompute.Plugins.Loaders
     /// <summary>
     /// Code analyzer for detecting malicious patterns in assemblies.
     /// </summary>
-    internal class CodeAnalyzer
+    internal sealed class CodeAnalyzer
     {
         private readonly ILogger _logger;
 
@@ -730,7 +731,7 @@ namespace DotCompute.Plugins.Loaders
     /// <summary>
     /// Result of code analysis.
     /// </summary>
-    internal class CodeAnalysisResult
+    internal sealed class CodeAnalysisResult
     {
         public List<SuspiciousCodePattern> SuspiciousPatterns { get; } = [];
         public List<string> AnalysisErrors { get; } = [];
@@ -739,7 +740,7 @@ namespace DotCompute.Plugins.Loaders
     /// <summary>
     /// Represents a suspicious code pattern found during analysis.
     /// </summary>
-    internal class SuspiciousCodePattern
+    internal sealed class SuspiciousCodePattern
     {
         public required string Pattern { get; set; }
         public SeverityLevel Severity { get; set; }

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Memory;
 
@@ -211,7 +212,7 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
     /// <summary>
     /// Gets transfer engine statistics.
     /// </summary>
-    public TransferStatistics GetStatistics() => _transferEngine.GetStatistics();
+    public TransferStatistics GetStatistics() => _transferEngine.Statistics;
 
     public async ValueTask DisposeAsync()
     {

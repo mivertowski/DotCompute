@@ -11,7 +11,7 @@ namespace DotCompute.Plugins.Managers
     /// <summary>
     /// Health monitor for plugins with comprehensive diagnostics.
     /// </summary>
-    internal class PluginHealthMonitor : IDisposable
+    internal sealed class PluginHealthMonitor : IDisposable
     {
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, PluginHealthState> _healthStates = new();
@@ -238,10 +238,10 @@ namespace DotCompute.Plugins.Managers
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                
+
                 // Simple responsiveness test - call GetMetrics()
                 var metrics = managedPlugin.Plugin?.GetMetrics();
-                
+
                 stopwatch.Stop();
                 result.ResponseTime = stopwatch.Elapsed;
 
@@ -339,7 +339,7 @@ namespace DotCompute.Plugins.Managers
     /// <summary>
     /// Metrics collector for plugins with performance tracking.
     /// </summary>
-    internal class PluginMetricsCollector : IDisposable
+    internal sealed class PluginMetricsCollector : IDisposable
     {
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, PluginMetricsState> _metricsStates = new();
@@ -404,19 +404,19 @@ namespace DotCompute.Plugins.Managers
             foreach (var plugin in plugins)
             {
                 var pluginId = plugin.LoadedPluginInfo?.Manifest.Id ?? "Unknown";
-                
+
                 if (_metricsStates.TryGetValue(pluginId, out var metricsState))
                 {
                     var metrics = await CollectPluginMetricsAsync(pluginId, plugin);
                     if (metrics != null)
                     {
                         report.PluginMetrics.Add(metrics);
-                        
+
                         // Aggregate system-wide metrics
                         report.TotalRequests += metrics.RequestCount;
                         report.TotalErrors += metrics.ErrorCount;
                         report.TotalMemoryUsage += metrics.MemoryUsage;
-                        
+
                         if (metrics.AverageResponseTime > 0)
                         {
                             report.AverageResponseTime = (report.AverageResponseTime * (report.PluginMetrics.Count - 1) + metrics.AverageResponseTime) / report.PluginMetrics.Count;
@@ -458,6 +458,8 @@ namespace DotCompute.Plugins.Managers
 
         private async Task<PluginMetrics?> CollectPluginMetricsAsync(string pluginId, ManagedPlugin managedPlugin)
         {
+            await Task.Yield();
+            
             try
             {
                 var metrics = managedPlugin.Plugin?.GetMetrics();
@@ -468,7 +470,7 @@ namespace DotCompute.Plugins.Managers
                     {
                         metricsState.MetricsHistory.Add(metrics);
                         metricsState.LastCollection = DateTimeOffset.UtcNow;
-                        
+
                         // Keep only the last 1000 entries
                         if (metricsState.MetricsHistory.Count > 1000)
                         {
@@ -519,7 +521,7 @@ namespace DotCompute.Plugins.Managers
     /// <summary>
     /// Health state for a monitored plugin.
     /// </summary>
-    internal class PluginHealthState
+    internal sealed class PluginHealthState
     {
         public required string PluginId { get; set; }
         public ManagedPlugin? Plugin { get; set; }
@@ -532,7 +534,7 @@ namespace DotCompute.Plugins.Managers
     /// <summary>
     /// Metrics state for a monitored plugin.
     /// </summary>
-    internal class PluginMetricsState
+    internal sealed class PluginMetricsState
     {
         public required string PluginId { get; set; }
         public ManagedPlugin? Plugin { get; set; }
