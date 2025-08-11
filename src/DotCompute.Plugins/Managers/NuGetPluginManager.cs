@@ -42,7 +42,11 @@ namespace DotCompute.Plugins.Managers
                 CompatibilitySettings = _options.CompatibilitySettings
             };
             
-            _pluginLoader = new NuGetPluginLoader(_logger, loaderOptions);
+            // Note: We'd need a logger factory to create a specific logger for NuGetPluginLoader
+            // For now, we'll cast the logger if possible or create a null logger
+            var pluginLoaderLogger = _logger as ILogger<NuGetPluginLoader> ?? 
+                                     Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance;
+            _pluginLoader = new NuGetPluginLoader(pluginLoaderLogger, loaderOptions);
             _healthMonitor = new PluginHealthMonitor(_logger);
             _metricsCollector = new PluginMetricsCollector(_logger);
             

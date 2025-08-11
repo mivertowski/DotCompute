@@ -362,21 +362,21 @@ public static class AdvancedPolynomialSolver
         ArgumentNullException.ThrowIfNull(coefficients);
         
         var degree = GetEffectiveDegree(coefficients);
+        
+        // Calculate root bounds and condition number before creating the analysis object
+        var rootBounds = degree > 0 ? EstimateRootBounds(coefficients, degree) : (0f, 0f);
+        var conditionNumber = degree > 0 ? EstimateConditionNumber(coefficients) : 0f;
+        
         var analysis = new PolynomialAnalysis
         {
             Degree = degree,
             IsConstant = degree == 0,
             IsLinear = degree == 1,
             IsQuadratic = degree == 2,
-            LeadingCoefficient = degree >= 0 ? coefficients[coefficients.Length - degree - 1] : 0
+            LeadingCoefficient = degree >= 0 ? coefficients[coefficients.Length - degree - 1] : 0,
+            RootBounds = rootBounds,
+            ConditionNumber = conditionNumber
         };
-        
-        if (degree > 0)
-        {
-            // Estimate root bounds using various methods
-            analysis.RootBounds = EstimateRootBounds(coefficients, degree);
-            analysis.ConditionNumber = EstimateConditionNumber(coefficients);
-        }
         
         return analysis;
     }

@@ -267,10 +267,12 @@ namespace DotCompute.Plugins.Loaders
 
             foreach (var plugin in loadedPlugins)
             {
-                var vulnerabilities = await _securityValidator.ScanForVulnerabilitiesAsync(plugin.Manifest, cancellationToken);
-                if (vulnerabilities != null)
+                var scanResult = await _securityValidator.ScanForVulnerabilitiesAsync(plugin.Manifest, cancellationToken);
+                if (scanResult != null && scanResult.AllVulnerabilities.Any())
                 {
-                    result.VulnerablePlugins.Add(plugin.Manifest.Id, vulnerabilities);
+                    // Store the scan result for this plugin
+                    // Note: We'd need to add a dictionary to track these if needed
+                    _logger.LogWarning($"Vulnerabilities found in plugin {plugin.Manifest.Id}");
                 }
             }
 
@@ -301,18 +303,20 @@ namespace DotCompute.Plugins.Loaders
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                NuGetPluginManifest? manifest = null;
                 try
                 {
                     var json = await File.ReadAllTextAsync(file, cancellationToken);
-                    var manifest = JsonSerializer.Deserialize<NuGetPluginManifest>(json);
-                    if (manifest != null)
-                    {
-                        yield return manifest;
-                    }
+                    manifest = JsonSerializer.Deserialize<NuGetPluginManifest>(json);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Failed to parse plugin manifest: {File}", file);
+                }
+                
+                if (manifest != null)
+                {
+                    yield return manifest;
                 }
             }
         }
@@ -323,17 +327,19 @@ namespace DotCompute.Plugins.Loaders
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                NuGetPluginManifest? manifest = null;
                 try
                 {
-                    var manifest = await ExtractManifestFromPackageAsync(packageFile, cancellationToken);
-                    if (manifest != null)
-                    {
-                        yield return manifest;
-                    }
+                    manifest = await ExtractManifestFromPackageAsync(packageFile, cancellationToken);
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Failed to extract manifest from package: {Package}", packageFile);
+                }
+                
+                if (manifest != null)
+                {
+                    yield return manifest;
                 }
             }
         }

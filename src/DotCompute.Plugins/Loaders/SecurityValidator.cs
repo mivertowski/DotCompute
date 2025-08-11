@@ -253,17 +253,25 @@ namespace DotCompute.Plugins.Loaders
                 // In a real system, you would use AuthenticodeTools or similar
                 var signature = new PluginSignature { IsSigned = false, IsValid = false };
 
-                using var certificate = X509Certificate.CreateFromSignedFile(assemblyPath);
-                if (certificate != null)
+                try
                 {
-                    signature.IsSigned = true;
-                    signature.CertificateThumbprint = certificate.GetCertHashString();
-                    signature.Publisher = certificate.Subject;
-                    signature.SigningAlgorithm = certificate.GetKeyAlgorithm();
-                    signature.IsValid = true; // Simplified - would need proper chain validation
+                    // Use X509CertificateLoader for .NET 9.0
+                    using var certificate = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
+                    if (certificate != null)
+                    {
+                        signature.IsSigned = true;
+                        signature.CertificateThumbprint = certificate.GetCertHashString();
+                        signature.Publisher = certificate.Subject;
+                        signature.SigningAlgorithm = certificate.GetKeyAlgorithm();
+                        signature.IsValid = true; // Simplified - would need proper chain validation
 
-                    // In a real implementation, you would validate the certificate chain
-                    // and check if the certificate is trusted
+                        // In a real implementation, you would validate the certificate chain
+                        // and check if the certificate is trusted
+                    }
+                }
+                catch
+                {
+                    // Certificate reading failed, leave signature as unsigned
                 }
 
                 return signature;

@@ -23,7 +23,6 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     private readonly Timer _pressureMonitor;
     
     // Performance optimization constants
-    private const int DefaultChunkSize = 4 * 1024 * 1024; // 4MB chunks
     private static readonly int MaxConcurrentTransfers = Environment.ProcessorCount * 2;
     private const int LargeDatasetThreshold = 64 * 1024 * 1024; // 64MB
     private const double MemoryPressureThreshold = 0.85;
@@ -76,8 +75,6 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             };
 
             IMemoryBuffer? buffer = null;
-            MemoryMappedFile? mmf = null;
-            MemoryMappedViewAccessor? accessor = null;
 
             try
             {
@@ -128,10 +125,6 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             }
             finally
             {
-                // Cleanup memory-mapped resources
-                accessor?.Dispose();
-                mmf?.Dispose();
-                
                 // Don't dispose buffer - caller owns it
             }
         }
@@ -351,7 +344,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Verifies data integrity using optimized sampling for large datasets.
     /// </summary>
-    private async Task<bool> VerifyDataIntegrityAsync<T>(
+    private static async Task<bool> VerifyDataIntegrityAsync<T>(
         IMemoryBuffer buffer,
         T[] originalData,
         TransferOptions options,
@@ -386,12 +379,16 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     private static bool VerifyDataIntegrityWithSampling<T>(T[] original, ReadOnlySpan<T> transferred, int sampleSize) where T : unmanaged
     {
         var actualSampleSize = Math.Min(sampleSize, Math.Min(original.Length, transferred.Length));
+#pragma warning disable CA5394 // Random is acceptable for non-security testing
         var random = new Random(42); // Deterministic for consistent testing
+#pragma warning restore CA5394
         
         for (var i = 0; i < actualSampleSize; i++)
         {
             // Use proper random sampling with bounds checking
+#pragma warning disable CA5394 // Random is acceptable for non-security testing
             var index = random.Next(0, Math.Min(original.Length, transferred.Length));
+#pragma warning restore CA5394
             
             if (!original[index].Equals(transferred[index]))
             {
@@ -430,7 +427,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Calculates the benefit gained from concurrent execution.
     /// </summary>
-    private static double CalculateConcurrencyBenefit(AdvancedTransferResult[] results, TimeSpan totalTime)
+    private static double CalculateConcurrencyBenefit(IEnumerable<AdvancedTransferResult> results, TimeSpan totalTime)
     {
         var sequentialTime = results.Sum(r => r.Duration.TotalMilliseconds);
         var concurrentTime = totalTime.TotalMilliseconds;
@@ -532,7 +529,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
 
         _disposed = true;
         
-        _shutdownCts.Cancel();
+        await _shutdownCts.CancelAsync();
         await _pressureMonitor.DisposeAsync();
         _concurrencyLimiter.Dispose();
         _shutdownCts.Dispose();
@@ -716,7 +713,7 @@ public class ConcurrentTransferResult
     /// <value>
     /// The results.
     /// </value>
-    public AdvancedTransferResult[] Results { get; set; } = [];
+    public IReadOnlyList<AdvancedTransferResult> Results { get; set; } = Array.Empty<AdvancedTransferResult>();
 
     /// <summary>
     /// Gets or sets the total bytes.

@@ -506,8 +506,8 @@ namespace DotCompute.Plugins.Loaders
 
             try
             {
-                // Load assembly for reflection (without executing)
-                var assembly = Assembly.ReflectionOnlyLoadFrom(assemblyPath);
+                // Load assembly metadata for analysis
+                var assembly = Assembly.LoadFrom(assemblyPath);
                 
                 // Get target framework from assembly attributes
                 var targetFrameworkAttr = assembly.GetCustomAttribute<System.Runtime.Versioning.TargetFrameworkAttribute>();

@@ -498,7 +498,7 @@ namespace DotCompute.Plugins.Managers
                 _logger.LogWarning(ex, "Failed to collect metrics for plugin: {PluginId}", pluginId);
             }
 
-            return Task.FromResult((PluginMetrics)null);
+            return Task.FromResult<PluginMetrics?>(null);
         }
 
         private async void CollectMetrics(object? state)
