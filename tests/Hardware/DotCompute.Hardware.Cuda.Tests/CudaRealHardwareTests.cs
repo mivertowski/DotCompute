@@ -354,7 +354,7 @@ public class CudaRealHardwareTests : IDisposable
     private static class CudaNative
     {
         // Windows CUDA methods
-        private static class Windows
+        public static class Windows
         {
             [DllImport("nvcuda.dll", EntryPoint = "cuInit")]
             public static extern int CudaInit(uint flags);
@@ -391,7 +391,7 @@ public class CudaRealHardwareTests : IDisposable
         }
 
         // Linux CUDA methods
-        private static class Linux
+        public static class Linux
         {
             [DllImport("libcuda.so.1", EntryPoint = "cuInit")]
             public static extern int CudaInit(uint flags);
