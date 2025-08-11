@@ -160,6 +160,7 @@ internal class HighPerformanceCpuAccelerator : IAccelerator
         return kernelInfo.Type switch
         {
             KernelType.VectorAdd => new OptimizedVectorAddKernel(kernelInfo.Name, options, _logger),
+            KernelType.VectorScale => new OptimizedVectorScaleKernel(kernelInfo.Name, options, _logger),
             KernelType.MatrixMultiply => new OptimizedMatrixMultiplyKernel(kernelInfo.Name, options, _logger),
             KernelType.Reduction => new OptimizedReductionKernel(kernelInfo.Name, options, _logger),
             KernelType.MemoryIntensive => new OptimizedMemoryKernel(kernelInfo.Name, options, _logger),
@@ -192,6 +193,7 @@ internal class OpenCLKernelParser(ILogger logger)
     {
         { @"result\[i\]\s*=\s*a\[i\]\s*\+\s*b\[i\]", KernelType.VectorAdd },
         { @"result\[i\]\s*=\s*a\[i\]\s*\*\s*b\[i\]", KernelType.VectorMultiply },
+        { @"(result\[i\]\s*=\s*input\[i\]\s*\*\s*scale)|(vector_scale)", KernelType.VectorScale },
         { @"matrix_mul|c\[row.*col\].*sum", KernelType.MatrixMultiply },
         { @"reduce_sum|sum\s*\+=.*input\[", KernelType.Reduction },
         { @"memory_intensive|multiple.*input\[i\]", KernelType.MemoryIntensive },
@@ -530,6 +532,7 @@ internal enum KernelType
     Generic,
     VectorAdd,
     VectorMultiply,
+    VectorScale,
     MatrixMultiply,
     Reduction,
     MemoryIntensive,
