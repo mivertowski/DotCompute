@@ -16,12 +16,12 @@ namespace DotCompute.Tests.Common.TestFixtures;
 public class AcceleratorTestFixture : IAsyncLifetime
 {
     private readonly List<IAccelerator> _accelerators = new();
-    private readonly ITestOutputHelper? _output;
     private IAcceleratorManager? _acceleratorManager = null;
     
-    public AcceleratorTestFixture(ITestOutputHelper? output = null)
+    public AcceleratorTestFixture()
     {
-        _output = output;
+        // Note: Class fixtures cannot receive ITestOutputHelper
+        // Individual tests must use their own ITestOutputHelper
     }
     
     /// <summary>
@@ -137,16 +137,11 @@ public class AcceleratorTestFixture : IAsyncLifetime
     
     public async Task InitializeAsync()
     {
-        _output?.WriteLine("Initializing accelerator test fixture...");
-        
         // TODO: Initialize real accelerator manager when available
         // For now, we'll detect available hardware but not initialize
         
         var availableTypes = GetAvailableAcceleratorTypes();
-        foreach (var type in availableTypes)
-        {
-            _output?.WriteLine($"  - {type} is available");
-        }
+        // Store the available types for later use by tests
         
         await Task.CompletedTask;
     }

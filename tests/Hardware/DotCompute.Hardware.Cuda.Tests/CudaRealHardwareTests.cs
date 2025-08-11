@@ -350,39 +350,194 @@ public class CudaRealHardwareTests : IDisposable
     }
 
     // P/Invoke declarations for CUDA Driver API
-    // Using libcuda.so.1 which is the NVIDIA driver library
-    [DllImport("libcuda.so.1", EntryPoint = "cuInit")]
-    private static extern int CudaInit(uint flags);
+    // Using platform-specific library names
+    private static class CudaNative
+    {
+        // Windows CUDA methods
+        private static class Windows
+        {
+            [DllImport("nvcuda.dll", EntryPoint = "cuInit")]
+            public static extern int CudaInit(uint flags);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetCount")]
-    private static extern int CudaGetDeviceCount(ref int count);
+            [DllImport("nvcuda.dll", EntryPoint = "cuDeviceGetCount")]
+            public static extern int CudaGetDeviceCount(ref int count);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetName")]
-    private static extern int CudaDeviceGetName(byte[] name, int len, int dev);
+            [DllImport("nvcuda.dll", EntryPoint = "cuDeviceGetName")]
+            public static extern int CudaDeviceGetName(byte[] name, int len, int dev);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuCtxCreate_v2")]
-    private static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+            [DllImport("nvcuda.dll", EntryPoint = "cuCtxCreate_v2")]
+            public static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuCtxDestroy_v2")]
-    private static extern int CudaCtxDestroy(IntPtr ctx);
+            [DllImport("nvcuda.dll", EntryPoint = "cuCtxDestroy_v2")]
+            public static extern int CudaCtxDestroy(IntPtr ctx);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemGetInfo_v2")]
-    private static extern int CudaMemGetInfo(ref ulong free, ref ulong total);
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemGetInfo_v2")]
+            public static extern int CudaMemGetInfo(ref ulong free, ref ulong total);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemAlloc_v2")]
-    private static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemAlloc_v2")]
+            public static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemFree_v2")]
-    private static extern int CudaFree(IntPtr dptr);
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemFree_v2")]
+            public static extern int CudaFree(IntPtr dptr);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoD_v2")]
-    private static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyHtoD_v2")]
+            public static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoH_v2")]
-    private static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoH_v2")]
+            public static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoD_v2")]
-    private static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoD_v2")]
+            public static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
+        }
+
+        // Linux CUDA methods
+        private static class Linux
+        {
+            [DllImport("libcuda.so.1", EntryPoint = "cuInit")]
+            public static extern int CudaInit(uint flags);
+
+            [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetCount")]
+            public static extern int CudaGetDeviceCount(ref int count);
+
+            [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetName")]
+            public static extern int CudaDeviceGetName(byte[] name, int len, int dev);
+
+            [DllImport("libcuda.so.1", EntryPoint = "cuCtxCreate_v2")]
+            public static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+
+            [DllImport("libcuda.so.1", EntryPoint = "cuCtxDestroy_v2")]
+            public static extern int CudaCtxDestroy(IntPtr ctx);
+
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemGetInfo_v2")]
+            public static extern int CudaMemGetInfo(ref ulong free, ref ulong total);
+
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemAlloc_v2")]
+            public static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemFree_v2")]
+            public static extern int CudaFree(IntPtr dptr);
+
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoD_v2")]
+            public static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoH_v2")]
+            public static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoD_v2")]
+            public static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
+        }
+    }
+
+    // Platform-agnostic wrapper methods
+    private static int CudaInit(uint flags)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaInit(flags);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaInit(flags);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
+
+    private static int CudaGetDeviceCount(ref int count)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaGetDeviceCount(ref count);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaGetDeviceCount(ref count);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
+
+    private static int CudaDeviceGetName(byte[] name, int len, int dev)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaDeviceGetName(name, len, dev);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaDeviceGetName(name, len, dev);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
+
+    private static int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaCtxCreate(ref ctx, flags, dev);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaCtxCreate(ref ctx, flags, dev);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
+
+    private static int CudaCtxDestroy(IntPtr ctx)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaCtxDestroy(ctx);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaCtxDestroy(ctx);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
+
+    private static int CudaMemGetInfo(ref ulong free, ref ulong total)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaMemGetInfo(ref free, ref total);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaMemGetInfo(ref free, ref total);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
+
+    private static int CudaMalloc(ref IntPtr dptr, long bytesize)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaMalloc(ref dptr, bytesize);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaMalloc(ref dptr, bytesize);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
+
+    private static int CudaFree(IntPtr dptr)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaFree(dptr);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaFree(dptr);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
+
+    private static int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaMemcpyHtoD(dstDevice, srcHost, byteCount);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaMemcpyHtoD(dstDevice, srcHost, byteCount);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
+
+    private static int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaMemcpyDtoH(dstHost, srcDevice, byteCount);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaMemcpyDtoH(dstHost, srcDevice, byteCount);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
+
+    private static int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return CudaNative.Windows.CudaMemcpyDtoD(dstDevice, srcDevice, byteCount);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return CudaNative.Linux.CudaMemcpyDtoD(dstDevice, srcDevice, byteCount);
+        else
+            throw new PlatformNotSupportedException("CUDA is not supported on this platform");
+    }
 }
 
 /// <summary>

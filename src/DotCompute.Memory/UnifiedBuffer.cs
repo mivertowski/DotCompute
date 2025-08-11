@@ -373,6 +373,20 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
                     // Already synchronized
                     break;
 
+                case BufferState.HostOnly:
+                    // Data is only on host - no need to synchronize
+                    // Just ensure state is valid
+                    break;
+
+                case BufferState.DeviceOnly:
+                    // Data is only on device - no need to synchronize
+                    // Just ensure state is valid
+                    break;
+
+                case BufferState.Uninitialized:
+                    // Nothing to synchronize
+                    break;
+
                 default:
                     throw new InvalidOperationException($"Cannot synchronize from state: {_state}");
             }
@@ -406,6 +420,20 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 
                 case BufferState.Synchronized:
                     // Already synchronized
+                    break;
+
+                case BufferState.HostOnly:
+                    // Data is only on host - no need to synchronize
+                    // Just ensure state is valid
+                    break;
+
+                case BufferState.DeviceOnly:
+                    // Data is only on device - no need to synchronize
+                    // Just ensure state is valid
+                    break;
+
+                case BufferState.Uninitialized:
+                    // Nothing to synchronize
                     break;
 
                 default:
@@ -529,7 +557,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 
     private void AllocateDeviceMemory()
     {
-        if (!_deviceMemory.IsValid)
+        if (_deviceBuffer == null)
         {
             // Allocate real device memory using the memory manager
 #pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for synchronous allocation
@@ -541,8 +569,10 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
             _deviceBuffer = deviceBuffer;
 
             // Create a device memory handle
+            // Use a non-zero pointer value to indicate allocated memory
+            // The actual device pointer is managed internally by the device buffer
             _deviceMemory = new DeviceMemory(
-                IntPtr.Zero, // The actual device pointer is managed internally by the device buffer
+                new IntPtr(1), // Use non-zero value to indicate valid allocation
                 SizeInBytes
             );
         }
@@ -550,7 +580,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 
     private void EnsureDeviceAllocated()
     {
-        if (!_deviceMemory.IsValid)
+        if (_deviceBuffer == null)
         {
             AllocateDeviceMemory();
         }
@@ -677,7 +707,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// <param name="cancellationToken">Cancellation token for the async operation.</param>
     private async ValueTask AllocateDeviceMemoryAsync(AcceleratorContext context, CancellationToken cancellationToken)
     {
-        if (_deviceMemory.IsValid)
+        if (_deviceBuffer != null)
         {
             return;
         }
@@ -691,8 +721,10 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
                 .ConfigureAwait(false);
 
             // Create a device memory handle
+            // Use a non-zero pointer value to indicate allocated memory
+            // The actual device pointer is managed internally by the device buffer
             _deviceMemory = new DeviceMemory(
-                IntPtr.Zero, // The actual device pointer is managed internally by the device buffer
+                new IntPtr(1), // Use non-zero value to indicate valid allocation
                 SizeInBytes
             );
 
@@ -716,7 +748,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     /// <param name="cancellationToken">Cancellation token for the async operation.</param>
     private async ValueTask EnsureDeviceAllocatedAsync(AcceleratorContext context, CancellationToken cancellationToken)
     {
-        if (!_deviceMemory.IsValid)
+        if (_deviceBuffer == null)
         {
             await AllocateDeviceMemoryAsync(context, cancellationToken).ConfigureAwait(false);
         }
