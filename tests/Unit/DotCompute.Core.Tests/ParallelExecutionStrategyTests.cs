@@ -44,6 +44,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
         // Create mock GPU accelerators
         _mockAccelerators = CreateMockGPUAccelerators(4);
         SetupMockAcceleratorManager();
+        SetupMockKernelManager();
         
         _strategy = new ParallelExecutionStrategy(_logger, _mockAcceleratorManager.Object, _mockKernelManager.Object, _loggerFactory);
     }
@@ -411,6 +412,17 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
             mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()))
                 .Returns(ValueTask.CompletedTask);
 
+            // Setup Memory property to return a mock IMemoryManager
+            var mockMemoryManager = new Mock<IMemoryManager>();
+            mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(() =>
+                {
+                    var mockBuffer = new Mock<IMemoryBuffer>();
+                    mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
+                    return mockBuffer.Object;
+                });
+            mock.Setup(a => a.Memory).Returns(mockMemoryManager.Object);
+
             accelerators.Add(mock);
         }
 
@@ -432,6 +444,18 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
         });
         cpuMock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
+        
+        // Setup Memory property for CPU accelerator
+        var cpuMemoryManager = new Mock<IMemoryManager>();
+        cpuMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(() =>
+            {
+                var mockBuffer = new Mock<IMemoryBuffer>();
+                mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
+                return mockBuffer.Object;
+            });
+        cpuMock.Setup(a => a.Memory).Returns(cpuMemoryManager.Object);
+        
         accelerators.Add(cpuMock);
 
         return accelerators;
@@ -447,6 +471,73 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
         
         _mockAcceleratorManager.Setup(m => m.GetAcceleratorById(It.IsAny<string>()))
             .Returns<string>(id => allAccelerators.FirstOrDefault(a => a.Info.Id == id));
+    }
+
+    private void SetupMockKernelManager()
+    {
+        // Setup the kernel manager to return compiled kernels with proper Name property
+        _mockKernelManager.Setup(m => m.GetOrCompileOperationKernelAsync(
+            It.IsAny<string>(),
+            It.IsAny<Type[]>(),
+            It.IsAny<Type>(),
+            It.IsAny<IAccelerator>(),
+            It.IsAny<KernelGenerationContext>(),
+            It.IsAny<DotCompute.Core.Kernels.CompilationOptions>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string kernelName, Type[] inputTypes, Type outputType, IAccelerator device, 
+                          KernelGenerationContext context, DotCompute.Core.Kernels.CompilationOptions options, CancellationToken ct) =>
+            {
+                // Create a concrete instance since ManagedCompiledKernel has required properties
+                return new ManagedCompiledKernel
+                {
+                    Name = kernelName,
+                    Binary = new byte[] { 0x01, 0x02, 0x03 }, // Dummy binary data
+                    Parameters = new DotCompute.Core.Kernels.KernelParameter[]
+                    {
+                        new DotCompute.Core.Kernels.KernelParameter 
+                        { 
+                            Name = "input", 
+                            Type = typeof(float), 
+                            IsInput = true,
+                            IsOutput = false
+                        },
+                        new DotCompute.Core.Kernels.KernelParameter 
+                        { 
+                            Name = "output", 
+                            Type = typeof(float), 
+                            IsInput = false,
+                            IsOutput = true
+                        }
+                    },
+                    Handle = IntPtr.Zero,
+                    RequiredWorkGroupSize = new[] { 256, 1, 1 },
+                    SharedMemorySize = 1024
+                };
+            });
+
+        // Setup ExecuteKernelAsync to return successful results
+        _mockKernelManager.Setup(m => m.ExecuteKernelAsync(
+            It.IsAny<ManagedCompiledKernel>(),
+            It.IsAny<KernelArgument[]>(),
+            It.IsAny<IAccelerator>(),
+            It.IsAny<KernelExecutionConfig>(),
+            It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new KernelExecutionResult
+            {
+                Success = true,
+                Handle = new KernelExecutionHandle 
+                { 
+                    Id = Guid.NewGuid(),
+                    KernelName = "test_kernel",
+                    SubmittedAt = DateTimeOffset.UtcNow
+                },
+                Timings = new KernelExecutionTimings
+                {
+                    KernelTimeMs = 10.0,
+                    TotalTimeMs = 13.0,
+                    EffectiveComputeThroughputGFLOPS = 100.0
+                }
+            });
     }
 
     private DotCompute.Abstractions.IBuffer<T>[] CreateMockBuffers<T>(int elementCount, int bufferCount) where T : unmanaged

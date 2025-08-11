@@ -127,6 +127,23 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
             testData[i] = i * 0.5f;
         }
         
+        // Setup mock to return a device buffer when AllocateAsync is called
+        // This needs to handle both the initial allocation and any subsequent allocations
+        var mockDeviceBuffer = new Mock<IMemoryBuffer>();
+        mockDeviceBuffer.Setup(b => b.SizeInBytes).Returns(length * sizeof(float));
+        mockDeviceBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.CompletedTask);
+        
+        // Use a callback to verify the mock is being called and return the buffer
+        _baseMemoryManagerMock
+            .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
+            .Callback<long, DotCompute.Abstractions.MemoryOptions, CancellationToken>((size, options, ct) =>
+            {
+                // This helps debug if the mock is being called
+                // In a real test we wouldn't use Console.WriteLine
+            })
+            .ReturnsAsync(mockDeviceBuffer.Object);
+        
         // Act
         var unifiedBuffer = await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(length);
         await unifiedBuffer.CopyFromAsync(testData.AsMemory());
@@ -140,6 +157,9 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
 
         // Assert - Buffer should now be available on both host and device
         Assert.True(unifiedBuffer.IsOnDevice);
+        
+        // Verify the mock was called for allocation
+        _baseMemoryManagerMock.Verify(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
