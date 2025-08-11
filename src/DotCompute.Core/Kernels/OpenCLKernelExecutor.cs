@@ -76,7 +76,10 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
             throw new ObjectDisposedException(nameof(OpenCLKernelExecutor));
         }
 
-        ArgumentNullException.ThrowIfNull(kernel);
+        if (kernel.Equals(default(CompiledKernel)))
+        {
+            throw new ArgumentNullException(nameof(kernel), "Kernel cannot be default/uninitialized");
+        }
         ArgumentNullException.ThrowIfNull(arguments);
         ArgumentNullException.ThrowIfNull(executionConfig);
 
@@ -282,7 +285,10 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         int iterations = 100,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(kernel);
+        if (kernel.Equals(default(CompiledKernel)))
+        {
+            throw new ArgumentNullException(nameof(kernel), "Kernel cannot be default/uninitialized");
+        }
         ArgumentNullException.ThrowIfNull(arguments);
         ArgumentNullException.ThrowIfNull(executionConfig);
 
