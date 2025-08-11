@@ -51,7 +51,7 @@ public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unma
     /// Executes the workload using work-stealing strategy.
     /// </summary>
     public async ValueTask<DeviceExecutionResult[]> ExecuteAsync(
-        KernelManager kernelManager,
+        IKernelManager kernelManager,
         WorkStealingOptions options,
         CancellationToken cancellationToken = default)
     {
@@ -151,7 +151,7 @@ public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unma
 
     private async Task<DeviceExecutionResult> ExecuteDeviceWorkAsync(
         int deviceIndex,
-        KernelManager kernelManager,
+        IKernelManager kernelManager,
         WorkStealingOptions options,
         CancellationToken cancellationToken)
     {
