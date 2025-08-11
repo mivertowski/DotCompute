@@ -142,23 +142,26 @@ jobs:
     
     - name: 🔍 Check and Create TRX if Missing
       if: always()
+      shell: pwsh
       run: |
         # Check if TRX files were created
-        if [ ! -f "./TestResults/${{ matrix.os-name }}-${{ matrix.configuration }}.trx" ]; then
-          echo "TRX file not found, creating a placeholder..."
+        $trxFile = "./TestResults/${{ matrix.os-name }}-${{ matrix.configuration }}.trx"
+        if (-not (Test-Path $trxFile)) {
+          Write-Host "TRX file not found, creating a placeholder..."
           # Create a minimal valid TRX file
-          cat > "./TestResults/${{ matrix.os-name }}-${{ matrix.configuration }}.trx" << 'EOF'
+          $trxContent = @'
         <?xml version="1.0" encoding="utf-8"?>
         <TestRun id="00000000-0000-0000-0000-000000000000" name="Placeholder" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
           <Results>
             <UnitTestResult testName="NoTestsExecuted" outcome="Inconclusive" />
           </Results>
         </TestRun>
-        EOF
-        fi
+        '@
+          Set-Content -Path $trxFile -Value $trxContent
+        }
         
-        echo "Final TRX files:"
-        ls -la ./TestResults/*.trx 2>/dev/null || echo "Still no TRX files"
+        Write-Host "Final TRX files:"
+        Get-ChildItem -Path "./TestResults" -Filter "*.trx" -ErrorAction SilentlyContinue | Format-Table Name, Length, LastWriteTime
     
     - name: 📊 Generate Test Report
       if: always()
