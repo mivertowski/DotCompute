@@ -88,9 +88,9 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
     {
         var connectionKey = GetConnectionKey(device1.Info.Id, device2.Info.Id);
         
-        if (_p2pConnections.ContainsKey(connectionKey))
+        if (_p2pConnections.TryGetValue(connectionKey, out var existingConnection))
         {
-            return _p2pConnections[connectionKey].IsEnabled;
+            return existingConnection.IsEnabled;
         }
 
         try

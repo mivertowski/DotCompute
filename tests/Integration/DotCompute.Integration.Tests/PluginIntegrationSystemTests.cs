@@ -67,10 +67,9 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Act
         var factoryResults = new List<BackendFactoryResult>();
         
-        foreach (var plugin in loadedPlugins)
+        foreach (var factoryResult in loadedPlugins.Select(plugin => TestBackendFactory(plugin)))
         {
-            var factoryResult = await TestBackendFactory(plugin);
-            factoryResults.Add(factoryResult);
+            factoryResults.Add(await factoryResult);
         }
 
         // Assert
@@ -95,13 +94,10 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Act
         var executionResults = new List<PluginExecutionResult>();
         
-        foreach (var backend in availableBackends)
+        foreach (var executionTask in availableBackends.Select(backend => 
+            ExecuteKernelThroughBackend(computeEngine, backend, testData)))
         {
-            var executionResult = await ExecuteKernelThroughBackend(
-                computeEngine,
-                backend,
-                testData);
-            executionResults.Add(executionResult);
+            executionResults.Add(await executionTask);
         }
 
         // Assert
@@ -146,13 +142,10 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Act
         var memoryResults = new List<MemoryManagementResult>();
         
-        foreach (var accelerator in accelerators.Take(2)) // Test first 2 accelerators
+        foreach (var memoryTask in accelerators.Take(2).Select(accelerator => // Test first 2 accelerators
+            TestPluginMemoryManagement(accelerator, bufferCount, bufferSize)))
         {
-            var memoryResult = await TestPluginMemoryManagement(
-                accelerator,
-                bufferCount,
-                bufferSize);
-            memoryResults.Add(memoryResult);
+            memoryResults.Add(await memoryTask);
         }
 
         // Assert
@@ -313,10 +306,10 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Act
         var cleanupResults = new List<ResourceCleanupResult>();
         
-        foreach (var accelerator in accelerators.Take(2))
+        foreach (var cleanupTask in accelerators.Take(2).Select(accelerator => 
+            TestResourceCleanup(accelerator)))
         {
-            var cleanupResult = await TestResourceCleanup(accelerator);
-            cleanupResults.Add(cleanupResult);
+            cleanupResults.Add(await cleanupTask);
         }
 
         // Assert

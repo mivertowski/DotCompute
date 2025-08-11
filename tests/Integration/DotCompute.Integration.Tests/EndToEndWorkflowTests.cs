@@ -425,6 +425,6 @@ public class WorkflowResult
 
     public T GetOutput<T>(string key)
     {
-        return Results.ContainsKey(key) ? (T)Results[key] : default(T)!;
+        return Results.TryGetValue(key, out var value) ? (T)value : default(T)!;
     }
 }

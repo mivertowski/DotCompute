@@ -472,10 +472,8 @@ public sealed class GlobalKernelCacheManager : IAsyncDisposable
         {
             var cleanupTasks = new List<Task>();
 
-            foreach (var kvp in _cachesByKernel)
+            foreach (var cache in _cachesByKernel.Select(kvp => kvp.Value))
             {
-                var cache = kvp.Value;
-                
                 // Remove stale kernels
                 cleanupTasks.Add(cache.RemoveStaleKernelsAsync(MaxKernelAge).AsTask());
                 

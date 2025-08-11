@@ -183,15 +183,7 @@ public class TestRunner
         });
         
         // Verify pipeline output
-        bool pipelineValid = true;
-        foreach (var val in stage3Result)
-        {
-            if (val < 0 || val > 255)
-            {
-                pipelineValid = false;
-                break;
-            }
-        }
+        bool pipelineValid = stage3Result.All(val => val >= 0 && val <= 255);
         
         Assert.True(pipelineValid, "Pipeline output out of expected range");
         _output.WriteLine("Pipeline execution completed successfully!");
