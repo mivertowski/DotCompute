@@ -121,7 +121,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
     #region Unified Memory Manager Integration
 
     [Fact]
-    public async Task Integration_UnifiedMemoryManager_ShouldCreateCorrectly()
+    public Task Integration_UnifiedMemoryManager_ShouldCreateCorrectly()
     {
         // Arrange
         var baseMemoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
@@ -134,6 +134,8 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         }
 
         TestOutput.WriteLine("UnifiedMemoryManager creation and disposal validated successfully");
+        
+        return Task.CompletedTask;
     }
 
     [Fact]

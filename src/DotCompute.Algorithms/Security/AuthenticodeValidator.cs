@@ -122,11 +122,14 @@ public sealed class AuthenticodeValidator : IDisposable
                 var cert = X509Certificate2.CreateFromSignedFile(filePath);
                 certificate = cert != null ? new X509Certificate2(cert) : null;
                 result.Certificate = certificate;
-                result.SignerName = certificate.GetNameInfo(X509NameType.SimpleName, false);
-                result.IssuerName = certificate.GetNameInfo(X509NameType.SimpleName, true);
-                result.Thumbprint = certificate.Thumbprint;
-                result.NotAfter = certificate.NotAfter;
-                result.NotBefore = certificate.NotBefore;
+                if (certificate != null)
+                {
+                    result.SignerName = certificate.GetNameInfo(X509NameType.SimpleName, false);
+                    result.IssuerName = certificate.GetNameInfo(X509NameType.SimpleName, true);
+                    result.Thumbprint = certificate.Thumbprint;
+                    result.NotAfter = certificate.NotAfter;
+                    result.NotBefore = certificate.NotBefore;
+                }
             }
             catch (Exception)
             {
