@@ -46,6 +46,9 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
             throw new ArgumentException($"Expected CUDA kernel but received {kernel.Language}", nameof(kernel));
         }
 
+        // Check for cancellation early
+        cancellationToken.ThrowIfCancellationRequested();
+
         _logger.LogInformation("Compiling CUDA kernel '{KernelName}' for target '{Target}'", 
             kernel.Name, options.TargetArchitecture ?? "default");
 
@@ -178,6 +181,9 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
     {
         var startTime = DateTime.UtcNow;
 
+        // Check for cancellation before starting
+        cancellationToken.ThrowIfCancellationRequested();
+
         // Check if CUDA is available
         if (!CUDAInterop.IsCudaAvailable())
         {
@@ -190,6 +196,9 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
             // Build NVRTC compilation options
             var compilerOptions = BuildNVRTCOptions(options);
             _logger.LogDebug("NVRTC compiler options: {Options}", string.Join(" ", compilerOptions));
+
+            // Check for cancellation after building options
+            cancellationToken.ThrowIfCancellationRequested();
 
             unsafe
             {
@@ -216,6 +225,9 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
 
                 try
                 {
+                    // Check for cancellation before compilation
+                    cancellationToken.ThrowIfCancellationRequested();
+
                     // Prepare compilation options
                     var optionPtrs = new IntPtr[compilerOptions.Count];
                     var optionBytes = new byte[compilerOptions.Count][];
@@ -382,23 +394,23 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
     {
         var nvrtcOptions = new List<string>();
 
-        // Add optimization level
+        // NVRTC doesn't support traditional optimization flags like -O2
+        // Instead, we use device-specific options and rely on PTX optimizer
+        // The optimization is primarily controlled through --gpu-architecture and other flags
         switch (options.OptimizationLevel)
         {
             case OptimizationLevel.O0:
-                nvrtcOptions.Add("-O0");
+                // No optimization - add debug flag
+                nvrtcOptions.Add("--device-debug");
                 break;
             case OptimizationLevel.O1:
-                nvrtcOptions.Add("-O1");
-                break;
             case OptimizationLevel.O2:
-                nvrtcOptions.Add("-O2");
-                break;
             case OptimizationLevel.O3:
-                nvrtcOptions.Add("-O3");
+                // NVRTC performs optimization by default
+                // Higher optimization levels can be achieved through PTX optimization
                 break;
             case OptimizationLevel.Os:
-                nvrtcOptions.Add("-Os");
+                // Size optimization - NVRTC doesn't have a direct equivalent
                 break;
         }
 
@@ -806,7 +818,13 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
     /// </summary>
     private async Task<CUDAPTXCompilationResult> CompileToPTXMockAsync(GeneratedKernel kernel, CompilationOptions options, CancellationToken cancellationToken)
     {
+        // Check for cancellation at the start
+        cancellationToken.ThrowIfCancellationRequested();
+        
         await Task.Delay(25, cancellationToken); // Simulate compilation time
+        
+        // Check for cancellation after delay
+        cancellationToken.ThrowIfCancellationRequested();
         
         var ptxCode = GenerateMockPTX(kernel, options);
         var ptxBinary = Encoding.UTF8.GetBytes(ptxCode);
@@ -830,7 +848,13 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
     /// </summary>
     private async Task<CUDACUBINCompilationResult> CompilePTXToCUBINMockAsync(string ptx, CompilationOptions options, CancellationToken cancellationToken)
     {
+        // Check for cancellation at the start
+        cancellationToken.ThrowIfCancellationRequested();
+        
         await Task.Delay(15, cancellationToken); // Simulate compilation time
+        
+        // Check for cancellation after delay
+        cancellationToken.ThrowIfCancellationRequested();
         
         var cubinBinary = GenerateMockCUBIN(ptx, options);
         var log = GenerateCompilationLog(null, options, true, "CUBIN (Mock)");
