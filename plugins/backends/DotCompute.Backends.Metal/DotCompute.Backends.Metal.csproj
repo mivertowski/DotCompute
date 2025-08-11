@@ -57,11 +57,18 @@
   </ItemGroup>
 
   <!-- Native Metal library references -->
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX')) AND Exists('native/libDotComputeMetal.dylib')">
     <None Include="native/libDotComputeMetal.dylib">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>libDotComputeMetal.dylib</Link>
     </None>
+  </ItemGroup>
+  
+  <!-- Placeholder when native library is not available -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX')) AND !Exists('native/libDotComputeMetal.dylib')">
+    <Content Include="native/README.md" Condition="Exists('native/README.md')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>
