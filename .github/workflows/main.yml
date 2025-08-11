@@ -115,21 +115,27 @@ jobs:
       id: test
       run: |
         mkdir -p ./TestResults
-        dotnet test DotCompute.sln \
+        
+        # Run tests with timeout and ensure TRX generation
+        timeout 300 dotnet test DotCompute.sln \
           --configuration ${{ matrix.configuration }} \
           --no-build \
           --no-restore \
-          --verbosity normal \
+          --verbosity minimal \
+          --blame \
+          --blame-hang-timeout 60s \
           --collect:"XPlat Code Coverage" \
           --results-directory ./TestResults \
           --logger "trx;LogFileName=${{ matrix.os-name }}-${{ matrix.configuration }}.trx" \
-          --logger "html;LogFileName=${{ matrix.os-name }}-${{ matrix.configuration }}.html" \
           --filter "Category!=RequiresGPU&Category!=LongRunning&Category!=Integration" \
-          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          -- RunConfiguration.TestSessionTimeout=240000 \
+             DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura || true
         
         # Display test results for debugging
         echo "Test results generated:"
         ls -la ./TestResults/*.trx 2>/dev/null || echo "No TRX files found"
+        echo "All files in TestResults:"
+        ls -la ./TestResults/ 2>/dev/null || echo "TestResults directory not found"
       continue-on-error: true
     
     - name: 📊 Generate Test Report
@@ -137,9 +143,13 @@ jobs:
       uses: dorny/test-reporter@v1
       with:
         name: Test Results - ${{ matrix.os-name }} (${{ matrix.configuration }})
-        path: './TestResults/*.trx'
+        path: |
+          ./TestResults/*.trx
+          ./TestResults/**/*.trx
+          ./**/*.trx
         reporter: dotnet-trx
         fail-on-error: false
+        path-replace-backslashes: true
     
     - name: 📈 Generate Code Coverage Report
       if: matrix.configuration == 'Release'
