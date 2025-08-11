@@ -107,7 +107,6 @@ jobs:
           /p:TreatWarningsAsErrors=false \
           /p:EnforceCodeStyleInBuild=false \
           /p:RunAnalyzersDuringBuild=false \
-          /p:NoWarn=\"CS0234%3BCS0246%3BCS0535%3BCS1061%3BCS0117%3BCS1503%3BCS1012%3BCS0103%3BCS0119%3BCS0133%3BCS1591%3BCS0618%3BCA1024%3BCA1707%3BCA1819%3BCA2227%3BIDE0011%3BCS1529\" \
           /p:ContinuousIntegrationBuild=true \
           --verbosity minimal
       continue-on-error: true

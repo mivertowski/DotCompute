@@ -7,7 +7,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <WarningsNotAsErrors></WarningsNotAsErrors>
-    <NoWarn>CS0234;CS0246;CS0535;CS1061;CS0117;CS1503;CS1012;CS0103;CS0119;CS0133</NoWarn>
+    <NoWarn>CS0234;CS0246;CS0535;CS1061;CS0117;CS1503;CS1012;CS0103;CS0119;CS0133;CS1591;CS0618;CA1024;CA1707;CA1819;CA2227;IDE0011;CS1529</NoWarn>
     
     <!-- AOT Configuration -->
     <IsAotCompatible>true</IsAotCompatible>
