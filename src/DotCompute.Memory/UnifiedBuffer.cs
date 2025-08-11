@@ -66,6 +66,11 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
     public BufferState State => _state;
 
     /// <summary>
+    /// Gets whether this buffer has been disposed.
+    /// </summary>
+    public bool IsDisposed => _disposed;
+
+    /// <summary>
     /// Initializes a new instance of the UnifiedBuffer class.
     /// </summary>
     /// <param name="memoryManager">The memory manager to use for device operations.</param>
@@ -1138,7 +1143,7 @@ public sealed class UnifiedBuffer<T> : IMemoryBuffer<T>, IBuffer<T> where T : un
 /// Represents a slice of a unified buffer.
 /// </summary>
 /// <typeparam name="T">The element type.</typeparam>
-internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset, int length) : IBuffer<T> where T : unmanaged
+internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset, int length) : IBuffer<T>, IMemoryBuffer, IDisposable where T : unmanaged
 {
 #pragma warning disable CA2213 // Disposable fields should be disposed - Slice doesn't own parent buffer
     private readonly UnifiedBuffer<T> _parent = parent ?? throw new ArgumentNullException(nameof(parent));
@@ -1147,8 +1152,10 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
     private readonly int _length = length;
 
     public IAccelerator Accelerator => _parent.Accelerator;
+    public int Length => _length;
     public long SizeInBytes => _length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
     public DotCompute.Abstractions.MemoryOptions Options => _parent.Options;
+    public bool IsDisposed => _parent.IsDisposed;
 
     public ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
@@ -1265,6 +1272,11 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+    public void Dispose()
+    {
+        // Slice doesn't own the parent buffer, so no disposal needed
+    }
 }
 
 /// <summary>
@@ -1272,7 +1284,7 @@ internal sealed class UnifiedBufferSlice<T>(UnifiedBuffer<T> parent, int offset,
 /// </summary>
 /// <typeparam name="TOriginal">The original element type.</typeparam>
 /// <typeparam name="TNew">The new element type.</typeparam>
-internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal> parent, int length) : IBuffer<TNew>
+internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal> parent, int length) : IBuffer<TNew>, IMemoryBuffer, IDisposable
     where TOriginal : unmanaged
     where TNew : unmanaged
 {
@@ -1282,8 +1294,10 @@ internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal
     private readonly int _length = length;
 
     public IAccelerator Accelerator => _parent.Accelerator;
+    public int Length => _length;
     public long SizeInBytes => _length * System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>();
     public DotCompute.Abstractions.MemoryOptions Options => _parent.Options;
+    public bool IsDisposed => _parent.IsDisposed;
 
     public ValueTask CopyFromHostAsync<TSource>(ReadOnlyMemory<TSource> source, long offset = 0, CancellationToken cancellationToken = default) where TSource : unmanaged
     {
@@ -1411,4 +1425,9 @@ internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+
+    public void Dispose()
+    {
+        // View doesn't own the parent buffer, so no disposal needed
+    }
 }

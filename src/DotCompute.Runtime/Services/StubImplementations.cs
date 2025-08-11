@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Algorithms.Abstractions;
+// using DotCompute.Algorithms // Commented out - missing reference.Abstractions;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Runtime.Services;
@@ -304,10 +304,11 @@ public class StubMemoryPool : IMemoryPool
     public void Dispose() { }
 }
 
-public class StubMemoryBuffer : IMemoryBuffer
+public class StubMemoryBuffer : IMemoryBuffer, IDisposable
 {
     public long SizeInBytes { get; }
     public MemoryOptions Options => MemoryOptions.None;
+    public bool IsDisposed { get; private set; }
 
     public StubMemoryBuffer(long sizeInBytes)
     {
@@ -320,7 +321,16 @@ public class StubMemoryBuffer : IMemoryBuffer
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) 
         where T : unmanaged => ValueTask.CompletedTask;
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public void Dispose() 
+    { 
+        IsDisposed = true; 
+    }
+
+    public ValueTask DisposeAsync() 
+    { 
+        IsDisposed = true;
+        return ValueTask.CompletedTask; 
+    }
 }
 
 // Interface definitions for stub implementations

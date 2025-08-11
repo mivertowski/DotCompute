@@ -15,7 +15,7 @@ public sealed class PluginServiceProvider : IServiceProvider, IDisposable
 {
     private readonly IServiceProvider _hostServiceProvider;
     private readonly IServiceCollection _pluginServices;
-    private readonly ServiceProvider _pluginServiceProvider;
+    private readonly IServiceProvider _pluginServiceProvider;
     private readonly ILogger<PluginServiceProvider> _logger;
     private readonly ConcurrentDictionary<Type, object> _singletonCache;
     private readonly ConcurrentDictionary<Assembly, IServiceScope> _assemblyScopes;

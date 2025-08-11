@@ -26,5 +26,5 @@ public interface ISyncMemoryBuffer : IMemoryBuffer, IDisposable
     /// <summary>
     /// Gets whether the buffer has been disposed.
     /// </summary>
-    public bool IsDisposed { get; }
+    public new bool IsDisposed { get; }
 }

@@ -257,7 +257,7 @@ public class PluginDependencyResolver : IPluginDependencyResolver
             
             if (service == null && !IsOptionalParameter(parameters[i]))
             {
-                throw new InvalidOperationException($\"Required dependency '{parameterType.Name}' could not be resolved for plugin '{pluginType.Name}'\");
+                throw new InvalidOperationException($"Required dependency '{parameterType.Name}' could not be resolved for plugin '{pluginType.Name}'");
             }
             
             dependencies[i] = service!;
@@ -290,12 +290,12 @@ public class PluginDependencyResolver : IPluginDependencyResolver
             }
             else if (IsRequiredProperty(property))
             {
-                throw new InvalidOperationException($\"Required property dependency '{property.PropertyType.Name}' could not be resolved for plugin '{pluginType.Name}'\");
+                throw new InvalidOperationException($"Required property dependency '{property.PropertyType.Name}' could not be resolved for plugin '{pluginType.Name}'");
             }
         }
 
         // Call initialization method if available
-        var initMethod = pluginType.GetMethod(\"InitializeAsync\", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+        var initMethod = pluginType.GetMethod("InitializeAsync", BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
         if (initMethod != null && initMethod.ReturnType == typeof(Task))
         {
             var result = initMethod.Invoke(pluginInstance, Array.Empty<object>());
@@ -325,7 +325,7 @@ public class PluginDependencyResolver : IPluginDependencyResolver
                 var service = serviceProvider.GetService(parameter.ParameterType);
                 if (service == null && !IsOptionalParameter(parameter))
                 {
-                    errors.Add($\"Required constructor dependency '{parameter.ParameterType.Name}' is not registered\");
+                    errors.Add($"Required constructor dependency '{parameter.ParameterType.Name}' is not registered");
                     missingDependencies.Add(parameter.ParameterType);
                 }
             }
@@ -337,7 +337,7 @@ public class PluginDependencyResolver : IPluginDependencyResolver
                 var service = serviceProvider.GetService(property.PropertyType);
                 if (service == null)
                 {
-                    errors.Add($\"Required property dependency '{property.PropertyType.Name}' is not registered\");
+                    errors.Add($"Required property dependency '{property.PropertyType.Name}' is not registered");
                     missingDependencies.Add(property.PropertyType);
                 }
             }
@@ -351,7 +351,7 @@ public class PluginDependencyResolver : IPluginDependencyResolver
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, \"Error validating dependencies for plugin {PluginType}\", pluginType.Name);
+            _logger.LogError(ex, "Error validating dependencies for plugin {PluginType}", pluginType.Name);
             return PluginDependencyValidationResult.Failure(new[] { ex.Message }, missingDependencies);
         }
     }
@@ -422,7 +422,7 @@ public class PluginDependencyResolver : IPluginDependencyResolver
         
         if (visited.Contains(type))
         {
-            circular.Add($\"Circular dependency detected involving {type.Name}\");
+            circular.Add($"Circular dependency detected involving {type.Name}");
             return circular;
         }
 

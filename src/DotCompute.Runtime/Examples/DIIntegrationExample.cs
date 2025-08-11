@@ -2,14 +2,14 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Algorithms.Abstractions;
+// using DotCompute.Algorithms // Commented out - missing reference.Abstractions;
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.DependencyInjection;
 using DotCompute.Runtime.Extensions;
 using DotCompute.Runtime.Services;
-using Microsoft.Extensions.Configuration;
+// using Microsoft.Extensions.Configuration // Commented out - missing reference;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+// using Microsoft.Extensions.Hosting // Commented out - missing reference;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Runtime.Examples;

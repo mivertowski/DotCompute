@@ -223,7 +223,7 @@ public class MockMemoryManager : IMemoryManager
 /// <summary>
 /// Mock memory buffer implementation for testing.
 /// </summary>
-public class MockMemoryBuffer : IMemoryBuffer
+public class MockMemoryBuffer : IMemoryBuffer, IDisposable
 {
     private readonly byte[] _data;
     private bool _isDisposed;
@@ -272,6 +272,13 @@ public class MockMemoryBuffer : IMemoryBuffer
         return ValueTask.CompletedTask;
     }
 
+    public void Dispose()
+    {
+        if (_isDisposed) return;
+        _isDisposed = true;
+        GC.SuppressFinalize(this);
+    }
+
     public ValueTask DisposeAsync()
     {
         if (_isDisposed) return ValueTask.CompletedTask;
@@ -293,7 +300,7 @@ public class MockMemoryBuffer : IMemoryBuffer
 /// <summary>
 /// Mock memory buffer view implementation for testing.
 /// </summary>
-public class MockMemoryBufferView : IMemoryBuffer
+public class MockMemoryBufferView : IMemoryBuffer, IDisposable
 {
     private readonly MockMemoryBuffer _parentBuffer;
     private readonly long _offset;
@@ -309,6 +316,7 @@ public class MockMemoryBufferView : IMemoryBuffer
 
     public long SizeInBytes => _length;
     public MemoryOptions Options => _parentBuffer.Options;
+    public bool IsDisposed => _isDisposed;
 
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
@@ -330,6 +338,13 @@ public class MockMemoryBufferView : IMemoryBuffer
             throw new ObjectDisposedException(nameof(MockMemoryBufferView));
         
         return _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+    }
+
+    public void Dispose()
+    {
+        if (_isDisposed) return;
+        _isDisposed = true;
+        GC.SuppressFinalize(this);
     }
 
     public ValueTask DisposeAsync()

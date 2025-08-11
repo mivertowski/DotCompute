@@ -327,7 +327,7 @@ internal class DefaultMemoryPool : IMemoryPool
 /// <summary>
 /// Memory buffer that belongs to a pool
 /// </summary>
-internal class PooledMemoryBuffer : IMemoryBuffer
+internal class PooledMemoryBuffer : IMemoryBuffer, IDisposable
 {
     private readonly DefaultMemoryPool _pool;
     private bool _disposed;
@@ -342,6 +342,7 @@ internal class PooledMemoryBuffer : IMemoryBuffer
     public DefaultMemoryPool Pool => _pool;
     public long SizeInBytes { get; }
     public MemoryOptions Options { get; }
+    public bool IsDisposed => _disposed;
 
     public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
@@ -353,6 +354,15 @@ internal class PooledMemoryBuffer : IMemoryBuffer
     {
         // Mock implementation
         return ValueTask.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _pool.ReturnAsync(this).GetAwaiter().GetResult();
+            _disposed = true;
+        }
     }
 
     public async ValueTask DisposeAsync()
@@ -445,7 +455,7 @@ public class UnifiedMemoryService : IUnifiedMemoryService
 /// <summary>
 /// Mock unified memory buffer implementation
 /// </summary>
-internal class UnifiedMemoryBuffer : IMemoryBuffer
+internal class UnifiedMemoryBuffer : IMemoryBuffer, IDisposable
 {
     public UnifiedMemoryBuffer(long sizeInBytes)
     {
@@ -455,6 +465,7 @@ internal class UnifiedMemoryBuffer : IMemoryBuffer
 
     public long SizeInBytes { get; }
     public MemoryOptions Options { get; }
+    public bool IsDisposed { get; private set; }
 
     public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
@@ -468,8 +479,14 @@ internal class UnifiedMemoryBuffer : IMemoryBuffer
         return ValueTask.CompletedTask;
     }
 
+    public void Dispose()
+    {
+        IsDisposed = true;
+    }
+
     public ValueTask DisposeAsync()
     {
+        IsDisposed = true;
         return ValueTask.CompletedTask;
     }
 }
