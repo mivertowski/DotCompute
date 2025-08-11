@@ -17,7 +17,7 @@ public class AcceleratorTestFixture : IAsyncLifetime
 {
     private readonly List<IAccelerator> _accelerators = new();
     private readonly ITestOutputHelper? _output;
-    private IAcceleratorManager? _acceleratorManager;
+    private IAcceleratorManager? _acceleratorManager = null;
     
     public AcceleratorTestFixture(ITestOutputHelper? output = null)
     {

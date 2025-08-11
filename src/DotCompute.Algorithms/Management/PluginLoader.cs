@@ -370,7 +370,8 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 {
                     try
                     {
-                        context.Certificate = new X509Certificate2(X509Certificate.CreateFromSignedFile(assemblyPath));
+                        var cert = X509Certificate2.CreateFromSignedFile(assemblyPath);
+                        context.Certificate = cert != null ? new X509Certificate2(cert) : null;
                     }
                     catch
                     {

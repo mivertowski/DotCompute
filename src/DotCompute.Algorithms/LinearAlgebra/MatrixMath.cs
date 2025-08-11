@@ -1592,7 +1592,7 @@ public static class MatrixMath
             };
 
             const int maxIterations = 1000;
-            const float tolerance = 1e-10f;
+            // const float tolerance = 1e-10f; // Reserved for future convergence checks
 
             // Allocate GPU memory for matrices
             var matrixSize = Math.Min(m, n) * Math.Min(m, n);

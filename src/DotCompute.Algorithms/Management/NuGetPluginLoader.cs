@@ -357,7 +357,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
     /// <summary>
     /// Extracts a .nupkg file to the cache directory.
     /// </summary>
-    private async Task<string> ExtractPackageAsync(
+    private Task<string> ExtractPackageAsync(
         string packagePath, 
         PackageIdentity identity, 
         CancellationToken cancellationToken)
@@ -376,7 +376,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             if (extractTime >= packageTime)
             {
                 LogPackageAlreadyExtracted(identity.Id, identity.Version.ToString());
-                return extractPath;
+                return Task.FromResult(extractPath);
             }
             
             // Clean up old extraction
@@ -417,7 +417,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             }
 
             LogPackageExtracted(identity.Id, identity.Version.ToString(), archive.Entries.Count);
-            return extractPath;
+            return Task.FromResult(extractPath);
         }
         catch (Exception ex)
         {
@@ -596,7 +596,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
                 
                 var assemblies = Directory.GetFiles(bestFolder.Path, "*.dll", SearchOption.TopDirectoryOnly);
                 compatibleAssemblies.AddRange(assemblies);
-                LogFoundCompatibleAssemblies(bestMatch.GetShortFolderName(), assemblies.Length);
+                LogFoundCompatibleAssemblies(bestMatch?.GetShortFolderName() ?? "unknown", assemblies.Length);
             }
             else
             {

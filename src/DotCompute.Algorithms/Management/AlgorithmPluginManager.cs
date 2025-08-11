@@ -1063,9 +1063,15 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             // Add certificate information if available
             if (_options.RequireDigitalSignature)
             {
-                context.Certificate = _authenticodeValidator.ExtractCertificateInfo(assemblyPath)?.Subject != null 
-                    ? new System.Security.Cryptography.X509Certificates.X509Certificate2(System.Security.Cryptography.X509Certificates.X509Certificate.CreateFromSignedFile(assemblyPath))
-                    : null;
+                if (_authenticodeValidator.ExtractCertificateInfo(assemblyPath)?.Subject != null)
+                {
+                    var cert = System.Security.Cryptography.X509Certificates.X509Certificate2.CreateFromSignedFile(assemblyPath);
+                    context.Certificate = cert != null ? new System.Security.Cryptography.X509Certificates.X509Certificate2(cert) : null;
+                }
+                else
+                {
+                    context.Certificate = null;
+                }
             }
 
             // Add strong name key if available

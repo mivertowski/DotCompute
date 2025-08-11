@@ -159,8 +159,9 @@ public sealed class DigitalSignatureSecurityRule : SecurityRule
         try
         {
             // Load the assembly and check for Authenticode signature
-            var cert = X509Certificate.CreateFromSignedFile(assemblyPath);
-            return new X509Certificate2(cert);
+            // Using X509Certificate2 constructor with X509Certificate
+            var cert = X509Certificate2.CreateFromSignedFile(assemblyPath);
+            return cert != null ? new X509Certificate2(cert) : null;
         }
         catch
         {

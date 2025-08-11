@@ -299,7 +299,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 7: Dependency resolution demonstration.
     /// </summary>
-    private async Task DependencyResolutionExample(CancellationToken cancellationToken)
+    private Task DependencyResolutionExample(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 7: Dependency resolution ===");
 
@@ -309,12 +309,14 @@ public sealed class NuGetPluginLoadingExample
         _logger.LogInformation("Dependency resolution is handled automatically during package loading");
         _logger.LogInformation("The NuGetPluginLoader resolves transitive dependencies and version conflicts");
         _logger.LogInformation("All dependencies are validated and loaded into isolated contexts");
+        
+        return Task.CompletedTask;
     }
 
     /// <summary>
     /// Example 8: Security validation showcase.
     /// </summary>
-    private async Task SecurityValidationExample(CancellationToken cancellationToken)
+    private Task SecurityValidationExample(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 8: Security validation ===");
 
@@ -328,6 +330,8 @@ public sealed class NuGetPluginLoadingExample
         
         // The actual security validation happens automatically during loading
         _logger.LogInformation("All loaded packages have passed security validation");
+        
+        return Task.CompletedTask;
     }
 
     /// <summary>

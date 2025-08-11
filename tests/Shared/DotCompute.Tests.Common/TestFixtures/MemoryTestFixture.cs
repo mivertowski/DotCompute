@@ -16,7 +16,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
 {
     private readonly List<IMemoryBuffer> _allocatedBuffers = new();
     private readonly ITestOutputHelper? _output;
-    private IMemoryManager? _memoryManager;
+    private IMemoryManager? _memoryManager = null;
     private bool _disposed;
     
     public MemoryTestFixture(ITestOutputHelper? output = null)
