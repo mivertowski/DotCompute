@@ -27,24 +27,43 @@ public interface IKernelManager : IDisposable
     void RegisterExecutor(AcceleratorType acceleratorType, IKernelExecutor executor);
 
     /// <summary>
-    /// Generates a kernel from an expression for a specific accelerator type.
+    /// Gets or compiles a kernel from an expression.
     /// </summary>
-    Task<IKernelSource> GenerateKernelAsync(Expression expression, AcceleratorType acceleratorType, CancellationToken cancellationToken = default);
+    ValueTask<ManagedCompiledKernel> GetOrCompileKernelAsync(
+        Expression expression,
+        IAccelerator accelerator,
+        KernelGenerationContext? context = null,
+        CompilationOptions? options = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Compiles a kernel source for a specific accelerator.
+    /// Gets or compiles a kernel for a specific operation.
     /// </summary>
-    Task<ICompiledKernel> CompileKernelAsync(IKernelSource source, IAccelerator accelerator, CompilationOptions? options = null, CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Gets or compiles a kernel from cache.
-    /// </summary>
-    Task<ICompiledKernel> GetOrCompileKernelAsync(string kernelId, IKernelSource source, IAccelerator accelerator, CompilationOptions? options = null, CancellationToken cancellationToken = default);
+    ValueTask<ManagedCompiledKernel> GetOrCompileOperationKernelAsync(
+        string operation,
+        Type elementType,
+        IAccelerator accelerator,
+        CompilationOptions? options = null,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Executes a compiled kernel with the specified arguments.
     /// </summary>
-    Task<KernelExecutionResult> ExecuteKernelAsync(ICompiledKernel compiledKernel, KernelArguments arguments, KernelExecutionConfig config, CancellationToken cancellationToken = default);
+    ValueTask<KernelExecutionResult> ExecuteKernelAsync(
+        ManagedCompiledKernel kernel,
+        KernelArguments arguments,
+        KernelExecutionConfig config,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Profiles a kernel execution.
+    /// </summary>
+    ValueTask<KernelProfilingResult> ProfileKernelAsync(
+        ManagedCompiledKernel kernel,
+        KernelArguments arguments,
+        KernelExecutionConfig config,
+        int iterations = 10,
+        CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Clears the kernel cache.
