@@ -322,7 +322,7 @@ public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unma
     private async Task<double> ExecuteWorkItemAsync(
         WorkItem<T> workItem,
         IAccelerator device,
-        KernelManager kernelManager,
+        IKernelManager kernelManager,
         CancellationToken cancellationToken)
     {
         var startTime = DateTimeOffset.UtcNow;
