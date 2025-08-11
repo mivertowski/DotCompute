@@ -403,15 +403,17 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
 
             // Execute kernel with test data
             const int testSize = 256;
-            var testData = GenerateTestData(testSize);
+            var testDataA = GenerateTestData(testSize);
+            var testDataB = GenerateTestData(testSize);
             var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
             
-            var inputBuffer = await CreateInputBuffer(memoryManager, testData);
+            var inputBufferA = await CreateInputBuffer(memoryManager, testDataA);
+            var inputBufferB = await CreateInputBuffer(memoryManager, testDataB);
             var outputBuffer = await CreateOutputBuffer<float>(memoryManager, testSize);
 
             await computeEngine.ExecuteAsync(
                 compiledKernel,
-                [inputBuffer, outputBuffer],
+                [inputBufferA, inputBufferB, outputBuffer],
                 ComputeBackendType.CPU,
                 new ExecutionOptions { GlobalWorkSize = [testSize] });
 
@@ -473,15 +475,17 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             stopwatch.Restart();
 
             // Execute kernel with specified options
-            var testData = GenerateTestData(dataSize);
+            var testDataA = GenerateTestData(dataSize);
+            var testDataB = GenerateTestData(dataSize);
             var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
             
-            var inputBuffer = await CreateInputBuffer(memoryManager, testData);
+            var inputBufferA = await CreateInputBuffer(memoryManager, testDataA);
+            var inputBufferB = await CreateInputBuffer(memoryManager, testDataB);
             var outputBuffer = await CreateOutputBuffer<float>(memoryManager, dataSize);
 
             await computeEngine.ExecuteAsync(
                 compiledKernel,
-                [inputBuffer, outputBuffer],
+                [inputBufferA, inputBufferB, outputBuffer],
                 ComputeBackendType.CPU,
                 executionOptions);
 

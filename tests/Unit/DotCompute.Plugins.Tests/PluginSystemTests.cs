@@ -29,7 +29,13 @@ public class PluginSystemTests : IDisposable
     public PluginSystemTests()
     {
         _logger = NullLogger<PluginSystem>.Instance;
-        _pluginSystem = new PluginSystem(_logger);
+        
+        // Create a minimal service provider for plugin initialization
+        var services = new ServiceCollection();
+        services.AddSingleton(_logger);
+        var serviceProvider = services.BuildServiceProvider();
+        
+        _pluginSystem = new PluginSystem(_logger, serviceProvider);
         _testPlugin = new TestPlugin();
     }
 

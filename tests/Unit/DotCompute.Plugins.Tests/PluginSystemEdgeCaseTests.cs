@@ -29,7 +29,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         var services = new ServiceCollection();
         _loggerMock = new Mock<ILogger<PluginSystem>>();
         services.AddSingleton(_loggerMock.Object);
-        services.AddSingleton<PluginSystem>();
+        services.AddSingleton<PluginSystem>(provider => 
+            new PluginSystem(_loggerMock.Object, provider));
         
         _serviceProvider = services.BuildServiceProvider();
         _pluginSystem = _serviceProvider.GetRequiredService<PluginSystem>();
