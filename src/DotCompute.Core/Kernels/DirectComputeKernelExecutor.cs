@@ -188,7 +188,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
             // Get or create kernel instance
             var kernelInstance = GetOrCreateKernelInstance(kernel);
             
-            if (kernelInstance?.ComputeShader == IntPtr.Zero)
+            if (kernelInstance == null || kernelInstance.ComputeShader == IntPtr.Zero)
             {
                 _logger.LogError("Failed to create compute shader for kernel {KernelId}", kernel.Id);
                 handle.IsCompleted = true;
@@ -295,7 +295,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         try
         {
             // Set compute shader
-            context.CSSetShader(kernelInstance.ComputeShader, null, 0);
+            context.CSSetShader(kernelInstance.ComputeShader, Array.Empty<IntPtr>(), 0);
 
             // Set up buffers and UAVs from arguments
             var buffers = new List<IntPtr>();
@@ -306,7 +306,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
             // Bind UAVs
             if (uavs.Count > 0)
             {
-                context.CSSetUnorderedAccessViews(0, (uint)uavs.Count, uavs.ToArray(), null);
+                context.CSSetUnorderedAccessViews(0, (uint)uavs.Count, uavs.ToArray(), Array.Empty<uint>());
             }
 
             // Calculate dispatch dimensions
