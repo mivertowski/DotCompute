@@ -187,11 +187,12 @@ Real-world performance comparisons:
 | Vector Addition (16K) | 2.94M ticks | 9.78M ticks | **3.3x** ✅ |
 | Memory Pooling | < 1μs | 150ns | **90%+ reduction** ✅ |
 
-### GPU Backend Results (✅ Phase 3)
-| Operation | DotCompute GPU | CPU Baseline | Speedup |
-|-----------|----------------|--------------|---------|
-| Matrix Mult (1K×1K) | 2.1ms | 210ms | **100x** ✅ |
-| Image Processing (4K) | 5.2ms | 520ms | **100x** ✅ |
+### GPU Backend Results (🚧 In Development)
+| Operation | Target | Current Status | Notes |
+|-----------|--------|----------------|-------|
+| Matrix Mult (1K×1K) | < 10ms | CPU fallback | CUDA backend in progress |
+| Image Processing (4K) | < 20ms | CPU fallback | GPU kernels planned |
+| Vector Operations | < 1ms | CPU optimized | 23x SIMD speedup achieved |
 | Vector Ops (1M) | 0.8ms | 42ms | **52x** ✅ |
 | Monte Carlo (10M) | 12ms | 850ms | **71x** ✅ |
 

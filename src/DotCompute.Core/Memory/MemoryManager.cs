@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
+
 namespace DotCompute.Core.Memory;
 
 /// <summary>
@@ -11,7 +13,7 @@ public interface IMemoryManager : IAsyncDisposable
     /// <summary>
     /// Creates a buffer with the specified size and location.
     /// </summary>
-    public ValueTask<IBuffer<T>> CreateBufferAsync<T>(
+    public ValueTask<Abstractions.IBuffer<T>> CreateBufferAsync<T>(
         int elementCount,
         MemoryLocation location,
         MemoryAccess access = MemoryAccess.ReadWrite,
@@ -20,7 +22,7 @@ public interface IMemoryManager : IAsyncDisposable
     /// <summary>
     /// Creates a buffer from existing data.
     /// </summary>
-    public ValueTask<IBuffer<T>> CreateBufferAsync<T>(
+    public ValueTask<Abstractions.IBuffer<T>> CreateBufferAsync<T>(
         ReadOnlyMemory<T> data,
         MemoryLocation location,
         MemoryAccess access = MemoryAccess.ReadWrite,
@@ -30,8 +32,8 @@ public interface IMemoryManager : IAsyncDisposable
     /// Copies data between buffers.
     /// </summary>
     public ValueTask CopyAsync<T>(
-        IBuffer<T> source,
-        IBuffer<T> destination,
+        Abstractions.IBuffer<T> source,
+        Abstractions.IBuffer<T> destination,
         long sourceOffset = 0,
         long destinationOffset = 0,
         long? elementCount = null,
@@ -48,65 +50,8 @@ public interface IMemoryManager : IAsyncDisposable
     public MemoryLocation[] AvailableLocations { get; }
 }
 
-/// <summary>
-/// Represents a typed memory buffer.
-/// </summary>
-public interface IBuffer<T> : IAsyncDisposable where T : unmanaged
-{
-    /// <summary>
-    /// Gets the number of elements in the buffer.
-    /// </summary>
-    public int ElementCount { get; }
-
-    /// <summary>
-    /// Gets the size in bytes.
-    /// </summary>
-    public long SizeInBytes { get; }
-
-    /// <summary>
-    /// Gets the memory location.
-    /// </summary>
-    public MemoryLocation Location { get; }
-
-    /// <summary>
-    /// Gets the access mode.
-    /// </summary>
-    public MemoryAccess Access { get; }
-
-    /// <summary>
-    /// Reads data from the buffer.
-    /// </summary>
-    public ValueTask<T[]> ReadAsync(
-        int offset = 0,
-        int? count = null,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Writes data to the buffer.
-    /// </summary>
-    public ValueTask WriteAsync(
-        ReadOnlyMemory<T> data,
-        int offset = 0,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Fills the buffer with a value.
-    /// </summary>
-    public ValueTask FillAsync(
-        T value,
-        int offset = 0,
-        int? count = null,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Maps the buffer for direct access.
-    /// </summary>
-    public ValueTask<IMemoryMapping<T>> MapAsync(
-        MemoryMapMode mode = MemoryMapMode.ReadWrite,
-        int offset = 0,
-        int? count = null,
-        CancellationToken cancellationToken = default);
-}
+// Note: IBuffer<T> interface moved to DotCompute.Abstractions to avoid conflicts
+// All buffer implementations should use DotCompute.Abstractions.IBuffer<T>
 
 /// <summary>
 /// Memory locations where buffers can be allocated.

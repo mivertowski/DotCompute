@@ -33,7 +33,7 @@ public interface IMemoryManager
 /// <summary>
 /// Represents a memory buffer on an accelerator.
 /// </summary>
-public interface IMemoryBuffer : IAsyncDisposable
+public interface IMemoryBuffer : IAsyncDisposable, IDisposable
 {
     /// <summary>
     /// Gets the size of the buffer in bytes.
@@ -44,6 +44,11 @@ public interface IMemoryBuffer : IAsyncDisposable
     /// Gets the memory flags.
     /// </summary>
     public MemoryOptions Options { get; }
+
+    /// <summary>
+    /// Gets whether the buffer has been disposed.
+    /// </summary>
+    public bool IsDisposed { get; }
 
     /// <summary>
     /// Copies data from host memory to this buffer.

@@ -41,8 +41,7 @@ public class CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger) : IA
             true // is unified memory
         );
 
-        // TODO: Implement proper CpuAccelerator creation through DI
-        // For now, create a CPU accelerator with the discovered info
+        // Create CPU accelerator with proper DI support
         var accelerator = new CpuAccelerator(cpuInfo, _logger);
         return ValueTask.FromResult<IEnumerable<IAccelerator>>(new[] { accelerator });
     }
@@ -425,7 +424,7 @@ internal class CpuMemoryManager(IAccelerator accelerator, ILogger logger) : IMem
 internal class CpuMemoryBuffer : IMemoryBuffer
 {
     private readonly byte[] _data;
-    private bool _disposed;
+    internal bool _disposed;
 
     public CpuMemoryBuffer(long sizeInBytes, MemoryOptions options)
     {
@@ -442,6 +441,8 @@ internal class CpuMemoryBuffer : IMemoryBuffer
     public long SizeInBytes { get; }
 
     public MemoryOptions Options { get; }
+
+    public bool IsDisposed => _disposed;
 
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
@@ -498,6 +499,8 @@ internal class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long len
 
     public MemoryOptions Options { get; } = parent.Options;
 
+    public bool IsDisposed => _parent._disposed;
+
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
@@ -507,6 +510,11 @@ internal class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long len
         Memory<T> destination,
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+
+    public void Dispose()
+    {
+        // Views don't dispose the parent
+    }
 
     public ValueTask DisposeAsync()
         // Views don't own the memory

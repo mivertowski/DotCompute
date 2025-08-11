@@ -1,0 +1,306 @@
+# Azure DevOps / GitHub Actions compatible coverage pipeline
+name: Coverage Analysis Pipeline
+
+variables:
+  DOTNET_VERSION: '9.0.x'
+  BUILD_CONFIGURATION: 'Release'
+  COVERAGE_THRESHOLD: 70.0
+  COVERAGE_OUTPUT_PATH: '$(Build.ArtifactStagingDirectory)/coverage'
+
+trigger:
+  branches:
+    include:
+      - main
+      - develop
+      - feature/*
+  paths:
+    include:
+      - 'src/**'
+      - 'tests/**'
+      - '*.csproj'
+      - '*.sln'
+
+pr:
+  branches:
+    include:
+      - main
+      - develop
+
+stages:
+- stage: Coverage
+  displayName: 'Code Coverage Analysis'
+  jobs:
+  - job: TestAndCoverage
+    displayName: 'Run Tests with Coverage'
+    pool:
+      vmImage: 'ubuntu-latest'
+    timeoutInMinutes: 60
+    
+    variables:
+      COVERLET_INTEGRATION: true
+      DOTNET_CLI_TELEMETRY_OPTOUT: true
+      DOTNET_NOLOGO: true
+    
+    steps:
+    - checkout: self
+      fetchDepth: 0  # Full history for GitVersion and trend analysis
+    
+    - task: UseDotNet@2
+      displayName: 'Install .NET SDK'
+      inputs:
+        packageType: 'sdk'
+        version: '$(DOTNET_VERSION)'
+        includePreviewVersions: false
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Restore Dependencies'
+      inputs:
+        command: 'restore'
+        projects: '**/*.csproj'
+        feedsToUse: 'select'
+        verbosityRestore: 'Minimal'
+    
+    - task: DotNetCoreCLI@2
+      displayName: 'Build Solution'
+      inputs:
+        command: 'build'
+        projects: '**/*.csproj'
+        arguments: '--configuration $(BUILD_CONFIGURATION) --no-restore'
+    
+    - script: |
+        dotnet tool install -g dotnet-reportgenerator-globaltool
+        echo "ReportGenerator installed"
+      displayName: 'Install Coverage Tools'
+    
+    - script: |
+        # Build coverage analyzer
+        dotnet build ./tools/coverage-analysis/CoverageAnalyzer.csproj -c Release
+        echo "Coverage analyzer built"
+      displayName: 'Build Coverage Analyzer'
+    
+    # Run tests in parallel with coverage
+    - task: PowerShell@2
+      displayName: 'Run Tests with Coverage (Parallel)'
+      inputs:
+        filePath: './scripts/coverage/parallel-test-runner.ps1'
+        arguments: >
+          -Configuration $(BUILD_CONFIGURATION) 
+          -OutputPath "$(COVERAGE_OUTPUT_PATH)"
+          -SkipSlowTests:${{ eq(variables['Build.Reason'], 'PullRequest') }}
+          -VerboseOutput:$false
+        errorActionPreference: 'continue'  # Don't fail pipeline on test failures yet
+    
+    # Generate comprehensive coverage reports
+    - task: PowerShell@2
+      displayName: 'Generate Coverage Reports'
+      inputs:
+        filePath: './scripts/coverage/generate-reports.ps1'
+        arguments: >
+          -Configuration $(BUILD_CONFIGURATION)
+          -OutputPath "$(COVERAGE_OUTPUT_PATH)"
+          -LineThreshold $(COVERAGE_THRESHOLD)
+          -BranchThreshold $(COVERAGE_THRESHOLD)
+      condition: always()  # Run even if tests failed
+    
+    # Publish test results
+    - task: PublishTestResults@2
+      displayName: 'Publish Test Results'
+      inputs:
+        testResultsFormat: 'VSTest'
+        testResultsFiles: '**/*.trx'
+        searchFolder: '$(COVERAGE_OUTPUT_PATH)'
+        publishRunAttachments: true
+        mergeTestResults: true
+        testRunTitle: 'DotCompute Tests'
+      condition: always()
+    
+    # Publish code coverage results  
+    - task: PublishCodeCoverageResults@1
+      displayName: 'Publish Coverage Results'
+      inputs:
+        codeCoverageTool: 'Cobertura'
+        summaryFileLocation: '$(COVERAGE_OUTPUT_PATH)/**/coverage.cobertura.xml'
+        reportDirectory: '$(COVERAGE_OUTPUT_PATH)/html'
+        additionalCodeCoverageFiles: '$(COVERAGE_OUTPUT_PATH)/**/*.xml'
+      condition: always()
+    
+    # Quality Gate Check
+    - task: PowerShell@2
+      displayName: 'Coverage Quality Gate'
+      inputs:
+        targetType: 'inline'
+        script: |
+          $reportPath = "$(COVERAGE_OUTPUT_PATH)/analysis-report.json"
+          
+          if (Test-Path $reportPath) {
+            $report = Get-Content $reportPath | ConvertFrom-Json
+            $lineRate = $report.overall.lineRate * 100
+            $branchRate = $report.overall.branchRate * 100
+            
+            Write-Host "Overall Line Coverage: $($lineRate.ToString('F2'))%"
+            Write-Host "Overall Branch Coverage: $($branchRate.ToString('F2'))%"
+            Write-Host "Coverage Threshold: $(COVERAGE_THRESHOLD)%"
+            
+            # Set pipeline variables for badges
+            Write-Host "##vso[task.setvariable variable=LineCoverage;isOutput=true]$($lineRate.ToString('F1'))"
+            Write-Host "##vso[task.setvariable variable=BranchCoverage;isOutput=true]$($branchRate.ToString('F1'))"
+            
+            if ($lineRate -lt $(COVERAGE_THRESHOLD)) {
+              Write-Host "##vso[task.logissue type=error]Line coverage $($lineRate.ToString('F2'))% is below threshold $(COVERAGE_THRESHOLD)%"
+              $failBuild = $true
+            }
+            
+            if ($branchRate -lt $(COVERAGE_THRESHOLD)) {
+              Write-Host "##vso[task.logissue type=error]Branch coverage $($branchRate.ToString('F2'))% is below threshold $(COVERAGE_THRESHOLD)%"
+              $failBuild = $true
+            }
+            
+            # Show low coverage projects
+            if ($report.lowCoverageAreas.Count -gt 0) {
+              Write-Host "Projects needing attention:"
+              foreach ($area in $report.lowCoverageAreas) {
+                Write-Host "  - $area"
+              }
+            }
+            
+            # Show recommendations
+            if ($report.recommendations.Count -gt 0) {
+              Write-Host "Recommendations:"
+              foreach ($recommendation in $report.recommendations) {
+                Write-Host "  - $recommendation"
+              }
+            }
+            
+            if ($failBuild -and "${{ variables['Build.Reason'] }}" -ne "PullRequest") {
+              Write-Host "##vso[task.complete result=Failed;]Coverage quality gate failed"
+              exit 1
+            } elseif ($failBuild) {
+              Write-Host "##vso[task.logissue type=warning]Coverage below threshold in PR - consider adding tests"
+            }
+          } else {
+            Write-Host "##vso[task.logissue type=error]Coverage analysis report not found"
+            exit 1
+          }
+        errorActionPreference: 'stop'
+      condition: always()
+    
+    # Archive coverage artifacts
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Coverage Artifacts'
+      inputs:
+        pathToPublish: '$(COVERAGE_OUTPUT_PATH)'
+        artifactName: 'coverage-reports'
+        publishLocation: 'Container'
+      condition: always()
+    
+    # Comment PR with coverage results (if PR build)
+    - task: PowerShell@2
+      displayName: 'Comment PR with Coverage'
+      inputs:
+        targetType: 'inline'
+        script: |
+          if ("${{ variables['Build.Reason'] }}" -eq "PullRequest") {
+            $reportPath = "$(COVERAGE_OUTPUT_PATH)/analysis-report.json"
+            
+            if (Test-Path $reportPath) {
+              $report = Get-Content $reportPath | ConvertFrom-Json
+              $lineRate = $report.overall.lineRate * 100
+              $branchRate = $report.overall.branchRate * 100
+              
+              $comment = @"
+          ## 📊 Code Coverage Report
+          
+          | Metric | Value | Status |
+          |--------|--------|--------|
+          | Line Coverage | $($lineRate.ToString('F1'))% | $(if($lineRate -ge $(COVERAGE_THRESHOLD)) {'✅'} else {'❌'}) |
+          | Branch Coverage | $($branchRate.ToString('F1'))% | $(if($branchRate -ge $(COVERAGE_THRESHOLD)) {'✅'} else {'❌'}) |
+          | Threshold | $(COVERAGE_THRESHOLD)% | - |
+          
+          $(if($report.lowCoverageAreas.Count -gt 0) {
+            "### 🔍 Areas Needing Attention`n" + 
+            ($report.lowCoverageAreas | ForEach-Object { "- $_" } | Join-String "`n")
+          })
+          
+          📈 [View detailed coverage report]($(System.TeamFoundationCollectionUri)$(System.TeamProject)/_build/results?buildId=$(Build.BuildId)&view=codecoverage-tab)
+          "@
+              
+              Write-Host "Coverage comment generated for PR"
+              # Here you would integrate with your PR commenting system
+            }
+          }
+      condition: and(always(), eq(variables['Build.Reason'], 'PullRequest'))
+
+# Coverage trend analysis job (runs on main branch)
+- stage: CoverageTrends
+  displayName: 'Coverage Trend Analysis'
+  dependsOn: Coverage
+  condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+  jobs:
+  - job: TrendAnalysis
+    displayName: 'Analyze Coverage Trends'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - download: current
+      artifact: coverage-reports
+    
+    - task: PowerShell@2
+      displayName: 'Analyze Coverage Trends'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # This would integrate with your trend analysis system
+          # Could store results in Application Insights, database, etc.
+          
+          $reportPath = "$(Pipeline.Workspace)/coverage-reports/analysis-report.json"
+          if (Test-Path $reportPath) {
+            $report = Get-Content $reportPath | ConvertFrom-Json
+            
+            Write-Host "Historical data point captured:"
+            Write-Host "  Date: $(Build.Repository.Name)"
+            Write-Host "  Commit: $(Build.SourceVersion)"
+            Write-Host "  Line Coverage: $($report.overall.lineRate * 100)%"
+            Write-Host "  Branch Coverage: $($report.overall.branchRate * 100)%"
+            
+            # Store in your preferred system (Application Insights, Azure Table Storage, etc.)
+            # Example: Send to Application Insights
+            # az extension add --name application-insights
+            # az monitor app-insights events show --app YourAppInsights --type customEvents
+          }
+
+# Notification stage for coverage reports
+- stage: Notifications  
+  displayName: 'Coverage Notifications'
+  dependsOn: [Coverage, CoverageTrends]
+  condition: always()
+  jobs:
+  - job: SendNotifications
+    displayName: 'Send Coverage Notifications'
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: PowerShell@2
+      displayName: 'Send Teams/Slack Notification'
+      inputs:
+        targetType: 'inline'
+        script: |
+          # Example webhook notification
+          # Customize for your notification system (Teams, Slack, email, etc.)
+          
+          $buildStatus = "$(Agent.JobStatus)"
+          $buildNumber = "$(Build.BuildNumber)"
+          $repoName = "$(Build.Repository.Name)"
+          
+          Write-Host "Build completed: $buildStatus"
+          Write-Host "Would send notification for build $buildNumber of $repoName"
+          
+          # Example Teams webhook call:
+          # $webhook = "YOUR_TEAMS_WEBHOOK_URL"
+          # $body = @{
+          #   text = "Coverage report available for build $buildNumber"
+          #   sections = @(@{
+          #     activityTitle = "DotCompute Coverage Report"
+          #     activitySubtitle = "Build $buildNumber"
+          #   })
+          # }
+          # Invoke-RestMethod -Uri $webhook -Method Post -Body ($body | ConvertTo-Json) -ContentType 'application/json'

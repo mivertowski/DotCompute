@@ -11,6 +11,11 @@ namespace DotCompute.Abstractions;
 public interface IBuffer<T> : IMemoryBuffer where T : unmanaged
 {
     /// <summary>
+    /// Gets the length of the buffer in elements.
+    /// </summary>
+    public int Length { get; }
+
+    /// <summary>
     /// Gets the accelerator this buffer is associated with.
     /// </summary>
     public IAccelerator Accelerator { get; }

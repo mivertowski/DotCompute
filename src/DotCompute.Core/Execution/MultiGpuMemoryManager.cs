@@ -10,29 +10,34 @@ namespace DotCompute.Core.Execution;
 
 /// <summary>
 /// Manages memory allocation and transfers across multiple GPU devices.
+/// Provides real peer-to-peer GPU memory management with hardware detection and optimization.
 /// </summary>
 public sealed class MultiGpuMemoryManager : IAsyncDisposable
 {
     private readonly ILogger<MultiGpuMemoryManager> _logger;
-    private readonly ConcurrentDictionary<string, DeviceMemoryPool> _devicePools;
-    private readonly ConcurrentDictionary<string, PeerToPeerConnection> _p2pConnections;
-    private readonly TransferScheduler _transferScheduler;
-    private readonly MemoryCoherenceManager _coherenceManager;
+    private readonly P2PCapabilityDetector _p2pDetector;
+    private readonly P2PBufferFactory _bufferFactory;
+    private readonly ConcurrentDictionary<string, DeviceBufferPool> _devicePools;
+    private readonly ConcurrentDictionary<string, P2PConnectionCapability> _p2pConnections;
+    private readonly P2PTransferScheduler _transferScheduler;
+    private readonly P2PMemoryCoherenceManager _coherenceManager;
     private readonly SemaphoreSlim _managementSemaphore;
     private bool _disposed;
 
     public MultiGpuMemoryManager(ILogger<MultiGpuMemoryManager> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _devicePools = new ConcurrentDictionary<string, DeviceMemoryPool>();
-        _p2pConnections = new ConcurrentDictionary<string, PeerToPeerConnection>();
-        _transferScheduler = new TransferScheduler(logger);
-        _coherenceManager = new MemoryCoherenceManager(logger);
+        _p2pDetector = new P2PCapabilityDetector(logger);
+        _bufferFactory = new P2PBufferFactory(logger, _p2pDetector);
+        _devicePools = new ConcurrentDictionary<string, DeviceBufferPool>();
+        _p2pConnections = new ConcurrentDictionary<string, P2PConnectionCapability>();
+        _transferScheduler = new P2PTransferScheduler(logger);
+        _coherenceManager = new P2PMemoryCoherenceManager(logger);
         _managementSemaphore = new SemaphoreSlim(1);
     }
 
     /// <summary>
-    /// Creates a buffer slice on the target device from a source buffer.
+    /// Creates a buffer slice on the target device from a source buffer using P2P optimizations.
     /// </summary>
     public async ValueTask<AbstractionsMemory.IBuffer<T>> CreateBufferSliceAsync<T>(
         AbstractionsMemory.IBuffer<T> sourceBuffer,
@@ -44,28 +49,28 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
         await _managementSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            _logger.LogDebug("Creating buffer slice on device {DeviceId}: start={StartIndex}, count={ElementCount}",
+            _logger.LogDebug("Creating P2P buffer slice on device {DeviceId}: start={StartIndex}, count={ElementCount}",
                 targetDevice.Info.Id, startIndex, elementCount);
 
-            // Get or create memory pool for the target device
-            var devicePool = _devicePools.GetOrAdd(targetDevice.Info.Id, 
-                _ => new DeviceMemoryPool(targetDevice, _logger));
-
-            // Allocate buffer on target device
-            var sizeInBytes = elementCount * System.Runtime.InteropServices.Marshal.SizeOf<T>();
-            var memoryBuffer = await targetDevice.Memory.AllocateAsync(sizeInBytes, AbstractionsMemory.MemoryOptions.None, cancellationToken);
+            // Ensure P2P connection is established
+            var sourceDevice = sourceBuffer.Accelerator;
+            var connectionKey = GetConnectionKey(sourceDevice.Info.Id, targetDevice.Info.Id);
             
-            // Create a buffer wrapper - this is simplified, real implementation would use proper factory
-            var targetBuffer = CreateBufferFromMemoryBuffer<T>(memoryBuffer, targetDevice, elementCount);
+            if (!_p2pConnections.TryGetValue(connectionKey, out var p2pCapability))
+            {
+                p2pCapability = await _p2pDetector.DetectP2PCapabilityAsync(sourceDevice, targetDevice, cancellationToken);
+                _p2pConnections[connectionKey] = p2pCapability;
+            }
 
-            // Schedule data transfer from source to target
-            await ScheduleBufferTransferAsync(
-                sourceBuffer, targetBuffer, startIndex, 0, elementCount, cancellationToken);
+            // Create P2P-optimized buffer slice
+            var p2pBuffer = await _bufferFactory.CreateP2PBufferSliceAsync(
+                sourceBuffer as P2PBuffer<T> ?? await ConvertToP2PBufferAsync(sourceBuffer, cancellationToken),
+                targetDevice, startIndex, elementCount, null, cancellationToken);
 
-            // Track coherence
-            _coherenceManager.TrackBuffer(targetBuffer, sourceBuffer, startIndex, elementCount);
+            // Track coherence with P2P awareness
+            _coherenceManager.TrackP2PBuffer(p2pBuffer, sourceBuffer, startIndex, elementCount, p2pCapability);
 
-            return targetBuffer;
+            return p2pBuffer;
         }
         finally
         {
@@ -82,45 +87,51 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// Enables peer-to-peer transfers between two devices if supported.
+    /// Enables peer-to-peer transfers between two devices using hardware detection.
     /// </summary>
     public async ValueTask<bool> EnablePeerToPeerAsync(IAccelerator device1, IAccelerator device2)
     {
         var connectionKey = GetConnectionKey(device1.Info.Id, device2.Info.Id);
         
-        if (_p2pConnections.TryGetValue(connectionKey, out var existingConnection))
+        if (_p2pConnections.TryGetValue(connectionKey, out var existingCapability))
         {
-            return existingConnection.IsEnabled;
+            return existingCapability.IsSupported;
         }
 
         try
         {
-            // Check if P2P is supported (this would be device-specific implementation)
-            var isSupported = await CheckPeerToPeerSupportAsync(device1, device2);
-            
-            var connection = new PeerToPeerConnection
-            {
-                Device1Id = device1.Info.Id,
-                Device2Id = device2.Info.Id,
-                IsEnabled = isSupported,
-                IsSupported = isSupported,
-                BandwidthGBps = isSupported ? EstimatePeerToPeerBandwidth(device1, device2) : 0
-            };
+            // Use hardware-aware P2P detection
+            var capability = await _p2pDetector.DetectP2PCapabilityAsync(device1, device2);
+            _p2pConnections[connectionKey] = capability;
 
-            _p2pConnections[connectionKey] = connection;
-
-            if (isSupported)
+            if (capability.IsSupported)
             {
-                _logger.LogInformation("Enabled P2P between {Device1} and {Device2} with bandwidth {BandwidthGBps:F1} GB/s",
-                    device1.Info.Name, device2.Info.Name, connection.BandwidthGBps);
+                // Establish P2P connection at hardware level
+                var enableResult = await _p2pDetector.EnableP2PAccessAsync(device1, device2);
+                
+                if (enableResult.Success)
+                {
+                    // Establish connection in buffer factory
+                    await _bufferFactory.EstablishP2PConnectionAsync(device1, device2);
+                    
+                    _logger.LogInformation("Enabled P2P between {Device1} and {Device2}: {ConnectionType}, {BandwidthGBps:F1} GB/s",
+                        device1.Info.Name, device2.Info.Name, capability.ConnectionType, capability.EstimatedBandwidthGBps);
+                    
+                    return true;
+                }
+                else
+                {
+                    _logger.LogWarning("P2P hardware detection succeeded but enable failed between {Device1} and {Device2}: {Error}",
+                        device1.Info.Name, device2.Info.Name, enableResult.ErrorMessage);
+                    return false;
+                }
             }
             else
             {
-                _logger.LogWarning("P2P not supported between {Device1} and {Device2}",
-                    device1.Info.Name, device2.Info.Name);
+                _logger.LogInformation("P2P not supported between {Device1} and {Device2}: {Reason}",
+                    device1.Info.Name, device2.Info.Name, capability.LimitationReason);
+                return false;
             }
-
-            return isSupported;
         }
         catch (Exception ex)
         {
@@ -131,7 +142,7 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// Transfers data between buffers on different devices.
+    /// Transfers data between buffers on different devices using optimal P2P strategy.
     /// </summary>
     public async ValueTask TransferBufferAsync<T>(
         AbstractionsMemory.IBuffer<T> sourceBuffer,
@@ -147,8 +158,14 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
             sourceElementCount - sourceOffset,
             targetElementCount - targetOffset);
 
-        await ScheduleBufferTransferAsync(
-            sourceBuffer, targetBuffer, sourceOffset, targetOffset, transferCount, cancellationToken);
+        // Get optimal transfer strategy
+        var transferSize = transferCount * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        var strategy = await _p2pDetector.GetOptimalTransferStrategyAsync(
+            sourceBuffer.Accelerator, targetBuffer.Accelerator, transferSize, cancellationToken);
+
+        // Schedule P2P-optimized transfer
+        await _transferScheduler.ScheduleP2PTransferAsync(
+            sourceBuffer, targetBuffer, sourceOffset, targetOffset, transferCount, strategy, cancellationToken);
     }
 
     /// <summary>
@@ -160,47 +177,79 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// Gets memory usage statistics across all devices.
+    /// Gets comprehensive memory usage statistics across all devices with P2P metrics.
     /// </summary>
     public MultiGpuMemoryStatistics GetMemoryStatistics()
     {
+        var p2pStats = _bufferFactory.GetConnectionStatistics();
+        var poolStats = _bufferFactory.GetBufferPoolStatistics();
+        
         var stats = new MultiGpuMemoryStatistics
         {
             DeviceStatistics = [],
-            TotalP2PConnections = _p2pConnections.Count,
-            ActiveP2PConnections = _p2pConnections.Count(kvp => kvp.Value.IsEnabled),
+            TotalP2PConnections = p2pStats.TotalConnections,
+            ActiveP2PConnections = p2pStats.ActiveConnections,
             PendingTransfers = _transferScheduler.GetPendingTransferCount(),
-            CoherenceOverhead = _coherenceManager.GetOverheadPercentage()
+            CoherenceOverhead = _coherenceManager.GetOverheadPercentage(),
+            TotalP2PTransfers = p2pStats.TotalTransfers,
+            TotalP2PBytesTransferred = p2pStats.TotalBytesTransferred,
+            AverageP2PTransferSize = p2pStats.AverageTransferSize
         };
 
-        foreach (var kvp in _devicePools)
+        // Convert pool statistics to device statistics
+        foreach (var poolStat in poolStats)
         {
-            stats.DeviceStatistics[kvp.Key] = kvp.Value.GetStatistics();
+            stats.DeviceStatistics[poolStat.DeviceId] = new DeviceMemoryStatistics
+            {
+                DeviceId = poolStat.DeviceId,
+                TotalAllocatedBytes = poolStat.TotalAllocatedBytes,
+                AvailableBuffers = poolStat.ActiveBuffers,
+                PeakUsageBytes = poolStat.TotalAllocatedBytes,
+                AllocationCount = poolStat.AllocationCount,
+                DeallocationCount = poolStat.DeallocationCount
+            };
         }
 
         return stats;
     }
 
     /// <summary>
-    /// Optimizes memory layout for better performance across devices.
+    /// Optimizes memory layout for better P2P performance across devices.
     /// </summary>
     public async ValueTask OptimizeMemoryLayoutAsync(IAccelerator[] devices, CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Optimizing memory layout across {DeviceCount} devices", devices.Length);
+        _logger.LogInformation("Optimizing P2P memory layout across {DeviceCount} devices", devices.Length);
 
-        // Enable P2P between all device pairs where possible
+        // Build P2P capability matrix
+        var p2pMatrix = new Dictionary<string, Dictionary<string, P2PConnectionCapability>>();
+        
         for (var i = 0; i < devices.Length; i++)
         {
-            for (var j = i + 1; j < devices.Length; j++)
+            p2pMatrix[devices[i].Info.Id] = new Dictionary<string, P2PConnectionCapability>();
+            
+            for (var j = 0; j < devices.Length; j++)
             {
-                await EnablePeerToPeerAsync(devices[i], devices[j]);
+                if (i != j)
+                {
+                    var capability = await _p2pDetector.DetectP2PCapabilityAsync(devices[i], devices[j], cancellationToken);
+                    p2pMatrix[devices[i].Info.Id][devices[j].Info.Id] = capability;
+                    
+                    // Enable P2P if supported
+                    if (capability.IsSupported)
+                    {
+                        await EnablePeerToPeerAsync(devices[i], devices[j]);
+                    }
+                }
             }
         }
 
-        // Optimize buffer placement based on access patterns
-        await _coherenceManager.OptimizePlacementAsync(devices, cancellationToken);
+        // Log P2P topology
+        LogP2PTopology(devices, p2pMatrix);
 
-        _logger.LogInformation("Memory layout optimization completed");
+        // Optimize buffer placement based on P2P topology and access patterns
+        await _coherenceManager.OptimizeP2PPlacementAsync(devices, p2pMatrix, cancellationToken);
+
+        _logger.LogInformation("P2P memory layout optimization completed");
     }
 
     public async ValueTask DisposeAsync()
@@ -212,6 +261,10 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
 
         _logger.LogInformation("Disposing MultiGpuMemoryManager");
 
+        // Dispose P2P components
+        await _bufferFactory.DisposeAsync().ConfigureAwait(false);
+        await _p2pDetector.DisposeAsync().ConfigureAwait(false);
+        
         // Dispose all device pools
         var disposeTasks = _devicePools.Values.Select(pool => pool.DisposeAsync()).ToArray();
         foreach (var task in disposeTasks)
@@ -232,6 +285,9 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
 
     #region Private Methods
 
+    /// <summary>
+    /// Schedules a P2P-optimized buffer transfer.
+    /// </summary>
     private async ValueTask ScheduleBufferTransferAsync<T>(
         AbstractionsMemory.IBuffer<T> sourceBuffer,
         AbstractionsMemory.IBuffer<T> targetBuffer,
@@ -240,68 +296,54 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
         int elementCount,
         CancellationToken cancellationToken) where T : unmanaged
     {
-        var transfer = new BufferTransfer<T>
-        {
-            SourceBuffer = sourceBuffer,
-            TargetBuffer = targetBuffer,
-            SourceOffset = sourceOffset,
-            TargetOffset = targetOffset,
-            ElementCount = elementCount,
-            Priority = TransferPriority.Normal
-        };
+        var transferSize = elementCount * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        var strategy = await _p2pDetector.GetOptimalTransferStrategyAsync(
+            sourceBuffer.Accelerator, targetBuffer.Accelerator, transferSize, cancellationToken);
 
-        await _transferScheduler.ScheduleTransferAsync(transfer, cancellationToken);
+        await _transferScheduler.ScheduleP2PTransferAsync(
+            sourceBuffer, targetBuffer, sourceOffset, targetOffset, elementCount, strategy, cancellationToken);
     }
 
-    private async ValueTask<bool> CheckPeerToPeerSupportAsync(IAccelerator device1, IAccelerator device2)
+    /// <summary>
+    /// Converts a standard buffer to a P2P buffer for optimization.
+    /// </summary>
+    private async ValueTask<P2PBuffer<T>> ConvertToP2PBufferAsync<T>(AbstractionsMemory.IBuffer<T> buffer, CancellationToken cancellationToken) where T : unmanaged
     {
-        // This is a simplified check - real implementation would query device capabilities
-        if (device1.Info.DeviceType != device2.Info.DeviceType)
+        if (buffer is P2PBuffer<T> p2pBuffer)
         {
-            return false;
+            return p2pBuffer;
         }
 
-        if (device1.Info.DeviceType == "CUDA")
-        {
-            // For CUDA, check if devices are on the same node and support P2P
-            return await CheckCudaPeerToPeerSupportAsync(device1, device2);
-        }
+        // Create new P2P buffer and copy data
+        return await _bufferFactory.CreateP2PBufferAsync(buffer, buffer.Accelerator, null, cancellationToken);
+    }
+
+    /// <summary>
+    /// Logs the P2P topology matrix for debugging and optimization.
+    /// </summary>
+    private void LogP2PTopology(IAccelerator[] devices, Dictionary<string, Dictionary<string, P2PConnectionCapability>> p2pMatrix)
+    {
+        _logger.LogInformation("P2P Topology Matrix:");
         
-        if (device1.Info.DeviceType == "ROCm")
+        foreach (var sourceDevice in devices)
         {
-            // For ROCm, check XGMI connectivity
-            return await CheckRocmPeerToPeerSupportAsync(device1, device2);
+            var connections = new List<string>();
+            
+            foreach (var targetDevice in devices)
+            {
+                if (sourceDevice.Info.Id != targetDevice.Info.Id && 
+                    p2pMatrix[sourceDevice.Info.Id].TryGetValue(targetDevice.Info.Id, out var capability))
+                {
+                    var status = capability.IsSupported 
+                        ? $"{targetDevice.Info.Name}({capability.ConnectionType},{capability.EstimatedBandwidthGBps:F0}GB/s)"
+                        : $"{targetDevice.Info.Name}(Not Supported)";
+                    connections.Add(status);
+                }
+            }
+            
+            _logger.LogInformation("{SourceDevice} -> [{Connections}]", 
+                sourceDevice.Info.Name, string.Join(", ", connections));
         }
-
-        // Default: assume no P2P support for other types
-        return false;
-    }
-
-    private async ValueTask<bool> CheckCudaPeerToPeerSupportAsync(IAccelerator device1, IAccelerator device2)
-    {
-        // Placeholder for CUDA P2P capability check
-        await Task.CompletedTask;
-        return true; // Assume supported for demonstration
-    }
-
-    private async ValueTask<bool> CheckRocmPeerToPeerSupportAsync(IAccelerator device1, IAccelerator device2)
-    {
-        // Placeholder for ROCm XGMI connectivity check
-        await Task.CompletedTask;
-        return true; // Assume supported for demonstration
-    }
-
-    private double EstimatePeerToPeerBandwidth(IAccelerator device1, IAccelerator device2)
-    {
-        // Simplified bandwidth estimation based on device types
-        var deviceType = device1.Info.DeviceType;
-        
-        return deviceType switch
-        {
-            "CUDA" => 600.0, // NVLink bandwidth estimate
-            "ROCm" => 400.0, // XGMI bandwidth estimate
-            _ => 16.0 // PCIe 4.0 x16 bandwidth estimate
-        };
     }
 
     private static string GetConnectionKey(string device1Id, string device2Id)
@@ -311,14 +353,16 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
         return $"{ids[0]}<->{ids[1]}";
     }
 
-    private AbstractionsMemory.IBuffer<T> CreateBufferFromMemoryBuffer<T>(
+    /// <summary>
+    /// Creates a P2P-optimized buffer from a memory buffer.
+    /// </summary>
+    private P2PBuffer<T> CreateBufferFromMemoryBuffer<T>(
         AbstractionsMemory.IMemoryBuffer memoryBuffer, 
         IAccelerator device, 
         int elementCount) where T : unmanaged
     {
-        // Create a simple mock buffer that can be used in tests
-        // In production, this would use a proper buffer factory
-        return new SimpleBufferAdapter<T>(memoryBuffer, elementCount);
+        // Create P2P-optimized buffer
+        return new P2PBuffer<T>(memoryBuffer, device, elementCount, true, _logger);
     }
 
     #endregion
@@ -768,6 +812,10 @@ public class MultiGpuMemoryStatistics
     public int ActiveP2PConnections { get; set; }
     public int PendingTransfers { get; set; }
     public double CoherenceOverhead { get; set; }
+    public long TotalP2PTransfers { get; set; }
+    public long TotalP2PBytesTransferred { get; set; }
+    public long AverageP2PTransferSize { get; set; }
+    public double P2PEfficiencyRatio => TotalP2PConnections > 0 ? (double)ActiveP2PConnections / TotalP2PConnections : 0.0;
 }
 
 public class DeviceMemoryStatistics

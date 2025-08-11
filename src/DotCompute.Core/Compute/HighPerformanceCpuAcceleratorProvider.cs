@@ -401,6 +401,7 @@ internal class HighPerformanceMemoryBuffer : IMemoryBuffer
 
     public long SizeInBytes => _sizeInBytes;
     public MemoryOptions Options { get; private set; }
+    public bool IsDisposed => _disposed;
 
     public void Reset(long sizeInBytes, MemoryOptions options)
     {
@@ -510,6 +511,7 @@ internal class HighPerformanceMemoryBufferView(HighPerformanceMemoryBuffer paren
 
     public long SizeInBytes { get; } = length;
     public MemoryOptions Options { get; } = parent.Options;
+    public bool IsDisposed => _parent.IsDisposed;
 
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
@@ -522,6 +524,11 @@ internal class HighPerformanceMemoryBufferView(HighPerformanceMemoryBuffer paren
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged => 
         _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+
+    public void Dispose()
+    {
+        // Views don't dispose the parent
+    }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

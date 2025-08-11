@@ -273,8 +273,9 @@ public static class ComputeQueryableExtensions
         // Create logger factory
         var loggerFactory = options.LoggerFactory ?? NullLoggerFactory.Instance;
         
-        // Create kernel factory
-        var kernelFactory = new DefaultKernelFactory();
+        // Create enhanced kernel factory with logging
+        var kernelFactory = new Operators.DefaultKernelFactory(
+            loggerFactory.CreateLogger<Operators.DefaultKernelFactory>());
         
         // Create components
         var optimizer = new ExpressionOptimizer(
@@ -310,63 +311,6 @@ public static class ComputeQueryableExtensions
             cache,
             loggerFactory.CreateLogger<ComputeQueryProvider>());
     }
-
-    /// <summary>
-    /// Default kernel factory implementation.
-    /// </summary>
-    private class DefaultKernelFactory : IKernelFactory
-    {
-        public Operators.IKernel CreateKernel(IAccelerator accelerator, Operators.KernelDefinition definition)
-        {
-            // In a full implementation, this would create actual kernels
-            // For now, return a mock kernel
-            return new MockKernel(definition);
-        }
-    }
-
-    /// <summary>
-    /// Mock kernel for testing.
-    /// </summary>
-    private class MockKernel : Operators.IKernel
-    {
-        private readonly Operators.KernelDefinition _definition;
-
-        public MockKernel(Operators.KernelDefinition definition)
-        {
-            _definition = definition;
-            Properties = new KernelProperties
-            {
-                MaxThreadsPerBlock = 256,
-                SharedMemorySize = 48 * 1024,
-                RegisterCount = 32
-            };
-        }
-
-        public string Name => _definition.Name;
-        public KernelProperties Properties { get; }
-
-        public Task CompileAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.CompletedTask;
-        }
-
-        public Task ExecuteAsync(WorkItems workItems, Dictionary<string, object> parameters, CancellationToken cancellationToken = default)
-        {
-            // Mock execution
-            return Task.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            // Nothing to dispose in mock
-        }
-
-        public IReadOnlyList<Operators.KernelParameter> GetParameterInfo()
-        {
-            return _definition.Parameters;
-        }
-    }
-}
 
 /// <summary>
 /// Options for compute queries.
