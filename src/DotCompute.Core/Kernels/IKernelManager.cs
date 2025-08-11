@@ -41,8 +41,10 @@ public interface IKernelManager : IDisposable
     /// </summary>
     ValueTask<ManagedCompiledKernel> GetOrCompileOperationKernelAsync(
         string operation,
-        Type elementType,
+        Type[] inputTypes,
+        Type outputType,
         IAccelerator accelerator,
+        KernelGenerationContext? context = null,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default);
 
@@ -51,8 +53,9 @@ public interface IKernelManager : IDisposable
     /// </summary>
     ValueTask<KernelExecutionResult> ExecuteKernelAsync(
         ManagedCompiledKernel kernel,
-        KernelArguments arguments,
-        KernelExecutionConfig config,
+        KernelArgument[] arguments,
+        IAccelerator accelerator,
+        KernelExecutionConfig? config = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -60,9 +63,10 @@ public interface IKernelManager : IDisposable
     /// </summary>
     ValueTask<KernelProfilingResult> ProfileKernelAsync(
         ManagedCompiledKernel kernel,
-        KernelArguments arguments,
-        KernelExecutionConfig config,
-        int iterations = 10,
+        KernelArgument[] arguments,
+        IAccelerator accelerator,
+        KernelExecutionConfig? config = null,
+        int iterations = 100,
         CancellationToken cancellationToken = default);
 
     /// <summary>
