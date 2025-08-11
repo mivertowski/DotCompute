@@ -35,9 +35,9 @@ public static class ConvolutionExample
         var signal = new float[signalLength];
         var random = new Random(42);
         
-        for (int i = 0; i < signalLength; i++)
+        for (var i = 0; i < signalLength; i++)
         {
-            float t = i / sampleRate;
+            var t = i / sampleRate;
             signal[i] = MathF.Sin(2 * MathF.PI * frequency * t) + 
                        0.3f * (float)(random.NextDouble() - 0.5); // Add noise
         }
@@ -85,11 +85,11 @@ public static class ConvolutionExample
         const int imageHeight = 512;
         var image = new float[imageHeight * imageWidth];
 
-        for (int y = 0; y < imageHeight; y++)
+        for (var y = 0; y < imageHeight; y++)
         {
-            for (int x = 0; x < imageWidth; x++)
+            for (var x = 0; x < imageWidth; x++)
             {
-                bool isWhite = ((x / 32) + (y / 32)) % 2 == 0;
+                var isWhite = ((x / 32) + (y / 32)) % 2 == 0;
                 image[y * imageWidth + x] = isWhite ? 1.0f : 0.0f;
             }
         }
@@ -129,8 +129,8 @@ public static class ConvolutionExample
         };
         
         // Normalize
-        float sum = gaussian.Sum();
-        for (int i = 0; i < gaussian.Length; i++)
+        var sum = gaussian.Sum();
+        for (var i = 0; i < gaussian.Length; i++)
         {
             gaussian[i] /= sum;
         }
@@ -147,10 +147,10 @@ public static class ConvolutionExample
         var gaussianY = new float[] { 1, 2, 1 };
         
         // Normalize
-        float sumX = gaussianX.Sum();
-        float sumY = gaussianY.Sum();
-        for (int i = 0; i < gaussianX.Length; i++) gaussianX[i] /= sumX;
-        for (int i = 0; i < gaussianY.Length; i++) gaussianY[i] /= sumY;
+        var sumX = gaussianX.Sum();
+        var sumY = gaussianY.Sum();
+        for (var i = 0; i < gaussianX.Length; i++) gaussianX[i] /= sumX;
+        for (var i = 0; i < gaussianY.Length; i++) gaussianY[i] /= sumY;
 
         var separableBlur = await convolution.SeparableConvolve2DAsync(
             image, gaussianX, gaussianY, imageWidth, imageHeight, PaddingMode.Same);
@@ -186,14 +186,14 @@ public static class ConvolutionExample
         // Create random input batch (normally would be actual images)
         var batchInput = new float[batchSize * inputChannels * imageHeight * imageWidth];
         var random = new Random(42);
-        for (int i = 0; i < batchInput.Length; i++)
+        for (var i = 0; i < batchInput.Length; i++)
         {
             batchInput[i] = (float)(random.NextDouble() - 0.5) * 2; // [-1, 1]
         }
 
         // Create random kernels (normally would be trained weights)
         var kernels = new float[outputChannels * inputChannels * kernelSize * kernelSize];
-        for (int i = 0; i < kernels.Length; i++)
+        for (var i = 0; i < kernels.Length; i++)
         {
             kernels[i] = (float)(random.NextGaussian() * 0.1); // Small random weights
         }
@@ -209,7 +209,7 @@ public static class ConvolutionExample
 
         // Demonstrate depthwise convolution (used in MobileNets)
         var depthwiseKernels = new float[inputChannels * kernelSize * kernelSize];
-        for (int i = 0; i < depthwiseKernels.Length; i++)
+        for (var i = 0; i < depthwiseKernels.Length; i++)
         {
             depthwiseKernels[i] = (float)(random.NextGaussian() * 0.1);
         }
@@ -236,14 +236,14 @@ public static class ConvolutionExample
 
         // Demonstrate transposed convolution (for upsampling)
         var smallInput = new float[batchSize * outputChannels * 56 * 56]; // 1/4 size
-        for (int i = 0; i < smallInput.Length; i++)
+        for (var i = 0; i < smallInput.Length; i++)
         {
             smallInput[i] = (float)(random.NextDouble() - 0.5);
         }
 
         var upsampledOutput = await convolution.TransposedConvolve2DAsync(
-            smallInput.Take(outputChannels * 56 * 56).ToArray(), // Single image for demo
-            kernels.Take(inputChannels * kernelSize * kernelSize).ToArray(), // Single kernel
+            [.. smallInput.Take(outputChannels * 56 * 56)], // Single image for demo
+            [.. kernels.Take(inputChannels * kernelSize * kernelSize)], // Single kernel
             56, 56, kernelSize, kernelSize,
             (2, 2), PaddingMode.Same, (0, 0));
 
@@ -276,11 +276,11 @@ public static class ConvolutionExample
         var centerZ = volumeDepth / 2.0f;
         var radius = Math.Min(volumeWidth, Math.Min(volumeHeight, volumeDepth)) / 4.0f;
 
-        for (int z = 0; z < volumeDepth; z++)
+        for (var z = 0; z < volumeDepth; z++)
         {
-            for (int y = 0; y < volumeHeight; y++)
+            for (var y = 0; y < volumeHeight; y++)
             {
-                for (int x = 0; x < volumeWidth; x++)
+                for (var x = 0; x < volumeWidth; x++)
                 {
                     var distance = MathF.Sqrt(
                         (x - centerX) * (x - centerX) +
@@ -313,8 +313,8 @@ public static class ConvolutionExample
         };
 
         // Normalize
-        float sum = smoothingKernel.Sum();
-        for (int i = 0; i < smoothingKernel.Length; i++)
+        var sum = smoothingKernel.Sum();
+        for (var i = 0; i < smoothingKernel.Length; i++)
         {
             smoothingKernel[i] /= sum;
         }
@@ -369,7 +369,7 @@ public static class ConvolutionExample
         var random = new Random(42);
 
         // Fill with random data
-        for (int i = 0; i < image.Length; i++)
+        for (var i = 0; i < image.Length; i++)
         {
             image[i] = (float)random.NextDouble();
         }
@@ -390,7 +390,7 @@ public static class ConvolutionExample
         {
             // Create random kernel
             var kernel = new float[kernelSize * kernelSize];
-            for (int i = 0; i < kernel.Length; i++)
+            for (var i = 0; i < kernel.Length; i++)
             {
                 kernel[i] = (float)(random.NextGaussian() * 0.1);
             }
@@ -442,8 +442,8 @@ internal static class RandomExtensions
         // Box-Muller transform
         static double GenerateStandardNormal(Random rng)
         {
-            double u1 = 1.0 - rng.NextDouble(); // Uniform(0,1]
-            double u2 = 1.0 - rng.NextDouble();
+            var u1 = 1.0 - rng.NextDouble(); // Uniform(0,1]
+            var u2 = 1.0 - rng.NextDouble();
             return Math.Sqrt(-2.0 * Math.Log(u1)) * Math.Sin(2.0 * Math.PI * u2);
         }
 

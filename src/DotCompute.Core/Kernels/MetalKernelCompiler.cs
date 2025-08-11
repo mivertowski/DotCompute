@@ -93,14 +93,14 @@ public sealed class MetalKernelCompiler : IKernelCompiler
             return new KernelValidationResult
             {
                 IsValid = false,
-                Errors = new List<ValidationError>
-                {
+                Errors =
+                [
                     new ValidationError
                     {
                         Code = "INVALID_LANGUAGE",
                         Message = $"Expected Metal kernel but received {kernel.Language}"
                     }
-                }
+                ]
             };
         }
 
@@ -162,11 +162,11 @@ public sealed class MetalKernelCompiler : IKernelCompiler
             EnableFastMath = true,
             FiniteMathOnly = true,
             EnableUnsafeOptimizations = false,
-            AdditionalFlags = new List<string>
-            {
+            AdditionalFlags =
+            [
                 "-ffast-math",              // Enable fast math operations
                 "-std=metal2.4"            // Metal standard version
-            },
+            ],
             Defines = new Dictionary<string, string>
             {
                 ["METAL_VERSION"] = "240",  // Metal 2.4
@@ -190,7 +190,7 @@ public sealed class MetalKernelCompiler : IKernelCompiler
         }
 
         // Metal threadgroup size limits
-        int totalSize = threadgroupSize.Aggregate(1, (a, b) => a * b);
+        var totalSize = threadgroupSize.Aggregate(1, (a, b) => a * b);
         if (totalSize > 1024)
         {
             errors.Add(new ValidationError

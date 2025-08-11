@@ -21,11 +21,11 @@ public static class AdvancedFFT
         ArgumentNullException.ThrowIfNull(signal);
         
         var n = signal.Length;
-        if (n == 0) return Array.Empty<Complex>();
+        if (n == 0) return [];
         
         // Convert to complex
         var complexSignal = new Complex[n];
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             complexSignal[i] = new Complex(signal[i], 0);
         }
@@ -70,18 +70,18 @@ public static class AdvancedFFT
         ArgumentNullException.ThrowIfNull(spectrum);
         
         var n = spectrum.Length;
-        if (n == 0) return Array.Empty<Complex>();
+        if (n == 0) return [];
         
         // Conjugate, FFT, conjugate, and normalize
         var conjugated = new Complex[n];
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             conjugated[i] = Complex.Conjugate(spectrum[i]);
         }
         
         var result = ComputeFFT(conjugated);
         
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             result[i] = Complex.Conjugate(result[i]) / n;
         }
@@ -106,7 +106,7 @@ public static class AdvancedFFT
         var halfN = n / 2;
         var packedSignal = new Complex[halfN];
         
-        for (int i = 0; i < halfN; i++)
+        for (var i = 0; i < halfN; i++)
         {
             packedSignal[i] = new Complex(signal[2*i], signal[2*i + 1]);
         }
@@ -134,41 +134,41 @@ public static class AdvancedFFT
         var result = new Complex[rows, cols];
         
         // Convert to complex
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 result[i, j] = new Complex(signal2D[i, j], 0);
             }
         }
         
         // FFT along rows
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
             var row = new Complex[cols];
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 row[j] = result[i, j];
             }
             
             var fftRow = ComputeFFT(row);
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 result[i, j] = fftRow[j];
             }
         }
         
         // FFT along columns
-        for (int j = 0; j < cols; j++)
+        for (var j = 0; j < cols; j++)
         {
             var col = new Complex[rows];
-            for (int i = 0; i < rows; i++)
+            for (var i = 0; i < rows; i++)
             {
                 col[i] = result[i, j];
             }
             
             var fftCol = ComputeFFT(col);
-            for (int i = 0; i < rows; i++)
+            for (var i = 0; i < rows; i++)
             {
                 result[i, j] = fftCol[i];
             }
@@ -196,10 +196,10 @@ public static class AdvancedFFT
         
         var window = ApplyWindow(windowSize, WindowType.Hann);
         
-        for (int start = 0; start + windowSize <= buffer.Length; start += hopSize)
+        for (var start = 0; start + windowSize <= buffer.Length; start += hopSize)
         {
             var windowedSignal = new float[windowSize];
-            for (int i = 0; i < windowSize; i++)
+            for (var i = 0; i < windowSize; i++)
             {
                 windowedSignal[i] = buffer[start + i] * window[i];
             }
@@ -235,23 +235,23 @@ public static class AdvancedFFT
         
         // Bit-reversal permutation for in-place computation
         var result = new Complex[n];
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             result[ReverseBits(i, (int)Math.Log2(n))] = x[i];
         }
         
         // Cooley-Tukey decimation-in-time
-        for (int length = 2; length <= n; length *= 2)
+        for (var length = 2; length <= n; length *= 2)
         {
             var angleStep = -2.0 * Math.PI / length;
             var wlen = new Complex(Math.Cos(angleStep), Math.Sin(angleStep));
             
-            for (int start = 0; start < n; start += length)
+            for (var start = 0; start < n; start += length)
             {
                 var w = Complex.One;
                 var halfLength = length / 2;
                 
-                for (int j = 0; j < halfLength; j++)
+                for (var j = 0; j < halfLength; j++)
                 {
                     var even = result[start + j];
                     var odd = result[start + j + halfLength] * w;
@@ -294,12 +294,12 @@ public static class AdvancedFFT
         var ndim = dims.Length;
         
         // Chinese Remainder Theorem mapping
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             var indices = new int[ndim];
             var temp = i;
             
-            for (int d = ndim - 1; d >= 0; d--)
+            for (var d = ndim - 1; d >= 0; d--)
             {
                 indices[d] = temp % dims[d];
                 temp /= dims[d];
@@ -308,7 +308,7 @@ public static class AdvancedFFT
             // Multi-dimensional FFT
             var complexValue = x[i];
             
-            for (int d = 0; d < ndim; d++)
+            for (var d = 0; d < ndim; d++)
             {
                 // Apply 1D FFT along dimension d
                 var factor = dims[d];
@@ -332,11 +332,11 @@ public static class AdvancedFFT
         {
             var stride = n / factor;
             
-            for (int start = 0; start < stride; start++)
+            for (var start = 0; start < stride; start++)
             {
                 // Extract elements for this DFT
                 var subSequence = new Complex[factor];
-                for (int i = 0; i < factor; i++)
+                for (var i = 0; i < factor; i++)
                 {
                     subSequence[i] = result[start + i * stride];
                 }
@@ -345,7 +345,7 @@ public static class AdvancedFFT
                 var subFFT = DirectDFT(subSequence);
                 
                 // Write back
-                for (int i = 0; i < factor; i++)
+                for (var i = 0; i < factor; i++)
                 {
                     result[start + i * stride] = subFFT[i];
                 }
@@ -363,7 +363,7 @@ public static class AdvancedFFT
         
         // Create chirp sequence
         var chirp = new Complex[n];
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             var phase = Math.PI * i * i / n;
             chirp[i] = new Complex(Math.Cos(phase), -Math.Sin(phase));
@@ -371,7 +371,7 @@ public static class AdvancedFFT
         
         // Multiply input by chirp
         var a = new Complex[m];
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             a[i] = x[i] * chirp[i];
         }
@@ -379,7 +379,7 @@ public static class AdvancedFFT
         // Create convolution kernel
         var b = new Complex[m];
         b[0] = Complex.One;
-        for (int i = 1; i < n; i++)
+        for (var i = 1; i < n; i++)
         {
             var phase = Math.PI * i * i / n;
             var w = new Complex(Math.Cos(phase), Math.Sin(phase));
@@ -391,7 +391,7 @@ public static class AdvancedFFT
         var aFFT = CooleyTukeyRadix2FFT(a);
         var bFFT = CooleyTukeyRadix2FFT(b);
         
-        for (int i = 0; i < m; i++)
+        for (var i = 0; i < m; i++)
         {
             aFFT[i] *= bFFT[i];
         }
@@ -400,7 +400,7 @@ public static class AdvancedFFT
         
         // Extract result and multiply by chirp
         var result = new Complex[n];
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             result[i] = conv[i] * chirp[i];
         }
@@ -413,10 +413,10 @@ public static class AdvancedFFT
         var n = x.Length;
         var result = new Complex[n];
         
-        for (int k = 0; k < n; k++)
+        for (var k = 0; k < n; k++)
         {
-            Complex sum = Complex.Zero;
-            for (int j = 0; j < n; j++)
+            var sum = Complex.Zero;
+            for (var j = 0; j < n; j++)
             {
                 var angle = -2.0 * Math.PI * k * j / n;
                 var twiddle = new Complex(Math.Cos(angle), Math.Sin(angle));
@@ -442,7 +442,7 @@ public static class AdvancedFFT
         }
         
         // Unpack remaining frequencies using conjugate symmetry
-        for (int k = 1; k < halfN; k++)
+        for (var k = 1; k < halfN; k++)
         {
             var wk = Complex.FromPolarCoordinates(1.0, -Math.PI * k / halfN);
             var wkConj = Complex.Conjugate(wk);
@@ -465,21 +465,21 @@ public static class AdvancedFFT
                 break;
                 
             case WindowType.Hann:
-                for (int i = 0; i < size; i++)
+                for (var i = 0; i < size; i++)
                 {
                     window[i] = 0.5f * (1 - (float)Math.Cos(2 * Math.PI * i / (size - 1)));
                 }
                 break;
                 
             case WindowType.Hamming:
-                for (int i = 0; i < size; i++)
+                for (var i = 0; i < size; i++)
                 {
                     window[i] = 0.54f - 0.46f * (float)Math.Cos(2 * Math.PI * i / (size - 1));
                 }
                 break;
                 
             case WindowType.Blackman:
-                for (int i = 0; i < size; i++)
+                for (var i = 0; i < size; i++)
                 {
                     var arg = 2 * Math.PI * i / (size - 1);
                     window[i] = 0.42f - 0.5f * (float)Math.Cos(arg) + 0.08f * (float)Math.Cos(2 * arg);
@@ -502,7 +502,7 @@ public static class AdvancedFFT
     {
         var factors = new List<int>();
         
-        for (int d = 2; d * d <= n; d++)
+        for (var d = 2; d * d <= n; d++)
         {
             while (n % d == 0)
             {
@@ -518,8 +518,8 @@ public static class AdvancedFFT
 
     private static int ReverseBits(int value, int bitCount)
     {
-        int result = 0;
-        for (int i = 0; i < bitCount; i++)
+        var result = 0;
+        for (var i = 0; i < bitCount; i++)
         {
             result = (result << 1) | (value & 1);
             value >>= 1;

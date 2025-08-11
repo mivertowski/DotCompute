@@ -142,7 +142,7 @@ public sealed class Matrix : IEquatable<Matrix>
         ArgumentOutOfRangeException.ThrowIfNegativeOrZero(size);
 
         var matrix = new Matrix(size, size);
-        for (int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             matrix[i, i] = 1.0f;
         }
@@ -197,13 +197,13 @@ public sealed class Matrix : IEquatable<Matrix>
     {
         ArgumentNullException.ThrowIfNull(array);
 
-        int rows = array.GetLength(0);
-        int cols = array.GetLength(1);
+        var rows = array.GetLength(0);
+        var cols = array.GetLength(1);
         var matrix = new Matrix(rows, cols);
 
-        for (int i = 0; i < rows; i++)
+        for (var i = 0; i < rows; i++)
         {
-            for (int j = 0; j < cols; j++)
+            for (var j = 0; j < cols; j++)
             {
                 matrix[i, j] = array[i, j];
             }
@@ -242,7 +242,7 @@ public sealed class Matrix : IEquatable<Matrix>
         }
 
         var result = new Matrix(_rows, 1);
-        for (int i = 0; i < _rows; i++)
+        for (var i = 0; i < _rows; i++)
         {
             result[i, 0] = this[i, col];
         }
@@ -295,10 +295,10 @@ public sealed class Matrix : IEquatable<Matrix>
         var sb = new StringBuilder();
         sb.AppendLine(CultureInfo.InvariantCulture, $"Matrix({_rows}x{_cols}):");
         
-        for (int i = 0; i < Math.Min(_rows, 10); i++)
+        for (var i = 0; i < Math.Min(_rows, 10); i++)
         {
             sb.Append('[');
-            for (int j = 0; j < Math.Min(_cols, 10); j++)
+            for (var j = 0; j < Math.Min(_cols, 10); j++)
             {
                 if (j > 0)
                 {

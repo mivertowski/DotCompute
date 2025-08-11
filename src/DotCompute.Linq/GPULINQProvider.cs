@@ -134,7 +134,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
             // Use predefined operation kernel
             managedKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
                 analysis.OperationType,
-                analysis.InputTypes ?? Array.Empty<Type>(),
+                analysis.InputTypes ?? [],
                 analysis.OutputType ?? typeof(object),
                 _accelerator,
                 context,
@@ -199,7 +199,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
             }
         }
 
-        return arguments.ToArray();
+        return [.. arguments];
     }
 
     private async ValueTask<KernelArgument> CreateKernelArgumentAsync(object value, CancellationToken cancellationToken)
@@ -417,13 +417,13 @@ internal sealed class ExpressionAnalysis
 internal sealed class GPUCompatibilityVisitor : ExpressionVisitor
 {
     private readonly ExpressionAnalysis _analysis = new() { CanExecuteOnGPU = true };
-    private readonly List<Type> _inputTypes = new();
+    private readonly List<Type> _inputTypes = [];
     private int _complexity;
 
     public ExpressionAnalysis GetAnalysis()
     {
         _analysis.EstimatedComplexity = _complexity;
-        _analysis.InputTypes = _inputTypes.ToArray();
+        _analysis.InputTypes = [.. _inputTypes];
         return _analysis;
     }
 

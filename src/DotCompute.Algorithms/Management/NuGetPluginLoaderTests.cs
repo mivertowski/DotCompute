@@ -125,7 +125,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// Tests basic package loading from a local .nupkg file.
     /// </summary>
     /// <returns>A task representing the test.</returns>
-    public async Task TestLocalPackageLoading()
+    public async Task TestLocalPackageLoadingAsync()
     {
         Console.WriteLine("=== Testing Local Package Loading ===");
 
@@ -171,7 +171,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// Tests package manifest parsing and metadata extraction.
     /// </summary>
     /// <returns>A task representing the test.</returns>
-    public async Task TestPackageManifestParsing()
+    public async Task TestPackageManifestParsingAsync()
     {
         Console.WriteLine("=== Testing Package Manifest Parsing ===");
 
@@ -207,7 +207,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// Tests framework compatibility and assembly selection.
     /// </summary>
     /// <returns>A task representing the test.</returns>
-    public async Task TestFrameworkCompatibility()
+    public async Task TestFrameworkCompatibilityAsync()
     {
         Console.WriteLine("=== Testing Framework Compatibility ===");
 
@@ -251,7 +251,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// Tests package caching functionality.
     /// </summary>
     /// <returns>A task representing the test.</returns>
-    public async Task TestPackageCaching()
+    public async Task TestPackageCachingAsync()
     {
         Console.WriteLine("=== Testing Package Caching ===");
 
@@ -307,7 +307,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// Tests security validation with mock security policies.
     /// </summary>
     /// <returns>A task representing the test.</returns>
-    public async Task TestSecurityValidation()
+    public async Task TestSecurityValidationAsync()
     {
         Console.WriteLine("=== Testing Security Validation ===");
 
@@ -383,7 +383,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// Tests package update functionality.
     /// </summary>
     /// <returns>A task representing the test.</returns>
-    public async Task TestPackageUpdates()
+    public async Task TestPackageUpdatesAsync()
     {
         Console.WriteLine("=== Testing Package Updates ===");
 
@@ -439,7 +439,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// Tests error handling and edge cases.
     /// </summary>
     /// <returns>A task representing the test.</returns>
-    public async Task TestErrorHandling()
+    public async Task TestErrorHandlingAsync()
     {
         Console.WriteLine("=== Testing Error Handling ===");
 
@@ -524,13 +524,13 @@ public sealed class NuGetPluginLoaderTests : IDisposable
 
         try
         {
-            await TestLocalPackageLoading();
-            await TestPackageManifestParsing();
-            await TestFrameworkCompatibility();
-            await TestPackageCaching();
-            await TestSecurityValidation();
-            await TestPackageUpdates();
-            await TestErrorHandling();
+            await TestLocalPackageLoadingAsync();
+            await TestPackageManifestParsingAsync();
+            await TestFrameworkCompatibilityAsync();
+            await TestPackageCachingAsync();
+            await TestSecurityValidationAsync();
+            await TestPackageUpdatesAsync();
+            await TestErrorHandlingAsync();
 
             Console.WriteLine("=== All Tests Completed Successfully! ===");
             Console.WriteLine($"Test artifacts created in: {_testCacheDirectory}");
@@ -547,7 +547,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     /// Demonstrates performance characteristics.
     /// </summary>
     /// <returns>A task representing the performance test.</returns>
-    public async Task RunPerformanceTests()
+    public async Task RunPerformanceTestsAsync()
     {
         Console.WriteLine("=== Performance Tests ===");
 
@@ -634,7 +634,7 @@ public static class Program
     /// </summary>
     /// <param name="args">Command line arguments.</param>
     /// <returns>A task representing the program execution.</returns>
-    public static async Task Main(string[] args)
+    public static async Task MainAsync(string[] args)
     {
         Console.WriteLine("DotCompute NuGet Plugin Loader Tests");
         Console.WriteLine("====================================");
@@ -645,7 +645,7 @@ public static class Program
         {
             if (args.Length > 0 && args[0] == "--performance")
             {
-                await tests.RunPerformanceTests();
+                await tests.RunPerformanceTestsAsync();
             }
             else
             {

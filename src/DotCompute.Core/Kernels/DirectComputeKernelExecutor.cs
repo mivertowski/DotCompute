@@ -65,11 +65,18 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         KernelExecutionConfig executionConfig,
         CancellationToken cancellationToken = default)
     {
-        if (kernel.Id == Guid.Empty) throw new ArgumentNullException(nameof(kernel), "Kernel cannot be default/empty");
+        if (kernel.Id == Guid.Empty)
+        {
+            throw new ArgumentNullException(nameof(kernel), "Kernel cannot be default/empty");
+        }
+
         ArgumentNullException.ThrowIfNull(arguments);
         ArgumentNullException.ThrowIfNull(executionConfig);
         
-        if (_disposed) throw new ObjectDisposedException(nameof(DirectComputeKernelExecutor));
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(DirectComputeKernelExecutor));
+        }
 
         var handle = EnqueueExecution(kernel, arguments, executionConfig);
         return await WaitForCompletionAsync(handle, cancellationToken);
@@ -80,10 +87,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         CompiledKernel kernel,
         KernelArgument[] arguments,
         KernelExecutionConfig executionConfig,
-        CancellationToken cancellationToken = default)
-    {
-        return ExecuteAsync(kernel, arguments, executionConfig, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) => ExecuteAsync(kernel, arguments, executionConfig, cancellationToken);
 
     /// <inheritdoc/>
     public KernelExecutionHandle EnqueueExecution(
@@ -91,7 +95,10 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         KernelArgument[] arguments,
         KernelExecutionConfig executionConfig)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(DirectComputeKernelExecutor));
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(DirectComputeKernelExecutor));
+        }
 
         var handle = new KernelExecutionHandle
         {
@@ -128,7 +135,10 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         KernelExecutionHandle handle,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(DirectComputeKernelExecutor));
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(DirectComputeKernelExecutor));
+        }
 
         // Poll for completion (in production, would use proper async synchronization)
         while (!handle.IsCompleted && !cancellationToken.IsCancellationRequested)
@@ -231,8 +241,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         try
         {
             // Create compute shader from bytecode
-            var device = Marshal.GetObjectForIUnknown(_device) as DirectComputeInterop.ID3D11Device;
-            if (device == null)
+            if (Marshal.GetObjectForIUnknown(_device) is not DirectComputeInterop.ID3D11Device device)
             {
                 _logger.LogError("Failed to get D3D11Device interface");
                 return null;
@@ -241,9 +250,9 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
             // Get bytecode from kernel binary (in real implementation, this would be actual DXBC bytecode)
             var bytecode = kernel.NativeHandle != IntPtr.Zero ? 
                 GetBytecodeFromHandle(kernel.NativeHandle) : 
-                new byte[] { 0x44, 0x58, 0x42, 0x43 }; // Mock DXBC header
+                [0x44, 0x58, 0x42, 0x43]; // Mock DXBC header
 
-            IntPtr computeShader = IntPtr.Zero;
+            var computeShader = IntPtr.Zero;
             int hr;
             
             unsafe
@@ -290,8 +299,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         KernelArgument[] arguments,
         KernelExecutionConfig executionConfig)
     {
-        var context = Marshal.GetObjectForIUnknown(_context) as DirectComputeInterop.ID3D11DeviceContext;
-        if (context == null)
+        if (Marshal.GetObjectForIUnknown(_context) is not DirectComputeInterop.ID3D11DeviceContext context)
         {
             _logger.LogError("Failed to get D3D11DeviceContext interface");
             return;
@@ -300,7 +308,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         try
         {
             // Set compute shader
-            context.CSSetShader(kernelInstance.ComputeShader, Array.Empty<IntPtr>(), 0);
+            context.CSSetShader(kernelInstance.ComputeShader, [], 0);
 
             // Set up buffers and UAVs from arguments
             var buffers = new List<IntPtr>();
@@ -311,7 +319,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
             // Bind UAVs
             if (uavs.Count > 0)
             {
-                context.CSSetUnorderedAccessViews(0, (uint)uavs.Count, uavs.ToArray(), Array.Empty<uint>());
+                context.CSSetUnorderedAccessViews(0, (uint)uavs.Count, [.. uavs], []);
             }
 
             // Calculate dispatch dimensions
@@ -338,8 +346,10 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
     /// </summary>
     private void SetupArgumentBuffers(KernelArgument[] arguments, List<IntPtr> buffers, List<IntPtr> uavs)
     {
-        var device = Marshal.GetObjectForIUnknown(_device) as DirectComputeInterop.ID3D11Device;
-        if (device == null) return;
+        if (Marshal.GetObjectForIUnknown(_device) is not DirectComputeInterop.ID3D11Device device)
+        {
+            return;
+        }
 
         foreach (var arg in arguments)
         {
@@ -379,7 +389,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
                 StructureByteStride = GetElementSize(arg.Type)
             };
 
-            int hr = device.CreateBuffer(ref bufferDesc, IntPtr.Zero, out IntPtr buffer);
+            var hr = device.CreateBuffer(ref bufferDesc, IntPtr.Zero, out var buffer);
             DirectComputeInterop.ThrowIfFailed(hr, $"CreateBuffer for argument {arg.Name}");
 
             return buffer;
@@ -410,7 +420,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
                 }
             };
 
-            int hr = device.CreateUnorderedAccessView(buffer, ref uavDesc, out IntPtr uav);
+            var hr = device.CreateUnorderedAccessView(buffer, ref uavDesc, out var uav);
             DirectComputeInterop.ThrowIfFailed(hr, $"CreateUnorderedAccessView for argument {arg.Name}");
 
             return uav;
@@ -428,14 +438,25 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
     private static uint GetElementSize(Type type)
     {
         if (type == typeof(float) || type == typeof(int) || type == typeof(uint))
+        {
             return 4;
+        }
+
         if (type == typeof(double) || type == typeof(long) || type == typeof(ulong))
+        {
             return 8;
+        }
+
         if (type == typeof(short) || type == typeof(ushort))
+        {
             return 2;
+        }
+
         if (type == typeof(byte) || type == typeof(sbyte))
+        {
             return 1;
-        
+        }
+
         // Default to 4 bytes for unknown types
         return 4;
     }
@@ -472,13 +493,17 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         foreach (var uav in uavs)
         {
             if (uav != IntPtr.Zero)
+            {
                 Marshal.Release(uav);
+            }
         }
 
         foreach (var buffer in buffers)
         {
             if (buffer != IntPtr.Zero)
+            {
                 Marshal.Release(buffer);
+            }
         }
     }
 
@@ -489,7 +514,7 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
     {
         // In a real implementation, this would extract bytecode from the handle
         // For now, return mock DXBC data
-        return new byte[] { 0x44, 0x58, 0x42, 0x43, 0x00, 0x00, 0x00, 0x00 };
+        return [0x44, 0x58, 0x42, 0x43, 0x00, 0x00, 0x00, 0x00];
     }
 #endif
 
@@ -534,8 +559,8 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         
         return new KernelExecutionConfig
         {
-            GlobalWorkSize = problemSize.Select(x => (int)Math.Ceiling((double)x / threadsPerGroup) * threadsPerGroup).ToArray(),
-            LocalWorkSize = new[] { threadsPerGroup },
+            GlobalWorkSize = [.. problemSize.Select(x => (int)Math.Ceiling((double)x / threadsPerGroup) * threadsPerGroup)],
+            LocalWorkSize = [threadsPerGroup],
             DynamicSharedMemorySize = kernel.SharedMemorySize,
             CaptureTimings = _isSupported,
             Flags = _isSupported ? KernelExecutionFlags.PreferSharedMemory : KernelExecutionFlags.None
@@ -554,7 +579,9 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         ArgumentNullException.ThrowIfNull(executionConfig);
         
         if (iterations <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(iterations), "Iterations must be positive");
+        }
 
         if (!_isSupported)
         {
@@ -567,13 +594,13 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
         try
         {
             // Warm-up runs
-            for (int i = 0; i < Math.Min(3, iterations); i++)
+            for (var i = 0; i < Math.Min(3, iterations); i++)
             {
                 await ExecuteAsync(kernel, arguments, executionConfig, cancellationToken);
             }
 
             // Actual profiling runs
-            for (int i = 0; i < iterations && !cancellationToken.IsCancellationRequested; i++)
+            for (var i = 0; i < iterations && !cancellationToken.IsCancellationRequested; i++)
             {
                 var iterationStart = System.Diagnostics.Stopwatch.StartNew();
                 var result = await ExecuteAsync(kernel, arguments, executionConfig, cancellationToken);
@@ -604,7 +631,9 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
     private KernelExecutionTimings? CreateExecutionTimings(KernelExecutionHandle handle)
     {
         if (!handle.CompletedAt.HasValue)
+        {
             return null;
+        }
 
         var totalTime = Math.Max(0.1, (handle.CompletedAt.Value - handle.SubmittedAt).TotalMilliseconds);
         
@@ -624,7 +653,9 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
     private KernelProfilingResult CreateProfilingResult(List<double> timings, int iterations)
     {
         if (timings.Count == 0)
+        {
             return CreateStubProfilingResult(0);
+        }
 
         timings.Sort();
         var avg = timings.Average();
@@ -669,13 +700,13 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
                     ["Compute"] = 0.70
                 }
             },
-            OptimizationSuggestions = new List<string>
-            {
+            OptimizationSuggestions =
+            [
                 "Consider using shared memory to reduce global memory access",
                 "Optimize thread group size for better occupancy",
                 "Profile memory access patterns for coalescing",
                 "Consider compute/memory overlap techniques"
-            }
+            ]
         };
     }
 
@@ -708,15 +739,15 @@ public sealed class DirectComputeKernelExecutor : IKernelExecutor, IDisposable
                 Type = BottleneckType.None,
                 Severity = 0,
                 Details = "DirectCompute not available on this platform",
-                ResourceUtilization = new Dictionary<string, double>()
+                ResourceUtilization = []
             },
-            OptimizationSuggestions = new List<string>
-            {
+            OptimizationSuggestions =
+            [
                 "Optimize shared memory usage for better cache performance",
                 "Consider thread group size optimization for better occupancy",
                 "Profile memory coalescing patterns for improved bandwidth",
                 "Ensure DirectX 11 runtime is available for DirectCompute support"
-            }
+            ]
         };
     }
 

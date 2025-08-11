@@ -638,11 +638,11 @@ extern ""C"" __global__ void tensor_core_gemm_cuda(
     private static int CalculateOptimalTileSize(long matrixSize, HardwareInfo hardware)
     {
         // Calculate tile size based on available memory and compute units
-        long availableMemory = hardware.GlobalMemorySize / 4; // Use 25% of memory
-        int maxTileSize = (int)Math.Sqrt(availableMemory / sizeof(float));
+        var availableMemory = hardware.GlobalMemorySize / 4; // Use 25% of memory
+        var maxTileSize = (int)Math.Sqrt(availableMemory / sizeof(float));
         
         // Align to warp/wavefront size
-        int alignment = hardware.WarpSize ?? 32;
+        var alignment = hardware.WarpSize ?? 32;
         return ((Math.Min(maxTileSize, 128) + alignment - 1) / alignment) * alignment;
     }
 

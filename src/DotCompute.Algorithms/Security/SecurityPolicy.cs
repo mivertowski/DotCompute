@@ -18,7 +18,7 @@ public sealed class SecurityPolicy
     private readonly ConcurrentDictionary<string, SecurityRule> _rules = new();
     private readonly HashSet<string> _trustedPublishers = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> _blockedAssemblies = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, SecurityLevel> _directoryPolicies = new();
+    private readonly Dictionary<string, SecurityLevel> _directoryPolicies = [];
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SecurityPolicy"/> class.
@@ -310,8 +310,8 @@ public sealed class SecurityPolicy
             EnableMetadataAnalysis = EnableMetadataAnalysis,
             EnableMalwareScanning = EnableMalwareScanning,
             MaxAssemblySize = MaxAssemblySize,
-            TrustedPublishers = _trustedPublishers.ToList(),
-            BlockedAssemblies = _blockedAssemblies.ToList(),
+            TrustedPublishers = [.. _trustedPublishers],
+            BlockedAssemblies = [.. _blockedAssemblies],
             DirectoryPolicies = new Dictionary<string, SecurityLevel>(_directoryPolicies)
         };
     }
@@ -355,17 +355,17 @@ public sealed class SecurityPolicyConfiguration
     /// <summary>
     /// Gets or sets the trusted publishers.
     /// </summary>
-    public List<string> TrustedPublishers { get; set; } = new();
+    public List<string> TrustedPublishers { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the blocked assemblies.
     /// </summary>
-    public List<string> BlockedAssemblies { get; set; } = new();
+    public List<string> BlockedAssemblies { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the directory policies.
     /// </summary>
-    public Dictionary<string, SecurityLevel> DirectoryPolicies { get; set; } = new();
+    public Dictionary<string, SecurityLevel> DirectoryPolicies { get; set; } = [];
 }
 
 /// <summary>
@@ -422,7 +422,7 @@ public sealed class SecurityEvaluationContext
     /// <summary>
     /// Gets additional metadata for evaluation.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = new();
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>
@@ -443,17 +443,17 @@ public sealed class SecurityEvaluationResult
     /// <summary>
     /// Gets the security violations found.
     /// </summary>
-    public List<string> Violations { get; } = new();
+    public List<string> Violations { get; } = [];
 
     /// <summary>
     /// Gets the security warnings.
     /// </summary>
-    public List<string> Warnings { get; } = new();
+    public List<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets additional evaluation metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = new();
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>

@@ -340,10 +340,10 @@ public class ParallelExecutionMetrics
     public double TotalGFLOPSHours { get; set; }
     
     /// <summary>Gets or sets metrics by execution strategy.</summary>
-    public Dictionary<ExecutionStrategyType, StrategyMetrics> MetricsByStrategy { get; set; } = new();
+    public Dictionary<ExecutionStrategyType, StrategyMetrics> MetricsByStrategy { get; set; } = [];
     
     /// <summary>Gets or sets metrics by device.</summary>
-    public Dictionary<string, DeviceMetrics> MetricsByDevice { get; set; } = new();
+    public Dictionary<string, DeviceMetrics> MetricsByDevice { get; set; } = [];
 }
 
 /// <summary>
@@ -397,16 +397,16 @@ public class ParallelExecutionAnalysis
     public double OverallRating { get; set; }
     
     /// <summary>Gets or sets the primary bottlenecks identified.</summary>
-    public List<BottleneckAnalysis> Bottlenecks { get; set; } = new();
+    public List<BottleneckAnalysis> Bottlenecks { get; set; } = [];
     
     /// <summary>Gets or sets optimization recommendations.</summary>
-    public List<string> OptimizationRecommendations { get; set; } = new();
+    public List<string> OptimizationRecommendations { get; set; } = [];
     
     /// <summary>Gets or sets the recommended execution strategy.</summary>
     public ExecutionStrategyType RecommendedStrategy { get; set; }
     
     /// <summary>Gets or sets device utilization analysis.</summary>
-    public Dictionary<string, double> DeviceUtilizationAnalysis { get; set; } = new();
+    public Dictionary<string, double> DeviceUtilizationAnalysis { get; set; } = [];
 }
 
 /// <summary>
@@ -428,76 +428,4 @@ public class ExecutionStrategyRecommendation
     
     /// <summary>Gets or sets recommended options for the strategy.</summary>
     public object? RecommendedOptions { get; set; }
-}
-
-/// <summary>
-/// Analysis of performance bottlenecks.
-/// </summary>
-public class BottleneckAnalysis
-{
-    /// <summary>Gets or sets the bottleneck type.</summary>
-    public required BottleneckType Type { get; set; }
-    
-    /// <summary>Gets or sets the severity of the bottleneck (0-1).</summary>
-    public required double Severity { get; set; }
-    
-    /// <summary>Gets or sets detailed information about the bottleneck.</summary>
-    public string? Details { get; set; }
-    
-    /// <summary>Gets or sets affected devices or components.</summary>
-    public string[]? AffectedComponents { get; set; }
-    
-    /// <summary>Gets or sets suggested mitigations.</summary>
-    public string[]? SuggestedMitigations { get; set; }
-}
-
-/// <summary>
-/// Types of performance bottlenecks.
-/// </summary>
-public enum BottleneckType
-{
-    /// <summary>No significant bottleneck identified.</summary>
-    None,
-    
-    /// <summary>Memory bandwidth limited.</summary>
-    MemoryBandwidth,
-    
-    /// <summary>Memory latency limited.</summary>
-    MemoryLatency,
-    
-    /// <summary>Compute capacity limited.</summary>
-    Compute,
-    
-    /// <summary>Synchronization overhead.</summary>
-    Synchronization,
-    
-    /// <summary>Communication between devices.</summary>
-    Communication,
-    
-    /// <summary>Load imbalance between devices.</summary>
-    LoadImbalance,
-    
-    /// <summary>Instruction issue rate limited.</summary>
-    InstructionIssue,
-    
-    /// <summary>Register pressure limiting occupancy.</summary>
-    RegisterPressure,
-    
-    /// <summary>Shared memory bank conflicts.</summary>
-    SharedMemoryConflicts,
-    
-    /// <summary>Branch divergence in warps/wavefronts.</summary>
-    BranchDivergence,
-    
-    /// <summary>Cache miss rate too high.</summary>
-    CacheMisses,
-    
-    /// <summary>Host-device transfer bandwidth.</summary>
-    HostDeviceTransfer,
-    
-    /// <summary>Thermal throttling.</summary>
-    ThermalThrottling,
-    
-    /// <summary>Power limiting.</summary>
-    PowerLimit
 }

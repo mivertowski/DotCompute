@@ -115,8 +115,8 @@ public static class PipelineUsageExample
 
         return Task.FromResult(pipeline);
     }
-    private static readonly float[] _value = new[] { 0.485f, 0.456f, 0.406f };
-    private static readonly float[] _valueArray = new[] { 0.229f, 0.224f, 0.225f };
+    private static readonly float[] _value = [0.485f, 0.456f, 0.406f];
+    private static readonly float[] _valueArray = [0.229f, 0.224f, 0.225f];
 
     /// <summary>
     /// Example: Machine learning inference pipeline with preprocessing and postprocessing.

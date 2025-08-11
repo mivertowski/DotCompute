@@ -303,7 +303,9 @@ internal static class OpenCLInterop
     public static IntPtr[] GetAvailablePlatforms()
     {
         if (!IsOpenCLAvailable())
-            return Array.Empty<IntPtr>();
+        {
+            return [];
+        }
 
         try
         {
@@ -311,16 +313,18 @@ internal static class OpenCLInterop
             var result = GetPlatformIDs(0, null, out numPlatforms);
             
             if (result != CL_SUCCESS || numPlatforms == 0)
-                return Array.Empty<IntPtr>();
+            {
+                return [];
+            }
 
             var platforms = new IntPtr[numPlatforms];
             result = GetPlatformIDs(numPlatforms, platforms, out _);
             
-            return result == CL_SUCCESS ? platforms : Array.Empty<IntPtr>();
+            return result == CL_SUCCESS ? platforms : [];
         }
         catch
         {
-            return Array.Empty<IntPtr>();
+            return [];
         }
     }
 
@@ -330,7 +334,9 @@ internal static class OpenCLInterop
     public static IntPtr[] GetAvailableDevices(IntPtr platform, ulong deviceType = CL_DEVICE_TYPE_ALL)
     {
         if (!IsOpenCLAvailable())
-            return Array.Empty<IntPtr>();
+        {
+            return [];
+        }
 
         try
         {
@@ -338,16 +344,18 @@ internal static class OpenCLInterop
             var result = GetDeviceIDs(platform, deviceType, 0, null, out numDevices);
             
             if (result != CL_SUCCESS || numDevices == 0)
-                return Array.Empty<IntPtr>();
+            {
+                return [];
+            }
 
             var devices = new IntPtr[numDevices];
             result = GetDeviceIDs(platform, deviceType, numDevices, devices, out _);
             
-            return result == CL_SUCCESS ? devices : Array.Empty<IntPtr>();
+            return result == CL_SUCCESS ? devices : [];
         }
         catch
         {
-            return Array.Empty<IntPtr>();
+            return [];
         }
     }
 
@@ -357,7 +365,9 @@ internal static class OpenCLInterop
     public static UIntPtr GetDeviceInfoUIntPtr(IntPtr device, uint paramName)
     {
         if (!IsOpenCLAvailable())
+        {
             return UIntPtr.Zero;
+        }
 
         try
         {
@@ -384,7 +394,9 @@ internal static class OpenCLInterop
     public static UIntPtr[] GetDeviceInfoUIntPtrArray(IntPtr device, uint paramName, int maxElements)
     {
         if (!IsOpenCLAvailable())
-            return Array.Empty<UIntPtr>();
+        {
+            return [];
+        }
 
         try
         {
@@ -394,12 +406,14 @@ internal static class OpenCLInterop
             {
                 var result = GetDeviceInfo(device, paramName, (UIntPtr)bufferSize, buffer, out var actualSize);
                 if (result != CL_SUCCESS)
-                    return Array.Empty<UIntPtr>();
+                {
+                    return [];
+                }
 
                 var elementCount = (int)actualSize.ToUInt64() / IntPtr.Size;
                 var values = new UIntPtr[elementCount];
                 
-                for (int i = 0; i < elementCount; i++)
+                for (var i = 0; i < elementCount; i++)
                 {
                     values[i] = (UIntPtr)Marshal.ReadIntPtr(buffer, i * IntPtr.Size);
                 }
@@ -413,7 +427,7 @@ internal static class OpenCLInterop
         }
         catch
         {
-            return Array.Empty<UIntPtr>();
+            return [];
         }
     }
 
@@ -423,7 +437,9 @@ internal static class OpenCLInterop
     public static UIntPtr GetKernelWorkGroupInfoUIntPtr(IntPtr kernel, IntPtr device, uint paramName)
     {
         if (!IsOpenCLAvailable())
+        {
             return UIntPtr.Zero;
+        }
 
         try
         {
@@ -450,14 +466,18 @@ internal static class OpenCLInterop
     public static string GetProgramBuildLog(IntPtr program, IntPtr device)
     {
         if (!IsOpenCLAvailable())
+        {
             return "OpenCL not available";
+        }
 
         try
         {
             // First get the size of the build log
             var result = GetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, UIntPtr.Zero, IntPtr.Zero, out var logSize);
             if (result != CL_SUCCESS || logSize.ToUInt64() == 0)
+            {
                 return "No build log available";
+            }
 
             // Allocate buffer and get the log
             var buffer = Marshal.AllocHGlobal((int)logSize.ToUInt64());
@@ -465,7 +485,9 @@ internal static class OpenCLInterop
             {
                 result = GetProgramBuildInfo(program, device, CL_PROGRAM_BUILD_LOG, logSize, buffer, out _);
                 if (result != CL_SUCCESS)
+                {
                     return "Failed to retrieve build log";
+                }
 
                 return Marshal.PtrToStringAnsi(buffer) ?? "Empty build log";
             }
@@ -486,7 +508,9 @@ internal static class OpenCLInterop
     public static int GetProgramBuildStatus(IntPtr program, IntPtr device)
     {
         if (!IsOpenCLAvailable())
+        {
             return CL_BUILD_ERROR;
+        }
 
         try
         {
@@ -513,25 +537,33 @@ internal static class OpenCLInterop
     public static byte[] GetProgramBinary(IntPtr program)
     {
         if (!IsOpenCLAvailable())
-            return Array.Empty<byte>();
+        {
+            return [];
+        }
 
         try
         {
             // Get binary sizes
             var result = GetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, UIntPtr.Zero, IntPtr.Zero, out var sizeBufferSize);
             if (result != CL_SUCCESS)
-                return Array.Empty<byte>();
+            {
+                return [];
+            }
 
             var sizeBuffer = Marshal.AllocHGlobal((int)sizeBufferSize.ToUInt64());
             try
             {
                 result = GetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeBufferSize, sizeBuffer, out _);
                 if (result != CL_SUCCESS)
-                    return Array.Empty<byte>();
+                {
+                    return [];
+                }
 
                 var binarySize = (UIntPtr)Marshal.ReadIntPtr(sizeBuffer);
                 if (binarySize.ToUInt64() == 0)
-                    return Array.Empty<byte>();
+                {
+                    return [];
+                }
 
                 // Get the binary
                 var binaryBuffer = Marshal.AllocHGlobal((int)binarySize.ToUInt64());
@@ -542,7 +574,9 @@ internal static class OpenCLInterop
                     
                     result = GetProgramInfo(program, CL_PROGRAM_BINARIES, (UIntPtr)IntPtr.Size, binaryPtrBuffer, out _);
                     if (result != CL_SUCCESS)
-                        return Array.Empty<byte>();
+                    {
+                        return [];
+                    }
 
                     var binary = new byte[binarySize.ToUInt64()];
                     Marshal.Copy(binaryBuffer, binary, 0, binary.Length);
@@ -561,7 +595,7 @@ internal static class OpenCLInterop
         }
         catch
         {
-            return Array.Empty<byte>();
+            return [];
         }
     }
 
@@ -571,7 +605,9 @@ internal static class OpenCLInterop
     public static ulong GetEventProfilingInfoULong(IntPtr eventHandle, uint paramName)
     {
         if (!IsOpenCLAvailable())
+        {
             return 0;
+        }
 
         try
         {
@@ -619,7 +655,9 @@ internal static class OpenCLInterop
     public static void ThrowOnError(uint errorCode, string operation)
     {
         if (errorCode == CL_SUCCESS)
+        {
             return;
+        }
 
         var errorName = GetErrorName(errorCode);
         throw new InvalidOperationException($"OpenCL {operation} failed with error {errorName} ({errorCode})");

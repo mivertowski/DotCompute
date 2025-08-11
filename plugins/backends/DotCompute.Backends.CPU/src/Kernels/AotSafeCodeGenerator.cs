@@ -188,7 +188,7 @@ internal sealed class AotSafeCodeGenerator
         var a = context.GetBuffer<float>(0);
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
-        var workItemId = context.GetParameter(3) as long[] ?? new long[] { 0 };
+        var workItemId = context.GetParameter(3) as long[] ?? [0];
 
         var index = (int)workItemId[0];
         var vectorSize = System.Numerics.Vector<float>.Count;
@@ -215,7 +215,7 @@ internal sealed class AotSafeCodeGenerator
         var a = context.GetBuffer<float>(0);
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
-        var workItemId = context.GetParameter(3) as long[] ?? new long[] { 0 };
+        var workItemId = context.GetParameter(3) as long[] ?? [0];
 
         var index = (int)workItemId[0];
         var vectorSize = System.Numerics.Vector<float>.Count;
@@ -240,7 +240,7 @@ internal sealed class AotSafeCodeGenerator
         var a = context.GetBuffer<float>(0);
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
-        var workItemId = context.GetParameter(3) as long[] ?? new long[] { 0 };
+        var workItemId = context.GetParameter(3) as long[] ?? [0];
 
         var index = (int)workItemId[0];
         c.Span[index] = a.Span[index] + b.Span[index];
@@ -253,7 +253,7 @@ internal sealed class AotSafeCodeGenerator
         var a = context.GetBuffer<float>(0);
         var b = context.GetBuffer<float>(1);
         var c = context.GetBuffer<float>(2);
-        var workItemId = context.GetParameter(3) as long[] ?? new long[] { 0 };
+        var workItemId = context.GetParameter(3) as long[] ?? [0];
 
         var index = (int)workItemId[0];
         c.Span[index] = a.Span[index] * b.Span[index];
@@ -269,7 +269,7 @@ internal sealed class AotSafeCodeGenerator
         _ = context.GetScalar<int>(3); // m - rows, not used in this implementation
         var n = context.GetScalar<int>(4);
         var k = context.GetScalar<int>(5);
-        var workItemId = context.GetParameter(6) as long[] ?? new long[] { 0 };
+        var workItemId = context.GetParameter(6) as long[] ?? [0];
 
         var row = (int)(workItemId[0] / n);
         var col = (int)(workItemId[0] % n);
@@ -288,7 +288,7 @@ internal sealed class AotSafeCodeGenerator
     {
         var input = context.GetBuffer<float>(0);
         var output = context.GetBuffer<float>(1);
-        var workItemId = context.GetParameter(2) as long[] ?? new long[] { 0 };
+        var workItemId = context.GetParameter(2) as long[] ?? [0];
 
         // Simple reduction - in production would use tree reduction
         if (workItemId[0] == 0)

@@ -350,7 +350,7 @@ public sealed class KernelProfilingResult
     /// <summary>
     /// Gets percentile timings.
     /// </summary>
-    public Dictionary<int, double> PercentileTimingsMs { get; init; } = new();
+    public Dictionary<int, double> PercentileTimingsMs { get; init; } = [];
 
     /// <summary>
     /// Gets the achieved occupancy (0-1).
@@ -375,7 +375,7 @@ public sealed class KernelProfilingResult
     /// <summary>
     /// Gets optimization suggestions.
     /// </summary>
-    public List<string> OptimizationSuggestions { get; init; } = new();
+    public List<string> OptimizationSuggestions { get; init; } = [];
 }
 
 /// <summary>
@@ -401,7 +401,7 @@ public sealed class BottleneckAnalysis
     /// <summary>
     /// Gets resource utilization percentages.
     /// </summary>
-    public Dictionary<string, double> ResourceUtilization { get; init; } = new();
+    public Dictionary<string, double> ResourceUtilization { get; init; } = [];
 }
 
 /// <summary>

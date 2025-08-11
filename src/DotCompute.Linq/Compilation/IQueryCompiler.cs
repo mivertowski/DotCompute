@@ -41,7 +41,7 @@ public class CompilationContext
     {
         Accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
         Expression = expression ?? throw new ArgumentNullException(nameof(expression));
-        Parameters = new Dictionary<string, object>();
+        Parameters = [];
         Options = new CompilationOptions();
     }
 
@@ -112,7 +112,7 @@ public class ValidationResult
     {
         IsValid = isValid;
         Message = message;
-        Errors = errors?.ToList() ?? new List<ValidationError>();
+        Errors = errors?.ToList() ?? [];
     }
 
     /// <summary>
@@ -255,5 +255,5 @@ public class ExecutionConfiguration
     /// <summary>
     /// Gets or sets additional configuration parameters.
     /// </summary>
-    public Dictionary<string, object> Parameters { get; set; } = new();
+    public Dictionary<string, object> Parameters { get; set; } = [];
 }

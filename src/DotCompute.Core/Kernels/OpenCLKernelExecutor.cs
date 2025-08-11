@@ -16,7 +16,7 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
     private readonly IAccelerator _accelerator;
     private readonly ILogger<OpenCLKernelExecutor> _logger;
     private readonly ConcurrentDictionary<Guid, PendingExecution> _pendingExecutions = new();
-    private readonly object _commandQueueLock = new();
+    private readonly Lock _commandQueueLock = new();
     
     // OpenCL context and command queue handles
     private IntPtr _context;
@@ -51,11 +51,6 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         KernelExecutionConfig executionConfig,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(OpenCLKernelExecutor));
-        ArgumentNullException.ThrowIfNull(kernel);
-        ArgumentNullException.ThrowIfNull(arguments);
-        ArgumentNullException.ThrowIfNull(executionConfig);
-        
         var handle = EnqueueExecution(kernel, arguments, executionConfig);
         return await WaitForCompletionAsync(handle, cancellationToken);
     }
@@ -76,8 +71,12 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         KernelArgument[] arguments,
         KernelExecutionConfig executionConfig)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(OpenCLKernelExecutor));
-        if (kernel.Id == Guid.Empty) throw new ArgumentNullException(nameof(kernel), "Kernel cannot be default/empty");
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(OpenCLKernelExecutor));
+        }
+
+        ArgumentNullException.ThrowIfNull(kernel);
         ArgumentNullException.ThrowIfNull(arguments);
         ArgumentNullException.ThrowIfNull(executionConfig);
 
@@ -149,7 +148,11 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         KernelExecutionHandle handle,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(OpenCLKernelExecutor));
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(OpenCLKernelExecutor));
+        }
+
         ArgumentNullException.ThrowIfNull(handle);
 
         if (!_pendingExecutions.TryGetValue(handle.Id, out var pendingExecution))
@@ -201,12 +204,7 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         catch (OperationCanceledException)
         {
             _logger.LogInformation("OpenCL kernel execution {ExecutionId} was cancelled", handle.Id);
-            return new KernelExecutionResult
-            {
-                Success = false,
-                Handle = handle,
-                ErrorMessage = "Execution was cancelled"
-            };
+            throw;
         }
         catch (Exception ex)
         {
@@ -242,7 +240,7 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
             
             // Round up global work size to be divisible by local work size
             var globalWorkSize = new int[problemSize.Length];
-            for (int i = 0; i < problemSize.Length; i++)
+            for (var i = 0; i < problemSize.Length; i++)
             {
                 globalWorkSize[i] = (int)Math.Ceiling((double)problemSize[i] / localWorkSize[i]) * localWorkSize[i];
             }
@@ -268,8 +266,8 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
             // Fallback to conservative defaults
             return new KernelExecutionConfig
             {
-                GlobalWorkSize = problemSize.Select(x => (int)Math.Ceiling((double)x / 256) * 256).ToArray(),
-                LocalWorkSize = Enumerable.Repeat(256, problemSize.Length).ToArray(),
+                GlobalWorkSize = [.. problemSize.Select(x => (int)Math.Ceiling((double)x / 256) * 256)],
+                LocalWorkSize = [.. Enumerable.Repeat(256, problemSize.Length)],
                 DynamicSharedMemorySize = kernel.SharedMemorySize,
                 CaptureTimings = true
             };
@@ -289,7 +287,9 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         ArgumentNullException.ThrowIfNull(executionConfig);
 
         if (iterations <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(iterations), "Iterations must be positive");
+        }
 
         _logger.LogInformation("Starting OpenCL kernel profiling for {Iterations} iterations", iterations);
 
@@ -311,7 +311,7 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
             await ExecuteAsync(kernel, arguments, profilingConfig, cancellationToken);
             
             // Profile runs
-            for (int i = 0; i < iterations && !cancellationToken.IsCancellationRequested; i++)
+            for (var i = 0; i < iterations && !cancellationToken.IsCancellationRequested; i++)
             {
                 var result = await ExecuteAsync(kernel, arguments, profilingConfig, cancellationToken);
                 
@@ -367,7 +367,7 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
 
     private void SetKernelArguments(IntPtr kernelHandle, KernelArgument[] arguments)
     {
-        for (int i = 0; i < arguments.Length; i++)
+        for (var i = 0; i < arguments.Length; i++)
         {
             var arg = arguments[i];
             
@@ -486,7 +486,7 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
     private int[] GetMaxWorkItemSizes()
     {
         // In a real implementation, this would query device properties
-        return new[] { 1024, 1024, 64 }; // Common maximums for 3D work items
+        return [1024, 1024, 64]; // Common maximums for 3D work items
     }
 
     private int GetPreferredWorkGroupSizeMultiple(IntPtr kernelHandle)
@@ -500,7 +500,7 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         var localWorkSize = new int[problemSize.Length];
         
         // Start with preferred multiple as base
-        for (int i = 0; i < localWorkSize.Length; i++)
+        for (var i = 0; i < localWorkSize.Length; i++)
         {
             localWorkSize[i] = Math.Min(preferredMultiple, maxWorkItemSizes[i]);
         }
@@ -511,11 +511,14 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
         {
             // Scale down uniformly
             var scaleFactor = Math.Pow((double)maxWorkGroupSize / totalWorkItems, 1.0 / localWorkSize.Length);
-            for (int i = 0; i < localWorkSize.Length; i++)
+            for (var i = 0; i < localWorkSize.Length; i++)
             {
                 localWorkSize[i] = Math.Max(1, (int)(localWorkSize[i] * scaleFactor));
                 localWorkSize[i] = (localWorkSize[i] / preferredMultiple) * preferredMultiple; // Keep multiple alignment
-                if (localWorkSize[i] == 0) localWorkSize[i] = 1;
+                if (localWorkSize[i] == 0)
+                {
+                    localWorkSize[i] = 1;
+                }
             }
         }
         
@@ -582,12 +585,12 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
                     ["Cache"] = Random.Shared.NextDouble() * 0.5 + 0.4   // 40-90%
                 }
             },
-            OptimizationSuggestions = new List<string>
-            {
+            OptimizationSuggestions =
+            [
                 "Consider using vector data types to improve memory throughput",
                 "Optimize memory access patterns to reduce cache misses",
                 "Use local memory for frequently accessed data"
-            }
+            ]
         };
     }
 

@@ -244,7 +244,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 loadResult.ResolvedDependencies.Length);
 
             // Load plugins from each assembly in the package
-            int totalPluginsLoaded = 0;
+            var totalPluginsLoaded = 0;
             var assemblyLoadTasks = loadResult.LoadedAssemblyPaths
                 .Select(async assemblyPath =>
                 {
@@ -400,7 +400,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
         catch (Exception ex)
         {
             LogGetCachedPackagesFailed(ex.Message);
-            return Array.Empty<CachedPackageInfo>();
+            return [];
         }
     }
 
@@ -472,7 +472,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 DependencyCount = 0,
                 SecurityValidationPassed = false,
                 SecurityDetails = $"Validation failed: {ex.Message}",
-                Warnings = Array.Empty<string>(),
+                Warnings = [],
                 ValidationTime = TimeSpan.Zero,
                 PackageSize = 0
             };
@@ -544,7 +544,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 var pluginTypes = assembly.GetTypes()
                     .Where(t => t.IsClass && !t.IsAbstract && typeof(IAlgorithmPlugin).IsAssignableFrom(t));
 
-                int loadedCount = 0;
+                var loadedCount = 0;
                 foreach (var pluginType in pluginTypes)
                 {
                     try
@@ -839,7 +839,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
         const int maxRetries = 3;
         var retryDelay = TimeSpan.FromMilliseconds(100);
 
-        for (int attempt = 1; attempt <= maxRetries; attempt++)
+        for (var attempt = 1; attempt <= maxRetries; attempt++)
         {
             try
             {
@@ -962,7 +962,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             Version = lp.Plugin.Version,
             Description = lp.Plugin.Description,
             SupportedAccelerators = lp.Plugin.SupportedAccelerators,
-            InputTypes = lp.Plugin.InputTypes.Select(t => t.FullName ?? t.Name).ToArray(),
+            InputTypes = [.. lp.Plugin.InputTypes.Select(t => t.FullName ?? t.Name)],
             OutputType = lp.Plugin.OutputType.FullName ?? lp.Plugin.OutputType.Name,
             PerformanceProfile = lp.Plugin.GetPerformanceProfile()
         });
@@ -1650,12 +1650,12 @@ public sealed class AlgorithmPluginManagerOptions
     /// <summary>
     /// Gets the allowed plugin directories.
     /// </summary>
-    public List<string> AllowedPluginDirectories { get; } = new();
+    public List<string> AllowedPluginDirectories { get; } = [];
 
     /// <summary>
     /// Gets trusted assembly publishers (for signature validation).
     /// </summary>
-    public List<string> TrustedPublishers { get; } = new();
+    public List<string> TrustedPublishers { get; } = [];
 
     /// <summary>
     /// Gets or sets whether digital signatures are required.
@@ -1736,12 +1736,12 @@ public sealed class PluginMetadata
     /// <summary>
     /// Gets the plugin dependencies.
     /// </summary>
-    public List<string> Dependencies { get; } = new();
+    public List<string> Dependencies { get; } = [];
 
     /// <summary>
     /// Gets additional metadata.
     /// </summary>
-    public Dictionary<string, object> AdditionalMetadata { get; } = new();
+    public Dictionary<string, object> AdditionalMetadata { get; } = [];
 }
 
 /// <summary>

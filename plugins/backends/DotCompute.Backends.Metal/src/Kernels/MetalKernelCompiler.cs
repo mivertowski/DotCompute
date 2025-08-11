@@ -29,11 +29,11 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
 
     /// <inheritdoc/>
 #pragma warning disable CA1819 // Properties should not return arrays - Required by IKernelCompiler interface
-    public KernelSourceType[] SupportedSourceTypes { get; } = new[]
-    {
+    public KernelSourceType[] SupportedSourceTypes { get; } =
+    [
         KernelSourceType.Metal,
         KernelSourceType.Binary
-    };
+    ];
 #pragma warning restore CA1819
 
     /// <inheritdoc/>

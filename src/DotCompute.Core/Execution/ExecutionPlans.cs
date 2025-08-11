@@ -71,7 +71,7 @@ public class DataParallelDeviceTask<T> where T : unmanaged
     public required int ElementCount { get; set; }
     
     /// <summary>Gets or sets dependencies on other device tasks.</summary>
-    public List<int> Dependencies { get; set; } = new();
+    public List<int> Dependencies { get; set; } = [];
 }
 
 /// <summary>
@@ -121,7 +121,7 @@ public class ModelLayer<T> where T : unmanaged
     public long ComputeRequirementFLOPS { get; set; }
     
     /// <summary>Gets or sets the dependencies on other layers.</summary>
-    public List<int> Dependencies { get; set; } = new();
+    public List<int> Dependencies { get; set; } = [];
 }
 
 /// <summary>
@@ -345,7 +345,7 @@ public class PipelineBufferStrategy<T> where T : unmanaged
 public class BufferPool<T> where T : unmanaged
 {
     private readonly Queue<AbstractionsMemory.IBuffer<T>> _availableBuffers = new();
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     
     /// <summary>Gets a buffer from the pool or creates a new one.</summary>
     public async ValueTask<AbstractionsMemory.IBuffer<T>> GetBufferAsync(int elementCount, AbstractionsMemory.IMemoryManager memoryManager, CancellationToken cancellationToken = default)
@@ -487,7 +487,7 @@ public class PipelineStageDefinition
     public required string KernelName { get; set; }
     
     /// <summary>Gets or sets the dependencies on other stages.</summary>
-    public List<string> Dependencies { get; set; } = new();
+    public List<string> Dependencies { get; set; } = [];
 }
 
 /// <summary>
@@ -577,7 +577,7 @@ public class WorkItem<T> where T : unmanaged
     public double EstimatedProcessingTimeMs { get; set; }
     
     /// <summary>Gets or sets the dependencies on other work items.</summary>
-    public List<int> Dependencies { get; set; } = new();
+    public List<int> Dependencies { get; set; } = [];
 }
 
 /// <summary>
@@ -586,11 +586,11 @@ public class WorkItem<T> where T : unmanaged
 public class LoadBalancingHints
 {
     /// <summary>Gets or sets the preferred devices for specific work items.</summary>
-    public Dictionary<int, string> PreferredDevices { get; set; } = new();
+    public Dictionary<int, string> PreferredDevices { get; set; } = [];
     
     /// <summary>Gets or sets the work item priorities.</summary>
-    public Dictionary<int, int> Priorities { get; set; } = new();
+    public Dictionary<int, int> Priorities { get; set; } = [];
     
     /// <summary>Gets or sets the affinity groups for work items.</summary>
-    public Dictionary<int, int> AffinityGroups { get; set; } = new();
+    public Dictionary<int, int> AffinityGroups { get; set; } = [];
 }

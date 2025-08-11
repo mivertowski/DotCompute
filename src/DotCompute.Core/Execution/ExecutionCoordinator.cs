@@ -151,7 +151,9 @@ public sealed class ExecutionCoordinator : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         _logger.LogInformation("Disposing ExecutionCoordinator");
 
@@ -211,7 +213,9 @@ public sealed class ExecutionEvent : IAsyncDisposable
     public async ValueTask SignalAsync(CancellationToken cancellationToken = default)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(ExecutionEvent));
+        }
 
         if (!_isSignaled)
         {
@@ -229,7 +233,9 @@ public sealed class ExecutionEvent : IAsyncDisposable
     public async ValueTask WaitAsync(CancellationToken cancellationToken = default)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(ExecutionEvent));
+        }
 
         if (!_isSignaled)
         {
@@ -243,7 +249,9 @@ public sealed class ExecutionEvent : IAsyncDisposable
     public async ValueTask ResetAsync()
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(ExecutionEvent));
+        }
 
         _isSignaled = false;
         // Drain any pending releases
@@ -266,7 +274,9 @@ public sealed class ExecutionEvent : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         // Signal to unblock any waiting threads
         if (!_isSignaled)
@@ -317,7 +327,9 @@ public sealed class ExecutionBarrier : IAsyncDisposable
     public async ValueTask EnterAsync(CancellationToken cancellationToken = default)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(ExecutionBarrier));
+        }
 
         var participantNumber = Interlocked.Increment(ref _participantsEntered);
         _logger.LogTrace("Participant {ParticipantNumber}/{TotalParticipants} entered barrier: {BarrierName}",
@@ -343,7 +355,9 @@ public sealed class ExecutionBarrier : IAsyncDisposable
     public async ValueTask ResetAsync()
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(ExecutionBarrier));
+        }
 
         _participantsEntered = 0;
         _isComplete = false;
@@ -368,7 +382,9 @@ public sealed class ExecutionBarrier : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         // Release all waiting participants
         if (!_isComplete && _participantsEntered > 0)

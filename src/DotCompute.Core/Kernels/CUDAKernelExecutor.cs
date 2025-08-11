@@ -16,12 +16,12 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
     private readonly IAccelerator _accelerator;
     private readonly ILogger<CUDAKernelExecutor> _logger;
     private readonly ConcurrentDictionary<Guid, PendingCudaExecution> _pendingExecutions = new();
-    private readonly object _streamLock = new();
+    private readonly Lock _streamLock = new();
     
     // CUDA context and stream handles
     private IntPtr _context;
     private IntPtr _defaultStream;
-    private readonly Dictionary<object, IntPtr> _namedStreams = new();
+    private readonly Dictionary<object, IntPtr> _namedStreams = [];
     private bool _disposed;
 
     /// <summary>
@@ -72,8 +72,12 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
         KernelArgument[] arguments,
         KernelExecutionConfig executionConfig)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(CUDAKernelExecutor));
-        if (kernel.Id == Guid.Empty) throw new ArgumentNullException(nameof(kernel), "Kernel cannot be default/empty");
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(CUDAKernelExecutor));
+        }
+
+        ArgumentNullException.ThrowIfNull(kernel);
         ArgumentNullException.ThrowIfNull(arguments);
         ArgumentNullException.ThrowIfNull(executionConfig);
 
@@ -171,7 +175,11 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
         KernelExecutionHandle handle,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(CUDAKernelExecutor));
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(CUDAKernelExecutor));
+        }
+
         ArgumentNullException.ThrowIfNull(handle);
 
         if (!_pendingExecutions.TryGetValue(handle.Id, out var pendingExecution))
@@ -219,12 +227,7 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
         catch (OperationCanceledException)
         {
             _logger.LogInformation("CUDA kernel execution {ExecutionId} was cancelled", handle.Id);
-            return new KernelExecutionResult
-            {
-                Success = false,
-                Handle = handle,
-                ErrorMessage = "Execution was cancelled"
-            };
+            throw;
         }
         catch (Exception ex)
         {
@@ -269,7 +272,7 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
 
             var config = new KernelExecutionConfig
             {
-                GlobalWorkSize = gridDim.Select((g, i) => g * blockDim[i]).ToArray(),
+                GlobalWorkSize = [.. gridDim.Select((g, i) => g * blockDim[i])],
                 LocalWorkSize = blockDim,
                 DynamicSharedMemorySize = sharedMemorySize,
                 CaptureTimings = true,
@@ -289,8 +292,8 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
             var defaultBlockSize = 256;
             return new KernelExecutionConfig
             {
-                GlobalWorkSize = problemSize.Select(x => (int)Math.Ceiling((double)x / defaultBlockSize) * defaultBlockSize).ToArray(),
-                LocalWorkSize = new[] { defaultBlockSize },
+                GlobalWorkSize = [.. problemSize.Select(x => (int)Math.Ceiling((double)x / defaultBlockSize) * defaultBlockSize)],
+                LocalWorkSize = [defaultBlockSize],
                 DynamicSharedMemorySize = kernel.SharedMemorySize,
                 CaptureTimings = true
             };
@@ -310,7 +313,9 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
         ArgumentNullException.ThrowIfNull(executionConfig);
 
         if (iterations <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(iterations), "Iterations must be positive");
+        }
 
         _logger.LogInformation("Starting CUDA kernel profiling for {Iterations} iterations", iterations);
 
@@ -330,13 +335,13 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
         try
         {
             // Warmup runs to stabilize performance
-            for (int w = 0; w < 3; w++)
+            for (var w = 0; w < 3; w++)
             {
                 await ExecuteAsync(kernel, arguments, profilingConfig, cancellationToken);
             }
             
             // Profile runs with detailed metrics collection
-            for (int i = 0; i < iterations && !cancellationToken.IsCancellationRequested; i++)
+            for (var i = 0; i < iterations && !cancellationToken.IsCancellationRequested; i++)
             {
                 var result = await ExecuteAsync(kernel, arguments, profilingConfig, cancellationToken);
                 
@@ -361,7 +366,7 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
                 throw new InvalidOperationException("No successful profiling runs completed");
             }
 
-            return await AnalyzeCudaProfilingResults(kernel, timings, occupancyResults, executionConfig);
+            return await AnalyzeCudaProfilingResultsAsync(kernel, timings, occupancyResults, executionConfig);
         }
         catch (Exception ex)
         {
@@ -425,10 +430,14 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
     private IntPtr GetOrCreateStream(object? streamConfig)
     {
         if (streamConfig == null)
+        {
             return _defaultStream;
-            
+        }
+
         if (_namedStreams.TryGetValue(streamConfig, out var existingStream))
+        {
             return existingStream;
+        }
 
         IntPtr newStream;
         try
@@ -544,7 +553,7 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
     {
         var kernelParams = new IntPtr[arguments.Length];
         
-        for (int i = 0; i < arguments.Length; i++)
+        for (var i = 0; i < arguments.Length; i++)
         {
             var arg = arguments[i];
             
@@ -678,13 +687,13 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
     private (int[] gridDim, int[] blockDim) CalculateGridAndBlockDimensions(KernelExecutionConfig config)
     {
         var globalSize = config.GlobalWorkSize;
-        var localSize = config.LocalWorkSize ?? new[] { 256 };
+        var localSize = config.LocalWorkSize ?? [256];
         
         // Expand local size to match global size dimensions
         var blockDim = new int[Math.Max(globalSize.Length, 3)];
         var gridDim = new int[Math.Max(globalSize.Length, 3)];
         
-        for (int i = 0; i < blockDim.Length; i++)
+        for (var i = 0; i < blockDim.Length; i++)
         {
             blockDim[i] = i < localSize.Length ? localSize[i] : 1;
             var global = i < globalSize.Length ? globalSize[i] : 1;
@@ -732,7 +741,7 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
                 {
                     // Prepare kernel parameters as void** array
                     var paramPtrs = stackalloc void*[parameters.Length];
-                    for (int i = 0; i < parameters.Length; i++)
+                    for (var i = 0; i < parameters.Length; i++)
                     {
                         paramPtrs[i] = parameters[i].ToPointer();
                     }
@@ -760,8 +769,8 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
             _logger.LogWarning(ex, "Failed to launch real CUDA kernel, using mock");
         }
         
-        // Mock kernel launch - always succeed for tests
-        var mockResult = CudaError.Success;
+        // Mock kernel launch - simulate potential failures
+        var mockResult = Random.Shared.NextDouble() > 0.01 ? CudaError.Success : CudaError.LaunchFailure;
         _logger.LogTrace("Mock CUDA kernel launch result: {Result}", mockResult);
         return mockResult;
     }
@@ -816,8 +825,8 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
 
     private async ValueTask<KernelExecutionTimings> CalculateCudaTimingsAsync(PendingCudaExecution execution)
     {
-        double kernelTime = 0.0;
-        double queueWaitTime = 0.0;
+        var kernelTime = 0.0;
+        var queueWaitTime = 0.0;
         
         try
         {
@@ -840,8 +849,11 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
                     {
                         kernelTime = elapsedMs;
                         queueWaitTime = (execution.StartTime - DateTimeOffset.UtcNow).TotalMilliseconds;
-                        if (queueWaitTime < 0) queueWaitTime = 0; // Ensure positive
-                        
+                        if (queueWaitTime < 0)
+                        {
+                            queueWaitTime = 0; // Ensure positive
+                        }
+
                         _logger.LogTrace("Real CUDA timing: kernel={KernelTime:F3}ms, queue={QueueTime:F3}ms", 
                             kernelTime, queueWaitTime);
                     }
@@ -1103,27 +1115,29 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
     private int[] ConvertToBlockDimensions(int blockSize, int[] problemSize)
     {
         if (problemSize.Length == 1)
-            return new[] { Math.Min(blockSize, problemSize[0]) };
-        
+        {
+            return [Math.Min(blockSize, problemSize[0])];
+        }
+
         if (problemSize.Length == 2)
         {
             var blockX = Math.Min(16, problemSize[0]);
             var blockY = Math.Min(blockSize / blockX, problemSize[1]);
-            return new[] { blockX, blockY };
+            return [blockX, blockY];
         }
         
         // 3D case
         var bx = Math.Min(8, problemSize[0]);
         var by = Math.Min(8, problemSize[1]);
         var bz = Math.Min(blockSize / (bx * by), problemSize[2]);
-        return new[] { bx, by, Math.Max(1, bz) };
+        return [bx, by, Math.Max(1, bz)];
     }
 
     private int[] CalculateGridDimensions(int[] problemSize, int[] blockDim)
     {
         var gridDim = new int[Math.Max(problemSize.Length, blockDim.Length)];
         
-        for (int i = 0; i < gridDim.Length; i++)
+        for (var i = 0; i < gridDim.Length; i++)
         {
             var problem = i < problemSize.Length ? problemSize[i] : 1;
             var block = i < blockDim.Length ? blockDim[i] : 1;
@@ -1170,7 +1184,7 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
         return Math.Min(totalThreads * 0.1, 100000.0); // Cap at 100 TFLOPS
     }
 
-    private ValueTask<KernelProfilingResult> AnalyzeCudaProfilingResults(
+    private ValueTask<KernelProfilingResult> AnalyzeCudaProfilingResultsAsync(
         CompiledKernel kernel,
         List<double> timings,
         List<double> occupancyResults,

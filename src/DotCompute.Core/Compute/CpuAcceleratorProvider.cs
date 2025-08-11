@@ -22,8 +22,8 @@ public class CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger) : IA
 
     public string Name => "CPU";
 
-    public AcceleratorType[] SupportedTypes => new[] { AcceleratorType.CPU };
-    private static readonly char[] _separator = new[] { ' ' };
+    public AcceleratorType[] SupportedTypes => [AcceleratorType.CPU];
+    private static readonly char[] _separator = [' '];
 
     public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
     {

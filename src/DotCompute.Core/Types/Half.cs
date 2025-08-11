@@ -253,10 +253,10 @@ public readonly struct Half : IComparable<Half>, IEquatable<Half>
 
     private static ushort FloatToHalf(float value)
     {
-        uint fbits = BitConverter.SingleToUInt32Bits(value);
-        uint sign = (fbits >> 16) & 0x8000;
-        int exponent = (int)((fbits >> 23) & 0xFF) - 127;
-        uint mantissa = fbits & 0x7FFFFF;
+        var fbits = BitConverter.SingleToUInt32Bits(value);
+        var sign = (fbits >> 16) & 0x8000;
+        var exponent = (int)((fbits >> 23) & 0xFF) - 127;
+        var mantissa = fbits & 0x7FFFFF;
 
         if (exponent == 128)
         {
@@ -300,9 +300,9 @@ public readonly struct Half : IComparable<Half>, IEquatable<Half>
 
     private static float HalfToFloat(ushort value)
     {
-        uint sign = (uint)(value & 0x8000) << 16;
-        int exponent = (value >> 10) & 0x1F;
-        uint mantissa = (uint)(value & 0x3FF) << 13;
+        var sign = (uint)(value & 0x8000) << 16;
+        var exponent = (value >> 10) & 0x1F;
+        var mantissa = (uint)(value & 0x3FF) << 13;
 
         if (exponent == 0x1F)
         {

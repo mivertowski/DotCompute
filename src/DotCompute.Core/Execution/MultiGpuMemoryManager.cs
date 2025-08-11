@@ -166,7 +166,7 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
     {
         var stats = new MultiGpuMemoryStatistics
         {
-            DeviceStatistics = new Dictionary<string, DeviceMemoryStatistics>(),
+            DeviceStatistics = [],
             TotalP2PConnections = _p2pConnections.Count,
             ActiveP2PConnections = _p2pConnections.Count(kvp => kvp.Value.IsEnabled),
             PendingTransfers = _transferScheduler.GetPendingTransferCount(),
@@ -189,9 +189,9 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
         _logger.LogInformation("Optimizing memory layout across {DeviceCount} devices", devices.Length);
 
         // Enable P2P between all device pairs where possible
-        for (int i = 0; i < devices.Length; i++)
+        for (var i = 0; i < devices.Length; i++)
         {
-            for (int j = i + 1; j < devices.Length; j++)
+            for (var j = i + 1; j < devices.Length; j++)
             {
                 await EnablePeerToPeerAsync(devices[i], devices[j]);
             }
@@ -206,7 +206,9 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         _logger.LogInformation("Disposing MultiGpuMemoryManager");
 
@@ -255,7 +257,9 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
     {
         // This is a simplified check - real implementation would query device capabilities
         if (device1.Info.DeviceType != device2.Info.DeviceType)
+        {
             return false;
+        }
 
         if (device1.Info.DeviceType == "CUDA")
         {
@@ -312,135 +316,9 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
         IAccelerator device, 
         int elementCount) where T : unmanaged
     {
-        // Create a simple buffer wrapper for the memory buffer
-        // In a production implementation, this would use a proper buffer factory
-        return new SimpleDeviceBuffer<T>(memoryBuffer, device, elementCount);
-    }
-    
-    /// <summary>
-    /// Simple device buffer implementation for internal use.
-    /// </summary>
-    private sealed class SimpleDeviceBuffer<T> : AbstractionsMemory.IBuffer<T>, AbstractionsMemory.IMemoryBuffer where T : unmanaged
-    {
-        private readonly AbstractionsMemory.IMemoryBuffer _memoryBuffer;
-        private readonly IAccelerator _device;
-        private readonly int _elementCount;
-        
-        public SimpleDeviceBuffer(AbstractionsMemory.IMemoryBuffer memoryBuffer, IAccelerator device, int elementCount)
-        {
-            _memoryBuffer = memoryBuffer ?? throw new ArgumentNullException(nameof(memoryBuffer));
-            _device = device ?? throw new ArgumentNullException(nameof(device));
-            _elementCount = elementCount;
-        }
-        
-        public int Length => _elementCount;
-        public long SizeInBytes => _memoryBuffer.SizeInBytes;
-        public AbstractionsMemory.MemoryLocation Location => AbstractionsMemory.MemoryLocation.Device;
-        public AbstractionsMemory.MemoryAccess Access => AbstractionsMemory.MemoryAccess.ReadWrite;
-        public AbstractionsMemory.MemoryOptions Options => AbstractionsMemory.MemoryOptions.None;
-        public IAccelerator Accelerator => _device;
-        
-        public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
-        {
-            return _memoryBuffer.CopyFromHostAsync(source, 0, cancellationToken);
-        }
-        
-        public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
-        {
-            return _memoryBuffer.CopyToHostAsync(destination, 0, cancellationToken);
-        }
-        
-        public ValueTask CopyFromAsync(AbstractionsMemory.IBuffer<T> source, CancellationToken cancellationToken = default)
-        {
-            // Simplified implementation - would need proper device-to-device copy
-            return ValueTask.CompletedTask;
-        }
-        
-        public ValueTask CopyToAsync(AbstractionsMemory.IBuffer<T> destination, CancellationToken cancellationToken = default)
-        {
-            // Simplified implementation - would need proper device-to-device copy
-            return ValueTask.CompletedTask;
-        }
-        
-        public ValueTask CopyToAsync(int sourceOffset, AbstractionsMemory.IBuffer<T> destination, int destinationOffset, int length, CancellationToken cancellationToken = default)
-        {
-            // Simplified implementation for partial copy
-            return ValueTask.CompletedTask;
-        }
-        
-        public ValueTask<T[]> ToArrayAsync(CancellationToken cancellationToken = default)
-        {
-            var array = new T[_elementCount];
-            return ValueTask.FromResult(array);
-        }
-        
-        public AbstractionsMemory.IBuffer<T> Slice(int start, int length)
-        {
-            // Return a new buffer representing the slice
-            return new SimpleDeviceBuffer<T>(_memoryBuffer, _device, length);
-        }
-        
-        public AbstractionsMemory.IBuffer<TNew> AsType<TNew>() where TNew : unmanaged
-        {
-            // Create a new buffer with reinterpreted type
-            var newElementCount = (int)(SizeInBytes / System.Runtime.InteropServices.Marshal.SizeOf<TNew>());
-            return new SimpleDeviceBuffer<TNew>(_memoryBuffer, _device, newElementCount);
-        }
-        
-        public ValueTask FillAsync(T value, CancellationToken cancellationToken = default)
-        {
-            // Simplified implementation - would fill entire buffer with value
-            return ValueTask.CompletedTask;
-        }
-        
-        public ValueTask FillAsync(T value, int offset, int length, CancellationToken cancellationToken = default)
-        {
-            // Simplified implementation - would fill partial buffer with value
-            return ValueTask.CompletedTask;
-        }
-        
-        public AbstractionsMemory.MappedMemory<T> Map(AbstractionsMemory.MapMode mode)
-        {
-            // Simplified implementation - return default for testing
-            // In production, would use proper memory mapping via device-specific APIs
-            return default(AbstractionsMemory.MappedMemory<T>);
-        }
-        
-        public AbstractionsMemory.MappedMemory<T> MapRange(int offset, int length, AbstractionsMemory.MapMode mode)
-        {
-            // Simplified implementation - return default for testing
-            // In production, would use proper memory mapping via device-specific APIs
-            return default(AbstractionsMemory.MappedMemory<T>);
-        }
-        
-        public ValueTask<AbstractionsMemory.MappedMemory<T>> MapAsync(AbstractionsMemory.MapMode mode, CancellationToken cancellationToken = default)
-        {
-            // Simplified implementation - return default for testing
-            // In production, would use proper memory mapping via device-specific APIs
-            return ValueTask.FromResult(default(AbstractionsMemory.MappedMemory<T>));
-        }
-        
-        // IMemoryBuffer implementation
-        public ValueTask CopyFromHostAsync<TData>(ReadOnlyMemory<TData> source, long offset = 0, CancellationToken cancellationToken = default) where TData : unmanaged
-        {
-            return _memoryBuffer.CopyFromHostAsync(source, offset, cancellationToken);
-        }
-        
-        public ValueTask CopyToHostAsync<TData>(Memory<TData> destination, long offset = 0, CancellationToken cancellationToken = default) where TData : unmanaged
-        {
-            return _memoryBuffer.CopyToHostAsync(destination, offset, cancellationToken);
-        }
-        
-        public void Dispose()
-        {
-            // Nothing to dispose in this simple implementation
-        }
-        
-        public ValueTask DisposeAsync()
-        {
-            Dispose();
-            return ValueTask.CompletedTask;
-        }
+        // This is a simplified implementation - in practice, you would use a proper buffer factory
+        // that creates device-specific buffer implementations
+        throw new NotImplementedException("CreateBufferFromMemoryBuffer needs proper implementation based on device type and buffer factory");
     }
 
     #endregion
@@ -454,7 +332,7 @@ public sealed class DeviceMemoryPool : IAsyncDisposable
     private readonly IAccelerator _device;
     private readonly ILogger _logger;
     private readonly ConcurrentQueue<AbstractionsMemory.IMemoryBuffer> _availableBuffers;
-    private readonly object _statisticsLock = new();
+    private readonly Lock _statisticsLock = new();
     private DeviceMemoryStatistics _statistics;
     private bool _disposed;
 
@@ -485,7 +363,9 @@ public sealed class DeviceMemoryPool : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         // Dispose all available buffers
         while (_availableBuffers.TryDequeue(out var buffer))
@@ -577,7 +457,9 @@ public sealed class TransferScheduler : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         _shutdownTokenSource.Cancel();
         
@@ -659,7 +541,9 @@ public sealed class MemoryCoherenceManager : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         _bufferTracking.Clear();
         _disposed = true;
@@ -713,7 +597,7 @@ public class BufferCoherenceInfo
 
 public class MultiGpuMemoryStatistics
 {
-    public Dictionary<string, DeviceMemoryStatistics> DeviceStatistics { get; set; } = new();
+    public Dictionary<string, DeviceMemoryStatistics> DeviceStatistics { get; set; } = [];
     public int TotalP2PConnections { get; set; }
     public int ActiveP2PConnections { get; set; }
     public int PendingTransfers { get; set; }

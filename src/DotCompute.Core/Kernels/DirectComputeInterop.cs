@@ -646,7 +646,7 @@ internal static partial class DirectComputeInterop
         flags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
-        int hr = D3D11CreateDevice(
+        var hr = D3D11CreateDevice(
             IntPtr.Zero, // Use default adapter
             D3D_DRIVER_TYPE.D3D_DRIVER_TYPE_HARDWARE,
             IntPtr.Zero,
@@ -654,9 +654,9 @@ internal static partial class DirectComputeInterop
             featureLevels,
             (uint)featureLevels.Length,
             D3D11_SDK_VERSION,
-            out IntPtr device,
-            out D3D_FEATURE_LEVEL featureLevel,
-            out IntPtr context);
+            out var device,
+            out var featureLevel,
+            out var context);
 
         ThrowIfFailed(hr, "D3D11CreateDevice");
         return (device, context, featureLevel);
@@ -669,7 +669,7 @@ internal static partial class DirectComputeInterop
     {
         var sourceBytes = Encoding.UTF8.GetBytes(source);
         
-        int hr = D3DCompile(
+        var hr = D3DCompile(
             source,
             (nuint)sourceBytes.Length,
             null, // Source name
@@ -679,16 +679,15 @@ internal static partial class DirectComputeInterop
             target,
             flags,
             0, // Effect flags
-            out IntPtr codeBlob,
-            out IntPtr errorBlob);
+            out var codeBlob,
+            out var errorBlob);
 
-        string log = "";
+        var log = "";
         if (errorBlob != IntPtr.Zero)
         {
             try
             {
-                var errorBlobInterface = Marshal.GetObjectForIUnknown(errorBlob) as ID3DBlob;
-                if (errorBlobInterface != null)
+                if (Marshal.GetObjectForIUnknown(errorBlob) is ID3DBlob errorBlobInterface)
                 {
                     var errorPtr = errorBlobInterface.GetBufferPointer();
                     var errorSize = (int)errorBlobInterface.GetBufferSize();
@@ -707,15 +706,19 @@ internal static partial class DirectComputeInterop
         if (Failed(hr))
         {
             if (codeBlob != IntPtr.Zero)
+            {
                 Marshal.Release(codeBlob);
+            }
+
             throw new InvalidOperationException($"HLSL compilation failed (HRESULT: 0x{hr:X8}): {log}");
         }
 
         try
         {
-            var codeBlobInterface = Marshal.GetObjectForIUnknown(codeBlob) as ID3DBlob;
-            if (codeBlobInterface == null)
+            if (Marshal.GetObjectForIUnknown(codeBlob) is not ID3DBlob codeBlobInterface)
+            {
                 throw new InvalidOperationException("Failed to get blob interface");
+            }
 
             var bytecodePtr = codeBlobInterface.GetBufferPointer();
             var bytecodeSize = (int)codeBlobInterface.GetBufferSize();
@@ -728,7 +731,9 @@ internal static partial class DirectComputeInterop
         finally
         {
             if (codeBlob != IntPtr.Zero)
+            {
                 Marshal.Release(codeBlob);
+            }
         }
     }
 }

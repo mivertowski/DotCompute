@@ -94,9 +94,9 @@ public sealed record MatrixProperties
     {
         if (!matrix.IsSquare) return false;
 
-        for (int i = 0; i < matrix.Rows; i++)
+        for (var i = 0; i < matrix.Rows; i++)
         {
-            for (int j = 0; j < matrix.Columns; j++)
+            for (var j = 0; j < matrix.Columns; j++)
             {
                 if (Math.Abs(matrix[i, j] - matrix[j, i]) > 1e-6f)
                     return false;
@@ -111,7 +111,7 @@ public sealed record MatrixProperties
 
         // Simplified check - full implementation would use Cholesky decomposition
         // For now, just check diagonal elements are positive
-        for (int i = 0; i < matrix.Rows; i++)
+        for (var i = 0; i < matrix.Rows; i++)
         {
             if (matrix[i, i] <= 0)
                 return false;

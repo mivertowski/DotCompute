@@ -10,7 +10,6 @@ using System.Runtime.Loader;
 using System.Security;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Exceptions;
@@ -25,16 +24,16 @@ namespace DotCompute.Plugins.Loaders
     /// <summary>
     /// Sophisticated NuGet plugin loader with dependency resolution, security scanning, and validation.
     /// </summary>
-    public sealed class NuGetPluginLoader : IAsyncDisposable, IDisposable
+    public class NuGetPluginLoader : IDisposable
     {
         private readonly ILogger<NuGetPluginLoader> _logger;
         private readonly NuGetPluginLoaderOptions _options;
         private readonly ConcurrentDictionary<string, LoadedNuGetPlugin> _loadedPlugins = new();
+        private readonly ConcurrentDictionary<string, NuGetPackageInfo> _packageCache = new();
         private readonly SemaphoreSlim _loadSemaphore = new(1, 1);
         private readonly SecurityValidator _securityValidator;
         private readonly DependencyResolver _dependencyResolver;
         private readonly CompatibilityChecker _compatibilityChecker;
-        private readonly JsonSerializerOptions _jsonOptions;
         private bool _disposed;
 
         /// <summary>
@@ -47,14 +46,6 @@ namespace DotCompute.Plugins.Loaders
             _securityValidator = new SecurityValidator(_logger, _options.SecurityPolicy);
             _dependencyResolver = new DependencyResolver(_logger, _options.DependencyResolution);
             _compatibilityChecker = new CompatibilityChecker(_logger, _options.CompatibilitySettings);
-
-            // Configure JSON serialization for AOT compatibility
-            _jsonOptions = new JsonSerializerOptions
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-                WriteIndented = false,
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
-            };
         }
 
         /// <summary>
@@ -78,7 +69,7 @@ namespace DotCompute.Plugins.Loaders
 
                 try
                 {
-                    await foreach (var manifest in DiscoverPluginsInDirectoryAsync(directory, cancellationToken).ConfigureAwait(false))
+                    await foreach (var manifest in DiscoverPluginsInDirectoryAsync(directory, cancellationToken))
                     {
                         manifests.Add(manifest);
                     }
@@ -101,7 +92,7 @@ namespace DotCompute.Plugins.Loaders
             ArgumentNullException.ThrowIfNull(manifest);
             ThrowIfDisposed();
 
-            await _loadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _loadSemaphore.WaitAsync(cancellationToken);
             try
             {
                 // Check if already loaded
@@ -113,14 +104,14 @@ namespace DotCompute.Plugins.Loaders
                 _logger.LogInformation("Loading plugin: {PluginId} v{Version}", manifest.Id, manifest.Version);
 
                 // Validate plugin
-                var validationResult = await ValidatePluginAsync(manifest, cancellationToken).ConfigureAwait(false);
+                var validationResult = await ValidatePluginAsync(manifest, cancellationToken);
                 if (!validationResult.IsValid)
                 {
                     return NuGetPluginLoadResult.ValidationFailed(manifest.Id, validationResult.ValidationErrors);
                 }
 
                 // Resolve dependencies
-                var dependencyGraph = await _dependencyResolver.ResolveAsync(manifest, cancellationToken).ConfigureAwait(false);
+                var dependencyGraph = await _dependencyResolver.ResolveAsync(manifest, cancellationToken);
                 if (!dependencyGraph.IsResolved)
                 {
                     return NuGetPluginLoadResult.DependencyResolutionFailed(manifest.Id, dependencyGraph.Errors);
@@ -129,18 +120,18 @@ namespace DotCompute.Plugins.Loaders
                 // Load dependencies first
                 foreach (var dependency in dependencyGraph.Dependencies.OrderBy(d => d.Level))
                 {
-                    await EnsureDependencyLoadedAsync(dependency, cancellationToken).ConfigureAwait(false);
+                    await EnsureDependencyLoadedAsync(dependency, cancellationToken);
                 }
 
                 // Create isolated load context
                 var loadContext = new NuGetPluginLoadContext(manifest, dependencyGraph);
 
                 // Load the plugin assembly
-                var assembly = await LoadAssemblyAsync(loadContext, manifest.AssemblyPath, cancellationToken).ConfigureAwait(false);
-
+                var assembly = await LoadAssemblyAsync(loadContext, manifest.AssemblyPath, cancellationToken);
+                
                 // Create plugin instance
-                var plugin = await CreatePluginInstanceAsync(assembly, manifest, cancellationToken).ConfigureAwait(false);
-
+                var plugin = await CreatePluginInstanceAsync(assembly, manifest, cancellationToken);
+                
                 var loadedPlugin = new LoadedNuGetPlugin
                 {
                     Manifest = manifest,
@@ -181,15 +172,15 @@ namespace DotCompute.Plugins.Loaders
             {
                 // Basic manifest validation
                 ValidateManifest(manifest, result);
-
+                
                 // Security validation
-                await _securityValidator.ValidateAsync(manifest, result, cancellationToken).ConfigureAwait(false);
-
+                await _securityValidator.ValidateAsync(manifest, result, cancellationToken);
+                
                 // Compatibility validation
-                await _compatibilityChecker.ValidateAsync(manifest, result, cancellationToken).ConfigureAwait(false);
-
+                await _compatibilityChecker.ValidateAsync(manifest, result, cancellationToken);
+                
                 // Dependency validation
-                await ValidateDependenciesAsync(manifest, result, cancellationToken).ConfigureAwait(false);
+                await ValidateDependenciesAsync(manifest, result, cancellationToken);
 
                 result.IsValid = result.ValidationErrors.Count == 0;
             }
@@ -211,7 +202,7 @@ namespace DotCompute.Plugins.Loaders
             ArgumentException.ThrowIfNullOrWhiteSpace(pluginId);
             ThrowIfDisposed();
 
-            await _loadSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _loadSemaphore.WaitAsync(cancellationToken);
             try
             {
                 if (!_loadedPlugins.TryRemove(pluginId, out var loadedPlugin))
@@ -225,7 +216,7 @@ namespace DotCompute.Plugins.Loaders
                 loadedPlugin.Plugin?.Dispose();
 
                 // Check if dependencies can be unloaded
-                await UnloadUnusedDependenciesAsync(loadedPlugin.DependencyGraph, cancellationToken).ConfigureAwait(false);
+                await UnloadUnusedDependenciesAsync(loadedPlugin.DependencyGraph, cancellationToken);
 
                 // Unload the load context
                 loadedPlugin.LoadContext?.Unload();
@@ -276,14 +267,10 @@ namespace DotCompute.Plugins.Loaders
 
             foreach (var plugin in loadedPlugins)
             {
-                var vulnerabilities = await _securityValidator.ScanForVulnerabilitiesAsync(plugin.Manifest, cancellationToken).ConfigureAwait(false);
-                if (vulnerabilities.AllVulnerabilities.Any())
+                var vulnerabilities = await _securityValidator.ScanForVulnerabilitiesAsync(plugin.Manifest, cancellationToken);
+                if (vulnerabilities != null)
                 {
-                    // Merge vulnerability results into main result
-                    result.CriticalVulnerabilities.AddRange(vulnerabilities.CriticalVulnerabilities);
-                    result.HighRiskVulnerabilities.AddRange(vulnerabilities.HighRiskVulnerabilities);
-                    result.MediumRiskVulnerabilities.AddRange(vulnerabilities.MediumRiskVulnerabilities);
-                    result.LowRiskVulnerabilities.AddRange(vulnerabilities.LowRiskVulnerabilities);
+                    result.VulnerablePlugins.Add(plugin.Manifest.Id, vulnerabilities);
                 }
             }
 
@@ -296,13 +283,13 @@ namespace DotCompute.Plugins.Loaders
             var packageFiles = Directory.EnumerateFiles(directory, "*.nupkg", SearchOption.AllDirectories);
 
             // Discover from manifest files
-            await foreach (var manifest in DiscoverFromManifestFilesAsync(manifestFiles, cancellationToken).ConfigureAwait(false))
+            await foreach (var manifest in DiscoverFromManifestFilesAsync(manifestFiles, cancellationToken))
             {
                 yield return manifest;
             }
 
             // Discover from NuGet packages
-            await foreach (var manifest in DiscoverFromPackagesAsync(packageFiles, cancellationToken).ConfigureAwait(false))
+            await foreach (var manifest in DiscoverFromPackagesAsync(packageFiles, cancellationToken))
             {
                 yield return manifest;
             }
@@ -314,20 +301,18 @@ namespace DotCompute.Plugins.Loaders
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                NuGetPluginManifest? manifest = null;
                 try
                 {
-                    var json = await File.ReadAllTextAsync(file, cancellationToken).ConfigureAwait(false);
-                    manifest = JsonSerializer.Deserialize<NuGetPluginManifest>(json, _jsonOptions);
+                    var json = await File.ReadAllTextAsync(file, cancellationToken);
+                    var manifest = JsonSerializer.Deserialize<NuGetPluginManifest>(json);
+                    if (manifest != null)
+                    {
+                        yield return manifest;
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Failed to parse plugin manifest: {File}", file);
-                }
-
-                if (manifest != null)
-                {
-                    yield return manifest;
                 }
             }
         }
@@ -338,19 +323,17 @@ namespace DotCompute.Plugins.Loaders
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                NuGetPluginManifest? manifest = null;
                 try
                 {
-                    manifest = await ExtractManifestFromPackageAsync(packageFile, cancellationToken).ConfigureAwait(false);
+                    var manifest = await ExtractManifestFromPackageAsync(packageFile, cancellationToken);
+                    if (manifest != null)
+                    {
+                        yield return manifest;
+                    }
                 }
                 catch (Exception ex)
                 {
                     _logger.LogWarning(ex, "Failed to extract manifest from package: {Package}", packageFile);
-                }
-
-                if (manifest != null)
-                {
-                    yield return manifest;
                 }
             }
         }
@@ -358,9 +341,9 @@ namespace DotCompute.Plugins.Loaders
         private async Task<NuGetPluginManifest?> ExtractManifestFromPackageAsync(string packagePath, CancellationToken cancellationToken)
         {
             using var archive = ZipFile.OpenRead(packagePath);
-
+            
             // Look for plugin manifest in the package
-            var manifestEntry = archive.Entries.FirstOrDefault(e =>
+            var manifestEntry = archive.Entries.FirstOrDefault(e => 
                 e.FullName.EndsWith(".plugin.json", StringComparison.OrdinalIgnoreCase) ||
                 e.FullName.EndsWith("plugin.json", StringComparison.OrdinalIgnoreCase));
 
@@ -368,15 +351,15 @@ namespace DotCompute.Plugins.Loaders
             {
                 using var stream = manifestEntry.Open();
                 using var reader = new StreamReader(stream);
-                var json = await reader.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
-                return JsonSerializer.Deserialize<NuGetPluginManifest>(json, _jsonOptions);
+                var json = await reader.ReadToEndAsync(cancellationToken);
+                return JsonSerializer.Deserialize<NuGetPluginManifest>(json);
             }
 
             // Try to infer from .nuspec file
             var nuspecEntry = archive.Entries.FirstOrDefault(e => e.FullName.EndsWith(".nuspec", StringComparison.OrdinalIgnoreCase));
             if (nuspecEntry != null)
             {
-                return await CreateManifestFromNuspecAsync(nuspecEntry, packagePath, cancellationToken).ConfigureAwait(false);
+                return await CreateManifestFromNuspecAsync(nuspecEntry, packagePath, cancellationToken);
             }
 
             return null;
@@ -387,7 +370,7 @@ namespace DotCompute.Plugins.Loaders
             // This would parse the .nuspec XML and create a plugin manifest
             // For now, return a basic manifest
             await Task.CompletedTask;
-
+            
             var packageName = Path.GetFileNameWithoutExtension(packagePath);
             return new NuGetPluginManifest
             {
@@ -433,7 +416,7 @@ namespace DotCompute.Plugins.Loaders
 
         private async Task ValidateDependenciesAsync(NuGetPluginManifest manifest, NuGetPluginValidationResult result, CancellationToken cancellationToken)
         {
-            if (manifest.Dependencies == null || !manifest.Dependencies.Any())
+            if (manifest.Dependencies == null || manifest.Dependencies.Count == 0)
             {
                 return;
             }
@@ -453,7 +436,7 @@ namespace DotCompute.Plugins.Loaders
                 }
 
                 // Check if dependency exists (simplified check)
-                if (!await DependencyExistsAsync(dependency, cancellationToken).ConfigureAwait(false))
+                if (!await DependencyExistsAsync(dependency, cancellationToken))
                 {
                     result.ValidationErrors.Add($"Dependency '{dependency.Id}' not found");
                 }
@@ -464,8 +447,8 @@ namespace DotCompute.Plugins.Loaders
         {
             // This is a simplified implementation
             // In a real system, this would check NuGet repositories, local packages, etc.
-            await Task.Yield();
-
+            await Task.Delay(1, cancellationToken);
+            
             // For testing purposes, return false for "NonExistentDep"
             return !dependency.Id.Equals("NonExistentDep", StringComparison.OrdinalIgnoreCase);
         }
@@ -481,10 +464,10 @@ namespace DotCompute.Plugins.Loaders
             // Load dependency if it's a plugin
             if (dependency.IsPlugin)
             {
-                var dependencyManifest = await LoadDependencyManifestAsync(dependency, cancellationToken).ConfigureAwait(false);
+                var dependencyManifest = await LoadDependencyManifestAsync(dependency, cancellationToken);
                 if (dependencyManifest != null)
                 {
-                    await LoadPluginAsync(dependencyManifest, cancellationToken).ConfigureAwait(false);
+                    await LoadPluginAsync(dependencyManifest, cancellationToken);
                 }
             }
         }
@@ -505,7 +488,7 @@ namespace DotCompute.Plugins.Loaders
             }
 
             // Verify assembly before loading
-            await VerifyAssemblyAsync(assemblyPath, cancellationToken).ConfigureAwait(false);
+            await VerifyAssemblyAsync(assemblyPath, cancellationToken);
 
             return loadContext.LoadFromAssemblyPath(assemblyPath);
         }
@@ -514,12 +497,12 @@ namespace DotCompute.Plugins.Loaders
         {
             if (_options.SecurityPolicy?.RequireSignedAssemblies == true)
             {
-                await VerifyAssemblySignatureAsync(assemblyPath, cancellationToken).ConfigureAwait(false);
+                await VerifyAssemblySignatureAsync(assemblyPath, cancellationToken);
             }
 
             if (_options.SecurityPolicy?.ScanForMaliciousCode == true)
             {
-                await ScanAssemblyForMaliciousCodeAsync(assemblyPath, cancellationToken).ConfigureAwait(false);
+                await ScanAssemblyForMaliciousCodeAsync(assemblyPath, cancellationToken);
             }
         }
 
@@ -527,8 +510,8 @@ namespace DotCompute.Plugins.Loaders
         {
             // This would verify the assembly's digital signature
             // For now, just simulate the verification
-            await Task.Delay(10, cancellationToken).ConfigureAwait(false);
-
+            await Task.Delay(10, cancellationToken);
+            
             if (_options.SecurityPolicy?.TrustedPublishers?.Any() == true)
             {
                 // In a real implementation, this would check the assembly's signature
@@ -539,8 +522,8 @@ namespace DotCompute.Plugins.Loaders
         private async Task ScanAssemblyForMaliciousCodeAsync(string assemblyPath, CancellationToken cancellationToken)
         {
             // This would scan the assembly for potentially malicious patterns
-            await Task.Delay(50, cancellationToken).ConfigureAwait(false);
-
+            await Task.Delay(50, cancellationToken);
+            
             // Simple heuristic: check file size (malicious assemblies might be unusually large)
             var fileInfo = new FileInfo(assemblyPath);
             if (fileInfo.Length > _options.SecurityPolicy?.MaxAssemblySize)
@@ -549,31 +532,28 @@ namespace DotCompute.Plugins.Loaders
             }
         }
 
-        private async Task<IBackendPlugin> CreatePluginInstanceAsync(Assembly assembly, NuGetPluginManifest manifest, CancellationToken cancellationToken)
+        private Task<IBackendPlugin> CreatePluginInstanceAsync(Assembly assembly, NuGetPluginManifest manifest, CancellationToken cancellationToken)
         {
-            await Task.Yield();
-            
             var pluginTypes = PluginSystem.DiscoverPluginTypes(assembly).ToList();
-
-            if (!pluginTypes.Any())
+            
+            if (pluginTypes.Count == 0)
             {
                 throw new PluginLoadException($"No plugin types found in assembly: {manifest.AssemblyPath}", manifest.Id, manifest.AssemblyPath);
             }
 
             var pluginType = pluginTypes.First();
-
+            
             if (pluginType.GetConstructor(Type.EmptyTypes) == null)
             {
                 throw new PluginLoadException($"Plugin type must have a parameterless constructor: {pluginType.FullName}", manifest.Id, manifest.AssemblyPath);
             }
 
-            var instance = Activator.CreateInstance(pluginType) as IBackendPlugin;
-            if (instance == null)
+            if (Activator.CreateInstance(pluginType) is not IBackendPlugin instance)
             {
                 throw new PluginLoadException($"Failed to create plugin instance: {pluginType.FullName}", manifest.Id, manifest.AssemblyPath);
             }
 
-            return instance;
+            return Task.FromResult(instance);
         }
 
         private async Task UnloadUnusedDependenciesAsync(DependencyGraph dependencyGraph, CancellationToken cancellationToken)
@@ -585,66 +565,43 @@ namespace DotCompute.Plugins.Loaders
                     continue;
                 }
 
-                await UnloadPluginAsync(dependency.Id, cancellationToken).ConfigureAwait(false);
+                await UnloadPluginAsync(dependency.Id, cancellationToken);
             }
         }
 
         private bool IsDependencyStillNeeded(string dependencyId)
         {
-            return _loadedPlugins.Values.Any(p =>
+            return _loadedPlugins.Values.Any(p => 
                 p.DependencyGraph.Dependencies.Any(d => d.Id == dependencyId));
         }
 
         private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, nameof(NuGetPluginLoader));
 
         /// <inheritdoc/>
-        public async ValueTask DisposeAsync()
+        public void Dispose()
         {
             if (_disposed)
+            {
                 return;
+            }
 
             _disposed = true;
 
-            var disposeTasks = new List<Task>();
-
             foreach (var plugin in _loadedPlugins.Values)
             {
-                disposeTasks.Add(DisposePluginAsync(plugin));
+                try
+                {
+                    plugin.Plugin?.Dispose();
+                    plugin.LoadContext?.Unload();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, "Error disposing plugin: {PluginId}", plugin.Manifest.Id);
+                }
             }
-
-            await Task.WhenAll(disposeTasks).ConfigureAwait(false);
 
             _loadedPlugins.Clear();
             _loadSemaphore.Dispose();
-
-            GC.SuppressFinalize(this);
-        }
-
-        private async Task DisposePluginAsync(LoadedNuGetPlugin plugin)
-        {
-            try
-            {
-                if (plugin.Plugin is IAsyncDisposable asyncDisposablePlugin)
-                {
-                    await asyncDisposablePlugin.DisposeAsync().ConfigureAwait(false);
-                }
-                else
-                {
-                    plugin.Plugin?.Dispose();
-                }
-
-                plugin.LoadContext?.Unload();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error disposing plugin: {PluginId}", plugin.Manifest.Id);
-            }
-        }
-
-        /// <inheritdoc/>
-        public void Dispose()
-        {
-            DisposeAsync().AsTask().GetAwaiter().GetResult();
         }
     }
 
@@ -657,7 +614,7 @@ namespace DotCompute.Plugins.Loaders
         private readonly DependencyGraph _dependencyGraph;
         private readonly AssemblyDependencyResolver _resolver;
 
-        public NuGetPluginLoadContext(NuGetPluginManifest manifest, DependencyGraph dependencyGraph)
+        public NuGetPluginLoadContext(NuGetPluginManifest manifest, DependencyGraph dependencyGraph) 
             : base($"Plugin_{manifest.Id}_{manifest.Version}", isCollectible: true)
         {
             _manifest = manifest;
@@ -676,7 +633,7 @@ namespace DotCompute.Plugins.Loaders
             // Try to load from dependency graph
             var dependency = _dependencyGraph.Dependencies
                 .FirstOrDefault(d => d.AssemblyName == assemblyName.Name);
-
+            
             if (dependency?.AssemblyPath != null)
             {
                 return LoadFromAssemblyPath(dependency.AssemblyPath);

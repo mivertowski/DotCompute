@@ -170,13 +170,13 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "vector_add",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "a", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "b", Type = inputTypes[1], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "result", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "n", Type = typeof(int), IsInput = true }
-            },
+            ],
             OptimizationMetadata = new Dictionary<string, object>
             {
                 ["VectorWidth"] = vectorWidth,
@@ -232,13 +232,13 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "vector_subtract",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "a", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "b", Type = inputTypes[1], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "result", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "n", Type = typeof(int), IsInput = true }
-            },
+            ],
             OptimizationMetadata = new Dictionary<string, object>
             {
                 ["VectorWidth"] = vectorWidth,
@@ -256,7 +256,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
         var source = new StringBuilder();
         
         // Use Tensor Cores if available
-        bool useTensorCores = context.Metadata?.ContainsKey("UseTensorCores") == true && 
+        var useTensorCores = context.Metadata?.ContainsKey("UseTensorCores") == true && 
                              (bool)context.Metadata["UseTensorCores"] &&
                              (elementType == typeof(float) || elementType == typeof(DotCompute.Core.Types.Half));
 
@@ -343,16 +343,16 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "matrix_multiply",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "A", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "B", Type = inputTypes[1], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "C", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "M", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "N", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "K", Type = typeof(int), IsInput = true }
-            },
-            RequiredWorkGroupSize = new[] { tileSize, tileSize },
+            ],
+            RequiredWorkGroupSize = [tileSize, tileSize],
             SharedMemorySize = 2 * tileSize * (tileSize + 1) * GetTypeSize(elementType),
             OptimizationMetadata = new Dictionary<string, object>
             {
@@ -444,8 +444,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "convolution_2d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = inputTypes[1], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = outputType, IsOutput = true },
@@ -455,7 +455,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "kernel_height", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "pad_x", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "pad_y", Type = typeof(int), IsInput = true }
-            },
+            ],
             SharedMemorySize = context.UseSharedMemory ? 16 * 16 * GetTypeSize(elementType) : 0
         };
     }
@@ -520,14 +520,14 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "fft_stockham",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = inputTypes[0], IsInput = true },
                 new KernelParameter { Name = "output", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "N", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "stride", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "offset", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -600,13 +600,13 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "reduce_sum",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "n", Type = typeof(int), IsInput = true }
-            },
-            RequiredWorkGroupSize = new[] { workGroupSize },
+            ],
+            RequiredWorkGroupSize = [workGroupSize],
             SharedMemorySize = (workGroupSize / 32) * GetTypeSize(elementType),
             OptimizationMetadata = new Dictionary<string, object>
             {
@@ -640,12 +640,12 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "map_function",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "n", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -678,13 +678,13 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "filter_predicate",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "output_count", Type = typeof(int).MakeArrayType(), IsOutput = true },
                 new KernelParameter { Name = "n", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -707,7 +707,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
         source.AppendLine();
         source.AppendLine($"extern \"C\" __global__ void {name}(");
         
-        for (int i = 0; i < parameters.Length; i++)
+        for (var i = 0; i < parameters.Length; i++)
         {
             var param = parameters[i];
             var typeStr = GetCUDAType(param.Type);
@@ -869,15 +869,15 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "direct_convolution_1d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
                 new KernelParameter { Name = "input_length", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "kernel_length", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -915,8 +915,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "strided_convolution_1d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
@@ -924,7 +924,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "kernel_length", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "stride", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -962,8 +962,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "dilated_convolution_1d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
@@ -971,7 +971,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "kernel_length", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "dilation", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -1021,8 +1021,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "direct_convolution_2d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
@@ -1033,8 +1033,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "stride_x", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "stride_y", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            },
-            RequiredWorkGroupSize = new[] { tileSize, tileSize }
+            ],
+            RequiredWorkGroupSize = [tileSize, tileSize]
         };
     }
 
@@ -1083,8 +1083,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "winograd_convolution_2d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
@@ -1095,7 +1095,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "stride_x", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "stride_y", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -1145,8 +1145,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "im2col_convolution_2d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
@@ -1157,7 +1157,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "stride_x", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "stride_y", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -1218,8 +1218,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "depthwise_convolution_2d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernels", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
@@ -1231,7 +1231,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "stride_x", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "stride_y", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -1285,8 +1285,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "transposed_convolution_2d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
@@ -1299,7 +1299,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "output_padding_x", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "output_padding_y", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -1340,8 +1340,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "convolve_rows_2d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
@@ -1349,7 +1349,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "height", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "kernel_length", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -1390,8 +1390,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "convolve_columns_2d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
@@ -1399,7 +1399,7 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "height", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "kernel_length", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -1485,8 +1485,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "batch_convolution_2d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "batch_input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernels", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "batch_output", Type = typeof(float[]), IsOutput = true },
@@ -1500,8 +1500,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "stride_x", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "stride_y", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            },
-            RequiredWorkGroupSize = new[] { tileSize, tileSize },
+            ],
+            RequiredWorkGroupSize = [tileSize, tileSize],
             OptimizationMetadata = new Dictionary<string, object>
             {
                 ["TileSize"] = tileSize,
@@ -1566,8 +1566,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
             Name = "convolution_3d",
             Source = source.ToString(),
             Language = KernelLanguage.CUDA,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = typeof(float[]), IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = typeof(float[]), IsOutput = true },
@@ -1581,8 +1581,8 @@ public sealed class CUDAKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "stride_y", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "stride_z", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "padding_mode", Type = typeof(int), IsInput = true }
-            },
-            RequiredWorkGroupSize = new[] { tileSize, tileSize, tileSize }
+            ],
+            RequiredWorkGroupSize = [tileSize, tileSize, tileSize]
         };
     }
 
@@ -1603,9 +1603,9 @@ internal sealed class CUDAExpressionVisitor : ExpressionVisitor
     {
         _context = context;
         _kernelBody = new StringBuilder();
-        _parameters = new List<KernelParameter>();
+        _parameters = [];
         KernelName = "generated_kernel";
-        OptimizationMetadata = new Dictionary<string, object>();
+        OptimizationMetadata = [];
     }
 
     public string KernelName { get; set; }
@@ -1614,7 +1614,7 @@ internal sealed class CUDAExpressionVisitor : ExpressionVisitor
 
     public KernelParameter[] GetParameters()
     {
-        return _parameters.ToArray();
+        return [.. _parameters];
     }
 
     public new string Visit(Expression expression)
@@ -1690,15 +1690,28 @@ internal sealed class CUDAExpressionVisitor : ExpressionVisitor
         if (method.DeclaringType == typeof(Math) || method.DeclaringType == typeof(MathF))
         {
             var funcName = method.Name.ToLowerInvariant();
-            if (funcName == "log") funcName = "logf";
-            else if (funcName == "log10") funcName = "log10f";
-            else if (!funcName.EndsWith("f")) funcName += "f";
-            
+            if (funcName == "log")
+            {
+                funcName = "logf";
+            }
+            else if (funcName == "log10")
+            {
+                funcName = "log10f";
+            }
+            else if (!funcName.EndsWith("f"))
+            {
+                funcName += "f";
+            }
+
             _kernelBody.Append($"{funcName}(");
             
-            for (int i = 0; i < node.Arguments.Count; i++)
+            for (var i = 0; i < node.Arguments.Count; i++)
             {
-                if (i > 0) _kernelBody.Append(", ");
+                if (i > 0)
+                {
+                    _kernelBody.Append(", ");
+                }
+
                 Visit(node.Arguments[i]);
             }
             

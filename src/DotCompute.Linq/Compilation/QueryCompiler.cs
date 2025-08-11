@@ -106,8 +106,8 @@ public class QueryCompiler : IQueryCompiler
         private readonly IKernelFactory _kernelFactory;
         private readonly IAccelerator _accelerator;
         private readonly ILogger _logger;
-        private readonly List<IComputeStage> _stages = new();
-        private readonly Dictionary<string, Type> _inputParameters = new();
+        private readonly List<IComputeStage> _stages = [];
+        private readonly Dictionary<string, Type> _inputParameters = [];
         private Type _outputType = typeof(object);
         private long _estimatedMemoryUsage;
         private int _stageCounter;
@@ -176,12 +176,12 @@ public class QueryCompiler : IQueryCompiler
             var kernelDefinition = new Operators.KernelDefinition
             {
                 Name = $"Select_{_stageCounter++}",
-                Parameters = new[]
-                {
+                Parameters =
+                [
                     new Operators.KernelParameter("input", inputType.MakeArrayType(), Operators.ParameterDirection.In),
                     new Operators.KernelParameter("output", outputType.MakeArrayType(), Operators.ParameterDirection.Out),
                     new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
-                },
+                ],
                 Language = Operators.KernelLanguage.CSharp
             };
 
@@ -221,13 +221,13 @@ public class QueryCompiler : IQueryCompiler
             var kernelDefinition = new Operators.KernelDefinition
             {
                 Name = $"Where_{_stageCounter++}",
-                Parameters = new[]
-                {
+                Parameters =
+                [
                     new Operators.KernelParameter("input", elementType.MakeArrayType(), Operators.ParameterDirection.In),
                     new Operators.KernelParameter("output", elementType.MakeArrayType(), Operators.ParameterDirection.Out),
                     new Operators.KernelParameter("predicate_results", typeof(bool[]), Operators.ParameterDirection.Out),
                     new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
-                },
+                ],
                 Language = Operators.KernelLanguage.CSharp
             };
 
@@ -266,12 +266,12 @@ public class QueryCompiler : IQueryCompiler
             var kernelDefinition = new Operators.KernelDefinition
             {
                 Name = $"{node.Method.Name}_{_stageCounter++}",
-                Parameters = new[]
-                {
+                Parameters =
+                [
                     new Operators.KernelParameter("input", elementType.MakeArrayType(), Operators.ParameterDirection.In),
                     new Operators.KernelParameter("result", resultType, Operators.ParameterDirection.Out),
                     new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
-                },
+                ],
                 Language = Operators.KernelLanguage.CSharp
             };
 
@@ -312,13 +312,13 @@ public class QueryCompiler : IQueryCompiler
             var kernelDefinition = new Operators.KernelDefinition
             {
                 Name = $"{node.Method.Name}_{_stageCounter++}",
-                Parameters = new[]
-                {
+                Parameters =
+                [
                     new Operators.KernelParameter("input", elementType.MakeArrayType(), Operators.ParameterDirection.In),
                     new Operators.KernelParameter("output", elementType.MakeArrayType(), Operators.ParameterDirection.Out),
                     new Operators.KernelParameter("keys", keyType.MakeArrayType(), Operators.ParameterDirection.InOut),
                     new Operators.KernelParameter("count", typeof(int), Operators.ParameterDirection.In)
-                },
+                ],
                 Language = Operators.KernelLanguage.CSharp
             };
 
@@ -399,7 +399,7 @@ public class QueryCompiler : IQueryCompiler
     /// </summary>
     private class ExpressionValidator : ExpressionVisitor
     {
-        private List<ValidationError> _errors = new();
+        private List<ValidationError> _errors = [];
 
         public void Visit(Expression expression, List<ValidationError> errors)
         {

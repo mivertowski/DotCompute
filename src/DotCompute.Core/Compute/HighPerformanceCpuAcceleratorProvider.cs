@@ -28,7 +28,7 @@ public class HighPerformanceCpuAcceleratorProvider(ILogger<HighPerformanceCpuAcc
 
     public string Name => "High-Performance CPU";
 
-    public AcceleratorType[] SupportedTypes => new[] { AcceleratorType.CPU };
+    public AcceleratorType[] SupportedTypes => [AcceleratorType.CPU];
 
     public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
     {
@@ -70,13 +70,25 @@ public class HighPerformanceCpuAcceleratorProvider(ILogger<HighPerformanceCpuAcc
     private static Version GetSimdCapability()
     {
         if (Avx512F.IsSupported)
+        {
             return new Version(5, 1, 2);
+        }
+
         if (Avx2.IsSupported)
+        {
             return new Version(2, 0);
+        }
+
         if (Sse41.IsSupported)
+        {
             return new Version(1, 4);
+        }
+
         if (Vector.IsHardwareAccelerated)
+        {
             return new Version(1, 0);
+        }
+
         return new Version(0, 1);
     }
 
@@ -259,7 +271,7 @@ internal class HighPerformanceMemoryManager(IAccelerator accelerator, ILogger lo
 {
     private readonly IAccelerator _accelerator = accelerator;
     private readonly ILogger _logger = logger;
-    private readonly ConcurrentBag<HighPerformanceMemoryBuffer> _allocatedBuffers = new();
+    private readonly ConcurrentBag<HighPerformanceMemoryBuffer> _allocatedBuffers = [];
     private readonly MemoryPool _memoryPool = new();
     private long _totalAllocated;
 
@@ -321,7 +333,7 @@ internal class MemoryPool : IDisposable
         // Round up to nearest power of 2 for better pooling
         var poolSize = RoundUpToPowerOfTwo(sizeInBytes);
         
-        var pool = _pools.GetOrAdd(poolSize, _ => new ConcurrentBag<HighPerformanceMemoryBuffer>());
+        var pool = _pools.GetOrAdd(poolSize, _ => []);
         
         if (pool.TryTake(out var buffer))
         {
@@ -335,10 +347,12 @@ internal class MemoryPool : IDisposable
     public void Return(HighPerformanceMemoryBuffer buffer)
     {
         if (buffer.SizeInBytes > 100 * 1024 * 1024) // Don't pool buffers > 100MB
+        {
             return;
+        }
 
         var poolSize = RoundUpToPowerOfTwo(buffer.SizeInBytes);
-        var pool = _pools.GetOrAdd(poolSize, _ => new ConcurrentBag<HighPerformanceMemoryBuffer>());
+        var pool = _pools.GetOrAdd(poolSize, _ => []);
         pool.Add(buffer);
     }
 
@@ -389,12 +403,16 @@ internal class HighPerformanceMemoryBuffer : IMemoryBuffer
     public void Reset(long sizeInBytes, MemoryOptions options)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
+        }
 
         if (_data != null)
         {
             if (_handle.IsAllocated)
+            {
                 _handle.Free();
+            }
         }
 
         // Align to 64-byte boundaries for optimal SIMD performance
@@ -418,7 +436,9 @@ internal class HighPerformanceMemoryBuffer : IMemoryBuffer
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
+        }
 
         var sourceBytes = MemoryMarshal.AsBytes(source.Span);
         var destPtr = _alignedPtr + (int)offset;
@@ -438,7 +458,9 @@ internal class HighPerformanceMemoryBuffer : IMemoryBuffer
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(HighPerformanceMemoryBuffer));
+        }
 
         var destBytes = MemoryMarshal.AsBytes(destination.Span);
         var sourcePtr = _alignedPtr + (int)offset;
@@ -466,7 +488,10 @@ internal class HighPerformanceMemoryBuffer : IMemoryBuffer
         if (!_disposed)
         {
             if (_handle.IsAllocated)
+            {
                 _handle.Free();
+            }
+
             _disposed = true;
             GC.SuppressFinalize(this);
         }
@@ -516,7 +541,7 @@ internal class KernelInfo
     public string Name { get; set; } = string.Empty;
     public KernelType Type { get; set; }
     public string Source { get; set; } = string.Empty;
-    public List<KernelParameter> Parameters { get; set; } = new();
+    public List<KernelParameter> Parameters { get; set; } = [];
 }
 
 internal class KernelParameter

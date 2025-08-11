@@ -20,7 +20,7 @@ public sealed class CodeAccessSecurityManager : IDisposable
     private readonly CodeAccessSecurityOptions _options;
     private readonly ConcurrentDictionary<string, SecurityPermissionSet> _assemblyPermissions = new();
     private readonly ConcurrentDictionary<string, SecurityZone> _assemblyZones = new();
-    private readonly object _lockObject = new();
+    private readonly Lock _lockObject = new();
     private bool _disposed;
 
     /// <summary>
@@ -208,8 +208,8 @@ public sealed class CodeAccessSecurityManager : IDisposable
                 EnableReflectionRestrictions = _options.EnableReflectionRestrictions,
                 MaxMemoryUsage = _options.MaxMemoryUsage,
                 MaxExecutionTime = _options.MaxExecutionTime,
-                AllowedFileSystemPaths = _options.AllowedFileSystemPaths.ToList(),
-                AllowedNetworkEndpoints = _options.AllowedNetworkEndpoints.ToList()
+                AllowedFileSystemPaths = [.. _options.AllowedFileSystemPaths],
+                AllowedNetworkEndpoints = [.. _options.AllowedNetworkEndpoints]
             };
 
             var json = JsonSerializer.Serialize(config, new JsonSerializerOptions { WriteIndented = true });
@@ -522,12 +522,12 @@ public sealed class CodeAccessSecurityOptions
     /// <summary>
     /// Gets the list of allowed file system paths.
     /// </summary>
-    public List<string> AllowedFileSystemPaths { get; } = new();
+    public List<string> AllowedFileSystemPaths { get; } = [];
 
     /// <summary>
     /// Gets the list of allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; } = new();
+    public List<string> AllowedNetworkEndpoints { get; } = [];
 }
 
 /// <summary>
@@ -631,17 +631,17 @@ public sealed class SecurityPermissionSet
     /// <summary>
     /// Gets the list of allowed file system paths.
     /// </summary>
-    public List<string> AllowedFilePaths { get; } = new();
+    public List<string> AllowedFilePaths { get; } = [];
 
     /// <summary>
     /// Gets the list of allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; } = new();
+    public List<string> AllowedNetworkEndpoints { get; } = [];
 
     /// <summary>
     /// Gets the collection of individual permissions.
     /// </summary>
-    public Dictionary<string, object> Permissions { get; } = new();
+    public Dictionary<string, object> Permissions { get; } = [];
 
     /// <summary>
     /// Adds a permission to the set.
@@ -739,10 +739,10 @@ public sealed class CodeAccessSecurityConfiguration
     /// <summary>
     /// Gets or sets the allowed file system paths.
     /// </summary>
-    public List<string> AllowedFileSystemPaths { get; set; } = new();
+    public List<string> AllowedFileSystemPaths { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; set; } = new();
+    public List<string> AllowedNetworkEndpoints { get; set; } = [];
 }

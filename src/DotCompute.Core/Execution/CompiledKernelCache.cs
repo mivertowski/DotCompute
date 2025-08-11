@@ -14,7 +14,7 @@ public sealed class CompiledKernelCache : IAsyncDisposable
 {
     private readonly ConcurrentDictionary<string, ManagedCompiledKernel> _kernelsByDevice;
     private readonly ConcurrentDictionary<string, KernelMetadata> _metadata;
-    private readonly object _disposeLock = new();
+    private readonly Lock _disposeLock = new();
     private volatile bool _disposed;
 
     public CompiledKernelCache()
@@ -39,7 +39,9 @@ public sealed class CompiledKernelCache : IAsyncDisposable
     public void AddKernel(IAccelerator device, ManagedCompiledKernel kernel)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(CompiledKernelCache));
+        }
 
         var deviceKey = GetDeviceKey(device);
         _kernelsByDevice[deviceKey] = kernel;
@@ -84,7 +86,9 @@ public sealed class CompiledKernelCache : IAsyncDisposable
     public bool RemoveKernel(IAccelerator device)
     {
         if (_disposed)
+        {
             return false;
+        }
 
         var deviceKey = GetDeviceKey(device);
         var removed = _kernelsByDevice.TryRemove(deviceKey, out var kernel);
@@ -104,9 +108,11 @@ public sealed class CompiledKernelCache : IAsyncDisposable
     public string[] GetCachedDeviceIds()
     {
         if (_disposed)
-            return Array.Empty<string>();
+        {
+            return [];
+        }
 
-        return _metadata.Values.Select(m => m.DeviceId).ToArray();
+        return [.. _metadata.Values.Select(m => m.DeviceId)];
     }
 
     /// <summary>
@@ -115,7 +121,9 @@ public sealed class CompiledKernelCache : IAsyncDisposable
     public KernelCacheStatistics GetStatistics()
     {
         if (_disposed)
+        {
             return new KernelCacheStatistics();
+        }
 
         return new KernelCacheStatistics
         {
@@ -135,12 +143,16 @@ public sealed class CompiledKernelCache : IAsyncDisposable
     public async ValueTask ClearAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         lock (_disposeLock)
         {
             if (_disposed)
+            {
                 return;
+            }
 
             var kernels = _kernelsByDevice.Values.ToArray();
             _kernelsByDevice.Clear();
@@ -173,7 +185,9 @@ public sealed class CompiledKernelCache : IAsyncDisposable
     public async ValueTask EvictLeastRecentlyUsedAsync(int maxKernelsToKeep)
     {
         if (_disposed || _kernelsByDevice.Count <= maxKernelsToKeep)
+        {
             return;
+        }
 
         var sortedMetadata = _metadata.Values
             .OrderBy(m => m.LastAccessed)
@@ -185,7 +199,9 @@ public sealed class CompiledKernelCache : IAsyncDisposable
         lock (_disposeLock)
         {
             if (_disposed)
+            {
                 return;
+            }
 
             foreach (var metadata in sortedMetadata)
             {
@@ -219,13 +235,14 @@ public sealed class CompiledKernelCache : IAsyncDisposable
     public string[] GetStaleKernels(TimeSpan maxAge)
     {
         if (_disposed)
-            return Array.Empty<string>();
+        {
+            return [];
+        }
 
         var cutoffTime = DateTimeOffset.UtcNow - maxAge;
-        return _metadata.Values
+        return [.. _metadata.Values
             .Where(m => m.LastAccessed < cutoffTime)
-            .Select(m => m.DeviceId)
-            .ToArray();
+            .Select(m => m.DeviceId)];
     }
 
     /// <summary>
@@ -240,7 +257,9 @@ public sealed class CompiledKernelCache : IAsyncDisposable
         lock (_disposeLock)
         {
             if (_disposed)
+            {
                 return 0;
+            }
 
             foreach (var deviceId in staleDeviceIds)
             {
@@ -275,12 +294,17 @@ public sealed class CompiledKernelCache : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         lock (_disposeLock)
         {
             if (_disposed)
+            {
                 return;
+            }
+
             _disposed = true;
         }
 
@@ -339,7 +363,7 @@ public class KernelCacheStatistics
     public long TotalAccessCount { get; set; }
     
     /// <summary>Gets or sets the number of kernels by device type.</summary>
-    public Dictionary<string, int> DeviceTypes { get; set; } = new();
+    public Dictionary<string, int> DeviceTypes { get; set; } = [];
     
     /// <summary>Gets or sets the oldest cache time.</summary>
     public DateTimeOffset OldestCacheTime { get; set; }
@@ -361,7 +385,7 @@ public sealed class GlobalKernelCacheManager : IAsyncDisposable
 {
     private readonly ConcurrentDictionary<string, CompiledKernelCache> _cachesByKernel;
     private readonly Timer _cleanupTimer;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
     private GlobalCacheStatistics _statistics;
     private bool _disposed;
 
@@ -384,7 +408,9 @@ public sealed class GlobalKernelCacheManager : IAsyncDisposable
     public CompiledKernelCache GetOrCreateCache(string kernelName)
     {
         if (_disposed)
+        {
             throw new ObjectDisposedException(nameof(GlobalKernelCacheManager));
+        }
 
         return _cachesByKernel.GetOrAdd(kernelName, _ => new CompiledKernelCache());
     }
@@ -395,20 +421,22 @@ public sealed class GlobalKernelCacheManager : IAsyncDisposable
     public GlobalCacheStatistics GetStatistics()
     {
         if (_disposed)
+        {
             return new GlobalCacheStatistics();
+        }
 
         lock (_statsLock)
         {
             _statistics.TotalCaches = _cachesByKernel.Count;
             _statistics.TotalKernels = _cachesByKernel.Values.Sum(c => c.Count);
-            _statistics.KernelNames = _cachesByKernel.Keys.ToArray();
+            _statistics.KernelNames = [.. _cachesByKernel.Keys];
             _statistics.LastCleanupTime = _statistics.LastCleanupTime; // Keep existing value
             
             return new GlobalCacheStatistics
             {
                 TotalCaches = _statistics.TotalCaches,
                 TotalKernels = _statistics.TotalKernels,
-                KernelNames = _statistics.KernelNames.ToArray(),
+                KernelNames = [.. _statistics.KernelNames],
                 LastCleanupTime = _statistics.LastCleanupTime,
                 CleanupCount = _statistics.CleanupCount
             };
@@ -421,7 +449,9 @@ public sealed class GlobalKernelCacheManager : IAsyncDisposable
     public async ValueTask ClearAllAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         var caches = _cachesByKernel.Values.ToArray();
         _cachesByKernel.Clear();
@@ -446,7 +476,9 @@ public sealed class GlobalKernelCacheManager : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         _disposed = true;
         
@@ -466,7 +498,9 @@ public sealed class GlobalKernelCacheManager : IAsyncDisposable
     private async ValueTask PerformCleanupAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         try
         {
@@ -527,7 +561,7 @@ public class GlobalCacheStatistics
     public int TotalKernels { get; set; }
     
     /// <summary>Gets or sets the names of all cached kernels.</summary>
-    public string[] KernelNames { get; set; } = Array.Empty<string>();
+    public string[] KernelNames { get; set; } = [];
     
     /// <summary>Gets or sets when the last cleanup was performed.</summary>
     public DateTimeOffset LastCleanupTime { get; set; }

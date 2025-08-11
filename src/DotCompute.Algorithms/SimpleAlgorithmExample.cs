@@ -55,7 +55,7 @@ public partial class VectorAddAlgorithm
         // For now, simple CPU implementation
         await Task.Run(() =>
         {
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -90,7 +90,7 @@ public partial class VectorAddAlgorithm
         // For now, simple CPU implementation
         await Task.Run(() =>
         {
-            for (int i = 0; i < length; i++)
+            for (var i = 0; i < length; i++)
             {
                 result += a[i] * b[i];
             }
@@ -155,12 +155,12 @@ public partial class MatrixOperations
         // Simple CPU implementation for now
         await Task.Run(() =>
         {
-            for (int i = 0; i < m; i++)
+            for (var i = 0; i < m; i++)
             {
-                for (int j = 0; j < p; j++)
+                for (var j = 0; j < p; j++)
                 {
                     float sum = 0;
-                    for (int k = 0; k < n; k++)
+                    for (var k = 0; k < n; k++)
                     {
                         sum += a[i * n + k] * b[k * p + j];
                     }
@@ -197,9 +197,9 @@ public partial class MatrixOperations
         // Simple CPU implementation for now
         await Task.Run(() =>
         {
-            for (int i = 0; i < rows; i++)
+            for (var i = 0; i < rows; i++)
             {
-                for (int j = 0; j < cols; j++)
+                for (var j = 0; j < cols; j++)
                 {
                     result[j * rows + i] = matrix[i * cols + j];
                 }

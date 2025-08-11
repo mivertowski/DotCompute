@@ -108,7 +108,7 @@ public sealed class FFTPlugin : AlgorithmPluginBase
             return 0;
         }
 
-        int n = inputSizes[0];
+        var n = inputSizes[0];
         // Complex array + workspace + twiddle factors
         return n * sizeof(float) * 2 * 3 + 4096; // Extra for overhead
     }

@@ -34,7 +34,7 @@ public class DefaultAcceleratorManager(ILogger<DefaultAcceleratorManager> logger
     public IReadOnlyList<IAccelerator> AvailableAccelerators => _accelerators.AsReadOnly();
 
     public int Count => _accelerators.Count;
-    private static readonly char[] _separator = new[] { '-', '_' };
+    private static readonly char[] _separator = ['-', '_'];
 
     public async ValueTask InitializeAsync(CancellationToken cancellationToken = default)
     {

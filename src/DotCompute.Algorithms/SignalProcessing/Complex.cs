@@ -122,7 +122,7 @@ public readonly struct Complex : IEquatable<Complex>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Complex operator /(Complex left, Complex right)
     {
-        float denominator = right.Real * right.Real + right.Imaginary * right.Imaginary;
+        var denominator = right.Real * right.Real + right.Imaginary * right.Imaginary;
         return new Complex(
             (left.Real * right.Real + left.Imaginary * right.Imaginary) / denominator,
             (left.Imaginary * right.Real - left.Real * right.Imaginary) / denominator);

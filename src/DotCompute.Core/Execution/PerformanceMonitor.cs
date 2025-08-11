@@ -19,7 +19,7 @@ public sealed class PerformanceMonitor : IDisposable
     private readonly ConcurrentDictionary<string, DevicePerformanceProfile> _deviceProfiles;
     private readonly PerformanceAnalyzer _analyzer;
     private readonly AdaptiveOptimizer _optimizer;
-    private readonly object _metricsLock = new();
+    private readonly Lock _metricsLock = new();
     private ParallelExecutionMetrics _currentMetrics;
     private bool _disposed;
 
@@ -52,7 +52,7 @@ public sealed class PerformanceMonitor : IDisposable
             ThroughputGFLOPS = result.ThroughputGFLOPS,
             MemoryBandwidthGBps = result.MemoryBandwidthGBps,
             EfficiencyPercentage = result.EfficiencyPercentage,
-            DeviceResults = result.DeviceResults.ToArray(),
+            DeviceResults = [.. result.DeviceResults],
             ErrorMessage = result.ErrorMessage
         };
 
@@ -126,11 +126,11 @@ public sealed class PerformanceMonitor : IDisposable
             {
                 OverallRating = 5.0,
                 RecommendedStrategy = ExecutionStrategyType.Single,
-                OptimizationRecommendations = new List<string> { "No execution data available for analysis." }
+                OptimizationRecommendations = ["No execution data available for analysis."]
             };
         }
 
-        return _analyzer.AnalyzePerformance(recentExecutions, _deviceProfiles.Values.ToArray());
+        return _analyzer.AnalyzePerformance(recentExecutions, [.. _deviceProfiles.Values]);
     }
 
     /// <summary>
@@ -205,7 +205,10 @@ public sealed class PerformanceMonitor : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         Reset();
         _disposed = true;
@@ -303,10 +306,9 @@ public sealed class PerformanceMonitor : IDisposable
 
     private ExecutionRecord[] GetRecentExecutions(int count)
     {
-        return _executionHistory
+        return [.. _executionHistory
             .TakeLast(count)
-            .OrderByDescending(e => e.Timestamp)
-            .ToArray();
+            .OrderByDescending(e => e.Timestamp)];
     }
 
     private async Task AnalyzePerformanceAsync()
@@ -314,20 +316,23 @@ public sealed class PerformanceMonitor : IDisposable
         try
         {
             var recentExecutions = GetRecentExecutions(AnalysisWindowSize);
-            if (recentExecutions.Length == 0) return;
+            if (recentExecutions.Length == 0)
+            {
+                return;
+            }
 
             // Perform background analysis
-            var analysis = _analyzer.AnalyzePerformance(recentExecutions, _deviceProfiles.Values.ToArray());
+            var analysis = _analyzer.AnalyzePerformance(recentExecutions, [.. _deviceProfiles.Values]);
             
             // Log findings
-            if (analysis.Bottlenecks.Any())
+            if (analysis.Bottlenecks.Count != 0)
             {
                 var primaryBottleneck = analysis.Bottlenecks.OrderByDescending(b => b.Severity).First();
                 _logger.LogInformation("Performance analysis: Primary bottleneck is {BottleneckType} with severity {Severity:F2}",
                     primaryBottleneck.Type, primaryBottleneck.Severity);
             }
 
-            if (analysis.OptimizationRecommendations.Any())
+            if (analysis.OptimizationRecommendations.Count != 0)
             {
                 _logger.LogInformation("Performance recommendations: {Recommendations}",
                     string.Join("; ", analysis.OptimizationRecommendations));
@@ -364,10 +369,10 @@ public class PerformanceAnalyzer
         analysis.OverallRating = CalculateOverallRating(executions);
 
         // Identify bottlenecks
-        analysis.Bottlenecks = IdentifyBottlenecks(executions, deviceProfiles).ToList();
+        analysis.Bottlenecks = [.. IdentifyBottlenecks(executions, deviceProfiles)];
 
         // Generate optimization recommendations
-        analysis.OptimizationRecommendations = GenerateOptimizationRecommendations(executions, analysis.Bottlenecks).ToList();
+        analysis.OptimizationRecommendations = [.. GenerateOptimizationRecommendations(executions, analysis.Bottlenecks)];
 
         // Recommend optimal strategy
         analysis.RecommendedStrategy = RecommendStrategy(executions);
@@ -395,20 +400,23 @@ public class PerformanceAnalyzer
         };
 
         // Calculate throughput trend
-        trends.ThroughputTrend = CalculateTrend(executions.Select(e => e.ThroughputGFLOPS).ToArray());
+        trends.ThroughputTrend = CalculateTrend([.. executions.Select(e => e.ThroughputGFLOPS)]);
 
         // Calculate efficiency trend
-        trends.EfficiencyTrend = CalculateTrend(executions.Select(e => e.EfficiencyPercentage).ToArray());
+        trends.EfficiencyTrend = CalculateTrend([.. executions.Select(e => e.EfficiencyPercentage)]);
 
         // Calculate execution time trend
-        trends.ExecutionTimeTrend = CalculateTrend(executions.Select(e => e.TotalExecutionTimeMs).ToArray());
+        trends.ExecutionTimeTrend = CalculateTrend([.. executions.Select(e => e.TotalExecutionTimeMs)]);
 
         return trends;
     }
 
     private double CalculateOverallRating(ExecutionRecord[] executions)
     {
-        if (executions.Length == 0) return 5.0;
+        if (executions.Length == 0)
+        {
+            return 5.0;
+        }
 
         var avgEfficiency = executions.Average(e => e.EfficiencyPercentage);
         var successRate = executions.Count(e => e.Success) / (double)executions.Length;
@@ -492,7 +500,10 @@ public class PerformanceAnalyzer
 
     private ExecutionStrategyType RecommendStrategy(ExecutionRecord[] executions)
     {
-        if (executions.Length == 0) return ExecutionStrategyType.Single;
+        if (executions.Length == 0)
+        {
+            return ExecutionStrategyType.Single;
+        }
 
         // Find strategy with best average efficiency
         var strategyPerformance = executions
@@ -521,7 +532,10 @@ public class PerformanceAnalyzer
 
     private TrendDirection CalculateTrend(double[] values)
     {
-        if (values.Length < 2) return TrendDirection.Stable;
+        if (values.Length < 2)
+        {
+            return TrendDirection.Stable;
+        }
 
         var correlation = CalculateCorrelation(values);
         
@@ -686,13 +700,13 @@ public class ExecutionRecord
 public class KernelPerformanceProfile
 {
     public required string KernelName { get; set; }
-    public Dictionary<string, List<KernelExecution>> DeviceExecutions { get; set; } = new();
+    public Dictionary<string, List<KernelExecution>> DeviceExecutions { get; set; } = [];
 
     public void AddExecution(string deviceId, double executionTimeMs, double throughputGFLOPS)
     {
         if (!DeviceExecutions.TryGetValue(deviceId, out var executions))
         {
-            executions = new List<KernelExecution>();
+            executions = [];
             DeviceExecutions[deviceId] = executions;
         }
 
@@ -722,7 +736,7 @@ public class KernelExecution
 public class DevicePerformanceProfile
 {
     public required string DeviceId { get; set; }
-    public List<DeviceExecutionResult> Executions { get; set; } = new();
+    public List<DeviceExecutionResult> Executions { get; set; } = [];
     
     public double AverageUtilizationPercentage { get; private set; }
     public double PeakUtilizationPercentage { get; private set; }
@@ -762,11 +776,17 @@ public class DevicePerformanceProfile
 
     private void UpdateUtilizationMetrics()
     {
-        if (Executions.Count == 0) return;
+        if (Executions.Count == 0)
+        {
+            return;
+        }
 
         // Simple utilization calculation based on throughput
         var recentExecutions = Executions.TakeLast(100).Where(e => e.Success).ToArray();
-        if (recentExecutions.Length == 0) return;
+        if (recentExecutions.Length == 0)
+        {
+            return;
+        }
 
         AverageUtilizationPercentage = recentExecutions.Average(e => Math.Min(100, e.ThroughputGFLOPS / 10)); // Assuming 10 GFLOPS = 100% utilization
         PeakUtilizationPercentage = recentExecutions.Max(e => Math.Min(100, e.ThroughputGFLOPS / 10));
@@ -802,7 +822,7 @@ public class DeviceUtilizationAnalysis
     public double PeakUtilizationPercentage { get; set; }
     public double IdleTimePercentage { get; set; }
     public double BottleneckSeverity { get; set; }
-    public List<string> RecommendedOptimizations { get; set; } = new();
+    public List<string> RecommendedOptimizations { get; set; } = [];
 }
 
 public class KernelCharacteristics

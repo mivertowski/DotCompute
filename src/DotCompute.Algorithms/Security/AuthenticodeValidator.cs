@@ -154,7 +154,7 @@ public sealed class AuthenticodeValidator : IDisposable
             chain.ChainPolicy.VerificationFlags = X509VerificationFlags.NoFlag;
 
             var chainValid = chain.Build(certificate);
-            result.ChainStatus = chain.ChainStatus.ToArray();
+            result.ChainStatus = [.. chain.ChainStatus];
 
             if (!chainValid)
             {
@@ -338,17 +338,17 @@ public sealed class AuthenticodeValidationResult
     /// <summary>
     /// Gets the certificate chain status.
     /// </summary>
-    public X509ChainStatus[] ChainStatus { get; set; } = Array.Empty<X509ChainStatus>();
+    public X509ChainStatus[] ChainStatus { get; set; } = [];
 
     /// <summary>
     /// Gets validation warnings.
     /// </summary>
-    public List<string> Warnings { get; } = new();
+    public List<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets additional validation metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = new();
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>

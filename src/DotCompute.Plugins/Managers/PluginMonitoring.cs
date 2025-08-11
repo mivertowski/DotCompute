@@ -11,7 +11,7 @@ namespace DotCompute.Plugins.Managers
     /// <summary>
     /// Health monitor for plugins with comprehensive diagnostics.
     /// </summary>
-    internal sealed class PluginHealthMonitor : IDisposable
+    internal class PluginHealthMonitor : IDisposable
     {
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, PluginHealthState> _healthStates = new();
@@ -189,13 +189,21 @@ namespace DotCompute.Plugins.Managers
 
             // Determine overall system health
             if (report.CriticalPlugins > 0)
+            {
                 report.OverallHealth = PluginHealth.Critical;
+            }
             else if (report.UnhealthyPlugins > 0)
+            {
                 report.OverallHealth = PluginHealth.Unhealthy;
+            }
             else if (report.DegradedPlugins > 0)
+            {
                 report.OverallHealth = PluginHealth.Degraded;
+            }
             else
+            {
                 report.OverallHealth = PluginHealth.Healthy;
+            }
 
             return report;
         }
@@ -214,7 +222,9 @@ namespace DotCompute.Plugins.Managers
                     {
                         result.Issues.Add($"High memory usage: {metrics.MemoryUsage / (1024 * 1024)}MB");
                         if (result.Health == PluginHealth.Healthy)
+                        {
                             result.Health = PluginHealth.Degraded;
+                        }
                     }
 
                     // Check if memory usage is critical (> 1GB)
@@ -238,10 +248,10 @@ namespace DotCompute.Plugins.Managers
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-
+                
                 // Simple responsiveness test - call GetMetrics()
                 var metrics = managedPlugin.Plugin?.GetMetrics();
-
+                
                 stopwatch.Stop();
                 result.ResponseTime = stopwatch.Elapsed;
 
@@ -250,7 +260,9 @@ namespace DotCompute.Plugins.Managers
                 {
                     result.Issues.Add($"Slow response time: {stopwatch.ElapsedMilliseconds}ms");
                     if (result.Health == PluginHealth.Healthy)
+                    {
                         result.Health = PluginHealth.Degraded;
+                    }
                 }
 
                 // Check if response time is critical (> 30 seconds)
@@ -289,7 +301,9 @@ namespace DotCompute.Plugins.Managers
                         {
                             result.Issues.Add($"High error rate: {errorRate:P2}");
                             if (result.Health == PluginHealth.Healthy)
+                            {
                                 result.Health = PluginHealth.Degraded;
+                            }
                         }
 
                         // Check if error rate is critical (> 50%)
@@ -339,7 +353,7 @@ namespace DotCompute.Plugins.Managers
     /// <summary>
     /// Metrics collector for plugins with performance tracking.
     /// </summary>
-    internal sealed class PluginMetricsCollector : IDisposable
+    internal class PluginMetricsCollector : IDisposable
     {
         private readonly ILogger _logger;
         private readonly ConcurrentDictionary<string, PluginMetricsState> _metricsStates = new();
@@ -404,19 +418,19 @@ namespace DotCompute.Plugins.Managers
             foreach (var plugin in plugins)
             {
                 var pluginId = plugin.LoadedPluginInfo?.Manifest.Id ?? "Unknown";
-
+                
                 if (_metricsStates.TryGetValue(pluginId, out var metricsState))
                 {
                     var metrics = await CollectPluginMetricsAsync(pluginId, plugin);
                     if (metrics != null)
                     {
                         report.PluginMetrics.Add(metrics);
-
+                        
                         // Aggregate system-wide metrics
                         report.TotalRequests += metrics.RequestCount;
                         report.TotalErrors += metrics.ErrorCount;
                         report.TotalMemoryUsage += metrics.MemoryUsage;
-
+                        
                         if (metrics.AverageResponseTime > 0)
                         {
                             report.AverageResponseTime = (report.AverageResponseTime * (report.PluginMetrics.Count - 1) + metrics.AverageResponseTime) / report.PluginMetrics.Count;
@@ -456,10 +470,8 @@ namespace DotCompute.Plugins.Managers
             }
         }
 
-        private async Task<PluginMetrics?> CollectPluginMetricsAsync(string pluginId, ManagedPlugin managedPlugin)
+        private Task<PluginMetrics?> CollectPluginMetricsAsync(string pluginId, ManagedPlugin managedPlugin)
         {
-            await Task.Yield();
-            
             try
             {
                 var metrics = managedPlugin.Plugin?.GetMetrics();
@@ -470,7 +482,7 @@ namespace DotCompute.Plugins.Managers
                     {
                         metricsState.MetricsHistory.Add(metrics);
                         metricsState.LastCollection = DateTimeOffset.UtcNow;
-
+                        
                         // Keep only the last 1000 entries
                         if (metricsState.MetricsHistory.Count > 1000)
                         {
@@ -478,7 +490,7 @@ namespace DotCompute.Plugins.Managers
                         }
                     }
 
-                    return metrics;
+                    return Task.FromResult(metrics)!;
                 }
             }
             catch (Exception ex)
@@ -486,7 +498,7 @@ namespace DotCompute.Plugins.Managers
                 _logger.LogWarning(ex, "Failed to collect metrics for plugin: {PluginId}", pluginId);
             }
 
-            return null;
+            return Task.FromResult((PluginMetrics)null);
         }
 
         private async void CollectMetrics(object? state)
@@ -521,7 +533,7 @@ namespace DotCompute.Plugins.Managers
     /// <summary>
     /// Health state for a monitored plugin.
     /// </summary>
-    internal sealed class PluginHealthState
+    internal class PluginHealthState
     {
         public required string PluginId { get; set; }
         public ManagedPlugin? Plugin { get; set; }
@@ -534,7 +546,7 @@ namespace DotCompute.Plugins.Managers
     /// <summary>
     /// Metrics state for a monitored plugin.
     /// </summary>
-    internal sealed class PluginMetricsState
+    internal class PluginMetricsState
     {
         public required string PluginId { get; set; }
         public ManagedPlugin? Plugin { get; set; }

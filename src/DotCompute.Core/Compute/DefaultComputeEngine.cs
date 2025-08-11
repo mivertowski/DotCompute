@@ -18,7 +18,7 @@ internal class SimpleKernelSource : IKernelSource
         Code = code ?? throw new ArgumentNullException(nameof(code));
         Language = language;
         EntryPoint = entryPoint ?? "main";
-        Dependencies = dependencies ?? Array.Empty<string>();
+        Dependencies = dependencies ?? [];
     }
 
     public string Name { get; }
@@ -46,10 +46,10 @@ public class DefaultComputeEngine : IComputeEngine
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         
         // Initialize backends on first use (lazy initialization)
-        _availableBackends = new List<ComputeBackendType>();
+        _availableBackends = [];
     }
 
-    public ComputeBackendType[] AvailableBackends => _availableBackends.ToArray();
+    public ComputeBackendType[] AvailableBackends => [.. _availableBackends];
 
     public ComputeBackendType DefaultBackend => _availableBackends.FirstOrDefault();
 
@@ -60,7 +60,9 @@ public class DefaultComputeEngine : IComputeEngine
         CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(kernelSource))
+        {
             throw new ArgumentException("Kernel source cannot be null or empty", nameof(kernelSource));
+        }
 
         await EnsureInitializedAsync();
 
@@ -111,9 +113,14 @@ public class DefaultComputeEngine : IComputeEngine
         CancellationToken cancellationToken = default)
     {
         if (kernel == null)
+        {
             throw new ArgumentNullException(nameof(kernel));
+        }
+
         if (arguments == null)
+        {
             throw new ArgumentNullException(nameof(arguments));
+        }
 
         _logger.LogInformation("Executing kernel {KernelName} on backend {Backend}", 
             kernel.Name, backendType);
@@ -130,7 +137,9 @@ public class DefaultComputeEngine : IComputeEngine
     private async ValueTask EnsureInitializedAsync()
     {
         if (_availableBackends.Count > 0)
+        {
             return;
+        }
 
         // Try to initialize the accelerator manager if not already done
         try
@@ -155,10 +164,11 @@ public class DefaultComputeEngine : IComputeEngine
 
     private List<ComputeBackendType> DetermineAvailableBackends()
     {
-        var backends = new List<ComputeBackendType>();
-        
-        // CPU is always available
-        backends.Add(ComputeBackendType.CPU);
+        var backends = new List<ComputeBackendType>
+        {
+            // CPU is always available
+            ComputeBackendType.CPU
+        };
         
         // Check for CUDA support
         try
@@ -186,7 +196,9 @@ public class DefaultComputeEngine : IComputeEngine
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         _disposed = true;
         

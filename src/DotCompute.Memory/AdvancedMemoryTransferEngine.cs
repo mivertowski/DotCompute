@@ -23,6 +23,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     private readonly Timer _pressureMonitor;
     
     // Performance optimization constants
+    private const int DefaultChunkSize = 4 * 1024 * 1024; // 4MB chunks
     private static readonly int MaxConcurrentTransfers = Environment.ProcessorCount * 2;
     private const int LargeDatasetThreshold = 64 * 1024 * 1024; // 64MB
     private const double MemoryPressureThreshold = 0.85;
@@ -30,7 +31,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     // Statistics tracking
     private long _totalBytesTransferred;
     private long _totalTransferCount;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
     
     // Memory pressure tracking
     private double _currentMemoryPressure;
@@ -75,6 +76,8 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             };
 
             IMemoryBuffer? buffer = null;
+            MemoryMappedFile? mmf = null;
+            MemoryMappedViewAccessor? accessor = null;
 
             try
             {
@@ -125,6 +128,10 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             }
             finally
             {
+                // Cleanup memory-mapped resources
+                accessor?.Dispose();
+                mmf?.Dispose();
+                
                 // Don't dispose buffer - caller owns it
             }
         }
@@ -289,7 +296,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
         
         try
         {
-            for (int chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
+            for (var chunkIndex = 0; chunkIndex < chunkCount; chunkIndex++)
             {
                 var currentChunkIndex = chunkIndex; // Capture for closure
                 var chunkTask = ProcessChunkAsync(data, buffer, currentChunkIndex, chunkSize, elementSize, chunkSemaphore, cancellationToken);
@@ -328,7 +335,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             {
                 return;
             }
-            
+
             var chunkData = new T[actualChunkSize];
             Array.Copy(data, startIndex, chunkData, 0, actualChunkSize);
             
@@ -344,7 +351,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Verifies data integrity using optimized sampling for large datasets.
     /// </summary>
-    private static async Task<bool> VerifyDataIntegrityAsync<T>(
+    private async Task<bool> VerifyDataIntegrityAsync<T>(
         IMemoryBuffer buffer,
         T[] originalData,
         TransferOptions options,
@@ -360,7 +367,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
         {
             return false;
         }
-        
+
         // For large datasets, use statistical sampling for efficiency
         if (originalData.Length > 100000)
         {
@@ -379,16 +386,12 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     private static bool VerifyDataIntegrityWithSampling<T>(T[] original, ReadOnlySpan<T> transferred, int sampleSize) where T : unmanaged
     {
         var actualSampleSize = Math.Min(sampleSize, Math.Min(original.Length, transferred.Length));
-#pragma warning disable CA5394 // Random is acceptable for non-security testing
-        var random = Random.Shared; // Use thread-safe shared instance
-#pragma warning restore CA5394
+        var random = new Random(42); // Deterministic for consistent testing
         
-        for (int i = 0; i < actualSampleSize; i++)
+        for (var i = 0; i < actualSampleSize; i++)
         {
             // Use proper random sampling with bounds checking
-#pragma warning disable CA5394 // Random is acceptable for non-security testing
             var index = random.Next(0, Math.Min(original.Length, transferred.Length));
-#pragma warning restore CA5394
             
             if (!original[index].Equals(transferred[index]))
             {
@@ -408,7 +411,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
         {
             return false;
         }
-            
+
         return original.AsSpan().SequenceEqual(transferred);
     }
 
@@ -427,7 +430,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Calculates the benefit gained from concurrent execution.
     /// </summary>
-    private static double CalculateConcurrencyBenefit(IReadOnlyCollection<AdvancedTransferResult> results, TimeSpan totalTime)
+    private static double CalculateConcurrencyBenefit(AdvancedTransferResult[] results, TimeSpan totalTime)
     {
         var sequentialTime = results.Sum(r => r.Duration.TotalMilliseconds);
         var concurrentTime = totalTime.TotalMilliseconds;
@@ -436,7 +439,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
         {
             return 0;
         }
-        
+
         return Math.Max(0, (sequentialTime - concurrentTime) / sequentialTime);
     }
 
@@ -502,20 +505,21 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     /// <summary>
     /// Gets comprehensive transfer statistics.
     /// </summary>
-    public TransferStatistics Statistics => GetStatistics();
-
-    private TransferStatistics GetStatistics()
+    public TransferStatistics Statistics
     {
-        lock (_statsLock)
+        get
         {
-            return new TransferStatistics
+            lock (_statsLock)
             {
-                TotalBytesTransferred = _totalBytesTransferred,
-                TotalTransferCount = _totalTransferCount,
-                AverageTransferSize = _totalTransferCount > 0 ? _totalBytesTransferred / _totalTransferCount : 0,
-                CurrentMemoryPressure = _currentMemoryPressure,
-                ActiveTransfers = MaxConcurrentTransfers - _concurrencyLimiter.CurrentCount
-            };
+                return new TransferStatistics
+                {
+                    TotalBytesTransferred = _totalBytesTransferred,
+                    TotalTransferCount = _totalTransferCount,
+                    AverageTransferSize = _totalTransferCount > 0 ? _totalBytesTransferred / _totalTransferCount : 0,
+                    CurrentMemoryPressure = _currentMemoryPressure,
+                    ActiveTransfers = MaxConcurrentTransfers - _concurrencyLimiter.CurrentCount
+                };
+            }
         }
     }
 
@@ -525,9 +529,10 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
         {
             return;
         }
+
         _disposed = true;
         
-        await _shutdownCts.CancelAsync();
+        _shutdownCts.Cancel();
         await _pressureMonitor.DisposeAsync();
         _concurrencyLimiter.Dispose();
         _shutdownCts.Dispose();
@@ -539,19 +544,116 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
 /// </summary>
 public class AdvancedTransferResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether this <see cref="AdvancedTransferResult"/> is success.
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if success; otherwise, <c>false</c>.
+    /// </value>
     public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>
+    /// The start time.
+    /// </value>
     public DateTimeOffset StartTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>
+    /// The duration.
+    /// </value>
     public TimeSpan Duration { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total bytes.
+    /// </summary>
+    /// <value>
+    /// The total bytes.
+    /// </value>
     public long TotalBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the throughput m BPS.
+    /// </summary>
+    /// <value>
+    /// The throughput m BPS.
+    /// </value>
     public double ThroughputMBps { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether [integrity verified].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [integrity verified]; otherwise, <c>false</c>.
+    /// </value>
     public bool IntegrityVerified { get; set; }
+
+    /// <summary>
+    /// Gets or sets the chunk count.
+    /// </summary>
+    /// <value>
+    /// The chunk count.
+    /// </value>
     public int ChunkCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether [used streaming].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [used streaming]; otherwise, <c>false</c>.
+    /// </value>
     public bool UsedStreaming { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether [used compression].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [used compression]; otherwise, <c>false</c>.
+    /// </value>
     public bool UsedCompression { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether [used memory mapping].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [used memory mapping]; otherwise, <c>false</c>.
+    /// </value>
     public bool UsedMemoryMapping { get; set; }
+
+    /// <summary>
+    /// Gets or sets the efficiency ratio.
+    /// </summary>
+    /// <value>
+    /// The efficiency ratio.
+    /// </value>
     public double EfficiencyRatio { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error.
+    /// </summary>
+    /// <value>
+    /// The error.
+    /// </value>
     public string? Error { get; set; }
+
+    /// <summary>
+    /// Gets or sets the index of the transfer.
+    /// </summary>
+    /// <value>
+    /// The index of the transfer.
+    /// </value>
     public int TransferIndex { get; set; }
+
+    /// <summary>
+    /// Gets or sets the transferred buffer.
+    /// </summary>
+    /// <value>
+    /// The transferred buffer.
+    /// </value>
     public IMemoryBuffer? TransferredBuffer { get; set; }
 }
 
@@ -560,15 +662,84 @@ public class AdvancedTransferResult
 /// </summary>
 public class ConcurrentTransferResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether this <see cref="ConcurrentTransferResult"/> is success.
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if success; otherwise, <c>false</c>.
+    /// </value>
     public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>
+    /// The start time.
+    /// </value>
     public DateTimeOffset StartTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the duration.
+    /// </summary>
+    /// <value>
+    /// The duration.
+    /// </value>
     public TimeSpan Duration { get; set; }
+
+    /// <summary>
+    /// Gets or sets the transfer count.
+    /// </summary>
+    /// <value>
+    /// The transfer count.
+    /// </value>
     public int TransferCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the successful transfers.
+    /// </summary>
+    /// <value>
+    /// The successful transfers.
+    /// </value>
     public int SuccessfulTransfers { get; set; }
+
+    /// <summary>
+    /// Gets or sets the failed transfers.
+    /// </summary>
+    /// <value>
+    /// The failed transfers.
+    /// </value>
     public int FailedTransfers { get; set; }
-    public IReadOnlyCollection<AdvancedTransferResult> Results { get; set; } = Array.Empty<AdvancedTransferResult>();
+
+    /// <summary>
+    /// Gets or sets the results.
+    /// </summary>
+    /// <value>
+    /// The results.
+    /// </value>
+    public AdvancedTransferResult[] Results { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the total bytes.
+    /// </summary>
+    /// <value>
+    /// The total bytes.
+    /// </value>
     public long TotalBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average throughput m BPS.
+    /// </summary>
+    /// <value>
+    /// The average throughput m BPS.
+    /// </value>
     public double AverageThroughputMBps { get; set; }
+
+    /// <summary>
+    /// Gets or sets the concurrency benefit.
+    /// </summary>
+    /// <value>
+    /// The concurrency benefit.
+    /// </value>
     public double ConcurrencyBenefit { get; set; }
 }
 
@@ -577,13 +748,60 @@ public class ConcurrentTransferResult
 /// </summary>
 public class TransferOptions
 {
+    /// <summary>
+    /// Gets the default.
+    /// </summary>
+    /// <value>
+    /// The default.
+    /// </value>
     public static TransferOptions Default => new();
-    
+
+    /// <summary>
+    /// Gets or sets a value indicating whether [enable compression].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [enable compression]; otherwise, <c>false</c>.
+    /// </value>
     public bool EnableCompression { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether [enable memory mapping].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [enable memory mapping]; otherwise, <c>false</c>.
+    /// </value>
     public bool EnableMemoryMapping { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether [verify integrity].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [verify integrity]; otherwise, <c>false</c>.
+    /// </value>
     public bool VerifyIntegrity { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the size of the chunk.
+    /// </summary>
+    /// <value>
+    /// The size of the chunk.
+    /// </value>
     public int ChunkSize { get; set; } = 4 * 1024 * 1024; // 4MB
+
+    /// <summary>
+    /// Gets or sets the size of the integrity sample.
+    /// </summary>
+    /// <value>
+    /// The size of the integrity sample.
+    /// </value>
     public int IntegritySampleSize { get; set; } = 1000;
+
+    /// <summary>
+    /// Gets or sets the memory options.
+    /// </summary>
+    /// <value>
+    /// The memory options.
+    /// </value>
     public DotCompute.Abstractions.MemoryOptions MemoryOptions { get; set; } = DotCompute.Abstractions.MemoryOptions.None;
 }
 
@@ -592,13 +810,60 @@ public class TransferOptions
 /// </summary>
 public class ConcurrentTransferOptions
 {
+    /// <summary>
+    /// Gets the default.
+    /// </summary>
+    /// <value>
+    /// The default.
+    /// </value>
     public static ConcurrentTransferOptions Default => new();
-    
+
+    /// <summary>
+    /// Gets or sets the maximum concurrency.
+    /// </summary>
+    /// <value>
+    /// The maximum concurrency.
+    /// </value>
     public int MaxConcurrency { get; set; } = Environment.ProcessorCount;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether [enable compression].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [enable compression]; otherwise, <c>false</c>.
+    /// </value>
     public bool EnableCompression { get; set; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether [enable memory mapping].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [enable memory mapping]; otherwise, <c>false</c>.
+    /// </value>
     public bool EnableMemoryMapping { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets a value indicating whether [verify integrity].
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if [verify integrity]; otherwise, <c>false</c>.
+    /// </value>
     public bool VerifyIntegrity { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the size of the chunk.
+    /// </summary>
+    /// <value>
+    /// The size of the chunk.
+    /// </value>
     public int ChunkSize { get; set; } = 4 * 1024 * 1024; // 4MB
+
+    /// <summary>
+    /// Gets or sets the memory options.
+    /// </summary>
+    /// <value>
+    /// The memory options.
+    /// </value>
     public DotCompute.Abstractions.MemoryOptions MemoryOptions { get; set; } = DotCompute.Abstractions.MemoryOptions.None;
 }
 
@@ -607,10 +872,44 @@ public class ConcurrentTransferOptions
 /// </summary>
 public class TransferStatistics
 {
+    /// <summary>
+    /// Gets or sets the total bytes transferred.
+    /// </summary>
+    /// <value>
+    /// The total bytes transferred.
+    /// </value>
     public long TotalBytesTransferred { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total transfer count.
+    /// </summary>
+    /// <value>
+    /// The total transfer count.
+    /// </value>
     public long TotalTransferCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average size of the transfer.
+    /// </summary>
+    /// <value>
+    /// The average size of the transfer.
+    /// </value>
     public long AverageTransferSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current memory pressure.
+    /// </summary>
+    /// <value>
+    /// The current memory pressure.
+    /// </value>
     public double CurrentMemoryPressure { get; set; }
+
+    /// <summary>
+    /// Gets or sets the active transfers.
+    /// </summary>
+    /// <value>
+    /// The active transfers.
+    /// </value>
     public int ActiveTransfers { get; set; }
 }
 

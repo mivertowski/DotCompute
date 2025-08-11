@@ -73,11 +73,11 @@ public static class ComputeQueryableExtensions
         if (source.Provider is ComputeQueryProvider computeProvider)
         {
             var result = computeProvider.Execute<T[]>(source.Expression);
-            return result ?? Array.Empty<T>();
+            return result ?? [];
         }
 
         // Fallback to regular LINQ
-        return source.ToArray();
+        return [.. source];
     }
 
     /// <summary>
@@ -97,7 +97,7 @@ public static class ComputeQueryableExtensions
         {
             // For async execution, we'd need to extend the provider
             // For now, run synchronously on a background thread
-            return await Task.Run(() => computeProvider.Execute<T[]>(source.Expression) ?? Array.Empty<T>(), 
+            return await Task.Run(() => computeProvider.Execute<T[]>(source.Expression) ?? [], 
                 cancellationToken);
         }
 
@@ -232,7 +232,7 @@ public static class ComputeQueryableExtensions
             return optimizer.Analyze(source.Expression);
         }
 
-        return Enumerable.Empty<OptimizationSuggestion>();
+        return [];
     }
 
     /// <summary>

@@ -57,11 +57,11 @@ namespace DotCompute.Plugins.Loaders
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to resolve dependencies for plugin: {PluginId}", manifest.Id);
-                return new DependencyGraph
-                {
-                    RootPlugin = manifest,
-                    IsResolved = false,
-                    Errors = { $"Dependency resolution failed: {ex.Message}" }
+                return new DependencyGraph 
+                { 
+                    RootPlugin = manifest, 
+                    IsResolved = false, 
+                    Errors = { $"Dependency resolution failed: {ex.Message}" } 
                 };
             }
             finally
@@ -74,11 +74,11 @@ namespace DotCompute.Plugins.Loaders
         /// Resolves dependencies recursively with cycle detection.
         /// </summary>
         private async Task ResolveDependenciesRecursiveAsync(
-            NuGetPluginManifest manifest,
-            DependencyGraph graph,
-            HashSet<string> visited,
-            HashSet<string> resolving,
-            int level,
+            NuGetPluginManifest manifest, 
+            DependencyGraph graph, 
+            HashSet<string> visited, 
+            HashSet<string> resolving, 
+            int level, 
             CancellationToken cancellationToken)
         {
             if (level > _settings.MaxDependencyDepth)
@@ -106,7 +106,7 @@ namespace DotCompute.Plugins.Loaders
                 foreach (var dependency in manifest.Dependencies ?? [])
                 {
                     var resolvedDependency = await ResolveSingleDependencyAsync(dependency, level + 1, cancellationToken);
-
+                    
                     if (resolvedDependency != null)
                     {
                         graph.Dependencies.Add(resolvedDependency);
@@ -115,11 +115,11 @@ namespace DotCompute.Plugins.Loaders
                         if (_settings.ResolveTransitiveDependencies && resolvedDependency.Manifest != null)
                         {
                             await ResolveDependenciesRecursiveAsync(
-                                resolvedDependency.Manifest,
-                                graph,
-                                visited,
-                                resolving,
-                                level + 1,
+                                resolvedDependency.Manifest, 
+                                graph, 
+                                visited, 
+                                resolving, 
+                                level + 1, 
                                 cancellationToken);
                         }
                     }
@@ -139,8 +139,8 @@ namespace DotCompute.Plugins.Loaders
         /// Resolves a single dependency to the best available version.
         /// </summary>
         private async Task<ResolvedDependency?> ResolveSingleDependencyAsync(
-            NuGetPackageDependency dependency,
-            int level,
+            NuGetPackageDependency dependency, 
+            int level, 
             CancellationToken cancellationToken)
         {
             _logger.LogDebug("Resolving dependency: {DependencyId} {VersionRange}", dependency.Id, dependency.VersionRange);
@@ -154,7 +154,7 @@ namespace DotCompute.Plugins.Loaders
 
             // Find available versions
             var availableVersions = await FindAvailableVersionsAsync(dependency, cancellationToken);
-            if (!availableVersions.Any())
+            if (availableVersions.Count == 0)
             {
                 _logger.LogWarning("No versions found for dependency: {DependencyId}", dependency.Id);
                 return null;
@@ -211,8 +211,10 @@ namespace DotCompute.Plugins.Loaders
         /// </summary>
         private string? SelectBestVersion(string versionRange, List<string> availableVersions)
         {
-            if (!availableVersions.Any())
+            if (availableVersions.Count == 0)
+            {
                 return null;
+            }
 
             // Parse version range (simplified implementation)
             var versionConstraint = ParseVersionRange(versionRange);
@@ -231,7 +233,7 @@ namespace DotCompute.Plugins.Loaders
         {
             // Simplified version range parsing
             // In a real implementation, this would use NuGet.Versioning library
-
+            
             if (string.IsNullOrWhiteSpace(versionRange))
             {
                 return new VersionConstraint { MinVersion = "0.0.0", IncludeMinVersion = true };
@@ -242,12 +244,12 @@ namespace DotCompute.Plugins.Loaders
             {
                 // Exact version: [1.0.0]
                 var version = versionRange.Trim('[', ']');
-                return new VersionConstraint
-                {
-                    MinVersion = version,
-                    MaxVersion = version,
-                    IncludeMinVersion = true,
-                    IncludeMaxVersion = true
+                return new VersionConstraint 
+                { 
+                    MinVersion = version, 
+                    MaxVersion = version, 
+                    IncludeMinVersion = true, 
+                    IncludeMaxVersion = true 
                 };
             }
 
@@ -265,10 +267,10 @@ namespace DotCompute.Plugins.Loaders
             }
 
             // Default: minimum version
-            return new VersionConstraint
-            {
-                MinVersion = versionRange,
-                IncludeMinVersion = true
+            return new VersionConstraint 
+            { 
+                MinVersion = versionRange, 
+                IncludeMinVersion = true 
             };
         }
 
@@ -278,26 +280,36 @@ namespace DotCompute.Plugins.Loaders
         private bool IsVersionCompatible(string version, VersionConstraint constraint)
         {
             if (!Version.TryParse(version, out var v))
+            {
                 return false;
+            }
 
             if (!string.IsNullOrEmpty(constraint.MinVersion))
             {
                 if (!Version.TryParse(constraint.MinVersion, out var minVersion))
+                {
                     return false;
+                }
 
                 var comparison = v.CompareTo(minVersion);
                 if (constraint.IncludeMinVersion ? comparison < 0 : comparison <= 0)
+                {
                     return false;
+                }
             }
 
             if (!string.IsNullOrEmpty(constraint.MaxVersion))
             {
                 if (!Version.TryParse(constraint.MaxVersion, out var maxVersion))
+                {
                     return false;
+                }
 
                 var comparison = v.CompareTo(maxVersion);
                 if (constraint.IncludeMaxVersion ? comparison > 0 : comparison >= 0)
+                {
                     return false;
+                }
             }
 
             return true;
@@ -315,7 +327,7 @@ namespace DotCompute.Plugins.Loaders
             package.AssemblyName = package.Id;
             package.AssemblyPath = $"/packages/{package.Id}.{package.Version}/{package.Id}.dll";
             package.IsPlugin = package.Id.Contains("Plugin", StringComparison.OrdinalIgnoreCase);
-
+            
             // Simulate loading manifest for plugin packages
             if (package.IsPlugin)
             {
@@ -366,23 +378,23 @@ namespace DotCompute.Plugins.Loaders
                 var versions = group.Select(d => d.Version).Distinct().ToList();
                 if (versions.Count > 1)
                 {
-                    _logger.LogWarning("Version conflict detected for package: {PackageId}. Versions: {Versions}",
+                    _logger.LogWarning("Version conflict detected for package: {PackageId}. Versions: {Versions}", 
                         group.Key, string.Join(", ", versions));
 
                     // Apply conflict resolution strategy
                     switch (_settings.ConflictResolutionStrategy)
                     {
                         case ConflictResolutionStrategy.Highest:
-                            ResolveConflictUsingHighestVersion(group.ToList(), graph);
+                            ResolveConflictUsingHighestVersion([.. group], graph);
                             break;
                         case ConflictResolutionStrategy.Lowest:
-                            ResolveConflictUsingLowestVersion(group.ToList(), graph);
+                            ResolveConflictUsingLowestVersion([.. group], graph);
                             break;
                         case ConflictResolutionStrategy.Fail:
                             graph.Errors.Add($"Version conflict for package {group.Key}: {string.Join(", ", versions)}");
                             break;
                         default:
-                            ResolveConflictUsingHighestVersion(group.ToList(), graph);
+                            ResolveConflictUsingHighestVersion([.. group], graph);
                             break;
                     }
                 }
@@ -404,7 +416,7 @@ namespace DotCompute.Plugins.Loaders
                 graph.Dependencies.Remove(dependency);
             }
 
-            _logger.LogInformation("Resolved version conflict for {PackageId} using highest version: {Version}",
+            _logger.LogInformation("Resolved version conflict for {PackageId} using highest version: {Version}", 
                 highestVersion.Id, highestVersion.Version);
         }
 
@@ -423,7 +435,7 @@ namespace DotCompute.Plugins.Loaders
                 graph.Dependencies.Remove(dependency);
             }
 
-            _logger.LogInformation("Resolved version conflict for {PackageId} using lowest version: {Version}",
+            _logger.LogInformation("Resolved version conflict for {PackageId} using lowest version: {Version}", 
                 lowestVersion.Id, lowestVersion.Version);
         }
 
@@ -487,7 +499,7 @@ namespace DotCompute.Plugins.Loaders
         /// <summary>
         /// Gets or sets whether to include prerelease versions.
         /// </summary>
-        public bool IncludePrereleaseVersions { get; set; }
+        public bool IncludePrereleaseVersions { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the dependency resolution timeout.
@@ -549,7 +561,7 @@ namespace DotCompute.Plugins.Loaders
         /// <summary>
         /// Gets or sets whether to include the maximum version.
         /// </summary>
-        public bool IncludeMaxVersion { get; set; }
+        public bool IncludeMaxVersion { get; set; } = false;
     }
 
     /// <summary>

@@ -41,7 +41,7 @@ public sealed partial class PluginLoader : IAsyncDisposable
         public required DateTime LoadTime { get; init; }
         public required string AssemblyPath { get; init; }
         public bool IsIsolated { get; init; }
-        public List<IAlgorithmPlugin> Plugins { get; } = new();
+        public List<IAlgorithmPlugin> Plugins { get; } = [];
     }
 
     /// <summary>
@@ -647,8 +647,8 @@ public sealed partial class PluginLoader : IAsyncDisposable
         if (_options.TrustedAssemblyHashes.Count > 0)
         {
             var blocklistRule = new BlocklistSecurityRule(
-                new HashSet<string>(), // No blocked hashes by default
-                new HashSet<string>()  // No blocked names by default
+                [], // No blocked hashes by default
+                []  // No blocked names by default
             );
             _securityPolicy.AddSecurityRule("Blocklist", blocklistRule);
         }
@@ -716,12 +716,12 @@ public sealed class PluginLoaderOptions
     /// <summary>
     /// Gets the list of allowed directories for loading plugins.
     /// </summary>
-    public List<string> AllowedDirectories { get; } = new();
+    public List<string> AllowedDirectories { get; } = [];
 
     /// <summary>
     /// Gets the list of trusted assembly hashes.
     /// </summary>
-    public HashSet<string> TrustedAssemblyHashes { get; } = new();
+    public HashSet<string> TrustedAssemblyHashes { get; } = [];
 
     /// <summary>
     /// Gets or sets the sandbox configuration for plugin execution.
@@ -757,12 +757,12 @@ public sealed class PluginSandboxOptions
     /// <summary>
     /// Gets the allowed file system paths.
     /// </summary>
-    public List<string> AllowedFilePaths { get; } = new();
+    public List<string> AllowedFilePaths { get; } = [];
 
     /// <summary>
     /// Gets the allowed network endpoints.
     /// </summary>
-    public List<string> AllowedNetworkEndpoints { get; } = new();
+    public List<string> AllowedNetworkEndpoints { get; } = [];
 }
 
 /// <summary>
@@ -778,17 +778,17 @@ public sealed class SecurityValidationResult
     /// <summary>
     /// Gets the validation errors.
     /// </summary>
-    public List<string> Errors { get; } = new();
+    public List<string> Errors { get; } = [];
 
     /// <summary>
     /// Gets the validation warnings.
     /// </summary>
-    public List<string> Warnings { get; } = new();
+    public List<string> Warnings { get; } = [];
 
     /// <summary>
     /// Gets additional validation metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; } = new();
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>
@@ -804,7 +804,7 @@ public sealed class PluginLoadResult
     /// <summary>
     /// Gets the loaded plugins.
     /// </summary>
-    public List<IAlgorithmPlugin> Plugins { get; } = new();
+    public List<IAlgorithmPlugin> Plugins { get; } = [];
 
     /// <summary>
     /// Gets or sets the security validation result.
@@ -865,7 +865,7 @@ public sealed class LoadedAssemblyInfo
     /// <summary>
     /// Gets the plugin information.
     /// </summary>
-    public List<PluginInfo> Plugins { get; } = new();
+    public List<PluginInfo> Plugins { get; } = [];
 }
 
 /// <summary>

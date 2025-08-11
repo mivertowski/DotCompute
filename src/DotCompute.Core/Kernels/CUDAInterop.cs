@@ -331,13 +331,13 @@ internal static unsafe class CUDAInterop
     /// Copy memory from host to device asynchronously.
     /// </summary>
     [DllImport(CudaDriverLib, CallingConvention = CallingConvention.Cdecl)]
-    public static extern CUresult cuMemcpyHtoDAsync(CUdeviceptr dstDevice, void* srcHost, nuint ByteCount, CUstream hStream);
+    public static extern CUresult cuMemcpyHtoD(CUdeviceptr dstDevice, void* srcHost, nuint ByteCount, CUstream hStream);
 
     /// <summary>
     /// Copy memory from device to host asynchronously.
     /// </summary>
     [DllImport(CudaDriverLib, CallingConvention = CallingConvention.Cdecl)]
-    public static extern CUresult cuMemcpyDtoHAsync(void* dstHost, CUdeviceptr srcDevice, nuint ByteCount, CUstream hStream);
+    public static extern CUresult cuMemcpyDtoH(void* dstHost, CUdeviceptr srcDevice, nuint ByteCount, CUstream hStream);
 
     /// <summary>
     /// Launch a CUDA kernel.
@@ -525,7 +525,9 @@ internal static unsafe class CUDAInterop
         {
             var result = cuInit(0);
             if (result != CUresult.CUDA_SUCCESS)
+            {
                 return false;
+            }
 
             var deviceCount = 0;
             result = cuDeviceGetCount(out deviceCount);
@@ -573,7 +575,7 @@ internal static unsafe class CUDAInterop
     {
         try
         {
-            byte* pStr = nvrtcGetErrorString(result);
+            var pStr = nvrtcGetErrorString(result);
             if (pStr != null)
             {
                 return Marshal.PtrToStringAnsi((IntPtr)pStr) ?? result.ToString();

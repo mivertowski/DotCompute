@@ -194,17 +194,20 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
         // Look for [numthreads(...)] attribute followed by function definition
         var lines = source.Split('\n', StringSplitOptions.RemoveEmptyEntries);
         
-        for (int i = 0; i < lines.Length - 1; i++)
+        for (var i = 0; i < lines.Length - 1; i++)
         {
             var line = lines[i].Trim();
             if (line.StartsWith("[numthreads(") && line.EndsWith("]"))
             {
                 // Check next non-empty line for function signature
-                for (int j = i + 1; j < lines.Length; j++)
+                for (var j = i + 1; j < lines.Length; j++)
                 {
                     var nextLine = lines[j].Trim();
-                    if (string.IsNullOrWhiteSpace(nextLine)) continue;
-                    
+                    if (string.IsNullOrWhiteSpace(nextLine))
+                    {
+                        continue;
+                    }
+
                     // Look for void functionName(...) pattern
                     var match = System.Text.RegularExpressions.Regex.Match(nextLine, @"void\s+([\w_][\w\d_]*)\s*\(");
                     if (match.Success)
@@ -264,14 +267,14 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
             return new KernelValidationResult
             {
                 IsValid = false,
-                Errors = new List<ValidationError>
-                {
+                Errors =
+                [
                     new ValidationError
                     {
                         Code = "INVALID_LANGUAGE",
                         Message = $"Expected DirectCompute kernel but received {kernel.Language}"
                     }
-                }
+                ]
             };
         }
 
@@ -340,12 +343,12 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
             FiniteMathOnly = true,
             EnableUnsafeOptimizations = false,
             TargetArchitecture = "cs_5_0", // Compute Shader 5.0
-            AdditionalFlags = new List<string>
-            {
+            AdditionalFlags =
+            [
                 "/O3",                      // Maximum optimization
                 "/Gfp",                     // Prefer flow control constructs
                 "/enable_unbounded_descriptor_tables" // Enable unbounded descriptor tables (if supported)
-            },
+            ],
             Defines = new Dictionary<string, string>
             {
                 ["DIRECTCOMPUTE"] = "1",
@@ -392,14 +395,23 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
     private static void ValidateHLSLSyntax(string source, List<ValidationError> errors, List<ValidationWarning> warnings)
     {
         // Check for balanced braces
-        int braceCount = 0;
-        int line = 1;
-        for (int i = 0; i < source.Length; i++)
+        var braceCount = 0;
+        var line = 1;
+        for (var i = 0; i < source.Length; i++)
         {
-            char c = source[i];
-            if (c == '\n') line++;
-            else if (c == '{') braceCount++;
-            else if (c == '}') braceCount--;
+            var c = source[i];
+            if (c == '\n')
+            {
+                line++;
+            }
+            else if (c == '{')
+            {
+                braceCount++;
+            }
+            else if (c == '}')
+            {
+                braceCount--;
+            }
 
             if (braceCount < 0)
             {
@@ -508,7 +520,7 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
         }
 
         // Total thread group size limit
-        int totalSize = threadGroupSize.Aggregate(1, (a, b) => a * b);
+        var totalSize = threadGroupSize.Aggregate(1, (a, b) => a * b);
         if (totalSize > 1024)
         {
             errors.Add(new ValidationError

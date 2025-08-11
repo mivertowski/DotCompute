@@ -46,8 +46,11 @@ public sealed class MetalKernelExecutor : IKernelExecutor, IDisposable
         KernelExecutionConfig executionConfig,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(MetalKernelExecutor));
-        
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(MetalKernelExecutor));
+        }
+
         _logger.LogWarning("Metal kernel execution is not yet implemented");
         
         // Stub implementation - simulate execution
@@ -92,8 +95,11 @@ public sealed class MetalKernelExecutor : IKernelExecutor, IDisposable
         KernelArgument[] arguments,
         KernelExecutionConfig executionConfig)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(MetalKernelExecutor));
-        
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(MetalKernelExecutor));
+        }
+
         _logger.LogWarning("Metal kernel enqueue execution is not yet implemented");
         
         var handle = new KernelExecutionHandle
@@ -117,8 +123,11 @@ public sealed class MetalKernelExecutor : IKernelExecutor, IDisposable
         KernelExecutionHandle handle,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed) throw new ObjectDisposedException(nameof(MetalKernelExecutor));
-        
+        if (_disposed)
+        {
+            throw new ObjectDisposedException(nameof(MetalKernelExecutor));
+        }
+
         if (!_pendingExecutions.TryRemove(handle.Id, out _))
         {
             return ValueTask.FromResult(new KernelExecutionResult
@@ -161,8 +170,8 @@ public sealed class MetalKernelExecutor : IKernelExecutor, IDisposable
         
         return new KernelExecutionConfig
         {
-            GlobalWorkSize = problemSize.Select(x => (int)Math.Ceiling((double)x / threadsPerThreadgroup) * threadsPerThreadgroup).ToArray(),
-            LocalWorkSize = new[] { threadsPerThreadgroup },
+            GlobalWorkSize = [.. problemSize.Select(x => (int)Math.Ceiling((double)x / threadsPerThreadgroup) * threadsPerThreadgroup)],
+            LocalWorkSize = [threadsPerThreadgroup],
             DynamicSharedMemorySize = kernel.SharedMemorySize,
             CaptureTimings = false, // Not implemented yet
             Flags = KernelExecutionFlags.None
@@ -182,8 +191,10 @@ public sealed class MetalKernelExecutor : IKernelExecutor, IDisposable
         ArgumentNullException.ThrowIfNull(executionConfig);
         
         if (iterations <= 0)
+        {
             throw new ArgumentOutOfRangeException(nameof(iterations), "Iterations must be positive");
-        
+        }
+
         _logger.LogWarning("Metal kernel profiling is not yet implemented");
         
         // Return stub profiling result
@@ -195,7 +206,7 @@ public sealed class MetalKernelExecutor : IKernelExecutor, IDisposable
             MaxTimeMs = 0,
             StdDevMs = 0,
             MedianTimeMs = 0,
-            PercentileTimingsMs = new Dictionary<int, double>(),
+            PercentileTimingsMs = [],
             AchievedOccupancy = 0,
             MemoryThroughputGBps = 0,
             ComputeThroughputGFLOPS = 0,
@@ -204,14 +215,14 @@ public sealed class MetalKernelExecutor : IKernelExecutor, IDisposable
                 Type = BottleneckType.None,
                 Severity = 0,
                 Details = "Metal profiling not yet implemented",
-                ResourceUtilization = new Dictionary<string, double>()
+                ResourceUtilization = []
             },
-            OptimizationSuggestions = new List<string>
-            {
+            OptimizationSuggestions =
+            [
                 "Metal kernel execution is not yet implemented",
                 "Future implementation will require Metal Performance Shaders framework",
                 "Consider using Metal Performance Shaders Graph for compute workloads"
-            }
+            ]
         });
     }
 

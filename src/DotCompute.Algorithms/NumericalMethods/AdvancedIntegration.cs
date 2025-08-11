@@ -87,7 +87,7 @@ public static class AdvancedIntegration
         // First column: trapezoidal rule with increasing refinement
         R[0, 0] = TrapezoidalRule(functionValues, a, b);
         
-        for (int i = 1; i < maxLevels && (1 << i) < n; i++)
+        for (var i = 1; i < maxLevels && (1 << i) < n; i++)
         {
             // Use subset of points for coarser approximations
             var step = 1 << i;
@@ -96,9 +96,9 @@ public static class AdvancedIntegration
         }
         
         // Fill Romberg table with Richardson extrapolation
-        for (int j = 1; j < maxLevels; j++)
+        for (var j = 1; j < maxLevels; j++)
         {
-            for (int i = j; i < maxLevels; i++)
+            for (var i = j; i < maxLevels; i++)
             {
                 var powerOf4 = 1 << (2 * j); // 4^j
                 R[i, j] = (powerOf4 * R[i, j-1] - R[i-1, j-1]) / (powerOf4 - 1);
@@ -127,12 +127,12 @@ public static class AdvancedIntegration
         var weights = new float[n];
         var sum = 0.0f;
         
-        for (int k = 0; k < n; k++)
+        for (var k = 0; k < n; k++)
         {
             weights[k] = (k == 0 || k == n-1) ? 0.5f : 1.0f;
             
             // Apply Clenshaw-Curtis weight corrections
-            for (int j = 1; j < n/2; j++)
+            for (var j = 1; j < n/2; j++)
             {
                 var angle = j * Math.PI * k / (n-1);
                 weights[k] -= (2.0f / (4*j*j - 1)) * (float)Math.Cos(2 * angle);
@@ -168,7 +168,7 @@ public static class AdvancedIntegration
         var totalIntegral = 0.0f;
         var totalError = 0.0f;
         
-        for (int i = 0; i < segments; i++)
+        for (var i = 0; i < segments; i++)
         {
             var startIdx = i * segmentSize;
             var endIdx = Math.Min((i + 1) * segmentSize, n - 1);
@@ -216,7 +216,7 @@ public static class AdvancedIntegration
         if (values.Length >= 3)
         {
             var variation = 0.0f;
-            for (int i = 1; i < values.Length - 1; i++)
+            for (var i = 1; i < values.Length - 1; i++)
             {
                 var secondDiff = values[i+1] - 2*values[i] + values[i-1];
                 variation = Math.Max(variation, Math.Abs(secondDiff));
@@ -243,11 +243,11 @@ public static class AdvancedIntegration
             // Standard Simpson's 1/3 rule
             var sum = values[0] + values[n-1];
             
-            for (int i = 1; i < n-1; i += 2)
+            for (var i = 1; i < n-1; i += 2)
             {
                 sum += 4 * values[i];
             }
-            for (int i = 2; i < n-1; i += 2)
+            for (var i = 2; i < n-1; i += 2)
             {
                 sum += 2 * values[i];
             }
@@ -259,11 +259,11 @@ public static class AdvancedIntegration
             // Composite rule: Simpson's 1/3 + trapezoidal for last interval
             var simpsonSum = values[0] + values[n-2];
             
-            for (int i = 1; i < n-2; i += 2)
+            for (var i = 1; i < n-2; i += 2)
             {
                 simpsonSum += 4 * values[i];
             }
-            for (int i = 2; i < n-2; i += 2)
+            for (var i = 2; i < n-2; i += 2)
             {
                 simpsonSum += 2 * values[i];
             }
@@ -282,7 +282,7 @@ public static class AdvancedIntegration
         var h = (b - a) / (values.Length - 1);
         var sum = 0.5f * (values[0] + values[values.Length - 1]);
         
-        for (int i = 1; i < values.Length - 1; i++)
+        for (var i = 1; i < values.Length - 1; i++)
         {
             sum += values[i];
         }
@@ -296,9 +296,9 @@ public static class AdvancedIntegration
         // Nodes and weights for [-1,1], then transform to [a,b]
         var nodes = new float[] {
             0.0f,
-            0.4058451513773972f, -0.4058451513773972f,
-            0.7415311855993944f, -0.7415311855993944f,
-            0.9491079123427585f, -0.9491079123427585f
+            ±0.4058451513773972f,
+            ±0.7415311855993944f,
+            ±0.9491079123427585f
         };
         
         var weights = new float[] {
@@ -313,7 +313,7 @@ public static class AdvancedIntegration
         var center = (a + b) / 2.0f;
         var sum = 0.0f;
         
-        for (int i = 0; i < 7; i++)
+        for (var i = 0; i < 7; i++)
         {
             var x = center + transform * nodes[i];
             var idx = (int)((x - a) / (b - a) * (values.Length - 1));
@@ -367,7 +367,7 @@ public static class AdvancedIntegration
         // Apply Filon's quadrature
         var sum = 0.0f;
         
-        for (int i = 0; i < n-2; i += 2)
+        for (var i = 0; i < n-2; i += 2)
         {
             var x0 = a + i * h;
             var x1 = a + (i+1) * h;

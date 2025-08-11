@@ -73,7 +73,7 @@ public class KernelDefinition
     /// <summary>
     /// Gets or sets the kernel parameters.
     /// </summary>
-    public KernelParameter[] Parameters { get; set; } = Array.Empty<KernelParameter>();
+    public KernelParameter[] Parameters { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the kernel language.
@@ -83,7 +83,7 @@ public class KernelDefinition
     /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 /// <summary>
@@ -125,12 +125,12 @@ public class WorkItems
     /// <summary>
     /// Gets or sets the global work size.
     /// </summary>
-    public int[] GlobalWorkSize { get; set; } = Array.Empty<int>();
+    public int[] GlobalWorkSize { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the local work size.
     /// </summary>
-    public int[] LocalWorkSize { get; set; } = Array.Empty<int>();
+    public int[] LocalWorkSize { get; set; } = [];
 }
 
 /// <summary>

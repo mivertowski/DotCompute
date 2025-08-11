@@ -265,18 +265,18 @@ public class QueryExecutor : IQueryExecutor
         
         return new Operators.WorkItems
         {
-            GlobalWorkSize = new[]
-            {
+            GlobalWorkSize =
+            [
                 config.GridDimensions.X * config.BlockDimensions.X,
                 config.GridDimensions.Y * config.BlockDimensions.Y,
                 config.GridDimensions.Z * config.BlockDimensions.Z
-            },
-            LocalWorkSize = new[]
-            {
+            ],
+            LocalWorkSize =
+            [
                 config.BlockDimensions.X,
                 config.BlockDimensions.Y,
                 config.BlockDimensions.Z
-            }
+            ]
         };
     }
 
@@ -351,7 +351,7 @@ public class QueryExecutor : IQueryExecutor
             var array = Array.CreateInstance(elementType, elementCount);
             
             // Copy elements
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 var elementData = new byte[elementSize];
                 Array.Copy(data, i * elementSize, elementData, 0, elementSize);

@@ -31,7 +31,7 @@ internal static class CpuRuntimeCodeGenerator
         {
             Bytecode = [.. bytecode],
             CodeSize = bytecode.Length,
-            OptimizationNotes = new[] { "JIT compiled from bytecode" }
+            OptimizationNotes = ["JIT compiled from bytecode"]
         };
 
         return compiledCode;
@@ -46,11 +46,11 @@ internal static class CpuRuntimeCodeGenerator
         if (definition.Metadata?.TryGetValue("Operation", out var opObj) == true && opObj is string opStr)
         {
             // Generate optimized code for specific operation
-            compiledCode.OptimizationNotes = new[] { $"Generated optimized {opStr} kernel" };
+            compiledCode.OptimizationNotes = [$"Generated optimized {opStr} kernel"];
         }
         else
         {
-            compiledCode.OptimizationNotes = new[] { "Generated default kernel" };
+            compiledCode.OptimizationNotes = ["Generated default kernel"];
         }
 
         compiledCode.CodeSize = 2048; // Estimated

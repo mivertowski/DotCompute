@@ -95,7 +95,7 @@ public static class MetalUtilities
     /// </summary>
     public static string FormatBytes(long bytes)
     {
-        string[] sizes = { "B", "KB", "MB", "GB", "TB" };
+        string[] sizes = ["B", "KB", "MB", "GB", "TB"];
         double len = bytes;
         var order = 0;
 

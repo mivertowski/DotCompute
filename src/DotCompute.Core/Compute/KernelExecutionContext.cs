@@ -16,7 +16,7 @@ public class KernelExecutionContext
     /// <summary>
     /// Arguments passed to the kernel.
     /// </summary>
-    public object[] Arguments { get; set; } = Array.Empty<object>();
+    public object[] Arguments { get; set; } = [];
 
     /// <summary>
     /// Work dimensions (global work size).
@@ -36,10 +36,10 @@ public class KernelExecutionContext
     /// <summary>
     /// Additional metadata for kernel execution.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 
     /// <summary>
     /// Performance hints for optimization.
     /// </summary>
-    public Dictionary<string, object> PerformanceHints { get; set; } = new();
+    public Dictionary<string, object> PerformanceHints { get; set; } = [];
 }

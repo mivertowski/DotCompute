@@ -61,8 +61,8 @@ public static class KernelCompilerExtensions
             GenerateDebugInfo = options.EnableDebugInfo,
             EnableFastMath = options.FastMath,
             EnableUnsafeOptimizations = false, // Default
-            AdditionalFlags = options.AdditionalFlags?.ToList() ?? new List<string>(),
-            Defines = options.Defines?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? new Dictionary<string, string>()
+            AdditionalFlags = options.AdditionalFlags?.ToList() ?? [],
+            Defines = options.Defines?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? []
         };
         
         return compiler.CompileAsync(kernel, coreOptions, cancellationToken);
@@ -162,7 +162,7 @@ public sealed class ManagedCompiledKernel : IDisposable
     public DotCompute.Abstractions.CompiledKernel ToCompiledKernel()
     {
         // Calculate shared memory size from parameters
-        int sharedMemSize = SharedMemorySize > 0 ? SharedMemorySize : 1024; // Default shared memory
+        var sharedMemSize = SharedMemorySize > 0 ? SharedMemorySize : 1024; // Default shared memory
         
         // Create kernel configuration based on work group size
         var blockDims = RequiredWorkGroupSize != null && RequiredWorkGroupSize.Length > 0
@@ -221,17 +221,17 @@ public sealed class CompilationOptions
     /// <summary>
     /// Gets or sets additional compiler flags.
     /// </summary>
-    public List<string> AdditionalFlags { get; set; } = new();
+    public List<string> AdditionalFlags { get; set; } = [];
 
     /// <summary>
     /// Gets or sets include directories.
     /// </summary>
-    public List<string> IncludeDirectories { get; set; } = new();
+    public List<string> IncludeDirectories { get; set; } = [];
 
     /// <summary>
     /// Gets or sets preprocessor definitions.
     /// </summary>
-    public Dictionary<string, string> Defines { get; set; } = new();
+    public Dictionary<string, string> Defines { get; set; } = [];
 }
 
 /// <summary>
@@ -247,12 +247,12 @@ public sealed class KernelValidationResult
     /// <summary>
     /// Gets validation errors.
     /// </summary>
-    public List<ValidationError> Errors { get; init; } = new();
+    public List<ValidationError> Errors { get; init; } = [];
 
     /// <summary>
     /// Gets validation warnings.
     /// </summary>
-    public List<ValidationWarning> Warnings { get; init; } = new();
+    public List<ValidationWarning> Warnings { get; init; } = [];
 
     /// <summary>
     /// Gets resource usage estimates.

@@ -31,7 +31,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
     {
         _kernelManager = kernelManager ?? throw new ArgumentNullException(nameof(kernelManager));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _kernelCache = new Dictionary<string, ManagedCompiledKernel>();
+        _kernelCache = [];
     }
 
     /// <summary>
@@ -252,7 +252,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         var (q, r) = await QRDecompositionAsync(a, accelerator, cancellationToken).ConfigureAwait(false);
         // Solve R * x = Q^T * b
         var qtb = await MatrixMath.MultiplyAsync(await MatrixMath.TransposeAsync(q, accelerator, cancellationToken).ConfigureAwait(false), b, accelerator, cancellationToken).ConfigureAwait(false);
-        return await BackSubstitution(r, qtb, cancellationToken).ConfigureAwait(false);
+        return await BackSubstitutionAsync(r, qtb, cancellationToken).ConfigureAwait(false);
     }
 
     private async Task<Matrix> SolveIterativeAsync(Matrix a, Matrix b, IAccelerator accelerator, CancellationToken cancellationToken)
@@ -279,7 +279,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
 
         var kernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             kernelName,
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             accelerator,
             context,
@@ -333,10 +333,10 @@ public sealed class GPULinearAlgebraProvider : IDisposable
     private static float ComputeSparsityRatio(Matrix matrix)
     {
         var data = matrix.AsSpan();
-        int zeroCount = 0;
+        var zeroCount = 0;
         const float tolerance = 1e-10f;
 
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             if (Math.Abs(data[i]) < tolerance)
                 zeroCount++;
@@ -350,9 +350,9 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         if (!matrix.IsSquare) return false;
         
         const float tolerance = 1e-6f;
-        for (int i = 0; i < matrix.Rows; i++)
+        for (var i = 0; i < matrix.Rows; i++)
         {
-            for (int j = i + 1; j < matrix.Columns; j++)
+            for (var j = i + 1; j < matrix.Columns; j++)
             {
                 if (Math.Abs(matrix[i, j] - matrix[j, i]) > tolerance)
                     return false;
@@ -368,7 +368,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         try
         {
             // Quick test: check if all diagonal elements are positive
-            for (int i = 0; i < matrix.Rows; i++)
+            for (var i = 0; i < matrix.Rows; i++)
             {
                 if (matrix[i, i] <= 0) return false;
             }
@@ -415,12 +415,12 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         return await Task.Run(() =>
         {
             var result = new Matrix(a.Rows, b.Columns);
-            for (int i = 0; i < a.Rows; i++)
+            for (var i = 0; i < a.Rows; i++)
             {
-                for (int j = 0; j < b.Columns; j++)
+                for (var j = 0; j < b.Columns; j++)
                 {
                     float sum = 0;
-                    for (int k = 0; k < a.Columns; k++)
+                    for (var k = 0; k < a.Columns; k++)
                     {
                         sum += a[i, k] * b[k, j];
                     }
@@ -436,32 +436,32 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         return await Task.Run(() =>
         {
             // Simplified Gram-Schmidt process
-            int m = matrix.Rows;
-            int n = matrix.Columns;
+            var m = matrix.Rows;
+            var n = matrix.Columns;
             var q = new Matrix(m, n);
             var r = new Matrix(n, n);
 
-            for (int j = 0; j < n; j++)
+            for (var j = 0; j < n; j++)
             {
                 // Copy column j of A to Q
-                for (int i = 0; i < m; i++)
+                for (var i = 0; i < m; i++)
                 {
                     q[i, j] = matrix[i, j];
                 }
 
                 // Orthogonalize against previous columns
-                for (int k = 0; k < j; k++)
+                for (var k = 0; k < j; k++)
                 {
                     // Compute R[k,j] = Q[:,k]^T * Q[:,j]
                     float rho = 0;
-                    for (int i = 0; i < m; i++)
+                    for (var i = 0; i < m; i++)
                     {
                         rho += q[i, k] * q[i, j];
                     }
                     r[k, j] = rho;
 
                     // Q[:,j] = Q[:,j] - R[k,j] * Q[:,k]
-                    for (int i = 0; i < m; i++)
+                    for (var i = 0; i < m; i++)
                     {
                         q[i, j] -= rho * q[i, k];
                     }
@@ -469,7 +469,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
 
                 // Compute R[j,j] and normalize Q[:,j]
                 float norm = 0;
-                for (int i = 0; i < m; i++)
+                for (var i = 0; i < m; i++)
                 {
                     norm += q[i, j] * q[i, j];
                 }
@@ -478,7 +478,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
 
                 if (norm > 1e-10f)
                 {
-                    for (int i = 0; i < m; i++)
+                    for (var i = 0; i < m; i++)
                     {
                         q[i, j] /= norm;
                     }
@@ -495,16 +495,16 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         {
             // Simplified SVD using eigendecomposition of A^T * A
             // This is not numerically stable but serves as a fallback
-            int m = matrix.Rows;
-            int n = matrix.Columns;
+            var m = matrix.Rows;
+            var n = matrix.Columns;
 
             var u = Matrix.Identity(m);
             var s = Matrix.Identity(Math.Min(m, n));
             var vt = Matrix.Identity(n);
 
             // For small matrices, use simple diagonal extraction
-            int minDim = Math.Min(m, n);
-            for (int i = 0; i < minDim; i++)
+            var minDim = Math.Min(m, n);
+            for (var i = 0; i < minDim; i++)
             {
                 s[i, i] = Math.Abs(matrix[i, i]);
             }
@@ -518,28 +518,28 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         return await Task.Run(() =>
         {
             // Simple Gaussian elimination
-            int n = a.Rows;
+            var n = a.Rows;
             var augmented = new Matrix(n, n + b.Columns);
 
             // Create augmented matrix
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
-                for (int j = 0; j < n; j++)
+                for (var j = 0; j < n; j++)
                 {
                     augmented[i, j] = a[i, j];
                 }
-                for (int j = 0; j < b.Columns; j++)
+                for (var j = 0; j < b.Columns; j++)
                 {
                     augmented[i, n + j] = b[i, j];
                 }
             }
 
             // Forward elimination
-            for (int k = 0; k < n; k++)
+            for (var k = 0; k < n; k++)
             {
                 // Find pivot
-                int pivotRow = k;
-                for (int i = k + 1; i < n; i++)
+                var pivotRow = k;
+                for (var i = k + 1; i < n; i++)
                 {
                     if (Math.Abs(augmented[i, k]) > Math.Abs(augmented[pivotRow, k]))
                         pivotRow = i;
@@ -548,17 +548,17 @@ public sealed class GPULinearAlgebraProvider : IDisposable
                 // Swap rows
                 if (pivotRow != k)
                 {
-                    for (int j = 0; j < n + b.Columns; j++)
+                    for (var j = 0; j < n + b.Columns; j++)
                     {
                         (augmented[k, j], augmented[pivotRow, j]) = (augmented[pivotRow, j], augmented[k, j]);
                     }
                 }
 
                 // Eliminate
-                for (int i = k + 1; i < n; i++)
+                for (var i = k + 1; i < n; i++)
                 {
-                    float factor = augmented[i, k] / augmented[k, k];
-                    for (int j = k; j < n + b.Columns; j++)
+                    var factor = augmented[i, k] / augmented[k, k];
+                    for (var j = k; j < n + b.Columns; j++)
                     {
                         augmented[i, j] -= factor * augmented[k, j];
                     }
@@ -567,12 +567,12 @@ public sealed class GPULinearAlgebraProvider : IDisposable
 
             // Back substitution
             var x = new Matrix(n, b.Columns);
-            for (int col = 0; col < b.Columns; col++)
+            for (var col = 0; col < b.Columns; col++)
             {
-                for (int i = n - 1; i >= 0; i--)
+                for (var i = n - 1; i >= 0; i--)
                 {
-                    float sum = augmented[i, n + col];
-                    for (int j = i + 1; j < n; j++)
+                    var sum = augmented[i, n + col];
+                    for (var j = i + 1; j < n; j++)
                     {
                         sum -= augmented[i, j] * x[j, col];
                     }
@@ -584,19 +584,19 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         }, cancellationToken).ConfigureAwait(false);
     }
 
-    private static async Task<Matrix> BackSubstitution(Matrix r, Matrix b, CancellationToken cancellationToken)
+    private static async Task<Matrix> BackSubstitutionAsync(Matrix r, Matrix b, CancellationToken cancellationToken)
     {
         return await Task.Run(() =>
         {
-            int n = r.Rows;
+            var n = r.Rows;
             var x = new Matrix(n, b.Columns);
 
-            for (int col = 0; col < b.Columns; col++)
+            for (var col = 0; col < b.Columns; col++)
             {
-                for (int i = n - 1; i >= 0; i--)
+                for (var i = n - 1; i >= 0; i--)
                 {
-                    float sum = b[i, col];
-                    for (int j = i + 1; j < n; j++)
+                    var sum = b[i, col];
+                    for (var j = i + 1; j < n; j++)
                     {
                         sum -= r[i, j] * x[j, col];
                     }
@@ -641,9 +641,9 @@ public sealed class GPULinearAlgebraProvider : IDisposable
 
     private static void CopyArrayToMatrix(float[] array, Matrix matrix)
     {
-        for (int i = 0; i < matrix.Rows; i++)
+        for (var i = 0; i < matrix.Rows; i++)
         {
-            for (int j = 0; j < matrix.Columns; j++)
+            for (var j = 0; j < matrix.Columns; j++)
             {
                 matrix[i, j] = array[i * matrix.Columns + j];
             }

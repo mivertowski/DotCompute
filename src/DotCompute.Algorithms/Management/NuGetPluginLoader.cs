@@ -69,9 +69,9 @@ public sealed partial class NuGetPluginLoader : IDisposable
         public string? IconUrl { get; init; }
         public string? ReleaseNotes { get; init; }
         public string? Copyright { get; init; }
-        public string[] Tags { get; init; } = Array.Empty<string>();
-        public PackageDependency[] Dependencies { get; init; } = Array.Empty<PackageDependency>();
-        public FrameworkSpecificGroup[] FrameworkGroups { get; init; } = Array.Empty<FrameworkSpecificGroup>();
+        public string[] Tags { get; init; } = [];
+        public PackageDependency[] Dependencies { get; init; } = [];
+        public FrameworkSpecificGroup[] FrameworkGroups { get; init; } = [];
         public bool RequireLicenseAcceptance { get; init; }
         public string? MinClientVersion { get; init; }
     }
@@ -107,7 +107,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
         public required PackageDependency[] ResolvedDependencies { get; init; }
         public required TimeSpan LoadTime { get; init; }
         public required long TotalSize { get; init; }
-        public string[] Warnings { get; init; } = Array.Empty<string>();
+        public string[] Warnings { get; init; } = [];
         public string? SecurityValidationResult { get; init; }
         public bool FromCache { get; init; }
         public string? CachePath { get; init; }
@@ -517,7 +517,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
         var dependencies = metadataElement.Element("dependencies")?
             .Elements("group")
             .SelectMany(g => g.Elements("dependency"))
-            .Concat(metadataElement.Element("dependencies")?.Elements("dependency") ?? Enumerable.Empty<XElement>())
+            .Concat(metadataElement.Element("dependencies")?.Elements("dependency") ?? [])
             .Select(d => new PackageDependency
             {
                 Id = d.Attribute("id")?.Value ?? string.Empty,
@@ -526,7 +526,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
                 Exclude = d.Attribute("exclude")?.Value?.Split(','),
                 Include = d.Attribute("include")?.Value?.Split(',')
             })
-            .ToArray() ?? Array.Empty<PackageDependency>();
+            .ToArray() ?? [];
 
         return new PackageManifest
         {
@@ -539,7 +539,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             IconUrl = metadataElement.Element("iconUrl")?.Value,
             ReleaseNotes = metadataElement.Element("releaseNotes")?.Value,
             Copyright = metadataElement.Element("copyright")?.Value,
-            Tags = metadataElement.Element("tags")?.Value?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? Array.Empty<string>(),
+            Tags = metadataElement.Element("tags")?.Value?.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [],
             Dependencies = dependencies,
             RequireLicenseAcceptance = bool.Parse(metadataElement.Element("requireLicenseAcceptance")?.Value ?? "false"),
             MinClientVersion = metadataElement.Element("minClientVersion")?.Value
@@ -557,7 +557,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
         if (!Directory.Exists(libPath))
         {
             LogNoLibFolderFound(extractedPath);
-            return Array.Empty<string>();
+            return [];
         }
 
         var targetNuGetFramework = NuGetFramework.Parse(targetFramework);
@@ -573,7 +573,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             .Where(f => f.Framework != null && f.Framework.IsSpecificFramework)
             .ToList();
 
-        if (!frameworkFolders.Any())
+        if (frameworkFolders.Count == 0)
         {
             // No framework-specific folders, check root lib folder
             var rootAssemblies = Directory.GetFiles(libPath, "*.dll", SearchOption.TopDirectoryOnly);
@@ -589,7 +589,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
                 .Where(f => DefaultCompatibilityProvider.Instance.IsCompatible(targetNuGetFramework, f))
                 .ToList();
 
-            if (compatibleFrameworks.Any())
+            if (compatibleFrameworks.Count != 0)
             {
                 var bestMatch = reducer.GetNearest(targetNuGetFramework, compatibleFrameworks);
                 var bestFolder = frameworkFolders.First(f => f.Framework!.Equals(bestMatch));
@@ -604,7 +604,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             }
         }
 
-        return compatibleAssemblies.ToArray();
+        return [.. compatibleAssemblies];
     }
 
     /// <summary>
@@ -851,7 +851,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        return _packageCache.Values
+        return [.. _packageCache.Values
             .Select(cp => new CachedPackageInfo
             {
                 Identity = cp.Identity,
@@ -863,8 +863,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
                 IsSecurityValidated = cp.IsSecurityValidated,
                 CacheAge = DateTime.UtcNow - cp.CacheTime
             })
-            .OrderByDescending(cp => cp.CacheTime)
-            .ToArray();
+            .OrderByDescending(cp => cp.CacheTime)];
     }
 
     /// <summary>
@@ -877,7 +876,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
 
         var packagesToRemove = olderThan.HasValue
             ? _packageCache.Where(kvp => DateTime.UtcNow - kvp.Value.CacheTime > olderThan.Value).ToList()
-            : _packageCache.ToList();
+            : [.. _packageCache];
 
         LogClearingCache(packagesToRemove.Count, olderThan?.ToString() ?? "all");
 
@@ -1132,17 +1131,17 @@ public sealed class NuGetPluginLoaderOptions
     /// <summary>
     /// Gets the trusted package sources.
     /// </summary>
-    public List<string> TrustedSources { get; } = new() { "https://api.nuget.org/v3/index.json" };
+    public List<string> TrustedSources { get; } = ["https://api.nuget.org/v3/index.json"];
 
     /// <summary>
     /// Gets the blocked package IDs.
     /// </summary>
-    public HashSet<string> BlockedPackages { get; } = new();
+    public HashSet<string> BlockedPackages { get; } = [];
 
     /// <summary>
     /// Gets the required package prefixes for security.
     /// </summary>
-    public HashSet<string> AllowedPackagePrefixes { get; } = new();
+    public HashSet<string> AllowedPackagePrefixes { get; } = [];
 }
 
 /// <summary>

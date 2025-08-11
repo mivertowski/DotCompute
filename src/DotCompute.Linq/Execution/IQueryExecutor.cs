@@ -51,7 +51,7 @@ public class ExecutionContext
     {
         Accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
         Plan = plan ?? throw new ArgumentNullException(nameof(plan));
-        Parameters = new Dictionary<string, object>();
+        Parameters = [];
         BufferPool = new BufferPool();
     }
 
@@ -117,8 +117,8 @@ public class ExecutionOptions
 /// </summary>
 public class BufferPool
 {
-    private readonly Dictionary<string, IMemoryBuffer> _buffers = new();
-    private readonly object _lock = new();
+    private readonly Dictionary<string, IMemoryBuffer> _buffers = [];
+    private readonly Lock _lock = new();
 
     /// <summary>
     /// Gets or creates a buffer with the specified key.

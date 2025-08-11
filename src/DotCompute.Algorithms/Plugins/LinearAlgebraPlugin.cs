@@ -120,7 +120,7 @@ public sealed class LinearAlgebraPlugin : AlgorithmPluginBase
         }
 
         // Assume square matrices for estimation
-        int n = inputSizes[0];
+        var n = inputSizes[0];
         
         // Memory for input matrices + result + workspace
         return n * n * sizeof(float) * 4 + 4096; // Extra for overhead
@@ -157,7 +157,7 @@ public sealed class LinearAlgebraPlugin : AlgorithmPluginBase
         var result = await MatrixMath.MultiplyAsync(matrices[0], matrices[1], Accelerator, cancellationToken).ConfigureAwait(false);
 
         // Chain multiply if more than 2 matrices
-        for (int i = 2; i < matrices.Length; i++)
+        for (var i = 2; i < matrices.Length; i++)
         {
             result = await MatrixMath.MultiplyAsync(result, matrices[i], Accelerator, cancellationToken).ConfigureAwait(false);
         }
@@ -175,7 +175,7 @@ public sealed class LinearAlgebraPlugin : AlgorithmPluginBase
         var result = await MatrixMath.AddAsync(matrices[0], matrices[1], Accelerator, cancellationToken).ConfigureAwait(false);
 
         // Chain add if more than 2 matrices
-        for (int i = 2; i < matrices.Length; i++)
+        for (var i = 2; i < matrices.Length; i++)
         {
             result = await MatrixMath.AddAsync(result, matrices[i], Accelerator, cancellationToken).ConfigureAwait(false);
         }

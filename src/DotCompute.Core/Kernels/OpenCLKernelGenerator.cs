@@ -145,13 +145,13 @@ public sealed class OpenCLKernelGenerator : IKernelGenerator
             Name = "vector_add",
             Source = source.ToString(),
             Language = KernelLanguage.OpenCL,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "a", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "b", Type = inputTypes[1], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "result", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "n", Type = typeof(int), IsInput = true }
-            },
+            ],
             OptimizationMetadata = new Dictionary<string, object>
             {
                 ["VectorWidth"] = vectorWidth,
@@ -202,13 +202,13 @@ public sealed class OpenCLKernelGenerator : IKernelGenerator
             Name = "vector_subtract",
             Source = source.ToString(),
             Language = KernelLanguage.OpenCL,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "a", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "b", Type = inputTypes[1], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "result", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "n", Type = typeof(int), IsInput = true }
-            },
+            ],
             OptimizationMetadata = new Dictionary<string, object>
             {
                 ["VectorWidth"] = vectorWidth,
@@ -310,16 +310,16 @@ public sealed class OpenCLKernelGenerator : IKernelGenerator
             Name = "matrix_multiply",
             Source = source.ToString(),
             Language = KernelLanguage.OpenCL,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "A", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "B", Type = inputTypes[1], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "C", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "M", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "N", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "K", Type = typeof(int), IsInput = true }
-            },
-            RequiredWorkGroupSize = new[] { tileSize, tileSize },
+            ],
+            RequiredWorkGroupSize = [tileSize, tileSize],
             SharedMemorySize = 2 * tileSize * tileSize * GetTypeSize(elementType),
             OptimizationMetadata = new Dictionary<string, object>
             {
@@ -387,8 +387,8 @@ public sealed class OpenCLKernelGenerator : IKernelGenerator
             Name = "convolution_2d",
             Source = source.ToString(),
             Language = KernelLanguage.OpenCL,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "kernel", Type = inputTypes[1], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = outputType, IsOutput = true },
@@ -398,7 +398,7 @@ public sealed class OpenCLKernelGenerator : IKernelGenerator
                 new KernelParameter { Name = "kernel_height", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "pad_x", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "pad_y", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -448,14 +448,14 @@ public sealed class OpenCLKernelGenerator : IKernelGenerator
             Name = "fft_stockham",
             Source = source.ToString(),
             Language = KernelLanguage.OpenCL,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = inputTypes[0], IsInput = true },
                 new KernelParameter { Name = "output", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "N", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "stride", Type = typeof(int), IsInput = true },
                 new KernelParameter { Name = "offset", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -501,14 +501,14 @@ public sealed class OpenCLKernelGenerator : IKernelGenerator
             Name = "reduce_sum",
             Source = source.ToString(),
             Language = KernelLanguage.OpenCL,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "shared", Type = elementType.MakeArrayType(), MemorySpace = MemorySpace.Shared },
                 new KernelParameter { Name = "n", Type = typeof(int), IsInput = true }
-            },
-            RequiredWorkGroupSize = new[] { workGroupSize },
+            ],
+            RequiredWorkGroupSize = [workGroupSize],
             SharedMemorySize = workGroupSize * GetTypeSize(elementType)
         };
     }
@@ -537,12 +537,12 @@ public sealed class OpenCLKernelGenerator : IKernelGenerator
             Name = "map_function",
             Source = source.ToString(),
             Language = KernelLanguage.OpenCL,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "n", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -575,13 +575,13 @@ public sealed class OpenCLKernelGenerator : IKernelGenerator
             Name = "filter_predicate",
             Source = source.ToString(),
             Language = KernelLanguage.OpenCL,
-            Parameters = new[]
-            {
+            Parameters =
+            [
                 new KernelParameter { Name = "input", Type = inputTypes[0], IsInput = true, IsReadOnly = true },
                 new KernelParameter { Name = "output", Type = outputType, IsOutput = true },
                 new KernelParameter { Name = "output_count", Type = typeof(int).MakeArrayType(), IsOutput = true },
                 new KernelParameter { Name = "n", Type = typeof(int), IsInput = true }
-            }
+            ]
         };
     }
 
@@ -602,7 +602,7 @@ public sealed class OpenCLKernelGenerator : IKernelGenerator
         source.AppendLine();
         source.AppendLine($"__kernel void {name}(");
         
-        for (int i = 0; i < parameters.Length; i++)
+        for (var i = 0; i < parameters.Length; i++)
         {
             var param = parameters[i];
             var qualifier = param.MemorySpace switch
@@ -775,9 +775,9 @@ internal sealed class OpenCLExpressionVisitor : ExpressionVisitor
     {
         _context = context;
         _kernelBody = new StringBuilder();
-        _parameters = new List<KernelParameter>();
+        _parameters = [];
         KernelName = "generated_kernel";
-        OptimizationMetadata = new Dictionary<string, object>();
+        OptimizationMetadata = [];
     }
 
     public string KernelName { get; set; }
@@ -786,7 +786,7 @@ internal sealed class OpenCLExpressionVisitor : ExpressionVisitor
 
     public KernelParameter[] GetParameters()
     {
-        return _parameters.ToArray();
+        return [.. _parameters];
     }
 
     public new string Visit(Expression expression)
@@ -860,9 +860,13 @@ internal sealed class OpenCLExpressionVisitor : ExpressionVisitor
             var funcName = method.Name.ToLowerInvariant();
             _kernelBody.Append($"{funcName}(");
             
-            for (int i = 0; i < node.Arguments.Count; i++)
+            for (var i = 0; i < node.Arguments.Count; i++)
             {
-                if (i > 0) _kernelBody.Append(", ");
+                if (i > 0)
+                {
+                    _kernelBody.Append(", ");
+                }
+
                 Visit(node.Arguments[i]);
             }
             

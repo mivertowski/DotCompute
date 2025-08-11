@@ -40,7 +40,7 @@ public static class SimpleQueryableExtensions
     public static T[] ToGpuArray<T>(this IQueryable<T> source)
     {
         ArgumentNullException.ThrowIfNull(source);
-        return source.ToArray();
+        return [.. source];
     }
 
     /// <summary>

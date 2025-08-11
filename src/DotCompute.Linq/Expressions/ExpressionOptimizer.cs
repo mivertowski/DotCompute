@@ -206,7 +206,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
     private class RedundancyEliminationVisitor : ExpressionVisitor
     {
         private readonly ILogger _logger;
-        private readonly Dictionary<Expression, Expression> _visitedExpressions = new();
+        private readonly Dictionary<Expression, Expression> _visitedExpressions = [];
 
         public RedundancyEliminationVisitor(ILogger logger)
         {

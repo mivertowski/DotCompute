@@ -126,7 +126,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return new NumaMemoryPolicy
         {
             Strategy = NumaAllocationStrategy.LocalPreferred,
-            PreferredNodes = new[] { preferredNode },
+            PreferredNodes = [preferredNode],
             FallbackStrategy = NumaFallbackStrategy.ClosestFirst
         };
     }
@@ -142,7 +142,7 @@ public sealed class CpuMemoryManager : IMemoryManager, IDisposable
         return new NumaMemoryPolicy
         {
             Strategy = NumaAllocationStrategy.LocalPreferred,
-            PreferredNodes = new[] { optimalNode },
+            PreferredNodes = [optimalNode],
             FallbackStrategy = NumaFallbackStrategy.ClosestFirst
         };
     }

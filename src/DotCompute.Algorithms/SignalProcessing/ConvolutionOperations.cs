@@ -98,7 +98,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "StridedConvolution1D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -145,7 +145,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "DilatedConvolution1D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -292,7 +292,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "DepthwiseConvolution2D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -361,7 +361,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "Convolution3D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -427,7 +427,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "TransposedConvolution2D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -501,7 +501,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "BatchConvolution2D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -544,7 +544,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "DirectConvolution1D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -616,7 +616,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "DirectConvolution2D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -671,7 +671,7 @@ public sealed class ConvolutionOperations : IDisposable
 
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "WinogradConvolution2D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -713,7 +713,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "Im2ColConvolution2D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -756,7 +756,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "FFTConvolution2D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -826,7 +826,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "ConvolveRows2D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -858,7 +858,7 @@ public sealed class ConvolutionOperations : IDisposable
         var context = CreateKernelGenerationContext();
         var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             "ConvolveColumns2D",
-            new[] { typeof(float[]), typeof(float[]) },
+            [typeof(float[]), typeof(float[])],
             typeof(float[]),
             _accelerator,
             context,
@@ -900,11 +900,11 @@ public sealed class ConvolutionOperations : IDisposable
         var maxWorkGroupSize = _accelerator.Info.MaxThreadsPerBlock;
         
         if (maxWorkGroupSize >= 256)
-            return new[] { 16, 16 }; // 2D work groups
+            return [16, 16]; // 2D work groups
         else if (maxWorkGroupSize >= 64)
-            return new[] { 8, 8 };
+            return [8, 8];
         else
-            return new[] { 4, 4 };
+            return [4, 4];
     }
 
     private static ConvolutionStrategy SelectOptimalStrategy(ConvolutionStrategy strategy, int maxKernelSize, int dimensions)
@@ -962,10 +962,10 @@ public sealed class ConvolutionOperations : IDisposable
     {
         return padding switch
         {
-            PaddingMode.Valid => input.Take(originalSignalLength - kernelLength + 1).ToArray(),
-            PaddingMode.Same => input.Take(originalSignalLength).ToArray(),
+            PaddingMode.Valid => [.. input.Take(originalSignalLength - kernelLength + 1)],
+            PaddingMode.Same => [.. input.Take(originalSignalLength)],
             PaddingMode.Full => input,
-            PaddingMode.Causal => input.Take(originalSignalLength).ToArray(),
+            PaddingMode.Causal => [.. input.Take(originalSignalLength)],
             _ => input
         };
     }

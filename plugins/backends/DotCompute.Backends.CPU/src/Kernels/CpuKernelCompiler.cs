@@ -122,7 +122,7 @@ internal static partial class CpuKernelCompiler
                 }
 
                 // Validate each parameter
-                for (int i = 0; i < parameters.Count; i++)
+                for (var i = 0; i < parameters.Count; i++)
                 {
                     if (parameters[i] is IDictionary<string, object> param)
                     {

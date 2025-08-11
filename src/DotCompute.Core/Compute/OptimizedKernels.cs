@@ -41,7 +41,9 @@ internal abstract class OptimizedKernelBase : ICompiledKernel
     protected void ThrowIfDisposed()
     {
         if (Disposed)
+        {
             throw new ObjectDisposedException(GetType().Name);
+        }
     }
 }
 
@@ -58,7 +60,9 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
         ThrowIfDisposed();
 
         if (arguments.Arguments.Length < 3)
+        {
             throw new ArgumentException("Vector add requires 3 arguments: input A, input B, output");
+        }
 
         var bufferA = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
         var bufferB = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
@@ -110,7 +114,7 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
         var remainder = elementCount % vectorSize;
 
         // Process 8 elements at a time with AVX
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vecA = Avx.LoadVector256(ptrA + offset);
@@ -120,7 +124,7 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
         }
 
         // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < elementCount; i++)
+        for (var i = vectorCount * vectorSize; i < elementCount; i++)
         {
             ptrResult[i] = ptrA[i] + ptrB[i];
         }
@@ -132,7 +136,7 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
         var vectorCount = elementCount / vectorSize;
 
         // Process 4 elements at a time with SSE
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vecA = Sse.LoadVector128(ptrA + offset);
@@ -142,7 +146,7 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
         }
 
         // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < elementCount; i++)
+        for (var i = vectorCount * vectorSize; i < elementCount; i++)
         {
             ptrResult[i] = ptrA[i] + ptrB[i];
         }
@@ -154,7 +158,7 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
         var vectorCount = elementCount / vectorSize;
 
         // Use .NET Vector<T> SIMD
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vecA = Unsafe.ReadUnaligned<Vector<float>>(ptrA + offset);
@@ -164,7 +168,7 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
         }
 
         // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < elementCount; i++)
+        for (var i = vectorCount * vectorSize; i < elementCount; i++)
         {
             ptrResult[i] = ptrA[i] + ptrB[i];
         }
@@ -172,7 +176,7 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
 
     private static unsafe void ExecuteVectorAddScalar(float* ptrA, float* ptrB, float* ptrResult, int elementCount)
     {
-        for (int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             ptrResult[i] = ptrA[i] + ptrB[i];
         }
@@ -191,7 +195,7 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
         var vectorSize = Vector<float>.Count;
         var vectorCount = elementCount / vectorSize;
 
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vecA = new Vector<float>(dataA, offset);
@@ -201,7 +205,7 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
         }
 
         // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < elementCount; i++)
+        for (var i = vectorCount * vectorSize; i < elementCount; i++)
         {
             dataResult[i] = dataA[i] + dataB[i];
         }
@@ -223,7 +227,9 @@ internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
         ThrowIfDisposed();
 
         if (arguments.Arguments.Length < 4)
+        {
             throw new ArgumentException("Matrix multiply requires 4 arguments: matrix A, matrix B, result C, size");
+        }
 
         var bufferA = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
         var bufferB = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
@@ -247,7 +253,7 @@ internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
         }
         else
         {
-            ExecuteMatrixMultiplyGeneric(bufferA, bufferB, bufferC, size).Wait();
+            ExecuteMatrixMultiplyGenericAsync(bufferA, bufferB, bufferC, size).Wait();
         }
     }
 
@@ -256,28 +262,28 @@ internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
         const int blockSize = 64; // Optimize for L1 cache
 
         // Initialize result matrix to zero
-        for (int i = 0; i < size * size; i++)
+        for (var i = 0; i < size * size; i++)
         {
             c[i] = 0.0f;
         }
 
         // Blocked matrix multiplication for cache efficiency
-        for (int ii = 0; ii < size; ii += blockSize)
+        for (var ii = 0; ii < size; ii += blockSize)
         {
-            for (int jj = 0; jj < size; jj += blockSize)
+            for (var jj = 0; jj < size; jj += blockSize)
             {
-                for (int kk = 0; kk < size; kk += blockSize)
+                for (var kk = 0; kk < size; kk += blockSize)
                 {
                     var iEnd = Math.Min(ii + blockSize, size);
                     var jEnd = Math.Min(jj + blockSize, size);
                     var kEnd = Math.Min(kk + blockSize, size);
 
-                    for (int i = ii; i < iEnd; i++)
+                    for (var i = ii; i < iEnd; i++)
                     {
-                        for (int j = jj; j < jEnd; j++)
+                        for (var j = jj; j < jEnd; j++)
                         {
                             var sum = c[i * size + j];
-                            for (int k = kk; k < kEnd; k++)
+                            for (var k = kk; k < kEnd; k++)
                             {
                                 sum += a[i * size + k] * b[k * size + j];
                             }
@@ -289,7 +295,7 @@ internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
         }
     }
 
-    private async Task ExecuteMatrixMultiplyGeneric(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferC, int size)
+    private async Task ExecuteMatrixMultiplyGenericAsync(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferC, int size)
     {
         var matrixA = new float[size * size];
         var matrixB = new float[size * size];
@@ -301,10 +307,10 @@ internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
         // Parallel matrix multiplication
         Parallel.For(0, size, i =>
         {
-            for (int j = 0; j < size; j++)
+            for (var j = 0; j < size; j++)
             {
-                float sum = 0.0f;
-                for (int k = 0; k < size; k++)
+                var sum = 0.0f;
+                for (var k = 0; k < size; k++)
                 {
                     sum += matrixA[i * size + k] * matrixB[k * size + j];
                 }
@@ -329,7 +335,9 @@ internal class OptimizedReductionKernel : OptimizedKernelBase
         ThrowIfDisposed();
 
         if (arguments.Arguments.Length < 2)
+        {
             throw new ArgumentException("Reduction requires 2 arguments: input, output");
+        }
 
         var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
         var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
@@ -351,7 +359,7 @@ internal class OptimizedReductionKernel : OptimizedKernelBase
         }
         else
         {
-            ExecuteReductionGeneric(inputBuffer, outputBuffer, elementCount).Wait();
+            ExecuteReductionGenericAsync(inputBuffer, outputBuffer, elementCount).Wait();
         }
     }
 
@@ -377,7 +385,7 @@ internal class OptimizedReductionKernel : OptimizedKernelBase
                 var vectorSum = Vector256<float>.Zero;
                 var vectorCount = (end - start) / 8;
                 
-                for (int i = 0; i < vectorCount; i++)
+                for (var i = 0; i < vectorCount; i++)
                 {
                     var vec = Avx.LoadVector256(input + start + i * 8);
                     vectorSum = Avx.Add(vectorSum, vec);
@@ -386,20 +394,20 @@ internal class OptimizedReductionKernel : OptimizedKernelBase
                 // Sum vector elements
                 var temp = stackalloc float[8];
                 Avx.Store(temp, vectorSum);
-                for (int i = 0; i < 8; i++)
+                for (var i = 0; i < 8; i++)
                 {
                     sum += temp[i];
                 }
                 
                 // Handle remaining elements
-                for (int i = start + vectorCount * 8; i < end; i++)
+                for (var i = start + vectorCount * 8; i < end; i++)
                 {
                     sum += input[i];
                 }
             }
             else
             {
-                for (int i = start; i < end; i++)
+                for (var i = start; i < end; i++)
                 {
                     sum += input[i];
                 }
@@ -410,7 +418,7 @@ internal class OptimizedReductionKernel : OptimizedKernelBase
 
         // Second level: tree reduction of per-thread sums
         var totalSum = 0.0f;
-        for (int i = 0; i < numThreads; i++)
+        for (var i = 0; i < numThreads; i++)
         {
             totalSum += tempBuffer[i];
         }
@@ -418,7 +426,7 @@ internal class OptimizedReductionKernel : OptimizedKernelBase
         return totalSum;
     }
 
-    private async Task ExecuteReductionGeneric(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
+    private async Task ExecuteReductionGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
     {
         var input = new float[elementCount];
         await inputBuffer.CopyToHostAsync<float>(input);
@@ -433,8 +441,8 @@ internal class OptimizedReductionKernel : OptimizedKernelBase
             var start = partition * elementsPerPartition;
             var end = (partition == numPartitions - 1) ? elementCount : start + elementsPerPartition;
 
-            double sum = 0.0;
-            for (int i = start; i < end; i++)
+            var sum = 0.0;
+            for (var i = start; i < end; i++)
             {
                 sum += input[i];
             }
@@ -459,7 +467,9 @@ internal class OptimizedMemoryKernel : OptimizedKernelBase
         ThrowIfDisposed();
 
         if (arguments.Arguments.Length < 2)
+        {
             throw new ArgumentException("Memory kernel requires 2 arguments: input, output");
+        }
 
         var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
         var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
@@ -478,7 +488,7 @@ internal class OptimizedMemoryKernel : OptimizedKernelBase
             var outputPtr = hpOutputBuffer.GetFloatPtr();
 
             // Memory-intensive operations with prefetching
-            for (int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 // Prefetch next cache lines
                 if (i + 16 < elementCount)
@@ -496,11 +506,11 @@ internal class OptimizedMemoryKernel : OptimizedKernelBase
         }
         else
         {
-            ExecuteMemoryIntensiveGeneric(inputBuffer, outputBuffer, elementCount).Wait();
+            ExecuteMemoryIntensiveGenericAsync(inputBuffer, outputBuffer, elementCount).Wait();
         }
     }
 
-    private async Task ExecuteMemoryIntensiveGeneric(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
+    private async Task ExecuteMemoryIntensiveGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
     {
         var input = new float[elementCount];
         var output = new float[elementCount];
@@ -533,7 +543,9 @@ internal class OptimizedComputeKernel : OptimizedKernelBase
         ThrowIfDisposed();
 
         if (arguments.Arguments.Length < 3)
+        {
             throw new ArgumentException("Compute kernel requires 3 arguments: input, output, iterations");
+        }
 
         var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
         var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
@@ -556,7 +568,7 @@ internal class OptimizedComputeKernel : OptimizedKernelBase
         {
             var value = input[i];
             
-            for (int iter = 0; iter < iterations; iter++)
+            for (var iter = 0; iter < iterations; iter++)
             {
                 value = MathF.Sin(value) * MathF.Cos(value) + MathF.Sqrt(MathF.Abs(value) + 1.0f);
                 value = MathF.Abs(value);

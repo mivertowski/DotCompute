@@ -20,10 +20,10 @@ public static class SignalProcessor
     {
         if (signal.Length == 0 || kernel.Length == 0)
         {
-            return Array.Empty<float>();
+            return [];
         }
 
-        int resultLength = signal.Length + kernel.Length - 1;
+        var resultLength = signal.Length + kernel.Length - 1;
         var result = new float[resultLength];
 
         // Direct convolution for small kernels
@@ -50,12 +50,12 @@ public static class SignalProcessor
     {
         if (signal1.Length == 0 || signal2.Length == 0)
         {
-            return Array.Empty<float>();
+            return [];
         }
 
         // Cross-correlation is convolution with reversed kernel
         var reversedSignal2 = new float[signal2.Length];
-        for (int i = 0; i < signal2.Length; i++)
+        for (var i = 0; i < signal2.Length; i++)
         {
             reversedSignal2[i] = signal2[signal2.Length - 1 - i];
         }
@@ -85,7 +85,7 @@ public static class SignalProcessor
     {
         if (signal.Length == 0)
         {
-            return Array.Empty<float>();
+            return [];
         }
 
         if (a.Length == 0 || Math.Abs(a[0]) < float.Epsilon)
@@ -97,10 +97,10 @@ public static class SignalProcessor
         var delayLineX = new float[b.Length];
         var delayLineY = new float[a.Length];
 
-        for (int n = 0; n < signal.Length; n++)
+        for (var n = 0; n < signal.Length; n++)
         {
             // Shift delay lines
-            for (int i = delayLineX.Length - 1; i > 0; i--)
+            for (var i = delayLineX.Length - 1; i > 0; i--)
             {
                 delayLineX[i] = delayLineX[i - 1];
             }
@@ -108,13 +108,13 @@ public static class SignalProcessor
 
             // Calculate feedforward part
             float y = 0;
-            for (int i = 0; i < b.Length && i < delayLineX.Length; i++)
+            for (var i = 0; i < b.Length && i < delayLineX.Length; i++)
             {
                 y += b[i] * delayLineX[i];
             }
 
             // Calculate feedback part
-            for (int i = 1; i < a.Length && i < delayLineY.Length; i++)
+            for (var i = 1; i < a.Length && i < delayLineY.Length; i++)
             {
                 y -= a[i] * delayLineY[i];
             }
@@ -123,7 +123,7 @@ public static class SignalProcessor
             result[n] = y;
 
             // Update output delay line
-            for (int i = delayLineY.Length - 1; i > 0; i--)
+            for (var i = delayLineY.Length - 1; i > 0; i--)
             {
                 delayLineY[i] = delayLineY[i - 1];
             }
@@ -153,13 +153,13 @@ public static class SignalProcessor
         }
 
         var coefficients = new float[filterLength];
-        int center = filterLength / 2;
-        float wc = 2 * MathF.PI * cutoffFreq;
+        var center = filterLength / 2;
+        var wc = 2 * MathF.PI * cutoffFreq;
 
         // Generate ideal sinc function
-        for (int i = 0; i < filterLength; i++)
+        for (var i = 0; i < filterLength; i++)
         {
-            int n = i - center;
+            var n = i - center;
             if (n == 0)
             {
                 coefficients[i] = 2 * cutoffFreq;
@@ -175,14 +175,14 @@ public static class SignalProcessor
 
         // Normalize
         float sum = 0;
-        for (int i = 0; i < filterLength; i++)
+        for (var i = 0; i < filterLength; i++)
         {
             sum += coefficients[i];
         }
 
         if (Math.Abs(sum) > float.Epsilon)
         {
-            for (int i = 0; i < filterLength; i++)
+            for (var i = 0; i < filterLength; i++)
             {
                 coefficients[i] /= sum;
             }
@@ -204,8 +204,8 @@ public static class SignalProcessor
         var lowPass = DesignLowPassFIR(cutoffFreq, filterLength, windowType);
 
         // Spectral inversion
-        int center = filterLength / 2;
-        for (int i = 0; i < filterLength; i++)
+        var center = filterLength / 2;
+        for (var i = 0; i < filterLength; i++)
         {
             lowPass[i] = -lowPass[i];
         }
@@ -234,7 +234,7 @@ public static class SignalProcessor
         var lowPass = DesignLowPassFIR(lowFreq, filterLength, windowType);
 
         var result = new float[filterLength];
-        for (int i = 0; i < filterLength; i++)
+        for (var i = 0; i < filterLength; i++)
         {
             result[i] = highPass[i] - lowPass[i];
         }
@@ -253,20 +253,20 @@ public static class SignalProcessor
     {
         if (signal.Length == 0)
         {
-            return Array.Empty<float>();
+            return [];
         }
 
-        float ratio = targetRate / originalRate;
-        int outputLength = (int)(signal.Length * ratio);
+        var ratio = targetRate / originalRate;
+        var outputLength = (int)(signal.Length * ratio);
         var result = new float[outputLength];
 
         // Simple linear interpolation for now
-        for (int i = 0; i < outputLength; i++)
+        for (var i = 0; i < outputLength; i++)
         {
-            float sourceIndex = i / ratio;
-            int index1 = (int)sourceIndex;
-            int index2 = Math.Min(index1 + 1, signal.Length - 1);
-            float fraction = sourceIndex - index1;
+            var sourceIndex = i / ratio;
+            var index1 = (int)sourceIndex;
+            var index2 = Math.Min(index1 + 1, signal.Length - 1);
+            var fraction = sourceIndex - index1;
 
             if (index1 < signal.Length)
             {
@@ -279,12 +279,12 @@ public static class SignalProcessor
 
     private static void DirectConvolve(ReadOnlySpan<float> signal, ReadOnlySpan<float> kernel, Span<float> result)
     {
-        for (int n = 0; n < result.Length; n++)
+        for (var n = 0; n < result.Length; n++)
         {
             float sum = 0;
-            for (int k = 0; k < kernel.Length; k++)
+            for (var k = 0; k < kernel.Length; k++)
             {
-                int signalIndex = n - k;
+                var signalIndex = n - k;
                 if (signalIndex >= 0 && signalIndex < signal.Length)
                 {
                     sum += signal[signalIndex] * kernel[k];
@@ -297,7 +297,7 @@ public static class SignalProcessor
     private static void FFTConvolve(ReadOnlySpan<float> signal, ReadOnlySpan<float> kernel, Span<float> result)
     {
         // Find next power of 2
-        int fftSize = 1;
+        var fftSize = 1;
         while (fftSize < result.Length)
         {
             fftSize <<= 1;
@@ -307,12 +307,12 @@ public static class SignalProcessor
         var paddedSignal = new Complex[fftSize];
         var paddedKernel = new Complex[fftSize];
 
-        for (int i = 0; i < signal.Length; i++)
+        for (var i = 0; i < signal.Length; i++)
         {
             paddedSignal[i] = new Complex(signal[i], 0);
         }
 
-        for (int i = 0; i < kernel.Length; i++)
+        for (var i = 0; i < kernel.Length; i++)
         {
             paddedKernel[i] = new Complex(kernel[i], 0);
         }
@@ -322,7 +322,7 @@ public static class SignalProcessor
         FFT.Forward(paddedKernel);
 
         // Multiply in frequency domain
-        for (int i = 0; i < fftSize; i++)
+        for (var i = 0; i < fftSize; i++)
         {
             paddedSignal[i] = paddedSignal[i] * paddedKernel[i];
         }
@@ -331,7 +331,7 @@ public static class SignalProcessor
         FFT.Inverse(paddedSignal);
 
         // Copy result
-        for (int i = 0; i < result.Length; i++)
+        for (var i = 0; i < result.Length; i++)
         {
             result[i] = paddedSignal[i].Real;
         }

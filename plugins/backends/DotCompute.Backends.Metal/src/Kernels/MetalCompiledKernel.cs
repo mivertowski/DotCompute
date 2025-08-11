@@ -272,8 +272,8 @@ public sealed class MetalCompiledKernel(
     {
         return value switch
         {
-            byte b => new[] { b },
-            sbyte sb => new[] { (byte)sb },
+            byte b => [b],
+            sbyte sb => [(byte)sb],
             short s => BitConverter.GetBytes(s),
             ushort us => BitConverter.GetBytes(us),
             int i => BitConverter.GetBytes(i),

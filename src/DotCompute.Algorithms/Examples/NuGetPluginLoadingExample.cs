@@ -66,34 +66,34 @@ public sealed class NuGetPluginLoadingExample
         try
         {
             // Example 1: Load from local .nupkg file
-            await LoadFromLocalPackageExample(cancellationToken);
+            await LoadFromLocalPackageExampleAsync(cancellationToken);
 
             // Example 2: Load from NuGet.org by package ID
-            await LoadFromRemotePackageExample(cancellationToken);
+            await LoadFromRemotePackageExampleAsync(cancellationToken);
 
             // Example 3: Load specific version
-            await LoadSpecificVersionExample(cancellationToken);
+            await LoadSpecificVersionExampleAsync(cancellationToken);
 
             // Example 4: Package validation before loading
-            await PackageValidationExample(cancellationToken);
+            await PackageValidationExampleAsync(cancellationToken);
 
             // Example 5: Package update management
-            await PackageUpdateExample(cancellationToken);
+            await PackageUpdateExampleAsync(cancellationToken);
 
             // Example 6: Cache management
-            await CacheManagementExample(cancellationToken);
+            await CacheManagementExampleAsync(cancellationToken);
 
             // Example 7: Dependency resolution demonstration
-            await DependencyResolutionExample(cancellationToken);
+            await DependencyResolutionExampleAsync(cancellationToken);
 
             // Example 8: Security validation showcase
-            await SecurityValidationExample(cancellationToken);
+            await SecurityValidationExampleAsync(cancellationToken);
 
             // Example 9: Framework targeting
-            await FrameworkTargetingExample(cancellationToken);
+            await FrameworkTargetingExampleAsync(cancellationToken);
 
             // Example 10: Plugin execution with loaded NuGet packages
-            await ExecuteLoadedPluginsExample(cancellationToken);
+            await ExecuteLoadedPluginsExampleAsync(cancellationToken);
 
             _logger.LogInformation("NuGet plugin loading example completed successfully!");
         }
@@ -107,7 +107,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 1: Loading plugins from a local .nupkg file.
     /// </summary>
-    private async Task LoadFromLocalPackageExample(CancellationToken cancellationToken)
+    private async Task LoadFromLocalPackageExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 1: Loading from local .nupkg file ===");
 
@@ -137,7 +137,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 2: Loading plugins from NuGet.org by package ID.
     /// </summary>
-    private async Task LoadFromRemotePackageExample(CancellationToken cancellationToken)
+    private async Task LoadFromRemotePackageExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 2: Loading from remote package ===");
 
@@ -167,7 +167,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 3: Loading a specific version of a package.
     /// </summary>
-    private async Task LoadSpecificVersionExample(CancellationToken cancellationToken)
+    private async Task LoadSpecificVersionExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 3: Loading specific package version ===");
 
@@ -197,7 +197,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 4: Validating a package before loading it.
     /// </summary>
-    private async Task PackageValidationExample(CancellationToken cancellationToken)
+    private async Task PackageValidationExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 4: Package validation ===");
 
@@ -233,7 +233,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 5: Updating packages to latest versions.
     /// </summary>
-    private async Task PackageUpdateExample(CancellationToken cancellationToken)
+    private async Task PackageUpdateExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 5: Package updates ===");
 
@@ -262,7 +262,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 6: Cache management operations.
     /// </summary>
-    private async Task CacheManagementExample(CancellationToken cancellationToken)
+    private async Task CacheManagementExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 6: Cache management ===");
 
@@ -299,7 +299,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 7: Dependency resolution demonstration.
     /// </summary>
-    private Task DependencyResolutionExample(CancellationToken cancellationToken)
+    private Task DependencyResolutionExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 7: Dependency resolution ===");
 
@@ -316,7 +316,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 8: Security validation showcase.
     /// </summary>
-    private Task SecurityValidationExample(CancellationToken cancellationToken)
+    private Task SecurityValidationExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 8: Security validation ===");
 
@@ -337,7 +337,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 9: Framework targeting demonstration.
     /// </summary>
-    private async Task FrameworkTargetingExample(CancellationToken cancellationToken)
+    private async Task FrameworkTargetingExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 9: Framework targeting ===");
 
@@ -377,7 +377,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Example 10: Executing loaded plugins.
     /// </summary>
-    private async Task ExecuteLoadedPluginsExample(CancellationToken cancellationToken)
+    private async Task ExecuteLoadedPluginsExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("=== Example 10: Executing loaded plugins ===");
 
@@ -421,7 +421,7 @@ public sealed class NuGetPluginLoadingExample
                     // This would execute with actual input data appropriate for the plugin
                     var result = await _pluginManager.ExecutePluginAsync(
                         firstPlugin.Id,
-                        new object[] { /* appropriate inputs */ },
+                        [],
                         null,
                         cancellationToken);
 
@@ -452,16 +452,16 @@ public sealed class NuGetPluginLoadingExample
     {
         _logger.LogInformation("=== Advanced NuGet Plugin Loading Scenarios ===");
 
-        await BatchPackageLoadingExample(cancellationToken);
-        await ConditionalLoadingExample(cancellationToken);
-        await PerformanceMonitoringExample(cancellationToken);
-        await ErrorHandlingExample(cancellationToken);
+        await BatchPackageLoadingExampleAsync(cancellationToken);
+        await ConditionalLoadingExampleAsync(cancellationToken);
+        await PerformanceMonitoringExampleAsync(cancellationToken);
+        await ErrorHandlingExampleAsync(cancellationToken);
     }
 
     /// <summary>
     /// Demonstrates loading multiple packages efficiently.
     /// </summary>
-    private async Task BatchPackageLoadingExample(CancellationToken cancellationToken)
+    private async Task BatchPackageLoadingExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("--- Batch package loading ---");
 
@@ -507,7 +507,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Demonstrates conditional loading based on package analysis.
     /// </summary>
-    private async Task ConditionalLoadingExample(CancellationToken cancellationToken)
+    private async Task ConditionalLoadingExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("--- Conditional loading based on validation ---");
 
@@ -534,7 +534,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Demonstrates performance monitoring during package operations.
     /// </summary>
-    private async Task PerformanceMonitoringExample(CancellationToken cancellationToken)
+    private async Task PerformanceMonitoringExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("--- Performance monitoring ---");
 
@@ -563,7 +563,7 @@ public sealed class NuGetPluginLoadingExample
     /// <summary>
     /// Demonstrates comprehensive error handling.
     /// </summary>
-    private async Task ErrorHandlingExample(CancellationToken cancellationToken)
+    private async Task ErrorHandlingExampleAsync(CancellationToken cancellationToken)
     {
         _logger.LogInformation("--- Error handling demonstration ---");
 

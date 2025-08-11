@@ -161,7 +161,7 @@ internal sealed class KernelStage(
             var kernelContext = new KernelExecutionContext
             {
                 Name = _kernel.Name,
-                WorkDimensions = _globalWorkSize ?? new[] { 1L },
+                WorkDimensions = _globalWorkSize ?? [1L],
                 LocalWorkSize = _localWorkSize != null ? _localWorkSize : null,
                 Arguments = [.. arguments],
                 CancellationToken = cancellationToken

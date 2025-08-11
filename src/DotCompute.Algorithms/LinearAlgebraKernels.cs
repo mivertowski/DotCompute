@@ -945,8 +945,8 @@ __kernel void lu_decomposition_step(
         {
             LinearAlgebraOperation.MatrixMultiply => new KernelExecutionParameters
             {
-                GlobalWorkSize = new[] { ((cols + 15) / 16) * 16, ((rows + 15) / 16) * 16 },
-                LocalWorkSize = new[] { 16, 16 },
+                GlobalWorkSize = [((cols + 15) / 16) * 16, ((rows + 15) / 16) * 16],
+                LocalWorkSize = [16, 16],
                 SharedMemorySize = 2 * 16 * 16 * sizeof(float), // Two tiles
                 UseSharedMemory = true,
                 TileSize = 16
@@ -954,24 +954,24 @@ __kernel void lu_decomposition_step(
             
             LinearAlgebraOperation.HouseholderVector => new KernelExecutionParameters
             {
-                GlobalWorkSize = new[] { ((Math.Max(rows, cols) + 255) / 256) * 256 },
-                LocalWorkSize = new[] { 256 },
+                GlobalWorkSize = [((Math.Max(rows, cols) + 255) / 256) * 256],
+                LocalWorkSize = [256],
                 SharedMemorySize = 256 * sizeof(float),
                 UseSharedMemory = true
             },
             
             LinearAlgebraOperation.ParallelReduction => new KernelExecutionParameters
             {
-                GlobalWorkSize = new[] { ((rows * cols + 255) / 256) * 256 },
-                LocalWorkSize = new[] { 256 },
+                GlobalWorkSize = [((rows * cols + 255) / 256) * 256],
+                LocalWorkSize = [256],
                 SharedMemorySize = 256 * sizeof(float),
                 UseSharedMemory = true
             },
             
             _ => new KernelExecutionParameters
             {
-                GlobalWorkSize = new[] { ((Math.Max(rows, cols) + 127) / 128) * 128 },
-                LocalWorkSize = new[] { 128 },
+                GlobalWorkSize = [((Math.Max(rows, cols) + 127) / 128) * 128],
+                LocalWorkSize = [128],
                 UseSharedMemory = false
             }
         };
@@ -1025,7 +1025,7 @@ __kernel void lu_decomposition_step(
     {
         // Calculate block size to fit in shared memory
         long availableSharedMem = hardware.SharedMemorySize - 1024; // Reserve some space
-        int maxBlockSize = (int)Math.Sqrt(availableSharedMem / sizeof(float));
+        var maxBlockSize = (int)Math.Sqrt(availableSharedMem / sizeof(float));
         
         // Round down to nearest power of 2
         return GetPreviousPowerOfTwo(Math.Min(maxBlockSize, 64));
@@ -1073,8 +1073,8 @@ public enum LinearAlgebraOperation
 /// </summary>
 public class KernelExecutionParameters
 {
-    public int[] GlobalWorkSize { get; set; } = Array.Empty<int>();
-    public int[] LocalWorkSize { get; set; } = Array.Empty<int>();
+    public int[] GlobalWorkSize { get; set; } = [];
+    public int[] LocalWorkSize { get; set; } = [];
     public int SharedMemorySize { get; set; }
     public bool UseSharedMemory { get; set; }
     public int TileSize { get; set; } = 16;

@@ -259,7 +259,7 @@ namespace DotCompute.Plugins.Loaders
             IsLoaded = false,
             ResultType = PluginLoadResultType.ValidationFailed,
             ErrorMessage = $"Validation failed for plugin {pluginId}",
-            ErrorDetails = errors.ToList()
+            ErrorDetails = [.. errors]
         };
 
         /// <summary>
@@ -270,7 +270,7 @@ namespace DotCompute.Plugins.Loaders
             IsLoaded = false,
             ResultType = PluginLoadResultType.DependencyResolutionFailed,
             ErrorMessage = $"Dependency resolution failed for plugin {pluginId}",
-            ErrorDetails = errors.ToList()
+            ErrorDetails = [.. errors]
         };
 
         /// <summary>

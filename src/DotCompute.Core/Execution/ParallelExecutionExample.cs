@@ -15,12 +15,12 @@ public class ParallelExecutionExample
 {
     private readonly ILogger<ParallelExecutionExample> _logger;
     private readonly IAcceleratorManager _acceleratorManager;
-    private readonly KernelManager _kernelManager;
+    private readonly IKernelManager _kernelManager;
 
     public ParallelExecutionExample(
         ILogger<ParallelExecutionExample> logger,
         IAcceleratorManager acceleratorManager,
-        KernelManager kernelManager)
+        IKernelManager kernelManager)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(nameof(acceleratorManager));
@@ -30,7 +30,7 @@ public class ParallelExecutionExample
     /// <summary>
     /// Demonstrates data parallel execution across multiple GPUs.
     /// </summary>
-    public async Task<ParallelExecutionResult> RunDataParallelExample()
+    public async Task<ParallelExecutionResult> RunDataParallelExampleAsync()
     {
         _logger.LogInformation("Running data parallel execution example");
 
@@ -58,7 +58,7 @@ public class ParallelExecutionExample
         {
             Success = false,
             TotalExecutionTimeMs = 0,
-            DeviceResults = Array.Empty<DeviceExecutionResult>(),
+            DeviceResults = [],
             ErrorMessage = "Example implementation not complete - requires proper buffer factory",
             Strategy = ExecutionStrategyType.DataParallel
         };
@@ -70,7 +70,7 @@ public class ParallelExecutionExample
     /// <summary>
     /// Demonstrates work-stealing execution for dynamic load balancing.
     /// </summary>
-    public async Task<ParallelExecutionResult> RunWorkStealingExample()
+    public async Task<ParallelExecutionResult> RunWorkStealingExampleAsync()
     {
         _logger.LogInformation("Running work-stealing execution example");
 
@@ -88,7 +88,7 @@ public class ParallelExecutionExample
         {
             Success = false,
             TotalExecutionTimeMs = 0,
-            DeviceResults = Array.Empty<DeviceExecutionResult>(),
+            DeviceResults = [],
             ErrorMessage = "Example implementation not complete - requires proper buffer factory",
             Strategy = ExecutionStrategyType.WorkStealing
         };
@@ -97,7 +97,7 @@ public class ParallelExecutionExample
     /// <summary>
     /// Demonstrates performance analysis and strategy recommendation.
     /// </summary>
-    public async Task<ExecutionStrategyRecommendation> GetOptimalStrategy()
+    public async Task<ExecutionStrategyRecommendation> GetOptimalStrategyAsync()
     {
         _logger.LogInformation("Analyzing performance and recommending optimal strategy");
 
@@ -127,7 +127,7 @@ public class ParallelExecutionExample
     /// <summary>
     /// Demonstrates performance monitoring and analysis.
     /// </summary>
-    public async Task<ParallelExecutionAnalysis> AnalyzePerformance()
+    public async Task<ParallelExecutionAnalysis> AnalyzePerformanceAsync()
     {
         _logger.LogInformation("Running performance analysis");
 
@@ -144,7 +144,7 @@ public class ParallelExecutionExample
         _logger.LogInformation("Overall Rating: {Rating:F1}/10", analysis.OverallRating);
         _logger.LogInformation("Recommended Strategy: {Strategy}", analysis.RecommendedStrategy);
 
-        if (analysis.Bottlenecks.Any())
+        if (analysis.Bottlenecks.Count != 0)
         {
             _logger.LogInformation("Primary Bottlenecks:");
             foreach (var bottleneck in analysis.Bottlenecks.Take(3))
@@ -154,7 +154,7 @@ public class ParallelExecutionExample
             }
         }
 
-        if (analysis.OptimizationRecommendations.Any())
+        if (analysis.OptimizationRecommendations.Count != 0)
         {
             _logger.LogInformation("Optimization Recommendations:");
             foreach (var recommendation in analysis.OptimizationRecommendations.Take(5))
@@ -169,7 +169,7 @@ public class ParallelExecutionExample
     /// <summary>
     /// Demonstrates device utilization monitoring.
     /// </summary>
-    public async Task MonitorDeviceUtilization()
+    public async Task MonitorDeviceUtilizationAsync()
     {
         _logger.LogInformation("Monitoring device utilization");
 

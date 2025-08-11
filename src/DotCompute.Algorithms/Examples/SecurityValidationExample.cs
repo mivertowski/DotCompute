@@ -23,7 +23,7 @@ public static class SecurityValidationExample
     /// </summary>
     /// <param name="args">Command line arguments.</param>
     /// <returns>A task representing the asynchronous operation.</returns>
-    public static async Task Main(string[] args)
+    public static async Task MainAsync(string[] args)
     {
         // Create host with dependency injection
         using var host = CreateHostBuilder(args).Build();
@@ -36,19 +36,19 @@ public static class SecurityValidationExample
         try
         {
             // Example 1: Configure comprehensive security policy
-            await Example1_ConfigureSecurityPolicy(host.Services, logger);
+            await Example1_ConfigureSecurityPolicyAsync(host.Services, logger);
             
             // Example 2: Digital signature validation
-            await Example2_DigitalSignatureValidation(host.Services, logger);
+            await Example2_DigitalSignatureValidationAsync(host.Services, logger);
             
             // Example 3: Malware scanning integration
-            await Example3_MalwareScanningIntegration(host.Services, logger);
+            await Example3_MalwareScanningIntegrationAsync(host.Services, logger);
             
             // Example 4: Code Access Security with permission restrictions
-            await Example4_CodeAccessSecurityRestrictions(host.Services, logger);
+            await Example4_CodeAccessSecurityRestrictionsAsync(host.Services, logger);
             
             // Example 5: Complete plugin loading with all security features
-            await Example5_SecurePluginLoading(accelerator, logger);
+            await Example5_SecurePluginLoadingAsync(accelerator, logger);
             
             logger.LogInformation("Security Validation Example completed successfully");
         }
@@ -61,7 +61,7 @@ public static class SecurityValidationExample
     /// <summary>
     /// Example 1: Configure comprehensive security policy with rules and trusted publishers.
     /// </summary>
-    private static async Task Example1_ConfigureSecurityPolicy(IServiceProvider services, ILogger logger)
+    private static async Task Example1_ConfigureSecurityPolicyAsync(IServiceProvider services, ILogger logger)
     {
         logger.LogInformation("=== Example 1: Configuring Security Policy ===");
 
@@ -110,7 +110,7 @@ public static class SecurityValidationExample
     /// <summary>
     /// Example 2: Demonstrate digital signature validation using Authenticode.
     /// </summary>
-    private static async Task Example2_DigitalSignatureValidation(IServiceProvider services, ILogger logger)
+    private static async Task Example2_DigitalSignatureValidationAsync(IServiceProvider services, ILogger logger)
     {
         logger.LogInformation("=== Example 2: Digital Signature Validation ===");
 
@@ -168,7 +168,7 @@ public static class SecurityValidationExample
     /// <summary>
     /// Example 3: Demonstrate malware scanning integration.
     /// </summary>
-    private static async Task Example3_MalwareScanningIntegration(IServiceProvider services, ILogger logger)
+    private static async Task Example3_MalwareScanningIntegrationAsync(IServiceProvider services, ILogger logger)
     {
         logger.LogInformation("=== Example 3: Malware Scanning Integration ===");
 
@@ -271,7 +271,7 @@ public static class SecurityValidationExample
     /// <summary>
     /// Example 4: Demonstrate Code Access Security with permission restrictions.
     /// </summary>
-    private static async Task Example4_CodeAccessSecurityRestrictions(IServiceProvider services, ILogger logger)
+    private static async Task Example4_CodeAccessSecurityRestrictionsAsync(IServiceProvider services, ILogger logger)
     {
         logger.LogInformation("=== Example 4: Code Access Security Restrictions ===");
 
@@ -302,7 +302,7 @@ public static class SecurityValidationExample
 
         logger.LogInformation("Creating permission sets for different security zones:");
 
-        foreach (SecurityZone zone in Enum.GetValues<SecurityZone>())
+        foreach (var zone in Enum.GetValues<SecurityZone>())
         {
             if (zone == SecurityZone.Unknown) continue;
 
@@ -351,7 +351,7 @@ public static class SecurityValidationExample
     /// <summary>
     /// Example 5: Complete plugin loading with all security features enabled.
     /// </summary>
-    private static async Task Example5_SecurePluginLoading(IAccelerator accelerator, ILogger logger)
+    private static async Task Example5_SecurePluginLoadingAsync(IAccelerator accelerator, ILogger logger)
     {
         logger.LogInformation("=== Example 5: Secure Plugin Loading ===");
 

@@ -43,7 +43,7 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
     private KernelManager? _kernelManager;
     private MemoryAllocator? _memoryAllocator;
     private ManagedCompiledKernel? _cachedKernel;
-    private readonly object _kernelLock = new();
+    private readonly Lock _kernelLock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VectorAdditionPlugin"/> class.
@@ -272,7 +272,7 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
                     var start = batch * batchSize;
                     var end = Math.Min(start + batchSize, length);
                     
-                    for (int i = start; i < end; i++)
+                    for (var i = start; i < end; i++)
                     {
                         result[i] = a[i] + b[i];
                     }
@@ -281,7 +281,7 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
             else
             {
                 // Simple loop for small vectors
-                for (int i = 0; i < length; i++)
+                for (var i = 0; i < length; i++)
                 {
                     result[i] = a[i] + b[i];
                 }
@@ -347,7 +347,7 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
             IsMemoryBound = true,
             IsComputeBound = false,
             EstimatedFlops = 1, // One addition per element
-            Metadata = new Dictionary<string, object>()
+            Metadata = []
         };
 
         if (Accelerator != null && Enum.Parse<AcceleratorType>(Accelerator.Info.DeviceType) == AcceleratorType.CPU)

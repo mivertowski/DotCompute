@@ -23,7 +23,7 @@ public static class AdvancedPolynomialSolver
         ArgumentNullException.ThrowIfNull(coefficients);
         
         var degree = GetEffectiveDegree(coefficients);
-        if (degree <= 0) return Array.Empty<float>();
+        if (degree <= 0) return [];
         
         // Normalize polynomial by leading coefficient
         var normalized = NormalizePolynomial(coefficients, degree + 1);
@@ -50,7 +50,7 @@ public static class AdvancedPolynomialSolver
         ArgumentNullException.ThrowIfNull(coefficients);
         
         var degree = GetEffectiveDegree(coefficients);
-        if (degree <= 0) return Array.Empty<Complex>();
+        if (degree <= 0) return [];
         
         var normalized = NormalizePolynomial(coefficients, degree + 1);
         return DurandKernerMethod(normalized, tolerance, maxIterations);
@@ -66,8 +66,8 @@ public static class AdvancedPolynomialSolver
     {
         if (coefficients.Length == 0) return 0.0f;
         
-        float result = coefficients[0];
-        for (int i = 1; i < coefficients.Length; i++)
+        var result = coefficients[0];
+        for (var i = 1; i < coefficients.Length; i++)
         {
             result = result * x + coefficients[i];
         }
@@ -85,7 +85,7 @@ public static class AdvancedPolynomialSolver
         if (coefficients.Length == 0) return Complex.Zero;
         
         Complex result = coefficients[0];
-        for (int i = 1; i < coefficients.Length; i++)
+        for (var i = 1; i < coefficients.Length; i++)
         {
             result = result * z + coefficients[i];
         }
@@ -94,7 +94,7 @@ public static class AdvancedPolynomialSolver
 
     private static int GetEffectiveDegree(float[] coefficients)
     {
-        for (int i = 0; i < coefficients.Length; i++)
+        for (var i = 0; i < coefficients.Length; i++)
         {
             if (Math.Abs(coefficients[i]) > 1e-15f)
                 return coefficients.Length - i - 1;
@@ -110,7 +110,7 @@ public static class AdvancedPolynomialSolver
         var leadingCoeff = result[0];
         if (Math.Abs(leadingCoeff) > 1e-15f)
         {
-            for (int i = 0; i < result.Length; i++)
+            for (var i = 0; i < result.Length; i++)
             {
                 result[i] /= leadingCoeff;
             }
@@ -122,8 +122,8 @@ public static class AdvancedPolynomialSolver
     private static float[] SolveLinear(float[] coeffs)
     {
         // ax + b = 0 => x = -b/a
-        if (Math.Abs(coeffs[0]) < 1e-15f) return Array.Empty<float>();
-        return new[] { -coeffs[1] / coeffs[0] };
+        if (Math.Abs(coeffs[0]) < 1e-15f) return [];
+        return [-coeffs[1] / coeffs[0]];
     }
 
     private static float[] SolveQuadratic(float[] coeffs)
@@ -133,7 +133,7 @@ public static class AdvancedPolynomialSolver
         var b = coeffs[1];
         var c = coeffs[2];
         
-        if (Math.Abs(a) < 1e-15f) return SolveLinear(new[] { b, c });
+        if (Math.Abs(a) < 1e-15f) return SolveLinear([b, c]);
         
         var discriminant = b * b - 4 * a * c;
         var roots = new List<float>();
@@ -154,7 +154,7 @@ public static class AdvancedPolynomialSolver
         // Complex roots not included in real root finding
         
         roots.Sort();
-        return roots.ToArray();
+        return [.. roots];
     }
 
     private static float[] SolveCubic(float[] coeffs)
@@ -165,7 +165,7 @@ public static class AdvancedPolynomialSolver
         var c = coeffs[2];
         var d = coeffs[3];
         
-        if (Math.Abs(a) < 1e-15f) return SolveQuadratic(new[] { b, c, d });
+        if (Math.Abs(a) < 1e-15f) return SolveQuadratic([b, c, d]);
         
         // Convert to depressed cubic t³ + pt + q = 0 using substitution x = t - b/(3a)
         var p = (3*a*c - b*b) / (3*a*a);
@@ -181,7 +181,7 @@ public static class AdvancedPolynomialSolver
             var m = 2 * (float)Math.Sqrt(-p/3);
             var theta = (1.0f/3.0f) * (float)Math.Acos(3*q/p * (float)Math.Sqrt(-3/p));
             
-            for (int k = 0; k < 3; k++)
+            for (var k = 0; k < 3; k++)
             {
                 var angle = theta - (2 * Math.PI * k) / 3;
                 roots.Add(m * (float)Math.Cos(angle) + offset);
@@ -213,7 +213,7 @@ public static class AdvancedPolynomialSolver
         }
         
         roots.Sort();
-        return roots.ToArray();
+        return [.. roots];
     }
 
     private static float[] SolveQuartic(float[] coeffs)
@@ -239,13 +239,13 @@ public static class AdvancedPolynomialSolver
         }
         
         realRoots.Sort();
-        return realRoots.ToArray();
+        return [.. realRoots];
     }
 
     private static Complex[] DurandKernerMethod(float[] coeffs, float tolerance, int maxIterations)
     {
         var degree = coeffs.Length - 1;
-        if (degree <= 0) return Array.Empty<Complex>();
+        if (degree <= 0) return [];
         
         var roots = new Complex[degree];
         var newRoots = new Complex[degree];
@@ -253,17 +253,17 @@ public static class AdvancedPolynomialSolver
         // Initialize roots using a sophisticated starting configuration
         InitializeDurandKernerRoots(roots, degree);
         
-        for (int iteration = 0; iteration < maxIterations; iteration++)
+        for (var iteration = 0; iteration < maxIterations; iteration++)
         {
             var maxChange = 0.0;
             
-            for (int i = 0; i < degree; i++)
+            for (var i = 0; i < degree; i++)
             {
                 var numerator = EvaluatePolynomial(coeffs, roots[i]);
                 var denominator = Complex.One;
                 
                 // Compute product of differences
-                for (int j = 0; j < degree; j++)
+                for (var j = 0; j < degree; j++)
                 {
                     if (i != j)
                     {
@@ -291,7 +291,7 @@ public static class AdvancedPolynomialSolver
         }
         
         // Polish roots using Newton's method
-        for (int i = 0; i < roots.Length; i++)
+        for (var i = 0; i < roots.Length; i++)
         {
             roots[i] = NewtonRefinement(coeffs, roots[i], tolerance, 10);
         }
@@ -304,7 +304,7 @@ public static class AdvancedPolynomialSolver
         // Use a more sophisticated initialization than simple equally-spaced points
         var goldenRatio = (1.0 + Math.Sqrt(5)) / 2.0;
         
-        for (int i = 0; i < degree; i++)
+        for (var i = 0; i < degree; i++)
         {
             // Combine geometric progression with angular distribution
             var radius = Math.Pow(goldenRatio, (i % 4) - 1.5);
@@ -324,7 +324,7 @@ public static class AdvancedPolynomialSolver
     {
         var z = initialGuess;
         
-        for (int i = 0; i < maxIter; i++)
+        for (var i = 0; i < maxIter; i++)
         {
             var f = EvaluatePolynomial(coeffs, z);
             var fp = EvaluatePolynomialDerivative(coeffs, z);
@@ -345,7 +345,7 @@ public static class AdvancedPolynomialSolver
         if (coeffs.Length <= 1) return Complex.Zero;
         
         Complex result = coeffs[0] * (coeffs.Length - 1);
-        for (int i = 1; i < coeffs.Length - 1; i++)
+        for (var i = 1; i < coeffs.Length - 1; i++)
         {
             result = result * z + coeffs[i] * (coeffs.Length - 1 - i);
         }
@@ -368,10 +368,15 @@ public static class AdvancedPolynomialSolver
             IsConstant = degree == 0,
             IsLinear = degree == 1,
             IsQuadratic = degree == 2,
-            LeadingCoefficient = degree >= 0 ? coefficients[coefficients.Length - degree - 1] : 0,
-            RootBounds = degree > 0 ? EstimateRootBounds(coefficients, degree) : (0f, 0f),
-            ConditionNumber = degree > 0 ? EstimateConditionNumber(coefficients) : 1f
+            LeadingCoefficient = degree >= 0 ? coefficients[coefficients.Length - degree - 1] : 0
         };
+        
+        if (degree > 0)
+        {
+            // Estimate root bounds using various methods
+            analysis.RootBounds = EstimateRootBounds(coefficients, degree);
+            analysis.ConditionNumber = EstimateConditionNumber(coefficients);
+        }
         
         return analysis;
     }
@@ -382,7 +387,7 @@ public static class AdvancedPolynomialSolver
         var leadingCoeff = Math.Abs(coeffs[0]);
         var maxRatio = 0.0f;
         
-        for (int i = 1; i < coeffs.Length; i++)
+        for (var i = 1; i < coeffs.Length; i++)
         {
             maxRatio = Math.Max(maxRatio, Math.Abs(coeffs[i]) / leadingCoeff);
         }

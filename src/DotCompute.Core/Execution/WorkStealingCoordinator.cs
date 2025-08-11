@@ -25,6 +25,22 @@ public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unma
     private volatile bool _executionActive;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="WorkStealingCoordinator{T}"/> class.
+    /// </summary>
+    /// <param name="devices">The devices.</param>
+    /// <param name="workload">The workload.</param>
+    /// <param name="memoryManager">The memory manager.</param>
+    /// <param name="logger">The logger.</param>
+    /// <exception cref="System.ArgumentNullException">
+    /// devices
+    /// or
+    /// workload
+    /// or
+    /// memoryManager
+    /// or
+    /// logger
+    /// </exception>
     public WorkStealingCoordinator(
         IAccelerator[] devices,
         WorkStealingWorkload<T> workload,
@@ -36,8 +52,8 @@ public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unma
         _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         
-        _deviceQueues = _devices.Select((device, index) => 
-            new DeviceWorkQueue<T>(device, index, logger)).ToArray();
+        _deviceQueues = [.. _devices.Select((device, index) => 
+            new DeviceWorkQueue<T>(device, index, logger))];
         
         _workItemStatuses = new ConcurrentDictionary<int, WorkItemStatus<T>>();
         _stealingCoordinator = new StealingCoordinator(_devices.Length, logger);
@@ -64,7 +80,7 @@ public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unma
         try
         {
             // Start execution tasks for each device
-            for (int deviceIndex = 0; deviceIndex < _devices.Length; deviceIndex++)
+            for (var deviceIndex = 0; deviceIndex < _devices.Length; deviceIndex++)
             {
                 var task = ExecuteDeviceWorkAsync(
                     deviceIndex, kernelManager, options, cancellationToken);
@@ -100,17 +116,26 @@ public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unma
             CompletedWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.Completed),
             InProgressWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.InProgress),
             PendingWorkItems = _workItemStatuses.Count(kvp => kvp.Value.Status == WorkStatus.Pending),
-            DeviceStatistics = _deviceQueues.Select(q => q.GetStatistics()).ToArray(),
-            StealingStatistics = _stealingCoordinator.GetStatistics()
+            DeviceStatistics = [.. _deviceQueues.Select(q => q.Statistics)],
+            StealingStatistics = _stealingCoordinator.Statistics
         };
 
         return stats;
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or
+    /// resetting unmanaged resources asynchronously.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous dispose operation.
+    /// </returns>
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
+        {
             return;
+        }
 
         _executionActive = false;
 
@@ -192,12 +217,9 @@ public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unma
             {
                 // Try to get work from own queue first
                 var workItem = await deviceQueue.DequeueWorkAsync(cancellationToken);
-                
-                if (workItem == null)
-                {
-                    // No work in own queue, try to steal from other devices
-                    workItem = await TryStealWorkAsync(deviceIndex, options, cancellationToken);
-                }
+
+                // No work in own queue, try to steal from other devices
+                workItem ??= await TryStealWorkAsync(deviceIndex, options, cancellationToken);
 
                 if (workItem == null)
                 {
@@ -295,7 +317,7 @@ public sealed class WorkStealingCoordinator<T> : IAsyncDisposable where T : unma
         var richestVictim = -1;
         var maxWorkCount = 0;
 
-        for (int i = 0; i < _devices.Length; i++)
+        for (var i = 0; i < _devices.Length; i++)
         {
             if (i != thiefIndex)
             {
@@ -497,10 +519,21 @@ public sealed class DeviceWorkQueue<T> : IAsyncDisposable where T : unmanaged
     private readonly ILogger _logger;
     private readonly ConcurrentQueue<WorkItem<T>> _workQueue;
     private readonly SemaphoreSlim _workAvailable;
-    private readonly object _statsLock = new();
-    private DeviceQueueStatistics _statistics;
+    private readonly Lock _statsLock = new();
+    private readonly DeviceQueueStatistics _statistics;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="DeviceWorkQueue{T}"/> class.
+    /// </summary>
+    /// <param name="device">The device.</param>
+    /// <param name="deviceIndex">Index of the device.</param>
+    /// <param name="logger">The logger.</param>
+    /// <exception cref="System.ArgumentNullException">
+    /// device
+    /// or
+    /// logger
+    /// </exception>
     public DeviceWorkQueue(IAccelerator device, int deviceIndex, ILogger logger)
     {
         _device = device ?? throw new ArgumentNullException(nameof(device));
@@ -522,7 +555,10 @@ public sealed class DeviceWorkQueue<T> : IAsyncDisposable where T : unmanaged
     /// </summary>
     public void EnqueueWork(WorkItem<T> workItem)
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         if (workItem == null)
         {
@@ -562,7 +598,10 @@ public sealed class DeviceWorkQueue<T> : IAsyncDisposable where T : unmanaged
     /// </summary>
     public async ValueTask<WorkItem<T>?> DequeueWorkAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed) return null;
+        if (_disposed)
+        {
+            return null;
+        }
 
         try
         {
@@ -628,24 +667,37 @@ public sealed class DeviceWorkQueue<T> : IAsyncDisposable where T : unmanaged
     /// <summary>
     /// Gets statistics for this device queue.
     /// </summary>
-    public DeviceQueueStatistics GetStatistics()
+    public DeviceQueueStatistics Statistics
     {
-        lock (_statsLock)
+        get
         {
-            return new DeviceQueueStatistics
+            lock (_statsLock)
             {
-                DeviceIndex = _statistics.DeviceIndex,
-                CurrentQueueSize = _workQueue.Count,
-                TotalEnqueued = _statistics.TotalEnqueued,
-                TotalDequeued = _statistics.TotalDequeued,
-                TotalStolen = _statistics.TotalStolen
-            };
+                return new DeviceQueueStatistics
+                {
+                    DeviceIndex = _statistics.DeviceIndex,
+                    CurrentQueueSize = _workQueue.Count,
+                    TotalEnqueued = _statistics.TotalEnqueued,
+                    TotalDequeued = _statistics.TotalDequeued,
+                    TotalStolen = _statistics.TotalStolen
+                };
+            }
         }
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or
+    /// resetting unmanaged resources asynchronously.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous dispose operation.
+    /// </returns>
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if (_disposed)
+        {
+            return;
+        }
 
         _workAvailable.Dispose();
         
@@ -669,8 +721,14 @@ public class StealingCoordinator
     private readonly ILogger _logger;
     private readonly int[,] _successfulSteals;
     private readonly int[,] _failedSteals;
-    private readonly object _statsLock = new();
+    private readonly Lock _statsLock = new();
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StealingCoordinator"/> class.
+    /// </summary>
+    /// <param name="deviceCount">The device count.</param>
+    /// <param name="logger">The logger.</param>
+    /// <exception cref="System.ArgumentNullException">logger</exception>
     public StealingCoordinator(int deviceCount, ILogger logger)
     {
         _deviceCount = deviceCount;
@@ -679,6 +737,11 @@ public class StealingCoordinator
         _failedSteals = new int[deviceCount, deviceCount];
     }
 
+    /// <summary>
+    /// Records the successful steal.
+    /// </summary>
+    /// <param name="thiefIndex">Index of the thief.</param>
+    /// <param name="victimIndex">Index of the victim.</param>
     public void RecordSuccessfulSteal(int thiefIndex, int victimIndex)
     {
         lock (_statsLock)
@@ -687,6 +750,11 @@ public class StealingCoordinator
         }
     }
 
+    /// <summary>
+    /// Records the failed steal.
+    /// </summary>
+    /// <param name="thiefIndex">Index of the thief.</param>
+    /// <param name="victimIndex">Index of the victim.</param>
     public void RecordFailedSteal(int thiefIndex, int victimIndex)
     {
         lock (_statsLock)
@@ -695,31 +763,38 @@ public class StealingCoordinator
         }
     }
 
-    public StealingStatistics GetStatistics()
+    /// <summary>
+    /// Gets the statistics.
+    /// </summary>
+    /// <returns></returns>
+    public StealingStatistics Statistics
     {
-        lock (_statsLock)
+        get
         {
-            var totalSuccessful = 0;
-            var totalFailed = 0;
-
-            for (int i = 0; i < _deviceCount; i++)
+            lock (_statsLock)
             {
-                for (int j = 0; j < _deviceCount; j++)
+                var totalSuccessful = 0;
+                var totalFailed = 0;
+
+                for (var i = 0; i < _deviceCount; i++)
                 {
-                    totalSuccessful += _successfulSteals[i, j];
-                    totalFailed += _failedSteals[i, j];
+                    for (var j = 0; j < _deviceCount; j++)
+                    {
+                        totalSuccessful += _successfulSteals[i, j];
+                        totalFailed += _failedSteals[i, j];
+                    }
                 }
-            }
 
-            return new StealingStatistics
-            {
-                TotalStealAttempts = totalSuccessful + totalFailed,
-                SuccessfulSteals = totalSuccessful,
-                FailedSteals = totalFailed,
-                StealSuccessRate = totalSuccessful + totalFailed > 0 
-                    ? (double)totalSuccessful / (totalSuccessful + totalFailed) * 100 
-                    : 0
-            };
+                return new StealingStatistics
+                {
+                    TotalStealAttempts = totalSuccessful + totalFailed,
+                    SuccessfulSteals = totalSuccessful,
+                    FailedSteals = totalFailed,
+                    StealSuccessRate = totalSuccessful + totalFailed > 0
+                        ? (double)totalSuccessful / (totalSuccessful + totalFailed) * 100
+                        : 0
+                };
+            }
         }
     }
 }
@@ -732,12 +807,30 @@ public class LoadBalancer
     private readonly IAccelerator[] _devices;
     private readonly ILogger _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="LoadBalancer"/> class.
+    /// </summary>
+    /// <param name="devices">The devices.</param>
+    /// <param name="logger">The logger.</param>
+    /// <exception cref="System.ArgumentNullException">
+    /// devices
+    /// or
+    /// logger
+    /// </exception>
     public LoadBalancer(IAccelerator[] devices, ILogger logger)
     {
         _devices = devices ?? throw new ArgumentNullException(nameof(devices));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
+    /// <summary>
+    /// Distributes the work items.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="workItems">The work items.</param>
+    /// <param name="deviceQueues">The device queues.</param>
+    /// <exception cref="System.ArgumentNullException">workItems</exception>
+    /// <exception cref="System.ArgumentException">Device queues cannot be null or empty - deviceQueues</exception>
     public void DistributeWorkItems<T>(List<WorkItem<T>> workItems, DeviceWorkQueue<T>[] deviceQueues) where T : unmanaged
     {
         if (workItems == null)
@@ -762,7 +855,7 @@ public class LoadBalancer
         try
         {
             // Simple round-robin distribution
-            for (int i = 0; i < validWorkItems.Count; i++)
+            for (var i = 0; i < validWorkItems.Count; i++)
             {
                 var deviceIndex = i % deviceQueues.Length;
                 var targetQueue = deviceQueues[deviceIndex];
@@ -788,6 +881,12 @@ public class LoadBalancer
         }
     }
 
+    /// <summary>
+    /// Calculates the load imbalance.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="deviceQueues">The device queues.</param>
+    /// <returns></returns>
     public double CalculateLoadImbalance<T>(DeviceWorkQueue<T>[] deviceQueues) where T : unmanaged
     {
         var workCounts = deviceQueues.Select(q => q.WorkCount).ToArray();
@@ -797,6 +896,13 @@ public class LoadBalancer
         return maxWork > 0 ? (double)(maxWork - minWork) / maxWork : 0;
     }
 
+    /// <summary>
+    /// Rebalances the work asynchronous.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="deviceQueues">The device queues.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
     public async ValueTask RebalanceWorkAsync<T>(DeviceWorkQueue<T>[] deviceQueues, CancellationToken cancellationToken) where T : unmanaged
     {
         _logger.LogDebug("Rebalancing work across {DeviceCount} devices", deviceQueues.Length);
@@ -805,13 +911,13 @@ public class LoadBalancer
         var workCounts = deviceQueues.Select(q => q.WorkCount).ToArray();
         var avgWork = workCounts.Average();
 
-        for (int i = 0; i < deviceQueues.Length; i++)
+        for (var i = 0; i < deviceQueues.Length; i++)
         {
             var currentWork = workCounts[i];
             if (currentWork > avgWork * 1.5) // Queue has 50% more work than average
             {
                 var excessWork = (int)(currentWork - avgWork);
-                for (int j = 0; j < excessWork / 2; j++) // Move half the excess
+                for (var j = 0; j < excessWork / 2; j++) // Move half the excess
                 {
                     var workItem = await deviceQueues[i].StealWorkAsync(cancellationToken);
                     if (workItem != null)
@@ -829,46 +935,214 @@ public class LoadBalancer
 }
 
 // Supporting data structures
+
+/// <summary>
+/// Work Item Status
+/// </summary>
+/// <typeparam name="T"></typeparam>
 public class WorkItemStatus<T> where T : unmanaged
 {
+    /// <summary>
+    /// Gets or sets the work item.
+    /// </summary>
+    /// <value>
+    /// The work item.
+    /// </value>
     public required WorkItem<T> WorkItem { get; set; }
+
+    /// <summary>
+    /// Gets or sets the status.
+    /// </summary>
+    /// <value>
+    /// The status.
+    /// </value>
     public WorkStatus Status { get; set; }
+
+    /// <summary>
+    /// Gets or sets the index of the assigned device.
+    /// </summary>
+    /// <value>
+    /// The index of the assigned device.
+    /// </value>
     public int AssignedDeviceIndex { get; set; }
+
+    /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    /// <value>
+    /// The start time.
+    /// </value>
     public DateTimeOffset? StartTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the end time.
+    /// </summary>
+    /// <value>
+    /// The end time.
+    /// </value>
     public DateTimeOffset? EndTime { get; set; }
 }
 
+/// <summary>
+/// Work Status
+/// </summary>
 public enum WorkStatus
 {
+    /// <summary>
+    /// The pending
+    /// </summary>
     Pending,
+
+    /// <summary>
+    /// The in progress
+    /// </summary>
     InProgress,
+
+    /// <summary>
+    /// The completed
+    /// </summary>
     Completed,
+
+    /// <summary>
+    /// The failed
+    /// </summary>
     Failed
 }
 
+/// <summary>
+/// Work Stealing Statistics
+/// </summary>
 public class WorkStealingStatistics
 {
+    /// <summary>
+    /// Gets or sets the total work items.
+    /// </summary>
+    /// <value>
+    /// The total work items.
+    /// </value>
     public int TotalWorkItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the completed work items.
+    /// </summary>
+    /// <value>
+    /// The completed work items.
+    /// </value>
     public int CompletedWorkItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the in progress work items.
+    /// </summary>
+    /// <value>
+    /// The in progress work items.
+    /// </value>
     public int InProgressWorkItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the pending work items.
+    /// </summary>
+    /// <value>
+    /// The pending work items.
+    /// </value>
     public int PendingWorkItems { get; set; }
-    public DeviceQueueStatistics[] DeviceStatistics { get; set; } = Array.Empty<DeviceQueueStatistics>();
+
+    /// <summary>
+    /// Gets or sets the device statistics.
+    /// </summary>
+    /// <value>
+    /// The device statistics.
+    /// </value>
+    public DeviceQueueStatistics[] DeviceStatistics { get; set; } = [];
+
+    /// <summary>
+    /// Gets or sets the stealing statistics.
+    /// </summary>
+    /// <value>
+    /// The stealing statistics.
+    /// </value>
     public StealingStatistics StealingStatistics { get; set; } = new();
 }
 
+/// <summary>
+/// Device Queue Statistics
+/// </summary>
 public class DeviceQueueStatistics
 {
+    /// <summary>
+    /// Gets or sets the index of the device.
+    /// </summary>
+    /// <value>
+    /// The index of the device.
+    /// </value>
     public int DeviceIndex { get; set; }
+
+    /// <summary>
+    /// Gets or sets the size of the current queue.
+    /// </summary>
+    /// <value>
+    /// The size of the current queue.
+    /// </value>
     public int CurrentQueueSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total enqueued.
+    /// </summary>
+    /// <value>
+    /// The total enqueued.
+    /// </value>
     public long TotalEnqueued { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total dequeued.
+    /// </summary>
+    /// <value>
+    /// The total dequeued.
+    /// </value>
     public long TotalDequeued { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total stolen.
+    /// </summary>
+    /// <value>
+    /// The total stolen.
+    /// </value>
     public long TotalStolen { get; set; }
 }
 
+/// <summary>
+/// Stealing Statistics
+/// </summary>
 public class StealingStatistics
 {
+    /// <summary>
+    /// Gets or sets the total steal attempts.
+    /// </summary>
+    /// <value>
+    /// The total steal attempts.
+    /// </value>
     public long TotalStealAttempts { get; set; }
+
+    /// <summary>
+    /// Gets or sets the successful steals.
+    /// </summary>
+    /// <value>
+    /// The successful steals.
+    /// </value>
     public long SuccessfulSteals { get; set; }
+
+    /// <summary>
+    /// Gets or sets the failed steals.
+    /// </summary>
+    /// <value>
+    /// The failed steals.
+    /// </value>
     public long FailedSteals { get; set; }
+
+    /// <summary>
+    /// Gets or sets the steal success rate.
+    /// </summary>
+    /// <value>
+    /// The steal success rate.
+    /// </value>
     public double StealSuccessRate { get; set; }
 }

@@ -130,7 +130,7 @@ public abstract partial class AlgorithmPluginBase : IAlgorithmPlugin
             return false;
         }
 
-        for (int i = 0; i < inputs.Length; i++)
+        for (var i = 0; i < inputs.Length; i++)
         {
             if (inputs[i] == null || !InputTypes[i].IsAssignableFrom(inputs[i].GetType()))
             {

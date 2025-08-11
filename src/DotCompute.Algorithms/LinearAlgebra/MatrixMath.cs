@@ -24,7 +24,7 @@ public static class MatrixMath
     private const float NumericalTolerance = 1e-10f; // Default numerical tolerance
     
     private static KernelManager? s_kernelManager;
-    private static readonly object s_kernelLock = new();
+    private static readonly Lock s_kernelLock = new();
 
     /// <summary>
     /// Multiplies two matrices with GPU acceleration when beneficial.
@@ -101,7 +101,7 @@ public static class MatrixMath
             }
             else
             {
-                for (int i = 0; i < aSpan.Length; i++)
+                for (var i = 0; i < aSpan.Length; i++)
                 {
                     resultData[i] = aSpan[i] + bSpan[i];
                 }
@@ -154,7 +154,7 @@ public static class MatrixMath
             }
             else
             {
-                for (int i = 0; i < aSpan.Length; i++)
+                for (var i = 0; i < aSpan.Length; i++)
                 {
                     resultData[i] = aSpan[i] - bSpan[i];
                 }
@@ -179,16 +179,16 @@ public static class MatrixMath
         await Task.Run(() =>
         {
             // Block transpose for cache efficiency
-            for (int i = 0; i < matrix.Rows; i += BlockSize)
+            for (var i = 0; i < matrix.Rows; i += BlockSize)
             {
-                for (int j = 0; j < matrix.Columns; j += BlockSize)
+                for (var j = 0; j < matrix.Columns; j += BlockSize)
                 {
-                    int blockRows = Math.Min(BlockSize, matrix.Rows - i);
-                    int blockCols = Math.Min(BlockSize, matrix.Columns - j);
+                    var blockRows = Math.Min(BlockSize, matrix.Rows - i);
+                    var blockCols = Math.Min(BlockSize, matrix.Columns - j);
 
-                    for (int bi = 0; bi < blockRows; bi++)
+                    for (var bi = 0; bi < blockRows; bi++)
                     {
-                        for (int bj = 0; bj < blockCols; bj++)
+                        for (var bj = 0; bj < blockCols; bj++)
                         {
                             result[j + bj, i + bi] = matrix[i + bi, j + bj];
                         }
@@ -215,13 +215,13 @@ public static class MatrixMath
         // Use LU decomposition to compute inverse
         var (l, u, p) = await LUDecompositionAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
         
-        int n = matrix.Rows;
+        var n = matrix.Rows;
         var inverse = new Matrix(n, n);
 
         // Solve AX = I by solving n systems Ax_i = e_i
         await Task.Run(() =>
         {
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
                 // Create unit vector e_i
                 var e = new Matrix(n, 1);
@@ -231,7 +231,7 @@ public static class MatrixMath
                 var x = SolveLU(l, u, p, e);
 
                 // Copy solution to inverse matrix column
-                for (int j = 0; j < n; j++)
+                for (var j = 0; j < n; j++)
                 {
                     inverse[j, i] = x[j, 0];
                 }
@@ -267,15 +267,15 @@ public static class MatrixMath
         var (_, u, p) = await LUDecompositionAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
 
         // Determinant is product of diagonal elements of U times sign of permutation
-        float det = 1.0f;
-        for (int i = 0; i < u.Rows; i++)
+        var det = 1.0f;
+        for (var i = 0; i < u.Rows; i++)
         {
             det *= u[i, i];
         }
 
         // Count permutation swaps
-        int swaps = 0;
-        for (int i = 0; i < p.Length; i++)
+        var swaps = 0;
+        for (var i = 0; i < p.Length; i++)
         {
             if (p[i] != i)
             {
@@ -297,8 +297,8 @@ public static class MatrixMath
     {
         ArgumentNullException.ThrowIfNull(matrix);
 
-        int m = matrix.Rows;
-        int n = matrix.Columns;
+        var m = matrix.Rows;
+        var n = matrix.Columns;
         
         var a = matrix.Clone();
         var q = Matrix.Identity(m);
@@ -319,11 +319,11 @@ public static class MatrixMath
         return await Task.Run(() =>
         {
             // Householder QR decomposition
-            for (int k = 0; k < Math.Min(m - 1, n); k++)
+            for (var k = 0; k < Math.Min(m - 1, n); k++)
             {
                 // Compute Householder vector
                 var x = new Matrix(m - k, 1);
-                for (int i = k; i < m; i++)
+                for (var i = k; i < m; i++)
                 {
                     x[i - k, 0] = a[i, k];
                 }
@@ -340,7 +340,7 @@ public static class MatrixMath
                     continue;
 
                 // Normalize Householder vector
-                for (int i = 0; i < x.Rows; i++)
+                for (var i = 0; i < x.Rows; i++)
                 {
                     x[i, 0] /= vnorm;
                 }
@@ -354,9 +354,9 @@ public static class MatrixMath
 
             // Extract R (upper triangular part of A)
             var r = new Matrix(Math.Min(m, n), n);
-            for (int i = 0; i < r.Rows; i++)
+            for (var i = 0; i < r.Rows; i++)
             {
-                for (int j = i; j < n; j++)
+                for (var j = i; j < n; j++)
                 {
                     r[i, j] = a[i, j];
                 }
@@ -378,28 +378,28 @@ public static class MatrixMath
             throw new ArgumentException("Matrix must be square for LU decomposition.");
         }
 
-        int n = matrix.Rows;
+        var n = matrix.Rows;
         var l = Matrix.Identity(n);
         var u = matrix.Clone();
         var p = new int[n];
 
         // Initialize permutation array
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             p[i] = i;
         }
 
         await Task.Run(() =>
         {
-            for (int k = 0; k < n - 1; k++)
+            for (var k = 0; k < n - 1; k++)
             {
                 // Find pivot
-                int pivotRow = k;
-                float maxVal = Math.Abs(u[k, k]);
+                var pivotRow = k;
+                var maxVal = Math.Abs(u[k, k]);
 
-                for (int i = k + 1; i < n; i++)
+                for (var i = k + 1; i < n; i++)
                 {
-                    float val = Math.Abs(u[i, k]);
+                    var val = Math.Abs(u[i, k]);
                     if (val > maxVal)
                     {
                         maxVal = val;
@@ -411,13 +411,13 @@ public static class MatrixMath
                 if (pivotRow != k)
                 {
                     // Swap in U
-                    for (int j = 0; j < n; j++)
+                    for (var j = 0; j < n; j++)
                     {
                         (u[k, j], u[pivotRow, j]) = (u[pivotRow, j], u[k, j]);
                     }
 
                     // Swap in L (only the computed part)
-                    for (int j = 0; j < k; j++)
+                    for (var j = 0; j < k; j++)
                     {
                         (l[k, j], l[pivotRow, j]) = (l[pivotRow, j], l[k, j]);
                     }
@@ -433,10 +433,10 @@ public static class MatrixMath
                 }
 
                 // Compute multipliers and eliminate
-                for (int i = k + 1; i < n; i++)
+                for (var i = k + 1; i < n; i++)
                 {
                     l[i, k] = u[i, k] / u[k, k];
-                    for (int j = k + 1; j < n; j++)
+                    for (var j = k + 1; j < n; j++)
                     {
                         u[i, j] -= l[i, k] * u[k, j];
                     }
@@ -669,9 +669,9 @@ public static class MatrixMath
 
     private static void CopyArrayToMatrix(float[] array, Matrix matrix)
     {
-        for (int i = 0; i < matrix.Rows; i++)
+        for (var i = 0; i < matrix.Rows; i++)
         {
-            for (int j = 0; j < matrix.Columns; j++)
+            for (var j = 0; j < matrix.Columns; j++)
             {
                 matrix[i, j] = array[i * matrix.Columns + j];
             }
@@ -680,37 +680,37 @@ public static class MatrixMath
 
     private static void MultiplyBlocked(Matrix a, Matrix b, Matrix result)
     {
-        int m = a.Rows;
-        int n = b.Columns;
-        int k = a.Columns;
+        var m = a.Rows;
+        var n = b.Columns;
+        var k = a.Columns;
 
         // Initialize result to zero
-        for (int i = 0; i < m; i++)
+        for (var i = 0; i < m; i++)
         {
-            for (int j = 0; j < n; j++)
+            for (var j = 0; j < n; j++)
             {
                 result[i, j] = 0;
             }
         }
 
         // Blocked matrix multiplication
-        for (int i0 = 0; i0 < m; i0 += BlockSize)
+        for (var i0 = 0; i0 < m; i0 += BlockSize)
         {
-            for (int j0 = 0; j0 < n; j0 += BlockSize)
+            for (var j0 = 0; j0 < n; j0 += BlockSize)
             {
-                for (int k0 = 0; k0 < k; k0 += BlockSize)
+                for (var k0 = 0; k0 < k; k0 += BlockSize)
                 {
-                    int iMax = Math.Min(i0 + BlockSize, m);
-                    int jMax = Math.Min(j0 + BlockSize, n);
-                    int kMax = Math.Min(k0 + BlockSize, k);
+                    var iMax = Math.Min(i0 + BlockSize, m);
+                    var jMax = Math.Min(j0 + BlockSize, n);
+                    var kMax = Math.Min(k0 + BlockSize, k);
 
                     // Multiply block
-                    for (int i = i0; i < iMax; i++)
+                    for (var i = i0; i < iMax; i++)
                     {
-                        for (int j = j0; j < jMax; j++)
+                        for (var j = j0; j < jMax; j++)
                         {
-                            float sum = result[i, j];
-                            for (int l = k0; l < kMax; l++)
+                            var sum = result[i, j];
+                            for (var l = k0; l < kMax; l++)
                             {
                                 sum += a[i, l] * b[l, j];
                             }
@@ -724,8 +724,8 @@ public static class MatrixMath
 
     private static void VectorizedAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, float[] result)
     {
-        int vectorSize = Vector<float>.Count;
-        int i = 0;
+        var vectorSize = Vector<float>.Count;
+        var i = 0;
 
         // Process vectorized portion
         for (; i <= a.Length - vectorSize; i += vectorSize)
@@ -745,8 +745,8 @@ public static class MatrixMath
 
     private static void VectorizedSubtract(ReadOnlySpan<float> a, ReadOnlySpan<float> b, float[] result)
     {
-        int vectorSize = Vector<float>.Count;
-        int i = 0;
+        var vectorSize = Vector<float>.Count;
+        var i = 0;
 
         // Process vectorized portion
         for (; i <= a.Length - vectorSize; i += vectorSize)
@@ -766,14 +766,14 @@ public static class MatrixMath
 
     private static Matrix SolveLU(Matrix l, Matrix u, int[] p, Matrix b)
     {
-        int n = l.Rows;
+        var n = l.Rows;
         var x = new Matrix(n, b.Columns);
 
         // Apply permutation to b
         var pb = new Matrix(n, b.Columns);
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
-            for (int j = 0; j < b.Columns; j++)
+            for (var j = 0; j < b.Columns; j++)
             {
                 pb[i, j] = b[p[i], j];
             }
@@ -781,12 +781,12 @@ public static class MatrixMath
 
         // Forward substitution: Ly = Pb
         var y = new Matrix(n, b.Columns);
-        for (int col = 0; col < b.Columns; col++)
+        for (var col = 0; col < b.Columns; col++)
         {
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
-                float sum = pb[i, col];
-                for (int j = 0; j < i; j++)
+                var sum = pb[i, col];
+                for (var j = 0; j < i; j++)
                 {
                     sum -= l[i, j] * y[j, col];
                 }
@@ -795,12 +795,12 @@ public static class MatrixMath
         }
 
         // Back substitution: Ux = y
-        for (int col = 0; col < b.Columns; col++)
+        for (var col = 0; col < b.Columns; col++)
         {
-            for (int i = n - 1; i >= 0; i--)
+            for (var i = n - 1; i >= 0; i--)
             {
-                float sum = y[i, col];
-                for (int j = i + 1; j < n; j++)
+                var sum = y[i, col];
+                for (var j = i + 1; j < n; j++)
                 {
                     sum -= u[i, j] * x[j, col];
                 }
@@ -860,21 +860,21 @@ public static class MatrixMath
 
         return await Task.Run(() =>
         {
-            int n = matrix.Rows;
+            var n = matrix.Rows;
             var l = new Matrix(n, n);
 
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
-                for (int j = 0; j <= i; j++)
+                for (var j = 0; j <= i; j++)
                 {
                     if (i == j) // Diagonal elements
                     {
                         float sum = 0;
-                        for (int k = 0; k < j; k++)
+                        for (var k = 0; k < j; k++)
                         {
                             sum += l[j, k] * l[j, k];
                         }
-                        float value = matrix[j, j] - sum;
+                        var value = matrix[j, j] - sum;
                         if (value <= 0)
                         {
                             throw new InvalidOperationException("Matrix is not positive definite.");
@@ -884,7 +884,7 @@ public static class MatrixMath
                     else // Lower triangular elements
                     {
                         float sum = 0;
-                        for (int k = 0; k < j; k++)
+                        for (var k = 0; k < j; k++)
                         {
                             sum += l[i, k] * l[j, k];
                         }
@@ -917,7 +917,7 @@ public static class MatrixMath
 
         return await Task.Run(() =>
         {
-            int n = matrix.Rows;
+            var n = matrix.Rows;
             var a = matrix.Clone();
             var v = Matrix.Identity(n);
 
@@ -925,17 +925,17 @@ public static class MatrixMath
             ReduceToHessenberg(a, v);
 
             // Apply QR algorithm with shifts
-            for (int iter = 0; iter < maxIterations; iter++)
+            for (var iter = 0; iter < maxIterations; iter++)
             {
                 // Check for convergence
                 if (IsConverged(a, tolerance))
                     break;
 
                 // Wilkinson shift
-                float shift = ComputeWilkinsonShift(a);
+                var shift = ComputeWilkinsonShift(a);
 
                 // Shift matrix
-                for (int i = 0; i < n; i++)
+                for (var i = 0; i < n; i++)
                 {
                     a[i, i] -= shift;
                 }
@@ -945,7 +945,7 @@ public static class MatrixMath
 
                 // Update A = RQ + shift*I
                 MultiplyMatrices(r, q, a);
-                for (int i = 0; i < n; i++)
+                for (var i = 0; i < n; i++)
                 {
                     a[i, i] += shift;
                 }
@@ -958,7 +958,7 @@ public static class MatrixMath
 
             // Extract eigenvalues from diagonal
             var eigenvalues = new Matrix(n, 1);
-            for (int i = 0; i < n; i++)
+            for (var i = 0; i < n; i++)
             {
                 eigenvalues[i, 0] = a[i, i];
             }
@@ -978,12 +978,12 @@ public static class MatrixMath
     {
         var (_, s, _) = await SVDAsync(matrix, accelerator, cancellationToken).ConfigureAwait(false);
         
-        float maxSingularValue = float.MinValue;
-        float minSingularValue = float.MaxValue;
+        var maxSingularValue = float.MinValue;
+        var minSingularValue = float.MaxValue;
         
-        for (int i = 0; i < s.Rows; i++)
+        for (var i = 0; i < s.Rows; i++)
         {
-            float value = s[i, i];
+            var value = s[i, i];
             if (value > maxSingularValue)
                 maxSingularValue = value;
             if (value < minSingularValue && value > 1e-15f)
@@ -1008,14 +1008,14 @@ public static class MatrixMath
         var x = await SolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false);
         var originalA = a.Clone();
 
-        for (int iter = 0; iter < maxRefinements; iter++)
+        for (var iter = 0; iter < maxRefinements; iter++)
         {
             // Compute residual r = b - Ax
             var ax = await MultiplyAsync(originalA, x, accelerator, cancellationToken).ConfigureAwait(false);
             var residual = await SubtractAsync(b, ax, accelerator, cancellationToken).ConfigureAwait(false);
 
             // Check convergence
-            float residualNorm = ComputeVector2Norm(residual);
+            var residualNorm = ComputeVector2Norm(residual);
             if (residualNorm < tolerance)
                 break;
 
@@ -1034,7 +1034,7 @@ public static class MatrixMath
     {
         float sum = 0;
         var data = vector.AsSpan();
-        for (int i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             sum += data[i] * data[i];
         }
@@ -1043,21 +1043,21 @@ public static class MatrixMath
 
     private static void ApplyHouseholderLeft(Matrix matrix, Matrix v, int startRow)
     {
-        int m = matrix.Rows;
-        int n = matrix.Columns;
+        var m = matrix.Rows;
+        var n = matrix.Columns;
         
         // Compute H * A where H = I - 2 * v * v^T
-        for (int j = 0; j < n; j++)
+        for (var j = 0; j < n; j++)
         {
             float dot = 0;
-            for (int i = startRow; i < m; i++)
+            for (var i = startRow; i < m; i++)
             {
                 dot += v[i - startRow, 0] * matrix[i, j];
             }
             
             dot *= 2.0f;
             
-            for (int i = startRow; i < m; i++)
+            for (var i = startRow; i < m; i++)
             {
                 matrix[i, j] -= dot * v[i - startRow, 0];
             }
@@ -1066,21 +1066,21 @@ public static class MatrixMath
 
     private static void ApplyHouseholderRight(Matrix matrix, Matrix v, int startCol)
     {
-        int m = matrix.Rows;
-        int n = matrix.Columns;
+        var m = matrix.Rows;
+        var n = matrix.Columns;
         
         // Compute A * H where H = I - 2 * v * v^T
-        for (int i = 0; i < m; i++)
+        for (var i = 0; i < m; i++)
         {
             float dot = 0;
-            for (int j = startCol; j < Math.Min(n, startCol + v.Rows); j++)
+            for (var j = startCol; j < Math.Min(n, startCol + v.Rows); j++)
             {
                 dot += matrix[i, j] * v[j - startCol, 0];
             }
             
             dot *= 2.0f;
             
-            for (int j = startCol; j < Math.Min(n, startCol + v.Rows); j++)
+            for (var j = startCol; j < Math.Min(n, startCol + v.Rows); j++)
             {
                 matrix[i, j] -= dot * v[j - startCol, 0];
             }
@@ -1089,8 +1089,8 @@ public static class MatrixMath
 
     private static (Matrix U, Matrix S, Matrix VT) ComputeJacobiSVD(Matrix matrix)
     {
-        int m = matrix.Rows;
-        int n = matrix.Columns;
+        var m = matrix.Rows;
+        var n = matrix.Columns;
         
         // Use two-sided Jacobi SVD for small to medium matrices
         var u = Matrix.Identity(m);
@@ -1100,17 +1100,17 @@ public static class MatrixMath
         const int maxIterations = 1000;
         const float tolerance = 1e-10f;
         
-        for (int iter = 0; iter < maxIterations; iter++)
+        for (var iter = 0; iter < maxIterations; iter++)
         {
-            bool converged = true;
+            var converged = true;
             
             // Iterate over all off-diagonal elements
-            for (int i = 0; i < Math.Min(m, n); i++)
+            for (var i = 0; i < Math.Min(m, n); i++)
             {
-                for (int j = i + 1; j < Math.Min(m, n); j++)
+                for (var j = i + 1; j < Math.Min(m, n); j++)
                 {
                     // Check if off-diagonal element is small enough
-                    float offDiag = Math.Abs(a[i, j]) + Math.Abs(a[j, i]);
+                    var offDiag = Math.Abs(a[i, j]) + Math.Abs(a[j, i]);
                     if (offDiag > tolerance)
                     {
                         converged = false;
@@ -1127,15 +1127,15 @@ public static class MatrixMath
         
         // Extract singular values and ensure they are positive
         var s = new Matrix(Math.Min(m, n), Math.Min(m, n));
-        for (int i = 0; i < Math.Min(m, n); i++)
+        for (var i = 0; i < Math.Min(m, n); i++)
         {
-            float value = Math.Abs(a[i, i]);
+            var value = Math.Abs(a[i, i]);
             s[i, i] = value;
             
             // If singular value is negative, flip sign of corresponding column in U or V
             if (a[i, i] < 0 && i < m)
             {
-                for (int j = 0; j < m; j++)
+                for (var j = 0; j < m; j++)
                 {
                     u[j, i] = -u[j, i];
                 }
@@ -1148,13 +1148,13 @@ public static class MatrixMath
     private static void ApplyJacobiRotation(Matrix a, Matrix u, Matrix v, int i, int j)
     {
         // Compute the 2x2 submatrix
-        float aii = a[i, i];
-        float aij = a[i, j];
-        float aji = a[j, i];
-        float ajj = a[j, j];
+        var aii = a[i, i];
+        var aij = a[i, j];
+        var aji = a[j, i];
+        var ajj = a[j, j];
         
         // Compute SVD of 2x2 matrix
-        ComputeJacobi2x2SVD(aii, aij, aji, ajj, out float c, out float s);
+        ComputeJacobi2x2SVD(aii, aij, aji, ajj, out var c, out var s);
         
         // Apply rotations to A, U, and V
         ApplyGivensRotationColumns(a, c, s, i, j);
@@ -1166,18 +1166,18 @@ public static class MatrixMath
     private static void ComputeJacobi2x2SVD(float a11, float a12, float a21, float a22, out float c, out float s)
     {
         // Simplified Jacobi rotation computation
-        float tau = (a22 - a11) / (2.0f * (a12 + a21));
-        float t = Math.Sign(tau) / (Math.Abs(tau) + (float)Math.Sqrt(1 + tau * tau));
+        var tau = (a22 - a11) / (2.0f * (a12 + a21));
+        var t = Math.Sign(tau) / (Math.Abs(tau) + (float)Math.Sqrt(1 + tau * tau));
         c = 1.0f / (float)Math.Sqrt(1 + t * t);
         s = c * t;
     }
 
     private static void ApplyGivensRotationColumns(Matrix matrix, float c, float s, int i, int j)
     {
-        for (int k = 0; k < matrix.Rows; k++)
+        for (var k = 0; k < matrix.Rows; k++)
         {
-            float temp1 = c * matrix[k, i] - s * matrix[k, j];
-            float temp2 = s * matrix[k, i] + c * matrix[k, j];
+            var temp1 = c * matrix[k, i] - s * matrix[k, j];
+            var temp2 = s * matrix[k, i] + c * matrix[k, j];
             matrix[k, i] = temp1;
             matrix[k, j] = temp2;
         }
@@ -1185,10 +1185,10 @@ public static class MatrixMath
 
     private static void ApplyGivensRotationRows(Matrix matrix, float c, float s, int i, int j)
     {
-        for (int k = 0; k < matrix.Columns; k++)
+        for (var k = 0; k < matrix.Columns; k++)
         {
-            float temp1 = c * matrix[i, k] - s * matrix[j, k];
-            float temp2 = s * matrix[i, k] + c * matrix[j, k];
+            var temp1 = c * matrix[i, k] - s * matrix[j, k];
+            var temp2 = s * matrix[i, k] + c * matrix[j, k];
             matrix[i, k] = temp1;
             matrix[j, k] = temp2;
         }
@@ -1197,9 +1197,9 @@ public static class MatrixMath
     private static Matrix TransposeMatrix(Matrix matrix)
     {
         var result = new Matrix(matrix.Columns, matrix.Rows);
-        for (int i = 0; i < matrix.Rows; i++)
+        for (var i = 0; i < matrix.Rows; i++)
         {
-            for (int j = 0; j < matrix.Columns; j++)
+            for (var j = 0; j < matrix.Columns; j++)
             {
                 result[j, i] = matrix[i, j];
             }
@@ -1209,29 +1209,29 @@ public static class MatrixMath
 
     private static void ReduceToHessenberg(Matrix a, Matrix v)
     {
-        int n = a.Rows;
+        var n = a.Rows;
         
-        for (int k = 0; k < n - 2; k++)
+        for (var k = 0; k < n - 2; k++)
         {
             // Find Householder vector to zero out column k below the subdiagonal
             var x = new Matrix(n - k - 1, 1);
-            for (int i = k + 1; i < n; i++)
+            for (var i = k + 1; i < n; i++)
             {
                 x[i - k - 1, 0] = a[i, k];
             }
             
-            float norm = ComputeVector2Norm(x);
+            var norm = ComputeVector2Norm(x);
             if (Math.Abs(norm) < NumericalTolerance)
                 continue;
                 
-            float sign = x[0, 0] >= 0 ? 1.0f : -1.0f;
+            var sign = x[0, 0] >= 0 ? 1.0f : -1.0f;
             x[0, 0] += sign * norm;
-            float vnorm = ComputeVector2Norm(x);
+            var vnorm = ComputeVector2Norm(x);
             
             if (Math.Abs(vnorm) < NumericalTolerance)
                 continue;
                 
-            for (int i = 0; i < x.Rows; i++)
+            for (var i = 0; i < x.Rows; i++)
             {
                 x[i, 0] /= vnorm;
             }
@@ -1243,50 +1243,50 @@ public static class MatrixMath
 
     private static void ApplyHouseholderToHessenberg(Matrix a, Matrix v, Matrix householder, int startIdx)
     {
-        int n = a.Rows;
+        var n = a.Rows;
         
         // Apply to A from left and right
-        for (int j = 0; j < n; j++)
+        for (var j = 0; j < n; j++)
         {
             float dot = 0;
-            for (int i = startIdx; i < n; i++)
+            for (var i = startIdx; i < n; i++)
             {
                 dot += householder[i - startIdx, 0] * a[i, j];
             }
             dot *= 2.0f;
             
-            for (int i = startIdx; i < n; i++)
+            for (var i = startIdx; i < n; i++)
             {
                 a[i, j] -= dot * householder[i - startIdx, 0];
             }
         }
         
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             float dot = 0;
-            for (int j = startIdx; j < n; j++)
+            for (var j = startIdx; j < n; j++)
             {
                 dot += a[i, j] * householder[j - startIdx, 0];
             }
             dot *= 2.0f;
             
-            for (int j = startIdx; j < n; j++)
+            for (var j = startIdx; j < n; j++)
             {
                 a[i, j] -= dot * householder[j - startIdx, 0];
             }
         }
         
         // Update eigenvector matrix V
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             float dot = 0;
-            for (int j = startIdx; j < n; j++)
+            for (var j = startIdx; j < n; j++)
             {
                 dot += v[i, j] * householder[j - startIdx, 0];
             }
             dot *= 2.0f;
             
-            for (int j = startIdx; j < n; j++)
+            for (var j = startIdx; j < n; j++)
             {
                 v[i, j] -= dot * householder[j - startIdx, 0];
             }
@@ -1295,8 +1295,8 @@ public static class MatrixMath
 
     private static bool IsConverged(Matrix matrix, float tolerance)
     {
-        int n = matrix.Rows;
-        for (int i = 0; i < n - 1; i++)
+        var n = matrix.Rows;
+        for (var i = 0; i < n - 1; i++)
         {
             if (Math.Abs(matrix[i + 1, i]) > tolerance)
                 return false;
@@ -1306,23 +1306,23 @@ public static class MatrixMath
 
     private static float ComputeWilkinsonShift(Matrix matrix)
     {
-        int n = matrix.Rows;
+        var n = matrix.Rows;
         if (n < 2) return 0;
         
-        float a = matrix[n - 2, n - 2];
-        float b = matrix[n - 2, n - 1];
-        float c = matrix[n - 1, n - 2];
-        float d = matrix[n - 1, n - 1];
+        var a = matrix[n - 2, n - 2];
+        var b = matrix[n - 2, n - 1];
+        var c = matrix[n - 1, n - 2];
+        var d = matrix[n - 1, n - 1];
         
-        float trace = a + d;
-        float det = a * d - b * c;
+        var trace = a + d;
+        var det = a * d - b * c;
         
-        float discriminant = trace * trace - 4 * det;
+        var discriminant = trace * trace - 4 * det;
         if (discriminant < 0) return d; // Use bottom-right element if complex eigenvalues
         
-        float sqrt_disc = (float)Math.Sqrt(discriminant);
-        float lambda1 = (trace + sqrt_disc) * 0.5f;
-        float lambda2 = (trace - sqrt_disc) * 0.5f;
+        var sqrt_disc = (float)Math.Sqrt(discriminant);
+        var lambda1 = (trace + sqrt_disc) * 0.5f;
+        var lambda2 = (trace - sqrt_disc) * 0.5f;
         
         // Return the eigenvalue closest to d
         return Math.Abs(lambda1 - d) < Math.Abs(lambda2 - d) ? lambda1 : lambda2;
@@ -1330,25 +1330,25 @@ public static class MatrixMath
 
     private static (Matrix Q, Matrix R) QRDecompositionHessenberg(Matrix hessenberg)
     {
-        int n = hessenberg.Rows;
+        var n = hessenberg.Rows;
         var q = Matrix.Identity(n);
         var r = hessenberg.Clone();
         
         // Use Givens rotations for Hessenberg matrices
-        for (int i = 0; i < n - 1; i++)
+        for (var i = 0; i < n - 1; i++)
         {
             if (Math.Abs(r[i + 1, i]) < NumericalTolerance)
                 continue;
                 
-            float a = r[i, i];
-            float b = r[i + 1, i];
-            float norm = (float)Math.Sqrt(a * a + b * b);
+            var a = r[i, i];
+            var b = r[i + 1, i];
+            var norm = (float)Math.Sqrt(a * a + b * b);
             
             if (Math.Abs(norm) < NumericalTolerance)
                 continue;
                 
-            float c = a / norm;
-            float s = -b / norm;
+            var c = a / norm;
+            var s = -b / norm;
             
             // Apply Givens rotation
             ApplyGivensRotationRows(r, c, s, i, i + 1);
@@ -1360,25 +1360,25 @@ public static class MatrixMath
 
     private static void MultiplyMatrices(Matrix a, Matrix b, Matrix result)
     {
-        int m = a.Rows;
-        int n = b.Columns;
-        int k = a.Columns;
+        var m = a.Rows;
+        var n = b.Columns;
+        var k = a.Columns;
         
         // Initialize result to zero
-        for (int i = 0; i < m; i++)
+        for (var i = 0; i < m; i++)
         {
-            for (int j = 0; j < n; j++)
+            for (var j = 0; j < n; j++)
             {
                 result[i, j] = 0;
             }
         }
         
         // Compute matrix multiplication
-        for (int i = 0; i < m; i++)
+        for (var i = 0; i < m; i++)
         {
-            for (int j = 0; j < n; j++)
+            for (var j = 0; j < n; j++)
             {
-                for (int l = 0; l < k; l++)
+                for (var l = 0; l < k; l++)
                 {
                     result[i, j] += a[i, l] * b[l, j];
                 }
@@ -1390,8 +1390,8 @@ public static class MatrixMath
     private static async Task<(Matrix Q, Matrix R)> QRDecompositionOnGPUAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken)
     {
         var kernelManager = GetKernelManager();
-        int m = matrix.Rows;
-        int n = matrix.Columns;
+        var m = matrix.Rows;
+        var n = matrix.Columns;
         
         var a = matrix.Clone();
         var q = Matrix.Identity(m);
@@ -1408,11 +1408,11 @@ public static class MatrixMath
             };
 
             // Process each Householder transformation step
-            for (int k = 0; k < Math.Min(m - 1, n); k++)
+            for (var k = 0; k < Math.Min(m - 1, n); k++)
             {
                 // Extract column vector for Householder computation
                 var columnData = new float[m - k];
-                for (int i = k; i < m; i++)
+                for (var i = k; i < m; i++)
                 {
                     columnData[i - k] = a[i, k];
                 }
@@ -1509,7 +1509,7 @@ public static class MatrixMath
 
                     // Update Q matrix (could also be done on GPU)
                     var x = new Matrix(m - k, 1);
-                    for (int i = 0; i < householderData.Length; i++)
+                    for (var i = 0; i < householderData.Length; i++)
                     {
                         x[i, 0] = householderData[i];
                     }
@@ -1528,10 +1528,10 @@ public static class MatrixMath
             // Fall back to CPU implementation if GPU fails
             await Task.Run(() =>
             {
-                for (int k = 0; k < Math.Min(m - 1, n); k++)
+                for (var k = 0; k < Math.Min(m - 1, n); k++)
                 {
                     var x = new Matrix(m - k, 1);
-                    for (int i = k; i < m; i++)
+                    for (var i = k; i < m; i++)
                     {
                         x[i - k, 0] = a[i, k];
                     }
@@ -1547,7 +1547,7 @@ public static class MatrixMath
                     if (Math.Abs(vnorm) < NumericalTolerance)
                         continue;
 
-                    for (int i = 0; i < x.Rows; i++)
+                    for (var i = 0; i < x.Rows; i++)
                     {
                         x[i, 0] /= vnorm;
                     }
@@ -1559,9 +1559,9 @@ public static class MatrixMath
         }
 
         var r = new Matrix(Math.Min(m, n), n);
-        for (int i = 0; i < r.Rows; i++)
+        for (var i = 0; i < r.Rows; i++)
         {
-            for (int j = i; j < n; j++)
+            for (var j = i; j < n; j++)
             {
                 r[i, j] = a[i, j];
             }
@@ -1573,8 +1573,8 @@ public static class MatrixMath
     private static async Task<(Matrix U, Matrix S, Matrix VT)> SVDOnGPUAsync(Matrix matrix, IAccelerator accelerator, CancellationToken cancellationToken)
     {
         var kernelManager = GetKernelManager();
-        int m = matrix.Rows;
-        int n = matrix.Columns;
+        var m = matrix.Rows;
+        var n = matrix.Columns;
         
         try
         {
@@ -1626,14 +1626,14 @@ public static class MatrixMath
                     cancellationToken).ConfigureAwait(false);
 
                 // Jacobi SVD iterations
-                for (int iter = 0; iter < maxIterations; iter++)
+                for (var iter = 0; iter < maxIterations; iter++)
                 {
-                    bool converged = true;
+                    var converged = true;
                     
                     // Iterate over all off-diagonal pairs
-                    for (int i = 0; i < Math.Min(m, n) && converged; i++)
+                    for (var i = 0; i < Math.Min(m, n) && converged; i++)
                     {
-                        for (int j = i + 1; j < Math.Min(m, n); j++)
+                        for (var j = i + 1; j < Math.Min(m, n); j++)
                         {
                             // Set convergence flag to 0 (not converged)
                             var convergenceFlag = new float[] { 0.0f };
@@ -1728,7 +1728,7 @@ public static class MatrixMath
                 CopyArrayToMatrix(vData, v);
                 
                 var s = new Matrix(Math.Min(m, n), Math.Min(m, n));
-                for (int i = 0; i < Math.Min(m, n); i++)
+                for (var i = 0; i < Math.Min(m, n); i++)
                 {
                     s[i, i] = sData[i * Math.Min(m, n) + i];
                 }

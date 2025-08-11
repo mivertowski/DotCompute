@@ -109,7 +109,7 @@ public sealed class SignalProcessingPlugin : AlgorithmPluginBase
             return 0;
         }
 
-        int n = inputSizes[0];
+        var n = inputSizes[0];
         // Signal + kernel + result + FFT workspace
         return n * sizeof(float) * 4 + 4096;
     }

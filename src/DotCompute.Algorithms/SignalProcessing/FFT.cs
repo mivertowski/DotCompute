@@ -19,7 +19,7 @@ public static class FFT
     /// <param name="data">The complex data array (will be modified in-place).</param>
     public static void Forward(Span<Complex> data)
     {
-        int n = data.Length;
+        var n = data.Length;
         
         // Verify power of 2
         if ((n & (n - 1)) != 0)
@@ -40,7 +40,7 @@ public static class FFT
     /// <param name="data">The complex data array (will be modified in-place).</param>
     public static void Inverse(Span<Complex> data)
     {
-        int n = data.Length;
+        var n = data.Length;
         
         // Verify power of 2
         if ((n & (n - 1)) != 0)
@@ -55,8 +55,8 @@ public static class FFT
         CooleyTukeyFFT(data, true);
 
         // Scale by 1/N
-        float scale = 1.0f / n;
-        for (int i = 0; i < n; i++)
+        var scale = 1.0f / n;
+        for (var i = 0; i < n; i++)
         {
             data[i] = data[i] * scale;
         }
@@ -69,7 +69,7 @@ public static class FFT
     /// <returns>Complex FFT result (only first N/2+1 elements are unique).</returns>
     public static Complex[] RealFFT(ReadOnlySpan<float> realData)
     {
-        int n = realData.Length;
+        var n = realData.Length;
         
         // Verify power of 2
         if ((n & (n - 1)) != 0)
@@ -79,7 +79,7 @@ public static class FFT
 
         // Convert to complex
         var complexData = new Complex[n];
-        for (int i = 0; i < n; i++)
+        for (var i = 0; i < n; i++)
         {
             complexData[i] = new Complex(realData[i], 0);
         }
@@ -113,14 +113,14 @@ public static class FFT
         var fullComplex = new Complex[outputLength];
         
         // Copy provided data
-        int providedLength = Math.Min(complexData.Length, outputLength / 2 + 1);
-        for (int i = 0; i < providedLength; i++)
+        var providedLength = Math.Min(complexData.Length, outputLength / 2 + 1);
+        for (var i = 0; i < providedLength; i++)
         {
             fullComplex[i] = complexData[i];
         }
 
         // Fill using Hermitian symmetry
-        for (int i = 1; i < outputLength / 2; i++)
+        for (var i = 1; i < outputLength / 2; i++)
         {
             fullComplex[outputLength - i] = fullComplex[i].Conjugate;
         }
@@ -130,7 +130,7 @@ public static class FFT
 
         // Extract real parts
         var result = new float[outputLength];
-        for (int i = 0; i < outputLength; i++)
+        for (var i = 0; i < outputLength; i++)
         {
             result[i] = fullComplex[i].Real;
         }
@@ -146,7 +146,7 @@ public static class FFT
     public static float[] PowerSpectrum(ReadOnlySpan<Complex> fftData)
     {
         var result = new float[fftData.Length];
-        for (int i = 0; i < fftData.Length; i++)
+        for (var i = 0; i < fftData.Length; i++)
         {
             var c = fftData[i];
             result[i] = c.Real * c.Real + c.Imaginary * c.Imaginary;
@@ -162,7 +162,7 @@ public static class FFT
     public static float[] MagnitudeSpectrum(ReadOnlySpan<Complex> fftData)
     {
         var result = new float[fftData.Length];
-        for (int i = 0; i < fftData.Length; i++)
+        for (var i = 0; i < fftData.Length; i++)
         {
             result[i] = fftData[i].Magnitude;
         }
@@ -177,7 +177,7 @@ public static class FFT
     public static float[] PhaseSpectrum(ReadOnlySpan<Complex> fftData)
     {
         var result = new float[fftData.Length];
-        for (int i = 0; i < fftData.Length; i++)
+        for (var i = 0; i < fftData.Length; i++)
         {
             result[i] = fftData[i].Phase;
         }
@@ -186,17 +186,17 @@ public static class FFT
 
     private static void BitReverseReorder(Span<Complex> data)
     {
-        int n = data.Length;
-        int j = 0;
+        var n = data.Length;
+        var j = 0;
 
-        for (int i = 0; i < n - 1; i++)
+        for (var i = 0; i < n - 1; i++)
         {
             if (i < j)
             {
                 (data[i], data[j]) = (data[j], data[i]);
             }
 
-            int k = n >> 1;
+            var k = n >> 1;
             while (k <= j)
             {
                 j -= k;
@@ -208,28 +208,28 @@ public static class FFT
 
     private static void CooleyTukeyFFT(Span<Complex> data, bool inverse)
     {
-        int n = data.Length;
-        int logN = BitOperations.Log2((uint)n);
+        var n = data.Length;
+        var logN = BitOperations.Log2((uint)n);
 
         // Precompute twiddle factors for better performance
-        float angleSign = inverse ? 1.0f : -1.0f;
+        var angleSign = inverse ? 1.0f : -1.0f;
 
         // Cooley-Tukey decimation-in-time
-        for (int s = 1; s <= logN; s++)
+        for (var s = 1; s <= logN; s++)
         {
-            int m = 1 << s;        // 2^s
-            int m2 = m >> 1;       // m/2
+            var m = 1 << s;        // 2^s
+            var m2 = m >> 1;       // m/2
 
             // Twiddle factor
-            float angle = angleSign * TwoPi / m;
+            var angle = angleSign * TwoPi / m;
             var w = Complex.Exp(angle);
             var wm = Complex.One;
 
-            for (int j = 0; j < m2; j++)
+            for (var j = 0; j < m2; j++)
             {
-                for (int k = j; k < n; k += m)
+                for (var k = j; k < n; k += m)
                 {
-                    int t = k + m2;
+                    var t = k + m2;
                     var u = data[k];
                     var v = data[t] * wm;
                     data[k] = u + v;
@@ -260,28 +260,28 @@ public static class FFT
     /// <param name="windowType">The window type.</param>
     public static void ApplyWindow(Span<float> data, WindowType windowType)
     {
-        int n = data.Length;
+        var n = data.Length;
         
         switch (windowType)
         {
             case WindowType.Hamming:
-                for (int i = 0; i < n; i++)
+                for (var i = 0; i < n; i++)
                 {
                     data[i] *= 0.54f - 0.46f * MathF.Cos(TwoPi * i / (n - 1));
                 }
                 break;
 
             case WindowType.Hanning:
-                for (int i = 0; i < n; i++)
+                for (var i = 0; i < n; i++)
                 {
                     data[i] *= 0.5f * (1 - MathF.Cos(TwoPi * i / (n - 1)));
                 }
                 break;
 
             case WindowType.Blackman:
-                for (int i = 0; i < n; i++)
+                for (var i = 0; i < n; i++)
                 {
-                    float t = TwoPi * i / (n - 1);
+                    var t = TwoPi * i / (n - 1);
                     data[i] *= 0.42f - 0.5f * MathF.Cos(t) + 0.08f * MathF.Cos(2 * t);
                 }
                 break;

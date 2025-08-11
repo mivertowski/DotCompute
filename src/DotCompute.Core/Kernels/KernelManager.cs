@@ -11,7 +11,7 @@ namespace DotCompute.Core.Kernels;
 /// <summary>
 /// Manages kernel generation, compilation, caching, and execution.
 /// </summary>
-public sealed partial class KernelManager : IKernelManager
+public sealed partial class KernelManager : IDisposable
 {
     private readonly ILogger<KernelManager> _logger;
     private readonly Dictionary<AcceleratorType, IKernelGenerator> _generators;
@@ -27,9 +27,9 @@ public sealed partial class KernelManager : IKernelManager
     public KernelManager(ILogger<KernelManager> logger)
     {
         _logger = logger;
-        _generators = new Dictionary<AcceleratorType, IKernelGenerator>();
-        _compilers = new Dictionary<AcceleratorType, IKernelCompiler>();
-        _executors = new Dictionary<AcceleratorType, IKernelExecutor>();
+        _generators = [];
+        _compilers = [];
+        _executors = [];
         _kernelCache = new ConcurrentDictionary<string, ManagedCompiledKernel>();
         _compilationSemaphore = new SemaphoreSlim(Environment.ProcessorCount);
 
@@ -419,7 +419,7 @@ public sealed partial class KernelManager : IKernelManager
             {
                 if (arg.Value is Array array)
                 {
-                    return new[] { array.Length };
+                    return [array.Length];
                 }
             }
             else if (arg.MemoryBuffer != null)
@@ -427,13 +427,13 @@ public sealed partial class KernelManager : IKernelManager
                 var elementSize = GetElementSize(arg.Type);
                 if (elementSize > 0)
                 {
-                    return new[] { (int)(arg.MemoryBuffer.SizeInBytes / elementSize) };
+                    return [(int)(arg.MemoryBuffer.SizeInBytes / elementSize)];
                 }
             }
         }
 
         // Default problem size
-        return new[] { 1024 };
+        return [1024];
     }
 
     private static int GetElementSize(Type type)
@@ -524,5 +524,5 @@ public sealed class KernelCacheStatistics
     /// <summary>
     /// Gets or sets kernel counts by type.
     /// </summary>
-    public Dictionary<string, int> KernelsByType { get; init; } = new();
+    public Dictionary<string, int> KernelsByType { get; init; } = [];
 }

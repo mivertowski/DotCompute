@@ -17,17 +17,17 @@ public static class PlatformDetection
 {
     private static readonly Lazy<PlatformInfo> _platformInfo = new(DetectPlatformInfo);
     private static readonly Lazy<HardwareCapabilities> _hardwareCapabilities = new(DetectHardwareCapabilities);
-
+    
     /// <summary>
     /// Gets comprehensive information about the current platform.
     /// </summary>
     public static PlatformInfo Current => _platformInfo.Value;
-
+    
     /// <summary>
     /// Gets detected hardware capabilities for the current system.
     /// </summary>
     public static HardwareCapabilities Hardware => _hardwareCapabilities.Value;
-
+    
     /// <summary>
     /// Determines if the specified compute backend is available on the current platform.
     /// </summary>
@@ -41,7 +41,7 @@ public static class PlatformDetection
         ComputeBackendType.Vulkan => IsVulkanAvailable(),
         _ => false
     };
-
+    
     /// <summary>
     /// Gets the recommended compute backend for the current platform and hardware.
     /// </summary>
@@ -49,35 +49,35 @@ public static class PlatformDetection
     {
         var platform = Current;
         var hardware = Hardware;
-
+        
         // Metal is preferred on Apple platforms with GPU
         if (platform.IsMacOS && hardware.HasGpu && IsMetalAvailable())
         {
             return ComputeBackendType.Metal;
         }
-
+        
         // CUDA is preferred on systems with NVIDIA GPUs
         if (hardware.HasNvidiaGpu && IsCudaAvailable())
         {
             return ComputeBackendType.CUDA;
         }
-
+        
         // DirectCompute on Windows with DirectX support
         if (platform.IsWindows && hardware.HasGpu && IsDirectComputeAvailable())
         {
             return ComputeBackendType.DirectCompute;
         }
-
+        
         // OpenCL as cross-platform GPU fallback
         if (hardware.HasGpu && IsOpenClAvailable())
         {
             return ComputeBackendType.OpenCL;
         }
-
+        
         // CPU fallback with SIMD optimization
         return ComputeBackendType.CPU;
     }
-
+    
     /// <summary>
     /// Validates backend availability and throws appropriate exceptions for unsupported configurations.
     /// </summary>
@@ -93,11 +93,11 @@ public static class PlatformDetection
                         $"Current platform: {Current.OperatingSystem} {Current.Architecture}");
                 }
                 break;
-
+                
             case ComputeBackendType.CUDA:
                 if (!IsCudaAvailable())
                 {
-                    var reason = Current.IsWindows || Current.IsLinux
+                    var reason = Current.IsWindows || Current.IsLinux 
                         ? "CUDA runtime libraries not found or no NVIDIA GPU detected"
                         : $"CUDA is not supported on {Current.OperatingSystem}";
                     throw new PlatformNotSupportedException(
@@ -105,7 +105,7 @@ public static class PlatformDetection
                         "Please install NVIDIA CUDA toolkit and ensure compatible GPU is present.");
                 }
                 break;
-
+                
             case ComputeBackendType.DirectCompute:
                 if (!IsDirectComputeAvailable())
                 {
@@ -114,7 +114,7 @@ public static class PlatformDetection
                         $"Current platform: {Current.OperatingSystem} {Current.Architecture}");
                 }
                 break;
-
+                
             case ComputeBackendType.OpenCL:
                 if (!IsOpenClAvailable())
                 {
@@ -123,7 +123,7 @@ public static class PlatformDetection
                         "Please install OpenCL drivers for your GPU or CPU.");
                 }
                 break;
-
+                
             case ComputeBackendType.Vulkan:
                 if (!IsVulkanAvailable())
                 {
@@ -134,7 +134,7 @@ public static class PlatformDetection
                 break;
         }
     }
-
+    
     private static PlatformInfo DetectPlatformInfo()
     {
         return new PlatformInfo
@@ -154,18 +154,42 @@ public static class PlatformDetection
             ProcessArchitecture = RuntimeInformation.ProcessArchitecture
         };
     }
-
+    
     private static string GetOperatingSystemName()
     {
-        if (OperatingSystem.IsWindows()) return "Windows";
-        if (OperatingSystem.IsLinux()) return "Linux";
-        if (OperatingSystem.IsMacOS()) return "macOS";
-        if (OperatingSystem.IsFreeBSD()) return "FreeBSD";
-        if (OperatingSystem.IsAndroid()) return "Android";
-        if (OperatingSystem.IsIOS()) return "iOS";
+        if (OperatingSystem.IsWindows())
+        {
+            return "Windows";
+        }
+
+        if (OperatingSystem.IsLinux())
+        {
+            return "Linux";
+        }
+
+        if (OperatingSystem.IsMacOS())
+        {
+            return "macOS";
+        }
+
+        if (OperatingSystem.IsFreeBSD())
+        {
+            return "FreeBSD";
+        }
+
+        if (OperatingSystem.IsAndroid())
+        {
+            return "Android";
+        }
+
+        if (OperatingSystem.IsIOS())
+        {
+            return "iOS";
+        }
+
         return "Unknown";
     }
-
+    
     private static HardwareCapabilities DetectHardwareCapabilities()
     {
         return new HardwareCapabilities
@@ -190,7 +214,7 @@ public static class PlatformDetection
             SupportsLzcnt = Lzcnt.IsSupported,
             SupportsBmi1 = Bmi1.IsSupported,
             SupportsBmi2 = Bmi2.IsSupported,
-
+            
             // ARM Features (if running on ARM)
             SupportsArmBase = AdvSimd.IsSupported,
             SupportsArmAes = System.Runtime.Intrinsics.Arm.Aes.IsSupported,
@@ -199,30 +223,30 @@ public static class PlatformDetection
             SupportsArmCrc32 = Crc32.IsSupported,
             SupportsArmDp = Dp.IsSupported,
             SupportsArmRdm = Rdm.IsSupported,
-
+            
             // Vector capabilities
             VectorSizeBytes = System.Numerics.Vector<byte>.Count,
             Vector128IsSupported = Vector128.IsHardwareAccelerated,
             Vector256IsSupported = Vector256.IsHardwareAccelerated,
             Vector512IsSupported = Vector512.IsHardwareAccelerated,
-
+            
             // GPU Detection
             HasGpu = DetectGpuPresence(),
             HasNvidiaGpu = DetectNvidiaGpu(),
             HasAmdGpu = DetectAmdGpu(),
             HasIntelGpu = DetectIntelGpu(),
-
+            
             // Memory
             TotalPhysicalMemory = GetTotalPhysicalMemory(),
             AvailablePhysicalMemory = GetAvailablePhysicalMemory(),
-
+            
             // CPU Info
             ProcessorCount = Environment.ProcessorCount
         };
     }
-
+    
     #region Backend Detection Methods
-
+    
     private static bool IsMetalAvailable()
     {
         // Metal is only available on Apple platforms
@@ -230,7 +254,7 @@ public static class PlatformDetection
         {
             return false;
         }
-
+        
         try
         {
             // On macOS, check for Metal framework availability
@@ -238,7 +262,7 @@ public static class PlatformDetection
             {
                 return CheckMacOSMetalAvailability();
             }
-
+            
             // iOS Metal detection would go here
             return true;
         }
@@ -247,16 +271,16 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool IsCudaAvailable()
     {
         // CUDA is only supported on Windows and Linux x64
-        if (!Environment.Is64BitOperatingSystem ||
+        if (!Environment.Is64BitOperatingSystem || 
             !(OperatingSystem.IsWindows() || OperatingSystem.IsLinux()))
         {
             return false;
         }
-
+        
         try
         {
             if (OperatingSystem.IsWindows())
@@ -267,7 +291,7 @@ public static class PlatformDetection
             {
                 return CheckLinuxCudaAvailability();
             }
-
+            
             return false;
         }
         catch
@@ -275,7 +299,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool IsOpenClAvailable()
     {
         try
@@ -293,7 +317,7 @@ public static class PlatformDetection
             {
                 return CheckMacOSOpenClAvailability();
             }
-
+            
             return false;
         }
         catch
@@ -301,7 +325,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool IsDirectComputeAvailable()
     {
         // DirectCompute is Windows-only
@@ -309,7 +333,7 @@ public static class PlatformDetection
         {
             return false;
         }
-
+        
         try
         {
             return CheckDirectComputeAvailability();
@@ -319,7 +343,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool IsVulkanAvailable()
     {
         try
@@ -336,7 +360,7 @@ public static class PlatformDetection
             {
                 return CheckMacOSVulkanAvailability();
             }
-
+            
             return false;
         }
         catch
@@ -344,11 +368,11 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     #endregion
-
+    
     #region Platform-specific Detection Implementation
-
+    
     private static bool CheckMacOSMetalAvailability()
     {
         // Check if Metal framework is available
@@ -363,7 +387,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool CheckWindowsCudaAvailability()
     {
         try
@@ -371,28 +395,28 @@ public static class PlatformDetection
             // Check for NVIDIA driver and CUDA runtime
             var systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
             var programFiles = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-
-            // Check for NVIDIA Management Library (nvml.dll)
+            
+            // Check for NVIDIA Management Library (nvml.dll) 
             var nvmlPath = Path.Combine(systemDirectory, "nvml.dll");
             if (File.Exists(nvmlPath))
             {
                 return true;
             }
-
+            
             // Check for CUDA runtime libraries
             var cudartFiles = Directory.GetFiles(systemDirectory, "cudart64_*.dll");
             if (cudartFiles.Length > 0)
             {
                 return true;
             }
-
+            
             // Check CUDA installation directory
             var cudaPath = Path.Combine(programFiles, "NVIDIA GPU Computing Toolkit", "CUDA");
             if (Directory.Exists(cudaPath))
             {
                 return true;
             }
-
+            
             return false;
         }
         catch
@@ -400,7 +424,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool CheckLinuxCudaAvailability()
     {
         try
@@ -415,25 +439,25 @@ public static class PlatformDetection
                 "/usr/local/cuda/lib64/libcudart.so",
                 "/usr/local/cuda/lib64/libcuda.so"
             };
-
+            
             // Check for CUDA libraries
             if (cudaLibPaths.Any(File.Exists))
             {
                 return true;
             }
-
+            
             // Check for NVIDIA driver
             if (Directory.Exists("/proc/driver/nvidia"))
             {
                 return true;
             }
-
+            
             // Check for NVIDIA device files
             if (File.Exists("/dev/nvidia0") || File.Exists("/dev/nvidiactl"))
             {
                 return true;
             }
-
+            
             return false;
         }
         catch
@@ -441,7 +465,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool CheckWindowsOpenClAvailability()
     {
         try
@@ -455,7 +479,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool CheckLinuxOpenClAvailability()
     {
         try
@@ -469,7 +493,7 @@ public static class PlatformDetection
                 "/usr/local/lib/libOpenCL.so",
                 "/opt/intel/opencl/lib64/libOpenCL.so"
             };
-
+            
             return openclPaths.Any(File.Exists);
         }
         catch
@@ -477,7 +501,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool CheckMacOSOpenClAvailability()
     {
         try
@@ -491,7 +515,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool CheckDirectComputeAvailability()
     {
         try
@@ -500,7 +524,7 @@ public static class PlatformDetection
             var systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
             var d3d11Path = Path.Combine(systemDirectory, "d3d11.dll");
             var dxgiPath = Path.Combine(systemDirectory, "dxgi.dll");
-
+            
             return File.Exists(d3d11Path) && File.Exists(dxgiPath);
         }
         catch
@@ -508,7 +532,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool CheckWindowsVulkanAvailability()
     {
         try
@@ -522,7 +546,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool CheckLinuxVulkanAvailability()
     {
         try
@@ -534,7 +558,7 @@ public static class PlatformDetection
                 "/usr/lib64/libvulkan.so",
                 "/usr/lib64/libvulkan.so.1"
             };
-
+            
             return vulkanPaths.Any(File.Exists);
         }
         catch
@@ -542,7 +566,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool CheckMacOSVulkanAvailability()
     {
         try
@@ -553,7 +577,7 @@ public static class PlatformDetection
                 "/usr/local/lib/libvulkan.dylib",
                 "/usr/local/lib/libMoltenVK.dylib"
             };
-
+            
             return vulkanPaths.Any(File.Exists);
         }
         catch
@@ -561,16 +585,16 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     #endregion
-
+    
     #region GPU Detection
-
+    
     private static bool DetectGpuPresence()
     {
         return DetectNvidiaGpu() || DetectAmdGpu() || DetectIntelGpu();
     }
-
+    
     private static bool DetectNvidiaGpu()
     {
         try
@@ -585,10 +609,10 @@ public static class PlatformDetection
             else if (OperatingSystem.IsLinux())
             {
                 // Check for NVIDIA driver
-                return Directory.Exists("/proc/driver/nvidia") ||
+                return Directory.Exists("/proc/driver/nvidia") || 
                        File.Exists("/dev/nvidia0");
             }
-
+            
             return false;
         }
         catch
@@ -596,7 +620,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool DetectAmdGpu()
     {
         try
@@ -613,7 +637,7 @@ public static class PlatformDetection
                 return Directory.EnumerateFiles("/dev/dri", "card*").Any() ||
                        File.Exists("/dev/kfd");
             }
-
+            
             return false;
         }
         catch
@@ -621,7 +645,7 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     private static bool DetectIntelGpu()
     {
         try
@@ -637,7 +661,7 @@ public static class PlatformDetection
                 // Intel GPU typically appears as i915
                 return Directory.EnumerateFiles("/dev/dri", "card*").Any();
             }
-
+            
             return false;
         }
         catch
@@ -645,11 +669,11 @@ public static class PlatformDetection
             return false;
         }
     }
-
+    
     #endregion
-
+    
     #region Memory Detection
-
+    
     private static long GetTotalPhysicalMemory()
     {
         try
@@ -666,9 +690,9 @@ public static class PlatformDetection
                 var lines = meminfo.Split('\n');
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith("MemTotal:", StringComparison.Ordinal))
+                    if (line.StartsWith("MemTotal:"))
                     {
-                        var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                        var parts = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
                         {
                             return kb * 1024; // Convert KB to bytes
@@ -676,7 +700,7 @@ public static class PlatformDetection
                     }
                 }
             }
-
+            
             // Fallback
             return Environment.WorkingSet;
         }
@@ -685,7 +709,7 @@ public static class PlatformDetection
             return Environment.WorkingSet;
         }
     }
-
+    
     private static long GetAvailablePhysicalMemory()
     {
         try
@@ -696,9 +720,9 @@ public static class PlatformDetection
                 var lines = meminfo.Split('\n');
                 foreach (var line in lines)
                 {
-                    if (line.StartsWith("MemAvailable:", StringComparison.Ordinal))
+                    if (line.StartsWith("MemAvailable:"))
                     {
-                        var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                        var parts = line.Split([' ', '\t'], StringSplitOptions.RemoveEmptyEntries);
                         if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
                         {
                             return kb * 1024;
@@ -706,7 +730,7 @@ public static class PlatformDetection
                     }
                 }
             }
-
+            
             // Fallback
             return GC.GetTotalMemory(false);
         }
@@ -715,7 +739,7 @@ public static class PlatformDetection
             return GC.GetTotalMemory(false);
         }
     }
-
+    
     #endregion
 }
 
@@ -764,7 +788,7 @@ public class HardwareCapabilities
     public required bool SupportsLzcnt { get; init; }
     public required bool SupportsBmi1 { get; init; }
     public required bool SupportsBmi2 { get; init; }
-
+    
     // ARM SIMD Capabilities
     public required bool SupportsArmBase { get; init; }
     public required bool SupportsArmAes { get; init; }
@@ -773,23 +797,23 @@ public class HardwareCapabilities
     public required bool SupportsArmCrc32 { get; init; }
     public required bool SupportsArmDp { get; init; }
     public required bool SupportsArmRdm { get; init; }
-
+    
     // Vector Capabilities
     public required int VectorSizeBytes { get; init; }
     public required bool Vector128IsSupported { get; init; }
     public required bool Vector256IsSupported { get; init; }
     public required bool Vector512IsSupported { get; init; }
-
+    
     // GPU Capabilities
     public required bool HasGpu { get; init; }
     public required bool HasNvidiaGpu { get; init; }
     public required bool HasAmdGpu { get; init; }
     public required bool HasIntelGpu { get; init; }
-
+    
     // Memory
     public required long TotalPhysicalMemory { get; init; }
     public required long AvailablePhysicalMemory { get; init; }
-
+    
     // CPU Info
     public required int ProcessorCount { get; init; }
 }

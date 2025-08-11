@@ -206,7 +206,7 @@ public sealed class StrongNameSecurityRule : SecurityRule
             // Store public key for other rules
             context.StrongNameKey = publicKey;
             result.Metadata["StrongNameKeySize"] = publicKey.Length;
-            result.Metadata["PublicKeyToken"] = Convert.ToHexString(assemblyName.GetPublicKeyToken() ?? Array.Empty<byte>());
+            result.Metadata["PublicKeyToken"] = Convert.ToHexString(assemblyName.GetPublicKeyToken() ?? []);
             result.SecurityLevel = SecurityLevel.High;
         }
         catch (Exception ex)
