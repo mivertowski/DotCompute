@@ -268,9 +268,17 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         // For kernels that need an output buffer (like vector_add), create it
         if (kernelName.Contains("add") || kernelName.Contains("mul") || kernelName.Contains("scale") || kernelName.Contains("transform"))
         {
-            outputBuffer = await CreateOutputBuffer<float>(memoryManager, workSize);
+            // Matrix multiplication needs a square output buffer
+            var outputSize = kernelName.Contains("matrix_mul") ? workSize * workSize : workSize;
+            outputBuffer = await CreateOutputBuffer<float>(memoryManager, outputSize);
             buffers.Add(outputBuffer);
             arguments.Add(outputBuffer);
+            
+            // Matrix multiplication needs the size parameter
+            if (kernelName.Contains("matrix_mul"))
+            {
+                arguments.Add(workSize);
+            }
         }
 
         // 3. Kernel Execution
