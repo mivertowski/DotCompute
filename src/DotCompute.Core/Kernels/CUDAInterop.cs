@@ -745,7 +745,8 @@ internal static unsafe class CUDAInterop
         CUDA_SUCCESS = 0,
         CUDA_ERROR_INVALID_VALUE = 1,
         CUDA_ERROR_OUT_OF_MEMORY = 2,
-        CUDA_ERROR_NOT_INITIALIZED = 3
+        CUDA_ERROR_NOT_INITIALIZED = 3,
+        CUDA_ERROR_NOT_READY = 600
     }
 
     /// <summary>
@@ -927,6 +928,16 @@ internal static unsafe class CUDAInterop
         minGridSize = 0;
         blockSize = 0;
         return CUresult.CUDA_ERROR_NOT_INITIALIZED;
+    }
+
+    public static CUresult cuCtxDestroy(CUcontext ctx)
+    {
+        return CUresult.CUDA_SUCCESS;
+    }
+
+    public static CUresult cuEventSynchronize(CUevent hEvent)
+    {
+        return CUresult.CUDA_SUCCESS;
     }
 }
 
