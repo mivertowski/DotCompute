@@ -8,6 +8,7 @@ using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
+using Microsoft.CodeAnalysis.CSharp;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
 
@@ -635,11 +636,16 @@ internal sealed class KernelAst
 {
     public List<AstNode> Operations { get; set; } = [];
     public List<AstNode> MemoryOperations { get; set; } = [];
+    public List<string> Variables { get; set; } = [];
+    public List<string> Parameters { get; set; } = [];
+    public List<string> FunctionCalls { get; set; } = [];
     public bool HasConditionals { get; set; }
     public bool HasLoops { get; set; }
     public bool HasRecursion { get; set; }
     public bool HasIndirectMemoryAccess { get; set; }
     public bool HasComplexControlFlow { get; set; }
+    public int ComplexityScore { get; set; }
+    public long EstimatedInstructions { get; set; }
 }
 
 /// <summary>
@@ -650,6 +656,8 @@ internal sealed class AstNode
     public AstNodeType NodeType { get; set; }
     public List<AstNode> Children { get; set; } = [];
     public object? Value { get; set; }
+    public int Position { get; set; }
+    public string? Text { get; set; }
 }
 
 /// <summary>
@@ -676,6 +684,25 @@ internal enum AstNodeType
     Cos,
     Tan,
 
+    // Logical operations
+    LogicalAnd,
+    LogicalOr,
+
+    // Comparison operations
+    Equal,
+    NotEqual,
+    LessThan,
+    GreaterThan,
+    LessThanOrEqual,
+    GreaterThanOrEqual,
+
+    // Bitwise operations
+    BitwiseAnd,
+    BitwiseOr,
+    BitwiseXor,
+    LeftShift,
+    RightShift,
+
     // Memory operations
     Load,
     Store,
@@ -689,7 +716,10 @@ internal enum AstNodeType
     // Literals and identifiers
     Constant,
     Variable,
-    Parameter
+    Parameter,
+    
+    // Unknown/error case
+    Unknown
 }
 
 /// <summary>
@@ -706,60 +736,403 @@ internal sealed class CompiledCode
 /// <summary>
 /// Parses kernel source code into AST.
 /// </summary>
-internal static class KernelSourceParser
+internal static partial class KernelSourceParser
 {
-#pragma warning disable SYSLIB1045 // Suppress GeneratedRegex warning for AOT compatibility
-    private static readonly Regex _loadPatternRegex = new(@"(\w+)\[", RegexOptions.Compiled);
-    private static readonly Regex _storePatternRegex = new(@"\[\w+\]\s*=", RegexOptions.Compiled);
-#pragma warning restore SYSLIB1045
+    [GeneratedRegex(@"(public|private|protected|internal)?\s*(static)?\s*\w+\s+(\w+)\s*\(", RegexOptions.Compiled)]
+    private static partial Regex FunctionNameRegex();
     public static KernelAst Parse(string code, string language)
     {
-        // Simple parser implementation for demonstration
-        // In production, this would use a proper parser library or Roslyn for C#
+        try
+        {
+            if (language.Equals("C#", StringComparison.OrdinalIgnoreCase) || 
+                language.Equals("csharp", StringComparison.OrdinalIgnoreCase))
+            {
+                return ParseCSharpWithRoslyn(code);
+            }
 
+            // For other languages, use pattern-based parsing
+            return ParseWithPatterns(code, language);
+        }
+        catch (Exception ex)
+        {
+            // Log error and fall back to pattern matching
+            System.Diagnostics.Debug.WriteLine($"Failed to parse with advanced parser: {ex.Message}");
+            return ParseWithPatterns(code, language);
+        }
+    }
+
+    private static KernelAst ParseCSharpWithRoslyn(string code)
+    {
         var ast = new KernelAst();
-
-        // Detect basic patterns
-        ast.HasConditionals = code.Contains("if", StringComparison.Ordinal) || code.Contains('?', StringComparison.Ordinal);
-        ast.HasLoops = code.Contains("for", StringComparison.Ordinal) || code.Contains("while", StringComparison.Ordinal);
-        ast.HasRecursion = false; // Would need deeper analysis
-        ast.HasIndirectMemoryAccess = code.Contains('[', StringComparison.Ordinal) && code.Contains(']', StringComparison.Ordinal);
-
-        // Parse operations (simplified)
-        if (code.Contains('+', StringComparison.Ordinal))
+        
+        try
         {
-            ast.Operations.Add(new AstNode { NodeType = AstNodeType.Add });
+            var syntaxTree = Microsoft.CodeAnalysis.CSharp.CSharpSyntaxTree.ParseText(code);
+            var root = syntaxTree.GetRoot();
+            
+            var visitor = new KernelSyntaxVisitor();
+            visitor.Visit(root);
+            
+            ast.HasConditionals = visitor.HasConditionals;
+            ast.HasLoops = visitor.HasLoops;
+            ast.HasRecursion = visitor.HasRecursion;
+            ast.HasIndirectMemoryAccess = visitor.HasIndirectMemoryAccess;
+            ast.Operations = visitor.Operations;
+            ast.Variables = visitor.Variables;
+            ast.Parameters = visitor.Parameters;
+            ast.FunctionCalls = visitor.FunctionCalls;
+            
+            // Additional analysis
+            ast.ComplexityScore = CalculateComplexityScore(ast);
+            ast.EstimatedInstructions = EstimateInstructionCount(ast);
         }
-
-        if (code.Contains('-', StringComparison.Ordinal))
+        catch (Exception ex)
         {
-            ast.Operations.Add(new AstNode { NodeType = AstNodeType.Subtract });
-        }
-
-        if (code.Contains('*', StringComparison.Ordinal))
-        {
-            ast.Operations.Add(new AstNode { NodeType = AstNodeType.Multiply });
-        }
-
-        if (code.Contains('/', StringComparison.Ordinal))
-        {
-            ast.Operations.Add(new AstNode { NodeType = AstNodeType.Divide });
-        }
-
-        // Detect memory operations
-        var loadMatches = _loadPatternRegex.Matches(code);
-        for (var i = 0; i < loadMatches.Count; i++)
-        {
-            ast.MemoryOperations.Add(new AstNode { NodeType = AstNodeType.Load });
-        }
-
-        var storeMatches = _storePatternRegex.Matches(code);
-        for (var i = 0; i < storeMatches.Count; i++)
-        {
-            ast.MemoryOperations.Add(new AstNode { NodeType = AstNodeType.Store });
+            System.Diagnostics.Debug.WriteLine($"Roslyn parsing failed: {ex.Message}");
+            // Fall back to pattern matching
+            return ParseWithPatterns(code, "C#");
         }
 
         return ast;
+    }
+
+    private static KernelAst ParseWithPatterns(string code, string language)
+    {
+        var ast = new KernelAst();
+
+        // Detect basic patterns
+        ast.HasConditionals = code.Contains("if", StringComparison.Ordinal) || 
+                             code.Contains('?', StringComparison.Ordinal) || 
+                             code.Contains("switch", StringComparison.Ordinal);
+        
+        ast.HasLoops = code.Contains("for", StringComparison.Ordinal) || 
+                      code.Contains("while", StringComparison.Ordinal) || 
+                      code.Contains("foreach", StringComparison.Ordinal) ||
+                      code.Contains("do", StringComparison.Ordinal);
+        
+        ast.HasRecursion = DetectRecursion(code);
+        ast.HasIndirectMemoryAccess = code.Contains('[', StringComparison.Ordinal) && 
+                                     code.Contains(']', StringComparison.Ordinal);
+
+        // Parse operations using regex patterns
+        DetectOperations(code, ast);
+        DetectVariables(code, ast);
+        DetectFunctionCalls(code, ast);
+        
+        // Calculate metrics
+        ast.ComplexityScore = CalculateComplexityScore(ast);
+        ast.EstimatedInstructions = EstimateInstructionCount(ast);
+
+        return ast;
+    }
+
+    private static bool DetectRecursion(string code)
+    {
+        // Simple heuristic: look for function calls that might be recursive
+        var functionNameMatch = FunctionNameRegex().Match(code);
+        if (functionNameMatch.Success)
+        {
+            var functionName = functionNameMatch.Groups[3].Value;
+            return code.IndexOf(functionName, functionNameMatch.Index + functionNameMatch.Length, StringComparison.Ordinal) >= 0;
+        }
+        return false;
+    }
+
+    private static void DetectOperations(string code, KernelAst ast)
+    {
+        var operationPatterns = new Dictionary<string, AstNodeType>
+        {
+            { @"\+(?!=)", AstNodeType.Add },
+            { @"-(?!=)", AstNodeType.Subtract },
+            { @"\*(?!=)", AstNodeType.Multiply },
+            { @"/(?!=)", AstNodeType.Divide },
+            { @"%", AstNodeType.Modulo },
+            { @"\&\&", AstNodeType.LogicalAnd },
+            { @"\|\|", AstNodeType.LogicalOr },
+            { @"==", AstNodeType.Equal },
+            { @"!=", AstNodeType.NotEqual },
+            { @"<=", AstNodeType.LessThanOrEqual },
+            { @">=", AstNodeType.GreaterThanOrEqual },
+            { @"<(?!=)", AstNodeType.LessThan },
+            { @">(?!=)", AstNodeType.GreaterThan },
+            { @"\&(?!&)", AstNodeType.BitwiseAnd },
+            { @"\|(?!\|)", AstNodeType.BitwiseOr },
+            { @"\^", AstNodeType.BitwiseXor },
+            { @"<<", AstNodeType.LeftShift },
+            { @">>", AstNodeType.RightShift }
+        };
+
+        foreach (var pattern in operationPatterns)
+        {
+            if (Regex.IsMatch(code, pattern.Key))
+            {
+                var matches = Regex.Matches(code, pattern.Key);
+                foreach (Match match in matches)
+                {
+                    ast.Operations.Add(new AstNode 
+                    { 
+                        NodeType = pattern.Value,
+                        Position = match.Index,
+                        Text = match.Value
+                    });
+                }
+            }
+        }
+    }
+
+    private static void DetectVariables(string code, KernelAst ast)
+    {
+        // Detect variable declarations
+        var variablePatterns = new[]
+        {
+            @"(int|float|double|long|short|byte|bool|char)\s+(\w+)",
+            @"var\s+(\w+)",
+            @"(\w+)\s+(\w+)\s*="
+        };
+
+        foreach (var pattern in variablePatterns)
+        {
+            var matches = Regex.Matches(code, pattern, RegexOptions.IgnoreCase);
+            foreach (Match match in matches)
+            {
+                var variableName = match.Groups.Count > 2 ? match.Groups[2].Value : match.Groups[1].Value;
+                if (!ast.Variables.Contains(variableName))
+                {
+                    ast.Variables.Add(variableName);
+                }
+            }
+        }
+    }
+
+    private static void DetectFunctionCalls(string code, KernelAst ast)
+    {
+        // Detect function calls
+        var functionCallPattern = @"(\w+)\s*\(";
+        var matches = Regex.Matches(code, functionCallPattern);
+        
+        foreach (Match match in matches)
+        {
+            var functionName = match.Groups[1].Value;
+            // Filter out language keywords and common operators
+            if (!IsKeyword(functionName) && !ast.FunctionCalls.Contains(functionName))
+            {
+                ast.FunctionCalls.Add(functionName);
+            }
+        }
+    }
+
+    private static bool IsKeyword(string word)
+    {
+        var keywords = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "if", "else", "for", "while", "do", "switch", "case", "default",
+            "return", "break", "continue", "goto", "try", "catch", "finally",
+            "throw", "using", "namespace", "class", "struct", "interface",
+            "enum", "delegate", "public", "private", "protected", "internal",
+            "static", "virtual", "override", "abstract", "sealed", "readonly",
+            "const", "volatile", "unsafe", "fixed", "lock", "sizeof", "typeof"
+        };
+        return keywords.Contains(word);
+    }
+
+    private static int CalculateComplexityScore(KernelAst ast)
+    {
+        var score = ast.Operations.Count;
+        if (ast.HasConditionals)
+        {
+            score += 2;
+        }
+        if (ast.HasLoops)
+        {
+            score += 3;
+        }
+        if (ast.HasRecursion)
+        {
+            score += 5;
+        }
+        if (ast.HasIndirectMemoryAccess)
+        {
+            score += 2;
+        }
+        score += ast.FunctionCalls.Count;
+        return score;
+    }
+
+    private static long EstimateInstructionCount(KernelAst ast)
+    {
+        long count = ast.Operations.Count * 2L; // Rough estimate: 2 instructions per operation
+        if (ast.HasLoops)
+        {
+            count *= 10; // Loops multiply instruction count
+        }
+        if (ast.HasConditionals)
+        {
+            count += 5; // Branching overhead
+        }
+        if (ast.HasRecursion)
+        {
+            count *= 5; // Recursive overhead
+        }
+        count += ast.FunctionCalls.Count * 3L; // Function call overhead
+        return Math.Max(count, 1L);
+    }
+}
+
+/// <summary>
+/// Roslyn syntax visitor for analyzing C# kernel code.
+/// </summary>
+internal sealed class KernelSyntaxVisitor : Microsoft.CodeAnalysis.CSharp.CSharpSyntaxWalker
+{
+    public bool HasConditionals { get; private set; }
+    public bool HasLoops { get; private set; }
+    public bool HasRecursion { get; private set; }
+    public bool HasIndirectMemoryAccess { get; private set; }
+    public List<AstNode> Operations { get; } = new();
+    public List<string> Variables { get; } = new();
+    public List<string> Parameters { get; } = new();
+    public List<string> FunctionCalls { get; } = new();
+    
+    private readonly HashSet<string> _declaredMethods = new();
+    private readonly HashSet<string> _calledMethods = new();
+
+    public override void VisitIfStatement(Microsoft.CodeAnalysis.CSharp.Syntax.IfStatementSyntax node)
+    {
+        HasConditionals = true;
+        base.VisitIfStatement(node);
+    }
+
+    public override void VisitSwitchStatement(Microsoft.CodeAnalysis.CSharp.Syntax.SwitchStatementSyntax node)
+    {
+        HasConditionals = true;
+        base.VisitSwitchStatement(node);
+    }
+
+    public override void VisitConditionalExpression(Microsoft.CodeAnalysis.CSharp.Syntax.ConditionalExpressionSyntax node)
+    {
+        HasConditionals = true;
+        base.VisitConditionalExpression(node);
+    }
+
+    public override void VisitForStatement(Microsoft.CodeAnalysis.CSharp.Syntax.ForStatementSyntax node)
+    {
+        HasLoops = true;
+        base.VisitForStatement(node);
+    }
+
+    public override void VisitWhileStatement(Microsoft.CodeAnalysis.CSharp.Syntax.WhileStatementSyntax node)
+    {
+        HasLoops = true;
+        base.VisitWhileStatement(node);
+    }
+
+    public override void VisitDoStatement(Microsoft.CodeAnalysis.CSharp.Syntax.DoStatementSyntax node)
+    {
+        HasLoops = true;
+        base.VisitDoStatement(node);
+    }
+
+    public override void VisitForEachStatement(Microsoft.CodeAnalysis.CSharp.Syntax.ForEachStatementSyntax node)
+    {
+        HasLoops = true;
+        base.VisitForEachStatement(node);
+    }
+
+    public override void VisitElementAccessExpression(Microsoft.CodeAnalysis.CSharp.Syntax.ElementAccessExpressionSyntax node)
+    {
+        HasIndirectMemoryAccess = true;
+        base.VisitElementAccessExpression(node);
+    }
+
+    public override void VisitBinaryExpression(Microsoft.CodeAnalysis.CSharp.Syntax.BinaryExpressionSyntax node)
+    {
+        var operationType = node.OperatorToken.ValueText switch
+        {
+            "+" => AstNodeType.Add,
+            "-" => AstNodeType.Subtract,
+            "*" => AstNodeType.Multiply,
+            "/" => AstNodeType.Divide,
+            "%" => AstNodeType.Modulo,
+            "&&" => AstNodeType.LogicalAnd,
+            "||" => AstNodeType.LogicalOr,
+            "==" => AstNodeType.Equal,
+            "!=" => AstNodeType.NotEqual,
+            "<" => AstNodeType.LessThan,
+            ">" => AstNodeType.GreaterThan,
+            "<=" => AstNodeType.LessThanOrEqual,
+            ">=" => AstNodeType.GreaterThanOrEqual,
+            "&" => AstNodeType.BitwiseAnd,
+            "|" => AstNodeType.BitwiseOr,
+            "^" => AstNodeType.BitwiseXor,
+            "<<" => AstNodeType.LeftShift,
+            ">>" => AstNodeType.RightShift,
+            _ => AstNodeType.Unknown
+        };
+
+        if (operationType != AstNodeType.Unknown)
+        {
+            Operations.Add(new AstNode
+            {
+                NodeType = operationType,
+                Position = node.SpanStart,
+                Text = node.OperatorToken.ValueText
+            });
+        }
+
+        base.VisitBinaryExpression(node);
+    }
+
+    public override void VisitVariableDeclarator(Microsoft.CodeAnalysis.CSharp.Syntax.VariableDeclaratorSyntax node)
+    {
+        var variableName = node.Identifier.ValueText;
+        if (!Variables.Contains(variableName))
+        {
+            Variables.Add(variableName);
+        }
+        base.VisitVariableDeclarator(node);
+    }
+
+    public override void VisitParameter(Microsoft.CodeAnalysis.CSharp.Syntax.ParameterSyntax node)
+    {
+        var parameterName = node.Identifier.ValueText;
+        if (!Parameters.Contains(parameterName))
+        {
+            Parameters.Add(parameterName);
+        }
+        base.VisitParameter(node);
+    }
+
+    public override void VisitMethodDeclaration(Microsoft.CodeAnalysis.CSharp.Syntax.MethodDeclarationSyntax node)
+    {
+        var methodName = node.Identifier.ValueText;
+        _declaredMethods.Add(methodName);
+        base.VisitMethodDeclaration(node);
+    }
+
+    public override void VisitInvocationExpression(Microsoft.CodeAnalysis.CSharp.Syntax.InvocationExpressionSyntax node)
+    {
+        if (node.Expression is Microsoft.CodeAnalysis.CSharp.Syntax.IdentifierNameSyntax identifierName)
+        {
+            var methodName = identifierName.Identifier.ValueText;
+            _calledMethods.Add(methodName);
+            
+            if (!FunctionCalls.Contains(methodName))
+            {
+                FunctionCalls.Add(methodName);
+            }
+        }
+        else if (node.Expression is Microsoft.CodeAnalysis.CSharp.Syntax.MemberAccessExpressionSyntax memberAccess)
+        {
+            var methodName = memberAccess.Name.Identifier.ValueText;
+            if (!FunctionCalls.Contains(methodName))
+            {
+                FunctionCalls.Add(methodName);
+            }
+        }
+
+        base.VisitInvocationExpression(node);
+        
+        // Check for recursion after visiting all nodes
+        HasRecursion = _declaredMethods.Intersect(_calledMethods).Any();
     }
 }
 

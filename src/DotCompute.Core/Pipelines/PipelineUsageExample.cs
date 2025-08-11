@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Core.Pipelines;
 
@@ -18,7 +19,8 @@ public static class PipelineUsageExample
         IComputeDevice device,
         ICompiledKernel blurKernel,
         ICompiledKernel edgeKernel,
-        ICompiledKernel enhanceKernel)
+        ICompiledKernel enhanceKernel,
+        ILogger? logger = null)
     {
         var pipeline = KernelPipelineBuilder.Create()
             .WithName("ImageProcessingPipeline")
@@ -90,17 +92,17 @@ public static class PipelineUsageExample
             // Add event monitoring
             .WithEventHandler(evt =>
             {
-                Console.WriteLine($"[{evt.Type}] {evt.Message}");
+                logger?.LogInformation("Pipeline event: {EventType} - {Message}", evt.Type, evt.Message);
                 if (evt.StageId != null)
                 {
-                    Console.WriteLine($"  Stage: {evt.StageId}");
+                    logger?.LogInformation("Pipeline event stage: {StageId}", evt.StageId);
                 }
             })
 
             // Add error handling
             .WithErrorHandler((exception, context) =>
             {
-                Console.WriteLine($"Error in pipeline: {exception.Message}");
+                logger?.LogError(exception, "Error in pipeline: {ErrorMessage}", exception.Message);
 
                 // Continue on non-critical errors
                 if (exception is not OutOfMemoryException)
@@ -125,7 +127,8 @@ public static class PipelineUsageExample
         IComputeDevice device,
         ICompiledKernel preprocessKernel,
         ICompiledKernel inferenceKernel,
-        ICompiledKernel postprocessKernel)
+        ICompiledKernel postprocessKernel,
+        ILogger? logger = null)
     {
         var pipeline = KernelPipelineBuilder.Create()
             .WithName("MLInferencePipeline")
@@ -174,7 +177,8 @@ public static class PipelineUsageExample
     public static Task<IKernelPipeline> CreateIterativeComputationPipelineAsync(
         IComputeDevice device,
         ICompiledKernel computeKernel,
-        ICompiledKernel convergenceKernel)
+        ICompiledKernel convergenceKernel,
+        ILogger? logger = null)
     {
         var pipeline = KernelPipelineBuilder.Create()
             .WithName("IterativeComputationPipeline")
@@ -240,10 +244,11 @@ public static class PipelineUsageExample
         IKernelPipeline pipeline,
         IComputeDevice device,
         IPipelineMemoryManager memoryManager,
-        Dictionary<string, object> inputs)
+        Dictionary<string, object> inputs,
+        ILogger? logger = null)
     {
         // Create profiler for detailed monitoring
-        var profiler = new BasicPipelineProfiler();
+        var profiler = new BasicPipelineProfiler(logger as ILogger<BasicPipelineProfiler>);
 
         // Create execution context
         var context = new PipelineExecutionContext
@@ -263,19 +268,18 @@ public static class PipelineUsageExample
 
         try
         {
-            Console.WriteLine($"Starting pipeline execution: {pipeline.Name}");
-            Console.WriteLine($"Input count: {inputs.Count}");
+            logger?.LogInformation("Starting pipeline execution: {PipelineName} with {InputCount} inputs", pipeline.Name, inputs.Count);
 
             // Validate pipeline before execution
             var validation = pipeline.Validate();
             if (!validation.IsValid)
             {
-                Console.WriteLine("Pipeline validation failed:");
+                logger?.LogError("Pipeline validation failed");
                 if (validation.Errors != null)
                 {
                     foreach (var error in validation.Errors)
                     {
-                        Console.WriteLine($"  Error: {error.Message}");
+                        logger?.LogError("Pipeline validation error: {ErrorMessage}", error.Message);
                     }
                 }
                 throw new PipelineValidationException("Pipeline validation failed", validation.Errors ?? new List<ValidationError>());
@@ -284,30 +288,31 @@ public static class PipelineUsageExample
             // Execute pipeline
             var result = await pipeline.ExecuteAsync(context);
 
-            // Display results
-            Console.WriteLine($"Pipeline execution completed: {(result.Success ? "SUCCESS" : "FAILED")}");
-            Console.WriteLine($"Execution time: {result.Metrics.Duration.TotalMilliseconds:F2} ms");
-            Console.WriteLine($"Memory usage: {result.Metrics.MemoryUsage.AllocatedBytes / 1024.0 / 1024.0:F2} MB");
-            Console.WriteLine($"Compute utilization: {result.Metrics.ComputeUtilization:P}");
-            Console.WriteLine($"Output count: {result.Outputs.Count}");
+            // Log results
+            logger?.LogInformation("Pipeline execution completed: {Status}, Duration: {Duration:F2}ms, Memory: {MemoryMB:F2}MB, CPU: {CpuUtilization:P}, Outputs: {OutputCount}",
+                result.Success ? "SUCCESS" : "FAILED",
+                result.Metrics.Duration.TotalMilliseconds,
+                result.Metrics.MemoryUsage.AllocatedBytes / 1024.0 / 1024.0,
+                result.Metrics.ComputeUtilization,
+                result.Outputs.Count);
 
-            // Display stage performance
-            Console.WriteLine("\nStage Performance:");
+            // Log stage performance
+            logger?.LogInformation("Stage Performance Summary:");
             foreach (var stageResult in result.StageResults)
             {
-                Console.WriteLine($"  {stageResult.StageId}: {stageResult.Duration.TotalMilliseconds:F2} ms ({(stageResult.Success ? "OK" : "FAILED")})");
+                logger?.LogInformation("Stage {StageId}: {Duration:F2}ms - {Status}", 
+                    stageResult.StageId, 
+                    stageResult.Duration.TotalMilliseconds, 
+                    stageResult.Success ? "OK" : "FAILED");
             }
 
             if (result.Errors != null)
             {
-                Console.WriteLine("\nErrors:");
+                logger?.LogWarning("Pipeline execution completed with {ErrorCount} errors", result.Errors.Count);
                 foreach (var error in result.Errors)
                 {
-                    Console.WriteLine($"  {error.Severity}: {error.Message}");
-                    if (error.StageId != null)
-                    {
-                        Console.WriteLine($"    Stage: {error.StageId}");
-                    }
+                    logger?.LogError("Pipeline error - Severity: {Severity}, Message: {ErrorMessage}, Stage: {StageId}", 
+                        error.Severity, error.Message, error.StageId ?? "Unknown");
                 }
             }
 
@@ -315,7 +320,7 @@ public static class PipelineUsageExample
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"Pipeline execution failed with exception: {ex.Message}");
+            logger?.LogError(ex, "Pipeline execution failed with exception: {ErrorMessage}", ex.Message);
             throw;
         }
     }
@@ -323,9 +328,9 @@ public static class PipelineUsageExample
     /// <summary>
     /// Example: Pipeline optimization workflow.
     /// </summary>
-    public static async Task<IKernelPipeline> OptimizePipelineAsync(IKernelPipeline originalPipeline)
+    public static async Task<IKernelPipeline> OptimizePipelineAsync(IKernelPipeline originalPipeline, ILogger? logger = null)
     {
-        Console.WriteLine($"Optimizing pipeline: {originalPipeline.Name}");
+        logger?.LogInformation("Starting pipeline optimization for: {PipelineName}", originalPipeline.Name);
 
         var optimizer = new PipelineOptimizer();
         var optimizationSettings = new PipelineOptimizationSettings
@@ -339,17 +344,19 @@ public static class PipelineUsageExample
 
         var optimizedResult = await optimizer.OptimizeAsync(originalPipeline, optimizationSettings);
 
-        Console.WriteLine($"Optimization completed:");
-        Console.WriteLine($"  Applied optimizations: {optimizedResult.AppliedOptimizations.Count}");
-        Console.WriteLine($"  Estimated speedup: {optimizedResult.EstimatedSpeedup:F2}x");
-        Console.WriteLine($"  Estimated memory savings: {optimizedResult.EstimatedMemorySavings / 1024.0 / 1024.0:F2} MB");
+        logger?.LogInformation("Pipeline optimization completed - Applied: {OptimizationCount}, Speedup: {Speedup:F2}x, Memory Savings: {MemorySavingsMB:F2}MB",
+            optimizedResult.AppliedOptimizations.Count,
+            optimizedResult.EstimatedSpeedup,
+            optimizedResult.EstimatedMemorySavings / 1024.0 / 1024.0);
 
-        Console.WriteLine("\nOptimizations applied:");
+        logger?.LogInformation("Applied optimizations summary:");
         foreach (var optimization in optimizedResult.AppliedOptimizations)
         {
-            Console.WriteLine($"  {optimization.Type}: {optimization.Description}");
-            Console.WriteLine($"    Impact: {optimization.EstimatedImpact:P}");
-            Console.WriteLine($"    Affected stages: {string.Join(", ", optimization.AffectedStages)}");
+            logger?.LogInformation("Optimization - Type: {OptimizationType}, Impact: {Impact:P}, Stages: {AffectedStages}, Description: {Description}",
+                optimization.Type,
+                optimization.EstimatedImpact,
+                string.Join(", ", optimization.AffectedStages),
+                optimization.Description);
         }
 
         return optimizedResult.Pipeline;
@@ -363,11 +370,21 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
 {
     private readonly Dictionary<string, DateTime> _executionStarts = [];
     private readonly Dictionary<string, DateTime> _stageStarts = [];
+    private readonly ILogger<BasicPipelineProfiler>? _logger;
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="BasicPipelineProfiler"/> class.
+    /// </summary>
+    /// <param name="logger">Optional logger for profiler events.</param>
+    public BasicPipelineProfiler(ILogger<BasicPipelineProfiler>? logger = null)
+    {
+        _logger = logger;
+    }
 
     public void StartPipelineExecution(string pipelineId, string executionId)
     {
         _executionStarts[executionId] = DateTime.UtcNow;
-        Console.WriteLine($"[PROFILER] Pipeline {pipelineId} started (ID: {executionId})");
+        _logger?.LogInformation("[PROFILER] Pipeline {PipelineId} started with execution ID: {ExecutionId}", pipelineId, executionId);
     }
 
     public void EndPipelineExecution(string executionId)
@@ -375,14 +392,14 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
         if (_executionStarts.TryGetValue(executionId, out var startTime))
         {
             var duration = DateTime.UtcNow - startTime;
-            Console.WriteLine($"[PROFILER] Pipeline completed in {duration.TotalMilliseconds:F2} ms");
+            _logger?.LogInformation("[PROFILER] Pipeline {ExecutionId} completed in {Duration:F2}ms", executionId, duration.TotalMilliseconds);
         }
     }
 
     public void StartStageExecution(string executionId, string stageId)
     {
         _stageStarts[$"{executionId}_{stageId}"] = DateTime.UtcNow;
-        Console.WriteLine($"[PROFILER] Stage {stageId} started");
+        _logger?.LogInformation("[PROFILER] Stage {StageId} started for execution {ExecutionId}", stageId, executionId);
     }
 
     public void EndStageExecution(string executionId, string stageId)
@@ -391,23 +408,31 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
         if (_stageStarts.TryGetValue(key, out var startTime))
         {
             var duration = DateTime.UtcNow - startTime;
-            Console.WriteLine($"[PROFILER] Stage {stageId} completed in {duration.TotalMilliseconds:F2} ms");
+            _logger?.LogInformation("[PROFILER] Stage {StageId} completed in {Duration:F2}ms for execution {ExecutionId}", stageId, duration.TotalMilliseconds, executionId);
         }
     }
 
-    public void RecordMemoryAllocation(string executionId, long bytes, string purpose) => Console.WriteLine($"[PROFILER] Memory allocated: {bytes / 1024.0 / 1024.0:F2} MB for {purpose}");
+    public void RecordMemoryAllocation(string executionId, long bytes, string purpose) => 
+        _logger?.LogInformation("[PROFILER] Memory allocated: {MemoryMB:F2}MB for {Purpose} (Execution: {ExecutionId})", 
+            bytes / 1024.0 / 1024.0, purpose, executionId);
 
-    public void RecordMemoryDeallocation(string executionId, long bytes) => Console.WriteLine($"[PROFILER] Memory released: {bytes / 1024.0 / 1024.0:F2} MB");
+    public void RecordMemoryDeallocation(string executionId, long bytes) => 
+        _logger?.LogInformation("[PROFILER] Memory released: {MemoryMB:F2}MB (Execution: {ExecutionId})", 
+            bytes / 1024.0 / 1024.0, executionId);
 
     public void RecordDataTransfer(string executionId, long bytes, TimeSpan duration, DataTransferType type)
     {
         var rate = bytes / duration.TotalSeconds / 1024.0 / 1024.0;
-        Console.WriteLine($"[PROFILER] Data transfer ({type}): {bytes / 1024.0 / 1024.0:F2} MB in {duration.TotalMilliseconds:F2} ms ({rate:F2} MB/s)");
+        _logger?.LogInformation("[PROFILER] Data transfer - Type: {TransferType}, Size: {SizeMB:F2}MB, Duration: {Duration:F2}ms, Rate: {RateMBps:F2}MB/s (Execution: {ExecutionId})",
+            type, bytes / 1024.0 / 1024.0, duration.TotalMilliseconds, rate, executionId);
     }
 
-    public void RecordKernelExecution(string executionId, KernelExecutionStats stats) => Console.WriteLine($"[PROFILER] Kernel {stats.KernelName}: {stats.ExecutionTime.TotalMilliseconds:F2} ms, {stats.WorkItemsProcessed} work items, {stats.ComputeUtilization:P} utilization");
+    public void RecordKernelExecution(string executionId, KernelExecutionStats stats) => 
+        _logger?.LogInformation("[PROFILER] Kernel {KernelName}: {Duration:F2}ms, {WorkItems} items, {Utilization:P} utilization (Execution: {ExecutionId})",
+            stats.KernelName, stats.ExecutionTime.TotalMilliseconds, stats.WorkItemsProcessed, stats.ComputeUtilization, executionId);
 
-    public void RecordCustomMetric(string executionId, string name, double value) => Console.WriteLine($"[PROFILER] Metric {name}: {value}");
+    public void RecordCustomMetric(string executionId, string name, double value) => 
+        _logger?.LogInformation("[PROFILER] Custom metric - {MetricName}: {Value} (Execution: {ExecutionId})", name, value, executionId);
 
     public ProfilingResults GetResults(string executionId)
     {

@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Backends.CPU.Accelerators;
 
 namespace DotCompute.Backends.CPU.Kernels;
 
@@ -131,54 +132,390 @@ internal sealed class AotSafeCodeGenerator
             paramCount = count;
         }
 
-        // For simplicity, we support common signatures
-        // In production, this would be more comprehensive
-        switch (paramCount)
+        // Comprehensive parameter signature support for all data types
+        return CreateTypedDelegate(definition, implementation, paramCount);
+    }
+
+    private Delegate CreateTypedDelegate(KernelDefinition definition, Func<ExtendedKernelExecutionContext, Task> implementation, int paramCount)
+    {
+        // Determine parameter types from metadata or infer from definition
+        var parameterTypes = InferParameterTypes(definition, paramCount);
+        
+        return parameterTypes.Count switch
         {
-            case 3: // Common case: input1, input2, output
-                return new Action<Memory<float>, Memory<float>, Memory<float>, long[]>((a, b, c, workItemId) =>
+            // Single parameter signatures
+            1 => CreateSingleParameterDelegate(parameterTypes[0], implementation),
+            
+            // Two parameter signatures
+            2 => CreateTwoParameterDelegate(parameterTypes[0], parameterTypes[1], implementation),
+            
+            // Three parameter signatures (most common)
+            3 => CreateThreeParameterDelegate(parameterTypes[0], parameterTypes[1], parameterTypes[2], implementation),
+            
+            // Four parameter signatures
+            4 => CreateFourParameterDelegate(parameterTypes[0], parameterTypes[1], parameterTypes[2], parameterTypes[3], implementation),
+            
+            // Five parameter signatures
+            5 => CreateFiveParameterDelegate(parameterTypes, implementation),
+            
+            // Six or more parameters - use generic approach
+            _ => CreateGenericDelegate(parameterTypes, implementation)
+        };
+    }
+
+    private List<Type> InferParameterTypes(KernelDefinition definition, int paramCount)
+    {
+        var types = new List<Type>();
+        
+        // Try to get types from metadata
+        if (definition.Metadata?.TryGetValue("ParameterTypes", out var paramTypesObj) == true)
+        {
+            if (paramTypesObj is string[] typeNames)
+            {
+                foreach (var typeName in typeNames)
                 {
-                    var context = new ExtendedKernelExecutionContext();
-                    context.SetBuffer(0, a);
-                    context.SetBuffer(1, b);
-                    context.SetBuffer(2, c);
-                    context.SetParameter(3, workItemId);
-
-                    // Execute synchronously for AOT compatibility
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT delegate signature compatibility
-                    implementation(context).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
-                });
-
-            case 2: // Reduction case: input, output
-                return new Action<Memory<float>, Memory<float>, long[]>((input, output, workItemId) =>
-                {
-                    var context = new ExtendedKernelExecutionContext();
-                    context.SetBuffer(0, input);
-                    context.SetBuffer(1, output);
-                    context.SetParameter(2, workItemId);
-
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT delegate signature compatibility
-                    implementation(context).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
-                });
-
-            default:
-                // Generic delegate for other cases
-                return new Action<object[], long[]>((parameters, workItemId) =>
-                {
-                    var context = new ExtendedKernelExecutionContext();
-                    for (var i = 0; i < parameters.Length; i++)
-                    {
-                        context.SetParameter(i, parameters[i]);
-                    }
-                    context.SetParameter(parameters.Length, workItemId);
-
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT delegate signature compatibility
-                    implementation(context).GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
-                });
+                    var type = ParseTypeFromString(typeName);
+                    types.Add(type);
+                }
+            }
         }
+        
+        // If we don't have explicit types, infer from kernel name and parameter count
+        if (types.Count == 0)
+        {
+            types = InferTypesFromKernelSignature(definition, paramCount);
+        }
+        
+        return types;
+    }
+
+    private Type ParseTypeFromString(string typeName)
+    {
+        return typeName.ToUpperInvariant() switch
+        {
+            "FLOAT" or "SINGLE" => typeof(Memory<float>),
+            "DOUBLE" => typeof(Memory<double>),
+            "INT" or "INT32" => typeof(Memory<int>),
+            "LONG" or "INT64" => typeof(Memory<long>),
+            "SHORT" or "INT16" => typeof(Memory<short>),
+            "BYTE" or "UINT8" => typeof(Memory<byte>),
+            "BOOL" or "BOOLEAN" => typeof(Memory<bool>),
+            "UINT" or "UINT32" => typeof(Memory<uint>),
+            "ULONG" or "UINT64" => typeof(Memory<ulong>),
+            "USHORT" or "UINT16" => typeof(Memory<ushort>),
+            "SBYTE" or "INT8" => typeof(Memory<sbyte>),
+            "CHAR" => typeof(Memory<char>),
+            "DECIMAL" => typeof(Memory<decimal>),
+            _ => typeof(Memory<float>) // Default to float
+        };
+    }
+
+    private List<Type> InferTypesFromKernelSignature(KernelDefinition definition, int paramCount)
+    {
+        var types = new List<Type>();
+        var kernelName = definition.Name.ToUpperInvariant();
+        
+        // Common patterns based on kernel names
+        if (kernelName.Contains("INT", StringComparison.Ordinal) || kernelName.Contains("INTEGER", StringComparison.Ordinal))
+        {
+            for (int i = 0; i < paramCount; i++)
+            {
+                types.Add(typeof(Memory<int>));
+            }
+        }
+        else if (kernelName.Contains("DOUBLE", StringComparison.Ordinal))
+        {
+            for (int i = 0; i < paramCount; i++)
+            {
+                types.Add(typeof(Memory<double>));
+            }
+        }
+        else if (kernelName.Contains("LONG", StringComparison.Ordinal))
+        {
+            for (int i = 0; i < paramCount; i++)
+            {
+                types.Add(typeof(Memory<long>));
+            }
+        }
+        else if (kernelName.Contains("BYTE", StringComparison.Ordinal))
+        {
+            for (int i = 0; i < paramCount; i++)
+            {
+                types.Add(typeof(Memory<byte>));
+            }
+        }
+        else
+        {
+            // Default to float for most compute kernels
+            for (int i = 0; i < paramCount; i++)
+            {
+                types.Add(typeof(Memory<float>));
+            }
+        }
+        
+        return types;
+    }
+
+    private Delegate CreateSingleParameterDelegate(Type paramType, Func<ExtendedKernelExecutionContext, Task> implementation)
+    {
+        if (paramType == typeof(Memory<float>))
+        {
+            return new Action<Memory<float>, long[]>((param, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, param);
+                context.SetParameter(1, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        else if (paramType == typeof(Memory<double>))
+        {
+            return new Action<Memory<double>, long[]>((param, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, param);
+                context.SetParameter(1, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        else if (paramType == typeof(Memory<int>))
+        {
+            return new Action<Memory<int>, long[]>((param, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, param);
+                context.SetParameter(1, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        
+        // Generic fallback
+        return new Action<object, long[]>((param, workItemId) =>
+        {
+            var context = new ExtendedKernelExecutionContext();
+            context.SetParameter(0, param);
+            context.SetParameter(1, workItemId);
+            ExecuteSync(implementation, context);
+        });
+    }
+
+    private Delegate CreateTwoParameterDelegate(Type param1Type, Type param2Type, Func<ExtendedKernelExecutionContext, Task> implementation)
+    {
+        // Handle most common combinations
+        if (param1Type == typeof(Memory<float>) && param2Type == typeof(Memory<float>))
+        {
+            return new Action<Memory<float>, Memory<float>, long[]>((p1, p2, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, p1);
+                context.SetBuffer(1, p2);
+                context.SetParameter(2, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        else if (param1Type == typeof(Memory<double>) && param2Type == typeof(Memory<double>))
+        {
+            return new Action<Memory<double>, Memory<double>, long[]>((p1, p2, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, p1);
+                context.SetBuffer(1, p2);
+                context.SetParameter(2, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        else if (param1Type == typeof(Memory<int>) && param2Type == typeof(Memory<int>))
+        {
+            return new Action<Memory<int>, Memory<int>, long[]>((p1, p2, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, p1);
+                context.SetBuffer(1, p2);
+                context.SetParameter(2, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        
+        // Generic fallback
+        return new Action<object, object, long[]>((p1, p2, workItemId) =>
+        {
+            var context = new ExtendedKernelExecutionContext();
+            context.SetParameter(0, p1);
+            context.SetParameter(1, p2);
+            context.SetParameter(2, workItemId);
+            ExecuteSync(implementation, context);
+        });
+    }
+
+    private Delegate CreateThreeParameterDelegate(Type param1Type, Type param2Type, Type param3Type, Func<ExtendedKernelExecutionContext, Task> implementation)
+    {
+        // Handle most common three-parameter combinations
+        if (param1Type == typeof(Memory<float>) && param2Type == typeof(Memory<float>) && param3Type == typeof(Memory<float>))
+        {
+            return new Action<Memory<float>, Memory<float>, Memory<float>, long[]>((p1, p2, p3, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, p1);
+                context.SetBuffer(1, p2);
+                context.SetBuffer(2, p3);
+                context.SetParameter(3, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        else if (param1Type == typeof(Memory<double>) && param2Type == typeof(Memory<double>) && param3Type == typeof(Memory<double>))
+        {
+            return new Action<Memory<double>, Memory<double>, Memory<double>, long[]>((p1, p2, p3, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, p1);
+                context.SetBuffer(1, p2);
+                context.SetBuffer(2, p3);
+                context.SetParameter(3, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        else if (param1Type == typeof(Memory<int>) && param2Type == typeof(Memory<int>) && param3Type == typeof(Memory<int>))
+        {
+            return new Action<Memory<int>, Memory<int>, Memory<int>, long[]>((p1, p2, p3, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, p1);
+                context.SetBuffer(1, p2);
+                context.SetBuffer(2, p3);
+                context.SetParameter(3, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        
+        // Mixed type combinations
+        if (param1Type == typeof(Memory<float>) && param2Type == typeof(Memory<float>) && param3Type == typeof(Memory<double>))
+        {
+            return new Action<Memory<float>, Memory<float>, Memory<double>, long[]>((p1, p2, p3, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, p1);
+                context.SetBuffer(1, p2);
+                context.SetBuffer(2, p3);
+                context.SetParameter(3, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        
+        // Generic fallback
+        return new Action<object, object, object, long[]>((p1, p2, p3, workItemId) =>
+        {
+            var context = new ExtendedKernelExecutionContext();
+            context.SetParameter(0, p1);
+            context.SetParameter(1, p2);
+            context.SetParameter(2, p3);
+            context.SetParameter(3, workItemId);
+            ExecuteSync(implementation, context);
+        });
+    }
+
+    private Delegate CreateFourParameterDelegate(Type p1Type, Type p2Type, Type p3Type, Type p4Type, Func<ExtendedKernelExecutionContext, Task> implementation)
+    {
+        // For four parameters, use a more generic approach with specific type checking
+        if (p1Type == typeof(Memory<float>) && p2Type == typeof(Memory<float>) && p3Type == typeof(Memory<float>) && p4Type == typeof(Memory<float>))
+        {
+            return new Action<Memory<float>, Memory<float>, Memory<float>, Memory<float>, long[]>((p1, p2, p3, p4, workItemId) =>
+            {
+                var context = new ExtendedKernelExecutionContext();
+                context.SetBuffer(0, p1);
+                context.SetBuffer(1, p2);
+                context.SetBuffer(2, p3);
+                context.SetBuffer(3, p4);
+                context.SetParameter(4, workItemId);
+                ExecuteSync(implementation, context);
+            });
+        }
+        
+        // Generic fallback
+        return new Action<object, object, object, object, long[]>((p1, p2, p3, p4, workItemId) =>
+        {
+            var context = new ExtendedKernelExecutionContext();
+            context.SetParameter(0, p1);
+            context.SetParameter(1, p2);
+            context.SetParameter(2, p3);
+            context.SetParameter(3, p4);
+            context.SetParameter(4, workItemId);
+            ExecuteSync(implementation, context);
+        });
+    }
+
+    private Delegate CreateFiveParameterDelegate(List<Type> paramTypes, Func<ExtendedKernelExecutionContext, Task> implementation)
+    {
+        // For five or more parameters, use array-based approach
+        return new Action<object[], long[]>((parameters, workItemId) =>
+        {
+            var context = new ExtendedKernelExecutionContext();
+            for (var i = 0; i < parameters.Length && i < paramTypes.Count; i++)
+            {
+                // Try to set as buffer first, fallback to parameter
+                if (parameters[i] is IMemoryBuffer buffer)
+                {
+                    var cpuBuffer = buffer as CpuMemoryBuffer ?? throw new InvalidOperationException("Buffer must be a CpuMemoryBuffer for CPU backend");
+                    context.SetBuffer(i, cpuBuffer.GetMemory());
+                }
+                else
+                {
+                    context.SetParameter(i, parameters[i]);
+                }
+            }
+            context.SetParameter(parameters.Length, workItemId);
+            ExecuteSync(implementation, context);
+        });
+    }
+
+    private Delegate CreateGenericDelegate(List<Type> paramTypes, Func<ExtendedKernelExecutionContext, Task> implementation)
+    {
+        // Most flexible approach for complex signatures
+        return new Action<object[], long[]>((parameters, workItemId) =>
+        {
+            var context = new ExtendedKernelExecutionContext();
+            
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                var parameter = parameters[i];
+                
+                // Handle different parameter types
+                switch (parameter)
+                {
+                    case IMemoryBuffer buffer:
+                        var cpuBuffer = buffer as CpuMemoryBuffer ?? throw new InvalidOperationException("Buffer must be a CpuMemoryBuffer for CPU backend");
+                        context.SetBuffer(i, cpuBuffer.GetMemory());
+                        break;
+                    case Memory<float> floatMem:
+                        context.SetBuffer(i, floatMem);
+                        break;
+                    case Memory<double> doubleMem:
+                        context.SetBuffer(i, doubleMem);
+                        break;
+                    case Memory<int> intMem:
+                        context.SetBuffer(i, intMem);
+                        break;
+                    case Memory<long> longMem:
+                        context.SetBuffer(i, longMem);
+                        break;
+                    case Memory<byte> byteMem:
+                        context.SetBuffer(i, byteMem);
+                        break;
+                    default:
+                        context.SetParameter(i, parameter);
+                        break;
+                }
+            }
+            
+            context.SetParameter(parameters.Length, workItemId);
+            ExecuteSync(implementation, context);
+        });
+    }
+
+    private static void ExecuteSync(Func<ExtendedKernelExecutionContext, Task> implementation, ExtendedKernelExecutionContext context)
+    {
+#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits - Required for AOT delegate signature compatibility
+        implementation(context).GetAwaiter().GetResult();
+#pragma warning restore VSTHRD002
     }
 
     #region Pre-compiled Kernel Implementations

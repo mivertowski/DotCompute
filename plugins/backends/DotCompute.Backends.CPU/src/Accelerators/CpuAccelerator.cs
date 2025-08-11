@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Kernels;
@@ -239,7 +240,234 @@ public sealed class CpuAccelerator : IAccelerator
         return 8L * 1024 * 1024 * 1024; // 8GB default
     }
 
-    private static long GetCacheSize() => 8 * 1024 * 1024; // L3 cache size estimation - 8MB default. In reality, you'd query this from the system
+    private static long GetCacheSize()
+    {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return GetCacheSizeWindows();
+            }
+            
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return GetCacheSizeLinux();
+            }
+            
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetCacheSizeMacOS();
+            }
+        }
+        catch (Exception ex)
+        {
+            // Log exception but don't throw - fall back to default
+            System.Diagnostics.Debug.WriteLine($"Failed to detect cache size: {ex.Message}");
+        }
+        
+        // Fallback to reasonable default - 8MB L3 cache
+        return 8 * 1024 * 1024;
+    }
+
+    [System.Runtime.Versioning.SupportedOSPlatform("windows")]
+    private static long GetCacheSizeWindows()
+    {
+        try
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                return 8 * 1024 * 1024; // 8MB default
+            }
+
+            using var searcher = new System.Management.ManagementObjectSearcher(
+                "SELECT * FROM Win32_CacheMemory WHERE Level = 3");
+            
+            foreach (System.Management.ManagementObject cache in searcher.Get())
+            {
+                var maxCacheSize = cache["MaxCacheSize"];
+                if (maxCacheSize != null && uint.TryParse(maxCacheSize.ToString(), out var sizeKB))
+                {
+                    return sizeKB * 1024L; // Convert KB to bytes
+                }
+            }
+            
+            // Alternative: Try Win32_Processor for cache information
+            using var procSearcher = new System.Management.ManagementObjectSearcher(
+                "SELECT * FROM Win32_Processor");
+            
+            foreach (System.Management.ManagementObject processor in procSearcher.Get())
+            {
+                var l3CacheSize = processor["L3CacheSize"];
+                if (l3CacheSize != null && uint.TryParse(l3CacheSize.ToString(), out var sizeKB))
+                {
+                    return sizeKB * 1024L; // Convert KB to bytes
+                }
+            }
+        }
+        catch
+        {
+            // Fall through to default
+        }
+        
+        return 8 * 1024 * 1024; // 8MB default
+    }
+
+    private static long GetCacheSizeLinux()
+    {
+        try
+        {
+            // Try to read from sysfs first - most reliable method
+            var cacheInfoPath = "/sys/devices/system/cpu/cpu0/cache";
+            if (Directory.Exists(cacheInfoPath))
+            {
+                // Look for L3 cache (index3) or highest level cache
+                var cacheIndexes = Directory.GetDirectories(cacheInfoPath, "index*")
+                    .OrderByDescending(d => d)
+                    .ToArray();
+                
+                foreach (var indexPath in cacheIndexes)
+                {
+                    var levelFile = Path.Combine(indexPath, "level");
+                    var sizeFile = Path.Combine(indexPath, "size");
+                    
+                    if (File.Exists(levelFile) && File.Exists(sizeFile))
+                    {
+                        var levelText = File.ReadAllText(levelFile).Trim();
+                        var sizeText = File.ReadAllText(sizeFile).Trim();
+                        
+                        if (int.TryParse(levelText, out var level) && level == 3)
+                        {
+                            // Parse size (usually in format like "8192K")
+                            if (ParseLinuxCacheSize(sizeText, out var size))
+                            {
+                                return size;
+                            }
+                        }
+                    }
+                }
+            }
+            
+            // Fallback: Try /proc/cpuinfo
+            var cpuinfoPath = "/proc/cpuinfo";
+            if (File.Exists(cpuinfoPath))
+            {
+                var lines = File.ReadAllLines(cpuinfoPath);
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("cache size", StringComparison.OrdinalIgnoreCase) ||
+                        line.StartsWith("cache_size", StringComparison.OrdinalIgnoreCase))
+                    {
+                        var parts = line.Split(':');
+                        if (parts.Length > 1 && ParseLinuxCacheSize(parts[1].Trim(), out var size))
+                        {
+                            return size;
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Fall through to default
+        }
+        
+        return 8 * 1024 * 1024; // 8MB default
+    }
+
+    private static bool ParseLinuxCacheSize(string sizeText, out long size)
+    {
+        size = 0;
+        if (string.IsNullOrEmpty(sizeText))
+        {
+            return false;
+        }
+        
+        sizeText = sizeText.ToUpperInvariant().Trim();
+        
+        if (sizeText.EndsWith("KB", StringComparison.Ordinal) || sizeText.EndsWith('K'))
+        {
+            var numericPart = sizeText.Replace("KB", "", StringComparison.Ordinal).Replace("K", "", StringComparison.Ordinal).Trim();
+            if (long.TryParse(numericPart, out var kb))
+            {
+                size = kb * 1024;
+                return true;
+            }
+        }
+        else if (sizeText.EndsWith("MB", StringComparison.Ordinal) || sizeText.EndsWith('M'))
+        {
+            var numericPart = sizeText.Replace("MB", "", StringComparison.Ordinal).Replace("M", "", StringComparison.Ordinal).Trim();
+            if (long.TryParse(numericPart, out var mb))
+            {
+                size = mb * 1024 * 1024;
+                return true;
+            }
+        }
+        else if (long.TryParse(sizeText, out var bytes))
+        {
+            size = bytes;
+            return true;
+        }
+        
+        return false;
+    }
+
+    private static long GetCacheSizeMacOS()
+    {
+        try
+        {
+            // Use sysctl to get L3 cache size
+            using (var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "sysctl",
+                    Arguments = "-n hw.l3cachesize",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            })
+            {
+                process.Start();
+                var output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+                
+                if (process.ExitCode == 0 && long.TryParse(output.Trim(), out var cacheSize) && cacheSize > 0)
+                {
+                    return cacheSize;
+                }
+            }
+            
+            // Fallback: Try L2 cache size if L3 not available
+            using (var process = new System.Diagnostics.Process
+            {
+                StartInfo = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "sysctl",
+                    Arguments = "-n hw.l2cachesize",
+                    RedirectStandardOutput = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            })
+            {
+                process.Start();
+                var output = process.StandardOutput.ReadToEnd();
+                process.WaitForExit();
+                
+                if (process.ExitCode == 0 && long.TryParse(output.Trim(), out var cacheSize) && cacheSize > 0)
+                {
+                    return cacheSize;
+                }
+            }
+        }
+        catch
+        {
+            // Fall through to default
+        }
+        
+        return 8 * 1024 * 1024; // 8MB default
+    }
 
     private static int GetNumaNodeCount() => NumaInfo.Topology.NodeCount;
 

@@ -39,4 +39,28 @@ internal static partial class CpuCompiledKernelLoggerMessages
         Level = LogLevel.Debug,
         Message = "Disposed kernel: {KernelName}")]
     public static partial void LogKernelDisposed(ILogger logger, string kernelName);
+
+    [LoggerMessage(
+        EventId = 3006,
+        Level = LogLevel.Warning,
+        Message = "Missing kernel definition for execution")]
+    public static partial void LogMissingKernelDefinition(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 3007,
+        Level = LogLevel.Warning,
+        Message = "Unsupported kernel operation '{KernelName}': {OperationType}")]
+    public static partial void LogUnsupportedKernelOperation(ILogger logger, string kernelName, string operationType);
+
+    [LoggerMessage(
+        EventId = 3008,
+        Level = LogLevel.Error,
+        Message = "Kernel execution error in '{KernelName}'")]
+    public static partial void LogKernelExecutionError(ILogger logger, string kernelName, Exception ex);
+
+    [LoggerMessage(
+        EventId = 3009,
+        Level = LogLevel.Debug,
+        Message = "Custom kernel execution not supported for '{KernelName}', falling back to pattern matching")]
+    public static partial void LogCustomKernelNotSupported(ILogger logger, string kernelName);
 }

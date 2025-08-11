@@ -241,9 +241,9 @@ public readonly struct MemoryLock<T> : IDisposable, IEquatable<MemoryLock<T>> wh
 
     public void Dispose() => _unlockAction?.Invoke();
 
-    public override bool Equals(object? obj) => throw new NotImplementedException();
+    public override bool Equals(object? obj) => obj is MemoryLock<T> other && Equals(other);
 
-    public override int GetHashCode() => throw new NotImplementedException();
+    public override int GetHashCode() => HashCode.Combine(_memory, _mode, _unlockAction?.Target);
 
     public static bool operator ==(MemoryLock<T> left, MemoryLock<T> right)
     {
@@ -255,7 +255,12 @@ public readonly struct MemoryLock<T> : IDisposable, IEquatable<MemoryLock<T>> wh
         return !(left == right);
     }
 
-    public bool Equals(MemoryLock<T> other) => throw new NotImplementedException();
+    public bool Equals(MemoryLock<T> other)
+    {
+        return ReferenceEquals(_memory, other._memory) &&
+               _mode == other._mode &&
+               ReferenceEquals(_unlockAction?.Target, other._unlockAction?.Target);
+    }
 }
 
 /// <summary>

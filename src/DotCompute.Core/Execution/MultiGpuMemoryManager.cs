@@ -330,10 +330,18 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
 internal sealed class MockAcceleratorForTest : IAccelerator
 {
     public AcceleratorInfo Info => default(AcceleratorInfo)!;
-    public AbstractionsMemory.IMemoryManager Memory => throw new NotImplementedException();
+    public AbstractionsMemory.IMemoryManager Memory { get; }
+
+    public MockAcceleratorForTest()
+    {
+        Memory = new MockMemoryManager();
+    }
     public bool IsDisposed => false;
     public ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
-        => throw new NotImplementedException();
+    {
+        // Return a mock compiled kernel for testing purposes
+        return ValueTask.FromResult<ICompiledKernel>(new MockCompiledKernel());
+    }
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     public void Dispose() { }
@@ -770,4 +778,91 @@ public class DeviceMemoryStatistics
     public long PeakUsageBytes { get; set; }
     public long AllocationCount { get; set; }
     public long DeallocationCount { get; set; }
+}
+
+/// <summary>
+/// Mock memory manager for testing purposes
+/// </summary>
+internal sealed class MockMemoryManager : AbstractionsMemory.IMemoryManager
+{
+    public ValueTask<AbstractionsMemory.IMemoryBuffer> AllocateAsync(long sizeInBytes, AbstractionsMemory.MemoryOptions options, CancellationToken cancellationToken = default)
+    {
+        var buffer = new MockMemoryBuffer(sizeInBytes, options);
+        return ValueTask.FromResult<AbstractionsMemory.IMemoryBuffer>(buffer);
+    }
+
+    public ValueTask<AbstractionsMemory.IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, AbstractionsMemory.MemoryOptions options, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        var sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        var buffer = new MockMemoryBuffer(sizeInBytes, options);
+        return ValueTask.FromResult<AbstractionsMemory.IMemoryBuffer>(buffer);
+    }
+
+    public AbstractionsMemory.IMemoryBuffer CreateView(AbstractionsMemory.IMemoryBuffer buffer, long offset, long length)
+    {
+        return new MockMemoryBuffer(length, buffer.Options);
+    }
+}
+
+/// <summary>
+/// Mock memory buffer for testing purposes
+/// </summary>
+internal sealed class MockMemoryBuffer : AbstractionsMemory.IMemoryBuffer
+{
+    private readonly long _sizeInBytes;
+    private bool _disposed;
+
+    public MockMemoryBuffer(long sizeInBytes, AbstractionsMemory.MemoryOptions options)
+    {
+        _sizeInBytes = sizeInBytes;
+        Options = options;
+    }
+
+    public long SizeInBytes => _sizeInBytes;
+    public AbstractionsMemory.MemoryOptions Options { get; }
+    public bool IsDisposed => _disposed;
+
+    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _disposed = true;
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+    }
+}
+
+/// <summary>
+/// Mock compiled kernel for testing purposes
+/// </summary>
+internal sealed class MockCompiledKernel : ICompiledKernel
+{
+    public string Name => "MockKernel";
+
+    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        // Nothing to dispose
+    }
 }

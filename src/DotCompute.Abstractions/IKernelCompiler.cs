@@ -101,9 +101,22 @@ public readonly struct ValidationResult : IEquatable<ValidationResult>
     public static ValidationResult FailureWithWarnings(string errorMessage, params string[] warnings)
         => new(false, errorMessage, warnings);
 
-    public override bool Equals(object? obj) => throw new NotImplementedException();
+    public override bool Equals(object? obj) => obj is ValidationResult other && Equals(other);
 
-    public override int GetHashCode() => throw new NotImplementedException();
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(IsValid);
+        hash.Add(ErrorMessage);
+        if (Warnings != null)
+        {
+            foreach (var warning in Warnings)
+            {
+                hash.Add(warning);
+            }
+        }
+        return hash.ToHashCode();
+    }
 
     public static bool operator ==(ValidationResult left, ValidationResult right)
     {
@@ -115,7 +128,13 @@ public readonly struct ValidationResult : IEquatable<ValidationResult>
         return !(left == right);
     }
 
-    public bool Equals(ValidationResult other) => throw new NotImplementedException();
+    public bool Equals(ValidationResult other)
+    {
+        return IsValid == other.IsValid &&
+               ErrorMessage == other.ErrorMessage &&
+               ((Warnings == null && other.Warnings == null) ||
+                (Warnings != null && other.Warnings != null && Warnings.SequenceEqual(other.Warnings)));
+    }
 }
 
 /// <summary>
@@ -204,9 +223,24 @@ public readonly struct CompilationMetadata(
     /// </summary>
     public string[]? OptimizationNotes { get; } = optimizationNotes;
 
-    public override bool Equals(object? obj) => throw new NotImplementedException();
+    public override bool Equals(object? obj) => obj is CompilationMetadata other && Equals(other);
 
-    public override int GetHashCode() => throw new NotImplementedException();
+    public override int GetHashCode()
+    {
+        var hash = new HashCode();
+        hash.Add(CompilationTime);
+        hash.Add(CodeSize);
+        hash.Add(RegistersPerThread);
+        hash.Add(SharedMemoryPerBlock);
+        if (OptimizationNotes != null)
+        {
+            foreach (var note in OptimizationNotes)
+            {
+                hash.Add(note);
+            }
+        }
+        return hash.ToHashCode();
+    }
 
     public static bool operator ==(CompilationMetadata left, CompilationMetadata right)
     {
@@ -218,5 +252,14 @@ public readonly struct CompilationMetadata(
         return !(left == right);
     }
 
-    public bool Equals(CompilationMetadata other) => throw new NotImplementedException();
+    public bool Equals(CompilationMetadata other)
+    {
+        return CompilationTime.Equals(other.CompilationTime) &&
+               CodeSize == other.CodeSize &&
+               RegistersPerThread == other.RegistersPerThread &&
+               SharedMemoryPerBlock == other.SharedMemoryPerBlock &&
+               ((OptimizationNotes == null && other.OptimizationNotes == null) ||
+                (OptimizationNotes != null && other.OptimizationNotes != null && 
+                 OptimizationNotes.SequenceEqual(other.OptimizationNotes)));
+    }
 }

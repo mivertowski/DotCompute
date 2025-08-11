@@ -137,9 +137,9 @@ public readonly struct MappedMemory<T> : IDisposable, IEquatable<MappedMemory<T>
         // Buffer should handle unmapping
     }
 
-    public override bool Equals(object? obj) => throw new NotImplementedException();
+    public override bool Equals(object? obj) => obj is MappedMemory<T> other && Equals(other);
 
-    public override int GetHashCode() => throw new NotImplementedException();
+    public override int GetHashCode() => HashCode.Combine(_buffer, _memory, _mode);
 
     public static bool operator ==(MappedMemory<T> left, MappedMemory<T> right)
     {
@@ -151,7 +151,12 @@ public readonly struct MappedMemory<T> : IDisposable, IEquatable<MappedMemory<T>
         return !(left == right);
     }
 
-    public bool Equals(MappedMemory<T> other) => throw new NotImplementedException();
+    public bool Equals(MappedMemory<T> other)
+    {
+        return ReferenceEquals(_buffer, other._buffer) &&
+               _memory.Equals(other._memory) &&
+               _mode == other._mode;
+    }
 }
 
 /// <summary>
