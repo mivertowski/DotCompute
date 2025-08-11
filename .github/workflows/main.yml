@@ -163,15 +163,25 @@ jobs:
         Write-Host "Final TRX files:"
         Get-ChildItem -Path "./TestResults" -Filter "*.trx" -ErrorAction SilentlyContinue | Format-Table Name, Length, LastWriteTime
     
+    - name: 🔍 List Test Results Directory
+      if: always()
+      shell: pwsh
+      run: |
+        Write-Host "Current directory:"
+        Get-Location
+        Write-Host "TestResults directory contents:"
+        if (Test-Path "./TestResults") {
+          Get-ChildItem -Path "./TestResults" -Recurse | Format-Table FullName, Length, LastWriteTime
+        } else {
+          Write-Host "TestResults directory does not exist"
+        }
+    
     - name: 📊 Generate Test Report
       if: always()
       uses: dorny/test-reporter@v1
       with:
         name: Test Results - ${{ matrix.os-name }} (${{ matrix.configuration }})
-        path: |
-          ./TestResults/*.trx
-          ./TestResults/**/*.trx
-          ./**/*.trx
+        path: TestResults/*.trx
         reporter: dotnet-trx
         fail-on-error: false
         path-replace-backslashes: true
