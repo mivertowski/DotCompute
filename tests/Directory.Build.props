@@ -39,15 +39,5 @@
     <DeterministicReport>true</DeterministicReport>
   </PropertyGroup>
 
-  <ItemGroup>
-    <!-- Coverage packages -->
-    <PackageReference Include="coverlet.msbuild" Version="6.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="coverlet.collector" Version="6.0.2">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+  <!-- Coverage packages moved to Directory.Build.targets to avoid duplicates -->
 </Project>

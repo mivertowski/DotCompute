@@ -10,7 +10,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.RTX2000.Tests.Benchmarks;
+namespace DotCompute.Tests.Hardware.Benchmarks;
 
 /// <summary>
 /// Comprehensive performance benchmarks for RTX 2000 Ada Generation GPU.

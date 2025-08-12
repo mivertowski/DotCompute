@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Mock.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Mock OpenCL tests that simulate hardware operations without requiring actual OpenCL runtime.

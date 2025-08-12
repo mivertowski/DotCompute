@@ -8,7 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Implementations.Kernels;
+namespace DotCompute.Tests.Shared.Kernels;
 
 /// <summary>
 /// Base test kernel compiler implementation for testing.

@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Cuda.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Real hardware tests for CUDA GPU operations.

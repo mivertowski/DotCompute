@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Cuda.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Comprehensive system diagnostics for CUDA backend

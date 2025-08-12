@@ -1,7 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
-using DotCompute.Core.Accelerators;
+using DotCompute.Core.Compute;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 

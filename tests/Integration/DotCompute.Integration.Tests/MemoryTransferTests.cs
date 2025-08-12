@@ -3,14 +3,14 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Memory;
-using DotCompute.Tests.Common;
+using DotCompute.Tests.Shared;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Integration.Tests;
+namespace DotCompute.Tests.Integration;
 
 /// <summary>
 /// Integration tests for memory transfer operations between devices and host.

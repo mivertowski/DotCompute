@@ -4,7 +4,7 @@
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
-using DotCompute.Core.Pipelines;
+using DotCompute.Core.Aot;
 using DotCompute.Memory;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Integration.Tests;
+namespace DotCompute.Tests.Integration;
 
 /// <summary>
 /// Integration tests for real-world usage scenarios.

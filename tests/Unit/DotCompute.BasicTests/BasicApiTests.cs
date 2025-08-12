@@ -2,7 +2,7 @@ using DotCompute.Abstractions;
 using FluentAssertions;
 using Xunit;
 
-namespace DotCompute.BasicTests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Basic API validation tests to ensure core functionality works

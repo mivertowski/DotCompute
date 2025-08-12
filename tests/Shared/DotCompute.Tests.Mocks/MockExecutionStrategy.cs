@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution;
 
-namespace DotCompute.Tests.Mocks;
+namespace DotCompute.Tests.Shared;
 
 /// <summary>
 /// Mock execution strategy for testing parallel execution without real hardware.

@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Memory;
 
-namespace DotCompute.Integration.Tests;
+namespace DotCompute.Tests.Integration;
 
 /// <summary>
 /// Utility class for advanced memory transfer operations in tests.

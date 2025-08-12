@@ -4,7 +4,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Mocks;
+namespace DotCompute.Tests.Shared;
 
 /// <summary>
 /// Mock accelerator implementation for testing without hardware dependencies.

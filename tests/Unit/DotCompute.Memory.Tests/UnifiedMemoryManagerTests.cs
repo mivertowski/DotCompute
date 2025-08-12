@@ -6,7 +6,7 @@ using DotCompute.Memory;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Memory.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for the UnifiedMemoryManager class.

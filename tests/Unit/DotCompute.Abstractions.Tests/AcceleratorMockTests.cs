@@ -4,7 +4,7 @@ using Xunit;
 
 #pragma warning disable CA2012 // Use ValueTasks correctly - NSubstitute mock setup requires storing ValueTask
 
-namespace DotCompute.Abstractions.Tests;
+namespace DotCompute.Tests.Unit;
 
 public class AcceleratorMockTests
 {

@@ -7,7 +7,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.RTX2000.Tests.NVRTC;
+namespace DotCompute.Tests.Hardware.NVRTC;
 
 /// <summary>
 /// Tests for NVRTC (NVIDIA Runtime Compilation) on RTX 2000 Ada Generation GPU.

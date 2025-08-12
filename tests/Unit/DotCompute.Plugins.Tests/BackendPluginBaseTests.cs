@@ -9,7 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Plugins.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for the BackendPluginBase class covering plugin lifecycle, state management, and metrics.

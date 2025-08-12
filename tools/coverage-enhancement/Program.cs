@@ -1,5 +1,5 @@
 using System.CommandLine;
-using DotCompute.Tools.CoverageEnhancement;
+using DotCompute.Tools.coverage-analysisEnhancement;
 
 var rootCommand = new RootCommand("DotCompute Coverage Enhancement Tool");
 

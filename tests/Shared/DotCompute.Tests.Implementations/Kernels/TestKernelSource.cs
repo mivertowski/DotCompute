@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Implementations;
+namespace DotCompute.Tests.Shared.Kernels;
 
 /// <summary>
 /// Test implementation of IKernelSource for testing purposes.

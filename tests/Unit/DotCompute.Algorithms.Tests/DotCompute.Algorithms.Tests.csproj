@@ -9,18 +9,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="coverlet.collector" Version="6.0.2" PrivateAssets="all" />
-    <PackageReference Include="FluentAssertions" Version="6.12.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
-    <PackageReference Include="xunit" Version="2.9.2" />
+    <!-- Coverlet collector provided by Directory.Build.targets -->
     <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\DotCompute.Algorithms\DotCompute.Algorithms.csproj" />
-    <ProjectReference Include="..\..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
-    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Algorithms\DotCompute.Algorithms\DotCompute.Algorithms.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
   </ItemGroup>
 
   <Using Include="Xunit" />

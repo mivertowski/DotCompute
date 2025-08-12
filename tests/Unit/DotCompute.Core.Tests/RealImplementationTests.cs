@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Implementations;
-using DotCompute.Tests.Implementations.Accelerators;
-using DotCompute.Tests.Implementations.Memory;
+using DotCompute.Tests.Shared.Kernels;
+using DotCompute.Tests.Shared.Kernels.Accelerators;
+using DotCompute.Tests.Shared.Kernels.Memory;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Integration tests using real test implementations instead of mocks.

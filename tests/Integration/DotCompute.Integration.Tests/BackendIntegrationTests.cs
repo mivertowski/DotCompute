@@ -1,9 +1,9 @@
 using DotCompute.Abstractions;
-using DotCompute.Tests.Common.TestInfrastructure;
+using DotCompute.Tests.Shared.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Integration.Tests;
+namespace DotCompute.Tests.Integration;
 
 /// <summary>
 /// Integration tests for backend implementations

@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.RTX2000.Tests.Utilities;
+namespace DotCompute.Tests.Hardware.Utilities;
 
 /// <summary>
 /// Utility class providing common functionality for RTX 2000 Ada Generation testing.

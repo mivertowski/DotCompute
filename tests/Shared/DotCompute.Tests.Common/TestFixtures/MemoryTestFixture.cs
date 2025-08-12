@@ -7,7 +7,7 @@ using DotCompute.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Common.TestFixtures;
+namespace DotCompute.Tests.Shared.TestFixtures;
 
 /// <summary>
 /// Shared test fixture for memory-related tests.

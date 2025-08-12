@@ -3,14 +3,14 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Common;
+using DotCompute.Tests.Shared;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Cuda.Tests.Mock;
+namespace DotCompute.Tests.Hardware.Mock;
 
 /// <summary>
 /// Mock device tests for CI/CD environments without actual CUDA hardware

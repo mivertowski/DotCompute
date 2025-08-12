@@ -4,7 +4,7 @@ using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Common.TestInfrastructure;
+namespace DotCompute.Tests.Shared.TestInfrastructure;
 
 /// <summary>
 /// Base class for performance benchmark tests

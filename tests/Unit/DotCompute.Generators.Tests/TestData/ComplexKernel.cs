@@ -4,7 +4,7 @@
 using System;
 using DotCompute.Generators.Kernel;
 
-namespace TestData
+namespace DotCompute.Tests.Unit.TestData
 {
     /// <summary>
     /// Complex kernel examples for advanced testing scenarios.

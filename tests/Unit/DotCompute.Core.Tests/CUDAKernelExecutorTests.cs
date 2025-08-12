@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using DotCompute.Core.Types;
-using DotCompute.Tests.Common;
+using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -17,7 +17,7 @@ using CompiledKernel = DotCompute.Tests.Common.CompiledKernel;
 using KernelArgument = DotCompute.Tests.Common.KernelArgument;
 using KernelConfiguration = DotCompute.Tests.Common.KernelConfiguration;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Comprehensive tests for CUDA kernel executor that can run on CI/CD without GPU hardware.

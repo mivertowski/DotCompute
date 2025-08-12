@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Integration.Tests;
+namespace DotCompute.Tests.Integration;
 
 /// <summary>
 /// Integration tests for plugin system integration with core DotCompute functionality.

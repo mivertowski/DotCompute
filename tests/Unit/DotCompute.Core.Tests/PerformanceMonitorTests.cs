@@ -12,7 +12,7 @@ using ExecutionParallelExecutionResult = DotCompute.Core.Execution.ParallelExecu
 using ExecutionDeviceExecutionResult = DotCompute.Core.Execution.DeviceExecutionResult;
 using ExecutionExecutionStrategyType = DotCompute.Core.Execution.ExecutionStrategyType;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for the PerformanceMonitor class from DotCompute.Core.Execution.

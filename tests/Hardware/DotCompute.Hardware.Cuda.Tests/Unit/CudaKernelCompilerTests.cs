@@ -6,13 +6,13 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Common;
+using DotCompute.Tests.Shared;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Cuda.Tests.Unit;
+namespace DotCompute.Tests.Hardware.Unit;
 
 /// <summary>
 /// Unit tests for CUDA kernel compilation functionality

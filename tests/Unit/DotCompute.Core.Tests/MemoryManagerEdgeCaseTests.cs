@@ -10,7 +10,7 @@ using FluentAssertions;
 using CoreMemory = DotCompute.Core.Memory;
 using AbstractionsMemory = DotCompute.Abstractions;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Edge case tests for IMemoryManager implementations focusing on boundary conditions,

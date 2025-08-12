@@ -1,0 +1,45 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>13</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    
+    <!-- AOT Configuration -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <TrimMode>full</TrimMode>
+    
+    <!-- Package Information -->
+    <PackageId>DotCompute.Memory</PackageId>
+    <Authors>DotCompute Contributors</Authors>
+    <Description>High-performance memory management for DotCompute with zero-copy operations</Description>
+    <PackageTags>memory;buffer;zero-copy;pool;allocator;aot</PackageTags>
+    
+    <!-- Build Configuration -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\DotCompute.Core\DotCompute.Core.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Memory management dependencies -->
+    <PackageReference Include="System.IO.Pipelines" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.2" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
+  </ItemGroup>
+
+</Project>

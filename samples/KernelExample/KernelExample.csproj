@@ -8,10 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
-    <ProjectReference Include="..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
-    <ProjectReference Include="..\..\src\DotCompute.Memory\DotCompute.Memory.csproj" />
-    <ProjectReference Include="..\..\src\DotCompute.Generators\DotCompute.Generators.csproj" 
+    <ProjectReference Include="..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
+    <ProjectReference Include="..\..\src\Runtime\DotCompute.Generators\DotCompute.Generators.csproj" 
                       OutputItemType="Analyzer" 
                       ReferenceOutputAssembly="true" />
   </ItemGroup>

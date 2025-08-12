@@ -1,5 +1,5 @@
 using System.CommandLine;
-using DotCompute.Tools.Coverage;
+using DotCompute.Tools.coverage-analysis;
 
 var rootCommand = new RootCommand("DotCompute Coverage Analysis Tool");
 

@@ -3,7 +3,7 @@
 
 using Xunit;
 
-namespace DotCompute.Hardware.Cuda.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Test collection definition for CUDA hardware tests to ensure proper test isolation

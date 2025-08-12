@@ -7,7 +7,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
-namespace DotCompute.Generators.Tests;
+namespace DotCompute.Tests.Unit;
 
 public class SourceGeneratorHelpersTests
 {

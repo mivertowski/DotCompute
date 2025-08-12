@@ -6,7 +6,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.RTX2000.Tests.Libraries;
+namespace DotCompute.Tests.Hardware.Libraries;
 
 /// <summary>
 /// Integration tests for cuBLAS (CUDA Basic Linear Algebra Subroutines) on RTX 2000 Ada Generation.

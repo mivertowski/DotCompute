@@ -8,7 +8,7 @@ using DotCompute.Core;
 using DotCompute.Abstractions;
 using DotCompute.Memory;
 
-namespace DotCompute.Hardware.RTX2000.Tests.Integration;
+namespace DotCompute.Tests.Hardware.Integration;
 
 /// <summary>
 /// End-to-end integration tests for RTX 2000 Ada Generation GPU.

@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Implementations.Plugins;
+namespace DotCompute.Tests.Shared.Plugins;
 
 /// <summary>
 /// Test implementation of IBackendPlugin for testing plugin functionality.

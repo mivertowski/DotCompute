@@ -5,13 +5,13 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Common;
+using DotCompute.Tests.Shared;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Cuda.Tests.Integration;
+namespace DotCompute.Tests.Hardware.Integration;
 
 /// <summary>
 /// Integration tests for CUDA host-device memory transfer operations

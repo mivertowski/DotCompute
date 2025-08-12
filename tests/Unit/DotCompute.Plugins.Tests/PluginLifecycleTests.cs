@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Xunit;
 
-namespace DotCompute.Plugins.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for plugin lifecycle management, including initialization, startup, shutdown, and error handling.

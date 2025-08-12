@@ -12,7 +12,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Comprehensive tests for linear algebra kernels and mathematical operations.

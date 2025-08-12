@@ -1,11 +1,11 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
-using DotCompute.Tests.Common.TestInfrastructure;
+using DotCompute.Tests.Shared.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 
-namespace DotCompute.Core.Tests.Compute;
+namespace DotCompute.Tests.Unit.Compute;
 
 /// <summary>
 /// Comprehensive unit tests for ComputeEngine

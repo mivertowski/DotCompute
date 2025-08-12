@@ -11,7 +11,7 @@ using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Integration tests for MultiGpuMemoryManager with real P2P scenarios.

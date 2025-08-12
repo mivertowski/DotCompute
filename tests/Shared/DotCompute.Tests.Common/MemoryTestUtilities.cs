@@ -7,7 +7,7 @@ using System.Text.Json;
 using DotCompute.Abstractions;
 using AbstractionsMemory = DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Common;
+namespace DotCompute.Tests.Shared;
 
 /// <summary>
 /// Monitors memory usage during test execution.

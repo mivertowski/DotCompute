@@ -5,7 +5,7 @@ using DotCompute.Plugins.Configuration;
 using FluentAssertions;
 using Xunit;
 
-namespace DotCompute.Plugins.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for plugin configuration classes covering options, settings, and directory management.

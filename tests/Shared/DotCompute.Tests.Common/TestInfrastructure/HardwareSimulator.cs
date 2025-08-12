@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Common.TestInfrastructure;
+namespace DotCompute.Tests.Shared.TestInfrastructure;
 
 /// <summary>
 /// Simulates hardware accelerators for testing purposes

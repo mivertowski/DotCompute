@@ -12,10 +12,10 @@
   <!-- Test packages provided by Directory.Build.targets -->
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
-    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
-    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Implementations\DotCompute.Tests.Implementations.csproj" />
-    <ProjectReference Include="..\..\Shared\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Implementations\DotCompute.Tests.Implementations.csproj" />
+    <ProjectReference Include="..\..\..\tests\Shared\DotCompute.SharedTestUtilities\DotCompute.SharedTestUtilities.csproj" />
   </ItemGroup>
   
   <ItemGroup>

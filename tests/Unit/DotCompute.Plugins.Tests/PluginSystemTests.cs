@@ -14,7 +14,7 @@ using NSubstitute;
 using System.Reflection;
 using Xunit;
 
-namespace DotCompute.Plugins.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for the PluginSystem class covering plugin loading, unloading, and lifecycle management.

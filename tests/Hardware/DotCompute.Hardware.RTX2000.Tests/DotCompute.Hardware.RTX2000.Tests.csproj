@@ -20,12 +20,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
-    <ProjectReference Include="..\..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\DotCompute.Memory\DotCompute.Memory.csproj" />
-    <ProjectReference Include="..\..\..\src\DotCompute.Linq\DotCompute.Linq.csproj" />
-    <ProjectReference Include="..\..\..\plugins\backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
-    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
+    <ProjectReference Include="..\..\..\src\Algorithms\DotCompute.Linq\DotCompute.Linq.csproj" />
+    <ProjectReference Include="..\..\..\src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj" />
+    <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>

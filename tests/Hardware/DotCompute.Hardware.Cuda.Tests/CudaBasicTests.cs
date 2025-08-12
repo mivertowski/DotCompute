@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Cuda.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Basic validation tests for CUDA backend functionality

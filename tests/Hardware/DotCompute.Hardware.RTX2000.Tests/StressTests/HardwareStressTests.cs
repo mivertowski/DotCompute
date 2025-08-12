@@ -9,7 +9,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.RTX2000.Tests.StressTests;
+namespace DotCompute.Tests.Hardware.StressTests;
 
 /// <summary>
 /// Comprehensive stress tests for RTX 2000 Ada Generation GPU.

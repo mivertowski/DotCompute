@@ -1,7 +1,7 @@
-using DotCompute.Core.Pipelines;
+using DotCompute.Core.Aot;
 using Xunit;
 
-namespace DotCompute.Core.UnitTests;
+namespace DotCompute.Tests.Unit;
 
 public class CorePipelineTypesTests
 {

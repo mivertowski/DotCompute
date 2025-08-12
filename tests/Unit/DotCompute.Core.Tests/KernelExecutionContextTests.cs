@@ -1,7 +1,7 @@
 using FluentAssertions;
 using Xunit;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 public class KernelExecutionContextTests
 {

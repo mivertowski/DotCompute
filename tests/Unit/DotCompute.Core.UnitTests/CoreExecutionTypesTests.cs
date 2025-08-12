@@ -3,7 +3,7 @@ using DotCompute.Core.Types;
 using DotCompute.Abstractions;
 using Xunit;
 
-namespace DotCompute.Core.UnitTests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for Core execution and type system components.

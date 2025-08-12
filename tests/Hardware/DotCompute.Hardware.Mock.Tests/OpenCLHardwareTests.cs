@@ -3,12 +3,12 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Common;
-using DotCompute.Tests.Common.TestFixtures;
+using DotCompute.Tests.Shared;
+using DotCompute.Tests.Shared.TestFixtures;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Hardware-dependent tests for OpenCL devices.

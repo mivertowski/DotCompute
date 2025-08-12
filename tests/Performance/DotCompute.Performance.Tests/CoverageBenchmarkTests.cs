@@ -3,12 +3,12 @@ using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Running;
-using DotCompute.Tests.Common.TestInfrastructure;
+using DotCompute.Tests.Shared.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
 using Xunit.Abstractions;
 
-namespace DotCompute.Performance.Tests;
+namespace DotCompute.Tests.Performance;
 
 /// <summary>
 /// Performance benchmark tests for coverage analysis

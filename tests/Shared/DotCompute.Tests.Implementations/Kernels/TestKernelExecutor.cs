@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Implementations.Kernels;
+namespace DotCompute.Tests.Shared.Kernels;
 
 /// <summary>
 /// Test kernel executor that simulates kernel execution.

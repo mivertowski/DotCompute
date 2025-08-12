@@ -10,7 +10,7 @@ using System.Diagnostics;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Integration.Tests;
+namespace DotCompute.Tests.Integration;
 
 /// <summary>
 /// Integration tests for performance benchmarking scenarios.

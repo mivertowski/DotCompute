@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Reflection;
 using Xunit;
 
-namespace DotCompute.Plugins.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Integration tests for the plugin system covering end-to-end scenarios, dependency resolution,

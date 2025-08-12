@@ -6,7 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Implementations.Memory;
+namespace DotCompute.Tests.Shared.Memory;
 
 /// <summary>
 /// Test implementation of IMemoryManager for testing without GPU hardware.

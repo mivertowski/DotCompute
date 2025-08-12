@@ -5,9 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Implementations.Memory;
+using DotCompute.Tests.Shared.Memory;
 
-namespace DotCompute.Tests.Implementations.Accelerators;
+namespace DotCompute.Tests.Shared.Accelerators;
 
 /// <summary>
 /// Test implementation of IAcceleratorManager for testing without GPU hardware.
@@ -316,7 +316,8 @@ public class TestGpuAcceleratorProvider : IAcceleratorProvider
 /// </summary>
 public class TestGpuAccelerator : IAccelerator
 {
-    private readonly TestMemoryManager _memoryManager;
+    public AcceleratorType Type => AcceleratorType.GPU;
+    private readonly IMemoryManager _memoryManager;
     private readonly ConcurrentDictionary<string, TestCompiledKernel> _compiledKernels;
     private bool _disposed;
 
@@ -351,6 +352,7 @@ public class TestGpuAccelerator : IAccelerator
     }
 
     public AcceleratorInfo Info { get; }
+    public AcceleratorType Type => AcceleratorType.CUDA;
     public IMemoryManager Memory => _memoryManager;
 
     public async ValueTask<ICompiledKernel> CompileKernelAsync(

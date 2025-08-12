@@ -4,7 +4,7 @@ using DotCompute.Abstractions;
 using Xunit;
 using NSubstitute;
 
-namespace DotCompute.Core.UnitTests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for Core execution workflow and caching components.

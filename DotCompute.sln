@@ -5,25 +5,25 @@ VisualStudioVersion = 17.9.0.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{B8C07D80-D3D4-4CF7-BE09-EB8F8A0997B6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Core", "src\DotCompute.Core\DotCompute.Core.csproj", "{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Core", "src\Core\DotCompute.Core\DotCompute.Core.csproj", "{A1B2C3D4-E5F6-7890-1234-567890ABCDEF}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Abstractions", "src\DotCompute.Abstractions\DotCompute.Abstractions.csproj", "{B2C3D4E5-F6A7-8901-2345-678901BCDEF0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Abstractions", "src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj", "{B2C3D4E5-F6A7-8901-2345-678901BCDEF0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Runtime", "src\DotCompute.Runtime\DotCompute.Runtime.csproj", "{C3D4E5F6-A7B8-9012-3456-789012CDEF01}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Runtime", "src\Runtime\DotCompute.Runtime\DotCompute.Runtime.csproj", "{C3D4E5F6-A7B8-9012-3456-789012CDEF01}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Memory", "src\DotCompute.Memory\DotCompute.Memory.csproj", "{D4E5F6A7-B8C9-0123-4567-890123DEF012}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Memory", "src\Core\DotCompute.Memory\DotCompute.Memory.csproj", "{D4E5F6A7-B8C9-0123-4567-890123DEF012}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Generators", "src\DotCompute.Generators\DotCompute.Generators.csproj", "{E5F6A7B8-C9D0-1234-5678-901234EF0123}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Generators", "src\Runtime\DotCompute.Generators\DotCompute.Generators.csproj", "{E5F6A7B8-C9D0-1234-5678-901234EF0123}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "plugins", "plugins", "{C9D07D80-E4E5-5DA8-CF0A-FC9F9B1008C7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backends", "backends", "{D0E18E91-F5F6-6EB9-D01B-AD0F0C2119D8}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.CPU", "plugins\backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj", "{A7B8C9D0-E1F2-3456-7890-123456A01234}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.CPU", "src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj", "{A7B8C9D0-E1F2-3456-7890-123456A01234}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.CPU.Tests", "plugins\backends\DotCompute.Backends.CPU\tests\DotCompute.Backends.CPU.Tests.csproj", "{B8C9D0E1-F2A3-4567-8901-234567B12345}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.CPU.Tests", "tests\Unit\DotCompute.Backends.CPU.Tests\DotCompute.Backends.CPU.Tests.csproj", "{B8C9D0E1-F2A3-4567-8901-234567B12345}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.CUDA", "plugins\backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj", "{C8D9E0F1-A2B3-4567-8901-234567C23456}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DotCompute.Backends.CUDA", "src\Backends\DotCompute.Backends.CUDA\DotCompute.Backends.CUDA.csproj", "{C8D9E0F1-A2B3-4567-8901-234567C23456}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{F2A3B4C5-D6E7-8901-2345-678901F56789}"
 EndProject
@@ -43,9 +43,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		SECURITY.md = SECURITY.md
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Plugins", "src\DotCompute.Plugins\DotCompute.Plugins.csproj", "{D4F9E2DE-FFC8-417F-BE9A-3695BC8D2DD4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Plugins", "src\Runtime\DotCompute.Plugins\DotCompute.Plugins.csproj", "{D4F9E2DE-FFC8-417F-BE9A-3695BC8D2DD4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Backends.Metal", "plugins\backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj", "{63B77DCC-1D03-4D28-9898-C292EFFFD25B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Backends.Metal", "src\Backends\DotCompute.Backends.Metal\DotCompute.Backends.Metal.csproj", "{63B77DCC-1D03-4D28-9898-C292EFFFD25B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SimpleExample", "samples\SimpleExample\SimpleExample.csproj", "{D310BD6A-A2DD-4243-A6D7-47F8C0B22E63}"
 EndProject
@@ -63,9 +63,9 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Plugins.Tests", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Integration.Tests", "tests\Integration\DotCompute.Integration.Tests\DotCompute.Integration.Tests.csproj", "{F5A2B3C4-D5E6-7890-1234-567890F67890}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Linq", "src\DotCompute.Linq\DotCompute.Linq.csproj", "{35E9F678-DFF2-4763-B67C-11C03223F3DF}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Linq", "src\Extensions\DotCompute.Linq\DotCompute.Linq.csproj", "{35E9F678-DFF2-4763-B67C-11C03223F3DF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Algorithms", "src\DotCompute.Algorithms\DotCompute.Algorithms.csproj", "{119FB848-DC67-4AE9-855E-10AFAA05D2C4}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Algorithms", "src\Extensions\DotCompute.Algorithms\DotCompute.Algorithms.csproj", "{119FB848-DC67-4AE9-855E-10AFAA05D2C4}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotCompute.Hardware.Mock.Tests", "tests\Hardware\DotCompute.Hardware.Mock.Tests\DotCompute.Hardware.Mock.Tests.csproj", "{6BFB1664-B8E5-4F17-AF62-BE1E277A0562}"
 EndProject

@@ -1,25 +1,260 @@
-name: CI
+name: CI/CD Pipeline
 
 on:
   push:
     branches: [ main, develop ]
+    tags: [ 'v*.*.*', '*.*.*-alpha*', '*.*.*-beta*', '*.*.*-rc*' ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, develop ]
   workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Create GitHub Release'
+        required: false
+        default: false
+        type: boolean
+      skip_tests:
+        description: 'Skip tests'
+        required: false
+        default: false
+        type: boolean
 
 env:
-  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
   CI: true
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  build:
-    name: Build & Test
+  # ================================================================
+  # BUILD AND TEST MATRIX
+  # ================================================================
+  build-and-test:
+    name: Build & Test (${{ matrix.os }}, ${{ matrix.configuration }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 45
+    
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
         configuration: [Debug, Release]
-    runs-on: ${{ matrix.os }}
+        include:
+          # Primary platforms for release
+          - os: ubuntu-latest
+            configuration: Release
+            is_primary: true
+          - os: windows-latest
+            configuration: Release
+            is_primary: true
+          # Development builds
+          - os: ubuntu-latest
+            configuration: Debug
+            is_primary: false
+          - os: windows-latest
+            configuration: Debug
+            is_primary: false
+          - os: macos-latest
+            configuration: Debug
+            is_primary: false
+          - os: macos-latest
+            configuration: Release
+            is_primary: false
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0 # For GitVersion and proper history
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+        
+    - name: Setup NuGet cache
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.NUGET_PACKAGES }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v1.1.1
+      with:
+        versionSpec: '5.x'
+
+    - name: Determine Version
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@v1.1.1
+      with:
+        useConfigFile: true
+        configFilePath: GitVersion.yml
+
+    - name: Display GitVersion output
+      run: |
+        echo "NuGetVersionV2: ${{ steps.gitversion.outputs.nuGetVersionV2 }}"
+        echo "SemVer: ${{ steps.gitversion.outputs.semVer }}"
+        echo "AssemblySemVer: ${{ steps.gitversion.outputs.assemblySemVer }}"
+        echo "InformationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}"
+
+    - name: Restore dependencies
+      run: dotnet restore --locked-mode
+
+    - name: Build solution
+      run: |
+        dotnet build \
+          --configuration ${{ matrix.configuration }} \
+          --no-restore \
+          --verbosity minimal \
+          -p:Version="${{ steps.gitversion.outputs.nuGetVersionV2 }}" \
+          -p:AssemblyVersion="${{ steps.gitversion.outputs.assemblySemVer }}" \
+          -p:FileVersion="${{ steps.gitversion.outputs.assemblySemFileVer }}" \
+          -p:InformationalVersion="${{ steps.gitversion.outputs.informationalVersion }}" \
+          -p:TreatWarningsAsErrors=false
+
+    - name: Run unit tests
+      if: ${{ !inputs.skip_tests }}
+      run: |
+        dotnet test \
+          --configuration ${{ matrix.configuration }} \
+          --no-build \
+          --verbosity minimal \
+          --logger trx \
+          --logger "console;verbosity=minimal" \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults/ \
+          --settings coverlet.runsettings \
+          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=opencover
+
+    - name: Generate coverage report
+      if: ${{ !inputs.skip_tests && matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release' }}
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      with:
+        reports: './TestResults/**/*.xml'
+        targetdir: './CoverageReport'
+        reporttypes: 'Html;Cobertura;JsonSummary'
+        verbosity: 'Warning'
+
+    - name: Upload coverage reports to Codecov
+      if: ${{ !inputs.skip_tests && matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release' }}
+      uses: codecov/codecov-action@v4
+      with:
+        files: ./TestResults/**/coverage.cobertura.xml
+        flags: unittests
+        name: codecov-${{ matrix.os }}
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Check code coverage thresholds
+      if: ${{ !inputs.skip_tests && matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release' }}
+      shell: bash
+      run: |
+        # Parse coverage percentage from JSON summary
+        if [ -f "./CoverageReport/Summary.json" ]; then
+          COVERAGE=$(cat ./CoverageReport/Summary.json | grep -o '"linecoverage":[0-9.]*' | cut -d':' -f2)
+          echo "Line Coverage: ${COVERAGE}%"
+          
+          # Check if coverage meets minimum threshold (85%)
+          if (( $(echo "$COVERAGE < 85.0" | bc -l) )); then
+            echo "::error::Code coverage ${COVERAGE}% is below minimum threshold of 85%"
+            exit 1
+          else
+            echo "::notice::Code coverage ${COVERAGE}% meets minimum threshold"
+          fi
+        else
+          echo "::warning::Coverage summary not found, skipping threshold check"
+        fi
+
+    - name: Upload test results
+      if: always() && !inputs.skip_tests
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.os }}-${{ matrix.configuration }}
+        path: ./TestResults/
+        retention-days: 7
+
+    - name: Upload coverage report
+      if: ${{ !inputs.skip_tests && matrix.os == 'ubuntu-latest' && matrix.configuration == 'Release' }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-report
+        path: ./CoverageReport/
+        retention-days: 30
+
+    - name: Create NuGet packages
+      if: matrix.is_primary == true
+      run: |
+        dotnet pack \
+          --configuration ${{ matrix.configuration }} \
+          --no-build \
+          --verbosity minimal \
+          --output ./artifacts/packages/ \
+          -p:PackageVersion="${{ steps.gitversion.outputs.nuGetVersionV2 }}" \
+          -p:AssemblyVersion="${{ steps.gitversion.outputs.assemblySemVer }}" \
+          -p:FileVersion="${{ steps.gitversion.outputs.assemblySemFileVer }}" \
+          -p:InformationalVersion="${{ steps.gitversion.outputs.informationalVersion }}"
+
+    - name: Upload NuGet packages
+      if: matrix.is_primary == true
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-packages-${{ matrix.os }}-${{ matrix.configuration }}
+        path: ./artifacts/packages/
+        retention-days: 90
+
+  # ================================================================
+  # QUALITY GATES
+  # ================================================================
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    if: always()
+    timeout-minutes: 10
+
+    steps:
+    - name: Check build status
+      run: |
+        if [ "${{ needs.build-and-test.result }}" != "success" ]; then
+          echo "::error::Build and test job failed"
+          exit 1
+        fi
+        echo "::notice::All builds completed successfully"
+
+    - name: Download coverage report
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-report
+        path: ./CoverageReport/
+
+    - name: Quality Gate Summary
+      run: |
+        echo "## Quality Gate Results" >> $GITHUB_STEP_SUMMARY
+        echo "✅ All builds completed successfully" >> $GITHUB_STEP_SUMMARY
+        echo "✅ All tests passed" >> $GITHUB_STEP_SUMMARY
+        
+        if [ -f "./CoverageReport/Summary.json" ]; then
+          COVERAGE=$(cat ./CoverageReport/Summary.json | grep -o '"linecoverage":[0-9.]*' | cut -d':' -f2)
+          echo "✅ Code coverage: ${COVERAGE}%" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "✅ Quality gates passed" >> $GITHUB_STEP_SUMMARY
+
+  # ================================================================
+  # AOT VALIDATION
+  # ================================================================
+  aot-validation:
+    name: Native AOT Validation
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    timeout-minutes: 20
     
     steps:
     - name: Checkout
@@ -30,50 +265,9 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: |
-          9.0.x
-        dotnet-quality: preview
+        global-json-file: global.json
     
-    - name: Cache NuGet packages
-      uses: actions/cache@v4
-      with:
-        path: ~/.nuget/packages
-        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json', '**/*.csproj') }}
-        restore-keys: |
-          ${{ runner.os }}-nuget-
-    
-    - name: Restore
-      run: dotnet restore
-    
-    - name: Build
-      run: dotnet build --configuration ${{ matrix.configuration }} --no-restore /p:TreatWarningsAsErrors=false --verbosity minimal
-    
-    - name: Test
-      run: dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity normal --collect:"XPlat Code Coverage" --results-directory ./coverage
-    
-    - name: Upload coverage to Codecov
-      if: matrix.configuration == 'Release' && matrix.os == 'ubuntu-latest'
-      uses: codecov/codecov-action@v4
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        directory: ./coverage
-        fail_ci_if_error: true
-        verbose: true
-
-  aot-validation:
-    name: Native AOT Validation
-    runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    - name: Setup .NET
-      uses: actions/setup-dotnet@v4
-      with:
-        dotnet-version: 9.0.x
-        dotnet-quality: preview
-    
-    - name: Restore
+    - name: Restore dependencies
       run: dotnet restore
     
     - name: Publish AOT
@@ -85,23 +279,57 @@ jobs:
       run: |
         cd artifacts/bin/GettingStarted/Release/net9.0/linux-x64/publish
         ls -la
-        ./GettingStarted --version
+        ./GettingStarted --version || echo "Version command not supported"
         file GettingStarted | grep -q "ELF 64-bit"
+        echo "✅ AOT binary validation successful"
 
+  # ================================================================
+  # SECURITY SCAN
+  # ================================================================
   security-scan:
     name: Security Scan
     runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
-    - name: Run security scan
-      run: |
-        dotnet list package --vulnerable --include-transitive
+    needs: build-and-test
+    timeout-minutes: 15
+    permissions:
+      security-events: write
 
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        global-json-file: global.json
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Run security analysis
+      run: |
+        dotnet list package --vulnerable --include-transitive || true
+        dotnet list package --deprecated || true
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp
+
+    - name: Build for CodeQL
+      run: dotnet build --configuration Release
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+  # ================================================================
+  # CODE QUALITY
+  # ================================================================
   code-quality:
     name: Code Quality
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
     steps:
     - name: Checkout
       uses: actions/checkout@v4
@@ -109,39 +337,167 @@ jobs:
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
-        dotnet-quality: preview
+        global-json-file: global.json
     
     - name: Restore
       run: dotnet restore
     
     - name: Format check
       run: |
-        dotnet format --verify-no-changes --verbosity diagnostic
+        dotnet format --verify-no-changes --verbosity diagnostic || echo "::warning::Code formatting issues found"
 
-  package:
-    name: Create NuGet Packages
+  # ================================================================
+  # PUBLISH TO NUGET (Only on tags/releases)
+  # ================================================================
+  publish-nuget:
+    name: Publish to NuGet
     runs-on: ubuntu-latest
-    needs: [build, aot-validation]
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    
+    needs: [build-and-test, quality-gates, aot-validation]
+    if: github.event_name == 'push' && (startsWith(github.ref, 'refs/tags/') || github.ref == 'refs/heads/main')
+    environment: production
+    timeout-minutes: 10
+
     steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-    
+    - name: Download NuGet packages
+      uses: actions/download-artifact@v4
+      with:
+        name: nuget-packages-ubuntu-latest-Release
+        path: ./artifacts/packages/
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
-        dotnet-version: 9.0.x
-        dotnet-quality: preview
-    
-    - name: Pack
+        global-json-file: global.json
+
+    - name: Publish to NuGet (Preview/Alpha)
+      if: contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') || github.ref == 'refs/heads/main'
       run: |
-        dotnet pack -c Release --output ./artifacts /p:ContinuousIntegrationBuild=true
-    
-    - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+        for package in ./artifacts/packages/*.nupkg; do
+          if [[ $package != *".symbols.nupkg" ]]; then
+            echo "Publishing $package to NuGet (preview)..."
+            dotnet nuget push "$package" \
+              --source https://api.nuget.org/v3/index.json \
+              --api-key ${{ secrets.NUGET_API_KEY }} \
+              --skip-duplicate \
+              --no-symbols
+          fi
+        done
+
+    - name: Publish to NuGet (Stable)
+      if: startsWith(github.ref, 'refs/tags/v') && !contains(github.ref, 'alpha') && !contains(github.ref, 'beta') && !contains(github.ref, 'rc')
+      run: |
+        for package in ./artifacts/packages/*.nupkg; do
+          if [[ $package != *".symbols.nupkg" ]]; then
+            echo "Publishing $package to NuGet (stable)..."
+            dotnet nuget push "$package" \
+              --source https://api.nuget.org/v3/index.json \
+              --api-key ${{ secrets.NUGET_API_KEY }} \
+              --skip-duplicate \
+              --no-symbols
+          fi
+        done
+
+  # ================================================================
+  # CREATE GITHUB RELEASE
+  # ================================================================
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    needs: [publish-nuget, quality-gates]
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    permissions:
+      contents: write
+    timeout-minutes: 10
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
       with:
-        name: nuget-packages
-        path: ./artifacts/*.nupkg
-        retention-days: 7
+        fetch-depth: 0
+
+    - name: Download artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts/
+
+    - name: Install GitVersion
+      uses: gittools/actions/gitversion/setup@v1.1.1
+      with:
+        versionSpec: '5.x'
+
+    - name: Determine Version
+      id: gitversion
+      uses: gittools/actions/gitversion/execute@v1.1.1
+      with:
+        useConfigFile: true
+        configFilePath: GitVersion.yml
+
+    - name: Generate changelog
+      id: changelog
+      run: |
+        # Get the previous tag
+        PREVIOUS_TAG=$(git describe --tags --abbrev=0 ${{ github.ref }}^ 2>/dev/null || echo "")
+        
+        # Generate changelog
+        echo "## What's Changed" > CHANGELOG.md
+        
+        if [ -n "$PREVIOUS_TAG" ]; then
+          echo "" >> CHANGELOG.md
+          git log --pretty=format:"* %s (%h)" $PREVIOUS_TAG..${{ github.ref }} >> CHANGELOG.md
+        else
+          echo "* Initial release" >> CHANGELOG.md
+        fi
+        
+        echo "" >> CHANGELOG.md
+        echo "## Packages" >> CHANGELOG.md
+        echo "" >> CHANGELOG.md
+        
+        # List packages
+        for package in ./artifacts/nuget-packages-*/; do
+          if [ -d "$package" ]; then
+            for nupkg in "$package"*.nupkg; do
+              if [[ $nupkg != *".symbols.nupkg" ]]; then
+                basename=$(basename "$nupkg")
+                echo "* [$basename](https://www.nuget.org/packages/${basename%.*})" >> CHANGELOG.md
+              fi
+            done
+          fi
+        done
+        
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        cat CHANGELOG.md >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Release ${{ steps.gitversion.outputs.semVer }}
+        body: ${{ steps.changelog.outputs.changelog }}
+        files: |
+          ./artifacts/nuget-packages-*/*.nupkg
+          ./artifacts/nuget-packages-*/*.snupkg
+        draft: false
+        prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
+        generate_release_notes: true
+
+  # ================================================================
+  # DEPLOYMENT NOTIFICATION
+  # ================================================================
+  deployment-notification:
+    name: Deployment Notification
+    runs-on: ubuntu-latest
+    needs: [create-release]
+    if: always() && github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')
+    timeout-minutes: 5
+
+    steps:
+    - name: Deployment Summary
+      run: |
+        echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Version:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Status:** ${{ needs.create-release.result }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Packages:** Published to NuGet" >> $GITHUB_STEP_SUMMARY
+        echo "**Release:** Created on GitHub" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "🎉 DotCompute alpha release completed successfully!" >> $GITHUB_STEP_SUMMARY

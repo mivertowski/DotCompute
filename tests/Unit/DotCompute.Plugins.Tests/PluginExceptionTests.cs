@@ -6,7 +6,7 @@ using FluentAssertions;
 using System.Runtime.Serialization.Formatters.Binary;
 using Xunit;
 
-namespace DotCompute.Plugins.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for plugin exception classes covering serialization, inheritance, and specific properties.

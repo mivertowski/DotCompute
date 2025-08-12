@@ -6,7 +6,7 @@ using DotCompute.Abstractions;
 using FluentAssertions;
 using Xunit;
 
-namespace DotCompute.Abstractions.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Stress tests and edge cases for accelerator abstractions.

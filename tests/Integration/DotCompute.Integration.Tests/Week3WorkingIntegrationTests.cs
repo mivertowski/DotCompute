@@ -14,7 +14,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Integration.Tests;
+namespace DotCompute.Tests.Integration;
 
 /// <summary>
 /// Week 3 Working Integration Tests - Focused on testable APIs with solid Week 2 foundation.

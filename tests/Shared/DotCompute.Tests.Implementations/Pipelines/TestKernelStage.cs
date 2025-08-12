@@ -4,10 +4,10 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Core.Pipelines;
-using DotCompute.Tests.Implementations.Kernels;
+using DotCompute.Core.Aot;
+using DotCompute.Tests.Shared.Kernels;
 
-namespace DotCompute.Tests.Implementations.Pipelines;
+namespace DotCompute.Tests.Shared.Pipelines;
 
 /// <summary>
 /// Test implementation of a kernel pipeline stage.

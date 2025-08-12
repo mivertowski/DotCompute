@@ -11,11 +11,11 @@
   <!-- Test packages provided by Directory.Build.targets -->
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
-    <ProjectReference Include="..\..\..\src\DotCompute.Core\DotCompute.Core.csproj" />
-    <ProjectReference Include="..\..\..\src\DotCompute.Memory\DotCompute.Memory.csproj" />
-    <ProjectReference Include="..\..\..\src\DotCompute.Plugins\DotCompute.Plugins.csproj" />
-    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
+    <ProjectReference Include="..\..\..\src\Runtime\DotCompute.Plugins\DotCompute.Plugins.csproj" />
+    <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
   </ItemGroup>
 
 </Project>

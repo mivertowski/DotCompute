@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Mock.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Mock DirectCompute tests that simulate DirectX operations without requiring actual DirectX runtime.

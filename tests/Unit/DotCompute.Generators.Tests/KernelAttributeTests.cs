@@ -5,7 +5,7 @@ using DotCompute.Generators.Kernel;
 using FluentAssertions;
 using Xunit;
 
-namespace DotCompute.Generators.Tests;
+namespace DotCompute.Tests.Unit;
 
 public class KernelAttributeTests
 {

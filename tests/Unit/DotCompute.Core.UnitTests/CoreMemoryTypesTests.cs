@@ -2,7 +2,7 @@ using DotCompute.Core.Types;
 using DotCompute.Core.Memory;
 using Xunit;
 
-namespace DotCompute.Core.UnitTests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for Core memory types and components.

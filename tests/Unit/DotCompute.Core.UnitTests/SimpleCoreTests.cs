@@ -1,8 +1,8 @@
-using DotCompute.Core.Pipelines;
+using DotCompute.Core.Aot;
 using DotCompute.Abstractions;
 using Xunit;
 
-namespace DotCompute.Core.UnitTests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Simple focused tests to drive up code coverage on Core types.

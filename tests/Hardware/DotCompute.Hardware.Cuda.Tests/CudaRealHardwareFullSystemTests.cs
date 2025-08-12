@@ -9,7 +9,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Cuda.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Comprehensive real hardware tests for CUDA backend on RTX 2000 Ada Gen

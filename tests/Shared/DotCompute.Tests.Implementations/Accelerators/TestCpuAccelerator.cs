@@ -4,15 +4,16 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Implementations.Memory;
+using DotCompute.Tests.Shared.Memory;
 
-namespace DotCompute.Tests.Implementations.Accelerators;
+namespace DotCompute.Tests.Shared.Accelerators;
 
 /// <summary>
 /// Test CPU-based accelerator implementation for testing without GPU hardware.
 /// </summary>
 public class TestCpuAccelerator : IAccelerator
 {
+    public AcceleratorType Type => AcceleratorType.CPU;
     private readonly TestMemoryManager _memoryManager;
     private readonly ConcurrentDictionary<string, TestCompiledKernel> _compiledKernels;
     private bool _disposed;
@@ -40,6 +41,7 @@ public class TestCpuAccelerator : IAccelerator
     }
 
     public AcceleratorInfo Info { get; }
+    public AcceleratorType Type => AcceleratorType.CPU;
     public IMemoryManager Memory => _memoryManager;
 
     public async ValueTask<ICompiledKernel> CompileKernelAsync(

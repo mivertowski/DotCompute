@@ -8,7 +8,7 @@ using Xunit;
 using CoreMemory = DotCompute.Core.Memory;
 using AbstractionsMemory = DotCompute.Abstractions;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for the IMemoryManager interface implementations.

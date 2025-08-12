@@ -37,11 +37,5 @@
     <IncludeTestAssembly>false</IncludeTestAssembly>
   </PropertyGroup>
 
-  <!-- Add coverlet.msbuild package reference for MSBuild integration -->
-  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
-    <PackageReference Include="coverlet.msbuild" Version="6.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-  </ItemGroup>
+  <!-- coverlet.msbuild package reference now provided by Directory.Build.targets -->
 </Project>

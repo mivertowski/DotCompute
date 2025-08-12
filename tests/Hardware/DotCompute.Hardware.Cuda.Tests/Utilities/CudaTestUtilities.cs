@@ -6,10 +6,10 @@ using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Common;
+using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Hardware.Cuda.Tests.Utilities;
+namespace DotCompute.Tests.Hardware.Utilities;
 
 /// <summary>
 /// Utility classes and methods for CUDA testing

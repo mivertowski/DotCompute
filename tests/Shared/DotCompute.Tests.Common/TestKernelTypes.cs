@@ -7,7 +7,7 @@ using System.Linq;
 using DotCompute.Abstractions;
 using DotCompute.Core.Types;
 
-namespace DotCompute.Tests.Common;
+namespace DotCompute.Tests.Shared;
 
 /// <summary>
 /// Test-specific CompiledKernel class with mutable properties for testing.

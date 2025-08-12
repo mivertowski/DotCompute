@@ -3,12 +3,12 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Core.Accelerators;
 using DotCompute.Core.Compute;
-using DotCompute.Core.Pipelines;
+using DotCompute.Core.Compute;
+using DotCompute.Core.Aot;
 using DotCompute.Memory;
 using DotCompute.Plugins.Core;
-using DotCompute.Tests.Common;
+using DotCompute.Tests.Shared;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -16,7 +16,7 @@ using Xunit;
 using Xunit.Abstractions;
 using MemoryOptions = DotCompute.Abstractions.MemoryOptions;
 
-namespace DotCompute.Integration.Tests;
+namespace DotCompute.Tests.Integration;
 
 /// <summary>
 /// Base class for integration tests providing common infrastructure and utilities.

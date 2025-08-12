@@ -13,7 +13,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Integration.Tests;
+namespace DotCompute.Tests.Integration;
 
 /// <summary>
 /// High-concurrency stress tests for the DotCompute integration layer.

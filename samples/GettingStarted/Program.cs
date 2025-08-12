@@ -5,7 +5,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace GettingStarted;
+namespace DotCompute.Samples.GettingStarted;
 
 internal sealed partial class Program
 {

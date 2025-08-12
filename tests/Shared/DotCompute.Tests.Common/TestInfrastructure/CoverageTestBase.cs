@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Common.TestInfrastructure;
+namespace DotCompute.Tests.Shared.TestInfrastructure;
 
 /// <summary>
 /// Base class for all tests that provides common infrastructure and coverage utilities

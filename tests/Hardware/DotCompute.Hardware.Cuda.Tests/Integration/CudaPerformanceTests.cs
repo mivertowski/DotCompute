@@ -8,13 +8,13 @@ using BenchmarkDotNet.Running;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Common;
+using DotCompute.Tests.Shared;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Cuda.Tests.Integration;
+namespace DotCompute.Tests.Hardware.Integration;
 
 /// <summary>
 /// Performance benchmarks and tests for CUDA backend operations

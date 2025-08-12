@@ -7,7 +7,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.RTX2000.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Comprehensive hardware validation tests specifically for NVIDIA RTX 2000 Ada Generation GPU.

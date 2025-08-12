@@ -4,7 +4,7 @@
 using System;
 using DotCompute.Abstractions;
 
-namespace DotCompute.SharedTestUtilities;
+namespace DotCompute.Tests.Shared;
 /// <summary>
 /// Memory test utilities.
 /// </summary>

@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Implementations.Pipelines;
+namespace DotCompute.Tests.Shared.Pipelines;
 
 /// <summary>
 /// Test implementation of a custom pipeline stage.

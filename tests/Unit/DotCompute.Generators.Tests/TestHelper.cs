@@ -6,7 +6,7 @@ using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 
-namespace DotCompute.Generators.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Helper class for testing source generators.

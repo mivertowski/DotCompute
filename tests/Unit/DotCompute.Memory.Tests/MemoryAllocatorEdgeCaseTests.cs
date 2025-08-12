@@ -7,7 +7,7 @@ using System.Runtime.InteropServices;
 using FluentAssertions;
 using Xunit;
 
-namespace DotCompute.Memory.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Edge case and boundary condition tests for MemoryAllocator.

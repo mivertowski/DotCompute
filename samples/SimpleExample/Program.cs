@@ -3,7 +3,7 @@
 
 using System.Buffers;
 
-namespace SimpleExample
+namespace DotCompute.Samples.SimpleExample
 {
     /// <summary>
     /// Simple example demonstrating DotCompute core functionality without source generation.

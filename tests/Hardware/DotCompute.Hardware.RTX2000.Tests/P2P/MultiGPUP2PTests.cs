@@ -7,7 +7,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.RTX2000.Tests.P2P;
+namespace DotCompute.Tests.Hardware.P2P;
 
 /// <summary>
 /// Multi-GPU P2P (Peer-to-Peer) communication tests for RTX 2000 Ada Generation.

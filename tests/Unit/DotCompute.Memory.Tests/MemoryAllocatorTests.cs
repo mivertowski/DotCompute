@@ -2,7 +2,7 @@ using System.Buffers;
 using FluentAssertions;
 using Xunit;
 
-namespace DotCompute.Memory.Tests;
+namespace DotCompute.Tests.Unit;
 
 public sealed class MemoryAllocatorTests : IDisposable
 {

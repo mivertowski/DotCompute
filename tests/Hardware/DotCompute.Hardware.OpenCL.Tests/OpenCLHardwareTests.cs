@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.OpenCL.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Hardware-dependent tests for OpenCL functionality.

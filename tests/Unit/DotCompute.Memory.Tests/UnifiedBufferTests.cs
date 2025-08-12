@@ -4,7 +4,7 @@ using FluentAssertions;
 using NSubstitute;
 using Xunit;
 
-namespace DotCompute.Memory.Tests;
+namespace DotCompute.Tests.Unit;
 
 public sealed class UnifiedBufferTests : IDisposable
 {

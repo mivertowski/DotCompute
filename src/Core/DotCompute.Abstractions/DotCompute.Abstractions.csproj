@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>13</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    
+    <!-- AOT Configuration -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <TrimMode>full</TrimMode>
+    
+    <!-- Package Information -->
+    <PackageId>DotCompute.Abstractions</PackageId>
+    <Authors>Michael Ivertowski</Authors>
+    <Description>Core abstractions for DotCompute - a high-performance, AOT-compatible tensor compute library for .NET</Description>
+    <PackageTags>tensor;compute;gpu;cuda;accelerator;aot;native</PackageTags>    
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    
+    <!-- Build Configuration -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+    <AnalysisLevel>none</AnalysisLevel>
+    <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    
+    <!-- Performance -->
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <ConcurrentGarbageCollection>true</ConcurrentGarbageCollection>
+    <RetainVMGarbageCollection>true</RetainVMGarbageCollection>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Allow internal access to Memory assembly -->
+    <InternalsVisibleTo Include="DotCompute.Memory" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- AOT-friendly dependencies only -->
+    <PackageReference Include="System.Memory" Version="4.6.3" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="6.1.2" />
+  </ItemGroup>
+
+  <ItemGroup><!-- Analyzers for AOT compatibility -->
+    <!-- <PackageReference Include="Microsoft.NET.ILLink.Analyzers" PrivateAssets="all" /> -->
+    <!-- <PackageReference Include="Microsoft.DotNet.ApiCompat" PrivateAssets="all" /> -->
+  
+    <PackageReference Update="Microsoft.CodeAnalysis.NetAnalyzers" Version="9.0.0" />
+  <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
+  </ItemGroup>
+
+</Project>

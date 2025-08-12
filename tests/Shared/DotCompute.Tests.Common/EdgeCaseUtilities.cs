@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
-namespace DotCompute.Tests.Common;
+namespace DotCompute.Tests.Shared;
 
 /// <summary>
 /// Utility methods for edge case testing across the DotCompute test suite.

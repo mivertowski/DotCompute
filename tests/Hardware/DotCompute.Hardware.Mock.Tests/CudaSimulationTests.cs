@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Hardware.Mock.Tests;
+namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Mock CUDA tests that simulate hardware operations without requiring actual CUDA hardware.

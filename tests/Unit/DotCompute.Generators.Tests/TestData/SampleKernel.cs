@@ -3,7 +3,7 @@
 
 using DotCompute.Generators.Kernel;
 
-namespace TestData
+namespace DotCompute.Tests.Unit.TestData
 {
     /// <summary>
     /// Sample kernel class for testing source generation.

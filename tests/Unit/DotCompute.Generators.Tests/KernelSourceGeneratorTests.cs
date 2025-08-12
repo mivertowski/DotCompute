@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 
-namespace DotCompute.Generators.Tests;
+namespace DotCompute.Tests.Unit;
 
 public class KernelSourceGeneratorTests
 {

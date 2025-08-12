@@ -1,0 +1,71 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>13</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    
+    <!-- Platform-specific configuration -->
+    <RuntimeIdentifiers Condition="$([MSBuild]::IsOSPlatform('OSX'))">osx-x64;osx-arm64;ios-arm64;maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers>
+    <RuntimeIdentifiers Condition="!$([MSBuild]::IsOSPlatform('OSX'))">osx-x64;osx-arm64</RuntimeIdentifiers>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    
+    <!-- AOT Configuration -->
+    <IsAotCompatible>true</IsAotCompatible>
+    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
+    <EnableSingleFileAnalyzer>true</EnableSingleFileAnalyzer>
+    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <TrimMode>full</TrimMode>
+    
+    <!-- Package Information -->
+    <PackageId>DotCompute.Backends.Metal</PackageId>
+    <Authors>DotCompute Contributors</Authors>
+    <Description>Metal backend for DotCompute with GPU acceleration for macOS and iOS</Description>
+    <PackageTags>metal;gpu;macos;ios;backend;compute;tensor;aot</PackageTags>
+    
+    <!-- Build Configuration -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <!-- Exclude test files from main project -->
+  <ItemGroup>
+    <Compile Remove="tests/**" />
+    <None Include="tests/**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\DotCompute.Core\DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
+    <ProjectReference Include="..\..\Runtime\DotCompute.Plugins\DotCompute.Plugins.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Metal-specific dependencies -->
+    <PackageReference Include="System.Private.Uri" Version="4.3.2" />
+    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
+  </ItemGroup>
+
+  <!-- Native Metal library references -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX')) AND Exists('native/libDotComputeMetal.dylib')">
+    <None Include="native/libDotComputeMetal.dylib">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>libDotComputeMetal.dylib</Link>
+    </None>
+  </ItemGroup>
+  
+  <!-- Placeholder when native library is not available -->
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX')) AND !Exists('native/libDotComputeMetal.dylib')">
+    <Content Include="native/README.md" Condition="Exists('native/README.md')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

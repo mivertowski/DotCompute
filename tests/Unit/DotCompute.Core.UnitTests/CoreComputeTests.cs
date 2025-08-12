@@ -1,11 +1,11 @@
 using DotCompute.Core.Compute;
-using DotCompute.Core.Accelerators;
+using DotCompute.Core.Compute;
 using DotCompute.Abstractions;
 using Xunit;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
-namespace DotCompute.Core.UnitTests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for Core compute components.

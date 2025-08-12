@@ -5,9 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Core.Pipelines;
+using DotCompute.Core.Aot;
 
-namespace DotCompute.Tests.Implementations.Pipelines;
+namespace DotCompute.Tests.Shared.Pipelines;
 
 /// <summary>
 /// Test implementation of a kernel pipeline.

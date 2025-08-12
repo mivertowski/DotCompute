@@ -2,12 +2,12 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Core.Pipelines;
+using DotCompute.Core.Aot;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Tests for Pipeline classes.

@@ -8,7 +8,7 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 
-namespace DotCompute.Generators.Tests;
+namespace DotCompute.Tests.Unit;
 
 public class GeneratedCodeValidationTests
 {

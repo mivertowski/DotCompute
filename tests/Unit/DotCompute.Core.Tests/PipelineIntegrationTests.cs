@@ -3,15 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Core.Pipelines;
-using DotCompute.Tests.Implementations.Accelerators;
-using DotCompute.Tests.Implementations.Kernels;
-using DotCompute.Tests.Implementations.Memory;
-using DotCompute.Tests.Implementations.Pipelines;
+using DotCompute.Core.Aot;
+using DotCompute.Tests.Shared.Kernels.Accelerators;
+using DotCompute.Tests.Shared.Kernels;
+using DotCompute.Tests.Shared.Kernels.Memory;
+using DotCompute.Tests.Shared.Kernels.Pipelines;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Integration tests for pipeline implementations.

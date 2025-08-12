@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Common.TestFixtures;
+namespace DotCompute.Tests.Shared.TestFixtures;
 
 /// <summary>
 /// Shared test fixture for accelerator-based tests.

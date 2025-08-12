@@ -12,7 +12,7 @@ using Moq;
 using FluentAssertions;
 using Xunit;
 
-namespace DotCompute.Plugins.Tests;
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Edge case and stress tests for the plugin system.

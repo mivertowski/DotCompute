@@ -11,7 +11,7 @@ using DotCompute.Core;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace CpuKernelCompilationExample;
+namespace DotCompute.Samples.CpuKernelCompilationExample;
 
 /// <summary>
 /// Example demonstrating CPU kernel compilation with optimization and vectorization.

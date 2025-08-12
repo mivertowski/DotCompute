@@ -1,11 +1,11 @@
 using DotCompute.Abstractions;
-using DotCompute.Core.Accelerators;
+using DotCompute.Core.Compute;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Xunit;
 
-namespace DotCompute.Core.Tests;
+namespace DotCompute.Tests.Unit;
 
 public class AcceleratorManagerTests
 {

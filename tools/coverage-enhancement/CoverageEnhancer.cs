@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace DotCompute.Tools.CoverageEnhancement;
+namespace DotCompute.Tools.coverage-enhancement;
 
 /// <summary>
 /// Analyzes coverage gaps and suggests test improvements

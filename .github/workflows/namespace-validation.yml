@@ -1,0 +1,33 @@
+# Copyright (c) 2025 Michael Ivertowski
+# Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+name: Namespace Validation
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-namespaces:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Validate Namespace Alignment
+      run: |
+        chmod +x scripts/validate-namespaces.sh
+        scripts/validate-namespaces.sh
+    
+    - name: Namespace Analysis Report
+      if: failure()
+      run: |
+        echo "Namespace validation failed. Here's the detailed analysis:"
+        python3 scripts/fix_namespaces.py --analyze || true

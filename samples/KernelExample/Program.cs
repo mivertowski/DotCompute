@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 using DotCompute.Generators.Kernel;
 using DotCompute.Memory;
 
-namespace KernelExample
+namespace DotCompute.Samples.KernelExample
 {
     /// <summary>
     /// Example of DotCompute kernel source generation.
