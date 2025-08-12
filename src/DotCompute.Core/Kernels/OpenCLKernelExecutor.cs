@@ -448,15 +448,19 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
                 // Get or create OpenCL buffer for the memory buffer
                 var clBuffer = GetOrCreateOpenCLBuffer(buffer);
                 
-                var result = OpenCLInterop.SetKernelArg(
-                    kernelHandle,
-                    (uint)index,
-                    (UIntPtr)IntPtr.Size,
-                    new IntPtr(&clBuffer));
-                    
-                OpenCLInterop.ThrowOnError(result, $"SetKernelArg (memory buffer at index {index})");
-                _logger.LogTrace("Set OpenCL memory buffer argument at index {Index}", index);
-                return;
+                unsafe
+                {
+                    var clBufferPtr = clBuffer;
+                    var result = OpenCLInterop.SetKernelArg(
+                        kernelHandle,
+                        (uint)index,
+                        (UIntPtr)IntPtr.Size,
+                        new IntPtr(&clBufferPtr));
+                        
+                    OpenCLInterop.ThrowOnError(result, $"SetKernelArg (memory buffer at index {index})");
+                    _logger.LogTrace("Set OpenCL memory buffer argument at index {Index}", index);
+                    return;
+                }
             }
         }
         catch (Exception ex)
@@ -634,7 +638,6 @@ public sealed class OpenCLKernelExecutor : IKernelExecutor, IDisposable
             KernelTimeMs = executionTime,
             TotalTimeMs = totalTime,
             QueueWaitTimeMs = queueWaitTime,
-            MemoryTransferTimeMs = memoryTransferTime,
             EffectiveMemoryBandwidthGBps = CalculateMemoryBandwidth(execution.ExecutionConfig),
             EffectiveComputeThroughputGFLOPS = CalculateComputeThroughput(execution.ExecutionConfig)
         };

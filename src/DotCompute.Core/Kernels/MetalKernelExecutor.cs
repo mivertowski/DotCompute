@@ -511,7 +511,6 @@ public sealed class MetalKernelExecutor : IKernelExecutor, IDisposable
             KernelTimeMs = Math.Max(0.05, totalTime * 0.85), // Metal is typically efficient
             TotalTimeMs = totalTime,
             QueueWaitTimeMs = Math.Max(0.01, totalTime * 0.05),
-            MemoryTransferTimeMs = Math.Max(0.01, totalTime * 0.10),
             EffectiveMemoryBandwidthGBps = _isSupported ? 400.0 : 0.0, // Apple Silicon has high bandwidth
             EffectiveComputeThroughputGFLOPS = _isSupported ? 2500.0 : 0.0 // Mock throughput
         };
