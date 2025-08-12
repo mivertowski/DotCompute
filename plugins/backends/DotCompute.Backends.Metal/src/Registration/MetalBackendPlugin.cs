@@ -12,14 +12,12 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend plugin has dynamic logging requirements
-
 namespace DotCompute.Backends.Metal.Registration;
 
 /// <summary>
 /// Plugin implementation for the Metal backend.
 /// </summary>
-public sealed class MetalBackendPlugin : BackendPluginBase
+public sealed partial class MetalBackendPlugin : BackendPluginBase
 {
     /// <inheritdoc/>
     public override string Id => "dotcompute.backends.metal";
@@ -71,7 +69,7 @@ public sealed class MetalBackendPlugin : BackendPluginBase
     {
         if (Logger is ILogger<MetalBackendPlugin> typedLogger)
         {
-            typedLogger.LogInformation("Initializing Metal backend plugin");
+            LogInitializing(typedLogger);
         }
         await base.OnInitializeAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -81,7 +79,7 @@ public sealed class MetalBackendPlugin : BackendPluginBase
     {
         if (Logger is ILogger<MetalBackendPlugin> typedLogger)
         {
-            typedLogger.LogInformation("Starting Metal backend plugin");
+            LogStarting(typedLogger);
         }
         await base.OnStartAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -91,7 +89,7 @@ public sealed class MetalBackendPlugin : BackendPluginBase
     {
         if (Logger is ILogger<MetalBackendPlugin> typedLogger)
         {
-            typedLogger.LogInformation("Stopping Metal backend plugin");
+            LogStopping(typedLogger);
         }
         await base.OnStopAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -302,4 +300,17 @@ internal sealed class NamedAcceleratorWrapper(string name, IAccelerator accelera
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => _accelerator.SynchronizeAsync(cancellationToken);
 
     public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
+
+    #region Logger Message Delegates
+
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Initializing Metal backend plugin")]
+    private static partial void LogInitializing(ILogger logger);
+
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Starting Metal backend plugin")]
+    private static partial void LogStarting(ILogger logger);
+
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Stopping Metal backend plugin")]
+    private static partial void LogStopping(ILogger logger);
+
+    #endregion
 }

@@ -80,8 +80,32 @@ internal class ExpressionCompilerLoggerWrapper : ILogger<ExpressionToKernelCompi
 }
 
 /// <summary>
-/// GPU-accelerated LINQ provider that uses kernel infrastructure with dynamic compilation.
+/// GPU-accelerated LINQ provider that translates LINQ expressions into optimized GPU kernels
+/// with automatic fallback to CPU execution when needed.
 /// </summary>
+/// <remarks>
+/// This provider enables transparent GPU acceleration of LINQ queries through dynamic kernel
+/// generation and compilation. It automatically handles device memory management, kernel
+/// optimization, and provides graceful fallback to CPU execution for unsupported operations.
+/// 
+/// Supported LINQ operations include Select, Where, Aggregate, Sum, Count, and more.
+/// The provider uses expression tree analysis to generate optimal GPU kernels and
+/// automatically manages data transfer between host and device memory.
+/// </remarks>
+/// <example>
+/// <code>
+/// // Create GPU LINQ provider
+/// var gpuProvider = new GPULINQProvider(accelerator, logger);
+/// 
+/// // Use with LINQ operations (automatically GPU-accelerated)
+/// var data = Enumerable.Range(0, 1000000).ToArray();
+/// var result = data.AsQueryable()
+///     .AsGPUQueryable()
+///     .Where(x => x % 2 == 0)
+///     .Select(x => x * x)
+///     .Sum();
+/// </code>
+/// </example>
 public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
 {
     private readonly IAccelerator _accelerator;
@@ -92,8 +116,16 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
     private bool _disposed;
 
     /// <summary>
-    /// Initializes a new instance of the <see cref="GPULINQProvider"/> class.
+    /// Initializes a new instance of the GPULINQProvider class with the specified accelerator.
     /// </summary>
+    /// <param name="accelerator">The compute accelerator to use for GPU execution.</param>
+    /// <param name="logger">The logger for monitoring query execution and performance.</param>
+    /// <exception cref="ArgumentNullException">Thrown when accelerator or logger is null.</exception>
+    /// <remarks>
+    /// This constructor creates a fully configured LINQ provider with default optimization
+    /// settings and automatic kernel management. The provider will detect the accelerator's
+    /// capabilities and configure the kernel compilation pipeline accordingly.
+    /// </remarks>
     public GPULINQProvider(IAccelerator accelerator, ILogger<GPULINQProvider> logger)
     {
         _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
@@ -153,14 +185,13 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
         // Try GPU execution first
         try
         {
-#pragma warning disable VSTHRD002 // Avoid problematic synchronous waits
             var task = ExecuteOnGPUAsync(expression, CancellationToken.None);
             if (task.IsCompleted)
             {
                 return task.Result;
             }
-            return task.AsTask().GetAwaiter().GetResult();
-#pragma warning restore VSTHRD002
+            // Use ConfigureAwait(false) to avoid deadlocks in sync context
+            return task.AsTask().ConfigureAwait(false).GetAwaiter().GetResult();
         }
         catch (Exception ex)
         {
@@ -179,8 +210,23 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
     }
 
     /// <summary>
-    /// Executes an expression on the GPU asynchronously using dynamic kernel compilation.
+    /// Executes a LINQ expression on the GPU asynchronously using dynamic kernel compilation.
     /// </summary>
+    /// <param name="expression">The LINQ expression tree to execute on the GPU.</param>
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    /// <returns>The result of the GPU-executed expression, or null if execution failed.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when expression is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the provider has been disposed.</exception>
+    /// <remarks>
+    /// This method performs the following steps:
+    /// 1. Analyzes the expression for GPU compatibility
+    /// 2. Optimizes the expression tree for parallel execution
+    /// 3. Generates and compiles GPU kernel code
+    /// 4. Manages memory transfers between host and device
+    /// 5. Executes the kernel and returns results
+    /// 
+    /// If any step fails, the method logs the error and falls back to CPU execution.
+    /// </remarks>
     public async ValueTask<object?> ExecuteOnGPUAsync(Expression expression, CancellationToken cancellationToken)
     {
         try

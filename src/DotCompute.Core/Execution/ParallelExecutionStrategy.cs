@@ -504,7 +504,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         return deviceBuffers;
     }
 
-    private async ValueTask<ManagedCompiledKernel> GetOrCompileKernelForDeviceAsync(
+    private async ValueTask<DotCompute.Core.Execution.ManagedCompiledKernel> GetOrCompileKernelForDeviceAsync(
         string kernelName,
         IAccelerator device,
         CancellationToken cancellationToken)
@@ -518,7 +518,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         }
 
         // This is a simplified kernel compilation - in practice, you'd provide the actual expression/operation
-        var compiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
+        var kernelsCompiledKernel = await _kernelManager.GetOrCompileOperationKernelAsync(
             kernelName, 
             [typeof(float)], 
             typeof(float), 
@@ -529,9 +529,14 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
 
         // Cache the kernel
         var kernelCache = _distributedKernelCache.GetOrAdd(cacheKey, _ => new CompiledKernelCache());
-        kernelCache.AddKernel(device, compiledKernel);
+        // Convert from Kernels.ManagedCompiledKernel to Execution.ManagedCompiledKernel
+        var executionKernel = new DotCompute.Core.Execution.ManagedCompiledKernel(
+            kernelsCompiledKernel.Name,
+            device,
+            new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 0, new KernelConfiguration(new Dim3(1), new Dim3(1))));
+        kernelCache.AddKernel(device, executionKernel);
 
-        return compiledKernel;
+        return executionKernel;
     }
 
     private async ValueTask<DeviceExecutionResult[]> ExecuteCoordinatedPlanAsync<T>(
@@ -556,8 +561,10 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
 
                     // Execute kernel on device
                     var kernelArgs = CreateKernelArguments(task.InputBuffers, task.OutputBuffers);
+                    // Convert Execution.ManagedCompiledKernel to Kernels.ManagedCompiledKernel
+                    var kernelsCompiledKernel = CreateKernelsCompatibleKernel(task.CompiledKernel);
                     var executionResult = await _kernelManager.ExecuteKernelAsync(
-                        task.CompiledKernel,
+                        kernelsCompiledKernel,
                         kernelArgs,
                         task.Device,
                         null,
@@ -597,7 +604,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         // Wait for all devices to complete and synchronize
         await _coordinator.WaitForAllEventsAsync(deviceEvents, cancellationToken);
 
-        return results;
+        return results!;
     }
 
     private KernelArgument[] CreateKernelArguments<T>(AbstractionsMemory.IBuffer<T>[] inputBuffers, AbstractionsMemory.IBuffer<T>[] outputBuffers) where T : unmanaged
@@ -847,6 +854,26 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         startTime.Stop();
         
         return results;
+    }
+
+    /// <summary>
+    /// Creates a Kernels-compatible kernel from an Execution kernel wrapper.
+    /// </summary>
+    private DotCompute.Core.Kernels.ManagedCompiledKernel CreateKernelsCompatibleKernel(DotCompute.Core.Execution.ManagedCompiledKernel executionKernel)
+    {
+        return new DotCompute.Core.Kernels.ManagedCompiledKernel
+        {
+            Name = executionKernel.Name,
+            Binary = Array.Empty<byte>(), // Simplified for demo
+            Parameters = Array.Empty<DotCompute.Core.Kernels.KernelParameter>(), // Simplified for demo
+            Handle = IntPtr.Zero,
+            SharedMemorySize = 0,
+            PerformanceMetadata = new Dictionary<string, object>
+            {
+                ["ExecutionCount"] = executionKernel.ExecutionCount,
+                ["TotalExecutionTime"] = executionKernel.TotalExecutionTime.TotalMilliseconds
+            }
+        };
     }
 
     #endregion

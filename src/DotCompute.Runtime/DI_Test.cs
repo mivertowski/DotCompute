@@ -88,7 +88,7 @@ public static class ConfigurationTest
             ValidateCapabilities = true,
             EnableDebugLogging = false,
             EnableGracefulDegradation = true,
-            AcceleratorLifetime = ServiceLifetime.Singleton
+            AcceleratorLifetime = (DotCompute.Runtime.Configuration.ServiceLifetime)Microsoft.Extensions.DependencyInjection.ServiceLifetime.Singleton
         };
         
         // Test plugin options
@@ -103,7 +103,7 @@ public static class ConfigurationTest
             ValidateSignatures = false,
             TrustedPublishers = new List<string>(),
             EnableDependencyInjection = true,
-            PluginLifetime = ServiceLifetime.Scoped
+            PluginLifetime = (DotCompute.Runtime.Configuration.ServiceLifetime)Microsoft.Extensions.DependencyInjection.ServiceLifetime.Scoped
         };
         
         // Test advanced memory options

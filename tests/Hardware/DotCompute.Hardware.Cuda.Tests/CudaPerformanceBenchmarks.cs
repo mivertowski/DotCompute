@@ -15,6 +15,9 @@ namespace DotCompute.Hardware.Cuda.Tests;
 /// <summary>
 /// Performance benchmarks for CUDA backend on real hardware
 /// </summary>
+[Trait("Category", "HardwareRequired")]
+[Trait("Category", "CudaRequired")]
+[Trait("Category", "Performance")]
 [Collection("Hardware")]
 public class CudaPerformanceBenchmarks : IDisposable
 {
@@ -38,14 +41,15 @@ public class CudaPerformanceBenchmarks : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "Performance")]
     public async Task MemoryBandwidth_ShouldAchieveHighThroughput()
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
         Assert.NotNull(_accelerator);
 
-        var stats = _accelerator.Memory.GetStatistics();
-        _logger.LogInformation("Total GPU Memory: {TotalGB:F1} GB", stats.TotalMemory / (1024.0 * 1024 * 1024));
-        _logger.LogInformation("Free GPU Memory: {FreeGB:F1} GB", stats.FreeMemory / (1024.0 * 1024 * 1024));
+        // Note: GetStatistics() method doesn't exist in new IMemoryManager interface
+        _logger.LogInformation("Starting memory bandwidth benchmark");
 
         // Test memory bandwidth with different sizes
         var sizes = new[] { 1, 4, 16, 64, 256, 1024 }; // MB
@@ -56,7 +60,7 @@ public class CudaPerformanceBenchmarks : IDisposable
             var data = new byte[sizeBytes];
             new Random(42).NextBytes(data);
 
-            var buffer = _accelerator.Memory.Allocate(sizeBytes);
+            var buffer = await _accelerator.Memory.AllocateAsync(sizeBytes);
             
             try
             {
@@ -103,6 +107,8 @@ public class CudaPerformanceBenchmarks : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "Performance")]
     public async Task ComputeThroughput_ShouldAchieveHighPerformance()
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
@@ -121,8 +127,8 @@ public class CudaPerformanceBenchmarks : IDisposable
             y[i] = i * 0.002f + 1.0f;
         }
 
-        var bufferX = _accelerator.Memory.Allocate(N * sizeof(float));
-        var bufferY = _accelerator.Memory.Allocate(N * sizeof(float));
+        var bufferX = await _accelerator.Memory.AllocateAsync(N * sizeof(float));
+        var bufferY = await _accelerator.Memory.AllocateAsync(N * sizeof(float));
 
         try
         {
@@ -140,7 +146,8 @@ extern ""C"" __global__ void saxpy(float* x, float* y, float alpha, int n)
     }
 }";
 
-            var kernelDefinition = new KernelDefinition("saxpy", "saxpy", Encoding.UTF8.GetBytes(kernelSource));
+            var kernelSourceObj = new TextKernelSource(kernelSource, "saxpy", KernelLanguage.Cuda, "saxpy");
+            var kernelDefinition = new KernelDefinition("saxpy", kernelSourceObj, new CompilationOptions());
             var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
 
@@ -189,6 +196,8 @@ extern ""C"" __global__ void saxpy(float* x, float* y, float alpha, int n)
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "Performance")]
     public async Task KernelLaunchOverhead_ShouldBeLow()
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
@@ -206,7 +215,8 @@ extern ""C"" __global__ void emptyKernel()
     }
 }";
 
-        var kernelDefinition = new KernelDefinition("emptyKernel", "emptyKernel", Encoding.UTF8.GetBytes(kernelSource));
+        var kernelSourceObj = new TextKernelSource(kernelSource, "emptyKernel", KernelLanguage.Cuda, "emptyKernel");
+        var kernelDefinition = new KernelDefinition("emptyKernel", kernelSourceObj, new CompilationOptions());
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
 
         // Warm up
@@ -233,6 +243,8 @@ extern ""C"" __global__ void emptyKernel()
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "Performance")]
     public async Task CompilationSpeed_ShouldBeReasonable()
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
@@ -283,7 +295,8 @@ extern ""C"" __global__ void emptyKernel()
 
             foreach (var optLevel in optimizationLevels)
             {
-                var definition = new KernelDefinition($"{kernelName}_{optLevel}", kernelName, Encoding.UTF8.GetBytes(kernelSource));
+                var kernelSourceObj = new TextKernelSource(kernelSource, kernelName, KernelLanguage.Cuda, kernelName);
+                var definition = new KernelDefinition($"{kernelName}_{optLevel}", kernelSourceObj, options);
                 var options = new CompilationOptions { OptimizationLevel = optLevel };
 
                 var stopwatch = Stopwatch.StartNew();
@@ -303,6 +316,8 @@ extern ""C"" __global__ void emptyKernel()
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "Performance")]
     public async Task ConcurrentExecution_ShouldScaleWithStreams()
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
@@ -324,7 +339,8 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
     }
 }";
 
-        var kernelDefinition = new KernelDefinition("workload", "workload", Encoding.UTF8.GetBytes(kernelSource));
+        var kernelSourceObj = new TextKernelSource(kernelSource, "workload", KernelLanguage.Cuda, "workload");
+        var kernelDefinition = new KernelDefinition("workload", kernelSourceObj, new CompilationOptions());
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
 
         // Test sequential execution
@@ -332,7 +348,7 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
         {
             for (int i = 0; i < KERNEL_COUNT; i++)
             {
-                var buffer = _accelerator.Memory.Allocate(ELEMENTS_PER_KERNEL * sizeof(float));
+                var buffer = await _accelerator.Memory.AllocateAsync(ELEMENTS_PER_KERNEL * sizeof(float));
                 try
                 {
                     var arguments = new KernelArguments(buffer, ELEMENTS_PER_KERNEL, 100);
@@ -349,13 +365,13 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
         var concurrentTime = await MeasureExecutionTime(async () =>
         {
             var tasks = new List<Task>();
-            var buffers = new List<ISyncMemoryBuffer>();
+            var buffers = new List<IMemoryBuffer>();
 
             try
             {
                 for (int i = 0; i < KERNEL_COUNT; i++)
                 {
-                    var buffer = _accelerator.Memory.Allocate(ELEMENTS_PER_KERNEL * sizeof(float));
+                    var buffer = await _accelerator.Memory.AllocateAsync(ELEMENTS_PER_KERNEL * sizeof(float));
                     buffers.Add(buffer);
 
                     var task = Task.Run(async () =>

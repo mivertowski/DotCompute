@@ -16,8 +16,7 @@
     <TieredCompilation>false</TieredCompilation>
     <TieredCompilationQuickJit>false</TieredCompilationQuickJit>
     
-    <!-- Suppress compilation errors for tests that are not yet fully implemented -->
-    <NoWarn>$(NoWarn);CS0103;CS1061;CS0117;CS0119;CS0133;CS0246;CA1707;CA5394;CA2265;xUnit1031;VSTHRD002;IDE0011;IDE2001;xUnit1025</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     
   </PropertyGroup>
 

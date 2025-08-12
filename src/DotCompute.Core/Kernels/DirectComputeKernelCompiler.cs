@@ -335,6 +335,9 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
     /// <inheritdoc/>
     public CompilationOptions GetDefaultOptions()
     {
+        var shaderModel = DetectOptimalShaderModel();
+        var featureLevel = DetectDirectXFeatureLevel();
+        
         return new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.O2,
@@ -342,20 +345,130 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
             EnableFastMath = true,
             FiniteMathOnly = true,
             EnableUnsafeOptimizations = false,
-            TargetArchitecture = "cs_5_0", // Compute Shader 5.0
+            TargetArchitecture = shaderModel,
             AdditionalFlags =
             [
                 "/O3",                      // Maximum optimization
                 "/Gfp",                     // Prefer flow control constructs
-                "/enable_unbounded_descriptor_tables" // Enable unbounded descriptor tables (if supported)
+                "/Qstrip_reflect",          // Strip reflection information
+                "/Qstrip_debug",            // Strip debug information in release
+                "/all_resources_bound",     // Assume all resources are bound
+                "/enable_unbounded_descriptor_tables", // Enable unbounded descriptor tables
+                "/res_may_alias",           // Resources may alias
+                "/Ges"                       // Enable strict mode
+            ],
+            IncludeDirectories =
+            [
+                "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\um",
+                "C:\\Program Files (x86)\\Windows Kits\\10\\Include\\10.0.22621.0\\shared",
+                "C:\\Program Files (x86)\\Microsoft DirectX SDK (June 2010)\\Include"
             ],
             Defines = new Dictionary<string, string>
             {
                 ["DIRECTCOMPUTE"] = "1",
                 ["HLSL"] = "1",
-                ["SHADER_MODEL"] = "50"     // Shader model 5.0
+                ["SHADER_MODEL"] = GetShaderModelDefine(shaderModel),
+                ["FEATURE_LEVEL"] = GetFeatureLevelDefine(featureLevel),
+                ["MAX_THREAD_GROUP_SIZE"] = "1024",
+                ["WARP_SIZE"] = "32",
+                ["DIRECTX_VERSION"] = "12"
             }
         };
+    }
+    
+    /// <summary>
+    /// Detects the optimal shader model for the current system.
+    /// </summary>
+    private string DetectOptimalShaderModel()
+    {
+        if (!_isSupported)
+        {
+            return "cs_5_0";
+        }
+        
+        try
+        {
+#if WINDOWS
+            var (device, context, featureLevel) = DirectComputeInterop.CreateDevice();
+            
+            if (device != IntPtr.Zero)
+            {
+                var shaderModel = featureLevel switch
+                {
+                    var level when level >= DirectComputeInterop.D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_12_1 => "cs_6_6",
+                    var level when level >= DirectComputeInterop.D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_12_0 => "cs_6_0",
+                    var level when level >= DirectComputeInterop.D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_11_1 => "cs_5_1",
+                    _ => "cs_5_0"
+                };
+                
+                Marshal.Release(context);
+                Marshal.Release(device);
+                return shaderModel;
+            }
+#endif
+        }
+        catch
+        {
+            // Fall back to default
+        }
+        
+        return "cs_5_0";
+    }
+    
+    /// <summary>
+    /// Detects the DirectX feature level.
+    /// </summary>
+    private string DetectDirectXFeatureLevel()
+    {
+        try
+        {
+#if WINDOWS
+            var (device, context, featureLevel) = DirectComputeInterop.CreateDevice();
+            
+            if (device != IntPtr.Zero)
+            {
+                var levelString = featureLevel switch
+                {
+                    var level when level >= DirectComputeInterop.D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_12_1 => "12_1",
+                    var level when level >= DirectComputeInterop.D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_12_0 => "12_0",
+                    var level when level >= DirectComputeInterop.D3D_FEATURE_LEVEL.D3D_FEATURE_LEVEL_11_1 => "11_1",
+                    _ => "11_0"
+                };
+                
+                Marshal.Release(context);
+                Marshal.Release(device);
+                return levelString;
+            }
+#endif
+        }
+        catch
+        {
+            // Fall back to default
+        }
+        
+        return "11_0";
+    }
+    
+    /// <summary>
+    /// Gets the shader model define value.
+    /// </summary>
+    private static string GetShaderModelDefine(string shaderModel)
+    {
+        return shaderModel switch
+        {
+            "cs_6_6" => "66",
+            "cs_6_0" => "60",
+            "cs_5_1" => "51",
+            _ => "50"
+        };
+    }
+    
+    /// <summary>
+    /// Gets the feature level define value.
+    /// </summary>
+    private static string GetFeatureLevelDefine(string featureLevel)
+    {
+        return featureLevel.Replace("_", ""); // "11_0" -> "110"
     }
 
     /// <summary>
@@ -390,89 +503,330 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
     }
 
     /// <summary>
-    /// Validates basic HLSL syntax and DirectCompute constructs.
+    /// Validates comprehensive HLSL syntax and DirectCompute constructs with advanced analysis.
     /// </summary>
     private static void ValidateHLSLSyntax(string source, List<ValidationError> errors, List<ValidationWarning> warnings)
     {
-        // Check for balanced braces
+        var lines = source.Split('\n');
         var braceCount = 0;
-        var line = 1;
-        for (var i = 0; i < source.Length; i++)
+        var parenCount = 0;
+        var bracketCount = 0;
+        var inString = false;
+        var inComment = false;
+        var inBlockComment = false;
+        var resourceBindings = new Dictionary<string, int>();
+        var barrierLocations = new List<int>();
+        var threadGroupSizes = new List<(int line, string size)>();
+        
+        for (var lineNum = 0; lineNum < lines.Length; lineNum++)
         {
-            var c = source[i];
-            if (c == '\n')
+            var line = lines[lineNum];
+            var actualLineNum = lineNum + 1;
+            var trimmedLine = line.Trim();
+            
+            // Parse numthreads attributes
+            if (trimmedLine.StartsWith("[numthreads(") && trimmedLine.EndsWith(")]"))
             {
-                line++;
+                var threadsSpec = trimmedLine.Substring(12, trimmedLine.Length - 14);
+                threadGroupSizes.Add((actualLineNum, threadsSpec));
             }
-            else if (c == '{')
+            
+            // Track balance and syntax
+            for (var i = 0; i < line.Length; i++)
             {
-                braceCount++;
+                var c = line[i];
+                var prev = i > 0 ? line[i - 1] : '\0';
+                var next = i < line.Length - 1 ? line[i + 1] : '\0';
+                
+                // Handle string literals
+                if (c == '"' && prev != '\\' && !inComment && !inBlockComment)
+                {
+                    inString = !inString;
+                    continue;
+                }
+                
+                if (inString) continue;
+                
+                // Handle comments
+                if (c == '/' && next == '/' && !inBlockComment)
+                {
+                    inComment = true;
+                    continue;
+                }
+                
+                if (c == '/' && next == '*' && !inComment)
+                {
+                    inBlockComment = true;
+                    i++; // Skip the '*'
+                    continue;
+                }
+                
+                if (c == '*' && next == '/' && inBlockComment)
+                {
+                    inBlockComment = false;
+                    i++; // Skip the '/'
+                    continue;
+                }
+                
+                if (inComment || inBlockComment) continue;
+                
+                // Track bracket balance
+                switch (c)
+                {
+                    case '{':
+                        braceCount++;
+                        break;
+                    case '}':
+                        braceCount--;
+                        if (braceCount < 0)
+                        {
+                            errors.Add(new ValidationError
+                            {
+                                Code = "UNBALANCED_BRACES",
+                                Message = "Unbalanced closing brace",
+                                Line = actualLineNum,
+                                Column = i + 1
+                            });
+                        }
+                        break;
+                    case '(':
+                        parenCount++;
+                        break;
+                    case ')':
+                        parenCount--;
+                        if (parenCount < 0)
+                        {
+                            errors.Add(new ValidationError
+                            {
+                                Code = "UNBALANCED_PARENTHESES",
+                                Message = "Unbalanced closing parenthesis",
+                                Line = actualLineNum,
+                                Column = i + 1
+                            });
+                        }
+                        break;
+                    case '[':
+                        bracketCount++;
+                        break;
+                    case ']':
+                        bracketCount--;
+                        if (bracketCount < 0)
+                        {
+                            errors.Add(new ValidationError
+                            {
+                                Code = "UNBALANCED_BRACKETS",
+                                Message = "Unbalanced closing bracket",
+                                Line = actualLineNum,
+                                Column = i + 1
+                            });
+                        }
+                        break;
+                }
             }
-            else if (c == '}')
-            {
-                braceCount--;
-            }
-
-            if (braceCount < 0)
+            
+            inComment = false; // Line comments end at line break
+            
+            // Line-specific validations
+            if (trimmedLine.Contains("malloc") || trimmedLine.Contains("free"))
             {
                 errors.Add(new ValidationError
                 {
-                    Code = "UNBALANCED_BRACES",
-                    Message = "Unbalanced closing brace",
-                    Line = line
+                    Code = "DYNAMIC_ALLOCATION_NOT_SUPPORTED",
+                    Message = "Dynamic memory allocation is not supported in DirectCompute shaders",
+                    Line = actualLineNum
                 });
-                break;
+            }
+            
+            if (trimmedLine.Contains("recursion") || (trimmedLine.Contains("function") && trimmedLine.Contains("return")))
+            {
+                warnings.Add(new ValidationWarning
+                {
+                    Code = "RECURSION_WARNING",
+                    Message = "Recursion should be avoided in DirectCompute shaders",
+                    Line = actualLineNum,
+                    Severity = WarningSeverity.Serious
+                });
+            }
+            
+            // Resource binding analysis
+            if (trimmedLine.Contains("Texture") || trimmedLine.Contains("Buffer") || trimmedLine.Contains("StructuredBuffer"))
+            {
+                if (trimmedLine.Contains("register("))
+                {
+                    // Extract register binding
+                    var registerMatch = System.Text.RegularExpressions.Regex.Match(trimmedLine, @"register\([^)]+\)");
+                    if (registerMatch.Success)
+                    {
+                        var binding = registerMatch.Value;
+                        if (resourceBindings.ContainsKey(binding))
+                        {
+                            errors.Add(new ValidationError
+                            {
+                                Code = "DUPLICATE_REGISTER_BINDING",
+                                Message = $"Duplicate register binding {binding} found",
+                                Line = actualLineNum
+                            });
+                        }
+                        else
+                        {
+                            resourceBindings[binding] = actualLineNum;
+                        }
+                    }
+                }
+                else
+                {
+                    warnings.Add(new ValidationWarning
+                    {
+                        Code = "MISSING_REGISTER_BINDING",
+                        Message = "Resources should specify explicit register bindings for optimal performance",
+                        Line = actualLineNum,
+                        Severity = WarningSeverity.Warning
+                    });
+                }
+            }
+            
+            // Memory barrier analysis
+            if (trimmedLine.Contains("GroupMemoryBarrier") || trimmedLine.Contains("AllMemoryBarrier") ||
+                trimmedLine.Contains("DeviceMemoryBarrier"))
+            {
+                barrierLocations.Add(actualLineNum);
+                warnings.Add(new ValidationWarning
+                {
+                    Code = "MEMORY_BARRIER_USAGE",
+                    Message = "Memory barriers can impact performance - ensure they are necessary",
+                    Line = actualLineNum,
+                    Severity = WarningSeverity.Info
+                });
+            }
+            
+            // Shared memory (groupshared) analysis
+            if (trimmedLine.Contains("groupshared"))
+            {
+                warnings.Add(new ValidationWarning
+                {
+                    Code = "GROUPSHARED_USAGE",
+                    Message = "Group shared memory usage detected - ensure optimal access patterns",
+                    Line = actualLineNum,
+                    Severity = WarningSeverity.Info
+                });
+            }
+            
+            // UAV (Unordered Access View) usage
+            if (trimmedLine.Contains("RWTexture") || trimmedLine.Contains("RWBuffer") ||
+                trimmedLine.Contains("RWStructuredBuffer"))
+            {
+                warnings.Add(new ValidationWarning
+                {
+                    Code = "UAV_USAGE",
+                    Message = "UAV resources require careful synchronization for correct results",
+                    Line = actualLineNum,
+                    Severity = WarningSeverity.Info
+                });
+            }
+            
+            // Texture sampling optimization hints
+            if (trimmedLine.Contains(".Sample") || trimmedLine.Contains(".Load"))
+            {
+                warnings.Add(new ValidationWarning
+                {
+                    Code = "TEXTURE_SAMPLING",
+                    Message = "Consider texture sampling patterns for optimal cache usage",
+                    Line = actualLineNum,
+                    Severity = WarningSeverity.Info
+                });
+            }
+            
+            // Branch analysis for compute shaders
+            if (trimmedLine.StartsWith("if") && (trimmedLine.Contains("SV_DispatchThreadID") || trimmedLine.Contains("SV_GroupThreadID")))
+            {
+                warnings.Add(new ValidationWarning
+                {
+                    Code = "THREAD_DIVERGENCE",
+                    Message = "Thread-dependent branching may cause performance issues",
+                    Line = actualLineNum,
+                    Severity = WarningSeverity.Warning
+                });
             }
         }
-
+        
+        // Final balance checks
         if (braceCount > 0)
         {
             errors.Add(new ValidationError
             {
                 Code = "UNBALANCED_BRACES",
-                Message = "Unbalanced opening brace"
+                Message = $"Missing {braceCount} closing brace(s)"
             });
         }
-
-        // Check for common HLSL issues
-        if (source.Contains("malloc") || source.Contains("free"))
+        
+        if (parenCount > 0)
         {
             errors.Add(new ValidationError
             {
-                Code = "DYNAMIC_ALLOCATION_NOT_SUPPORTED",
-                Message = "Dynamic memory allocation is not supported in DirectCompute shaders"
+                Code = "UNBALANCED_PARENTHESES",
+                Message = $"Missing {parenCount} closing parenthesis(es)"
             });
         }
-
-        if (source.Contains("recursion"))
+        
+        if (bracketCount > 0)
+        {
+            errors.Add(new ValidationError
+            {
+                Code = "UNBALANCED_BRACKETS",
+                Message = $"Missing {bracketCount} closing bracket(s)"
+            });
+        }
+        
+        // Thread group size analysis
+        foreach (var (line, size) in threadGroupSizes)
+        {
+            var dimensions = size.Split(',').Select(s => s.Trim()).ToArray();
+            if (dimensions.Length != 3)
+            {
+                warnings.Add(new ValidationWarning
+                {
+                    Code = "THREAD_GROUP_DIMENSIONS",
+                    Message = "Thread group should specify all three dimensions (x, y, z)",
+                    Line = line,
+                    Severity = WarningSeverity.Info
+                });
+            }
+            
+            // Calculate total threads
+            if (dimensions.All(d => int.TryParse(d, out _)))
+            {
+                var totalThreads = dimensions.Select(int.Parse).Aggregate(1, (a, b) => a * b);
+                if (totalThreads > 1024)
+                {
+                    errors.Add(new ValidationError
+                    {
+                        Code = "THREAD_GROUP_SIZE_EXCEEDED",
+                        Message = $"Total thread group size {totalThreads} exceeds DirectCompute maximum of 1024",
+                        Line = line
+                    });
+                }
+                
+                if (totalThreads % 32 != 0)
+                {
+                    warnings.Add(new ValidationWarning
+                    {
+                        Code = "SUBOPTIMAL_THREAD_GROUP_SIZE",
+                        Message = $"Thread group size {totalThreads} is not a multiple of warp size (32)",
+                        Line = line,
+                        Severity = WarningSeverity.Warning
+                    });
+                }
+            }
+        }
+        
+        // Barrier usage analysis
+        if (barrierLocations.Count > 2)
         {
             warnings.Add(new ValidationWarning
             {
-                Code = "RECURSION_WARNING",
-                Message = "Recursion should be avoided in DirectCompute shaders",
-                Severity = WarningSeverity.Serious
-            });
-        }
-
-        // Check for proper resource binding
-        if (source.Contains("Texture") && !source.Contains("register("))
-        {
-            warnings.Add(new ValidationWarning
-            {
-                Code = "MISSING_REGISTER_BINDING",
-                Message = "Resources should specify explicit register bindings",
+                Code = "EXCESSIVE_BARRIERS",
+                Message = $"Multiple memory barriers detected at lines {string.Join(", ", barrierLocations)} - consider optimization",
                 Severity = WarningSeverity.Warning
-            });
-        }
-
-        // Check for thread group synchronization
-        if (source.Contains("GroupMemoryBarrier") || source.Contains("AllMemoryBarrier"))
-        {
-            warnings.Add(new ValidationWarning
-            {
-                Code = "SYNCHRONIZATION_USAGE",
-                Message = "Memory barriers detected - ensure proper usage to avoid deadlocks",
-                Severity = WarningSeverity.Info
             });
         }
     }

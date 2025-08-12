@@ -9,7 +9,6 @@
     <EnableTrimming>false</EnableTrimming>
     <PublishTrimmed>false</PublishTrimmed>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <NoWarn>CS1591;NU1603;IL2026;IL2070;IL3050;IDE0040;CA2227;CA1819;CA1716;CA1848;VSTHRD002;IDE0011;CA1310;CA1850;VSTHRD200;IDE0059;CA1822;CA1859;CA1861;CA1305;IL2072;VSTHRD103;CA2000</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>

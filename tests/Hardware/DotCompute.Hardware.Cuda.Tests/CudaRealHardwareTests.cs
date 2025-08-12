@@ -11,8 +11,10 @@ namespace DotCompute.Hardware.Cuda.Tests;
 /// Real hardware tests for CUDA GPU operations.
 /// These tests require an NVIDIA GPU with CUDA support.
 /// </summary>
-[Trait("Category", "RequiresGPU")]
+[Trait("Category", "HardwareRequired")]
+[Trait("Category", "CudaRequired")]
 [Trait("Category", "Hardware")]
+[Collection("Hardware")]
 public class CudaRealHardwareTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
@@ -67,6 +69,7 @@ public class CudaRealHardwareTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public void DetectCudaDevice_ShouldFindGPU()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -91,6 +94,7 @@ public class CudaRealHardwareTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public void GetDeviceMemory_ShouldReportCorrectSize()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -107,6 +111,7 @@ public class CudaRealHardwareTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public async Task AllocateAndFreeMemory_ShouldSucceed()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -130,6 +135,7 @@ public class CudaRealHardwareTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public async Task CopyDataToFromDevice_ShouldMaintainIntegrity()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -199,6 +205,7 @@ public class CudaRealHardwareTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public async Task SimpleKernelExecution_VectorAdd_ShouldCompute()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -275,6 +282,8 @@ public class CudaRealHardwareTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "Performance")]
     public void MeasureMemoryBandwidth_ShouldReportPerformance()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");

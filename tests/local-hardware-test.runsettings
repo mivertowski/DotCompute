@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- Configuration for local development with hardware testing -->
+  <RunConfiguration>
+    <MaxCpuCount>0</MaxCpuCount>
+    <ResultsDirectory>TestResults</ResultsDirectory>
+    <TargetPlatform>x64</TargetPlatform>
+    <TargetFramework>net9.0</TargetFramework>
+    <TestAdaptersPaths>%UserProfile%\.nuget\packages</TestAdaptersPaths>
+    <TreatNoTestsAsError>false</TreatNoTestsAsError>
+  </RunConfiguration>
+
+  <!-- MSTest Configuration -->
+  <MSTest>
+    <Parallelize>
+      <Workers>1</Workers>
+      <Scope>method</Scope>
+    </Parallelize>
+  </MSTest>
+
+  <!-- xUnit Configuration -->
+  <xUnit>
+    <ParallelizeAssembly>false</ParallelizeAssembly>
+    <ParallelizeTestCollections>false</ParallelizeTestCollections>
+    <MaxParallelThreads>1</MaxParallelThreads>
+  </xUnit>
+
+  <!-- Test Category Filters for Local Hardware Testing -->
+  <TestRunParameters>
+    <Parameter name="Environment" value="Local" />
+    <Parameter name="HardwareAvailable" value="true" />
+  </TestRunParameters>
+
+  <!-- Filter Configuration -->
+  <TestCaseFilter>
+    <!-- Include ALL tests including hardware-dependent ones -->
+    TestCategory!=ExcludeFromLocal
+  </TestCaseFilter>
+
+  <!-- Data Collection -->
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Configuration>
+          <CodeCoverage>
+            <ModulePaths>
+              <Include>
+                <ModulePath>.*DotCompute\..*\.dll$</ModulePath>
+              </Include>
+              <Exclude>
+                <ModulePath>.*tests.*</ModulePath>
+                <ModulePath>.*\.tests\..*</ModulePath>
+              </Exclude>
+            </ModulePaths>
+            <Functions>
+              <Exclude>
+                <Function>.*\.get_.*</Function>
+                <Function>.*\.set_.*</Function>
+              </Exclude>
+            </Functions>
+            <UseVerifiableInstrumentation>True</UseVerifiableInstrumentation>
+            <AllowLowIntegrityProcesses>True</AllowLowIntegrityProcesses>
+            <CollectFromChildProcesses>True</CollectFromChildProcesses>
+            <CollectAspDotNet>False</CollectAspDotNet>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

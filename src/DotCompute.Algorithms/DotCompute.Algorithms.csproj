@@ -9,8 +9,7 @@
     <EnableTrimming>true</EnableTrimming>
     <PublishTrimmed>true</PublishTrimmed>
     <TrimMode>link</TrimMode>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <NoWarn>CS1591;NU1603;CA1819;IDE0011;CA1822;CA1307;VSTHRD100;CS0103;CS1061;CS1503;CS8601;CS0117;SYSLIB0057</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <RunAnalyzersDuringBuild>false</RunAnalyzersDuringBuild>
   </PropertyGroup>

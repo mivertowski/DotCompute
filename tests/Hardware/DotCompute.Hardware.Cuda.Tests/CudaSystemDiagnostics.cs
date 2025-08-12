@@ -114,7 +114,7 @@ public class CudaSystemDiagnostics : IDisposable
         var info = _accelerator.Info;
         
         Assert.NotNull(info);
-        Assert.Equal(AcceleratorType.CUDA, info.Type);
+        Assert.Equal("CUDA", info.Type);
         Assert.False(string.IsNullOrEmpty(info.Name));
         Assert.True(info.TotalMemory > 0);
         Assert.True(info.ComputeUnits > 0);
@@ -155,23 +155,20 @@ public class CudaSystemDiagnostics : IDisposable
         _logger.LogInformation("=== Memory Manager Diagnostics ===");
 
         var memory = _accelerator.Memory;
-        var initialStats = memory.GetStatistics();
+        // Note: GetStatistics() method doesn't exist in new IMemoryManager interface
         
-        _logger.LogInformation("Initial Memory Stats:");
-        _logger.LogInformation("  Total: {Total:N0} bytes", initialStats.TotalMemory);
-        _logger.LogInformation("  Free: {Free:N0} bytes", initialStats.FreeMemory);
-        _logger.LogInformation("  Used: {Used:N0} bytes", initialStats.UsedMemory);
+        _logger.LogInformation("Memory Manager Test - Testing various allocation sizes");
 
         // Test various allocation sizes
         var testSizes = new[] { 1024, 1024*1024, 16*1024*1024, 64*1024*1024 };
-        var buffers = new List<ISyncMemoryBuffer>();
+        var buffers = new List<IMemoryBuffer>();
 
         try
         {
             foreach (var size in testSizes)
             {
                 _logger.LogInformation("Allocating {Size:N0} bytes", size);
-                var buffer = memory.Allocate(size);
+                var buffer = await memory.AllocateAsync(size);
                 buffers.Add(buffer);
 
                 // Test memory operations
@@ -185,28 +182,20 @@ public class CudaSystemDiagnostics : IDisposable
                 Assert.Equal(testData, readBack);
                 _logger.LogInformation("  Copy operations verified for {Size:N0} bytes", size);
 
-                // Test fill operation
-                memory.Fill(buffer, 0xFF, Math.Min(size, 1024));
-                var filled = new byte[Math.Min(size, 1024)];
-                await buffer.CopyToHostAsync<byte>(filled);
-                Assert.All(filled, b => Assert.Equal(0xFF, b));
-                _logger.LogInformation("  Fill operation verified");
+                // Test fill operation - this would need to be implemented differently
+                // Fill operation is not part of the new IMemoryBuffer interface
+                _logger.LogInformation("  Fill operation test skipped (not available in new API)");
 
                 // Test slicing
                 if (size > 2048)
                 {
-                    var slice = buffer.Slice(1024, 1024);
+                    var slice = memory.CreateView(buffer, 1024, 1024);
                     Assert.Equal(1024, slice.SizeInBytes);
                     _logger.LogInformation("  Slicing verified");
                 }
             }
 
-            var finalStats = memory.GetStatistics();
-            _logger.LogInformation("Final Memory Stats:");
-            _logger.LogInformation("  Allocated: {Allocated:N0} bytes", finalStats.AllocatedMemory);
-            _logger.LogInformation("  Allocation Count: {Count}", finalStats.AllocationCount);
-
-            Assert.True(finalStats.AllocatedMemory > initialStats.AllocatedMemory);
+            _logger.LogInformation("Memory allocation tests completed successfully");
         }
         finally
         {
@@ -235,7 +224,8 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
     }
 }";
 
-        var definition = new KernelDefinition("testKernel", "testKernel", Encoding.UTF8.GetBytes(cudaSource));
+        var kernelSource = new TextKernelSource(cudaSource, "testKernel", KernelLanguage.Cuda, "testKernel");
+        var definition = new KernelDefinition("testKernel", kernelSource, new CompilationOptions());
 
         // Test different optimization levels
         var optimizationLevels = Enum.GetValues<OptimizationLevel>();
@@ -262,8 +252,8 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
             var input = Enumerable.Range(0, N).Select(i => (float)i).ToArray();
             var output = new float[N];
 
-            var inputBuffer = _accelerator.Memory.Allocate(N * sizeof(float));
-            var outputBuffer = _accelerator.Memory.Allocate(N * sizeof(float));
+            var inputBuffer = await _accelerator.Memory.AllocateAsync(N * sizeof(float));
+            var outputBuffer = await _accelerator.Memory.AllocateAsync(N * sizeof(float));
 
             try
             {
@@ -310,7 +300,8 @@ extern ""C"" __global__ void configTest(int* data, int n)
     }
 }";
 
-        var definition = new KernelDefinition("configTest", "configTest", Encoding.UTF8.GetBytes(kernelSource));
+        var kernelSourceObj = new TextKernelSource(kernelSource, "configTest", KernelLanguage.Cuda, "configTest");
+        var definition = new KernelDefinition("configTest", kernelSourceObj, new CompilationOptions());
         var compiledKernel = await _accelerator.CompileKernelAsync(definition) as CudaCompiledKernel;
         Assert.NotNull(compiledKernel);
 
@@ -335,7 +326,7 @@ extern ""C"" __global__ void configTest(int* data, int n)
 
                 // Test execution with this configuration
                 var data = new int[problemSize];
-                var buffer = _accelerator.Memory.Allocate(problemSize * sizeof(int));
+                var buffer = await _accelerator.Memory.AllocateAsync(problemSize * sizeof(int));
 
                 try
                 {
@@ -383,8 +374,8 @@ extern ""C"" __global__ void invalidKernel(float* data)
     undeclared_variable = data[threadIdx.x]; // This should cause compilation error
 }";
 
-        var definition = new KernelDefinition("invalidKernel", "invalidKernel", 
-            Encoding.UTF8.GetBytes(invalidKernelSource));
+        var kernelSourceObj = new TextKernelSource(invalidKernelSource, "invalidKernel", KernelLanguage.Cuda, "invalidKernel");
+        var definition = new KernelDefinition("invalidKernel", kernelSourceObj, new CompilationOptions());
 
         var compilationException = await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await _accelerator.CompileKernelAsync(definition));
@@ -393,20 +384,19 @@ extern ""C"" __global__ void invalidKernel(float* data)
         Assert.Contains("Failed to compile", compilationException.Message);
         _logger.LogInformation("Compilation error handled correctly: {Message}", compilationException.Message);
 
-        // Test memory allocation error handling (try to allocate more than available)
-        var stats = _accelerator.Memory.GetStatistics();
-        var oversizeAllocation = stats.TotalMemory + 1024 * 1024; // More than total memory
+        // Test memory allocation error handling (try to allocate very large amount)
+        var oversizeAllocation = long.MaxValue / 2; // Very large allocation
 
-        var memoryException = Assert.Throws<MemoryException>(
-            () => _accelerator.Memory.Allocate(oversizeAllocation));
+        var memoryException = await Assert.ThrowsAsync<OutOfMemoryException>(
+            async () => await _accelerator.Memory.AllocateAsync(oversizeAllocation));
 
         Assert.NotNull(memoryException);
         _logger.LogInformation("Memory allocation error handled correctly: {Message}", memoryException.Message);
 
         // Test execution error handling (null arguments)
         var validSource = @"extern ""C"" __global__ void validKernel(float* data, int n) { }";
-        var validDefinition = new KernelDefinition("validKernel", "validKernel", 
-            Encoding.UTF8.GetBytes(validSource));
+        var validKernelSource = new TextKernelSource(validSource, "validKernel", KernelLanguage.Cuda, "validKernel");
+        var validDefinition = new KernelDefinition("validKernel", validKernelSource, new CompilationOptions());
         var validKernel = await _accelerator.CompileKernelAsync(validDefinition);
 
         try

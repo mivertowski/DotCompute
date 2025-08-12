@@ -85,9 +85,9 @@ public class CudaRealHardwareFullSystemTests : IDisposable
         var c = new float[N];
 
         // Allocate GPU memory
-        var bufferA = _accelerator.Memory.Allocate(N * sizeof(float));
-        var bufferB = _accelerator.Memory.Allocate(N * sizeof(float));
-        var bufferC = _accelerator.Memory.Allocate(N * sizeof(float));
+        var bufferA = await _accelerator.Memory.AllocateAsync(N * sizeof(float));
+        var bufferB = await _accelerator.Memory.AllocateAsync(N * sizeof(float));
+        var bufferC = await _accelerator.Memory.AllocateAsync(N * sizeof(float));
 
         try
         {
@@ -105,10 +105,8 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
     }
 }";
 
-            var kernelDefinition = new KernelDefinition(
-                "vectorAdd",
-                "vectorAdd", 
-                Encoding.UTF8.GetBytes(kernelSource));
+            var kernelSourceObj = new TextKernelSource(kernelSource, "vectorAdd", KernelLanguage.Cuda, "vectorAdd");
+            var kernelDefinition = new KernelDefinition("vectorAdd", kernelSourceObj, options);
 
             var options = new CompilationOptions
             {
@@ -157,9 +155,9 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         var matrixC = new float[SIZE * SIZE];
 
         // Allocate GPU memory
-        var bufferA = _accelerator.Memory.Allocate(SIZE * SIZE * sizeof(float));
-        var bufferB = _accelerator.Memory.Allocate(SIZE * SIZE * sizeof(float));
-        var bufferC = _accelerator.Memory.Allocate(SIZE * SIZE * sizeof(float));
+        var bufferA = await _accelerator.Memory.AllocateAsync(SIZE * SIZE * sizeof(float));
+        var bufferB = await _accelerator.Memory.AllocateAsync(SIZE * SIZE * sizeof(float));
+        var bufferC = await _accelerator.Memory.AllocateAsync(SIZE * SIZE * sizeof(float));
 
         try
         {
@@ -183,10 +181,8 @@ extern ""C"" __global__ void matrixMul(float* A, float* B, float* C, int size)
     }
 }";
 
-            var kernelDefinition = new KernelDefinition(
-                "matrixMul",
-                "matrixMul",
-                Encoding.UTF8.GetBytes(kernelSource));
+            var kernelSourceObj = new TextKernelSource(kernelSource, "matrixMul", KernelLanguage.Cuda, "matrixMul");
+            var kernelDefinition = new KernelDefinition("matrixMul", kernelSourceObj, options);
 
             var options = new CompilationOptions
             {
@@ -238,20 +234,20 @@ extern ""C"" __global__ void matrixMul(float* A, float* B, float* C, int size)
 
         Assert.NotNull(_accelerator);
 
-        var stats = _accelerator.Memory.GetStatistics();
-        var availableMemory = stats.FreeMemory;
-        
-        _logger.LogInformation("Available GPU memory: {AvailableMB:F1} MB", availableMemory / (1024.0 * 1024));
+        // Note: GetStatistics() method doesn't exist in new IMemoryManager interface
+        _logger.LogInformation("Testing large memory allocations");
 
-        // Try to allocate a significant portion of available memory
-        var allocationSize = Math.Min(availableMemory / 4, 1024L * 1024 * 1024); // 1GB or 25% of available
+        // Try to allocate a significant amount of memory
+        var allocationSize = 1024L * 1024 * 1024; // 1GB
         
-        var buffer = _accelerator.Memory.Allocate(allocationSize);
+        var buffer = await _accelerator.Memory.AllocateAsync(allocationSize);
         
         try
         {
-            // Fill with pattern
-            _accelerator.Memory.Fill(buffer, 0xAB, allocationSize);
+            // Fill with pattern - Fill method not available in new API, using copy instead
+            var fillData = new byte[Math.Min(allocationSize, 1024)];
+            Array.Fill(fillData, (byte)0xAB);
+            await buffer.CopyFromHostAsync<byte>(fillData, 0);
 
             // Test partial copy operations
             var testData = new byte[1024];
@@ -294,7 +290,7 @@ extern ""C"" __global__ void matrixMul(float* A, float* B, float* C, int size)
         const int ELEMENTS_PER_KERNEL = 256 * 1024;
 
         var tasks = new List<Task>();
-        var buffers = new List<ISyncMemoryBuffer>();
+        var buffers = new List<IMemoryBuffer>();
 
         try
         {
@@ -308,10 +304,8 @@ extern ""C"" __global__ void simpleAdd(float* data, float value, int n)
     }
 }";
 
-            var kernelDefinition = new KernelDefinition(
-                "simpleAdd", 
-                "simpleAdd",
-                Encoding.UTF8.GetBytes(kernelSource));
+            var kernelSourceObj = new TextKernelSource(kernelSource, "simpleAdd", KernelLanguage.Cuda, "simpleAdd");
+            var kernelDefinition = new KernelDefinition("simpleAdd", kernelSourceObj, new CompilationOptions());
 
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
 
@@ -322,7 +316,7 @@ extern ""C"" __global__ void simpleAdd(float* data, float value, int n)
                 var task = Task.Run(async () =>
                 {
                     var data = CreateSequentialArray(ELEMENTS_PER_KERNEL, kernelIndex * 10.0f);
-                    var buffer = _accelerator.Memory.Allocate(ELEMENTS_PER_KERNEL * sizeof(float));
+                    var buffer = await _accelerator.Memory.AllocateAsync(ELEMENTS_PER_KERNEL * sizeof(float));
                     buffers.Add(buffer);
 
                     await buffer.CopyFromHostAsync<float>(data);
@@ -394,8 +388,8 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
 }";
 
         var inputData = CreateSequentialArray(N, 0.1f);
-        var bufferInput = _accelerator.Memory.Allocate(N * sizeof(float));
-        var bufferOutput = _accelerator.Memory.Allocate(N * sizeof(float));
+        var bufferInput = await _accelerator.Memory.AllocateAsync(N * sizeof(float));
+        var bufferOutput = await _accelerator.Memory.AllocateAsync(N * sizeof(float));
 
         try
         {
@@ -403,10 +397,8 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
 
             foreach (var optLevel in optimizationLevels)
             {
-                var kernelDefinition = new KernelDefinition(
-                    $"computeIntensive_{optLevel}",
-                    "computeIntensive", 
-                    Encoding.UTF8.GetBytes(kernelSource));
+                var kernelSourceObj = new TextKernelSource(kernelSource, "computeIntensive", KernelLanguage.Cuda, "computeIntensive");
+                var kernelDefinition = new KernelDefinition($"computeIntensive_{optLevel}", kernelSourceObj, options);
 
                 var options = new CompilationOptions
                 {

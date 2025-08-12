@@ -52,14 +52,13 @@ namespace SimpleExample
 
         private static void InitializeData(Span<float> a, Span<float> b)
         {
-#pragma warning disable CA5394 // Do not use insecure randomness - Sample code for demonstration
-            var random = new Random(42);
+            // Use a deterministic seed for reproducible results in sample code
+            var random = new Random(42); // This is intentional for demo purposes - provides consistent output
             for (var i = 0; i < a.Length; i++)
             {
                 a[i] = (float)random.NextDouble() * 100;
                 b[i] = (float)random.NextDouble() * 100;
             }
-#pragma warning restore CA5394
         }
 
         private static void AddVectors(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)

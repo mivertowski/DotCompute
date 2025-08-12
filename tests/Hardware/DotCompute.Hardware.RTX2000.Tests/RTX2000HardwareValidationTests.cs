@@ -13,9 +13,12 @@ namespace DotCompute.Hardware.RTX2000.Tests;
 /// Comprehensive hardware validation tests specifically for NVIDIA RTX 2000 Ada Generation GPU.
 /// Tests actual CUDA kernel compilation, execution, and hardware-specific features.
 /// </summary>
+[Trait("Category", "HardwareRequired")]
+[Trait("Category", "CudaRequired")]
 [Trait("Category", "RTX2000")]
 [Trait("Category", "HardwareValidation")]
-[Trait("Category", "RequiresGPU")]
+[Trait("Category", "Hardware")]
+[Collection("Hardware")]
 public class RTX2000HardwareValidationTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
@@ -125,6 +128,8 @@ public class RTX2000HardwareValidationTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "RTX2000")]
     public void ValidateComputeCapability89_ShouldConfirmRTX2000AdaGen()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -137,6 +142,8 @@ public class RTX2000HardwareValidationTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "RTX2000")]
     public void ValidateGDDR6Memory_ShouldReportCorrectSpecifications()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -172,6 +179,9 @@ public class RTX2000HardwareValidationTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "RTX2000")]
+    [Trait("Category", "Performance")]
     public async Task StressTestMemoryAllocation_ShouldHandleLargeAllocations()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -229,6 +239,9 @@ public class RTX2000HardwareValidationTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "RTX2000")]
+    [Trait("Category", "Performance")]
     public async Task MeasureActualMemoryBandwidth_ShouldMeetGDDR6Specifications()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -331,6 +344,8 @@ public class RTX2000HardwareValidationTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "RTX2000")]
     public async Task ValidateMultiprocessorUtilization_ShouldUseAllSMs()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -358,6 +373,9 @@ public class RTX2000HardwareValidationTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "RTX2000")]
+    [Trait("Category", "Performance")]
     public async Task TestConcurrentKernelExecution_ShouldSupportMultipleStreams()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
@@ -437,6 +455,8 @@ public class RTX2000HardwareValidationTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
+    [Trait("Category", "RTX2000")]
     public async Task ValidateErrorHandling_ShouldRecoverGracefully()
     {
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");

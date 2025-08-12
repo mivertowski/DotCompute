@@ -10,8 +10,9 @@ namespace DotCompute.Hardware.OpenCL.Tests;
 /// These tests require OpenCL runtime to be installed.
 /// </summary>
 [Collection("Hardware")]
-[Trait("Category", "RequiresGPU")]
-[Trait("Category", "OpenCL")]
+[Trait("Category", "HardwareRequired")]
+[Trait("Category", "OpenCLRequired")]
+[Trait("Category", "Hardware")]
 public class OpenCLHardwareTests
 {
     private readonly ITestOutputHelper _output;
@@ -22,6 +23,7 @@ public class OpenCLHardwareTests
     }
 
     [SkippableFact]
+    [Trait("Category", "OpenCLRequired")]
     public void Should_DetectOpenCLPlatforms()
     {
         Skip.IfNot(IsOpenCLAvailable(), "OpenCL runtime not available");
@@ -36,6 +38,7 @@ public class OpenCLHardwareTests
     }
 
     [SkippableFact]
+    [Trait("Category", "OpenCLRequired")]
     public void Should_GetOpenCLDevices()
     {
         Skip.IfNot(IsOpenCLAvailable(), "OpenCL runtime not available");
@@ -62,6 +65,7 @@ public class OpenCLHardwareTests
     }
 
     [SkippableFact]
+    [Trait("Category", "OpenCLRequired")]
     public void Should_CreateOpenCLContext()
     {
         Skip.IfNot(IsOpenCLAvailable(), "OpenCL runtime not available");

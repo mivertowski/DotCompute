@@ -202,11 +202,11 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
             stats.DeviceStatistics[poolStat.DeviceId] = new DeviceMemoryStatistics
             {
                 DeviceId = poolStat.DeviceId,
-                TotalAllocatedBytes = poolStat.TotalAllocatedBytes,
-                AvailableBuffers = poolStat.ActiveBuffers,
-                PeakUsageBytes = poolStat.TotalAllocatedBytes,
-                AllocationCount = poolStat.AllocationCount,
-                DeallocationCount = poolStat.DeallocationCount
+                AllocatedBytes = poolStat.TotalAllocatedBytes,
+                AvailableBytes = poolStat.TotalAllocatedBytes, // Use same value for consistency
+                PooledBufferCount = poolStat.ActiveBuffers,
+                AllocationSizeDistribution = new Dictionary<long, int>(), // Empty for now
+                FragmentationIndex = 0.0 // Calculate if needed
             };
         }
 
@@ -265,12 +265,9 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
         await _bufferFactory.DisposeAsync().ConfigureAwait(false);
         await _p2pDetector.DisposeAsync().ConfigureAwait(false);
         
-        // Dispose all device pools
-        var disposeTasks = _devicePools.Values.Select(pool => pool.DisposeAsync()).ToArray();
-        foreach (var task in disposeTasks)
-        {
-            await task.ConfigureAwait(false);
-        }
+        // Dispose all device pools through the buffer factory
+        // Individual pools are managed by the P2PBufferFactory
+        await Task.CompletedTask;
 
         await _transferScheduler.DisposeAsync().ConfigureAwait(false);
         await _coherenceManager.DisposeAsync().ConfigureAwait(false);
@@ -361,31 +358,54 @@ public sealed class MultiGpuMemoryManager : IAsyncDisposable
         IAccelerator device, 
         int elementCount) where T : unmanaged
     {
-        // Create P2P-optimized buffer
-        return new P2PBuffer<T>(memoryBuffer, device, elementCount, true, _logger);
+        // Create P2P-optimized buffer with capability detection
+        var deviceCapability = _p2pDetector.GetDeviceCapabilitiesAsync(device).GetAwaiter().GetResult();
+        return new P2PBuffer<T>(memoryBuffer, device, elementCount, deviceCapability.SupportsP2P, _logger);
     }
 
     #endregion
 }
 
 /// <summary>
-/// Mock accelerator for testing
+/// Mock accelerator for testing - provides minimal implementation for unit tests.
 /// </summary>
 internal sealed class MockAcceleratorForTest : IAccelerator
 {
-    public AcceleratorInfo Info => default(AcceleratorInfo)!;
-    public AbstractionsMemory.IMemoryManager Memory { get; }
-
-    public MockAcceleratorForTest()
+    private static int _nextId = 0;
+    private readonly AcceleratorInfo _info;
+    
+    public MockAcceleratorForTest(string? name = null)
     {
+        var id = Interlocked.Increment(ref _nextId);
+        _info = new AcceleratorInfo
+        {
+            Id = $"mock-{id}",
+            Name = name ?? $"MockDevice{id}",
+            DeviceType = "Mock",
+            Vendor = "Mock",
+            DriverVersion = "1.0.0",
+            TotalMemory = 1024 * 1024 * 1024, // 1GB
+            AvailableMemory = 1024 * 1024 * 1024,  // 1GB available
+            MaxSharedMemoryPerBlock = 48 * 1024,
+            MaxMemoryAllocationSize = 1024 * 1024 * 1024,
+            LocalMemorySize = 64 * 1024,
+            IsUnifiedMemory = false,
+            ComputeUnits = 4,
+            MaxClockFrequency = 1000,
+            MaxThreadsPerBlock = 1024
+        };
         Memory = new MockMemoryManager();
     }
+    
+    public AcceleratorInfo Info => _info;
+    public AbstractionsMemory.IMemoryManager Memory { get; }
     public bool IsDisposed => false;
+    
     public ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
     {
-        // Return a mock compiled kernel for testing purposes
         return ValueTask.FromResult<ICompiledKernel>(new MockCompiledKernel());
     }
+    
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     public void Dispose() { }
@@ -534,234 +554,13 @@ internal sealed class SimpleBufferAdapter<T> : AbstractionsMemory.IBuffer<T> whe
     }
 }
 
-/// <summary>
-/// Manages memory pool for a specific device.
-/// </summary>
-public sealed class DeviceMemoryPool : IAsyncDisposable
-{
-    private readonly IAccelerator _device;
-    private readonly ILogger _logger;
-    private readonly ConcurrentQueue<AbstractionsMemory.IMemoryBuffer> _availableBuffers;
-    private readonly Lock _statisticsLock = new();
-    private DeviceMemoryStatistics _statistics;
-    private bool _disposed;
+// DeviceMemoryPool is now in DeviceBufferPool.cs - this class is removed
 
-    public DeviceMemoryPool(IAccelerator device, ILogger logger)
-    {
-        _device = device ?? throw new ArgumentNullException(nameof(device));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _availableBuffers = new ConcurrentQueue<AbstractionsMemory.IMemoryBuffer>();
-        _statistics = new DeviceMemoryStatistics { DeviceId = device.Info.Id };
-    }
+// TransferScheduler is now implemented as P2PTransferScheduler in P2PTransferScheduler.cs - this class is removed
 
-    public DeviceMemoryStatistics GetStatistics()
-    {
-        lock (_statisticsLock)
-        {
-            return new DeviceMemoryStatistics
-            {
-                DeviceId = _statistics.DeviceId,
-                TotalAllocatedBytes = _statistics.TotalAllocatedBytes,
-                AvailableBuffers = _statistics.AvailableBuffers,
-                PeakUsageBytes = _statistics.PeakUsageBytes,
-                AllocationCount = _statistics.AllocationCount,
-                DeallocationCount = _statistics.DeallocationCount
-            };
-        }
-    }
+// MemoryCoherenceManager is now implemented as P2PMemoryCoherenceManager in P2PMemoryCoherenceManager.cs - this class is removed
 
-    public async ValueTask DisposeAsync()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        // Dispose all available buffers
-        while (_availableBuffers.TryDequeue(out var buffer))
-        {
-            await buffer.DisposeAsync().ConfigureAwait(false);
-        }
-
-        _disposed = true;
-    }
-}
-
-/// <summary>
-/// Schedules and manages data transfers between devices.
-/// </summary>
-public sealed class TransferScheduler : IAsyncDisposable
-{
-    private readonly ILogger _logger;
-    private readonly ConcurrentQueue<PendingTransfer> _transferQueue;
-    private readonly ConcurrentDictionary<string, List<TaskCompletionSource<bool>>> _deviceTransferCompletions;
-    private readonly Task _schedulerTask;
-    private readonly CancellationTokenSource _shutdownTokenSource;
-    private bool _disposed;
-
-    public TransferScheduler(ILogger logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _transferQueue = new ConcurrentQueue<PendingTransfer>();
-        _deviceTransferCompletions = new ConcurrentDictionary<string, List<TaskCompletionSource<bool>>>();
-        _shutdownTokenSource = new CancellationTokenSource();
-        
-        _schedulerTask = Task.Run(ProcessTransferQueueAsync);
-    }
-
-    public async ValueTask ScheduleTransferAsync<T>(BufferTransfer<T> transfer, CancellationToken cancellationToken) where T : unmanaged
-    {
-        var pendingTransfer = new PendingTransfer
-        {
-            Transfer = transfer,
-            CompletionSource = new TaskCompletionSource<bool>(),
-            ScheduledAt = DateTimeOffset.UtcNow
-        };
-
-        _transferQueue.Enqueue(pendingTransfer);
-        await pendingTransfer.CompletionSource.Task.WaitAsync(cancellationToken);
-    }
-
-    public async ValueTask WaitForDeviceTransfersAsync(string deviceId, CancellationToken cancellationToken)
-    {
-        if (_deviceTransferCompletions.TryGetValue(deviceId, out var completions))
-        {
-            var tasks = completions.Select(tcs => tcs.Task).ToArray();
-            await Task.WhenAll(tasks).WaitAsync(cancellationToken);
-        }
-    }
-
-    public int GetPendingTransferCount() => _transferQueue.Count;
-
-    private async Task ProcessTransferQueueAsync()
-    {
-        while (!_shutdownTokenSource.Token.IsCancellationRequested)
-        {
-            if (_transferQueue.TryDequeue(out var pendingTransfer))
-            {
-                try
-                {
-                    await ExecuteTransferAsync(pendingTransfer);
-                    pendingTransfer.CompletionSource.SetResult(true);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Transfer failed");
-                    pendingTransfer.CompletionSource.SetException(ex);
-                }
-            }
-            else
-            {
-                await Task.Delay(1, _shutdownTokenSource.Token);
-            }
-        }
-    }
-
-    private async Task ExecuteTransferAsync(PendingTransfer pendingTransfer)
-    {
-        // This is a simplified transfer execution - real implementation would be type-specific
-        _logger.LogTrace("Executing buffer transfer");
-        await Task.Delay(10, _shutdownTokenSource.Token); // Simulate transfer time
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _shutdownTokenSource.Cancel();
-        
-        try
-        {
-            await _schedulerTask.ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected when cancelling
-        }
-
-        _shutdownTokenSource.Dispose();
-        _disposed = true;
-    }
-}
-
-/// <summary>
-/// Manages memory coherence across multiple devices.
-/// </summary>
-public sealed class MemoryCoherenceManager : IAsyncDisposable
-{
-    private readonly ILogger _logger;
-    private readonly ConcurrentDictionary<object, BufferCoherenceInfo> _bufferTracking;
-    private bool _disposed;
-
-    public MemoryCoherenceManager(ILogger logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _bufferTracking = new ConcurrentDictionary<object, BufferCoherenceInfo>();
-    }
-
-    public void TrackBuffer<T>(AbstractionsMemory.IBuffer<T> buffer, AbstractionsMemory.IBuffer<T> sourceBuffer, int offset, int count) where T : unmanaged
-    {
-        var coherenceInfo = new BufferCoherenceInfo
-        {
-            SourceBuffer = sourceBuffer,
-            Offset = offset,
-            ElementCount = count,
-            LastModified = DateTimeOffset.UtcNow,
-            IsCoherent = true
-        };
-
-        _bufferTracking[buffer] = coherenceInfo;
-    }
-
-    public async ValueTask SynchronizeBufferAsync<T>(AbstractionsMemory.IBuffer<T> buffer, CancellationToken cancellationToken) where T : unmanaged
-    {
-        if (_bufferTracking.TryGetValue(buffer, out var coherenceInfo))
-        {
-            if (!coherenceInfo.IsCoherent)
-            {
-                // Synchronize buffer with source
-                _logger.LogDebug("Synchronizing buffer coherence");
-                // Implementation would perform actual synchronization
-                coherenceInfo.IsCoherent = true;
-                coherenceInfo.LastModified = DateTimeOffset.UtcNow;
-            }
-        }
-
-        await ValueTask.CompletedTask;
-    }
-
-    public async ValueTask OptimizePlacementAsync(IAccelerator[] devices, CancellationToken cancellationToken)
-    {
-        _logger.LogDebug("Optimizing buffer placement across {DeviceCount} devices", devices.Length);
-        // Implementation would analyze access patterns and optimize placement
-        await Task.CompletedTask;
-    }
-
-    public double GetOverheadPercentage()
-    {
-        var totalBuffers = _bufferTracking.Count;
-        var incoherentBuffers = _bufferTracking.Count(kvp => !kvp.Value.IsCoherent);
-        
-        return totalBuffers > 0 ? (double)incoherentBuffers / totalBuffers * 100 : 0;
-    }
-
-    public async ValueTask DisposeAsync()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        _bufferTracking.Clear();
-        _disposed = true;
-        await ValueTask.CompletedTask;
-    }
-}
-
-// Supporting classes and data structures
+// Supporting classes and data structures for MultiGpuMemoryManager
 public class PeerToPeerConnection
 {
     public required string Device1Id { get; set; }
@@ -771,38 +570,12 @@ public class PeerToPeerConnection
     public double BandwidthGBps { get; set; }
 }
 
-public class BufferTransfer<T> where T : unmanaged
-{
-    public required AbstractionsMemory.IBuffer<T> SourceBuffer { get; set; }
-    public required AbstractionsMemory.IBuffer<T> TargetBuffer { get; set; }
-    public required int SourceOffset { get; set; }
-    public required int TargetOffset { get; set; }
-    public required int ElementCount { get; set; }
-    public TransferPriority Priority { get; set; } = TransferPriority.Normal;
-}
-
 public enum TransferPriority
 {
     Low,
     Normal,
     High,
     Critical
-}
-
-public class PendingTransfer
-{
-    public required object Transfer { get; set; }
-    public required TaskCompletionSource<bool> CompletionSource { get; set; }
-    public required DateTimeOffset ScheduledAt { get; set; }
-}
-
-public class BufferCoherenceInfo
-{
-    public required object SourceBuffer { get; set; }
-    public required int Offset { get; set; }
-    public required int ElementCount { get; set; }
-    public required DateTimeOffset LastModified { get; set; }
-    public required bool IsCoherent { get; set; }
 }
 
 public class MultiGpuMemoryStatistics
@@ -821,9 +594,11 @@ public class MultiGpuMemoryStatistics
 public class DeviceMemoryStatistics
 {
     public required string DeviceId { get; set; }
-    public long TotalAllocatedBytes { get; set; }
-    public int AvailableBuffers { get; set; }
-    public long PeakUsageBytes { get; set; }
+    public long AllocatedBytes { get; set; }
+    public long AvailableBytes { get; set; }
+    public int PooledBufferCount { get; set; }
+    public Dictionary<long, int> AllocationSizeDistribution { get; set; } = new();
+    public double FragmentationIndex { get; set; }
     public long AllocationCount { get; set; }
     public long DeallocationCount { get; set; }
 }

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- Configuration for CI/CD environment testing -->
+  <RunConfiguration>
+    <MaxCpuCount>0</MaxCpuCount>
+    <ResultsDirectory>TestResults</ResultsDirectory>
+    <TargetPlatform>x64</TargetPlatform>
+    <TargetFramework>net9.0</TargetFramework>
+    <TestAdaptersPaths>%UserProfile%\.nuget\packages</TestAdaptersPaths>
+    <TreatNoTestsAsError>false</TreatNoTestsAsError>
+  </RunConfiguration>
+
+  <!-- MSTest Configuration -->
+  <MSTest>
+    <Parallelize>
+      <Workers>0</Workers>
+      <Scope>method</Scope>
+    </Parallelize>
+  </MSTest>
+
+  <!-- xUnit Configuration -->
+  <xUnit>
+    <ParallelizeAssembly>true</ParallelizeAssembly>
+    <ParallelizeTestCollections>true</ParallelizeTestCollections>
+    <MaxParallelThreads>0</MaxParallelThreads>
+  </xUnit>
+
+  <!-- Test Category Filters for CI/CD -->
+  <TestRunParameters>
+    <Parameter name="Environment" value="CI" />
+    <Parameter name="HardwareAvailable" value="false" />
+  </TestRunParameters>
+
+  <!-- Filter Configuration -->
+  <TestCaseFilter>
+    <!-- Include only mock/simulation tests, exclude hardware-dependent tests -->
+    (TestCategory=Mock|TestCategory=CI|TestCategory=Unit)&amp;TestCategory!=HardwareRequired&amp;TestCategory!=CudaRequired&amp;TestCategory!=OpenCLRequired&amp;TestCategory!=DirectComputeRequired&amp;TestCategory!=RTX2000
+  </TestCaseFilter>
+
+  <!-- Data Collection -->
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Configuration>
+          <CodeCoverage>
+            <ModulePaths>
+              <Include>
+                <ModulePath>.*DotCompute\..*\.dll$</ModulePath>
+              </Include>
+              <Exclude>
+                <ModulePath>.*tests.*</ModulePath>
+                <ModulePath>.*\.tests\..*</ModulePath>
+              </Exclude>
+            </ModulePaths>
+            <Functions>
+              <Exclude>
+                <Function>.*\.get_.*</Function>
+                <Function>.*\.set_.*</Function>
+              </Exclude>
+            </Functions>
+            <UseVerifiableInstrumentation>True</UseVerifiableInstrumentation>
+            <AllowLowIntegrityProcesses>True</AllowLowIntegrityProcesses>
+            <CollectFromChildProcesses>True</CollectFromChildProcesses>
+            <CollectAspDotNet>False</CollectAspDotNet>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

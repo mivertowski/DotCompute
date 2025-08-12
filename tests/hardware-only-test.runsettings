@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RunSettings>
+  <!-- Configuration for hardware-only testing (CUDA, OpenCL, DirectCompute) -->
+  <RunConfiguration>
+    <MaxCpuCount>1</MaxCpuCount>
+    <ResultsDirectory>TestResults</ResultsDirectory>
+    <TargetPlatform>x64</TargetPlatform>
+    <TargetFramework>net9.0</TargetFramework>
+    <TestAdaptersPaths>%UserProfile%\.nuget\packages</TestAdaptersPaths>
+    <TreatNoTestsAsError>false</TreatNoTestsAsError>
+    <!-- Longer timeout for hardware tests -->
+    <TestSessionTimeout>600000</TestSessionTimeout>
+  </RunConfiguration>
+
+  <!-- MSTest Configuration -->
+  <MSTest>
+    <Parallelize>
+      <Workers>1</Workers>
+      <Scope>method</Scope>
+    </Parallelize>
+  </MSTest>
+
+  <!-- xUnit Configuration - No parallelization for hardware tests to avoid conflicts -->
+  <xUnit>
+    <ParallelizeAssembly>false</ParallelizeAssembly>
+    <ParallelizeTestCollections>false</ParallelizeTestCollections>
+    <MaxParallelThreads>1</MaxParallelThreads>
+  </xUnit>
+
+  <!-- Test Category Filters for Hardware Testing -->
+  <TestRunParameters>
+    <Parameter name="Environment" value="Hardware" />
+    <Parameter name="HardwareAvailable" value="true" />
+    <Parameter name="CudaAvailable" value="auto-detect" />
+    <Parameter name="OpenCLAvailable" value="auto-detect" />
+    <Parameter name="DirectComputeAvailable" value="auto-detect" />
+  </TestRunParameters>
+
+  <!-- Filter Configuration -->
+  <TestCaseFilter>
+    <!-- Include ONLY hardware-dependent tests -->
+    TestCategory=HardwareRequired|TestCategory=CudaRequired|TestCategory=OpenCLRequired|TestCategory=DirectComputeRequired|TestCategory=RTX2000
+  </TestCaseFilter>
+
+  <!-- Data Collection -->
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="Code Coverage" uri="datacollector://Microsoft/CodeCoverage/2.0" assemblyQualifiedName="Microsoft.VisualStudio.Coverage.DynamicCoverageDataCollector, Microsoft.VisualStudio.TraceCollector, Version=11.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+        <Configuration>
+          <CodeCoverage>
+            <ModulePaths>
+              <Include>
+                <ModulePath>.*DotCompute\..*\.dll$</ModulePath>
+              </Include>
+              <Exclude>
+                <ModulePath>.*tests.*</ModulePath>
+                <ModulePath>.*\.tests\..*</ModulePath>
+              </Exclude>
+            </ModulePaths>
+            <Functions>
+              <Exclude>
+                <Function>.*\.get_.*</Function>
+                <Function>.*\.set_.*</Function>
+              </Exclude>
+            </Functions>
+            <UseVerifiableInstrumentation>True</UseVerifiableInstrumentation>
+            <AllowLowIntegrityProcesses>True</AllowLowIntegrityProcesses>
+            <CollectFromChildProcesses>True</CollectFromChildProcesses>
+            <CollectAspDotNet>False</CollectAspDotNet>
+          </CodeCoverage>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+</RunSettings>

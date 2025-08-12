@@ -527,6 +527,7 @@ public class ExpressionOptimizer : IExpressionOptimizer
         public override string Name => _name;
         public override Type DeclaringType => _declaringType;
         public override Type ReturnType => _returnType;
+        public override Type? ReflectedType => _declaringType;
         public MethodCallExpression FirstMethod => _firstMethod;
         public MethodCallExpression SecondMethod => _secondMethod;
 

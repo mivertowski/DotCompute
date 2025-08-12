@@ -1,0 +1,220 @@
+name: Hardware Tests (Optional)
+
+on:
+  schedule:
+    # Run weekly on Sundays at 6 AM UTC (for self-hosted runners with hardware)
+    - cron: '0 6 * * 0'
+  workflow_dispatch:
+    inputs:
+      test_cuda:
+        description: 'Run CUDA tests'
+        required: false
+        default: 'true'
+        type: boolean
+      test_opencl:
+        description: 'Run OpenCL tests'
+        required: false
+        default: 'true'
+        type: boolean
+      test_directcompute:
+        description: 'Run DirectCompute tests'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  hardware-detection:
+    name: Detect Available Hardware
+    runs-on: self-hosted # Requires self-hosted runner with GPU
+    outputs:
+      has-cuda: ${{ steps.detect.outputs.has-cuda }}
+      has-opencl: ${{ steps.detect.outputs.has-opencl }}
+      has-directcompute: ${{ steps.detect.outputs.has-directcompute }}
+      
+    steps:
+    - name: Detect hardware
+      id: detect
+      run: |
+        # Check for CUDA
+        if command -v nvidia-smi &> /dev/null && nvidia-smi -L | grep -q "GPU"; then
+          echo "has-cuda=true" >> $GITHUB_OUTPUT
+          echo "✅ CUDA GPU detected"
+        else
+          echo "has-cuda=false" >> $GITHUB_OUTPUT
+          echo "❌ No CUDA GPU detected"
+        fi
+        
+        # Check for OpenCL
+        if command -v clinfo &> /dev/null && clinfo -l | grep -q "Platform"; then
+          echo "has-opencl=true" >> $GITHUB_OUTPUT
+          echo "✅ OpenCL platforms detected"
+        else
+          echo "has-opencl=false" >> $GITHUB_OUTPUT
+          echo "❌ No OpenCL platforms detected"
+        fi
+        
+        # Check for DirectCompute (Windows only)
+        if [[ "$RUNNER_OS" == "Windows" ]]; then
+          echo "has-directcompute=true" >> $GITHUB_OUTPUT
+          echo "✅ Windows detected - DirectCompute may be available"
+        else
+          echo "has-directcompute=false" >> $GITHUB_OUTPUT
+          echo "❌ Not Windows - DirectCompute not available"
+        fi
+
+  cuda-tests:
+    name: CUDA Hardware Tests
+    runs-on: self-hosted
+    needs: hardware-detection
+    if: needs.hardware-detection.outputs.has-cuda == 'true' && (github.event.inputs.test_cuda != 'false')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Run CUDA tests
+      run: |
+        dotnet test --configuration Release \
+          --filter "TestCategory=CudaRequired" \
+          --logger "trx;LogFileName=cuda-test-results.trx" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/CUDA \
+          --verbosity normal
+      
+    - name: Upload CUDA test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: cuda-test-results
+        path: TestResults/CUDA/
+
+  opencl-tests:
+    name: OpenCL Hardware Tests
+    runs-on: self-hosted
+    needs: hardware-detection
+    if: needs.hardware-detection.outputs.has-opencl == 'true' && (github.event.inputs.test_opencl != 'false')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Run OpenCL tests
+      run: |
+        dotnet test --configuration Release \
+          --filter "TestCategory=OpenCLRequired" \
+          --logger "trx;LogFileName=opencl-test-results.trx" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/OpenCL \
+          --verbosity normal
+      
+    - name: Upload OpenCL test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: opencl-test-results
+        path: TestResults/OpenCL/
+
+  directcompute-tests:
+    name: DirectCompute Hardware Tests
+    runs-on: self-hosted
+    needs: hardware-detection
+    if: needs.hardware-detection.outputs.has-directcompute == 'true' && (github.event.inputs.test_directcompute == 'true')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore
+      
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore
+      
+    - name: Run DirectCompute tests
+      run: |
+        dotnet test --configuration Release \
+          --filter "TestCategory=DirectComputeRequired" \
+          --logger "trx;LogFileName=directcompute-test-results.trx" \
+          --logger "console;verbosity=normal" \
+          --results-directory TestResults/DirectCompute \
+          --verbosity normal
+      
+    - name: Upload DirectCompute test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: directcompute-test-results
+        path: TestResults/DirectCompute/
+
+  hardware-summary:
+    name: Hardware Test Summary
+    runs-on: ubuntu-latest
+    needs: [hardware-detection, cuda-tests, opencl-tests, directcompute-tests]
+    if: always()
+    
+    steps:
+    - name: Display hardware test summary
+      run: |
+        echo "## Hardware Test Results Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [[ "${{ needs.hardware-detection.outputs.has-cuda }}" == "true" ]]; then
+          if [[ "${{ needs.cuda-tests.result }}" == "success" ]]; then
+            echo "✅ **CUDA Tests:** Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **CUDA Tests:** Failed or Skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "⏭️ **CUDA Tests:** Skipped (No CUDA GPU detected)" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [[ "${{ needs.hardware-detection.outputs.has-opencl }}" == "true" ]]; then
+          if [[ "${{ needs.opencl-tests.result }}" == "success" ]]; then
+            echo "✅ **OpenCL Tests:** Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **OpenCL Tests:** Failed or Skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "⏭️ **OpenCL Tests:** Skipped (No OpenCL platforms detected)" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [[ "${{ needs.hardware-detection.outputs.has-directcompute }}" == "true" ]]; then
+          if [[ "${{ needs.directcompute-tests.result }}" == "success" ]]; then
+            echo "✅ **DirectCompute Tests:** Passed" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **DirectCompute Tests:** Failed or Skipped" >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "⏭️ **DirectCompute Tests:** Skipped (Windows not available)" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "💡 **Note:** Hardware tests require self-hosted runners with appropriate GPU hardware." >> $GITHUB_STEP_SUMMARY
+        echo "These tests are optional and run separately from the main CI pipeline." >> $GITHUB_STEP_SUMMARY

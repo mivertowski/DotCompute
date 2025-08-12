@@ -14,6 +14,10 @@ namespace DotCompute.Hardware.Cuda.Tests;
 /// <summary>
 /// Basic validation tests for CUDA backend functionality
 /// </summary>
+[Trait("Category", "HardwareRequired")]
+[Trait("Category", "CudaRequired")]
+[Trait("Category", "Hardware")]
+[Collection("Hardware")]
 public class CudaBasicTests : IDisposable
 {
     private readonly ILogger<CudaBasicTests> _logger;
@@ -40,6 +44,7 @@ public class CudaBasicTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public void CudaRuntime_ShouldBeAvailable()
     {
         Assert.True(CudaBackend.IsAvailable(), "CUDA runtime should be available");
@@ -51,6 +56,7 @@ public class CudaBasicTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public void CudaDevice_ShouldHaveValidProperties()
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
@@ -58,7 +64,7 @@ public class CudaBasicTests : IDisposable
         Assert.NotNull(_accelerator);
         var info = _accelerator.Info;
 
-        Assert.Equal(AcceleratorType.CUDA, info.Type);
+        Assert.Equal("CUDA", info.Type);
         Assert.False(string.IsNullOrEmpty(info.Name));
         Assert.True(info.TotalMemory > 0);
         Assert.True(info.ComputeUnits > 0);
@@ -71,6 +77,7 @@ public class CudaBasicTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public async Task MemoryOperations_ShouldWork()
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
@@ -110,6 +117,7 @@ public class CudaBasicTests : IDisposable
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public async Task KernelCompilation_ShouldWork()
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
@@ -137,6 +145,7 @@ extern ""C"" __global__ void addOne(float* data, int n)
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public async Task SimpleKernel_ShouldExecute()
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
@@ -194,6 +203,7 @@ extern ""C"" __global__ void multiply(float* data, float factor, int n)
     }
 
     [SkippableFact]
+    [Trait("Category", "CudaRequired")]
     public async Task LaunchConfiguration_ShouldOptimizeCorrectly()
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");

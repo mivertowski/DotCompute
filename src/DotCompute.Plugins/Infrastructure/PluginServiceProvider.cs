@@ -404,7 +404,10 @@ public sealed class PluginServiceProvider : IServiceProvider, IDisposable
             _assemblyScopes.Clear();
 
             // Dispose plugin service provider
-            _pluginServiceProvider?.Dispose();
+            if (_pluginServiceProvider is IDisposable disposableServiceProvider)
+            {
+                disposableServiceProvider.Dispose();
+            }
 
             // Clear singleton cache
             foreach (var singleton in _singletonCache.Values.OfType<IDisposable>())

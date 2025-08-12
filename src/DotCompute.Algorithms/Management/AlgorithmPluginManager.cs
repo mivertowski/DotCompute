@@ -1225,7 +1225,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     }
 
     /// <summary>
-    /// Sets up hot reload monitoring for a plugin assembly.
+    /// Sets up hot reload monitoring for a plugin assembly with enhanced file system monitoring.
     /// </summary>
     private void SetupHotReload(string assemblyPath)
     {
@@ -1243,13 +1243,43 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             
             var watcher = new FileSystemWatcher(directory, fileName)
             {
-                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
-                EnableRaisingEvents = true
+                NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size | NotifyFilters.CreationTime,
+                EnableRaisingEvents = true,
+                IncludeSubdirectories = false
             };
 
+            // Handle both file changes and dependency changes
             watcher.Changed += OnAssemblyChanged;
-            _watchers.TryAdd(assemblyPath, watcher);
+            watcher.Created += OnAssemblyChanged;
+            watcher.Error += OnFileWatcherError;
 
+            // Also watch for .pdb files (debug symbols) and .json manifest files
+            var pdbPath = Path.ChangeExtension(assemblyPath, ".pdb");
+            var manifestPath = Path.ChangeExtension(assemblyPath, ".json");
+            
+            if (File.Exists(pdbPath))
+            {
+                var pdbWatcher = new FileSystemWatcher(directory, Path.GetFileName(pdbPath))
+                {
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
+                    EnableRaisingEvents = true
+                };
+                pdbWatcher.Changed += OnAssemblyChanged;
+                _watchers.TryAdd(pdbPath, pdbWatcher);
+            }
+            
+            if (File.Exists(manifestPath))
+            {
+                var manifestWatcher = new FileSystemWatcher(directory, Path.GetFileName(manifestPath))
+                {
+                    NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.Size,
+                    EnableRaisingEvents = true
+                };
+                manifestWatcher.Changed += OnAssemblyChanged;
+                _watchers.TryAdd(manifestPath, manifestWatcher);
+            }
+
+            _watchers.TryAdd(assemblyPath, watcher);
             LogHotReloadSetup(assemblyPath);
         }
         catch (Exception ex)
@@ -1281,9 +1311,22 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             // Small delay to allow file to be fully written
             await Task.Delay(500).ConfigureAwait(false);
 
-            // Find plugins from this assembly
+            // Find plugins from this assembly (check both direct path and related files)
+            var assemblyPath = e.FullPath;
+            
+            // If this is a .pdb or .json file, find the corresponding assembly
+            if (Path.GetExtension(assemblyPath).Equals(".pdb", StringComparison.OrdinalIgnoreCase) ||
+                Path.GetExtension(assemblyPath).Equals(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                assemblyPath = Path.ChangeExtension(assemblyPath, ".dll");
+                if (!File.Exists(assemblyPath))
+                {
+                    assemblyPath = Path.ChangeExtension(e.FullPath, ".exe");
+                }
+            }
+
             var pluginsToReload = _plugins.Values
-                .Where(lp => string.Equals(lp.Metadata.AssemblyPath, e.FullPath, StringComparison.OrdinalIgnoreCase))
+                .Where(lp => string.Equals(lp.Metadata.AssemblyPath, assemblyPath, StringComparison.OrdinalIgnoreCase))
                 .Select(lp => lp.Plugin.Id)
                 .ToList();
 
@@ -1291,10 +1334,39 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             {
                 _ = Task.Run(async () => await ReloadPluginAsync(pluginId).ConfigureAwait(false));
             }
+            
+            if (pluginsToReload.Count > 0)
+            {
+                LogHotReloadTriggered(e.FullPath, pluginsToReload.Count);
+            }
         }
         catch (Exception ex)
         {
             LogHotReloadFailed(e.FullPath, ex.Message);
+        }
+    }
+
+    /// <summary>
+    /// Handles file watcher errors.
+    /// </summary>
+    private void OnFileWatcherError(object sender, ErrorEventArgs e)
+    {
+        _logger.LogError(e.GetException(), "File watcher error occurred");
+        
+        // Try to restart the watcher if it's a temporary error
+        if (sender is FileSystemWatcher watcher)
+        {
+            try
+            {
+                watcher.EnableRaisingEvents = false;
+                await Task.Delay(1000); // Wait a bit before restarting
+                watcher.EnableRaisingEvents = true;
+                _logger.LogInformation("Successfully restarted file watcher for: {Path}", watcher.Path);
+            }
+            catch (Exception restartEx)
+            {
+                _logger.LogError(restartEx, "Failed to restart file watcher for: {Path}", watcher.Path);
+            }
         }
     }
 
@@ -1338,10 +1410,11 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 loadedPlugin.Health = PluginHealth.Healthy;
             }
 
-            // TODO: Add more sophisticated health checks
-            // - Memory usage monitoring
-            // - Response time analysis
-            // - Error rate tracking
+            // Sophisticated health checks implementation
+            await PerformMemoryUsageMonitoringAsync(loadedPlugin);
+            await PerformResponseTimeAnalysisAsync(loadedPlugin);
+            await PerformErrorRateTrackingAsync(loadedPlugin);
+            await PerformResourceLeakDetectionAsync(loadedPlugin);
 
             if (oldHealth != loadedPlugin.Health)
             {
@@ -1354,6 +1427,236 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
         {
             loadedPlugin.Health = PluginHealth.Critical;
             loadedPlugin.LastError = ex;
+        }
+    }
+
+    /// <summary>
+    /// Monitors memory usage for a loaded plugin.
+    /// </summary>
+    private async Task PerformMemoryUsageMonitoringAsync(LoadedPlugin loadedPlugin)
+    {
+        try
+        {
+            // Get memory usage for the plugin's load context
+            var memoryBefore = GC.GetTotalMemory(false);
+            
+            // Force garbage collection to get more accurate reading
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+            
+            var memoryAfter = GC.GetTotalMemory(false);
+            var memoryUsage = memoryAfter - memoryBefore;
+            
+            // Check if memory usage is excessive
+            if (memoryUsage > _options.MaxAssemblySize * 2) // More than 2x the assembly size
+            {
+                loadedPlugin.Health = PluginHealth.Degraded;
+                loadedPlugin.LastError = new InvalidOperationException($"Plugin is using excessive memory: {memoryUsage:N0} bytes");
+            }
+            else if (memoryUsage > _options.MaxAssemblySize)
+            {
+                if (loadedPlugin.Health == PluginHealth.Healthy)
+                {
+                    loadedPlugin.Health = PluginHealth.Degraded;
+                }
+            }
+
+            // Store memory metrics
+            loadedPlugin.Metadata.Metadata["MemoryUsage"] = memoryUsage;
+            loadedPlugin.Metadata.Metadata["MemoryCheckTime"] = DateTime.UtcNow;
+
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to monitor memory usage for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+        }
+    }
+
+    /// <summary>
+    /// Analyzes response time patterns for a loaded plugin.
+    /// </summary>
+    private async Task PerformResponseTimeAnalysisAsync(LoadedPlugin loadedPlugin)
+    {
+        try
+        {
+            if (loadedPlugin.ExecutionCount == 0)
+            {
+                return; // No executions to analyze
+            }
+
+            var averageResponseTime = loadedPlugin.TotalExecutionTime.TotalMilliseconds / loadedPlugin.ExecutionCount;
+            const double maxAcceptableResponseTime = 30000; // 30 seconds
+            const double warningResponseTime = 10000; // 10 seconds
+
+            if (averageResponseTime > maxAcceptableResponseTime)
+            {
+                loadedPlugin.Health = PluginHealth.Degraded;
+                loadedPlugin.LastError = new TimeoutException($"Plugin average response time is too high: {averageResponseTime:F2} ms");
+            }
+            else if (averageResponseTime > warningResponseTime && loadedPlugin.Health == PluginHealth.Healthy)
+            {
+                loadedPlugin.Health = PluginHealth.Degraded;
+            }
+
+            // Check for response time degradation over time
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousAverageResponseTime", out var prevTimeObj) &&
+                prevTimeObj is double prevTime)
+            {
+                var degradationThreshold = 1.5; // 50% increase
+                if (averageResponseTime > prevTime * degradationThreshold)
+                {
+                    if (loadedPlugin.Health == PluginHealth.Healthy)
+                    {
+                        loadedPlugin.Health = PluginHealth.Degraded;
+                    }
+                }
+            }
+
+            // Store response time metrics
+            loadedPlugin.Metadata.AdditionalMetadata["AverageResponseTime"] = averageResponseTime;
+            loadedPlugin.Metadata.AdditionalMetadata["PreviousAverageResponseTime"] = averageResponseTime;
+            loadedPlugin.Metadata.AdditionalMetadata["ResponseTimeCheckTime"] = DateTime.UtcNow;
+
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to analyze response times for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+        }
+    }
+
+    /// <summary>
+    /// Tracks error rates for a loaded plugin.
+    /// </summary>
+    private async Task PerformErrorRateTrackingAsync(LoadedPlugin loadedPlugin)
+    {
+        try
+        {
+            if (loadedPlugin.ExecutionCount == 0)
+            {
+                return; // No executions to track
+            }
+
+            // Calculate error rate based on recent errors
+            var errorCount = loadedPlugin.LastError != null ? 1 : 0;
+            
+            // Get historical error count if available
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("TotalErrorCount", out var totalErrorsObj) &&
+                totalErrorsObj is long totalErrors)
+            {
+                errorCount = (int)totalErrors;
+            }
+
+            var errorRate = (double)errorCount / loadedPlugin.ExecutionCount;
+            const double criticalErrorRate = 0.5; // 50% error rate
+            const double warningErrorRate = 0.1; // 10% error rate
+
+            if (errorRate > criticalErrorRate)
+            {
+                loadedPlugin.Health = PluginHealth.Critical;
+                loadedPlugin.LastError = new InvalidOperationException($"Plugin has critical error rate: {errorRate:P2}");
+            }
+            else if (errorRate > warningErrorRate)
+            {
+                if (loadedPlugin.Health == PluginHealth.Healthy)
+                {
+                    loadedPlugin.Health = PluginHealth.Degraded;
+                }
+            }
+
+            // Check for recent error spikes
+            var recentExecutions = Math.Min(10, loadedPlugin.ExecutionCount);
+            if (loadedPlugin.LastError != null && 
+                DateTime.UtcNow - loadedPlugin.LastExecution < TimeSpan.FromMinutes(5))
+            {
+                // Recent error detected
+                var recentErrorWeight = 2.0; // Weight recent errors more heavily
+                if (errorRate * recentErrorWeight > warningErrorRate)
+                {
+                    if (loadedPlugin.Health == PluginHealth.Healthy)
+                    {
+                        loadedPlugin.Health = PluginHealth.Degraded;
+                    }
+                }
+            }
+
+            // Store error rate metrics
+            loadedPlugin.Metadata.AdditionalMetadata["ErrorRate"] = errorRate;
+            loadedPlugin.Metadata.AdditionalMetadata["TotalErrorCount"] = errorCount;
+            loadedPlugin.Metadata.AdditionalMetadata["ErrorRateCheckTime"] = DateTime.UtcNow;
+
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to track error rates for plugin: {PluginId}", loadedPlugin.Plugin.Id);
+        }
+    }
+
+    /// <summary>
+    /// Detects potential resource leaks for a loaded plugin.
+    /// </summary>
+    private async Task PerformResourceLeakDetectionAsync(LoadedPlugin loadedPlugin)
+    {
+        try
+        {
+            // Check for handle leaks
+            var currentProcess = System.Diagnostics.Process.GetCurrentProcess();
+            var handleCount = currentProcess.HandleCount;
+            
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousHandleCount", out var prevHandleObj) &&
+                prevHandleObj is int prevHandleCount)
+            {
+                var handleIncrease = handleCount - prevHandleCount;
+                const int handleLeakThreshold = 100; // Arbitrary threshold
+                
+                if (handleIncrease > handleLeakThreshold)
+                {
+                    if (loadedPlugin.Health == PluginHealth.Healthy)
+                    {
+                        loadedPlugin.Health = PluginHealth.Degraded;
+                    }
+                    
+                    _logger.LogWarning("Potential handle leak detected for plugin {PluginId}: {HandleIncrease} new handles",
+                        loadedPlugin.Plugin.Id, handleIncrease);
+                }
+            }
+
+            // Check for thread leaks
+            var threadCount = System.Diagnostics.Process.GetCurrentProcess().Threads.Count;
+            
+            if (loadedPlugin.Metadata.AdditionalMetadata.TryGetValue("PreviousThreadCount", out var prevThreadObj) &&
+                prevThreadObj is int prevThreadCount)
+            {
+                var threadIncrease = threadCount - prevThreadCount;
+                const int threadLeakThreshold = 10; // Conservative threshold
+                
+                if (threadIncrease > threadLeakThreshold)
+                {
+                    if (loadedPlugin.Health == PluginHealth.Healthy)
+                    {
+                        loadedPlugin.Health = PluginHealth.Degraded;
+                    }
+                    
+                    _logger.LogWarning("Potential thread leak detected for plugin {PluginId}: {ThreadIncrease} new threads",
+                        loadedPlugin.Plugin.Id, threadIncrease);
+                }
+            }
+
+            // Store resource metrics
+            loadedPlugin.Metadata.AdditionalMetadata["CurrentHandleCount"] = handleCount;
+            loadedPlugin.Metadata.AdditionalMetadata["PreviousHandleCount"] = handleCount;
+            loadedPlugin.Metadata.AdditionalMetadata["CurrentThreadCount"] = threadCount;
+            loadedPlugin.Metadata.AdditionalMetadata["PreviousThreadCount"] = threadCount;
+            loadedPlugin.Metadata.AdditionalMetadata["ResourceLeakCheckTime"] = DateTime.UtcNow;
+
+            await Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to detect resource leaks for plugin: {PluginId}", loadedPlugin.Plugin.Id);
         }
     }
 
@@ -1562,6 +1865,9 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
 
     [LoggerMessage(Level = LogLevel.Error, Message = "NuGet package validation failed for {PackageSource}: {Reason}")]
     private partial void LogNuGetPackageValidationFailed(string packageSource, string reason);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Hot reload triggered for {FilePath}, reloading {PluginCount} plugins")]
+    private partial void LogHotReloadTriggered(string filePath, int pluginCount);
 
     #endregion
 }

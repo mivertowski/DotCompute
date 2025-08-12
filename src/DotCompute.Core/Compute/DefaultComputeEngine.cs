@@ -29,8 +29,14 @@ internal class SimpleKernelSource : IKernelSource
 }
 
 /// <summary>
-/// Default implementation of the compute engine.
+/// Default implementation of the compute engine that provides unified kernel compilation
+/// and execution across different compute backends (CPU, CUDA, OpenCL, Metal, etc.).
 /// </summary>
+/// <remarks>
+/// This class serves as the primary entry point for kernel compilation and execution.
+/// It automatically detects available backends and provides a unified interface for
+/// compute operations across different hardware platforms.
+/// </remarks>
 public class DefaultComputeEngine : IComputeEngine
 {
     private readonly IAcceleratorManager _acceleratorManager;
@@ -38,6 +44,12 @@ public class DefaultComputeEngine : IComputeEngine
     private readonly List<ComputeBackendType> _availableBackends;
     private bool _disposed;
 
+    /// <summary>
+    /// Initializes a new instance of the DefaultComputeEngine class.
+    /// </summary>
+    /// <param name="acceleratorManager">The accelerator manager for device discovery and selection.</param>
+    /// <param name="logger">The logger instance for diagnostics and monitoring.</param>
+    /// <exception cref="ArgumentNullException">Thrown when acceleratorManager or logger is null.</exception>
     public DefaultComputeEngine(
         IAcceleratorManager acceleratorManager,
         ILogger<DefaultComputeEngine> logger)
@@ -49,10 +61,40 @@ public class DefaultComputeEngine : IComputeEngine
         _availableBackends = [];
     }
 
+    /// <summary>
+    /// Gets the array of available compute backends on this system.
+    /// </summary>
+    /// <returns>An array of ComputeBackendType values representing detected backends.</returns>
     public ComputeBackendType[] AvailableBackends => [.. _availableBackends];
 
+    /// <summary>
+    /// Gets the default compute backend to use for kernel execution.
+    /// Typically returns the first available GPU backend, falling back to CPU if needed.
+    /// </summary>
+    /// <returns>The default ComputeBackendType for this system.</returns>
     public ComputeBackendType DefaultBackend => _availableBackends.FirstOrDefault();
 
+    /// <summary>
+    /// Compiles a kernel from source code for execution on the optimal available backend.
+    /// </summary>
+    /// <param name="kernelSource">The kernel source code in OpenCL C, CUDA C, or HLSL.</param>
+    /// <param name="entryPoint">The entry point function name. Defaults to "main" if not specified.</param>
+    /// <param name="options">Compilation options including optimization level and debug information.</param>
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    /// <returns>A compiled kernel ready for execution.</returns>
+    /// <exception cref="ArgumentException">Thrown when kernelSource is null, empty, or whitespace.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when no accelerators are available for compilation.</exception>
+    /// <exception cref="CompilationException">Thrown when kernel compilation fails.</exception>
+    /// <example>
+    /// <code>
+    /// string kernelSource = @"
+    ///     __kernel void vector_add(__global const float* a, __global const float* b, __global float* result) {
+    ///         int gid = get_global_id(0);
+    ///         result[gid] = a[gid] + b[gid];
+    ///     }";
+    /// var compiledKernel = await engine.CompileKernelAsync(kernelSource, "vector_add");
+    /// </code>
+    /// </example>
     public async ValueTask<ICompiledKernel> CompileKernelAsync(
         string kernelSource,
         string? entryPoint = null,
@@ -105,6 +147,31 @@ public class DefaultComputeEngine : IComputeEngine
         return compiledKernel;
     }
 
+    /// <summary>
+    /// Executes a compiled kernel on the specified compute backend with the given arguments.
+    /// </summary>
+    /// <param name="kernel">The compiled kernel to execute.</param>
+    /// <param name="arguments">Array of arguments to pass to the kernel (buffers, scalars, etc.).</param>
+    /// <param name="backendType">The specific backend to use for execution.</param>
+    /// <param name="options">Execution options including work group sizing and profiling settings.</param>
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    /// <returns>A task representing the asynchronous execution operation.</returns>
+    /// <exception cref="ArgumentNullException">Thrown when kernel or arguments is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when the specified backend is not available.</exception>
+    /// <exception cref="KernelExecutionException">Thrown when kernel execution fails.</exception>
+    /// <example>
+    /// <code>
+    /// var buffer1 = await memoryManager.AllocateAsync&lt;float&gt;(1024);
+    /// var buffer2 = await memoryManager.AllocateAsync&lt;float&gt;(1024);
+    /// var result = await memoryManager.AllocateAsync&lt;float&gt;(1024);
+    /// 
+    /// await engine.ExecuteAsync(
+    ///     compiledKernel, 
+    ///     new object[] { buffer1, buffer2, result },
+    ///     ComputeBackendType.OpenCL,
+    ///     new ExecutionOptions { GlobalWorkSize = new long[] { 1024 } });
+    /// </code>
+    /// </example>
     public async ValueTask ExecuteAsync(
         ICompiledKernel kernel,
         object[] arguments,

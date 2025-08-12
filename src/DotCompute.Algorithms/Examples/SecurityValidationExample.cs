@@ -545,6 +545,8 @@ public static class SecurityValidationExample
         public long SizeInBytes { get; }
         
         public MemoryOptions Options { get; }
+        
+        public bool IsDisposed { get; private set; }
 
         public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default)
             where T : unmanaged
@@ -560,7 +562,16 @@ public static class SecurityValidationExample
             return ValueTask.CompletedTask;
         }
 
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            IsDisposed = true;
+        }
     }
 
     /// <summary>

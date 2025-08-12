@@ -186,6 +186,6 @@ public class AcceleratorValidationResult
         {
             IsValid = false,
             Errors = errors.ToList(),
-            Warnings = warnings?.ToList() ?? Array.Empty<string>()
+            Warnings = warnings?.ToList() ?? new List<string>()
         };
 }

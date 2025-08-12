@@ -268,7 +268,7 @@ public enum StealingStrategy
 /// <summary>
 /// Result of parallel execution.
 /// </summary>
-public class ParallelExecutionResult
+public partial class ParallelExecutionResult
 {
     /// <summary>Gets or sets whether the execution was successful.</summary>
     public required bool Success { get; set; }

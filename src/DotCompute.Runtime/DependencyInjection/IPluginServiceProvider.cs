@@ -213,8 +213,8 @@ public class PluginDependencyValidationResult
         {
             IsValid = false,
             Errors = errors.ToList(),
-            MissingDependencies = missingDependencies?.ToList() ?? Array.Empty<Type>(),
-            CircularDependencies = circularDependencies?.ToList() ?? Array.Empty<string>()
+            MissingDependencies = missingDependencies?.ToList() ?? new List<Type>(),
+            CircularDependencies = circularDependencies?.ToList() ?? new List<string>()
         };
 }
 

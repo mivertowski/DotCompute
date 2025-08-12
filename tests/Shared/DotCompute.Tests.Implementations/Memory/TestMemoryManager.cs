@@ -131,6 +131,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
     public IntPtr Handle { get; }
     public long SizeInBytes { get; }
     public MemoryOptions Options { get; }
+    public bool IsDisposed => _disposed;
 
     public async ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
@@ -230,6 +231,7 @@ public class TestMemoryView : IMemoryBuffer
 
     public long SizeInBytes { get; }
     public MemoryOptions Options { get; }
+    public bool IsDisposed => false; // Views don't manage disposal directly
 
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,

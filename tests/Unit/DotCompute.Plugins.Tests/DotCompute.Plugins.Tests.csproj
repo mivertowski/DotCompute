@@ -7,8 +7,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!-- Suppress code analysis warnings for test projects -->
-    <NoWarn>$(NoWarn);CS0067;CA1063;CA2000;CA1852;IDE0011;IDE0044;xUnit1031;CA1861;IDE2001;CA1034;IDE0040;CA1305;CA1806;IDE0059;CA2263</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

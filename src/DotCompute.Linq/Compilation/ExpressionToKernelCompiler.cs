@@ -40,7 +40,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
     /// <summary>
     /// Compiles an expression tree into a GPU kernel.
     /// </summary>
-    public async Task<IKernel> CompileExpressionAsync(
+    public async Task<Operators.IKernel> CompileExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
         CompilationOptions? options = null,
@@ -114,7 +114,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         };
     }
 
-    private async Task<IKernel> CompileFusedExpressionAsync(
+    private async Task<Operators.IKernel> CompileFusedExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
         FusionContext fusionContext,
@@ -141,7 +141,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         return _kernelFactory.CreateKernel(accelerator, definition);
     }
 
-    private async Task<IKernel> CompileSimpleExpressionAsync(
+    private async Task<Operators.IKernel> CompileSimpleExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
         ExpressionAnalysisResult analysis,
@@ -202,7 +202,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         return null;
     }
 
-    private KernelDefinition CreateFusedKernelDefinition(FusionContext fusionContext, Expression expression)
+    private Operators.KernelDefinition CreateFusedKernelDefinition(FusionContext fusionContext, Expression expression)
     {
         var name = $"fused_kernel_{string.Join("_", fusionContext.FusedOperations).ToLowerInvariant()}_{Guid.NewGuid():N}";
         
@@ -224,11 +224,11 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         // Add size parameter
         parameters.Add(new KernelParameter("size", typeof(int), ParameterDirection.In));
         
-        return new KernelDefinition
+        return new Operators.KernelDefinition
         {
             Name = name,
             Parameters = parameters.ToArray(),
-            Language = KernelLanguage.CSharp,
+            Language = Operators.KernelLanguage.CSharp,
             Metadata = new Dictionary<string, object>
             {
                 ["FusionType"] = fusionContext.FusionType,
@@ -238,7 +238,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         };
     }
 
-    private KernelDefinition CreateKernelDefinition(ExpressionAnalysisResult analysis, Expression expression)
+    private Operators.KernelDefinition CreateKernelDefinition(ExpressionAnalysisResult analysis, Expression expression)
     {
         var name = $"expression_kernel_{expression.NodeType.ToString().ToLowerInvariant()}_{Guid.NewGuid():N}";
         var parameters = new List<KernelParameter>();
@@ -252,11 +252,11 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         // Add output parameter
         parameters.Add(new KernelParameter("output", analysis.OutputType, ParameterDirection.Out));
         
-        return new KernelDefinition
+        return new Operators.KernelDefinition
         {
             Name = name,
             Parameters = parameters.ToArray(),
-            Language = KernelLanguage.CSharp,
+            Language = Operators.KernelLanguage.CSharp,
             Metadata = new Dictionary<string, object>
             {
                 ["OperationType"] = DetermineOperationType(analysis),
@@ -266,12 +266,12 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         };
     }
 
-    private static KernelGenerationContext CreateGenerationContext(
+    private static Operators.KernelGenerationContext CreateGenerationContext(
         IAccelerator accelerator, 
         CompilationOptions options,
         Dictionary<string, object>? additionalMetadata = null)
     {
-        var context = new KernelGenerationContext
+        var context = new Operators.KernelGenerationContext
         {
             DeviceInfo = accelerator.Info,
             UseSharedMemory = options.EnableMemoryCoalescing,
@@ -317,7 +317,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         return keyBuilder.ToString();
     }
 
-    private async Task<IKernel> CompileFromTemplate(
+    private async Task<Operators.IKernel> CompileFromTemplate(
         KernelTemplate template,
         IAccelerator accelerator,
         Expression expression,
@@ -407,7 +407,7 @@ public interface IExpressionToKernelCompiler
     /// <summary>
     /// Compiles an expression tree into a GPU kernel.
     /// </summary>
-    Task<IKernel> CompileExpressionAsync(
+    Task<Operators.IKernel> CompileExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
         CompilationOptions? options = null,
@@ -466,7 +466,7 @@ public class ExpressionResourceEstimate
 public class KernelTemplate
 {
     public string Name { get; init; } = string.Empty;
-    public Func<Expression, KernelDefinition> CreateDefinition { get; init; } = _ => new KernelDefinition();
+    public Func<Expression, Operators.KernelDefinition> CreateDefinition { get; init; } = _ => new Operators.KernelDefinition();
     public Dictionary<string, object> Metadata { get; init; } = new();
 }
 

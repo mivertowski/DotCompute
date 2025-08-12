@@ -2,24 +2,24 @@
 
 Welcome to DotCompute! This guide will help you set up and run your first high-performance compute application using .NET 9's Native AOT compilation.
 
-## 🎉 Phase 3 Complete - GPU Acceleration Ready!
+## 🎯 Current Status - Production-Ready CPU Backend!
 
-DotCompute Phase 3 is **100% complete** with exceptional GPU acceleration:
-- ✅ **23x SIMD speedup** achieved on CPU backend
-- ✅ **8-100x GPU acceleration** validated on CUDA and Metal
+DotCompute offers production-ready CPU acceleration with GPU backends in active development:
+- ✅ **8-23x SIMD speedup** achieved on CPU backend (Production Ready)
 - ✅ **Plugin system** with hot-reload development capabilities
 - ✅ **Source generators** for compile-time kernel optimization
-- ✅ **Production-ready** unified memory system and GPU backends
+- ✅ **Unified memory system** with 90%+ allocation reduction
+- 🚧 **GPU backends** (CUDA/Metal) have solid architecture, integration in progress
 
 ## 🎯 What You'll Learn
 
 By the end of this guide, you'll be able to:
-- ✅ Install and configure DotCompute with GPU acceleration
-- ✅ Write compute kernels in C# that run on CPU and GPU
-- ✅ Execute kernels with automatic backend selection (CPU/CUDA/Metal)
-- ✅ Achieve **8-100x performance improvements** with GPU acceleration
-- ✅ Use hot-reload plugins for rapid development
-- ✅ Deploy as a self-contained Native AOT application
+- ✅ Install and configure DotCompute for high-performance CPU computing
+- ✅ Write compute kernels in C# that leverage SIMD vectorization
+- ✅ Execute kernels with production-ready CPU backend
+- ✅ Achieve **8-23x performance improvements** with CPU acceleration
+- ✅ Use plugin system for extensible architecture
+- ✅ Deploy as a self-contained Native AOT application with sub-10ms startup
 
 ## 📋 Prerequisites
 
@@ -27,9 +27,9 @@ By the end of this guide, you'll be able to:
 - **.NET 9.0 SDK** or later ([Download](https://dotnet.microsoft.com/download/dotnet/9.0))
 - **Visual Studio 2022 17.8+** or **VS Code** with C# extension
 
-### Optional (for GPU acceleration) ✅ Production Ready
-- **CUDA Toolkit 12.0+** for NVIDIA GPU support (8-100x speedup)
-- **Metal SDK** for Apple GPU support on M1/M2/M3 (8-80x speedup)
+### Optional (for development/testing)
+- **CUDA Toolkit 12.0+** for NVIDIA GPU development (backend in progress)
+- **Metal SDK** for Apple GPU development (backend in progress)
 - **Plugin development** for custom backends and hot-reload
 - **Source generator tools** for advanced kernel optimization
 
@@ -54,19 +54,18 @@ dotnet new globaljson --sdk-version 9.0.100
 ### Step 2: Install DotCompute Packages
 
 ```bash
-# Core framework (required)
-dotnet add package DotCompute.Core
+# Core packages (Production Ready)
+dotnet add package DotCompute.Core            # Core abstractions
+dotnet add package DotCompute.Backends.CPU    # SIMD-optimized CPU backend
+dotnet add package DotCompute.Memory          # Unified memory system
 
-# CPU backend for vectorized operations
-dotnet add package DotCompute.Backends.CPU
+# Optional packages
+dotnet add package DotCompute.Plugins         # Plugin architecture
+dotnet add package DotCompute.Algorithms      # Algorithm library (CPU-optimized)
 
-# GPU acceleration (Production Ready)
-dotnet add package DotCompute.Backends.CUDA   # NVIDIA GPU support
-dotnet add package DotCompute.Backends.Metal  # Apple GPU support
-
-# Advanced features
-dotnet add package DotCompute.Plugins         # Plugin system
-dotnet add package DotCompute.Generators      # Source generators
+# GPU packages (In Development - for testing only)
+# dotnet add package DotCompute.Backends.CUDA   # NVIDIA GPU (In Development)
+# dotnet add package DotCompute.Backends.Metal  # Apple GPU (In Development)
 ```
 
 ### Step 3: Configure for Native AOT
@@ -188,14 +187,14 @@ public class Program
 # Build and run in development
 dotnet run
 
-# Expected output (GPU acceleration):
+# Expected output (CPU SIMD acceleration):
 # 🚀 DotCompute - Your First Kernel
 # ================================
 # 📊 Processing 1,000,000 elements...
-# ✅ Execution completed in 0.5ms
+# ✅ Execution completed in 15ms
 # 🎯 Results correct: True
-# ⚡ Throughput: 2000.0M ops/sec
-# 💻 Backend: CUDA (NVIDIA RTX 4090)
+# ⚡ Throughput: 66.7M ops/sec
+# 💻 Backend: CPU (AVX512 Vectorized)
 # 📈 Sample results: [0, 3, 6, 9, 12...]
 ```
 

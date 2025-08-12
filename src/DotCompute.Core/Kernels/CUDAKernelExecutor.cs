@@ -45,7 +45,17 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
     /// <inheritdoc/>
     public IAccelerator Accelerator => _accelerator;
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Executes a compiled CUDA kernel asynchronously with the specified arguments and configuration.
+    /// </summary>
+    /// <param name="kernel">The compiled CUDA kernel to execute.</param>
+    /// <param name="arguments">Array of kernel arguments including buffers and scalar values.</param>
+    /// <param name="executionConfig">Execution configuration specifying grid and block dimensions.</param>
+    /// <param name="cancellationToken">Cancellation token for the async operation.</param>
+    /// <returns>A kernel execution result containing performance metrics and status.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the executor has been disposed.</exception>
+    /// <exception cref="CudaException">Thrown when CUDA kernel execution fails.</exception>
+    /// <exception cref="ArgumentException">Thrown when kernel or arguments are invalid.</exception>
     public async ValueTask<KernelExecutionResult> ExecuteAsync(
         CompiledKernel kernel,
         KernelArgument[] arguments,
@@ -66,7 +76,20 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
         return await ExecuteAsync(kernel, arguments, executionConfig, cancellationToken);
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Enqueues a CUDA kernel for asynchronous execution and returns immediately with an execution handle.
+    /// </summary>
+    /// <param name="kernel">The compiled CUDA kernel to execute.</param>
+    /// <param name="arguments">Array of kernel arguments including device buffers and scalar parameters.</param>
+    /// <param name="executionConfig">Execution configuration with grid dimensions, block dimensions, and shared memory size.</param>
+    /// <returns>A handle that can be used to track execution status and retrieve results.</returns>
+    /// <exception cref="ObjectDisposedException">Thrown when the executor has been disposed.</exception>
+    /// <exception cref="ArgumentException">Thrown when kernel is invalid or arguments are malformed.</exception>
+    /// <exception cref="CudaException">Thrown when CUDA kernel launch fails.</exception>
+    /// <remarks>
+    /// This method performs non-blocking kernel launch using CUDA streams for optimal performance.
+    /// Use WaitForCompletionAsync with the returned handle to synchronize and get results.
+    /// </remarks>
     public KernelExecutionHandle EnqueueExecution(
         CompiledKernel kernel,
         KernelArgument[] arguments,

@@ -96,17 +96,19 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
         var bucket = GetOrCreateBucket(bucketSize);
 
         // Try to get a buffer from the bucket
-#pragma warning disable CA2000 // Dispose objects before losing scope - Buffer ownership is transferred to PooledMemoryBuffer
         if (bucket.TryDequeue(out var buffer))
         {
             try
             {
                 Interlocked.Increment(ref _totalRentedBuffers);
-                return new PooledMemoryBuffer<T>(this, buffer, bucketSize);
+                // Buffer ownership is transferred to PooledMemoryBuffer
+                var pooledBuffer = new PooledMemoryBuffer<T>(this, buffer, bucketSize);
+                buffer = null; // Prevent disposal in catch block
+                return pooledBuffer;
             }
             catch
             {
-                buffer.Dispose();
+                buffer?.Dispose();
                 throw;
             }
         }
@@ -119,14 +121,16 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
             Interlocked.Increment(ref _totalRentedBuffers);
             Interlocked.Add(ref _totalAllocatedBytes, buffer.SizeInBytes);
 
-            return new PooledMemoryBuffer<T>(this, buffer, bucketSize);
+            // Buffer ownership is transferred to PooledMemoryBuffer
+            var pooledBuffer = new PooledMemoryBuffer<T>(this, buffer, bucketSize);
+            buffer = null; // Prevent disposal in catch block
+            return pooledBuffer;
         }
         catch
         {
-            buffer.Dispose();
+            buffer?.Dispose();
             throw;
         }
-#pragma warning restore CA2000
     }
 
     /// <summary>
@@ -444,117 +448,62 @@ public sealed class MemoryPool<T> : IMemoryPoolInternal, IDisposable, IAsyncDisp
 /// A pooled memory buffer that automatically returns itself to the pool when disposed.
 /// </summary>
 /// <typeparam name="T">The element type.</typeparam>
-internal sealed class PooledMemoryBuffer<T>(MemoryPool<T> pool, IMemoryBuffer<T> buffer, int bucketSize) : IMemoryBuffer<T> where T : unmanaged
+internal sealed class PooledMemoryBuffer<T> : IMemoryBuffer<T>, IDisposable where T : unmanaged
 {
-#pragma warning disable CA2213 // Disposable fields should be disposed - Pool is not owned by this instance
-    private readonly MemoryPool<T> _pool = pool;
-#pragma warning restore CA2213
-    private readonly IMemoryBuffer<T> _buffer = buffer;
-    private readonly int _bucketSize = bucketSize;
+    // Pool is not owned by this instance - it's a shared resource
+    private readonly MemoryPool<T> _pool;
+    private IMemoryBuffer<T>? _buffer;
+    private readonly int _bucketSize;
     private volatile bool _disposed;
 
-    public int Length => _buffer.Length;
-    public long SizeInBytes => _buffer.SizeInBytes;
-    public bool IsOnHost => _buffer.IsOnHost;
-    public bool IsOnDevice => _buffer.IsOnDevice;
-    public bool IsDirty => _buffer.IsDirty;
-    public BufferState State => _buffer.State;
-
-    public Span<T> AsSpan()
+    public PooledMemoryBuffer(MemoryPool<T> pool, IMemoryBuffer<T> buffer, int bucketSize)
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.AsSpan();
+        _pool = pool ?? throw new ArgumentNullException(nameof(pool));
+        _buffer = buffer ?? throw new ArgumentNullException(nameof(buffer));
+        _bucketSize = bucketSize;
     }
 
-    public ReadOnlySpan<T> AsReadOnlySpan()
+    public int Length => GetBuffer().Length;
+    public long SizeInBytes => GetBuffer().SizeInBytes;
+    public bool IsOnHost => GetBuffer().IsOnHost;
+    public bool IsOnDevice => GetBuffer().IsOnDevice;
+    public bool IsDirty => GetBuffer().IsDirty;
+    public BufferState State => GetBuffer().State;
+
+    private IMemoryBuffer<T> GetBuffer()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.AsReadOnlySpan();
+        return _buffer ?? throw new ObjectDisposedException(nameof(PooledMemoryBuffer<T>));
     }
 
-    public Memory<T> AsMemory()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.AsMemory();
-    }
-
-    public ReadOnlyMemory<T> AsReadOnlyMemory()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.AsReadOnlyMemory();
-    }
-
-    public DeviceMemory GetDeviceMemory()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.GetDeviceMemory();
-    }
-
-    public void EnsureOnHost()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        _buffer.EnsureOnHost();
-    }
-
-    public void EnsureOnDevice()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        _buffer.EnsureOnDevice();
-    }
+    public Span<T> AsSpan() => GetBuffer().AsSpan();
+    public ReadOnlySpan<T> AsReadOnlySpan() => GetBuffer().AsReadOnlySpan();
+    public Memory<T> AsMemory() => GetBuffer().AsMemory();
+    public ReadOnlyMemory<T> AsReadOnlyMemory() => GetBuffer().AsReadOnlyMemory();
+    public DeviceMemory GetDeviceMemory() => GetBuffer().GetDeviceMemory();
+    public void EnsureOnHost() => GetBuffer().EnsureOnHost();
+    public void EnsureOnDevice() => GetBuffer().EnsureOnDevice();
 
     public ValueTask EnsureOnHostAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.EnsureOnHostAsync(context, cancellationToken);
-    }
+        => GetBuffer().EnsureOnHostAsync(context, cancellationToken);
 
     public ValueTask EnsureOnDeviceAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.EnsureOnDeviceAsync(context, cancellationToken);
-    }
+        => GetBuffer().EnsureOnDeviceAsync(context, cancellationToken);
 
-    public void MarkHostDirty()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        _buffer.MarkHostDirty();
-    }
-
-    public void MarkDeviceDirty()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        _buffer.MarkDeviceDirty();
-    }
-
-    public void Synchronize()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        _buffer.Synchronize();
-    }
+    public void MarkHostDirty() => GetBuffer().MarkHostDirty();
+    public void MarkDeviceDirty() => GetBuffer().MarkDeviceDirty();
+    public void Synchronize() => GetBuffer().Synchronize();
 
     public ValueTask SynchronizeAsync(AcceleratorContext context = default, CancellationToken cancellationToken = default)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.SynchronizeAsync(context, cancellationToken);
-    }
+        => GetBuffer().SynchronizeAsync(context, cancellationToken);
 
-    public Memory<T> GetMemory()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.GetMemory();
-    }
+    public Memory<T> GetMemory() => GetBuffer().GetMemory();
 
     public ValueTask CopyFromAsync(ReadOnlyMemory<T> source, CancellationToken cancellationToken = default)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.CopyFromAsync(source, cancellationToken);
-    }
+        => GetBuffer().CopyFromAsync(source, cancellationToken);
 
     public ValueTask CopyToAsync(Memory<T> destination, CancellationToken cancellationToken = default)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return _buffer.CopyToAsync(destination, cancellationToken);
-    }
+        => GetBuffer().CopyToAsync(destination, cancellationToken);
 
     public void Dispose()
     {
@@ -564,7 +513,13 @@ internal sealed class PooledMemoryBuffer<T>(MemoryPool<T> pool, IMemoryBuffer<T>
         }
 
         _disposed = true;
-        _pool.Return(_buffer, _bucketSize);
+        var buffer = _buffer;
+        _buffer = null;
+        
+        if (buffer != null)
+        {
+            _pool.Return(buffer, _bucketSize);
+        }
     }
 }
 

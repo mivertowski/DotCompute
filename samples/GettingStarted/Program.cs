@@ -5,11 +5,9 @@ using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-#pragma warning disable CA1848 // Use the LoggerMessage delegates
-
 namespace GettingStarted;
 
-internal sealed class Program
+internal sealed partial class Program
 {
     public static Task<int> Main(string[] args)
     {
@@ -35,8 +33,8 @@ internal sealed class Program
 
             var logger = services.GetRequiredService<ILogger<Program>>();
 
-            logger.LogInformation("DotCompute sample started successfully");
-            logger.LogInformation("Native AOT compilation working properly");
+            LogSampleStarted(logger);
+            LogNativeAOTWorking(logger);
 
             // Simulate some basic compute work
             var data = Enumerable.Range(0, 1000).Select(i => (float)i).ToArray();
@@ -52,20 +50,19 @@ internal sealed class Program
 
             sw.Stop();
 
-            logger.LogInformation("Processed {Count} elements in {ElapsedMs}ms",
-                data.Length, sw.ElapsedMilliseconds);
+            LogProcessed(logger, data.Length, sw.ElapsedMilliseconds);
 
             // Verify first few results
             var expected = new[] { 1.0f, 3.0f, 5.0f, 7.0f, 9.0f };
             var actual = result.Take(5).ToArray();
 
             var isCorrect = expected.SequenceEqual(actual);
-            logger.LogInformation("Results verification: {IsCorrect}", isCorrect ? "PASSED" : "FAILED");
+            LogVerification(logger, isCorrect ? "PASSED" : "FAILED");
 
             if (!isCorrect)
             {
-                logger.LogError("Expected: [{Expected}]", string.Join(", ", expected));
-                logger.LogError("Actual: [{Actual}]", string.Join(", ", actual));
+                LogExpected(logger, string.Join(", ", expected));
+                LogActual(logger, string.Join(", ", actual));
                 return Task.FromResult(1);
             }
 
@@ -78,4 +75,26 @@ internal sealed class Program
             return Task.FromResult(1);
         }
     }
+
+    #region Logger Message Delegates
+
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "DotCompute sample started successfully")]
+    private static partial void LogSampleStarted(ILogger logger);
+
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Native AOT compilation working properly")]
+    private static partial void LogNativeAOTWorking(ILogger logger);
+
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Processed {Count} elements in {ElapsedMs}ms")]
+    private static partial void LogProcessed(ILogger logger, int count, long elapsedMs);
+
+    [LoggerMessage(EventId = 4, Level = LogLevel.Information, Message = "Results verification: {IsCorrect}")]
+    private static partial void LogVerification(ILogger logger, string isCorrect);
+
+    [LoggerMessage(EventId = 5, Level = LogLevel.Error, Message = "Expected: [{Expected}]")]
+    private static partial void LogExpected(ILogger logger, string expected);
+
+    [LoggerMessage(EventId = 6, Level = LogLevel.Error, Message = "Actual: [{Actual}]")]
+    private static partial void LogActual(ILogger logger, string actual);
+
+    #endregion
 }

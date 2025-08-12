@@ -1328,35 +1328,6 @@ public sealed class GPULinearAlgebraProvider : IDisposable
         return result;
     }
 
-    /// <summary>
-    /// Multiplies two matrices using GPU acceleration.
-    /// </summary>
-    private async Task<Matrix> MultiplyAsync(Matrix a, Matrix b, IAccelerator accelerator, CancellationToken cancellationToken)
-    {
-        if (a.Columns != b.Rows)
-        {
-            throw new ArgumentException($"Matrix dimensions incompatible for multiplication: ({a.Rows}x{a.Columns}) * ({b.Rows}x{b.Columns})");
-        }
-
-        var result = new Matrix(a.Rows, b.Columns);
-        await Task.Run(() =>
-        {
-            for (var i = 0; i < a.Rows; i++)
-            {
-                for (var j = 0; j < b.Columns; j++)
-                {
-                    var sum = 0.0f;
-                    for (var k = 0; k < a.Columns; k++)
-                    {
-                        sum += a[i, k] * b[k, j];
-                    }
-                    result[i, j] = sum;
-                }
-            }
-        }, cancellationToken).ConfigureAwait(false);
-
-        return result;
-    }
 
     /// <summary>
     /// Transposes a matrix (helper method).

@@ -10,8 +10,9 @@ namespace DotCompute.Hardware.DirectCompute.Tests;
 /// These tests require DirectX 11 runtime on Windows.
 /// </summary>
 [Collection("Hardware")]
-[Trait("Category", "RequiresGPU")]
-[Trait("Category", "DirectCompute")]
+[Trait("Category", "HardwareRequired")]
+[Trait("Category", "DirectComputeRequired")]
+[Trait("Category", "Hardware")]
 [Trait("Platform", "Windows")]
 public class DirectComputeHardwareTests
 {
@@ -23,6 +24,8 @@ public class DirectComputeHardwareTests
     }
 
     [SkippableFact]
+    [Trait("Category", "DirectComputeRequired")]
+    [Trait("Platform", "Windows")]
     public void Should_DetectDirectComputeSupport()
     {
         Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "DirectCompute requires Windows");
@@ -55,6 +58,8 @@ public class DirectComputeHardwareTests
     }
 
     [SkippableFact]
+    [Trait("Category", "DirectComputeRequired")]
+    [Trait("Platform", "Windows")]
     public void Should_EnumerateAdapters()
     {
         Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "DirectCompute requires Windows");
@@ -113,6 +118,8 @@ public class DirectComputeHardwareTests
     }
 
     [SkippableFact]
+    [Trait("Category", "DirectComputeRequired")]
+    [Trait("Platform", "Windows")]
     public void Should_CreateComputeShader()
     {
         Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "DirectCompute requires Windows");

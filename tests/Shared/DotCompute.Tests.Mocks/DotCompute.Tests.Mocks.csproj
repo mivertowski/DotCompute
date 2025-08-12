@@ -8,6 +8,7 @@
     <IsTestProject>false</IsTestProject>
     <RootNamespace>DotCompute.Tests.Mocks</RootNamespace>
     <AssemblyName>DotCompute.Tests.Mocks</AssemblyName>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

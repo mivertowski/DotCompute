@@ -74,7 +74,7 @@ public class DefaultAcceleratorFactory : IAcceleratorFactory, IDisposable
             var accelerator = await provider.CreateAsync(acceleratorInfo);
             
             // Cache based on lifetime setting
-            if (_options.AcceleratorLifetime == ServiceLifetime.Singleton)
+            if (_options.AcceleratorLifetime == DotCompute.Runtime.Configuration.ServiceLifetime.Singleton)
             {
                 _createdAccelerators[acceleratorInfo.Id] = accelerator;
             }
@@ -124,6 +124,7 @@ public class DefaultAcceleratorFactory : IAcceleratorFactory, IDisposable
             var provider = serviceProvider.GetService<TProvider>();
             if (provider != null)
             {
+                await Task.CompletedTask; // Make method properly async
                 return provider;
             }
 
@@ -334,7 +335,7 @@ public class DefaultAcceleratorFactory : IAcceleratorFactory, IDisposable
     private static bool IsOptionalParameter(System.Reflection.ParameterInfo parameter)
     {
         return parameter.HasDefaultValue || 
-               parameter.GetCustomAttribute<System.ComponentModel.DataAnnotations.OptionalAttribute>() != null ||
+               parameter.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.OptionalAttribute), false).Any() ||
                Nullable.GetUnderlyingType(parameter.ParameterType) != null;
     }
 

@@ -11,6 +11,7 @@
     <Authors>DotCompute Contributors</Authors>
     <Description>CUDA backend for DotCompute - GPU acceleration support</Description>
     <PackageTags>DotCompute;CUDA;GPU;Compute;Backend</PackageTags>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

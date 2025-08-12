@@ -5,6 +5,9 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
+using System.Reflection;
+using System.Linq;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Runtime.DependencyInjection;
 
@@ -111,6 +114,9 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
             _logger.LogDebug("Initializing plugin {PluginType}", plugin.GetType().Name);
 
             // Call plugin-specific initialization if it exists
+            // Note: IAlgorithmPlugin interface is commented out due to missing reference
+            // This would be enabled when the proper plugin interfaces are available
+            /*
             if (plugin is IAlgorithmPlugin algorithmPlugin)
             {
                 var accelerator = serviceProvider.GetService<IAccelerator>();
@@ -119,6 +125,7 @@ public class PluginLifecycleManager : IPluginLifecycleManager, IDisposable
                     await algorithmPlugin.InitializeAsync(accelerator);
                 }
             }
+            */
 
             // Call generic initialization method if available
             var initMethod = plugin.GetType().GetMethod("InitializeAsync");
@@ -464,7 +471,7 @@ public class DefaultPluginFactory : IPluginFactory
 
             // Get property dependencies
             var properties = pluginType.GetProperties()
-                .Where(p => p.GetCustomAttribute<InjectAttribute>() != null);
+                .Where(p => p.GetCustomAttributes(typeof(InjectAttribute), false).Any());
             
             foreach (var property in properties)
             {

@@ -7,7 +7,7 @@ using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.DependencyInjection;
 using DotCompute.Runtime.Factories;
 using DotCompute.Runtime.Services;
-// using Microsoft.Extensions.Configuration // Commented out - missing reference;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;

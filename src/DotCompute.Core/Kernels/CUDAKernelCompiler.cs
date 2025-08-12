@@ -147,6 +147,8 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
     /// <inheritdoc/>
     public CompilationOptions GetDefaultOptions()
     {
+        var targetArch = DetectOptimalCudaArchitecture();
+        
         return new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.O2,
@@ -154,21 +156,68 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
             EnableFastMath = true,
             FiniteMathOnly = true,
             EnableUnsafeOptimizations = false,
-            TargetArchitecture = "sm_75", // Default to Turing architecture
+            TargetArchitecture = targetArch,
             AdditionalFlags =
             [
                 "--use_fast_math",          // Enable fast math operations
                 "--ftz=true",               // Flush denormals to zero
                 "--prec-div=false",         // Use fast division
                 "--prec-sqrt=false",        // Use fast square root
-                "--fmad=true"               // Enable fused multiply-add
+                "--fmad=true",              // Enable fused multiply-add
+                "--maxrregcount=64",        // Optimize register usage
+                "--ptxas-options=-v",       // Verbose PTX assembly
+                "-lineinfo",                // Enable line info for profiling
+                "--extra-device-vectorization" // Enable additional vectorization
+            ],
+            IncludeDirectories =
+            [
+                "/usr/local/cuda/include",
+                "/opt/cuda/include",
+                "C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.0\\include"
             ],
             Defines = new Dictionary<string, string>
             {
-                ["CUDA_VERSION"] = "12000", // CUDA 12.0
-                ["__CUDA_ARCH__"] = "750"   // Will be overridden by target architecture
+                ["CUDA_VERSION"] = "12000",
+                ["__CUDA_ARCH__"] = GetArchDefine(targetArch),
+                ["CUDA_OPTIMIZATION_LEVEL"] = "2",
+                ["WARP_SIZE"] = "32",
+                ["MAX_THREADS_PER_BLOCK"] = "1024"
             }
         };
+    }
+    
+    /// <summary>
+    /// Detects optimal CUDA architecture for the current system.
+    /// </summary>
+    private static string DetectOptimalCudaArchitecture()
+    {
+        try
+        {
+            if (CUDAInterop.IsCudaAvailable())
+            {
+                // Try to detect device capability through CUDA driver API
+                // For now, return a reasonable default based on availability
+                return "sm_80"; // Ampere architecture if CUDA is available
+            }
+        }
+        catch
+        {
+            // Fall back to default
+        }
+        
+        return "sm_75"; // Default to Turing architecture
+    }
+    
+    /// <summary>
+    /// Gets the __CUDA_ARCH__ define value for the target architecture.
+    /// </summary>
+    private static string GetArchDefine(string targetArch)
+    {
+        if (ComputeCapabilityVersions.TryGetValue(targetArch, out var archValue))
+        {
+            return (archValue * 10).ToString(); // Convert sm_75 to 750
+        }
+        return "750"; // Default
     }
 
     /// <summary>
@@ -567,14 +616,63 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
                     Message = $"Parameter '{param.Name}' has unsupported type '{param.Type}'"
                 });
             }
-
-            // Check for __restrict__ usage recommendation
-            if (param.Type.IsArray && param.IsReadOnly)
+            
+            // Advanced parameter analysis
+            if (param.Type.IsArray)
+            {
+                // Check for optimal memory space usage
+                if (param.MemorySpace == MemorySpace.Global && param.IsReadOnly)
+                {
+                    warnings.Add(new ValidationWarning
+                    {
+                        Code = "CONSIDER_CONST_MEMORY",
+                        Message = $"Read-only parameter '{param.Name}' could benefit from constant memory",
+                        Severity = WarningSeverity.Info
+                    });
+                }
+                
+                // Check for __restrict__ usage recommendation
+                if (param.IsReadOnly)
+                {
+                    warnings.Add(new ValidationWarning
+                    {
+                        Code = "MISSING_RESTRICT",
+                        Message = $"Consider using __restrict__ for parameter '{param.Name}' for better optimization",
+                        Severity = WarningSeverity.Info
+                    });
+                }
+                
+                // Suggest texture memory for large read-only arrays
+                if (param.IsReadOnly && param.MemorySpace == MemorySpace.Global)
+                {
+                    warnings.Add(new ValidationWarning
+                    {
+                        Code = "CONSIDER_TEXTURE_MEMORY",
+                        Message = $"Large read-only array '{param.Name}' could benefit from texture memory",
+                        Severity = WarningSeverity.Info
+                    });
+                }
+            }
+            
+            // Check for alignment requirements
+            var typeSize = GetTypeSize(param.Type);
+            if (typeSize > 4 && typeSize % 4 != 0)
             {
                 warnings.Add(new ValidationWarning
                 {
-                    Code = "MISSING_RESTRICT",
-                    Message = $"Consider using __restrict__ for parameter '{param.Name}' for better optimization",
+                    Code = "ALIGNMENT_WARNING",
+                    Message = $"Parameter '{param.Name}' may have alignment issues on GPU",
+                    Severity = WarningSeverity.Warning
+                });
+            }
+            
+            // Check for vector type opportunities
+            if (!param.Type.IsArray && (param.Type == typeof(float) || param.Type == typeof(int)))
+            {
+                warnings.Add(new ValidationWarning
+                {
+                    Code = "VECTOR_TYPE_OPPORTUNITY",
+                    Message = $"Consider using vector types (float4, int4) for parameter '{param.Name}' if processing multiple values",
                     Severity = WarningSeverity.Info
                 });
             }

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
@@ -55,6 +56,25 @@ internal class DynamicCompiledKernel : IKernel
         {
             _logger.LogDebug("Compiling dynamic kernel {KernelName}", Name);
             
+            // Check compilation cache first
+            var tempRequest = new KernelCompilationRequest
+            {
+                Name = _generatedKernel.Name,
+                Source = _generatedKernel.Source,
+                Language = _generatedKernel.Language,
+                TargetAccelerator = _accelerator,
+                OptimizationLevel = OptimizationLevel.Default
+            };
+            
+            var cacheKey = KernelCompilationCache.GenerateCacheKey(tempRequest);
+            
+            if (KernelCompilationCache.TryGetCached(cacheKey, out var cachedKernel))
+            {
+                _compiledKernel = cachedKernel;
+                _logger.LogDebug("Using cached compiled kernel {KernelName}", Name);
+                return;
+            }
+            
             var compilationRequest = new KernelCompilationRequest
             {
                 Name = _generatedKernel.Name,
@@ -74,6 +94,13 @@ internal class DynamicCompiledKernel : IKernel
             }
 
             _compiledKernel = result.CompiledKernel;
+            
+            // Cache the compiled kernel
+            if (_compiledKernel != null)
+            {
+                KernelCompilationCache.Cache(cacheKey, _compiledKernel);
+            }
+            
             _logger.LogInformation("Successfully compiled dynamic kernel {KernelName}", Name);
         }
         catch (Exception ex)
@@ -359,4 +386,123 @@ public enum OptimizationLevel
     Default,
     Release,
     Aggressive
+}
+
+/// <summary>
+/// Mock implementation of compiled kernel for development and testing.
+/// </summary>
+internal class MockCompiledKernel : ICompiledKernel
+{
+    private readonly string _name;
+    private readonly string _source;
+    private readonly ILogger _logger;
+    private bool _disposed;
+
+    public MockCompiledKernel(string name, string source, ILogger logger)
+    {
+        _name = name;
+        _source = source;
+        _logger = logger;
+    }
+
+    public async Task ExecuteAsync(KernelExecutionParameters parameters, CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(MockCompiledKernel));
+
+        _logger.LogDebug("Executing mock compiled kernel {KernelName}", _name);
+        
+        try
+        {
+            // Simulate kernel execution
+            var totalWorkItems = parameters.GlobalWorkSize.Aggregate(1, (a, b) => a * b);
+            var executionTime = Math.Max(1, totalWorkItems / 1000); // Simulate execution time
+            
+            await Task.Delay(executionTime, cancellationToken);
+            
+            // Simulate some basic operations on the output buffer
+            if (parameters.Arguments.TryGetValue("output", out var outputBuffer))
+            {
+                _logger.LogDebug("Mock kernel execution completed for {WorkItems} work items", totalWorkItems);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Mock kernel execution failed");
+            throw;
+        }
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _logger.LogDebug("Disposing mock compiled kernel {KernelName}", _name);
+            _disposed = true;
+        }
+    }
+}
+
+/// <summary>
+/// Performance and caching optimizations for dynamic kernel compilation.
+/// </summary>
+internal static class KernelCompilationCache
+{
+    private static readonly ConcurrentDictionary<string, WeakReference<ICompiledKernel>> _cache = new();
+    private static readonly Timer _cleanupTimer;
+    
+    static KernelCompilationCache()
+    {
+        // Clean up expired weak references every 5 minutes
+        _cleanupTimer = new Timer(CleanupExpiredEntries, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+    }
+    
+    public static bool TryGetCached(string key, out ICompiledKernel? kernel)
+    {
+        kernel = null;
+        
+        if (_cache.TryGetValue(key, out var weakRef) && weakRef.TryGetTarget(out kernel))
+        {
+            return true;
+        }
+        
+        // Remove expired entry
+        if (weakRef != null)
+        {
+            _cache.TryRemove(key, out _);
+        }
+        
+        return false;
+    }
+    
+    public static void Cache(string key, ICompiledKernel kernel)
+    {
+        _cache[key] = new WeakReference<ICompiledKernel>(kernel);
+    }
+    
+    public static string GenerateCacheKey(KernelCompilationRequest request)
+    {
+        // Generate cache key based on source hash and compilation options
+        var sourceHash = request.Source.GetHashCode();
+        var optionsHash = $"{request.Language}_{request.OptimizationLevel}_{request.TargetAccelerator.Type}".GetHashCode();
+        return $"{sourceHash:X}_{optionsHash:X}";
+    }
+    
+    private static void CleanupExpiredEntries(object? state)
+    {
+        var expiredKeys = new List<string>();
+        
+        foreach (var kvp in _cache)
+        {
+            if (!kvp.Value.TryGetTarget(out _))
+            {
+                expiredKeys.Add(kvp.Key);
+            }
+        }
+        
+        foreach (var key in expiredKeys)
+        {
+            _cache.TryRemove(key, out _);
+        }
+    }
 }

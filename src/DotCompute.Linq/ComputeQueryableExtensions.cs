@@ -371,3 +371,4 @@ public interface IKernelFactory
     /// <returns>The created kernel.</returns>
     Operators.IKernel CreateKernel(IAccelerator accelerator, Operators.KernelDefinition definition);
 }
+}

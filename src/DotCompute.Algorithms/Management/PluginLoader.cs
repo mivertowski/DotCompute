@@ -10,7 +10,10 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using DotCompute.Algorithms.Abstractions;
 using DotCompute.Algorithms.Security;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 
 namespace DotCompute.Algorithms.Management;
 
@@ -544,8 +547,23 @@ public sealed partial class PluginLoader : IAsyncDisposable
                     return Task.FromResult(constructor.Invoke([logger]) as IAlgorithmPlugin);
                 }
 
-                // TODO: Add support for more complex dependency injection patterns
-                // This could include service provider integration, configuration injection, etc.
+                // Support for more complex dependency injection patterns
+                if (TryCreateInstanceWithServiceProvider(pluginType, out var serviceInstance))
+                {
+                    return Task.FromResult(serviceInstance);
+                }
+                
+                // Try constructor with configuration parameter
+                if (TryCreateInstanceWithConfiguration(pluginType, out var configInstance))
+                {
+                    return Task.FromResult(configInstance);
+                }
+                
+                // Try constructor with multiple common dependencies
+                if (TryCreateInstanceWithCommonDependencies(pluginType, out var dependencyInstance))
+                {
+                    return Task.FromResult(dependencyInstance);
+                }
             }
 
             // Fallback to Activator.CreateInstance
@@ -654,7 +672,151 @@ public sealed partial class PluginLoader : IAsyncDisposable
         }
     }
 
-    /// <inheritdoc/>
+    /// <summary>
+    /// Attempts to create a plugin instance using a service provider pattern.
+    /// </summary>
+    private bool TryCreateInstanceWithServiceProvider(Type pluginType, out IAlgorithmPlugin? instance)
+    {
+        instance = null;
+        
+        try
+        {
+            var serviceProviderConstructor = pluginType.GetConstructor([typeof(IServiceProvider)]);
+            if (serviceProviderConstructor != null)
+            {
+                // Create a minimal service provider for basic services
+                var serviceProvider = new MinimalServiceProvider();
+                instance = serviceProviderConstructor.Invoke([serviceProvider]) as IAlgorithmPlugin;
+                return instance != null;
+            }
+        }
+        catch (Exception ex)
+        {
+            LogDependencyResolutionFailed(pluginType.FullName ?? pluginType.Name, ex.Message);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Attempts to create a plugin instance with configuration parameter.
+    /// </summary>
+    private bool TryCreateInstanceWithConfiguration(Type pluginType, out IAlgorithmPlugin? instance)
+    {
+        instance = null;
+        
+        try
+        {
+            var configConstructor = pluginType.GetConstructor([typeof(IConfiguration)]);
+            if (configConstructor != null)
+            {
+                // Create a minimal configuration for plugin initialization
+                var configuration = new MinimalConfiguration();
+                instance = configConstructor.Invoke([configuration]) as IAlgorithmPlugin;
+                return instance != null;
+            }
+        }
+        catch (Exception ex)
+        {
+            LogDependencyResolutionFailed(pluginType.FullName ?? pluginType.Name, ex.Message);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Attempts to create a plugin instance with common dependencies.
+    /// </summary>
+    private bool TryCreateInstanceWithCommonDependencies(Type pluginType, out IAlgorithmPlugin? instance)
+    {
+        instance = null;
+        
+        try
+        {
+            var constructors = pluginType.GetConstructors()
+                .OrderByDescending(c => c.GetParameters().Length)
+                .ToList();
+            
+            foreach (var constructor in constructors)
+            {
+                var parameters = constructor.GetParameters();
+                var parameterInstances = new object[parameters.Length];
+                bool canInstantiate = true;
+                
+                for (int i = 0; i < parameters.Length; i++)
+                {
+                    var paramType = parameters[i].ParameterType;
+                    
+                    if (paramType.IsGenericType && paramType.GetGenericTypeDefinition() == typeof(ILogger<>))
+                    {
+                        var loggerType = typeof(Microsoft.Extensions.Logging.Abstractions.NullLogger<>).MakeGenericType(pluginType);
+                        parameterInstances[i] = Activator.CreateInstance(loggerType)!;
+                    }
+                    else if (paramType == typeof(IServiceProvider))
+                    {
+                        parameterInstances[i] = new MinimalServiceProvider();
+                    }
+                    else if (paramType == typeof(IConfiguration))
+                    {
+                        parameterInstances[i] = new MinimalConfiguration();
+                    }
+                    else if (paramType.IsInterface && paramType.Assembly == pluginType.Assembly)
+                    {
+                        // Try to create a mock or default implementation for plugin-specific interfaces
+                        parameterInstances[i] = CreateDefaultImplementation(paramType);
+                        if (parameterInstances[i] == null)
+                        {
+                            canInstantiate = false;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        // Cannot resolve this parameter
+                        canInstantiate = false;
+                        break;
+                    }
+                }
+                
+                if (canInstantiate)
+                {
+                    instance = constructor.Invoke(parameterInstances) as IAlgorithmPlugin;
+                    if (instance != null)
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            LogDependencyResolutionFailed(pluginType.FullName ?? pluginType.Name, ex.Message);
+        }
+        
+        return false;
+    }
+
+    /// <summary>
+    /// Creates a default implementation for plugin-specific interfaces.
+    /// </summary>
+    private object? CreateDefaultImplementation(Type interfaceType)
+    {
+        try
+        {
+            // For plugin-specific interfaces, we can't create meaningful defaults
+            // Return null to indicate we can't resolve this dependency
+            return null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources asynchronously.
+    /// </summary>
+    /// <returns>A <see cref="ValueTask"/> that represents the asynchronous dispose operation.</returns>
     public async ValueTask DisposeAsync()
     {
         if (!_disposed)
@@ -676,6 +838,93 @@ public sealed partial class PluginLoader : IAsyncDisposable
             _trustedPublicKey?.Dispose();
         }
     }
+}
+
+/// <summary>
+/// Minimal service provider for plugin dependency injection.
+/// </summary>
+internal sealed class MinimalServiceProvider : IServiceProvider
+{
+    public object? GetService(Type serviceType)
+    {
+        if (serviceType.IsGenericType && serviceType.GetGenericTypeDefinition() == typeof(ILogger<>))
+        {
+            var loggerType = typeof(Microsoft.Extensions.Logging.Abstractions.NullLogger<>).MakeGenericType(serviceType.GetGenericArguments()[0]);
+            return Activator.CreateInstance(loggerType);
+        }
+        
+        if (serviceType == typeof(IConfiguration))
+        {
+            return new MinimalConfiguration();
+        }
+        
+        return null;
+    }
+}
+
+/// <summary>
+/// Minimal configuration for plugin initialization.
+/// </summary>
+internal sealed class MinimalConfiguration : IConfiguration
+{
+    public string? this[string key] 
+    { 
+        get => null; 
+        set { } 
+    }
+
+    public IEnumerable<IConfigurationSection> GetChildren() => [];
+
+    public IChangeToken GetReloadToken() => NullChangeToken.Singleton;
+
+    public IConfigurationSection GetSection(string key) => new MinimalConfigurationSection(key);
+}
+
+/// <summary>
+/// Minimal configuration section for plugin initialization.
+/// </summary>
+internal sealed class MinimalConfigurationSection : IConfigurationSection
+{
+    public MinimalConfigurationSection(string key)
+    {
+        Key = key;
+        Path = key;
+    }
+
+    public string? this[string key] 
+    { 
+        get => null; 
+        set { } 
+    }
+
+    public string Key { get; }
+    public string Path { get; }
+    public string? Value { get; set; }
+
+    public IEnumerable<IConfigurationSection> GetChildren() => [];
+    public IChangeToken GetReloadToken() => NullChangeToken.Singleton;
+    public IConfigurationSection GetSection(string key) => new MinimalConfigurationSection($"{Path}:{key}");
+}
+
+/// <summary>
+/// Null change token that never changes.
+/// </summary>
+internal sealed class NullChangeToken : IChangeToken
+{
+    public static readonly NullChangeToken Singleton = new();
+    
+    public bool HasChanged => false;
+    public bool ActiveChangeCallbacks => false;
+    public IDisposable RegisterChangeCallback(Action<object?> callback, object? state) => NullDisposable.Instance;
+}
+
+/// <summary>
+/// Null disposable for change token callbacks.
+/// </summary>
+internal sealed class NullDisposable : IDisposable
+{
+    public static readonly NullDisposable Instance = new();
+    public void Dispose() { }
 }
 
 /// <summary>

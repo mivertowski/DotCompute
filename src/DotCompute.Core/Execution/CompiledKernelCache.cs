@@ -96,7 +96,10 @@ public sealed class CompiledKernelCache : IAsyncDisposable
         if (removed)
         {
             _metadata.TryRemove(deviceKey, out _);
-            kernel?.Dispose();
+            if (kernel != null)
+            {
+                _ = Task.Run(async () => await kernel.DisposeAsync());
+            }
         }
 
         return removed;
@@ -165,7 +168,11 @@ public sealed class CompiledKernelCache : IAsyncDisposable
                 {
                     try
                     {
-                        kernel?.Dispose();
+                        if (kernel != null)
+                        {
+                            // Handle both IAsyncDisposable and IDisposable
+                            await kernel.DisposeAsync();
+                        }
                         await Task.Yield(); // Allow other work to proceed
                     }
                     catch
@@ -219,7 +226,10 @@ public sealed class CompiledKernelCache : IAsyncDisposable
         {
             try
             {
-                kernel?.Dispose();
+                if (kernel != null)
+                {
+                    await kernel.DisposeAsync();
+                }
                 await Task.Yield();
             }
             catch
@@ -279,7 +289,10 @@ public sealed class CompiledKernelCache : IAsyncDisposable
         {
             try
             {
-                kernel?.Dispose();
+                if (kernel != null)
+                {
+                    await kernel.DisposeAsync();
+                }
                 await Task.Yield();
             }
             catch

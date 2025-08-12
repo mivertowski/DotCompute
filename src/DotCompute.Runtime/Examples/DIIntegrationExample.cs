@@ -2,15 +2,17 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-// using DotCompute.Algorithms // Commented out - missing reference.Abstractions;
+// using DotCompute.Algorithms; // Temporarily commented out due to compilation issues
 using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.DependencyInjection;
 using DotCompute.Runtime.Extensions;
+using DotCompute.Runtime.Factories;
 using DotCompute.Runtime.Services;
-// using Microsoft.Extensions.Configuration // Commented out - missing reference;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-// using Microsoft.Extensions.Hosting // Commented out - missing reference;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DotCompute.Runtime.Examples;
 
@@ -103,12 +105,12 @@ public static class DIIntegrationExample
         
         // Use the enhanced setup
         var runtime = serviceProvider.GetRequiredService<AcceleratorRuntime>();
-        var pluginManager = serviceProvider.GetRequiredService<IAlgorithmPluginManager>();
+        // var pluginManager = serviceProvider.GetRequiredService<IAlgorithmPluginManager>();
         var memoryPool = serviceProvider.GetRequiredService<IMemoryPoolService>();
         var customService = serviceProvider.GetRequiredService<ICustomComputeService>();
         
         await runtime.InitializeAsync();
-        await pluginManager.LoadPluginsAsync();
+        // await pluginManager.LoadPluginsAsync();
         
         // Use memory pool
         var stats = memoryPool.GetUsageStatistics();
@@ -135,7 +137,7 @@ public static class DIIntegrationExample
         {
             options.EnablePlugins = true;
             options.EnableDependencyInjection = true;
-            options.PluginLifetime = ServiceLifetime.Scoped;
+            options.PluginLifetime = DotCompute.Runtime.Configuration.ServiceLifetime.Scoped;
         });
         
         // Register services that plugins might depend on
@@ -157,10 +159,10 @@ public static class DIIntegrationExample
         
         // Create plugin with DI
         var pluginScope = pluginServiceProvider.CreatePluginScope("MyPlugin");
-        var plugin = await pluginFactory.CreateAsync<IAlgorithmPlugin>(
-            typeof(SampleAlgorithmPlugin), pluginScope);
+        // var plugin = await pluginFactory.CreateAsync<IAlgorithmPlugin>(
+        //     typeof(SampleAlgorithmPlugin), pluginScope);
         
-        Console.WriteLine($"Created plugin: {plugin.Name} v{plugin.Version}");
+        // Console.WriteLine($"Created plugin: {plugin.Name} v{plugin.Version}");
         
         pluginScope.Dispose();
         serviceProvider.Dispose();
@@ -264,6 +266,7 @@ public class CustomComputeService : ICustomComputeService
 /// <summary>
 /// Example algorithm plugin with DI support
 /// </summary>
+/*
 public class SampleAlgorithmPlugin : IAlgorithmPlugin
 {
     private readonly ICustomDataProvider _dataProvider;
@@ -362,6 +365,7 @@ public class SampleAlgorithmPlugin : IAlgorithmPlugin
         return ValueTask.CompletedTask;
     }
 }
+*/
 
 // Supporting service interfaces and implementations
 public interface ICustomDataProvider
