@@ -740,6 +740,12 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
 
     public long SizeInBytes => _data.Length;
     public MemoryOptions Options { get; }
+    public bool IsDisposed => _disposed;
+
+    public void Dispose()
+    {
+        _disposed = true;
+    }
 
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,

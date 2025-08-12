@@ -355,6 +355,8 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
 
     public MemoryOptions Options => _options;
 
+    public bool IsDisposed => _disposed != 0;
+
     /// <summary>
     /// Gets the NUMA node this buffer is allocated on.
     /// </summary>

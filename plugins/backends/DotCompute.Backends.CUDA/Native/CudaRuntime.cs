@@ -89,6 +89,36 @@ public static class CudaRuntime
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cudaMemGetInfo(out ulong free, out ulong total);
 
+    // Unified Memory Management
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaMallocManaged(ref IntPtr devPtr, ulong size, uint flags = 1);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaMemAdvise(IntPtr devPtr, ulong count, CudaMemoryAdvise advice, int device);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaMemPrefetchAsync(IntPtr devPtr, ulong count, int dstDevice, IntPtr stream);
+
+    // Pinned Memory Management
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaMallocHost(ref IntPtr ptr, ulong size);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaFreeHost(IntPtr ptr);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaHostAlloc(ref IntPtr pHost, ulong size, uint flags);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaHostGetDevicePointer(ref IntPtr pDevice, IntPtr pHost, uint flags);
+
     // Stream Management
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -163,6 +193,81 @@ public static class CudaRuntime
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cudaPeekAtLastError();
 
+    // Event Management
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaEventCreate(ref IntPtr eventPtr);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaEventCreateWithFlags(ref IntPtr eventPtr, uint flags);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaEventDestroy(IntPtr eventPtr);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaEventRecord(IntPtr eventPtr, IntPtr stream);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaEventSynchronize(IntPtr eventPtr);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaEventElapsedTime(ref float ms, IntPtr start, IntPtr end);
+
+    // Unified Memory Management
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaMallocManaged(ref IntPtr devPtr, ulong size, uint flags = 0);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaMemPrefetchAsync(IntPtr devPtr, ulong count, int dstDevice, IntPtr stream);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaMemAdvise(IntPtr devPtr, ulong count, CudaMemoryAdvise advice, int device);
+
+    // Peer-to-Peer Memory Access
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaDeviceCanAccessPeer(ref int canAccessPeer, int device, int peerDevice);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaDeviceEnablePeerAccess(int peerDevice, uint flags);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaDeviceDisablePeerAccess(int peerDevice);
+
+    // Memory Pool Management (CUDA 11.2+)
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaMallocFromPoolAsync(ref IntPtr ptr, ulong size, IntPtr memPool, IntPtr stream);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaFreeAsync(IntPtr devPtr, IntPtr stream);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaDeviceGetDefaultMemPool(ref IntPtr memPool, int device);
+
+    // Occupancy Calculator
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaOccupancyMaxActiveBlocksPerMultiprocessor(
+        ref int numBlocks, IntPtr func, int blockSize, ulong dynamicSMemSize);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaOccupancyMaxPotentialBlockSize(
+        ref int minGridSize, ref int blockSize, IntPtr func, ulong dynamicSMemSize, int blockSizeLimit);
+
     // Helper Methods
     public static string GetErrorString(CudaError error)
     {
@@ -196,6 +301,50 @@ public static class CudaRuntime
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Gets the CUDA runtime version
+    /// </summary>
+    public static Version GetRuntimeVersion()
+    {
+        try
+        {
+            var result = cudaRuntimeGetVersion(out var version);
+            if (result == CudaError.Success)
+            {
+                var major = version / 1000;
+                var minor = (version % 1000) / 10;
+                return new Version(major, minor);
+            }
+        }
+        catch
+        {
+            // Fall through to default
+        }
+        return new Version(0, 0);
+    }
+
+    /// <summary>
+    /// Gets the CUDA driver version
+    /// </summary>
+    public static Version GetDriverVersion()
+    {
+        try
+        {
+            var result = cudaDriverGetVersion(out var version);
+            if (result == CudaError.Success)
+            {
+                var major = version / 1000;
+                var minor = (version % 1000) / 10;
+                return new Version(major, minor);
+            }
+        }
+        catch
+        {
+            // Fall through to default
+        }
+        return new Version(0, 0);
     }
 }
 
@@ -287,6 +436,32 @@ public enum CudaMemcpyKind
     DeviceToHost = 2,
     DeviceToDevice = 3,
     Default = 4
+}
+
+/// <summary>
+/// CUDA memory advice for unified memory
+/// </summary>
+public enum CudaMemoryAdvise
+{
+    SetReadMostly = 1,
+    UnsetReadMostly = 2,
+    SetPreferredLocation = 3,
+    UnsetPreferredLocation = 4,
+    SetAccessedBy = 5,
+    UnsetAccessedBy = 6
+}
+
+/// <summary>
+/// CUDA host allocation flags
+/// </summary>
+[Flags]
+public enum CudaHostAllocFlags : uint
+{
+    Default = 0,
+    Pinned = 1,
+    Mapped = 2,
+    WriteCombined = 4,
+    Portable = 8
 }
 
 /// <summary>

@@ -29,7 +29,7 @@ public class CudaPerformanceBenchmarks : IDisposable
     public CudaPerformanceBenchmarks(ITestOutputHelper output)
     {
         var loggerFactory = LoggerFactory.Create(builder =>
-            builder.AddXUnit(output).SetMinimumLevel(LogLevel.Information));
+            builder.SetMinimumLevel(LogLevel.Information));
         
         _logger = loggerFactory.CreateLogger<CudaPerformanceBenchmarks>();
 

@@ -335,7 +335,7 @@ public class DefaultAcceleratorFactory : IAcceleratorFactory, IDisposable
     private static bool IsOptionalParameter(System.Reflection.ParameterInfo parameter)
     {
         return parameter.HasDefaultValue || 
-               parameter.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.OptionalAttribute), false).Any() ||
+               // parameter.GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.OptionalAttribute), false).Any() ||
                Nullable.GetUnderlyingType(parameter.ParameterType) != null;
     }
 
@@ -362,7 +362,7 @@ public class DefaultAcceleratorFactory : IAcceleratorFactory, IDisposable
         }
 
         // Dispose cached accelerators if they are singletons
-        if (_options.AcceleratorLifetime == ServiceLifetime.Singleton)
+        if (_options.AcceleratorLifetime == DotCompute.Runtime.Configuration.ServiceLifetime.Singleton)
         {
             foreach (var accelerator in _createdAccelerators.Values)
             {

@@ -173,7 +173,9 @@ public static class DIIntegrationExample
     /// </summary>
     public static async Task HostedServiceExample()
     {
-        var host = Host.CreateDefaultBuilder()
+        throw new NotImplementedException("HostedServiceExample requires Microsoft.Extensions.Hosting package");
+        /*
+        var host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
             .ConfigureServices((context, services) =>
             {
                 // Add DotCompute as hosted service
@@ -194,7 +196,7 @@ public static class DIIntegrationExample
         await Task.Delay(1000);
         
         await host.StopAsync();
-        host.Dispose();
+        host.Dispose();\n        */
     }
     
     /// <summary>

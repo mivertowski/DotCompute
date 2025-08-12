@@ -45,7 +45,7 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
     /// <returns>A parallel execution result containing performance metrics and device-specific results.</returns>
     /// <exception cref="ArgumentNullException">Thrown when plan is null.</exception>
     /// <exception cref="ObjectDisposedException">Thrown when the executor has been disposed.</exception>
-    /// <exception cref="ExecutionException">Thrown when execution fails on one or more devices.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when execution fails on one or more devices.</exception>
     public async ValueTask<ParallelExecutionResult> ExecuteDataParallelPlanAsync<T>(
         DataParallelExecutionPlan<T> plan,
         CancellationToken cancellationToken = default) where T : unmanaged

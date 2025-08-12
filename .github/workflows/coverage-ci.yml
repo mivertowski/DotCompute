@@ -1,0 +1,333 @@
+name: Coverage CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run nightly coverage analysis
+    - cron: '0 2 * * *'
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  COVERAGE_THRESHOLD: 85
+  SOLUTION_FILE: DotCompute.sln
+
+jobs:
+  coverage-analysis:
+    name: Coverage Analysis
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    permissions:
+      contents: read
+      checks: write
+      pull-requests: write
+      issues: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for better analysis
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        include-prerelease: true
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.props', '**/*.targets') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore ${{ env.SOLUTION_FILE }}
+
+    - name: Build solution
+      run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore
+
+    - name: Install coverage tools
+      run: |
+        dotnet tool install -g dotnet-reportgenerator-globaltool
+        dotnet tool install -g coverlet.console
+
+    - name: Run comprehensive coverage
+      run: |
+        chmod +x ./scripts/run-coverage.sh
+        ./scripts/run-coverage.sh
+      env:
+        COVERAGE_THRESHOLD: ${{ env.COVERAGE_THRESHOLD }}
+
+    - name: Generate coverage reports
+      run: |
+        chmod +x ./scripts/generate-coverage-report.sh
+        ./scripts/generate-coverage-report.sh ./coverage-merge ./coverage-reports "DotCompute Coverage Report (CI)"
+
+    - name: Check coverage thresholds
+      id: coverage-check
+      run: |
+        chmod +x ./scripts/check-coverage-thresholds.sh
+        if ./scripts/check-coverage-thresholds.sh ./coverage-reports/coverage.cobertura.xml; then
+          echo "coverage_passed=true" >> $GITHUB_OUTPUT
+        else
+          echo "coverage_passed=false" >> $GITHUB_OUTPUT
+        fi
+      continue-on-error: true
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-reports-${{ github.run_number }}
+        path: |
+          coverage-reports/
+          !coverage-reports/history/
+        retention-days: 30
+        if-no-files-found: error
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage-reports/coverage.cobertura.xml
+        flags: unittests
+        name: DotCompute Coverage
+        fail_ci_if_error: false
+        verbose: true
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+    - name: Publish coverage results
+      uses: 5monkeys/cobertura-action@master
+      if: always()
+      with:
+        path: ./coverage-reports/coverage.cobertura.xml
+        minimum_coverage: ${{ env.COVERAGE_THRESHOLD }}
+        fail_below_threshold: false
+        show_missing: true
+        show_line: true
+        show_branch: true
+
+    - name: Comment coverage on PR
+      uses: marocchino/sticky-pull-request-comment@v2
+      if: github.event_name == 'pull_request'
+      with:
+        recreate: true
+        message: |
+          ## 📊 Coverage Report
+
+          **Overall Coverage:** $(cat coverage-reports/coverage-summary.json | jq -r '.coverage.linecoverage')%
+          **Target:** ${{ env.COVERAGE_THRESHOLD }}%
+          **Status:** ${{ steps.coverage-check.outputs.coverage_passed == 'true' && '✅ PASSED' || '❌ FAILED' }}
+
+          ### 📈 [Detailed Coverage Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+
+          <details>
+          <summary>Coverage by Component</summary>
+
+          $(cat coverage-reports/detailed-analysis.md | tail -n +5 | head -20)
+
+          </details>
+
+          ${{ steps.coverage-check.outputs.coverage_passed == 'false' && '⚠️ **Coverage below threshold.** Please add tests to improve coverage.' || '' }}
+
+    - name: Create coverage badge
+      if: github.ref == 'refs/heads/main'
+      run: |
+        # Extract coverage percentage
+        COVERAGE=$(python3 -c "
+        import json
+        with open('coverage-reports/coverage-summary.json', 'r') as f:
+            data = json.load(f)
+            print(f\"{data.get('coverage', {}).get('linecoverage', 0):.0f}\")
+        " 2>/dev/null || echo "0")
+        
+        # Determine badge color
+        if [ "$COVERAGE" -ge "90" ]; then
+          COLOR="brightgreen"
+        elif [ "$COVERAGE" -ge "80" ]; then
+          COLOR="green"  
+        elif [ "$COVERAGE" -ge "70" ]; then
+          COLOR="yellow"
+        elif [ "$COVERAGE" -ge "60" ]; then
+          COLOR="orange"
+        else
+          COLOR="red"
+        fi
+        
+        # Create badge
+        curl -s "https://img.shields.io/badge/coverage-${COVERAGE}%25-${COLOR}" > coverage-badge.svg
+
+    - name: Upload coverage badge
+      if: github.ref == 'refs/heads/main'
+      uses: actions/upload-artifact@v4
+      with:
+        name: coverage-badge
+        path: coverage-badge.svg
+
+    - name: Fail if coverage below threshold
+      if: steps.coverage-check.outputs.coverage_passed == 'false'
+      run: |
+        echo "❌ Coverage below threshold (${{ env.COVERAGE_THRESHOLD }}%)"
+        echo "See coverage report for details on improving test coverage"
+        exit 1
+
+  benchmark-coverage:
+    name: Coverage Benchmarks
+    runs-on: ubuntu-latest
+    needs: coverage-analysis
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Download coverage reports
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-reports-${{ github.run_number }}
+        path: coverage-reports/
+
+    - name: Run coverage benchmarks
+      run: |
+        dotnet run --project tools/coverage-analyzer/CoverageAnalyzer.csproj -- \
+          --input coverage-reports/coverage.cobertura.xml \
+          --benchmark \
+          --output coverage-benchmarks.json
+
+    - name: Store benchmark results
+      uses: benchmark-action/github-action-benchmark@v1
+      with:
+        tool: 'customSmallerIsBetter'
+        output-file-path: coverage-benchmarks.json
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        auto-push: true
+        comment-on-alert: true
+        alert-threshold: '120%'
+        fail-on-alert: false
+
+  cross-platform-coverage:
+    name: Cross-Platform Coverage
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            runtime: linux-x64
+          - os: windows-latest
+            runtime: win-x64
+          - os: macos-latest
+            runtime: osx-x64
+    
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Build and test with coverage
+      shell: bash
+      run: |
+        dotnet build ${{ env.SOLUTION_FILE }} --configuration Release
+        
+        # Run a subset of tests for cross-platform validation
+        dotnet test tests/Unit/ \
+          --configuration Release \
+          --no-build \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults \
+          --logger "trx;LogFileName=test_results_${{ matrix.runtime }}.trx" \
+          --verbosity normal
+
+    - name: Upload platform-specific results
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-results-${{ matrix.runtime }}
+        path: TestResults/
+        retention-days: 7
+
+  quality-gates:
+    name: Quality Gates
+    runs-on: ubuntu-latest
+    needs: [coverage-analysis, cross-platform-coverage]
+    if: always()
+    
+    steps:
+    - name: Download coverage reports
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-reports-${{ github.run_number }}
+        path: coverage-reports/
+
+    - name: Quality gate checks
+      run: |
+        echo "🔍 Quality Gate Analysis"
+        
+        # Check if coverage reports exist
+        if [ ! -f "coverage-reports/coverage-summary.json" ]; then
+          echo "❌ Coverage reports not found"
+          exit 1
+        fi
+        
+        # Extract coverage data
+        COVERAGE=$(python3 -c "
+        import json
+        with open('coverage-reports/coverage-summary.json', 'r') as f:
+            data = json.load(f)
+            print(data.get('coverage', {}).get('linecoverage', 0))
+        ")
+        
+        echo "📊 Coverage: ${COVERAGE}%"
+        
+        # Quality gates
+        GATES_PASSED=0
+        TOTAL_GATES=3
+        
+        # Gate 1: Minimum coverage
+        if (( $(echo "$COVERAGE >= 70" | bc -l) )); then
+          echo "✅ Gate 1: Minimum coverage (70%) - PASSED"
+          ((GATES_PASSED++))
+        else
+          echo "❌ Gate 1: Minimum coverage (70%) - FAILED"
+        fi
+        
+        # Gate 2: Target coverage  
+        if (( $(echo "$COVERAGE >= ${{ env.COVERAGE_THRESHOLD }}" | bc -l) )); then
+          echo "✅ Gate 2: Target coverage (${{ env.COVERAGE_THRESHOLD }}%) - PASSED"
+          ((GATES_PASSED++))
+        else
+          echo "❌ Gate 2: Target coverage (${{ env.COVERAGE_THRESHOLD }}%) - FAILED"
+        fi
+        
+        # Gate 3: Cross-platform builds
+        if [ "${{ needs.cross-platform-coverage.result }}" = "success" ]; then
+          echo "✅ Gate 3: Cross-platform builds - PASSED"
+          ((GATES_PASSED++))
+        else
+          echo "❌ Gate 3: Cross-platform builds - FAILED"
+        fi
+        
+        echo ""
+        echo "🎯 Quality Gates: ${GATES_PASSED}/${TOTAL_GATES} passed"
+        
+        if [ $GATES_PASSED -eq $TOTAL_GATES ]; then
+          echo "✅ All quality gates passed!"
+        else
+          echo "❌ Quality gates failed"
+          exit 1
+        fi

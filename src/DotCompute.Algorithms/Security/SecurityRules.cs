@@ -160,8 +160,8 @@ public sealed class DigitalSignatureSecurityRule : SecurityRule
         {
             // Load the assembly and check for Authenticode signature
             // Using X509Certificate2 constructor with X509Certificate
-            var cert = X509Certificate2.CreateFromSignedFile(assemblyPath);
-            return cert != null ? new X509Certificate2(cert) : null;
+            // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
+            return X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
         }
         catch
         {
@@ -411,7 +411,7 @@ public sealed class DirectoryPolicySecurityRule : SecurityRule
             if (applicableLevel.HasValue)
             {
                 result.SecurityLevel = applicableLevel.Value;
-                result.Metadata["AppliedDirectoryPolicy"] = matchedPolicy;
+                result.Metadata["AppliedDirectoryPolicy"] = matchedPolicy!;  // Non-null because we checked HasValue
                 
                 if (applicableLevel.Value == SecurityLevel.Low)
                 {

@@ -116,7 +116,7 @@ public class DirectComputeSimulationTests
 
         foreach (var adapter in expectedAdapters)
         {
-            var capabilities = SimulateAdapterCapabilities(adapter.VendorId, adapter.DedicatedVideoMemory);
+            var capabilities = SimulateAdapterCapabilities((uint)adapter.VendorId, adapter.DedicatedVideoMemory);
             
             Assert.Equal(adapter.SupportsDirectCompute, capabilities.DirectCompute);
             Assert.True(capabilities.MaxThreadGroupSize >= 1024, "Should support reasonable thread group sizes");
@@ -290,7 +290,7 @@ public class DirectComputeSimulationTests
         {
             return (totalGroups, 1, 1);
         }
-        else if (totalGroups <= 65535 * 65535)
+        else if ((long)totalGroups <= 65535L * 65535L)
         {
             var groupsY = (totalGroups + 65534) / 65535;
             var groupsX = (totalGroups + groupsY - 1) / groupsY;
@@ -299,7 +299,7 @@ public class DirectComputeSimulationTests
         else
         {
             // Need 3D dispatch
-            var groupsZ = (totalGroups + (65535 * 65535) - 1) / (65535 * 65535);
+            var groupsZ = (int)((totalGroups + (65535L * 65535L) - 1) / (65535L * 65535L));
             var remaining = (totalGroups + groupsZ - 1) / groupsZ;
             var groupsY = (remaining + 65534) / 65535;
             var groupsX = (remaining + groupsY - 1) / groupsY;

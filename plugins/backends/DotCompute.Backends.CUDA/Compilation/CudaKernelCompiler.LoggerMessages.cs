@@ -297,4 +297,10 @@ public sealed partial class CudaKernelCompiler
         Level = LogLevel.Information,
         Message = "Clearing CUDA kernel cache")]
     private static partial void LogClearingKernelCache(ILogger logger);
+
+    [LoggerMessage(
+        EventId = 1048,
+        Level = LogLevel.Information,
+        Message = "NVRTC supported architectures: {Architectures}")]
+    private static partial void LogSupportedArchitectures(ILogger logger, string architectures);
 }

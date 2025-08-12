@@ -373,8 +373,9 @@ public sealed partial class PluginLoader : IAsyncDisposable
                 {
                     try
                     {
-                        var cert = X509Certificate2.CreateFromSignedFile(assemblyPath);
-                        context.Certificate = cert != null ? new X509Certificate2(cert) : null;
+                        // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
+                        var cert = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
+                        context.Certificate = cert;
                     }
                     catch
                     {
@@ -763,12 +764,13 @@ public sealed partial class PluginLoader : IAsyncDisposable
                     else if (paramType.IsInterface && paramType.Assembly == pluginType.Assembly)
                     {
                         // Try to create a mock or default implementation for plugin-specific interfaces
-                        parameterInstances[i] = CreateDefaultImplementation(paramType);
-                        if (parameterInstances[i] == null)
+                        var defaultImpl = CreateDefaultImplementation(paramType);
+                        if (defaultImpl == null)
                         {
                             canInstantiate = false;
                             break;
                         }
+                        parameterInstances[i] = defaultImpl;
                     }
                     else
                     {

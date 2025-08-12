@@ -19,4 +19,35 @@
     <!-- VSTHRD002: Synchronous wait (test scenarios) -->
     <!-- IDE0011: Add braces (test readability preference) -->
   </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Coverage Configuration -->
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura,opencover,json</CoverletOutputFormat>
+    <CoverletOutput>./TestResults/coverage</CoverletOutput>
+    <Threshold>80</Threshold>
+    <ThresholdType>line,branch,method</ThresholdType>
+    <ThresholdStat>minimum</ThresholdStat>
+    <Include>[DotCompute*]*</Include>
+    <Exclude>[*.Tests]*,[*.TestImplementations]*,[*.SharedTestUtilities]*,[*.Benchmarks]*,[*.Mock*]*</Exclude>
+    <ExcludeByFile>**/obj/**,**/bin/**,**/*.g.cs,**/*.Designer.cs,**/*.Generated.cs,**/GlobalUsings.cs</ExcludeByFile>
+    <ExcludeByAttribute>Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute,ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+    <UseSourceLink>true</UseSourceLink>
+    <SingleHit>false</SingleHit>
+    <IncludeTestAssembly>false</IncludeTestAssembly>
+    <SkipAutoProps>true</SkipAutoProps>
+    <DeterministicReport>true</DeterministicReport>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Coverage packages -->
+    <PackageReference Include="coverlet.msbuild" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector" Version="6.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
 </Project>

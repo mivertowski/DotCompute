@@ -233,6 +233,11 @@ public class TestMemoryView : IMemoryBuffer
     public MemoryOptions Options { get; }
     public bool IsDisposed => false; // Views don't manage disposal directly
 
+    public void Dispose()
+    {
+        // Views don't manage disposal directly - parent buffer handles this
+    }
+
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,

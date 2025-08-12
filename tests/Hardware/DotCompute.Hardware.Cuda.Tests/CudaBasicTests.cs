@@ -28,7 +28,7 @@ public class CudaBasicTests : IDisposable
     public CudaBasicTests(ITestOutputHelper output)
     {
         var loggerFactory = LoggerFactory.Create(builder =>
-            builder.AddXUnit(output).SetMinimumLevel(LogLevel.Information));
+            builder.SetMinimumLevel(LogLevel.Information));
         
         _logger = loggerFactory.CreateLogger<CudaBasicTests>();
 
@@ -91,7 +91,7 @@ public class CudaBasicTests : IDisposable
             testData[i] = i * 0.5f;
         }
 
-        var buffer = _accelerator.Memory.Allocate(SIZE * sizeof(float));
+        var buffer = await _accelerator.Memory.AllocateAsync(SIZE * sizeof(float));
         
         try
         {
@@ -133,7 +133,8 @@ extern ""C"" __global__ void addOne(float* data, int n)
     }
 }";
 
-        var definition = new KernelDefinition("addOne", "addOne", Encoding.UTF8.GetBytes(kernelSource));
+        var kernelSource = new TextKernelSource(kernelSource, "addOne", KernelLanguage.Cuda, "addOne");
+        var definition = new KernelDefinition("addOne", kernelSource, options);
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
 
         var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
@@ -159,7 +160,7 @@ extern ""C"" __global__ void addOne(float* data, int n)
             data[i] = i;
         }
 
-        var buffer = _accelerator.Memory.Allocate(N * sizeof(float));
+        var buffer = await _accelerator.Memory.AllocateAsync(N * sizeof(float));
 
         try
         {
@@ -174,7 +175,8 @@ extern ""C"" __global__ void multiply(float* data, float factor, int n)
     }
 }";
 
-            var definition = new KernelDefinition("multiply", "multiply", Encoding.UTF8.GetBytes(kernelSource));
+            var kernelSource = new TextKernelSource(kernelSource, "multiply", KernelLanguage.Cuda, "multiply");
+        var definition = new KernelDefinition("multiply", kernelSource, options);
             var compiledKernel = await _accelerator.CompileKernelAsync(definition);
 
             const float FACTOR = 2.5f;
@@ -219,7 +221,8 @@ extern ""C"" __global__ void testConfig(int* data, int n)
     }
 }";
 
-        var definition = new KernelDefinition("testConfig", "testConfig", Encoding.UTF8.GetBytes(kernelSource));
+        var kernelSource = new TextKernelSource(kernelSource, "testConfig", KernelLanguage.Cuda, "testConfig");
+        var definition = new KernelDefinition("testConfig", kernelSource, options);
         var compiledKernel = await _accelerator.CompileKernelAsync(definition) as CudaCompiledKernel;
         Assert.NotNull(compiledKernel);
 
@@ -239,7 +242,7 @@ extern ""C"" __global__ void testConfig(int* data, int n)
 
             // Test execution with custom config
             var data = new int[N];
-            var buffer = _accelerator.Memory.Allocate(N * sizeof(int));
+            var buffer = await _accelerator.Memory.AllocateAsync(N * sizeof(int));
 
             try
             {

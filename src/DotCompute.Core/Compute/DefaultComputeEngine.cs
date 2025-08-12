@@ -84,7 +84,7 @@ public class DefaultComputeEngine : IComputeEngine
     /// <returns>A compiled kernel ready for execution.</returns>
     /// <exception cref="ArgumentException">Thrown when kernelSource is null, empty, or whitespace.</exception>
     /// <exception cref="InvalidOperationException">Thrown when no accelerators are available for compilation.</exception>
-    /// <exception cref="CompilationException">Thrown when kernel compilation fails.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when kernel compilation fails.</exception>
     /// <example>
     /// <code>
     /// string kernelSource = @"
@@ -158,7 +158,7 @@ public class DefaultComputeEngine : IComputeEngine
     /// <returns>A task representing the asynchronous execution operation.</returns>
     /// <exception cref="ArgumentNullException">Thrown when kernel or arguments is null.</exception>
     /// <exception cref="InvalidOperationException">Thrown when the specified backend is not available.</exception>
-    /// <exception cref="KernelExecutionException">Thrown when kernel execution fails.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when kernel execution fails.</exception>
     /// <example>
     /// <code>
     /// var buffer1 = await memoryManager.AllocateAsync&lt;float&gt;(1024);

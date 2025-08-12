@@ -54,7 +54,7 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
     /// <param name="cancellationToken">Cancellation token for the async operation.</param>
     /// <returns>A kernel execution result containing performance metrics and status.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the executor has been disposed.</exception>
-    /// <exception cref="CudaException">Thrown when CUDA kernel execution fails.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when CUDA kernel execution fails.</exception>
     /// <exception cref="ArgumentException">Thrown when kernel or arguments are invalid.</exception>
     public async ValueTask<KernelExecutionResult> ExecuteAsync(
         CompiledKernel kernel,
@@ -85,7 +85,7 @@ public sealed class CUDAKernelExecutor : IKernelExecutor, IDisposable
     /// <returns>A handle that can be used to track execution status and retrieve results.</returns>
     /// <exception cref="ObjectDisposedException">Thrown when the executor has been disposed.</exception>
     /// <exception cref="ArgumentException">Thrown when kernel is invalid or arguments are malformed.</exception>
-    /// <exception cref="CudaException">Thrown when CUDA kernel launch fails.</exception>
+    /// <exception cref="InvalidOperationException">Thrown when CUDA kernel launch fails.</exception>
     /// <remarks>
     /// This method performs non-blocking kernel launch using CUDA streams for optimal performance.
     /// Use WaitForCompletionAsync with the returned handle to synchronize and get results.

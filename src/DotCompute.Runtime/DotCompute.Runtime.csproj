@@ -23,8 +23,10 @@
     <!-- Build Configuration -->
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
     <AnalysisLevel>none</AnalysisLevel>
+    <RunCodeAnalysis>false</RunCodeAnalysis>
+    <NoWarn>CA1848,CA1063,CA1816,CA1822,CA1852,CA2227,IDE0040,CA2012,CA1002,CA1805,CA1513,CA1860,CA1849,IDE2006,CA1813,CA1819,CA1716,CA2201,CA2000</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

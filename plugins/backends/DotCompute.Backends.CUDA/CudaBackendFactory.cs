@@ -64,32 +64,35 @@ public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IB
 
         try
         {
-            var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
-            CudaRuntime.CheckError(result, "Get device count");
+            // Use CudaDevice.DetectAll for enhanced device detection
+            var devices = CudaDevice.DetectAll(_logger).ToList();
+            _logger.LogInformation("Detected {DeviceCount} CUDA device(s)", devices.Count);
 
-            _logger.LogInformation("Creating {DeviceCount} CUDA accelerator(s)", deviceCount);
-
-            for (var deviceId = 0; deviceId < deviceCount; deviceId++)
+            foreach (var device in devices)
             {
                 try
                 {
+                    _logger.LogInformation("Creating accelerator for {DeviceName} (ID: {DeviceId}, Arch: {Architecture}, RTX2000Ada: {IsRTX2000})",
+                        device.Name, device.DeviceId, device.ArchitectureGeneration, device.IsRTX2000Ada);
+
                     // Create logger for this specific device
                     var deviceLogger = _logger is ILoggerFactory loggerFactory
                         ? loggerFactory.CreateLogger<CudaAccelerator>()
                         : new NullLogger<CudaAccelerator>();
 
-                    var accelerator = new CudaAccelerator(deviceId, deviceLogger);
+                    var accelerator = new CudaAccelerator(device.DeviceId, deviceLogger);
                     createdAccelerators.Add(accelerator);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to create CUDA accelerator for device {DeviceId}", deviceId);
+                    _logger.LogError(ex, "Failed to create CUDA accelerator for device {DeviceId}: {DeviceName}", 
+                        device.DeviceId, device.Name);
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to enumerate CUDA devices");
+            _logger.LogError(ex, "Failed to detect CUDA devices");
         }
 
         foreach (var accelerator in createdAccelerators)
@@ -108,7 +111,16 @@ public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IB
 
         try
         {
-            _logger.LogInformation("Creating default CUDA accelerator (device 0)");
+            // Detect the default device (device 0) with enhanced detection
+            var defaultDevice = CudaDevice.Detect(0, _logger);
+            if (defaultDevice == null)
+            {
+                _logger.LogWarning("Default CUDA device (device 0) not found");
+                return null;
+            }
+
+            _logger.LogInformation("Creating default CUDA accelerator for {DeviceName} (Arch: {Architecture}, RTX2000Ada: {IsRTX2000})",
+                defaultDevice.Name, defaultDevice.ArchitectureGeneration, defaultDevice.IsRTX2000Ada);
 
             var deviceLogger = _logger is ILoggerFactory loggerFactory
                 ? loggerFactory.CreateLogger<CudaAccelerator>()

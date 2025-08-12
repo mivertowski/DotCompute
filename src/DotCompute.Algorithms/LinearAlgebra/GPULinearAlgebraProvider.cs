@@ -280,7 +280,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
                             GlobalWorkSize = [((Math.Max(m, n) + 255) / 256) * 256, n],
                             LocalWorkSize = [256, 1],
                             CaptureTimings = true,
-                            SharedMemorySize = 256 * sizeof(float)
+                            DynamicSharedMemorySize = 256 * sizeof(float)
                         };
 
                         var result = await _kernelManager.ExecuteKernelAsync(parallelQRKernel, args, accelerator, config, cancellationToken).ConfigureAwait(false);
@@ -375,7 +375,8 @@ public sealed class GPULinearAlgebraProvider : IDisposable
             };
 
             const int maxIterations = 1000;
-            const float tolerance = 1e-10f;
+            // Convergence tolerance for SVD
+            // const float tolerance = 1e-10f;
 
             // Allocate GPU memory for matrices
             var aData = a.ToArray();

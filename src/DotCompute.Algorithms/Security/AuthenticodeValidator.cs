@@ -119,8 +119,8 @@ public sealed class AuthenticodeValidator : IDisposable
             X509Certificate2? certificate = null;
             try
             {
-                var cert = X509Certificate2.CreateFromSignedFile(filePath);
-                certificate = cert != null ? new X509Certificate2(cert) : null;
+                // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
+                certificate = X509CertificateLoader.LoadCertificateFromFile(filePath);
                 result.Certificate = certificate;
                 if (certificate != null)
                 {
@@ -248,8 +248,8 @@ public sealed class AuthenticodeValidator : IDisposable
 
         try
         {
-            var cert = X509Certificate2.CreateFromSignedFile(assemblyPath);
-            using var certificate = cert != null ? new X509Certificate2(cert) : null;
+            // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
+            using var certificate = X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
             if (certificate == null) throw new InvalidOperationException("Failed to extract certificate");
 
             return new CertificateInfo

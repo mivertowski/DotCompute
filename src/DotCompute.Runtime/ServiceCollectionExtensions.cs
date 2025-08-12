@@ -66,8 +66,9 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IUnifiedMemoryService, UnifiedMemoryService>();
         
         // Register kernel services
-        services.TryAddTransient<IKernelCompilerService, KernelCompilerService>();
-        services.TryAddTransient<IKernelCacheService, KernelCacheService>();
+        // Commented out - these interfaces don't exist in Abstractions
+        // services.TryAddTransient<IKernelCompilerService, KernelCompilerService>();
+        // services.TryAddTransient<IKernelCacheService, KernelCacheService>();
         
         // Register the main runtime service
         services.TryAddSingleton<AcceleratorRuntime>();
@@ -156,7 +157,8 @@ public static class ServiceCollectionExtensions
         services.TryAddTransient<IPluginFactory, DefaultPluginFactory>();
         
         // Register algorithm plugin manager
-        services.TryAddSingleton<IAlgorithmPluginManager, AlgorithmPluginManager>();
+        // Commented out - this interface doesn't exist in Abstractions
+        // services.TryAddSingleton<IAlgorithmPluginManager, AlgorithmPluginManager>();
         
         return services;
     }
@@ -176,10 +178,11 @@ public static class ServiceCollectionExtensions
             services.Configure(configureOptions);
         }
 
-        services.TryAddSingleton<IMemoryCoherenceManager, MemoryCoherenceManager>();
-        services.TryAddSingleton<IDeviceBufferPoolManager, DeviceBufferPoolManager>();
-        services.TryAddSingleton<IP2PTransferService, P2PTransferService>();
-        services.TryAddTransient<IMemoryOptimizationService, MemoryOptimizationService>();
+        // These interfaces don't exist in Abstractions - commented out
+        // services.TryAddSingleton<IMemoryCoherenceManager, MemoryCoherenceManager>();
+        // services.TryAddSingleton<IDeviceBufferPoolManager, DeviceBufferPoolManager>();
+        // services.TryAddSingleton<IP2PTransferService, P2PTransferService>();
+        // services.TryAddTransient<IMemoryOptimizationService, MemoryOptimizationService>();
         
         return services;
     }
@@ -199,10 +202,11 @@ public static class ServiceCollectionExtensions
             services.Configure(configureOptions);
         }
 
-        services.TryAddSingleton<IPerformanceProfiler, PerformanceProfiler>();
-        services.TryAddSingleton<IDeviceMetricsCollector, DeviceMetricsCollector>();
-        services.TryAddTransient<IKernelProfiler, KernelProfiler>();
-        services.TryAddTransient<IBenchmarkRunner, BenchmarkRunner>();
+        // These interfaces don't exist in Abstractions - commented out
+        // services.TryAddSingleton<IPerformanceProfiler, PerformanceProfiler>();
+        // services.TryAddSingleton<IDeviceMetricsCollector, DeviceMetricsCollector>();
+        // services.TryAddTransient<IKernelProfiler, KernelProfiler>();
+        // services.TryAddTransient<IBenchmarkRunner, BenchmarkRunner>();
         
         return services;
     }

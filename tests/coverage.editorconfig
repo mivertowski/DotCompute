@@ -1,0 +1,31 @@
+# EditorConfig for coverage-specific files
+# https://editorconfig.org/
+
+root = false
+
+# Coverage configuration files
+[*.{runsettings,coverageconfig}]
+indent_style = space
+indent_size = 2
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Coverage XML files
+[*.{cobertura,opencover}.xml]
+indent_style = space
+indent_size = 2
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Test result files
+[*.trx]
+indent_style = space
+indent_size = 2
+end_of_line = crlf
+charset = utf-8
+trim_trailing_whitespace = false
+insert_final_newline = true

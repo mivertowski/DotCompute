@@ -90,7 +90,7 @@ public sealed class CudaBackendPlugin : BackendPluginBase
     {
         base.OnValidate(result);
 
-        // Check CUDA runtime availability
+        // Check CUDA runtime availability using enhanced device detection
         try
         {
             var cudaResult = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
@@ -99,35 +99,85 @@ public sealed class CudaBackendPlugin : BackendPluginBase
             {
                 result.IsValid = false;
                 result.Errors.Add($"CUDA runtime error: {CudaRuntime.GetErrorString(cudaResult)}");
+                return;
             }
-            else if (deviceCount == 0)
+
+            if (deviceCount == 0)
             {
                 result.IsValid = false;
                 result.Errors.Add("No CUDA-capable devices found");
+                return;
             }
-            else
+
+            result.Metadata["CudaDeviceCount"] = deviceCount;
+
+            // Add CUDA runtime and driver version info
+            var runtimeVersion = CudaRuntime.GetRuntimeVersion();
+            var driverVersion = CudaRuntime.GetDriverVersion();
+            result.Metadata["CudaRuntimeVersion"] = runtimeVersion.ToString();
+            result.Metadata["CudaDriverVersion"] = driverVersion.ToString();
+
+            // Use enhanced device detection to get detailed device information
+            var devices = CudaDevice.DetectAll(Logger).ToList();
+            var rtx2000AdaCount = 0;
+            var adaLovelaceCount = 0;
+
+            for (var i = 0; i < devices.Count; i++)
             {
-                result.Metadata["CudaDeviceCount"] = deviceCount;
+                var device = devices[i];
+                
+                result.Metadata[$"Device{i}Name"] = device.Name;
+                result.Metadata[$"Device{i}ComputeCapability"] = device.ComputeCapability.ToString();
+                result.Metadata[$"Device{i}GlobalMemory"] = device.GlobalMemorySize;
+                result.Metadata[$"Device{i}Architecture"] = device.ArchitectureGeneration;
+                result.Metadata[$"Device{i}IsRTX2000Ada"] = device.IsRTX2000Ada;
+                result.Metadata[$"Device{i}StreamingMultiprocessors"] = device.StreamingMultiprocessorCount;
+                result.Metadata[$"Device{i}EstimatedCudaCores"] = device.GetEstimatedCudaCores();
+                result.Metadata[$"Device{i}MemoryBandwidth"] = device.MemoryBandwidthGBps;
 
-                // Check device capabilities
-                for (var i = 0; i < deviceCount; i++)
+                // Track special GPU types
+                if (device.IsRTX2000Ada)
                 {
-                    var props = new CudaDeviceProperties();
-                    var propResult = CudaRuntime.cudaGetDeviceProperties(ref props, i);
-
-                    if (propResult == CudaError.Success)
-                    {
-                        result.Metadata[$"Device{i}Name"] = props.Name;
-                        result.Metadata[$"Device{i}ComputeCapability"] = $"{props.Major}.{props.Minor}";
-                        result.Metadata[$"Device{i}GlobalMemory"] = props.TotalGlobalMem;
-
-                        // Check minimum compute capability
-                        if (props.Major < 3)
-                        {
-                            result.Warnings.Add($"Device {i} has compute capability {props.Major}.{props.Minor} which may have limited support");
-                        }
-                    }
+                    rtx2000AdaCount++;
                 }
+
+                if (device.ArchitectureGeneration == "Ada Lovelace")
+                {
+                    adaLovelaceCount++;
+                }
+
+                // Check minimum compute capability
+                if (device.ComputeCapabilityMajor < 3)
+                {
+                    result.Warnings.Add($"Device {i} ({device.Name}) has compute capability {device.ComputeCapability} which may have limited support");
+                }
+
+                // Check for legacy architectures
+                if (device.ComputeCapabilityMajor < 6)
+                {
+                    result.Warnings.Add($"Device {i} ({device.Name}) uses legacy {device.ArchitectureGeneration} architecture");
+                }
+
+                // Provide RTX 2000 Ada specific information
+                if (device.IsRTX2000Ada)
+                {
+                    result.Metadata[$"Device{i}RTX2000AdaFeatures"] = "Tensor Cores, RT Cores, DLSS 3, AV1 Encoding";
+                }
+            }
+
+            // Summary metadata
+            result.Metadata["RTX2000AdaDeviceCount"] = rtx2000AdaCount;
+            result.Metadata["AdaLovelaceDeviceCount"] = adaLovelaceCount;
+
+            if (rtx2000AdaCount > 0)
+            {
+                result.Metadata["HasRTX2000AdaSupport"] = true;
+                Logger?.LogInformation("Detected {RTX2000AdaCount} RTX 2000 Ada Generation GPU(s)", rtx2000AdaCount);
+            }
+
+            if (adaLovelaceCount > 0)
+            {
+                result.Metadata["HasAdaLovelaceSupport"] = true;
             }
         }
         catch (DllNotFoundException)
@@ -139,6 +189,7 @@ public sealed class CudaBackendPlugin : BackendPluginBase
         {
             result.IsValid = false;
             result.Errors.Add($"Failed to validate CUDA environment: {ex.Message}");
+            Logger?.LogError(ex, "CUDA validation failed");
         }
     }
 
@@ -190,7 +241,7 @@ public sealed class CudaBackendPlugin : BackendPluginBase
     {
         base.OnUpdateMetrics(metrics);
 
-        // Add CUDA-specific metrics
+        // Add CUDA-specific metrics with enhanced device detection
         try
         {
             var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
@@ -198,33 +249,61 @@ public sealed class CudaBackendPlugin : BackendPluginBase
             {
                 metrics.CustomMetrics["CudaDeviceCount"] = deviceCount;
 
-                // Get runtime version
-                if (CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion) == CudaError.Success)
-                {
-                    metrics.CustomMetrics["CudaRuntimeVersion"] = runtimeVersion;
-                }
+                // Get runtime and driver versions using enhanced methods
+                var runtimeVersion = CudaRuntime.GetRuntimeVersion();
+                var driverVersion = CudaRuntime.GetDriverVersion();
+                metrics.CustomMetrics["CudaRuntimeVersion"] = runtimeVersion.ToString();
+                metrics.CustomMetrics["CudaDriverVersion"] = driverVersion.ToString();
 
-                // Get driver version
-                if (CudaRuntime.cudaDriverGetVersion(out var driverVersion) == CudaError.Success)
-                {
-                    metrics.CustomMetrics["CudaDriverVersion"] = driverVersion;
-                }
-
-                // Get memory info for default device
+                // Get detailed device metrics
                 if (deviceCount > 0)
                 {
-                    var memResult = CudaRuntime.cudaMemGetInfo(out var free, out var total);
-                    if (memResult == CudaError.Success)
+                    try
                     {
-                        metrics.CustomMetrics["CudaFreeMemory"] = free;
-                        metrics.CustomMetrics["CudaTotalMemory"] = total;
-                        metrics.CustomMetrics["CudaMemoryUtilization"] = (double)(total - free) / total * 100.0;
+                        var devices = CudaDevice.DetectAll(Logger).ToList();
+                        var rtx2000AdaCount = devices.Count(d => d.IsRTX2000Ada);
+                        var adaLovelaceCount = devices.Count(d => d.ArchitectureGeneration == "Ada Lovelace");
+                        var totalCudaCores = devices.Sum(d => d.GetEstimatedCudaCores());
+                        var totalStreamingMultiprocessors = devices.Sum(d => d.StreamingMultiprocessorCount);
+                        
+                        metrics.CustomMetrics["CudaRTX2000AdaDeviceCount"] = rtx2000AdaCount;
+                        metrics.CustomMetrics["CudaAdaLovelaceDeviceCount"] = adaLovelaceCount;
+                        metrics.CustomMetrics["CudaTotalEstimatedCores"] = totalCudaCores;
+                        metrics.CustomMetrics["CudaTotalStreamingMultiprocessors"] = totalStreamingMultiprocessors;
+
+                        // Get memory info for default device (device 0)
+                        if (devices.Count > 0)
+                        {
+                            var defaultDevice = devices[0];
+                            var (freeMemory, totalMemory) = defaultDevice.GetMemoryInfo();
+                            
+                            metrics.CustomMetrics["CudaFreeMemory"] = freeMemory;
+                            metrics.CustomMetrics["CudaTotalMemory"] = totalMemory;
+                            metrics.CustomMetrics["CudaMemoryUtilization"] = (double)(totalMemory - freeMemory) / totalMemory * 100.0;
+                            metrics.CustomMetrics["CudaDefaultDeviceName"] = defaultDevice.Name;
+                            metrics.CustomMetrics["CudaDefaultDeviceArchitecture"] = defaultDevice.ArchitectureGeneration;
+                            metrics.CustomMetrics["CudaDefaultDeviceComputeCapability"] = defaultDevice.ComputeCapability.ToString();
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger?.LogDebug(ex, "Failed to collect detailed CUDA device metrics");
+                        
+                        // Fallback to basic memory info
+                        var memResult = CudaRuntime.cudaMemGetInfo(out var free, out var total);
+                        if (memResult == CudaError.Success)
+                        {
+                            metrics.CustomMetrics["CudaFreeMemory"] = free;
+                            metrics.CustomMetrics["CudaTotalMemory"] = total;
+                            metrics.CustomMetrics["CudaMemoryUtilization"] = (double)(total - free) / total * 100.0;
+                        }
                     }
                 }
             }
         }
-        catch
+        catch (Exception ex)
         {
+            Logger?.LogDebug(ex, "Failed to collect CUDA metrics");
             // Ignore errors in metrics collection
         }
     }

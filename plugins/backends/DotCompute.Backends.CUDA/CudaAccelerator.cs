@@ -18,12 +18,12 @@ namespace DotCompute.Backends.CUDA;
 public sealed class CudaAccelerator : IAccelerator, IDisposable
 {
     private readonly ILogger<CudaAccelerator> _logger;
+    private readonly CudaDevice _device;
     private readonly CudaContext _context;
     private readonly CudaMemoryManager _memoryManager;
     private readonly CudaAsyncMemoryManagerAdapter _memoryAdapter;
     private readonly CudaKernelCompiler _kernelCompiler;
     private readonly AcceleratorInfo _info;
-    private readonly int _deviceId;
     private bool _disposed;
 
     /// <inheritdoc/>
@@ -32,14 +32,28 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
     /// <inheritdoc/>
     public IMemoryManager Memory => _memoryAdapter;
 
+    /// <summary>
+    /// Gets the underlying CUDA device.
+    /// </summary>
+    public CudaDevice Device => _device;
+
+    /// <summary>
+    /// Gets the device ID.
+    /// </summary>
+    public int DeviceId => _device.DeviceId;
+
     public CudaAccelerator(int deviceId = 0, ILogger<CudaAccelerator>? logger = null)
     {
         _logger = logger ?? new NullLogger<CudaAccelerator>();
-        _deviceId = deviceId;
 
         try
         {
             _logger.LogInformation("Initializing CUDA accelerator for device {DeviceId}", deviceId);
+
+            // Create and validate device
+            _device = new CudaDevice(deviceId, _logger);
+            _logger.LogInformation("Detected {DeviceName} (Compute Capability {ComputeCapability})", 
+                _device.Name, _device.ComputeCapability);
 
             // Initialize CUDA context
             _context = new CudaContext(deviceId);
@@ -53,11 +67,11 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
             _kernelCompiler = new CudaKernelCompiler(_context, _logger);
 #pragma warning restore IL2026, IL3050
 
-            // Build accelerator info
-            _info = BuildAcceleratorInfo();
+            // Build accelerator info from device
+            _info = _device.ToAcceleratorInfo();
 
-            _logger.LogInformation("CUDA accelerator initialized successfully. Device: {DeviceName}",
-                _info.Name);
+            _logger.LogInformation("CUDA accelerator initialized successfully. Device: {DeviceName} ({IsRTX2000Ada})",
+                _info.Name, _device.IsRTX2000Ada ? "RTX 2000 Ada Generation" : _device.ArchitectureGeneration);
         }
         catch (Exception ex)
         {
@@ -147,60 +161,39 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
         }
     }
 
-    private AcceleratorInfo BuildAcceleratorInfo()
+    /// <summary>
+    /// Gets detailed device information including RTX 2000 Ada detection.
+    /// </summary>
+    /// <returns>Device information and capabilities.</returns>
+    public DeviceInfo GetDeviceInfo()
     {
-        try
+        ThrowIfDisposed();
+
+        var (freeMemory, totalMemory) = _device.GetMemoryInfo();
+
+        return new DeviceInfo
         {
-            var deviceProps = new CudaDeviceProperties();
-            var result = CudaRuntime.cudaGetDeviceProperties(ref deviceProps, _deviceId);
-
-            if (result != CudaError.Success)
-            {
-                throw new InvalidOperationException($"Failed to query device properties: {CudaRuntime.GetErrorString(result)}");
-            }
-
-            var capabilities = new Dictionary<string, object>
-            {
-                ["ComputeCapabilityMajor"] = deviceProps.Major,
-                ["ComputeCapabilityMinor"] = deviceProps.Minor,
-                ["SharedMemoryPerBlock"] = deviceProps.SharedMemPerBlock,
-                ["ConstantMemory"] = deviceProps.TotalConstMem,
-                ["L2CacheSize"] = deviceProps.L2CacheSize,
-                ["MultiprocessorCount"] = deviceProps.MultiProcessorCount,
-                ["MaxThreadsPerBlock"] = deviceProps.MaxThreadsPerBlock,
-                ["MaxThreadsPerMultiprocessor"] = deviceProps.MaxThreadsPerMultiProcessor,
-                ["WarpSize"] = deviceProps.WarpSize,
-                ["AsyncEngineCount"] = deviceProps.AsyncEngineCount,
-                ["UnifiedAddressing"] = deviceProps.UnifiedAddressing > 0,
-                ["ManagedMemory"] = deviceProps.ManagedMemory > 0,
-                ["ConcurrentKernels"] = deviceProps.ConcurrentKernels > 0,
-                ["ECCEnabled"] = deviceProps.ECCEnabled > 0,
-                ["ClockRate"] = deviceProps.ClockRate,
-                ["MemoryClockRate"] = deviceProps.MemoryClockRate,
-                ["MemoryBusWidth"] = deviceProps.MemoryBusWidth,
-                ["MemoryBandwidth"] = 2.0 * deviceProps.MemoryClockRate * (deviceProps.MemoryBusWidth / 8) / 1.0e6
-            };
-
-            return new AcceleratorInfo(
-                type: AcceleratorType.CUDA,
-                name: deviceProps.Name,
-                driverVersion: $"{deviceProps.Major}.{deviceProps.Minor}",
-                memorySize: (long)deviceProps.TotalGlobalMem,
-                computeUnits: deviceProps.MultiProcessorCount,
-                maxClockFrequency: deviceProps.ClockRate / 1000, // Convert kHz to MHz
-                computeCapability: new Version(deviceProps.Major, deviceProps.Minor),
-                maxSharedMemoryPerBlock: (long)deviceProps.SharedMemPerBlock,
-                isUnifiedMemory: false
-            )
-            {
-                Capabilities = capabilities
-            };
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to build accelerator info");
-            throw new InvalidOperationException("Failed to build CUDA accelerator info", ex);
-        }
+            Name = _device.Name,
+            DeviceId = _device.DeviceId,
+            ComputeCapability = _device.ComputeCapability,
+            ArchitectureGeneration = _device.ArchitectureGeneration,
+            IsRTX2000Ada = _device.IsRTX2000Ada,
+            StreamingMultiprocessors = _device.StreamingMultiprocessorCount,
+            EstimatedCudaCores = _device.GetEstimatedCudaCores(),
+            TotalMemory = totalMemory,
+            AvailableMemory = freeMemory,
+            MemoryBandwidthGBps = _device.MemoryBandwidthGBps,
+            MaxThreadsPerBlock = _device.MaxThreadsPerBlock,
+            WarpSize = _device.WarpSize,
+            SharedMemoryPerBlock = _device.SharedMemoryPerBlock,
+            L2CacheSize = _device.L2CacheSize,
+            ClockRate = _device.ClockRate,
+            MemoryClockRate = _device.MemoryClockRate,
+            SupportsUnifiedAddressing = _device.SupportsUnifiedAddressing,
+            SupportsManagedMemory = _device.SupportsManagedMemory,
+            SupportsConcurrentKernels = _device.SupportsConcurrentKernels,
+            IsECCEnabled = _device.IsECCEnabled
+        };
     }
 
     private void ThrowIfDisposed()
@@ -227,6 +220,7 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
             _kernelCompiler?.Dispose();
             _memoryManager?.Dispose();
             _context?.Dispose();
+            _device?.Dispose();
 
             _disposed = true;
         }
@@ -265,6 +259,7 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
                 _kernelCompiler?.Dispose();
                 _memoryManager?.Dispose();
                 _context?.Dispose();
+                _device?.Dispose();
             }
             catch (Exception ex)
             {

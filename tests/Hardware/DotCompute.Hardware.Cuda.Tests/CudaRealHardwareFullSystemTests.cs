@@ -25,7 +25,7 @@ public class CudaRealHardwareFullSystemTests : IDisposable
     public CudaRealHardwareFullSystemTests(ITestOutputHelper output)
     {
         var loggerFactory = LoggerFactory.Create(builder =>
-            builder.AddXUnit(output).SetMinimumLevel(LogLevel.Debug));
+            builder.SetMinimumLevel(LogLevel.Debug));
         
         _logger = loggerFactory.CreateLogger<CudaRealHardwareFullSystemTests>();
 

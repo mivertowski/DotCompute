@@ -1065,7 +1065,8 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             {
                 if (_authenticodeValidator.ExtractCertificateInfo(assemblyPath)?.Subject != null)
                 {
-                    var cert = System.Security.Cryptography.X509Certificates.X509Certificate2.CreateFromSignedFile(assemblyPath);
+                    // Use X509CertificateLoader instead of obsolete CreateFromSignedFile
+                    var cert = System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadCertificateFromFile(assemblyPath);
                     context.Certificate = cert != null ? new System.Security.Cryptography.X509Certificates.X509Certificate2(cert) : null;
                 }
                 else
@@ -1349,7 +1350,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     /// <summary>
     /// Handles file watcher errors.
     /// </summary>
-    private void OnFileWatcherError(object sender, ErrorEventArgs e)
+    private async void OnFileWatcherError(object sender, ErrorEventArgs e)
     {
         _logger.LogError(e.GetException(), "File watcher error occurred");
         
@@ -1359,7 +1360,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             try
             {
                 watcher.EnableRaisingEvents = false;
-                await Task.Delay(1000); // Wait a bit before restarting
+                await Task.Delay(1000, CancellationToken.None).ConfigureAwait(false); // Wait a bit before restarting
                 watcher.EnableRaisingEvents = true;
                 _logger.LogInformation("Successfully restarted file watcher for: {Path}", watcher.Path);
             }
@@ -1463,8 +1464,8 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             }
 
             // Store memory metrics
-            loadedPlugin.Metadata.Metadata["MemoryUsage"] = memoryUsage;
-            loadedPlugin.Metadata.Metadata["MemoryCheckTime"] = DateTime.UtcNow;
+            loadedPlugin.Metadata.AdditionalMetadata["MemoryUsage"] = memoryUsage;
+            loadedPlugin.Metadata.AdditionalMetadata["MemoryCheckTime"] = DateTime.UtcNow;
 
             await Task.CompletedTask;
         }

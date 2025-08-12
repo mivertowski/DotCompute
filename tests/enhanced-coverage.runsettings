@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Enhanced Coverage Configuration for DotCompute -->
+<RunSettings>
+  <DataCollectionRunSettings>
+    <DataCollectors>
+      <DataCollector friendlyName="XPlat Code Coverage">
+        <Configuration>
+          <!-- Output formats -->
+          <Format>cobertura,opencover,json,lcov</Format>
+          
+          <!-- Include source code files -->
+          <Include>
+            [DotCompute.Core]*,
+            [DotCompute.Abstractions]*,
+            [DotCompute.Algorithms]*,
+            [DotCompute.Memory]*,
+            [DotCompute.Linq]*,
+            [DotCompute.Plugins]*,
+            [DotCompute.Runtime]*,
+            [DotCompute.Generators]*,
+            [DotCompute.Backends.*]*
+          </Include>
+          
+          <!-- Exclude test projects and utilities -->
+          <Exclude>
+            [*.Tests]*,
+            [*.TestImplementations]*,
+            [*.SharedTestUtilities]*,
+            [*.Benchmarks]*,
+            [*.Mock*]*,
+            [xunit.*]*,
+            [NSubstitute]*,
+            [FluentAssertions]*,
+            [Moq]*,
+            [Microsoft.TestPlatform.*]*,
+            [Microsoft.VisualStudio.TestPlatform.*]*
+          </Exclude>
+          
+          <!-- Exclude generated code and designer files -->
+          <ExcludeByFile>
+            **/obj/**,
+            **/bin/**,
+            **/*.g.cs,
+            **/*.Designer.cs,
+            **/*.Generated.cs,
+            **/GlobalUsings.cs,
+            **/AssemblyInfo.cs,
+            **/*.AssemblyAttributes.cs,
+            **/Program.cs
+          </ExcludeByFile>
+          
+          <!-- Exclude attributes -->
+          <ExcludeByAttribute>
+            Obsolete,
+            GeneratedCodeAttribute,
+            CompilerGeneratedAttribute,
+            ExcludeFromCodeCoverageAttribute,
+            DebuggerNonUserCodeAttribute,
+            DebuggerHiddenAttribute,
+            DebuggerStepThroughAttribute
+          </ExcludeByAttribute>
+          
+          <!-- Set output path -->
+          <Output>./TestResults/coverage</Output>
+          
+          <!-- Additional settings -->
+          <UseSourceLink>true</UseSourceLink>
+          <SingleHit>false</SingleHit>
+          <IncludeTestAssembly>false</IncludeTestAssembly>
+          <SkipAutoProps>true</SkipAutoProps>
+          <DeterministicReport>true</DeterministicReport>
+          
+          <!-- Experimental features -->
+          <IncludeDirectory>../../src</IncludeDirectory>
+          <IncludeDirectory>../../plugins</IncludeDirectory>
+          
+          <!-- Thresholds for individual runs -->
+          <Threshold>80</Threshold>
+          <ThresholdType>line,branch,method</ThresholdType>
+          <ThresholdStat>minimum</ThresholdStat>
+        </Configuration>
+      </DataCollector>
+    </DataCollectors>
+  </DataCollectionRunSettings>
+  
+  <!-- Test execution settings -->
+  <RunConfiguration>
+    <MaxCpuCount>0</MaxCpuCount>
+    <ResultsDirectory>./TestResults</ResultsDirectory>
+    <TreatTestAdapterErrorsAsWarnings>false</TreatTestAdapterErrorsAsWarnings>
+    <BatchSize>10</BatchSize>
+  </RunConfiguration>
+  
+  <!-- MSTest settings -->
+  <MSTest>
+    <Parallelize>
+      <Workers>0</Workers>
+      <Scope>method</Scope>
+    </Parallelize>
+    <AssemblyResolution>
+      <Directory path="../../src" includeSubDirectories="true" />
+      <Directory path="../../plugins" includeSubDirectories="true" />
+    </AssemblyResolution>
+  </MSTest>
+  
+  <!-- xUnit settings -->
+  <xUnit>
+    <MaxParallelThreads>0</MaxParallelThreads>
+    <AppDomain>false</AppDomain>
+    <DiagnosticMessages>false</DiagnosticMessages>
+    <InternalDiagnosticMessages>false</InternalDiagnosticMessages>
+    <MethodDisplay>ClassAndMethod</MethodDisplay>
+  </xUnit>
+</RunSettings>

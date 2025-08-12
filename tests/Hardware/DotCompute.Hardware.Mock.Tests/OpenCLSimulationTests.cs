@@ -119,7 +119,7 @@ public class OpenCLSimulationTests
             
             if (compilationResult.Success)
             {
-                Assert.NotEmpty(compilationResult.BinarySize);
+                Assert.True(compilationResult.BinarySize > 0);
                 _output.WriteLine($"Kernel '{kernel.Name}' compiled successfully - Binary size: {compilationResult.BinarySize} bytes");
             }
             else
