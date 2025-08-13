@@ -1,23 +1,34 @@
 using System.CommandLine;
-using DotCompute.Tools.coverage-analysis;
+using DotCompute.Tools.CoverageAnalysis;
 
 var rootCommand = new RootCommand("DotCompute Coverage Analysis Tool");
 
-var directoryOption = new Option<DirectoryInfo>("--directory", "Directory containing coverage files");
-directoryOption.AddAlias("-d");
-directoryOption.IsRequired = true;
+var directoryOption = new Option<DirectoryInfo>(
+    new[] { "--directory", "-d" },
+    "Directory containing coverage files")
+{
+    IsRequired = true
+};
 
-var outputOption = new Option<FileInfo>("--output", () => new FileInfo("coverage-report.md"), "Output file path for the report");
-outputOption.AddAlias("-o");
+var outputOption = new Option<FileInfo>(
+    new[] { "--output", "-o" },
+    () => new FileInfo("coverage-report.md"),
+    "Output file path for the report");
 
-var jsonOutputOption = new Option<FileInfo>("--json", () => new FileInfo("coverage-report.json"), "JSON output file path for the report");
-jsonOutputOption.AddAlias("-j");
+var jsonOutputOption = new Option<FileInfo>(
+    new[] { "--json", "-j" },
+    () => new FileInfo("coverage-report.json"),
+    "JSON output file path for the report");
 
-var lineThresholdOption = new Option<double>("--line-threshold", () => 80.0, "Line coverage threshold percentage");
-lineThresholdOption.AddAlias("-l");
+var lineThresholdOption = new Option<double>(
+    new[] { "--line-threshold", "-l" },
+    () => 80.0,
+    "Line coverage threshold percentage");
 
-var branchThresholdOption = new Option<double>("--branch-threshold", () => 70.0, "Branch coverage threshold percentage");
-branchThresholdOption.AddAlias("-b");
+var branchThresholdOption = new Option<double>(
+    new[] { "--branch-threshold", "-b" },
+    () => 70.0,
+    "Branch coverage threshold percentage");
 
 rootCommand.Add(directoryOption);
 rootCommand.Add(outputOption);
@@ -25,7 +36,7 @@ rootCommand.Add(jsonOutputOption);
 rootCommand.Add(lineThresholdOption);
 rootCommand.Add(branchThresholdOption);
 
-rootCommand.SetHandler(async (directory, output, jsonOutput, lineThreshold, branchThreshold) =>
+rootCommand.SetHandler(async (DirectoryInfo directory, FileInfo output, FileInfo jsonOutput, double lineThreshold, double branchThreshold) =>
 {
     Console.WriteLine("DotCompute Coverage Analysis Tool");
     Console.WriteLine("=================================");

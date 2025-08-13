@@ -447,7 +447,8 @@ public sealed class CudaP2PManager : IDisposable
     {
         try
         {
-            var result = CudaRuntime.cudaDeviceCanAccessPeer(out var canAccess, sourceDevice, destinationDevice);
+            var canAccess = 0;
+            var result = CudaRuntime.cudaDeviceCanAccessPeer(ref canAccess, sourceDevice, destinationDevice);
             CudaRuntime.CheckError(result, $"checking P2P access {sourceDevice} -> {destinationDevice}");
             
             return canAccess != 0;

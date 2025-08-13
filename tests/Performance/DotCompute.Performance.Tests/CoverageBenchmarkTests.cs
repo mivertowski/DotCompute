@@ -2,6 +2,7 @@ using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
+using BdnLogger = BenchmarkDotNet.Loggers.ILogger;
 using BenchmarkDotNet.Running;
 using DotCompute.Tests.Shared.TestInfrastructure;
 using Microsoft.Extensions.Logging;
@@ -289,7 +290,7 @@ public class SimpleBenchmark
 /// xUnit logger for BenchmarkDotNet
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class XunitLogger : ILogger
+public class XunitLogger : BdnLogger
 {
     private readonly ITestOutputHelper _output;
 

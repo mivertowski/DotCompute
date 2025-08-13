@@ -40,8 +40,22 @@ public sealed class CudaBackendIntegration : IDisposable
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
-        // Initialize all components
-        InitializeComponents();
+        // Initialize all components directly in constructor
+        var loggerFactory = serviceProvider.GetRequiredService<ILoggerFactory>();
+        var streamLogger = loggerFactory.CreateLogger<CudaStreamManager>();
+        var eventLogger = loggerFactory.CreateLogger<CudaEventManager>();
+        var executorLogger = loggerFactory.CreateLogger<CudaKernelExecutor>();
+        var graphLogger = loggerFactory.CreateLogger<CudaGraphSupport>();
+        var p2pLogger = loggerFactory.CreateLogger<CudaP2PManager>();
+        var advancedLogger = loggerFactory.CreateLogger<CudaAdvancedFeatures>();
+
+        _streamManager = new CudaStreamManager(context, streamLogger);
+        _eventManager = new CudaEventManager(context, eventLogger);
+        _kernelExecutor = new CudaKernelExecutor(context.ToIAccelerator(), context, _streamManager, _eventManager, executorLogger);
+        _graphSupport = new CudaGraphSupport(context, _streamManager, _eventManager, graphLogger);
+        _p2pManager = new CudaP2PManager(p2pLogger);
+        _advancedFeatures = new CudaAdvancedFeatures(context, advancedLogger);
+        _performanceMonitor = new CudaPerformanceMonitor(context, _logger);
 
         // Set up health monitoring
         _healthCheckTimer = new Timer(PerformHealthCheck, null,
@@ -328,26 +342,6 @@ public sealed class CudaBackendIntegration : IDisposable
         }
     }
 
-    private void InitializeComponents()
-    {
-        var loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
-        var streamLogger = loggerFactory.CreateLogger<CudaStreamManager>();
-        var eventLogger = loggerFactory.CreateLogger<CudaEventManager>();
-        var executorLogger = loggerFactory.CreateLogger<CudaKernelExecutor>();
-        var graphLogger = loggerFactory.CreateLogger<CudaGraphSupport>();
-        var p2pLogger = loggerFactory.CreateLogger<CudaP2PManager>();
-        var advancedLogger = loggerFactory.CreateLogger<CudaAdvancedFeatures>();
-
-        _streamManager = new CudaStreamManager(_context, streamLogger);
-        _eventManager = new CudaEventManager(_context, eventLogger);
-        _kernelExecutor = new CudaKernelExecutor(_context.ToIAccelerator(), _context, _streamManager, _eventManager, executorLogger);
-        _graphSupport = new CudaGraphSupport(_context, _streamManager, _eventManager, graphLogger);
-        _p2pManager = new CudaP2PManager(p2pLogger);
-        _advancedFeatures = new CudaAdvancedFeatures(_context, advancedLogger);
-        _performanceMonitor = new CudaPerformanceMonitor(_context, _logger);
-
-        _logger.LogDebug("All CUDA backend components initialized successfully");
-    }
 
     private async Task ApplyAdvancedOptimizationsAsync(
         CudaCompiledKernel kernel,
@@ -373,7 +367,7 @@ public sealed class CudaBackendIntegration : IDisposable
         var problemSize = EstimateProblemSize(arguments);
         
         // Get optimal configuration from kernel executor
-        var config = _kernelExecutor.GetOptimalExecutionConfig(kernel, problemSize);
+        var config = _kernelExecutor.GetOptimalExecutionConfig(kernel.ToCompiledKernel(), problemSize);
 
         // Apply user preferences
         if (options.PreferredStream != null)

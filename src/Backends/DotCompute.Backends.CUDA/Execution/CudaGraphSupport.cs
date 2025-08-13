@@ -126,12 +126,14 @@ public sealed class CudaGraphSupport : IDisposable
         try
         {
             // Create graph instance
+            var instanceHandle = IntPtr.Zero;
             var result = CudaRuntime.cuGraphInstantiate(
-                ref instance.Handle, 
+                ref instanceHandle, 
                 graph.Handle, 
                 IntPtr.Zero, 
                 IntPtr.Zero, 
                 0);
+            instance.Handle = instanceHandle;
             
             CudaRuntime.CheckError(result, "instantiating CUDA graph");
 
@@ -316,7 +318,9 @@ public sealed class CudaGraphSupport : IDisposable
                 };
 
                 // Get node count
-                result = CudaRuntime.cuGraphGetNodes(capturedGraph, IntPtr.Zero, ref graph.NodeCount);
+                var nodeCount = graph.NodeCount;
+                result = CudaRuntime.cuGraphGetNodes(capturedGraph, IntPtr.Zero, ref nodeCount);
+                graph.NodeCount = nodeCount;
                 CudaRuntime.CheckError(result, "getting graph node count");
 
                 _graphTemplates[graphId] = graph;
@@ -445,7 +449,9 @@ public sealed class CudaGraphSupport : IDisposable
         _context.MakeCurrent();
 
         // Create empty graph
-        var result = CudaRuntime.cuGraphCreate(ref graph.Handle, 0);
+        var graphHandle = graph.Handle;
+        var result = CudaRuntime.cuGraphCreate(ref graphHandle, 0);
+        graph.Handle = graphHandle;
         CudaRuntime.CheckError(result, "creating CUDA graph");
 
         var nodeHandles = new List<IntPtr>();
@@ -508,7 +514,7 @@ public sealed class CudaGraphSupport : IDisposable
         var result = CudaRuntime.cuGraphAddKernelNode(
             ref nodeHandle,
             graph,
-            IntPtr.Zero, // No dependencies yet
+            new IntPtr[0], // No dependencies yet
             0,
             ref nodeParams);
 
@@ -524,7 +530,7 @@ public sealed class CudaGraphSupport : IDisposable
         var handles = new List<GCHandle>();
         var argPointers = new List<IntPtr>();
 
-        foreach (var arg in arguments.Arguments)
+        foreach (var arg in arguments.ToArray())
         {
             var handle = GCHandle.Alloc(arg, GCHandleType.Pinned);
             handles.Add(handle);
@@ -805,56 +811,4 @@ public sealed class CudaGraphStatistics
     public bool IsOptimized { get; set; }
 }
 
-// P/Invoke structures for CUDA Graph API
-[System.Runtime.InteropServices.StructLayout(System.Runtime.InteropServices.LayoutKind.Sequential)]
-public struct CudaKernelNodeParams
-{
-    public IntPtr Function;
-    public uint GridDimX, GridDimY, GridDimZ;
-    public uint BlockDimX, BlockDimY, BlockDimZ;
-    public uint SharedMemBytes;
-    public IntPtr KernelParams;
-    public IntPtr Extra;
-}
 
-// Extended CUDA Runtime API for graphs
-public static partial class CudaRuntime
-{
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuGraphCreate(ref IntPtr phGraph, uint flags);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuGraphDestroy(IntPtr hGraph);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuGraphAddKernelNode(
-        ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
-        ref CudaKernelNodeParams nodeParams);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuGraphInstantiate(
-        ref IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, ulong bufferSize);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuGraphLaunch(IntPtr hGraphExec, IntPtr hStream);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuGraphExecDestroy(IntPtr hGraphExec);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuGraphExecUpdate(
-        IntPtr hGraphExec, IntPtr hGraph, ref IntPtr hErrorNode);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuGraphGetNodes(
-        IntPtr hGraph, IntPtr nodes, ref int numNodes);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuGraphDestroyNode(IntPtr hNode);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuStreamBeginCapture(IntPtr hStream, uint mode);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuStreamEndCapture(IntPtr hStream, ref IntPtr phGraph);
-}

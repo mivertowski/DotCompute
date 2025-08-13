@@ -364,7 +364,15 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     private sealed class MockAccelerator : IAccelerator
     {
         public required AcceleratorInfo Info { get; init; }
-        public IMemoryManager Memory { get; } = new MockMemoryManager();
+        public AcceleratorType Type => Info.DeviceType switch
+        {
+            "CUDA" => AcceleratorType.CUDA,
+            "ROCm" => AcceleratorType.ROCm,
+            "CPU" => AcceleratorType.CPU,
+            "OpenCL" => AcceleratorType.OpenCL,
+            _ => AcceleratorType.CPU
+        };
+        public DotCompute.Abstractions.IMemoryManager Memory { get; } = new MockMemoryManager();
         public bool IsDisposed => false;
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(
@@ -387,7 +395,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     /// <summary>
     /// Mock memory manager for testing.
     /// </summary>
-    private sealed class MockMemoryManager : IMemoryManager
+    private sealed class MockMemoryManager : DotCompute.Abstractions.IMemoryManager
     {
         public ValueTask<IMemoryBuffer> AllocateAsync(
             long sizeInBytes,

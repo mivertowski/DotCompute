@@ -1,3 +1,4 @@
+using DotCompute.Abstractions;
 using FluentAssertions;
 using NSubstitute;
 using Xunit;

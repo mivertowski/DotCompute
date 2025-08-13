@@ -200,7 +200,7 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
         // 3. When device memory is under pressure
         
         var memStats = _statistics.GetCurrentStatistics();
-        var isMemoryPressure = memStats.UsedMemory > MemoryPressureThreshold;
+        var isMemoryPressure = memStats.UsedMemoryBytes > MemoryPressureThreshold;
         var isSmallAllocation = sizeInBytes < 512 * 1024 * 1024; // < 512MB
         var isHostVisible = options.HasFlag(MemoryOptions.HostVisible);
         
@@ -272,7 +272,7 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
         try
         {
             var stats = _statistics.GetCurrentStatistics();
-            var memoryPressure = (double)stats.UsedMemory / stats.TotalMemory;
+            var memoryPressure = (double)stats.UsedMemoryBytes / stats.TotalMemoryBytes;
             
             if (memoryPressure > 0.90) // 90% threshold for aggressive cleanup
             {

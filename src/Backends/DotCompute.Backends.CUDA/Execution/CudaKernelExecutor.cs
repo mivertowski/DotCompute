@@ -90,7 +90,7 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
             var execution = new CudaKernelExecution
             {
                 Id = Guid.NewGuid(),
-                KernelName = kernel.Name,
+                KernelName = kernel.Id.ToString(),
                 SubmittedAt = DateTimeOffset.UtcNow,
                 Stream = _streamManager.GetOrCreateStream(executionConfig.Stream),
                 StartEvent = _eventManager.CreateEvent(),
@@ -138,7 +138,7 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute kernel {KernelName}", kernel.Name);
+                _logger.LogError(ex, "Failed to execute kernel {KernelName}", kernel.Id.ToString());
                 execution.IsCompleted = true;
                 execution.CompletedAt = DateTimeOffset.UtcNow;
                 return new KernelExecutionResult
@@ -174,7 +174,7 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
         var execution = new CudaKernelExecution
         {
             Id = Guid.NewGuid(),
-            KernelName = kernel.Name,
+            KernelName = kernel.Id.ToString(),
             SubmittedAt = DateTimeOffset.UtcNow,
             Stream = _streamManager.GetOrCreateStream(executionConfig.Stream),
             StartEvent = _eventManager.CreateEvent(),
@@ -211,7 +211,7 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to execute kernel {KernelName} asynchronously", kernel.Name);
+                _logger.LogError(ex, "Failed to execute kernel {KernelName} asynchronously", kernel.Id.ToString());
                 execution.Error = ex;
                 execution.IsCompleted = true;
                 execution.CompletedAt = DateTimeOffset.UtcNow;

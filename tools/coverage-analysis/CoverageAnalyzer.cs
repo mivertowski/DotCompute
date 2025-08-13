@@ -2,7 +2,7 @@ using System.Xml.Linq;
 using System.Text.Json;
 using System.Text;
 
-namespace DotCompute.Tools.coverage-analysis;
+namespace DotCompute.Tools.CoverageAnalysis;
 
 /// <summary>
 /// Analyzes code coverage reports and generates comprehensive analysis

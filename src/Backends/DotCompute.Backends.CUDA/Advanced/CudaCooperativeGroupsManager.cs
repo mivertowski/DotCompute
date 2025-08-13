@@ -150,15 +150,15 @@ public sealed class CudaCooperativeGroupsManager : IDisposable
                 launchConfig.Stream,
                 launchParams);
 
-            Native.CudaRuntime.CheckError(result, "launching cooperative kernel");
+            CudaRuntime.CheckError(result, "launching cooperative kernel");
 
             // Synchronize if required
             if (launchConfig.Synchronize)
             {
                 await Task.Run(() =>
                 {
-                    var syncResult = Native.CudaRuntime.cudaStreamSynchronize(launchConfig.Stream);
-                    Native.CudaRuntime.CheckError(syncResult, "synchronizing cooperative kernel");
+                    var syncResult = CudaRuntime.cudaStreamSynchronize(launchConfig.Stream);
+                    CudaRuntime.CheckError(syncResult, "synchronizing cooperative kernel");
                 }, cancellationToken).ConfigureAwait(false);
             }
 
@@ -404,29 +404,3 @@ public sealed class CudaCooperativeLaunchResult
     public string? ErrorMessage { get; set; }
 }
 
-// Extended CUDA Runtime API for Cooperative Groups
-public static partial class CudaRuntime
-{
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuLaunchCooperativeKernel(
-        IntPtr f,
-        uint gridDimX, uint gridDimY, uint gridDimZ,
-        uint blockDimX, uint blockDimY, uint blockDimZ,
-        uint sharedMemBytes,
-        IntPtr hStream,
-        IntPtr kernelParams);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuLaunchCooperativeKernelMultiDevice(
-        IntPtr[] launchParamsList,
-        uint numDevices,
-        uint flags);
-
-    [System.Runtime.InteropServices.DllImport("cuda")]
-    internal static extern CudaError cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(
-        ref int numBlocks,
-        IntPtr func,
-        int blockSize,
-        ulong dynamicSMemSize,
-        uint flags);
-}

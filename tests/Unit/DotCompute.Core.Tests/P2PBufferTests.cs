@@ -526,7 +526,8 @@ public sealed class P2PBufferTests : IDisposable
         }
 
         public AcceleratorInfo Info { get; }
-        public IMemoryManager Memory { get; }
+        public AcceleratorType Type => AcceleratorType.CPU;
+        public DotCompute.Abstractions.IMemoryManager Memory { get; }
         public bool IsDisposed { get; private set; }
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(
@@ -557,7 +558,7 @@ public sealed class P2PBufferTests : IDisposable
     /// <summary>
     /// Mock memory manager for testing.
     /// </summary>
-    private sealed class MockMemoryManager : IMemoryManager
+    private sealed class MockMemoryManager : DotCompute.Abstractions.IMemoryManager
     {
         public ValueTask<IMemoryBuffer> AllocateAsync(
             long sizeInBytes,

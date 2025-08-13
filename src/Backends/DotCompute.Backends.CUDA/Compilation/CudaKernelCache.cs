@@ -508,10 +508,10 @@ public sealed class CudaKernelCache : IDisposable
                     {
                         // Clean up expired entries
                         File.Delete(metadataFile);
-                        var cacheFile = Path.ChangeExtension(metadataFile, ".cache");
-                        if (File.Exists(cacheFile))
+                        var associatedCacheFile = Path.ChangeExtension(metadataFile, ".cache");
+                        if (File.Exists(associatedCacheFile))
                         {
-                            File.Delete(cacheFile);
+                            File.Delete(associatedCacheFile);
                         }
                         continue;
                     }

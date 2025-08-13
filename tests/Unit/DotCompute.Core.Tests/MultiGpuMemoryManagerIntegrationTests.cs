@@ -551,7 +551,14 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         }
 
         public AcceleratorInfo Info { get; }
-        public IMemoryManager Memory { get; }
+        public AcceleratorType Type => Info.DeviceType switch
+        {
+            "CUDA" => AcceleratorType.CUDA,
+            "ROCm" => AcceleratorType.ROCm,
+            "CPU" => AcceleratorType.CPU,
+            _ => AcceleratorType.CPU
+        };
+        public DotCompute.Abstractions.IMemoryManager Memory { get; }
         public bool IsDisposed { get; private set; }
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(
@@ -582,7 +589,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
     /// <summary>
     /// Mock memory manager for integration testing.
     /// </summary>
-    private sealed class MockMemoryManager : IMemoryManager
+    private sealed class MockMemoryManager : DotCompute.Abstractions.IMemoryManager
     {
         public ValueTask<IMemoryBuffer> AllocateAsync(
             long sizeInBytes,

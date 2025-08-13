@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using DotCompute.Memory;
+using AbstractionsMemoryManager = DotCompute.Abstractions.IMemoryManager;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -526,7 +527,7 @@ public sealed class P2PBufferTests : IDisposable
         }
 
         public AcceleratorInfo Info { get; }
-        public IMemoryManager Memory { get; }
+        public AbstractionsMemoryManager Memory { get; }
         public bool IsDisposed { get; private set; }
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(
@@ -557,7 +558,7 @@ public sealed class P2PBufferTests : IDisposable
     /// <summary>
     /// Mock memory manager for testing.
     /// </summary>
-    private sealed class MockMemoryManager : IMemoryManager
+    private sealed class MockMemoryManager : AbstractionsMemoryManager
     {
         public ValueTask<IMemoryBuffer> AllocateAsync(
             long sizeInBytes,

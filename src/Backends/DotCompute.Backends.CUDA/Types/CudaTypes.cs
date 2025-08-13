@@ -100,7 +100,7 @@ public class KernelCompilationException : Exception
 /// <summary>
 /// CUDA memory statistics for tracking memory usage
 /// </summary>
-public sealed class CudaMemoryStatistics
+public sealed class CudaMemoryStatistics : IDisposable
 {
     public long TotalMemoryBytes { get; set; }
     public long UsedMemoryBytes { get; set; }
@@ -111,6 +111,33 @@ public sealed class CudaMemoryStatistics
     public double FragmentationRatio { get; set; }
     public TimeSpan TotalAllocationTime { get; set; }
     public TimeSpan TotalDeallocationTime { get; set; }
+    private bool _disposed;
+
+    /// <summary>
+    /// Gets the current statistics snapshot
+    /// </summary>
+    public CudaMemoryStatistics GetCurrentStatistics()
+    {
+        return new CudaMemoryStatistics
+        {
+            TotalMemoryBytes = TotalMemoryBytes,
+            UsedMemoryBytes = UsedMemoryBytes,
+            AllocationCount = AllocationCount,
+            DeallocationCount = DeallocationCount,
+            PeakUsageBytes = PeakUsageBytes,
+            FragmentationRatio = FragmentationRatio,
+            TotalAllocationTime = TotalAllocationTime,
+            TotalDeallocationTime = TotalDeallocationTime
+        };
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+        }
+    }
 }
 
 /// <summary>

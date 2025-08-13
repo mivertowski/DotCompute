@@ -261,6 +261,81 @@ public static class CudaRuntime
     internal static extern CudaError cudaOccupancyMaxPotentialBlockSize(
         ref int minGridSize, ref int blockSize, IntPtr func, ulong dynamicSMemSize, int blockSizeLimit);
 
+    // Graph API (Driver API)
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGraphCreate(ref IntPtr phGraph, uint flags);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGraphInstantiate(ref IntPtr phGraphExec, IntPtr hGraph, IntPtr phErrorNode, IntPtr logBuffer, ulong bufferSize);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGraphExecDestroy(IntPtr hGraphExec);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGraphDestroy(IntPtr hGraph);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGraphLaunch(IntPtr hGraphExec, IntPtr hStream);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGraphAddKernelNode(
+        ref IntPtr phGraphNode, IntPtr hGraph, IntPtr[] dependencies, ulong numDependencies,
+        ref CudaKernelNodeParams nodeParams);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGraphExecUpdate(
+        IntPtr hGraphExec, IntPtr hGraph, ref IntPtr hErrorNode);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGraphGetNodes(
+        IntPtr hGraph, IntPtr nodes, ref int numNodes);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGraphDestroyNode(IntPtr hNode);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuStreamBeginCapture(IntPtr hStream, uint mode);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuStreamEndCapture(IntPtr hStream, ref IntPtr phGraph);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuLaunchCooperativeKernel(
+        IntPtr f,
+        uint gridDimX, uint gridDimY, uint gridDimZ,
+        uint blockDimX, uint blockDimY, uint blockDimZ,
+        uint sharedMemBytes,
+        IntPtr hStream,
+        IntPtr kernelParams);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuLaunchCooperativeKernelMultiDevice(
+        IntPtr[] launchParamsList,
+        uint numDevices,
+        uint flags);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuOccupancyMaxActiveBlocksPerMultiprocessorWithFlags(
+        ref int numBlocks,
+        IntPtr func,
+        int blockSize,
+        ulong dynamicSMemSize,
+        uint flags);
+
     // Helper Methods
     public static string GetErrorString(CudaError error)
     {

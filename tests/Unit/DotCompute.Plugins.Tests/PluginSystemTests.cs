@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+#pragma warning disable CS0067 // Event is never used - test events don't need to be raised
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Exceptions;
 using DotCompute.Plugins.Interfaces;
@@ -330,11 +331,11 @@ public class PluginSystemTests : IDisposable
         public PluginHealth Health => _health;
         public bool IsDisposed { get; private set; }
 
-        public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
 #pragma warning disable CS0067 // The event is never used
+        public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
-#pragma warning restore CS0067
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+#pragma warning restore CS0067
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
 
@@ -385,11 +386,11 @@ public class PluginSystemTests : IDisposable
         public PluginState State => PluginState.Unknown;
         public PluginHealth Health => PluginHealth.Unknown;
 
-        public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
 #pragma warning disable CS0067 // The event is never used
+        public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
-#pragma warning restore CS0067
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
+#pragma warning restore CS0067
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
         public Task InitializeAsync(IServiceProvider serviceProvider, CancellationToken cancellationToken = default) => Task.CompletedTask;

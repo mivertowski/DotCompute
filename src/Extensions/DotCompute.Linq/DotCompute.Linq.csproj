@@ -8,8 +8,7 @@
     <IsAotCompatible>false</IsAotCompatible>
     <EnableTrimming>false</EnableTrimming>
     <PublishTrimmed>false</PublishTrimmed>
-    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
-    <NoWarn>$(NoWarn);CA1822;IL3050;CA1859;VSTHRD103;IDE0040;CA1034;CA1305;IL2070;IL2072;CA1001;CA2000;CA1805;CA2227;CA1002;CA1819;CA1062;CA1848;CA1308;CA1711;CA1000;CA1054;CA1307;CA2208;CA1716;CA1725;CA1724;IL3051;IL2046;CA1720;IDE2001;IDE2002;IDE0011;IL2026;IL2055;VSTHRD200;CA1834;IDE0059;VSTHRD002;CA1310;CA1810;CA1861;CA1851;CA1513</NoWarn>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <PropertyGroup>

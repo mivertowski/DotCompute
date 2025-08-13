@@ -85,6 +85,7 @@ public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
         }
     }
 
+
     private void LoadModule()
     {
         try

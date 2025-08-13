@@ -283,7 +283,7 @@ public static class CudaPhase1Validator
             // Test invalid device ID handling
             try
             {
-                var invalidDevice = CudaDevice.Detect(999, logger);
+                var invalidDevice = CudaDevice.Detect(999, logger as ILogger<CudaDevice>);
                 if (invalidDevice != null)
                 {
                     result.Warnings.Add("Expected CudaDevice.Detect to return null for invalid device ID");
@@ -304,7 +304,7 @@ public static class CudaPhase1Validator
                 CudaAccelerator? accelerator = null;
                 try
                 {
-                    accelerator = new CudaAccelerator(0, logger);
+                    accelerator = new CudaAccelerator(0, logger as ILogger<CudaAccelerator>);
                     logger.LogInformation("Accelerator created for disposal test");
                 }
                 finally
