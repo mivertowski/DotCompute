@@ -92,22 +92,15 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(definition);
-        options ??= new CompilationOptions();
+        ThrowIfDisposed();
 
-        _logger.LogDebug("Compiling kernel '{KernelName}' for CUDA device {DeviceId}", definition.Name, DeviceId);
-
-        try
-        {
-            var compiledKernel = await _kernelCompiler.CompileAsync(definition, options, cancellationToken).ConfigureAwait(false);
-            _logger.LogDebug("Successfully compiled kernel '{KernelName}'", definition.Name);
-            return compiledKernel;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to compile kernel '{KernelName}'", definition.Name);
-            throw;
-        }
+        return await AcceleratorUtilities.CompileKernelWithLoggingAsync(
+            definition,
+            options,
+            _logger,
+            "CUDA",
+            _kernelCompiler.CompileAsync,
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <inheritdoc/>
@@ -115,27 +108,18 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
     {
         ThrowIfDisposed();
 
-        try
-        {
-            _logger.LogTrace("Synchronizing CUDA device {DeviceId}", DeviceId);
-
-            // Run synchronization on a background thread to avoid blocking
-            await Task.Run(() =>
+        await AcceleratorUtilities.SynchronizeWithLoggingAsync(
+            _logger,
+            "CUDA",
+            async (ct) => await Task.Run(() =>
             {
                 var result = CudaRuntime.cudaDeviceSynchronize();
                 if (result != CudaError.Success)
                 {
                     throw new InvalidOperationException($"CUDA synchronization failed: {CudaRuntime.GetErrorString(result)}");
                 }
-            }, cancellationToken).ConfigureAwait(false);
-
-            _logger.LogTrace("CUDA device {DeviceId} synchronized", DeviceId);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to synchronize CUDA device {DeviceId}", DeviceId);
-            throw;
-        }
+            }, ct).ConfigureAwait(false),
+            cancellationToken).ConfigureAwait(false);
     }
 
     public void Reset()
@@ -204,7 +188,7 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
 
     private void ThrowIfDisposed()
     {
-        ObjectDisposedException.ThrowIf(_disposed, this);
+        AcceleratorUtilities.ThrowIfDisposed(_disposed, this);
     }
 
     /// <inheritdoc/>
@@ -215,25 +199,13 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
             return;
         }
 
-        try
-        {
-            _logger.LogInformation("Disposing CUDA accelerator");
+        await AcceleratorUtilities.DisposeWithSynchronizationAsync(
+            _logger,
+            "CUDA",
+            SynchronizeAsync,
+            _kernelCompiler, _memoryManager, _context, _device);
 
-            // Synchronize before disposal
-            await SynchronizeAsync().ConfigureAwait(false);
-
-            // Dispose managed resources
-            _kernelCompiler?.Dispose();
-            _memoryManager?.Dispose();
-            _context?.Dispose();
-            _device?.Dispose();
-
-            _disposed = true;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error during CUDA accelerator disposal");
-        }
+        _disposed = true;
     }
 
     /// <summary>
@@ -254,23 +226,11 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
 
         if (disposing)
         {
-            try
-            {
-                _logger.LogInformation("Disposing CUDA accelerator");
-
-                // Synchronize before disposal
-                _context?.Synchronize();
-
-                // Dispose managed resources
-                _kernelCompiler?.Dispose();
-                _memoryManager?.Dispose();
-                _context?.Dispose();
-                _device?.Dispose();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error during CUDA accelerator disposal");
-            }
+            AcceleratorUtilities.DisposeWithSynchronization(
+                _logger,
+                "CUDA",
+                () => _context?.Synchronize(),
+                _kernelCompiler, _memoryManager, _context, _device);
         }
 
         _disposed = true;

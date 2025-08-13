@@ -274,7 +274,7 @@ public sealed class CudaCooperativeGroupsManager : IDisposable
         cooperativeKernel.OptimizationLevel = CudaCooperativeOptimizationLevel.Standard;
         cooperativeKernel.MaxBlocksPerSM = CalculateMaxBlocksPerSM();
         
-        await Task.CompletedTask; // Placeholder for async optimization work
+        await Task.CompletedTask.ConfigureAwait(false); // Placeholder for async optimization work
     }
 
     private int CalculateMaxBlocksPerSM()

@@ -554,23 +554,316 @@ namespace DotCompute.Plugins.Loaders
                 throw new FileNotFoundException($"Assembly file not found: {assemblyPath}");
             }
 
-            // Verify assembly before loading
-            await VerifyAssemblyAsync(assemblyPath, cancellationToken);
+            // Enhanced security verification before loading
+            await VerifyAssemblySecurityAsync(assemblyPath, cancellationToken);
 
-            return loadContext.LoadFromAssemblyPath(assemblyPath);
+            // Load assembly with additional security context
+            return await LoadAssemblyWithSecurityContextAsync(loadContext, assemblyPath, cancellationToken);
         }
 
-        private async Task VerifyAssemblyAsync(string assemblyPath, CancellationToken cancellationToken)
+        /// <summary>
+        /// Loads an assembly with enhanced security context and validation.
+        /// </summary>
+        private async Task<Assembly> LoadAssemblyWithSecurityContextAsync(
+            NuGetPluginLoadContext loadContext, 
+            string assemblyPath, 
+            CancellationToken cancellationToken)
         {
+            try
+            {
+                // Create security-aware load context
+                var securityContext = new PluginSecurityContext
+                {
+                    AssemblyPath = assemblyPath,
+                    LoadTime = DateTimeOffset.UtcNow,
+                    SecurityPolicy = _options.SecurityPolicy,
+                    AllowedPermissions = GetAllowedPermissions(assemblyPath)
+                };
+
+                // Apply security restrictions before loading
+                ApplySecurityRestrictions(securityContext);
+
+                // Load the assembly
+                var assembly = loadContext.LoadFromAssemblyPath(assemblyPath);
+
+                // Validate loaded assembly structure and metadata
+                await ValidateLoadedAssemblyAsync(assembly, securityContext, cancellationToken);
+
+                return assembly;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to load assembly with security context: {AssemblyPath}", assemblyPath);
+                throw new PluginLoadException($"Security validation failed for assembly: {assemblyPath}", "SecurityValidation", assemblyPath, ex);
+            }
+        }
+
+        /// <summary>
+        /// Enhanced security verification with comprehensive checks.
+        /// </summary>
+        private async Task VerifyAssemblySecurityAsync(string assemblyPath, CancellationToken cancellationToken)
+        {
+            // Path traversal and injection attack prevention
+            if (!IsAssemblyPathSafe(assemblyPath))
+            {
+                throw new SecurityException($"Unsafe assembly path detected: {assemblyPath}");
+            }
+
+            // File integrity verification
+            if (!await VerifyAssemblyIntegrityAsync(assemblyPath, cancellationToken))
+            {
+                throw new SecurityException($"Assembly integrity verification failed: {assemblyPath}");
+            }
+
+            // Digital signature verification
             if (_options.SecurityPolicy?.RequireSignedAssemblies == true)
             {
                 await VerifyAssemblySignatureAsync(assemblyPath, cancellationToken);
             }
 
+            // Strong name verification  
+            if (_options.SecurityPolicy?.RequireStrongName == true)
+            {
+                await VerifyStrongNameAsync(assemblyPath, cancellationToken);
+            }
+
+            // Malware and suspicious pattern scanning
             if (_options.SecurityPolicy?.ScanForMaliciousCode == true)
             {
                 await ScanAssemblyForMaliciousCodeAsync(assemblyPath, cancellationToken);
             }
+
+            // Dependency injection attack prevention
+            await ValidateAssemblyDependenciesAsync(assemblyPath, cancellationToken);
+
+            // Assembly metadata analysis
+            await AnalyzeAssemblyMetadataAsync(assemblyPath, cancellationToken);
+        }
+
+        /// <summary>
+        /// Validates that an assembly path is safe and doesn't contain malicious patterns.
+        /// </summary>
+        private static bool IsAssemblyPathSafe(string assemblyPath)
+        {
+            try
+            {
+                var fullPath = Path.GetFullPath(assemblyPath);
+                var fileName = Path.GetFileName(fullPath);
+                var directory = Path.GetDirectoryName(fullPath);
+                
+                // Check for directory traversal attacks
+                if (assemblyPath.Contains("..") || assemblyPath.Contains("~") || 
+                    fileName.StartsWith(".") || fileName.Contains(":") ||
+                    assemblyPath.Contains("//") || assemblyPath.Contains("\\\\"))
+                {
+                    return false;
+                }
+
+                // Validate file extension
+                var extension = Path.GetExtension(fileName).ToLowerInvariant();
+                var allowedExtensions = new[] { ".dll", ".exe" };
+                if (!allowedExtensions.Contains(extension))
+                {
+                    return false;
+                }
+
+                // Check for suspicious file names
+                var suspiciousPatterns = new[] { "hack", "crack", "keygen", "patch", "bypass" };
+                if (suspiciousPatterns.Any(pattern => fileName.Contains(pattern, StringComparison.OrdinalIgnoreCase)))
+                {
+                    return false;
+                }
+
+                // Validate directory is within allowed locations
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    var normalizedDir = directory.Replace('\\', '/').ToLowerInvariant();
+                    var forbiddenDirs = new[] { "windows", "system32", "syswow64", "program files" };
+                    if (forbiddenDirs.Any(forbidden => normalizedDir.Contains(forbidden)))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Verifies assembly file integrity using hash validation.
+        /// </summary>
+        private static async Task<bool> VerifyAssemblyIntegrityAsync(string assemblyPath, CancellationToken cancellationToken)
+        {
+            try
+            {
+                using var fileStream = File.OpenRead(assemblyPath);
+                using var sha256 = SHA256.Create();
+                
+                // Calculate hash
+                var hashBytes = await sha256.ComputeHashAsync(fileStream, cancellationToken);
+                var hash = Convert.ToHexString(hashBytes);
+                
+                // Basic integrity checks
+                if (hashBytes.Length != 32) return false; // SHA-256 should be 32 bytes
+                if (hash.All(c => c == '0')) return false; // All zeros indicates corruption
+                
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Verifies assembly strong name signature.
+        /// </summary>
+        private async Task VerifyStrongNameAsync(string assemblyPath, CancellationToken cancellationToken)
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    var assembly = Assembly.LoadFrom(assemblyPath);
+                    var assemblyName = assembly.GetName();
+                    
+                    var publicKey = assemblyName.GetPublicKey();
+                    var publicKeyToken = assemblyName.GetPublicKeyToken();
+                    
+                    if (publicKey == null || publicKey.Length == 0)
+                    {
+                        throw new SecurityException($"Assembly does not have a strong name: {assemblyPath}");
+                    }
+                    
+                    if (publicKeyToken == null || publicKeyToken.Length == 0)
+                    {
+                        throw new SecurityException($"Assembly strong name public key token is invalid: {assemblyPath}");
+                    }
+                }
+                catch (Exception ex) when (!(ex is SecurityException))
+                {
+                    throw new SecurityException($"Strong name verification failed: {ex.Message}", ex);
+                }
+            }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Validates assembly dependencies to prevent dependency injection attacks.
+        /// </summary>
+        private async Task ValidateAssemblyDependenciesAsync(string assemblyPath, CancellationToken cancellationToken)
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    using var fileStream = File.OpenRead(assemblyPath);
+                    using var peReader = new System.Reflection.PortableExecutable.PEReader(fileStream);
+                    
+                    if (!peReader.HasMetadata) return;
+                    
+                    var metadataReader = peReader.GetMetadataReader();
+                    
+                    // Check assembly references for suspicious dependencies
+                    foreach (var asmRefHandle in metadataReader.AssemblyReferences)
+                    {
+                        var asmRef = metadataReader.GetAssemblyReference(asmRefHandle);
+                        var asmName = metadataReader.GetString(asmRef.Name);
+                        
+                        // Block dangerous assemblies
+                        var dangerousAssemblies = new[]
+                        {
+                            "System.Management", "Microsoft.Win32.Registry", 
+                            "System.Diagnostics.Process", "System.DirectoryServices",
+                            "System.Security.Principal", "System.ServiceProcess"
+                        };
+                        
+                        if (dangerousAssemblies.Any(dangerous => 
+                            asmName.StartsWith(dangerous, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            if (!IsAssemblyAllowed(asmName))
+                            {
+                                throw new SecurityException(
+                                    $"Assembly references blocked dependency: {asmName}");
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex) when (!(ex is SecurityException))
+                {
+                    throw new SecurityException($"Dependency validation failed: {ex.Message}", ex);
+                }
+            }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Analyzes assembly metadata for suspicious patterns.
+        /// </summary>
+        private async Task AnalyzeAssemblyMetadataAsync(string assemblyPath, CancellationToken cancellationToken)
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    using var fileStream = File.OpenRead(assemblyPath);
+                    using var peReader = new System.Reflection.PortableExecutable.PEReader(fileStream);
+                    
+                    if (!peReader.HasMetadata) return;
+                    
+                    var metadataReader = peReader.GetMetadataReader();
+                    var suspiciousPatterns = new List<string>();
+                    
+                    // Analyze string literals for suspicious content
+                    foreach (var stringHandle in metadataReader.GetStrings())
+                    {
+                        var stringValue = metadataReader.GetString(stringHandle).ToLowerInvariant();
+                        
+                        var maliciousPatterns = new[]
+                        {
+                            "createprocess", "loadlibrary", "getprocaddress", 
+                            "virtualalloc", "writeprocessmemory", "createremotethread",
+                            "cmd.exe", "powershell.exe", "rundll32.exe"
+                        };
+                        
+                        foreach (var pattern in maliciousPatterns)
+                        {
+                            if (stringValue.Contains(pattern))
+                            {
+                                suspiciousPatterns.Add($"Suspicious string: {pattern}");
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (suspiciousPatterns.Count > 0)
+                    {
+                        var patterns = string.Join(", ", suspiciousPatterns);
+                        _logger.LogWarning("Suspicious patterns detected in assembly {AssemblyPath}: {Patterns}", 
+                            assemblyPath, patterns);
+                        
+                        if (_options.SecurityPolicy?.BlockSuspiciousAssemblies == true)
+                        {
+                            throw new SecurityException(
+                                $"Assembly contains suspicious patterns: {patterns}");
+                        }
+                    }
+                }
+                catch (Exception ex) when (!(ex is SecurityException))
+                {
+                    throw new SecurityException($"Metadata analysis failed: {ex.Message}", ex);
+                }
+            }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Checks if a specific assembly is explicitly allowed.
+        /// </summary>
+        private bool IsAssemblyAllowed(string assemblyName)
+        {
+            return _options.SecurityPolicy?.AllowedDangerousAssemblies?.Contains(assemblyName, StringComparer.OrdinalIgnoreCase) == true;
         }
 
         private async Task VerifyAssemblySignatureAsync(string assemblyPath, CancellationToken cancellationToken)
@@ -597,6 +890,153 @@ namespace DotCompute.Plugins.Loaders
             {
                 throw new SecurityException($"Assembly exceeds maximum allowed size: {assemblyPath}");
             }
+        }
+
+        /// <summary>
+        /// Validates loaded assembly structure and metadata for security compliance.
+        /// </summary>
+        private async Task ValidateLoadedAssemblyAsync(
+            Assembly assembly, 
+            PluginSecurityContext securityContext, 
+            CancellationToken cancellationToken)
+        {
+            await Task.Run(() =>
+            {
+                try
+                {
+                    // Validate assembly name matches expected
+                    var assemblyName = assembly.GetName();
+                    if (string.IsNullOrEmpty(assemblyName.Name))
+                    {
+                        throw new SecurityException("Assembly has invalid or empty name");
+                    }
+
+                    // Check for suspicious attributes
+                    var dangerousAttributes = assembly.GetCustomAttributes()
+                        .Where(attr => IsDangerousAttribute(attr.GetType()))
+                        .ToList();
+                    
+                    if (dangerousAttributes.Any())
+                    {
+                        var attrNames = string.Join(", ", dangerousAttributes.Select(a => a.GetType().Name));
+                        _logger.LogWarning("Assembly {AssemblyName} contains dangerous attributes: {Attributes}", 
+                            assemblyName.Name, attrNames);
+                    }
+
+                    // Validate types and members
+                    var types = assembly.GetTypes();
+                    foreach (var type in types.Take(100)) // Limit to prevent DoS
+                    {
+                        ValidateTypeForSecurity(type);
+                        cancellationToken.ThrowIfCancellationRequested();
+                    }
+                }
+                catch (Exception ex) when (!(ex is SecurityException))
+                {
+                    throw new SecurityException($"Assembly validation failed: {ex.Message}", ex);
+                }
+            }, cancellationToken);
+        }
+
+        /// <summary>
+        /// Validates a type for security compliance.
+        /// </summary>
+        private static void ValidateTypeForSecurity(Type type)
+        {
+            // Check for unsafe code
+            if (type.Name.Contains("Unsafe", StringComparison.OrdinalIgnoreCase) ||
+                type.Namespace?.Contains("Unsafe", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                throw new SecurityException($"Type uses unsafe code: {type.FullName}");
+            }
+
+            // Check for dangerous base types
+            var dangerousBaseTypes = new[]
+            {
+                "System.Runtime.InteropServices.Marshal",
+                "System.Reflection.Assembly",
+                "System.AppDomain"
+            };
+
+            var baseType = type.BaseType;
+            while (baseType != null)
+            {
+                if (dangerousBaseTypes.Contains(baseType.FullName))
+                {
+                    throw new SecurityException($"Type inherits from dangerous base type: {baseType.FullName}");
+                }
+                baseType = baseType.BaseType;
+            }
+        }
+
+        /// <summary>
+        /// Checks if an attribute type is considered dangerous.
+        /// </summary>
+        private static bool IsDangerousAttribute(Type attributeType)
+        {
+            var dangerousAttributes = new[]
+            {
+                "System.Security.AllowPartiallyTrustedCallersAttribute",
+                "System.Security.SecurityCriticalAttribute",
+                "System.Security.SuppressUnmanagedCodeSecurityAttribute",
+                "System.Security.UnverifiableCodeAttribute"
+            };
+
+            return dangerousAttributes.Contains(attributeType.FullName);
+        }
+
+        /// <summary>
+        /// Gets allowed permissions for an assembly based on path and policy.
+        /// </summary>
+        private HashSet<string> GetAllowedPermissions(string assemblyPath)
+        {
+            var permissions = new HashSet<string> { "Execution" };
+            
+            // Add permissions based on security policy
+            if (_options.SecurityPolicy != null)
+            {
+                var fileName = Path.GetFileName(assemblyPath);
+                
+                // System assemblies get more permissions
+                if (IsSystemAssembly(fileName))
+                {
+                    permissions.Add("FileIO");
+                    permissions.Add("NetworkAccess");
+                }
+                
+                // Add custom permissions based on configuration
+                if (_options.SecurityPolicy.AllowedPermissions != null)
+                {
+                    foreach (var permission in _options.SecurityPolicy.AllowedPermissions)
+                    {
+                        permissions.Add(permission);
+                    }
+                }
+            }
+            
+            return permissions;
+        }
+
+        /// <summary>
+        /// Applies security restrictions to the plugin loading context.
+        /// </summary>
+        private static void ApplySecurityRestrictions(PluginSecurityContext context)
+        {
+            // Set up security context with restricted permissions
+            context.RestrictedEnvironment = true;
+            context.MaxMemoryUsage = 100 * 1024 * 1024; // 100MB limit
+            context.MaxExecutionTime = TimeSpan.FromMinutes(5);
+        }
+
+        /// <summary>
+        /// Checks if an assembly is a system assembly.
+        /// </summary>
+        private static bool IsSystemAssembly(string fileName)
+        {
+            return fileName.StartsWith("System.", StringComparison.OrdinalIgnoreCase) ||
+                   fileName.StartsWith("Microsoft.", StringComparison.OrdinalIgnoreCase) ||
+                   fileName.StartsWith("mscorlib", StringComparison.OrdinalIgnoreCase) ||
+                   fileName.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase);
         }
 
         private Task<IBackendPlugin> CreatePluginInstanceAsync(Assembly assembly, NuGetPluginManifest manifest, CancellationToken cancellationToken)

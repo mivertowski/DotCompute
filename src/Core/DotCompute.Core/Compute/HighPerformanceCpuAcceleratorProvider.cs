@@ -291,7 +291,7 @@ internal class HighPerformanceMemoryManager(IAccelerator accelerator, ILogger lo
     {
         var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
         var buffer = _memoryPool.Rent(sizeInBytes, options);
-        await buffer.CopyFromHostAsync(source, cancellationToken: cancellationToken);
+        await buffer.CopyFromHostAsync(source, cancellationToken: cancellationToken).ConfigureAwait(false);
         _allocatedBuffers.Add(buffer);
         Interlocked.Add(ref _totalAllocated, sizeInBytes);
         return buffer;
@@ -304,6 +304,40 @@ internal class HighPerformanceMemoryManager(IAccelerator accelerator, ILogger lo
             throw new ArgumentException("Buffer must be a high-performance buffer", nameof(buffer));
         }
         return new HighPerformanceMemoryBufferView(hpBuffer, offset, length);
+    }
+
+    public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        return await AllocateAsync(sizeInBytes).ConfigureAwait(false);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        var memory = new ReadOnlyMemory<T>(data.ToArray());
+        buffer.CopyFromHostAsync(memory).AsTask().Wait();
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        var memory = new Memory<T>(new T[data.Length]);
+        buffer.CopyToHostAsync(memory).AsTask().Wait();
+        memory.Span.CopyTo(data);
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        if (buffer is HighPerformanceMemoryBuffer hpBuffer)
+        {
+            hpBuffer.Dispose();
+        }
+        else
+        {
+            buffer?.Dispose();
+        }
     }
 
     public void Dispose()

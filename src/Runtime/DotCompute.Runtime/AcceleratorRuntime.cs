@@ -28,7 +28,7 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
         _logger.LogInformation("Initializing DotCompute Runtime...");
 
         // Discover and register accelerators
-        await DiscoverAcceleratorsAsync();
+        await DiscoverAcceleratorsAsync().ConfigureAwait(false);
 
         _logger.LogInformation("Runtime initialized successfully. Found {Count} accelerators.", _accelerators.Count);
     }

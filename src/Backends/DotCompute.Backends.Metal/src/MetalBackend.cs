@@ -90,7 +90,7 @@ public sealed partial class MetalBackend : IDisposable
             throw new InvalidOperationException("No Metal accelerator available");
         }
 
-        return await accelerator.Memory.AllocateAsync(size * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+        return await accelerator.Memory.AllocateAsync(size * System.Runtime.CompilerServices.Unsafe.SizeOf<T>()).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -150,7 +150,7 @@ public sealed partial class MetalBackend : IDisposable
 
         // This would execute the compute shader
         // For now, just complete the task
-        await Task.CompletedTask;
+        await Task.CompletedTask.ConfigureAwait(false);
     }
 
     /// <summary>

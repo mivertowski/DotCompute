@@ -333,6 +333,41 @@ internal class SimpleCpuMemoryManager(IAccelerator accelerator, ILogger logger) 
         return new SimpleCpuMemoryBufferView(cpuBuffer, offset, length);
     }
 
+    public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        return await AllocateAsync(sizeInBytes);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        var memory = new ReadOnlyMemory<T>(data.ToArray());
+        buffer.CopyFromHostAsync(memory).AsTask().Wait();
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        var memory = new Memory<T>(new T[data.Length]);
+        buffer.CopyToHostAsync(memory).AsTask().Wait();
+        memory.Span.CopyTo(data);
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        if (buffer is SimpleCpuMemoryBuffer cpuBuffer)
+        {
+            _allocatedBuffers.Remove(cpuBuffer);
+            cpuBuffer.Dispose();
+        }
+        else
+        {
+            buffer?.Dispose();
+        }
+    }
+
     public void Dispose()
     {
         foreach (var buffer in _allocatedBuffers)

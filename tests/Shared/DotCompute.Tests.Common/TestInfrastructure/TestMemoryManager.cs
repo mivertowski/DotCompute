@@ -94,6 +94,70 @@ public class TestMemoryManager : IMemoryManager
     }
 
     /// <summary>
+    /// Allocates memory for a specific number of elements
+    /// </summary>
+    /// <typeparam name="T">The element type</typeparam>
+    /// <param name="count">The number of elements to allocate</param>
+    /// <returns>A memory buffer for the allocated elements</returns>
+    public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        
+        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        return await AllocateAsync(sizeInBytes);
+    }
+
+    /// <summary>
+    /// Copies data from host memory to a device buffer
+    /// </summary>
+    /// <typeparam name="T">The element type</typeparam>
+    /// <param name="buffer">The destination buffer</param>
+    /// <param name="data">The source data span</param>
+    /// <returns>A task representing the async operation</returns>
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(buffer);
+        
+        var memory = new ReadOnlyMemory<T>(data.ToArray());
+        buffer.CopyFromHostAsync(memory).AsTask().Wait();
+    }
+
+    /// <summary>
+    /// Copies data from a device buffer to host memory
+    /// </summary>
+    /// <typeparam name="T">The element type</typeparam>
+    /// <param name="data">The destination data span</param>
+    /// <param name="buffer">The source buffer</param>
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(buffer);
+        
+        var memory = new Memory<T>(new T[data.Length]);
+        buffer.CopyToHostAsync(memory).AsTask().Wait();
+        memory.Span.CopyTo(data);
+    }
+
+    /// <summary>
+    /// Frees a memory buffer
+    /// </summary>
+    /// <param name="buffer">The buffer to free</param>
+    public void Free(IMemoryBuffer buffer)
+    {
+        if (buffer is TestMemoryBuffer testBuffer)
+        {
+            // The TestMemoryBuffer.Dispose() method will call ReleaseBuffer internally
+            testBuffer.Dispose();
+        }
+        else
+        {
+            buffer?.Dispose();
+        }
+    }
+
+    /// <summary>
     /// Internal method to release a buffer
     /// </summary>
     internal void ReleaseBuffer(int bufferId)

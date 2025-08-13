@@ -173,7 +173,7 @@ public sealed class CudaKernelCache : IDisposable
         try
         {
             // Check if we need to evict entries to make room
-            await EnsureCacheCapacityAsync(cancellationToken);
+            await EnsureCacheCapacityAsync(cancellationToken).ConfigureAwait(false);
 
             var entry = new CacheEntry
             {
@@ -190,7 +190,7 @@ public sealed class CudaKernelCache : IDisposable
             _memoryCache[cacheKey] = entry;
 
             // Store to disk asynchronously
-            _ = Task.Run(async () => await PersistToDiskAsync(entry, cancellationToken), cancellationToken);
+            _ = Task.Run(async () => await PersistToDiskAsync(entry, cancellationToken).ConfigureAwait(false), cancellationToken);
 
             _logger.LogDebug("Stored kernel in cache: {CacheKey} (size: {Size} bytes, expires: {ExpiresAt})", 
                 cacheKey, ptxData.Length, expiresAt);
@@ -252,7 +252,7 @@ public sealed class CudaKernelCache : IDisposable
         }
 
         // Clean up disk cache
-        await _diskOperationsSemaphore.WaitAsync(cancellationToken);
+        await _diskOperationsSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             if (Directory.Exists(_cacheDirectory))
@@ -273,7 +273,7 @@ public sealed class CudaKernelCache : IDisposable
                     {
                         _logger.LogWarning(ex, "Failed to delete cache file: {File}", f);
                     }
-                }, cancellationToken)));
+                }, cancellationToken))).ConfigureAwait(false);
             }
         }
         finally
@@ -437,7 +437,7 @@ public sealed class CudaKernelCache : IDisposable
             return;
         }
 
-        await _diskOperationsSemaphore.WaitAsync(cancellationToken);
+        await _diskOperationsSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var fileName = SanitizeFileName(entry.CacheKey);
@@ -455,7 +455,7 @@ public sealed class CudaKernelCache : IDisposable
             _mappedViews[entry.CacheKey] = view;
 
             // Also persist to physical file for durability
-            await File.WriteAllBytesAsync(cacheFile, entry.PtxData, cancellationToken);
+            await File.WriteAllBytesAsync(cacheFile, entry.PtxData, cancellationToken).ConfigureAwait(false);
 
             // Save metadata
             var metadataJson = JsonSerializer.Serialize(new CacheMetadata
@@ -468,7 +468,7 @@ public sealed class CudaKernelCache : IDisposable
                 Metadata = entry.Metadata
             }, JsonOptions);
 
-            await File.WriteAllTextAsync(metadataFile, metadataJson, cancellationToken);
+            await File.WriteAllTextAsync(metadataFile, metadataJson, cancellationToken).ConfigureAwait(false);
 
             // Clear PTX data from memory to save space (it's now in memory-mapped file)
             entry.PtxData = null;
@@ -501,7 +501,7 @@ public sealed class CudaKernelCache : IDisposable
             {
                 try
                 {
-                    var json = await File.ReadAllTextAsync(metadataFile);
+                    var json = await File.ReadAllTextAsync(metadataFile).ConfigureAwait(false);
                     var metadata = JsonSerializer.Deserialize<CacheMetadata>(json, JsonOptions);
 
                     if (metadata == null || IsMetadataExpired(metadata))
@@ -585,7 +585,7 @@ public sealed class CudaKernelCache : IDisposable
 
         try
         {
-            _ = Task.Run(async () => await CleanupExpiredAsync());
+            _ = Task.Run(async () => await CleanupExpiredAsync().ConfigureAwait(false));
         }
         catch (Exception ex)
         {

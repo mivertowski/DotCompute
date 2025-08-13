@@ -120,7 +120,7 @@ public sealed class MetalAccelerator : IAccelerator
             var compiledKernel = await _kernelCompiler.CompileAsync(
                 definition,
                 options,
-                cancellationToken);
+                cancellationToken).ConfigureAwait(false);
 
             _logger.LogDebug("Successfully compiled kernel: {Name}", definition.Name);
             return compiledKernel;

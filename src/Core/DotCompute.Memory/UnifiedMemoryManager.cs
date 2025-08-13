@@ -14,12 +14,12 @@ namespace DotCompute.Memory;
 /// with efficient pooling and lazy synchronization.
 /// </summary>
 /// <remarks>
-/// Initializes a new instance of the UnifiedMemoryManager.
+/// Unified memory manager implementation that coordinates host and device memory
+/// with efficient pooling and lazy synchronization.
 /// </remarks>
-/// <param name="baseMemoryManager">The base memory manager to wrap.</param>
-public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUnifiedMemoryManager, IAsyncDisposable
+public sealed class UnifiedMemoryManager : IUnifiedMemoryManager, IAsyncDisposable
 {
-    private readonly IMemoryManager _baseMemoryManager = baseMemoryManager ?? throw new ArgumentNullException(nameof(baseMemoryManager));
+    private readonly IMemoryManager _baseMemoryManager;
     private readonly ConcurrentDictionary<Type, object> _pools = new();
     private readonly ConcurrentDictionary<object, WeakReference> _activeBuffers = new();
     private readonly Lock _lock = new();
@@ -41,6 +41,129 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
     private readonly AlignedCounter _totalAllocations;
 #pragma warning restore CS0649
     private bool _isDisposed;
+
+    /// <summary>
+    /// Initializes a new instance of the UnifiedMemoryManager with a default base memory manager.
+    /// </summary>
+    public UnifiedMemoryManager() : this(CreateDefaultMemoryManager())
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the UnifiedMemoryManager.
+    /// </summary>
+    /// <param name="baseMemoryManager">The base memory manager to wrap.</param>
+    public UnifiedMemoryManager(IMemoryManager baseMemoryManager)
+    {
+        _baseMemoryManager = baseMemoryManager ?? throw new ArgumentNullException(nameof(baseMemoryManager));
+    }
+
+    private static IMemoryManager CreateDefaultMemoryManager()
+    {
+        // Create a default memory manager using simple implementation
+        // In a real scenario, this might be injected via DI
+        return new SimpleInMemoryManager();
+    }
+
+    /// <summary>
+    /// Simple in-memory implementation of IMemoryManager for default scenarios
+    /// </summary>
+    private sealed class SimpleInMemoryManager : IMemoryManager, IDisposable
+    {
+        public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default)
+        {
+            var buffer = new SimpleMemoryBuffer(sizeInBytes, options);
+            return ValueTask.FromResult<IMemoryBuffer>(buffer);
+        }
+
+        public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            var buffer = new SimpleMemoryBuffer(sizeInBytes, options);
+            return ValueTask.FromResult<IMemoryBuffer>(buffer);
+        }
+
+        public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+        {
+            return new SimpleMemoryBuffer(length, buffer.Options);
+        }
+
+        public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+        {
+            var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+            return await AllocateAsync(sizeInBytes).ConfigureAwait(false);
+        }
+
+        public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+        {
+            var memory = new ReadOnlyMemory<T>(data.ToArray());
+            buffer.CopyFromHostAsync(memory).AsTask().Wait();
+        }
+
+        public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+        {
+            var memory = new Memory<T>(new T[data.Length]);
+            buffer.CopyToHostAsync(memory).AsTask().Wait();
+            memory.Span.CopyTo(data);
+        }
+
+        public void Free(IMemoryBuffer buffer)
+        {
+            buffer?.Dispose();
+        }
+
+        public void Dispose()
+        {
+            // Nothing to dispose for simple implementation
+        }
+
+        private sealed class SimpleMemoryBuffer : IMemoryBuffer
+        {
+            public long SizeInBytes { get; }
+            public DotCompute.Abstractions.MemoryOptions Options { get; }
+            public bool IsDisposed { get; private set; }
+
+            private readonly byte[] _data;
+
+            public SimpleMemoryBuffer(long sizeInBytes, DotCompute.Abstractions.MemoryOptions options)
+            {
+                SizeInBytes = sizeInBytes;
+                Options = options;
+                _data = new byte[sizeInBytes];
+            }
+
+            public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+            {
+                if (IsDisposed) throw new ObjectDisposedException(nameof(SimpleMemoryBuffer));
+                
+                var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(source.Span);
+                var destSpan = _data.AsSpan((int)offset, sourceBytes.Length);
+                sourceBytes.CopyTo(destSpan);
+                return ValueTask.CompletedTask;
+            }
+
+            public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+            {
+                if (IsDisposed) throw new ObjectDisposedException(nameof(SimpleMemoryBuffer));
+                
+                var sourceSpan = _data.AsSpan((int)offset, destination.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>());
+                var destBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(destination.Span);
+                sourceSpan.CopyTo(destBytes);
+                return ValueTask.CompletedTask;
+            }
+
+            public void Dispose()
+            {
+                IsDisposed = true;
+            }
+
+            public ValueTask DisposeAsync()
+            {
+                Dispose();
+                return ValueTask.CompletedTask;
+            }
+        }
+    }
 
     /// <summary>
     /// Creates a unified buffer with both host and device memory coordination.
@@ -72,8 +195,8 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        var buffer = await CreateUnifiedBufferAsync<T>(source.Length, options, cancellationToken);
-        await buffer.CopyFromAsync(source, cancellationToken);
+        var buffer = await CreateUnifiedBufferAsync<T>(source.Length, options, cancellationToken).ConfigureAwait(false);
+        await buffer.CopyFromAsync(source, cancellationToken).ConfigureAwait(false);
         return buffer;
     }
 
@@ -93,7 +216,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         // Convert to unified buffer creation and return as IBuffer
-        var unifiedBuffer = await CreateUnifiedBufferAsync<T>(length, MemoryOptions.None, cancellationToken);
+        var unifiedBuffer = await CreateUnifiedBufferAsync<T>(length, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
         return (IBuffer<T>)unifiedBuffer;
     }
 
@@ -113,7 +236,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         // Convert to unified buffer creation and return as IBuffer
-        var unifiedBuffer = await CreateUnifiedBufferFromAsync<T>(data, MemoryOptions.None, cancellationToken);
+        var unifiedBuffer = await CreateUnifiedBufferFromAsync<T>(data, MemoryOptions.None, cancellationToken).ConfigureAwait(false);
         return unifiedBuffer;
     }
 
@@ -134,7 +257,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         long sourceOffset = 0,
         long destinationOffset = 0,
         long? elementCount = null,
-        CancellationToken cancellationToken = default) where T : unmanaged => await source.CopyToAsync(destination, cancellationToken);
+        CancellationToken cancellationToken = default) where T : unmanaged => await source.CopyToAsync(destination, cancellationToken).ConfigureAwait(false);
 
     /// <summary>
     /// Gets memory usage statistics.
@@ -345,7 +468,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         ThrowIfDisposed();
 
         // Implement comprehensive memory benchmarks
-        var results = await RunComprehensiveBenchmarksAsync(cancellationToken);
+        var results = await RunComprehensiveBenchmarksAsync(cancellationToken).ConfigureAwait(false);
 
         return results;
 
@@ -372,7 +495,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         // Warmup
         for (var i = 0; i < warmupIterations; i++)
         {
-            await RunSingleBenchmarkIterationAsync(testDataSize, cancellationToken);
+            await RunSingleBenchmarkIterationAsync(testDataSize, cancellationToken).ConfigureAwait(false);
         }
 
         // Benchmark allocation overhead
@@ -382,10 +505,10 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         for (var i = 0; i < benchmarkIterations; i++)
         {
             sw.Restart();
-            var buffer = await CreateUnifiedBufferAsync<float>(testDataSize / sizeof(float), cancellationToken: cancellationToken);
+            var buffer = await CreateUnifiedBufferAsync<float>(testDataSize / sizeof(float), cancellationToken: cancellationToken).ConfigureAwait(false);
             sw.Stop();
             allocationTimes.Add(sw.Elapsed.TotalMicroseconds);
-            await buffer.DisposeAsync();
+            await buffer.DisposeAsync().ConfigureAwait(false);
         }
 
         // Set allocation overhead with proper measurement structure
@@ -401,7 +524,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
 
         // Benchmark transfer bandwidth
         var transferTimes = new List<double>();
-        var buffer1 = await CreateUnifiedBufferAsync<float>(testDataSize / sizeof(float), cancellationToken: cancellationToken);
+        var buffer1 = await CreateUnifiedBufferAsync<float>(testDataSize / sizeof(float), cancellationToken: cancellationToken).ConfigureAwait(false);
         var testData = new float[testDataSize / sizeof(float)];
 #pragma warning disable CA5394 // Do not use insecure randomness
         var random = new Random(42); // Deterministic random for benchmarking
@@ -414,7 +537,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         for (var i = 0; i < benchmarkIterations; i++)
         {
             sw.Restart();
-            await buffer1.CopyFromAsync(testData, cancellationToken);
+            await buffer1.CopyFromAsync(testData, cancellationToken).ConfigureAwait(false);
             sw.Stop();
             transferTimes.Add(sw.Elapsed.TotalMicroseconds);
         }
@@ -547,7 +670,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
             AvailableMemoryAtPressure = memStats.AvailableDeviceMemory
         };
 
-        await buffer1.DisposeAsync();
+        await buffer1.DisposeAsync().ConfigureAwait(false);
         return results;
     }
 
@@ -558,7 +681,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
     {
         var buffer = await CreateUnifiedBufferAsync<float>(testDataSize / sizeof(float), cancellationToken: cancellationToken);
         var testData = new float[testDataSize / sizeof(float)];
-        await buffer.CopyFromAsync(testData, cancellationToken);
+        await buffer.CopyFromAsync(testData, cancellationToken).ConfigureAwait(false);
 #pragma warning disable CA1849 // Call async methods when in an async method
         buffer.EnsureOnDevice();
         buffer.EnsureOnHost();
@@ -629,6 +752,76 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
     {
         ThrowIfDisposed();
         return _baseMemoryManager.CreateView(buffer, offset, length);
+    }
+
+    /// <summary>
+    /// Allocates memory for a specific number of elements.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="count">The number of elements to allocate.</param>
+    /// <returns>A memory buffer for the allocated elements.</returns>
+    public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        
+        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        return await _baseMemoryManager.AllocateAsync(sizeInBytes, DotCompute.Abstractions.MemoryOptions.None).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Copies data from host memory to a device buffer.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="buffer">The destination buffer.</param>
+    /// <param name="data">The source data span.</param>
+    /// <returns>A task representing the async operation.</returns>
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(buffer);
+        
+        var memory = new ReadOnlyMemory<T>(data.ToArray());
+        buffer.CopyFromHostAsync(memory).AsTask().Wait();
+    }
+
+    /// <summary>
+    /// Copies data from a device buffer to host memory.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="data">The destination data span.</param>
+    /// <param name="buffer">The source buffer.</param>
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(buffer);
+        
+        var memory = new Memory<T>(new T[data.Length]);
+        buffer.CopyToHostAsync(memory).AsTask().Wait();
+        memory.Span.CopyTo(data);
+    }
+
+    /// <summary>
+    /// Frees a memory buffer.
+    /// </summary>
+    /// <param name="buffer">The buffer to free.</param>
+    public void Free(IMemoryBuffer buffer)
+    {
+        if (buffer != null)
+        {
+            // Remove from tracking
+            _activeBuffers.TryRemove(buffer, out _);
+            
+            // Call base implementation if it has Free method
+            if (_baseMemoryManager is IDisposable disposable)
+            {
+                buffer.Dispose();
+            }
+            else
+            {
+                buffer.Dispose();
+            }
+        }
     }
 
     // Note: Legacy sync methods removed as they are not part of the new IMemoryManager interface
@@ -753,7 +946,7 @@ public sealed class UnifiedMemoryManager(IMemoryManager baseMemoryManager) : IUn
         {
             if (kvp.Value is IAsyncDisposable asyncDisposable)
             {
-                await asyncDisposable.DisposeAsync();
+                await asyncDisposable.DisposeAsync().ConfigureAwait(false);
             }
             else if (kvp.Value is IDisposable disposable)
             {

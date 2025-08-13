@@ -629,6 +629,33 @@ internal sealed class MockMemoryManager : AbstractionsMemory.IMemoryManager
     {
         return new MockMemoryBuffer(length, buffer.Options);
     }
+
+    public async ValueTask<AbstractionsMemory.IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(count);
+        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        return await AllocateAsync(sizeInBytes, AbstractionsMemory.MemoryOptions.None);
+    }
+
+    public void CopyToDevice<T>(AbstractionsMemory.IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        var memory = new ReadOnlyMemory<T>(data.ToArray());
+        buffer.CopyFromHostAsync(memory).AsTask().Wait();
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, AbstractionsMemory.IMemoryBuffer buffer) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        var memory = new Memory<T>(new T[data.Length]);
+        buffer.CopyToHostAsync(memory).AsTask().Wait();
+        memory.Span.CopyTo(data);
+    }
+
+    public void Free(AbstractionsMemory.IMemoryBuffer buffer)
+    {
+        buffer?.Dispose();
+    }
 }
 
 /// <summary>

@@ -28,6 +28,36 @@ public interface IMemoryManager
     /// Creates a view over existing memory.
     /// </summary>
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length);
+
+    /// <summary>
+    /// Allocates memory for a specific number of elements.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="count">The number of elements to allocate.</param>
+    /// <returns>A memory buffer for the allocated elements.</returns>
+    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged;
+
+    /// <summary>
+    /// Copies data from host memory to a device buffer.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="buffer">The destination buffer.</param>
+    /// <param name="data">The source data span.</param>
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged;
+
+    /// <summary>
+    /// Copies data from a device buffer to host memory.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="data">The destination data span.</param>
+    /// <param name="buffer">The source buffer.</param>
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged;
+
+    /// <summary>
+    /// Frees a memory buffer.
+    /// </summary>
+    /// <param name="buffer">The buffer to free.</param>
+    public void Free(IMemoryBuffer buffer);
 }
 
 /// <summary>

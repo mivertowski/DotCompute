@@ -571,14 +571,14 @@ public sealed class CudaGraphSupport : IDisposable
         // - Warp scheduling
         
         _logger.LogDebug("Applied Ada Lovelace optimizations to graph {GraphId}", graph.Id);
-        await Task.CompletedTask; // Placeholder for actual optimization logic
+        await Task.CompletedTask.ConfigureAwait(false); // Placeholder for actual optimization logic
     }
 
     private async Task AttemptKernelFusionAsync(CudaGraph graph, CancellationToken cancellationToken)
     {
         // Attempt to fuse compatible kernels
         _logger.LogDebug("Attempted kernel fusion for graph {GraphId}", graph.Id);
-        await Task.CompletedTask; // Placeholder for actual fusion logic
+        await Task.CompletedTask.ConfigureAwait(false); // Placeholder for actual fusion logic
     }
 
     private void OptimizeGraphs(object? state)

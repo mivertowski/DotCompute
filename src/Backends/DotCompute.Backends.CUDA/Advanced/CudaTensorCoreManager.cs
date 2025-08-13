@@ -372,7 +372,7 @@ public sealed class CudaTensorCoreManager : IDisposable
         tensorKernel.OptimizedLayout = true;
         tensorKernel.SupportedPrecisions = GetSupportedPrecisions();
         
-        await Task.CompletedTask; // Placeholder for async optimization work
+        await Task.CompletedTask.ConfigureAwait(false); // Placeholder for async optimization work
     }
 
     private List<CudaTensorPrecision> GetSupportedPrecisions()

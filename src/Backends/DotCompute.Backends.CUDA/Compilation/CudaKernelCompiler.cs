@@ -127,7 +127,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             };
 
             // Prepare CUDA source code
-            var cudaSource = await PrepareCudaSourceAsync(source, options);
+            var cudaSource = await PrepareCudaSourceAsync(source, options).ConfigureAwait(false);
 
             // Validate source code
             var validationResult = ValidateCudaSource(cudaSource, source.Name);
@@ -151,12 +151,12 @@ public sealed partial class CudaKernelCompiler : IDisposable
             if (useCubin)
             {
                 LogUsingCubinCompilation(_logger, source.Name);
-                compiledCode = await CompileToCubinAsync(cudaSource, source.Name, options);
+                compiledCode = await CompileToCubinAsync(cudaSource, source.Name, options).ConfigureAwait(false);
             }
             else
             {
                 LogUsingPtxCompilation(_logger, source.Name);
-                compiledCode = await CompileToPtxAsync(cudaSource, source.Name, options);
+                compiledCode = await CompileToPtxAsync(cudaSource, source.Name, options).ConfigureAwait(false);
             }
 
             // Verify compiled code
@@ -215,7 +215,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
 
         // Compile kernels in parallel
         var tasks = definitions.Select(def => CompileAsync(def, options, cancellationToken)).ToArray();
-        return await Task.WhenAll(tasks);
+        return await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
     public bool TryGetCached(string kernelName, out ICompiledKernel? compiledKernel)
@@ -391,7 +391,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
                 compilationOptions);
 
             // Get compilation log regardless of success/failure
-            var compilerLog = await GetCompilationLogAsync(program);
+            var compilerLog = await GetCompilationLogAsync(program).ConfigureAwait(false);
 
             if (!string.IsNullOrWhiteSpace(compilerLog))
             {
@@ -589,7 +589,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
                 compilationOptions);
 
             // Get compilation log
-            var compilerLog = await GetCompilationLogAsync(program);
+            var compilerLog = await GetCompilationLogAsync(program).ConfigureAwait(false);
 
             if (!string.IsNullOrWhiteSpace(compilerLog))
             {
@@ -902,7 +902,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
                         continue;
                     }
 
-                    var metadataJson = await File.ReadAllTextAsync(metadataFile);
+                    var metadataJson = await File.ReadAllTextAsync(metadataFile).ConfigureAwait(false);
                     var metadata = System.Text.Json.JsonSerializer.Deserialize<KernelCacheMetadata>(metadataJson);
 
                     if (metadata == null || IsCacheEntryExpired(metadata))
@@ -912,7 +912,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
                         continue;
                     }
 
-                    var ptxData = await File.ReadAllBytesAsync(ptxFile);
+                    var ptxData = await File.ReadAllBytesAsync(ptxFile).ConfigureAwait(false);
 
                     // Create compiled kernel from cached PTX
                     var compiledKernel = new CudaCompiledKernel(
@@ -955,10 +955,10 @@ public sealed partial class CudaKernelCompiler : IDisposable
             var ptxFile = Path.Combine(_cacheDirectory, $"{fileName}.ptx");
             var metadataFile = Path.Combine(_cacheDirectory, $"{fileName}.metadata.json");
 
-            await File.WriteAllBytesAsync(ptxFile, ptx);
+            await File.WriteAllBytesAsync(ptxFile, ptx).ConfigureAwait(false);
 
             var metadataJson = System.Text.Json.JsonSerializer.Serialize(metadata, _jsonOptions);
-            await File.WriteAllTextAsync(metadataFile, metadataJson);
+            await File.WriteAllTextAsync(metadataFile, metadataJson).ConfigureAwait(false);
 
             LogPersistedKernelCache(_logger, ptxFile);
         }

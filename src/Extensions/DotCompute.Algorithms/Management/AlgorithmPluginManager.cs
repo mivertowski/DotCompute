@@ -234,7 +234,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 nugetOptions);
 
             // Load the package and get assembly paths
-            var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework, cancellationToken)
+            var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework, cancellationToken).ConfigureAwait(false)
                 .ConfigureAwait(false);
 
             LogNuGetPackageLoaded(
@@ -250,7 +250,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 {
                     try
                     {
-                        var count = await LoadPluginsFromAssemblyAsync(assemblyPath, cancellationToken)
+                        var count = await LoadPluginsFromAssemblyAsync(assemblyPath, cancellationToken).ConfigureAwait(false)
                             .ConfigureAwait(false);
                         return count;
                     }
@@ -331,7 +331,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             }
 
             // Load the updated package
-            return await LoadPluginsFromNuGetPackageAsync(packageId, targetFramework, cancellationToken)
+            return await LoadPluginsFromNuGetPackageAsync(packageId, targetFramework, cancellationToken).ConfigureAwait(false)
                 .ConfigureAwait(false);
         }
         catch (Exception ex)
@@ -394,7 +394,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<NuGetPluginLoader>.Instance, 
                 nugetOptions);
 
-            await Task.CompletedTask; // Make async for consistency
+            await Task.CompletedTask.ConfigureAwait(false); // Make async for consistency
             return nugetLoader.GetCachedPackages();
         }
         catch (Exception ex)
@@ -439,7 +439,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
                 nugetOptions);
 
             // Load package to trigger validation
-            var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework, cancellationToken)
+            var loadResult = await nugetLoader.LoadPackageAsync(packageSource, targetFramework, cancellationToken).ConfigureAwait(false)
                 .ConfigureAwait(false);
 
             var validationResult = new NuGetValidationResult

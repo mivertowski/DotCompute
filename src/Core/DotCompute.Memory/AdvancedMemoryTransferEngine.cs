@@ -81,24 +81,24 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
                 if (result.UsedMemoryMapping)
                 {
                     // Use memory-mapped files for very large datasets
-                    buffer = await TransferWithMemoryMappingAsync(data, accelerator, options, result, cancellationToken);
+                    buffer = await TransferWithMemoryMappingAsync(data, accelerator, options, result, cancellationToken).ConfigureAwait(false);
                 }
                 else if (result.UsedStreaming)
                 {
                     // Use streaming transfers with chunking
-                    buffer = await TransferWithStreamingAsync(data, accelerator, options, result, cancellationToken);
+                    buffer = await TransferWithStreamingAsync(data, accelerator, options, result, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
                     // Standard transfer for smaller datasets
-                    buffer = await _memoryManager.AllocateAndCopyAsync<T>(data, options.MemoryOptions, cancellationToken);
+                    buffer = await _memoryManager.AllocateAndCopyAsync<T>(data, options.MemoryOptions, cancellationToken).ConfigureAwait(false);
                     result.ChunkCount = 1;
                 }
 
                 // Verify data integrity with optimized sampling
                 if (options.VerifyIntegrity && buffer != null)
                 {
-                    result.IntegrityVerified = await VerifyDataIntegrityAsync(buffer, data, options, cancellationToken);
+                    result.IntegrityVerified = await VerifyDataIntegrityAsync(buffer, data, options, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
@@ -163,7 +163,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             // Create transfer tasks with controlled concurrency
             var transferTasks = dataSets.Select(async (dataSet, index) =>
             {
-                await semaphore.WaitAsync(cancellationToken);
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
                 try
                 {
                     var transferOptions = new TransferOptions
@@ -175,7 +175,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
                         MemoryOptions = options.MemoryOptions
                     };
 
-                    var result = await TransferLargeDatasetAsync(dataSet, accelerator, transferOptions, cancellationToken);
+                    var result = await TransferLargeDatasetAsync(dataSet, accelerator, transferOptions, cancellationToken).ConfigureAwait(false);
                     result.TransferIndex = index;
                     results.Add(result);
                     return result;
@@ -187,7 +187,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             });
 
             // Execute all transfers concurrently
-            var allResults = await Task.WhenAll(transferTasks);
+            var allResults = await Task.WhenAll(transferTasks).ConfigureAwait(false);
             
             overallStopwatch.Stop();
             
@@ -235,12 +235,12 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             accessor.WriteArray(0, dataSpan.ToArray(), 0, dataSpan.Length);
             
             // Create buffer and copy from memory-mapped file
-            var buffer = await _memoryManager.AllocateAsync(sizeInBytes, options.MemoryOptions, cancellationToken);
+            var buffer = await _memoryManager.AllocateAsync(sizeInBytes, options.MemoryOptions, cancellationToken).ConfigureAwait(false);
             
             // Read from memory-mapped file and copy to buffer
             var tempBuffer = new byte[sizeInBytes];
             accessor.ReadArray(0, tempBuffer, 0, tempBuffer.Length);
-            await buffer.CopyFromHostAsync<byte>(tempBuffer, 0, cancellationToken);
+            await buffer.CopyFromHostAsync<byte>(tempBuffer, 0, cancellationToken).ConfigureAwait(false);
             
             result.UsedMemoryMapping = true;
             return buffer;
@@ -281,7 +281,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
         result.UsedStreaming = true;
         
         // Allocate destination buffer
-        var buffer = await _memoryManager.AllocateAsync(sizeInBytes, options.MemoryOptions, cancellationToken);
+        var buffer = await _memoryManager.AllocateAsync(sizeInBytes, options.MemoryOptions, cancellationToken).ConfigureAwait(false);
         
         // Process chunks with optimal parallelism
         var chunkSemaphore = new SemaphoreSlim(Math.Min(Environment.ProcessorCount, chunkCount));
@@ -296,7 +296,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
                 chunkTasks.Add(chunkTask);
             }
             
-            await Task.WhenAll(chunkTasks);
+            await Task.WhenAll(chunkTasks).ConfigureAwait(false);
             return buffer;
         }
         finally
@@ -317,7 +317,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
         SemaphoreSlim semaphore,
         CancellationToken cancellationToken) where T : unmanaged
     {
-        await semaphore.WaitAsync(cancellationToken);
+        await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             var startIndex = chunkIndex * (chunkSize / elementSize);
@@ -333,7 +333,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             Array.Copy(data, startIndex, chunkData, 0, actualChunkSize);
             
             var byteOffset = startIndex * elementSize;
-            await buffer.CopyFromHostAsync<T>(chunkData, byteOffset, cancellationToken);
+            await buffer.CopyFromHostAsync<T>(chunkData, byteOffset, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
@@ -352,7 +352,7 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
     {
         var sizeInBytes = originalData.Length * Unsafe.SizeOf<T>();
         var readBuffer = new byte[sizeInBytes];
-        await buffer.CopyToHostAsync<byte>(readBuffer, 0, cancellationToken);
+        await buffer.CopyToHostAsync<byte>(readBuffer, 0, cancellationToken).ConfigureAwait(false);
         
         var readData = MemoryMarshal.Cast<byte, T>(readBuffer);
         
@@ -481,11 +481,11 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
             {
                 if (_transferQueue.TryDequeue(out var operation))
                 {
-                    await operation.ExecuteAsync(_shutdownCts.Token);
+                    await operation.ExecuteAsync(_shutdownCts.Token).ConfigureAwait(false);
                 }
                 else
                 {
-                    await Task.Delay(10, _shutdownCts.Token);
+                    await Task.Delay(10, _shutdownCts.Token).ConfigureAwait(false);
                 }
             }
             catch (OperationCanceledException) when (_shutdownCts.Token.IsCancellationRequested)
@@ -529,8 +529,8 @@ public sealed class AdvancedMemoryTransferEngine : IAsyncDisposable
 
         _disposed = true;
         
-        await _shutdownCts.CancelAsync();
-        await _pressureMonitor.DisposeAsync();
+        await _shutdownCts.CancelAsync().ConfigureAwait(false);
+        await _pressureMonitor.DisposeAsync().ConfigureAwait(false);
         _concurrencyLimiter.Dispose();
         _shutdownCts.Dispose();
     }
