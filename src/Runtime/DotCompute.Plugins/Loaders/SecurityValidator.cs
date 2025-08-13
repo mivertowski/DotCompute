@@ -443,7 +443,8 @@ namespace DotCompute.Plugins.Loaders
                 return new StrongNameResult
                 {
                     IsValid = publicKey != null && publicKey.Length > 0,
-                    PublicKeyToken = assembly.GetName().GetPublicKeyToken()?.ToHexString(),
+                    PublicKeyToken = assembly.GetName().GetPublicKeyToken() != null ? 
+                        Convert.ToHexString(assembly.GetName().GetPublicKeyToken()!) : null,
                     ErrorMessage = publicKey == null ? "No public key found" : null
                 };
             }
@@ -605,6 +606,21 @@ namespace DotCompute.Plugins.Loaders
         /// Gets or sets whether to block packages with high-risk vulnerabilities.
         /// </summary>
         public bool BlockHighRiskPackages { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets whether to require strong name signing.
+        /// </summary>
+        public bool RequireStrongName { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether to block suspicious assemblies.
+        /// </summary>
+        public bool BlockSuspiciousAssemblies { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets the list of allowed dangerous assemblies.
+        /// </summary>
+        public List<string> AllowedDangerousAssemblies { get; set; } = new();
 
         /// <summary>
         /// Gets or sets whether to block packages with critical vulnerabilities.

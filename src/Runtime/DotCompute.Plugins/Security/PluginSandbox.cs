@@ -266,13 +266,13 @@ namespace DotCompute.Plugins.Security
             CancellationToken cancellationToken)
         {
             // Set up security context
-            var originalContext = Thread.CurrentThread.CurrentPrincipal;
+            var originalContext = Thread.CurrentPrincipal;
             var securityPrincipal = CreateSecurityPrincipal(plugin.SecurityContext);
             
             try
             {
                 // Switch to sandboxed security context
-                Thread.CurrentThread.CurrentPrincipal = securityPrincipal;
+                Thread.CurrentPrincipal = securityPrincipal;
                 
                 // Execute the operation
                 return await operation(plugin.Instance);
@@ -280,7 +280,7 @@ namespace DotCompute.Plugins.Security
             finally
             {
                 // Restore original context
-                Thread.CurrentThread.CurrentPrincipal = originalContext;
+                Thread.CurrentPrincipal = originalContext;
             }
         }
 

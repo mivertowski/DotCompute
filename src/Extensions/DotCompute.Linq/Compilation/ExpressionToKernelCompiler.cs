@@ -68,13 +68,11 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
             // Step 4: Generate kernel based on analysis
             if (fusionContext != null)
             {
-                return await CompileFusedExpressionAsync(optimizedExpression, accelerator, fusionContext, options, cancellationToken).ConfigureAwait(false)
-                    .ConfigureAwait(false);
+                return await CompileFusedExpressionAsync(optimizedExpression, accelerator, fusionContext, options, cancellationToken).ConfigureAwait(false);
             }
             else
             {
-                return await CompileSimpleExpressionAsync(optimizedExpression, accelerator, analysis, options, cancellationToken).ConfigureAwait(false)
-                    .ConfigureAwait(false);
+                return await CompileSimpleExpressionAsync(optimizedExpression, accelerator, analysis, options, cancellationToken).ConfigureAwait(false);
             }
         }
         finally
@@ -157,8 +155,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
         if (_templateCache.TryGetValue(templateKey, out var template))
         {
             _logger.LogDebug("Using cached template for expression compilation");
-            return await CompileFromTemplate(template, accelerator, expression, options, cancellationToken).ConfigureAwait(false)
-                .ConfigureAwait(false);
+            return await CompileFromTemplate(template, accelerator, expression, options, cancellationToken).ConfigureAwait(false);
         }
 
         // Create new kernel definition

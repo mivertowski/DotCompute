@@ -199,6 +199,16 @@ namespace DotCompute.Plugins.Loaders
         /// Gets or sets whether the signature is valid.
         /// </summary>
         public bool IsValid { get; set; }
+
+        /// <summary>
+        /// Gets or sets whether the plugin has a strong name.
+        /// </summary>
+        public bool HasStrongName { get; set; }
+
+        /// <summary>
+        /// Gets or sets validation errors.
+        /// </summary>
+        public List<string> ValidationErrors { get; set; } = new();
     }
 
     /// <summary>

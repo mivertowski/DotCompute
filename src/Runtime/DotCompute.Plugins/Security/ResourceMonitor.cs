@@ -268,8 +268,8 @@ namespace DotCompute.Plugins.Security
         
         private ResourceUsage _currentUsage;
         private DateTime _lastUpdate;
-        private long _lastFileIOCount;
-        private long _lastNetworkIOCount;
+        private long _lastFileIOCount = 0;
+        private long _lastNetworkIOCount = 0;
         private bool _disposed;
 
         public PluginResourceTracker(Guid pluginId, ResourceLimits limits, ILogger logger)

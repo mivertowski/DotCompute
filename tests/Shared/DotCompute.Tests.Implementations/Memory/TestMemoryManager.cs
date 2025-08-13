@@ -80,6 +80,75 @@ public class TestMemoryManager : IMemoryManager, IDisposable
         return new TestMemoryView(testBuffer, offset, length);
     }
 
+    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        var elementSize = Marshal.SizeOf<T>();
+        var sizeInBytes = count * elementSize;
+        return AllocateAsync(sizeInBytes);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        if (buffer is not TestMemoryBuffer testBuffer)
+        {
+            throw new ArgumentException("Buffer must be a TestMemoryBuffer", nameof(buffer));
+        }
+        
+        var elementSize = Marshal.SizeOf<T>();
+        var sizeInBytes = data.Length * elementSize;
+        
+        if (sizeInBytes > buffer.SizeInBytes)
+        {
+            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+        }
+
+        unsafe
+        {
+            fixed (T* dataPtr = data)
+            {
+                var destPtr = (byte*)testBuffer.Handle.ToPointer();
+                Buffer.MemoryCopy(dataPtr, destPtr, buffer.SizeInBytes, sizeInBytes);
+            }
+        }
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        if (buffer is not TestMemoryBuffer testBuffer)
+        {
+            throw new ArgumentException("Buffer must be a TestMemoryBuffer", nameof(buffer));
+        }
+        
+        var elementSize = Marshal.SizeOf<T>();
+        var sizeInBytes = data.Length * elementSize;
+        
+        if (sizeInBytes > buffer.SizeInBytes)
+        {
+            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+        }
+
+        unsafe
+        {
+            fixed (T* dataPtr = data)
+            {
+                var sourcePtr = (byte*)testBuffer.Handle.ToPointer();
+                Buffer.MemoryCopy(sourcePtr, dataPtr, sizeInBytes, sizeInBytes);
+            }
+        }
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        if (buffer is TestMemoryBuffer testBuffer)
+        {
+            testBuffer.Dispose();
+        }
+        else
+        {
+            throw new ArgumentException("Buffer must be a TestMemoryBuffer", nameof(buffer));
+        }
+    }
+
     internal void ReleaseBuffer(TestMemoryBuffer buffer)
     {
         if (_allocations.TryRemove(buffer.Handle, out _))

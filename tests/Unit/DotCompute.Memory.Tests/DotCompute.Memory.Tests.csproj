@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
     <ProjectReference Include="..\..\..\tests\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
+    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Mocks\DotCompute.Tests.Mocks.csproj" />
   </ItemGroup>
 
   <ItemGroup>

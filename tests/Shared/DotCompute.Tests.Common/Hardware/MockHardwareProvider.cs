@@ -3,6 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
+using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -71,7 +72,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
         }
 
         _logger.LogDebug("Creating mock accelerator for device {DeviceId}", device.Id);
-        return new MockAccelerator(mockDevice);
+        return new MockAccelerator(mockDevice.Id, mockDevice.Type, _logger);
     }
 
     /// <inheritdoc/>

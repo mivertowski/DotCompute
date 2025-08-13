@@ -1,26 +1,35 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Tests.Shared;
 
 /// <summary>
 /// Mock accelerator implementation for testing without hardware dependencies.
+/// Provides comprehensive IAccelerator implementation with configurable behavior for testing scenarios.
 /// </summary>
+[ExcludeFromCodeCoverage]
 public class MockAccelerator : IAccelerator
 {
     private bool _isDisposed;
     private readonly Dictionary<string, object> _properties = new();
     private readonly AcceleratorInfo _info;
     private readonly IMemoryManager _memoryManager;
+    private readonly ILogger _logger;
+    private string? _failureMessage;
 
     public MockAccelerator(
         string name = "MockGPU", 
         AcceleratorType type = AcceleratorType.GPU,
-        long totalMemory = 8L * 1024 * 1024 * 1024) // 8GB default
+        long totalMemory = 8L * 1024 * 1024 * 1024, // 8GB default
+        ILogger? logger = null)
     {
+        _logger = logger ?? NullLogger.Instance;
         Name = name;
         Type = type;
         TotalMemory = totalMemory;
@@ -31,6 +40,9 @@ public class MockAccelerator : IAccelerator
         ClockRate = 1500; // MHz
         Features = AcceleratorFeature.DoublePrecision | AcceleratorFeature.UnifiedMemory;
         IsAvailable = true;
+        
+        _logger.LogDebug("Created MockAccelerator {DeviceId} ({DeviceName}) with {TotalMemory} bytes memory", 
+            DeviceId, name, totalMemory);
 
         // Initialize AcceleratorInfo with required properties
         _info = new AcceleratorInfo
@@ -53,8 +65,9 @@ public class MockAccelerator : IAccelerator
             Capabilities = new Dictionary<string, object>(_properties)
         };
 
-        _memoryManager = new MockMemoryManager(this);
+        _memoryManager = new MockMemoryManager(this, _logger);
     }
+
 
     public string Name { get; set; }
     public AcceleratorType Type { get; set; }
@@ -81,7 +94,7 @@ public class MockAccelerator : IAccelerator
         ThrowIfDisposed();
         await Task.Delay(10, cancellationToken); // Simulate compilation time
         
-        return new MockCompiledKernel(definition.Name ?? "MockKernel");
+        return new MockCompiledKernel(definition.Name ?? "MockKernel", _logger);
     }
 
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
@@ -112,9 +125,25 @@ public class MockAccelerator : IAccelerator
         AvailableMemory = Math.Max(0, TotalMemory - bytesUsed);
     }
 
-    public void SimulateDeviceFailure()
+    /// <summary>
+    /// Simulates a device failure for testing error handling scenarios.
+    /// </summary>
+    /// <param name="errorMessage">The error message to simulate.</param>
+    public void SimulateDeviceFailure(string errorMessage = "Simulated device failure")
     {
         IsAvailable = false;
+        _failureMessage = errorMessage;
+        _logger.LogWarning("Simulated device failure: {ErrorMessage}", errorMessage);
+    }
+
+    /// <summary>
+    /// Resets any simulated failures.
+    /// </summary>
+    public void ResetFailure()
+    {
+        IsAvailable = true;
+        _failureMessage = null;
+        _logger.LogInformation("Reset device failure simulation");
     }
 
     private void ThrowIfDisposed()
@@ -129,11 +158,13 @@ public class MockAccelerator : IAccelerator
 /// </summary>
 public class MockCompiledKernel : ICompiledKernel
 {
+    private readonly ILogger _logger;
     private bool _isDisposed;
 
-    public MockCompiledKernel(string name)
+    public MockCompiledKernel(string name, ILogger? logger = null)
     {
         Name = name ?? throw new ArgumentNullException(nameof(name));
+        _logger = logger ?? NullLogger.Instance;
     }
 
     public string Name { get; }
@@ -164,11 +195,13 @@ public class MockCompiledKernel : ICompiledKernel
 public class MockMemoryManager : IMemoryManager
 {
     private readonly IAccelerator _accelerator;
+    private readonly ILogger _logger;
     private bool _isDisposed;
 
-    public MockMemoryManager(IAccelerator accelerator)
+    public MockMemoryManager(IAccelerator accelerator, ILogger? logger = null)
     {
         _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+        _logger = logger ?? NullLogger.Instance;
     }
 
     public async ValueTask<IMemoryBuffer> AllocateAsync(

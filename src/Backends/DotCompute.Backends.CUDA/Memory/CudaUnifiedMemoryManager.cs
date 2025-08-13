@@ -134,6 +134,126 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
         return cudaBuffer.CreateView(offset, length);
     }
 
+    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var sizeInBytes = count * elementSize;
+        return AllocateAsync(sizeInBytes);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(buffer);
+        
+        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var sizeInBytes = data.Length * elementSize;
+        
+        if (sizeInBytes > buffer.SizeInBytes)
+        {
+            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+        }
+
+        if (!_buffers.TryGetValue(buffer, out var cudaBuffer))
+        {
+            throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
+        }
+
+        try
+        {
+            _context.MakeCurrent();
+            
+            unsafe
+            {
+                fixed (T* dataPtr = data)
+                {
+                    var result = CudaRuntime.cudaMemcpyAsync(
+                        cudaBuffer.DevicePointer,
+                        new IntPtr(dataPtr),
+                        (ulong)sizeInBytes,
+                        CudaMemcpyKind.HostToDevice,
+                        _context.Stream);
+                    
+                    CudaRuntime.CheckError(result, "Host to device copy");
+                    _context.Synchronize();
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not MemoryException)
+        {
+            _logger.LogError(ex, "Failed to copy data to device");
+            throw new MemoryException("Failed to copy data to device", ex);
+        }
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        ThrowIfDisposed();
+        ArgumentNullException.ThrowIfNull(buffer);
+        
+        var elementSize = System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var sizeInBytes = data.Length * elementSize;
+        
+        if (sizeInBytes > buffer.SizeInBytes)
+        {
+            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+        }
+
+        if (!_buffers.TryGetValue(buffer, out var cudaBuffer))
+        {
+            throw new ArgumentException("Buffer was not allocated by this memory manager", nameof(buffer));
+        }
+
+        try
+        {
+            _context.MakeCurrent();
+            
+            unsafe
+            {
+                fixed (T* dataPtr = data)
+                {
+                    var result = CudaRuntime.cudaMemcpyAsync(
+                        new IntPtr(dataPtr),
+                        cudaBuffer.DevicePointer,
+                        (ulong)sizeInBytes,
+                        CudaMemcpyKind.DeviceToHost,
+                        _context.Stream);
+                    
+                    CudaRuntime.CheckError(result, "Device to host copy");
+                    _context.Synchronize();
+                }
+            }
+        }
+        catch (Exception ex) when (ex is not MemoryException)
+        {
+            _logger.LogError(ex, "Failed to copy data from device");
+            throw new MemoryException("Failed to copy data from device", ex);
+        }
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        
+        if (_buffers.TryRemove(buffer, out var cudaBuffer))
+        {
+            try
+            {
+                cudaBuffer.Dispose();
+                _statistics.AllocationCount--;
+                _statistics.UsedMemoryBytes -= buffer.SizeInBytes;
+                
+                _logger.LogDebug("Freed CUDA unified buffer of {Size}MB", 
+                    buffer.SizeInBytes / (1024 * 1024));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error disposing CUDA buffer during free");
+                throw;
+            }
+        }
+    }
+
     private async ValueTask<CudaUnifiedMemoryBuffer> AllocateUnifiedMemoryAsync(
         long sizeInBytes, 
         MemoryOptions options, 

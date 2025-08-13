@@ -111,6 +111,95 @@ public sealed class MetalMemoryManager(IntPtr device, MetalAcceleratorOptions op
         return new MetalMemoryBufferView(metalBuffer, offset, length);
     }
 
+    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        var elementSize = Unsafe.SizeOf<T>();
+        var sizeInBytes = count * elementSize;
+        return AllocateAsync(sizeInBytes);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        ObjectDisposedException.ThrowIf(_disposed > 0, this);
+        
+        if (!_allocations.TryGetValue(buffer, out var metalBuffer))
+        {
+            throw new ArgumentException("Buffer was not allocated by this manager.", nameof(buffer));
+        }
+        
+        var elementSize = Unsafe.SizeOf<T>();
+        var sizeInBytes = data.Length * elementSize;
+        
+        if (sizeInBytes > buffer.SizeInBytes)
+        {
+            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+        }
+
+        unsafe
+        {
+            var contents = MetalNative.GetBufferContents(metalBuffer.Buffer);
+            if (contents == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to get buffer contents.");
+            }
+
+            fixed (T* dataPtr = data)
+            {
+                System.Buffer.MemoryCopy(dataPtr, contents.ToPointer(), buffer.SizeInBytes, sizeInBytes);
+            }
+
+            // For managed storage mode, mark the range as modified
+            if (metalBuffer.StorageMode == MetalStorageMode.Managed)
+            {
+                MetalNative.DidModifyRange(metalBuffer.Buffer, 0, sizeInBytes);
+            }
+        }
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        ObjectDisposedException.ThrowIf(_disposed > 0, this);
+        
+        if (!_allocations.TryGetValue(buffer, out var metalBuffer))
+        {
+            throw new ArgumentException("Buffer was not allocated by this manager.", nameof(buffer));
+        }
+        
+        var elementSize = Unsafe.SizeOf<T>();
+        var sizeInBytes = data.Length * elementSize;
+        
+        if (sizeInBytes > buffer.SizeInBytes)
+        {
+            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
+        }
+
+        unsafe
+        {
+            var contents = MetalNative.GetBufferContents(metalBuffer.Buffer);
+            if (contents == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to get buffer contents.");
+            }
+
+            fixed (T* dataPtr = data)
+            {
+                System.Buffer.MemoryCopy(contents.ToPointer(), dataPtr, sizeInBytes, sizeInBytes);
+            }
+        }
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        ArgumentNullException.ThrowIfNull(buffer);
+        
+        if (_allocations.TryRemove(buffer, out var metalBuffer))
+        {
+            metalBuffer.Dispose();
+        }
+    }
+
     public long GetAllocatedMemory() => Interlocked.Read(ref _totalAllocated);
 
     public async ValueTask DisposeAsync()
@@ -168,6 +257,8 @@ internal sealed class MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryO
     public MemoryOptions Options { get; } = options;
 
     public bool IsDisposed => _disposed > 0;
+
+    public MetalStorageMode StorageMode => _storageMode;
 
     public async ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,

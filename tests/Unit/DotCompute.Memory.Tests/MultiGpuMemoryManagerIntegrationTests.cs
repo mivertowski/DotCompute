@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution;
 using DotCompute.Memory;
+using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -29,10 +30,10 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         // Create mock devices representing different GPU scenarios
         _devices = new[]
         {
-            new MockAccelerator("cuda-gpu-0", "CUDA", "RTX 4090 #0"),
-            new MockAccelerator("cuda-gpu-1", "CUDA", "RTX 4090 #1"),
-            new MockAccelerator("rocm-gpu-0", "ROCm", "MI210 #0"),
-            new MockAccelerator("cpu-device-0", "CPU", "Intel Xeon")
+            new MockAccelerator(name: "cuda-gpu-0", type: AcceleratorType.CUDA),
+            new MockAccelerator(name: "cuda-gpu-1", type: AcceleratorType.CUDA),
+            new MockAccelerator(name: "rocm-gpu-0", type: AcceleratorType.GPU),
+            new MockAccelerator(name: "cpu-device-0", type: AcceleratorType.CPU)
         };
     }
 
@@ -529,164 +530,4 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         }
     }
 
-    /// <summary>
-    /// Mock accelerator for integration testing.
-    /// </summary>
-    private sealed class MockAccelerator : IAccelerator
-    {
-        public MockAccelerator(string id, string deviceType, string name)
-        {
-            Info = new AcceleratorInfo
-            {
-                Id = id,
-                Name = name,
-                DeviceType = deviceType,
-                ComputeUnits = 128,
-                MaxWorkGroupSize = 1024,
-                LocalMemorySize = 64 * 1024,
-                GlobalMemorySize = 24L * 1024 * 1024 * 1024
-            };
-            Memory = new MockMemoryManager();
-        }
-
-        public AcceleratorInfo Info { get; }
-        public AcceleratorType Type => (AcceleratorType)Enum.Parse(typeof(AcceleratorType), Info.DeviceType);
-        public IMemoryManager Memory { get; }
-        public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
-        public bool IsDisposed { get; private set; }
-
-        public ValueTask<ICompiledKernel> CompileKernelAsync(
-            KernelDefinition definition,
-            CompilationOptions? options = null,
-            CancellationToken cancellationToken = default)
-        {
-            return ValueTask.FromResult<ICompiledKernel>(new MockCompiledKernel());
-        }
-
-        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-        {
-            return ValueTask.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            IsDisposed = true;
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            IsDisposed = true;
-            return ValueTask.CompletedTask;
-        }
-    }
-
-    /// <summary>
-    /// Mock memory manager for integration testing.
-    /// </summary>
-    private sealed class MockMemoryManager : IMemoryManager
-    {
-        public ValueTask<IMemoryBuffer> AllocateAsync(
-            long sizeInBytes,
-            Abstractions.MemoryOptions options,
-            CancellationToken cancellationToken = default)
-        {
-            return ValueTask.FromResult<IMemoryBuffer>(new MockMemoryBuffer(sizeInBytes, options));
-        }
-
-        public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
-            ReadOnlyMemory<T> source,
-            Abstractions.MemoryOptions options,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            return ValueTask.FromResult<IMemoryBuffer>(new MockMemoryBuffer(sizeInBytes, options));
-        }
-
-        public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
-        {
-            return new MockMemoryBuffer(length, buffer.Options);
-        }
-
-        public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
-        {
-            var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-            return AllocateAsync(sizeInBytes);
-        }
-
-        public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
-        {
-            // Mock implementation - just simulate the operation
-        }
-
-        public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
-        {
-            // Mock implementation - just simulate the operation
-        }
-
-        public void Free(IMemoryBuffer buffer)
-        {
-            buffer?.Dispose();
-        }
-    }
-
-    /// <summary>
-    /// Mock memory buffer for integration testing.
-    /// </summary>
-    private sealed class MockMemoryBuffer : IMemoryBuffer
-    {
-        public MockMemoryBuffer(long sizeInBytes, Abstractions.MemoryOptions options)
-        {
-            SizeInBytes = sizeInBytes;
-            Options = options;
-        }
-
-        public long SizeInBytes { get; }
-        public Abstractions.MemoryOptions Options { get; }
-        public bool IsDisposed { get; private set; }
-
-        public ValueTask CopyFromHostAsync<T>(
-            ReadOnlyMemory<T> source,
-            long offset,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            return ValueTask.CompletedTask;
-        }
-
-        public ValueTask CopyToHostAsync<T>(
-            Memory<T> destination,
-            long offset,
-            CancellationToken cancellationToken = default) where T : unmanaged
-        {
-            return ValueTask.CompletedTask;
-        }
-
-        public void Dispose()
-        {
-            IsDisposed = true;
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            IsDisposed = true;
-            return ValueTask.CompletedTask;
-        }
-    }
-
-    /// <summary>
-    /// Mock compiled kernel for integration testing.
-    /// </summary>
-    private sealed class MockCompiledKernel : ICompiledKernel
-    {
-        public string Name => "MockKernel";
-
-        public ValueTask ExecuteAsync(
-            KernelArguments arguments,
-            CancellationToken cancellationToken = default)
-        {
-            return ValueTask.CompletedTask;
-        }
-
-        public void Dispose() { }
-        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-    }
 }

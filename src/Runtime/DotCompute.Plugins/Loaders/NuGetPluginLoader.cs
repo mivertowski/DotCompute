@@ -766,10 +766,14 @@ namespace DotCompute.Plugins.Loaders
                     
                     if (!peReader.HasMetadata) return;
                     
-                    var metadataReader = peReader.GetMetadataReader();
+                    unsafe
+                    {
+                        var metadataBlock = peReader.GetMetadata();
+                        var metadataReader = new System.Reflection.Metadata.MetadataReader(metadataBlock.Pointer, metadataBlock.Length);
                     
-                    // Check assembly references for suspicious dependencies
-                    foreach (var asmRefHandle in metadataReader.AssemblyReferences)
+                        
+                        // Check assembly references for suspicious dependencies
+                        foreach (var asmRefHandle in metadataReader.AssemblyReferences)
                     {
                         var asmRef = metadataReader.GetAssemblyReference(asmRefHandle);
                         var asmName = metadataReader.GetString(asmRef.Name);
@@ -791,6 +795,7 @@ namespace DotCompute.Plugins.Loaders
                                     $"Assembly references blocked dependency: {asmName}");
                             }
                         }
+                    }
                     }
                 }
                 catch (Exception ex) when (!(ex is SecurityException))
@@ -814,13 +819,20 @@ namespace DotCompute.Plugins.Loaders
                     
                     if (!peReader.HasMetadata) return;
                     
-                    var metadataReader = peReader.GetMetadataReader();
                     var suspiciousPatterns = new List<string>();
                     
-                    // Analyze string literals for suspicious content
-                    foreach (var stringHandle in metadataReader.GetStrings())
+                    unsafe
                     {
-                        var stringValue = metadataReader.GetString(stringHandle).ToLowerInvariant();
+                        var metadataBlock = peReader.GetMetadata();
+                        var metadataReader = new System.Reflection.Metadata.MetadataReader(metadataBlock.Pointer, metadataBlock.Length);
+                        
+                        // Analyze string literals for suspicious content  
+                        var userStrings = typeof(System.Reflection.Metadata.MetadataReader).GetProperty("UserStrings")?.GetValue(metadataReader);
+                        if (userStrings is System.Collections.Generic.IEnumerable<System.Reflection.Metadata.UserStringHandle> handles)
+                        {
+                            foreach (var stringHandle in handles)
+                    {
+                        var stringValue = metadataReader.GetUserString(stringHandle).ToLowerInvariant();
                         
                         var maliciousPatterns = new[]
                         {
@@ -831,10 +843,11 @@ namespace DotCompute.Plugins.Loaders
                         
                         foreach (var pattern in maliciousPatterns)
                         {
-                            if (stringValue.Contains(pattern))
+                            if (stringValue.Contains(pattern, StringComparison.OrdinalIgnoreCase))
                             {
                                 suspiciousPatterns.Add($"Suspicious string: {pattern}");
                                 break;
+                                }
                             }
                         }
                     }
@@ -847,8 +860,9 @@ namespace DotCompute.Plugins.Loaders
                         
                         if (_options.SecurityPolicy?.BlockSuspiciousAssemblies == true)
                         {
-                            throw new SecurityException(
-                                $"Assembly contains suspicious patterns: {patterns}");
+                                throw new SecurityException(
+                                    $"Assembly contains suspicious patterns: {patterns}");
+                            }
                         }
                     }
                 }

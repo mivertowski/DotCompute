@@ -252,16 +252,21 @@ namespace DotCompute.Plugins.Security
                 "createprocess", "shellexecute", "downloadfile"
             };
 
-            foreach (var stringHandle in metadataReader.GetStrings())
+            // Iterate through user strings in the metadata
+            var userStrings = typeof(System.Reflection.Metadata.MetadataReader).GetProperty("UserStrings")?.GetValue(metadataReader);
+            if (userStrings is System.Collections.Generic.IEnumerable<System.Reflection.Metadata.UserStringHandle> handles)
             {
-                var stringValue = metadataReader.GetString(stringHandle).ToLowerInvariant();
-                
-                foreach (var suspicious in suspiciousStrings)
+                foreach (var handle in handles)
                 {
-                    if (stringValue.Contains(suspicious))
+                    var stringValue = metadataReader.GetUserString(handle).ToLowerInvariant();
+                
+                    foreach (var suspicious in suspiciousStrings)
                     {
-                        analysis.SuspiciousPatterns.Add($"Suspicious string: {suspicious}");
-                        break; // Avoid duplicate entries
+                        if (stringValue.Contains(suspicious))
+                        {
+                            analysis.SuspiciousPatterns.Add($"Suspicious string: {suspicious}");
+                            break; // Avoid duplicate entries
+                        }
                     }
                 }
             }
