@@ -42,14 +42,14 @@ public class ConcurrentOperationsBenchmarks
     {
         var logger = new NullLogger<DefaultAcceleratorManager>();
         _acceleratorManager = new DefaultAcceleratorManager(logger);
-        
+
         var cpuProvider = new CpuAcceleratorProvider(new NullLogger<CpuAcceleratorProvider>());
         _acceleratorManager.RegisterProvider(cpuProvider);
         await _acceleratorManager.InitializeAsync();
-        
+
         _accelerator = _acceleratorManager.Default;
         _memoryManager = _accelerator.Memory;
-        
+
         SetupTestData();
     }
 
@@ -57,7 +57,7 @@ public class ConcurrentOperationsBenchmarks
     {
         _threadData = new float[ConcurrentThreads][];
         var random = new Random(42);
-        
+
         for (int t = 0; t < ConcurrentThreads; t++)
         {
             _threadData[t] = new float[DataSize];
@@ -66,7 +66,7 @@ public class ConcurrentOperationsBenchmarks
                 _threadData[t][i] = (float)(random.NextDouble() * 2.0 - 1.0);
             }
         }
-        
+
         // Fill work queue for producer-consumer tests
         for (int i = 0; i < ConcurrentThreads * 10; i++)
         {
@@ -87,7 +87,8 @@ public class ConcurrentOperationsBenchmarks
             if (!buffer.IsDisposed)
                 await buffer.DisposeAsync();
         }
-        
+
         await _acceleratorManager.DisposeAsync();
         _semaphore.Dispose();
     }
+}
