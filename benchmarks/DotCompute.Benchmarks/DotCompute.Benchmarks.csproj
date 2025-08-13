@@ -19,6 +19,7 @@
     <ProjectReference Include="..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
     <ProjectReference Include="..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Backends\DotCompute.Backends.CPU\DotCompute.Backends.CPU.csproj" />
+    <ProjectReference Include="..\..\src\Extensions\DotCompute.Algorithms\DotCompute.Algorithms.csproj" />
   </ItemGroup>
 
 </Project>
