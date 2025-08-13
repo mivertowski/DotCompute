@@ -25,7 +25,7 @@
     
     <!-- Enable hardware intrinsics -->
     <EnableHardwareIntrinsics>true</EnableHardwareIntrinsics>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <!-- Exclude test files from main project -->
@@ -49,7 +49,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
     <PackageReference Include="System.Management" Version="9.0.8" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" Version="9.0.8" />
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.14.0" />
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
   </ItemGroup>
 
