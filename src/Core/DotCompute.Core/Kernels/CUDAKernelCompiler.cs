@@ -11,7 +11,7 @@ namespace DotCompute.Core.Kernels;
 /// <summary>
 /// CUDA kernel compiler implementation using NVRTC (NVIDIA Runtime Compilation).
 /// </summary>
-public sealed class CUDAKernelCompiler : IKernelCompiler
+public sealed class CUDAKernelCompiler : DotCompute.Abstractions.IKernelCompiler
 {
     private readonly ILogger<CUDAKernelCompiler> _logger;
     private static readonly Dictionary<string, int> ComputeCapabilityVersions = new()
@@ -33,29 +33,35 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
     }
 
     /// <inheritdoc/>
-    public AcceleratorType AcceleratorType => AcceleratorType.CUDA;
+    public string Name => "CUDA Kernel Compiler";
 
     /// <inheritdoc/>
-    public async ValueTask<ManagedCompiledKernel> CompileAsync(GeneratedKernel kernel, CompilationOptions options, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(kernel);
-        ArgumentNullException.ThrowIfNull(options);
+    public KernelSourceType[] SupportedSourceTypes { get; } = [KernelSourceType.CUDA, KernelSourceType.Binary];
 
-        if (kernel.Language != KernelLanguage.CUDA)
-        {
-            throw new ArgumentException($"Expected CUDA kernel but received {kernel.Language}", nameof(kernel));
-        }
+    /// <inheritdoc/>
+    public async ValueTask<ICompiledKernel> CompileAsync(
+        KernelDefinition definition,
+        DotCompute.Abstractions.CompilationOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        options ??= new DotCompute.Abstractions.CompilationOptions();
+
+        var coreOptions = options.ToCoreOptions();
+        
+        // Convert definition to GeneratedKernel format
+        var kernel = ConvertToGeneratedKernel(definition);
 
         _logger.LogInformation("Compiling CUDA kernel '{KernelName}' for target '{Target}'", 
-            kernel.Name, options.TargetArchitecture ?? "default");
+            definition.Name, coreOptions.TargetArchitecture ?? "default");
 
         try
         {
             // Compile to PTX first
-            var ptxResult = await CompileToPTXAsync(kernel, options, cancellationToken);
+            var ptxResult = await CompileToPTXAsync(kernel, coreOptions, cancellationToken);
             
             // Optionally compile PTX to CUBIN for better performance
-            var cubinResult = await CompilePTXToCUBINAsync(ptxResult.PTX, options, cancellationToken);
+            var cubinResult = await CompilePTXToCUBINAsync(ptxResult.PTX, coreOptions, cancellationToken);
 
             var compiledKernel = new ManagedCompiledKernel
             {
@@ -71,8 +77,8 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
                     ["CompilationTime"] = ptxResult.CompilationTime + (cubinResult?.CompilationTime ?? 0),
                     ["RegistersUsed"] = ptxResult.RegistersUsed,
                     ["SharedMemoryUsed"] = kernel.SharedMemorySize,
-                    ["OptimizationLevel"] = options.OptimizationLevel.ToString(),
-                    ["TargetArchitecture"] = options.TargetArchitecture ?? "default",
+                    ["OptimizationLevel"] = coreOptions.OptimizationLevel.ToString(),
+                    ["TargetArchitecture"] = coreOptions.TargetArchitecture ?? "default",
                     ["HasCUBIN"] = cubinResult != null,
                     ["PTXSize"] = ptxResult.PTX.Length,
                     ["BinarySize"] = cubinResult?.Binary.Length ?? ptxResult.Binary.Length
@@ -97,25 +103,22 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
     }
 
     /// <inheritdoc/>
-    public KernelValidationResult Validate(GeneratedKernel kernel)
+    public ValidationResult Validate(KernelDefinition definition)
     {
-        ArgumentNullException.ThrowIfNull(kernel);
+        ArgumentNullException.ThrowIfNull(definition);
 
-        if (kernel.Language != KernelLanguage.CUDA)
+        if (string.IsNullOrEmpty(definition.Name))
         {
-            return new KernelValidationResult
-            {
-                IsValid = false,
-                Errors =
-                [
-                    new ValidationError
-                    {
-                        Code = "INVALID_LANGUAGE",
-                        Message = $"Expected CUDA kernel but received {kernel.Language}"
-                    }
-                ]
-            };
+            return ValidationResult.Failure("Kernel name cannot be empty");
         }
+
+        if (definition.Code == null || definition.Code.Length == 0)
+        {
+            return ValidationResult.Failure("Kernel code cannot be empty");
+        }
+
+        // Convert to GeneratedKernel for validation
+        var kernel = ConvertToGeneratedKernel(definition);
 
         var errors = new List<ValidationError>();
         var warnings = new List<ValidationWarning>();
@@ -135,17 +138,18 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
         // Estimate resource usage
         var resourceUsage = EstimateResourceUsage(kernel);
 
-        return new KernelValidationResult
+        var result = errors.Count == 0 ? ValidationResult.Success() : ValidationResult.Failure(string.Join("; ", errors.Select(e => e.Message)));
+        foreach (var warning in warnings)
         {
-            IsValid = errors.Count == 0,
-            Errors = errors,
-            Warnings = warnings,
-            ResourceUsage = resourceUsage
-        };
+            result.AddWarning(warning.Message);
+        }
+        return result;
     }
 
-    /// <inheritdoc/>
-    public CompilationOptions GetDefaultOptions()
+    /// <summary>
+    /// Gets the default compilation options for CUDA kernels.
+    /// </summary>
+    private CompilationOptions GetCoreDefaultOptions()
     {
         var targetArch = DetectOptimalCudaArchitecture();
         
@@ -1133,6 +1137,29 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
     }
 
     /// <summary>
+    /// Converts KernelDefinition to GeneratedKernel for internal processing.
+    /// </summary>
+    private static GeneratedKernel ConvertToGeneratedKernel(KernelDefinition definition)
+    {
+        var sourceCode = System.Text.Encoding.UTF8.GetString(definition.Code);
+        return new GeneratedKernel
+        {
+            Name = definition.Name,
+            Source = sourceCode,
+            Language = KernelLanguage.CUDA,
+            Parameters = GetParametersFromMetadata(definition)?.Select(arg => new KernelParameter
+            {
+                Name = arg.Name,
+                Type = arg.Type,
+                IsReadOnly = arg.IsReadOnly,
+                MemorySpace = MemorySpace.Global // Default
+            }).ToArray() ?? [],
+            RequiredWorkGroupSize = null,
+            SharedMemorySize = 0
+        };
+    }
+
+    /// <summary>
     /// Checks if type is valid for CUDA kernels.
     /// </summary>
     private static bool IsValidCUDAType(Type type)
@@ -1169,5 +1196,17 @@ public sealed class CUDAKernelCompiler : IKernelCompiler
         public required byte[] Binary { get; init; }
         public required string Log { get; init; }
         public required double CompilationTime { get; init; }
+    }
+
+    /// <summary>
+    /// Gets kernel parameters from metadata.
+    /// </summary>
+    private static KernelParameter[]? GetParametersFromMetadata(KernelDefinition definition)
+    {
+        if (definition.Metadata?.TryGetValue("Parameters", out var paramsObj) == true && paramsObj is KernelParameter[] parameters)
+        {
+            return parameters;
+        }
+        return null;
     }
 }

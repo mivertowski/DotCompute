@@ -4,7 +4,6 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
-using DotCompute.Core.Compute;
 using DotCompute.Core.Aot;
 using DotCompute.Memory;
 using DotCompute.Plugins.Core;

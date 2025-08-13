@@ -47,7 +47,7 @@ public class QueryCompiler : IQueryCompiler
         var validationResult = Validate(context.Expression);
         if (!validationResult.IsValid)
         {
-            throw new InvalidOperationException($"Expression validation failed: {validationResult.Message}");
+            throw new InvalidOperationException($"Expression validation failed: {validationResult.ErrorMessage}");
         }
 
         // Optimize the expression tree
@@ -73,7 +73,7 @@ public class QueryCompiler : IQueryCompiler
     }
 
     /// <inheritdoc/>
-    public ValidationResult Validate(Expression expression)
+    public DotCompute.Abstractions.ValidationResult Validate(Expression expression)
     {
         ArgumentNullException.ThrowIfNull(expression);
 
@@ -93,10 +93,10 @@ public class QueryCompiler : IQueryCompiler
         if (errors.Count > 0)
         {
             var message = $"Expression validation failed with {errors.Count} errors";
-            return new ValidationResult(false, message, errors);
+            return DotCompute.Abstractions.ValidationResult.Failure(message);
         }
 
-        return new ValidationResult(true, "Expression is valid for GPU compilation");
+        return DotCompute.Abstractions.ValidationResult.Success();
     }
 
     /// <summary>

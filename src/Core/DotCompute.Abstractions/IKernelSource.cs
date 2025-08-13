@@ -55,7 +55,7 @@ public enum KernelLanguage
     Ptx,
 
     /// <summary>
-    /// HLSL shader code.
+    /// HLSL shader code (DirectCompute).
     /// </summary>
     HLSL,
 

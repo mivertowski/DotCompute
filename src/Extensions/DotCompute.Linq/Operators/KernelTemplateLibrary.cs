@@ -110,14 +110,14 @@ public class MapKernelTemplate : IKernelTemplate
         
         // Generate parameters
         var parameters = definition.Parameters;
-        for (int i = 0; i < parameters.Length; i++)
+        for (int i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
             source.Append("    ");
             source.Append(GetCudaType(param.Type));
             source.Append("* ");
             source.Append(param.Name);
-            if (i < parameters.Length - 1) source.Append(",");
+            if (i < parameters.Count - 1) source.Append(",");
             source.AppendLine();
         }
         
@@ -138,14 +138,14 @@ public class MapKernelTemplate : IKernelTemplate
         
         // Generate parameters
         var parameters = definition.Parameters;
-        for (int i = 0; i < parameters.Length; i++)
+        for (int i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
             source.Append("    __global ");
             source.Append(GetOpenCLType(param.Type));
             source.Append("* ");
             source.Append(param.Name);
-            if (i < parameters.Length - 1) source.Append(",");
+            if (i < parameters.Count - 1) source.Append(",");
             source.AppendLine();
         }
         
@@ -167,14 +167,14 @@ public class MapKernelTemplate : IKernelTemplate
         
         // Generate parameters
         var parameters = definition.Parameters;
-        for (int i = 0; i < parameters.Length; i++)
+        for (int i = 0; i < parameters.Count; i++)
         {
             var param = parameters[i];
             source.Append("    ");
             source.Append(GetCSharpType(param.Type));
             source.Append(" ");
             source.Append(param.Name);
-            if (i < parameters.Length - 1) source.Append(",");
+            if (i < parameters.Count - 1) source.Append(",");
             source.AppendLine();
         }
         

@@ -273,7 +273,7 @@ public class KernelSourceGenerator
 
     private static void GenerateParameters(StringBuilder sourceBuilder, KernelDefinition definition, string qualifier)
     {
-        for (int i = 0; i < definition.Parameters.Length; i++)
+        for (int i = 0; i < definition.Parameters.Count; i++)
         {
             var param = definition.Parameters[i];
             var typeStr = GetTypeString(param.Type);
@@ -287,7 +287,7 @@ public class KernelSourceGenerator
             sourceBuilder.Append("* ");
             sourceBuilder.Append(param.Name);
             
-            if (i < definition.Parameters.Length - 1)
+            if (i < definition.Parameters.Count - 1)
             {
                 sourceBuilder.Append(",");
             }

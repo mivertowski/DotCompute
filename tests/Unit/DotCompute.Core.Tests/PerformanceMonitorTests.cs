@@ -1,11 +1,10 @@
-using Xunit;
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using DotCompute.Abstractions;
 using DotCompute.Core.Execution;
 using DotCompute.Core.Kernels;
-using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;

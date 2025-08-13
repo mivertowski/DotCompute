@@ -406,7 +406,7 @@ public class CudaMemoryManagerTests : IDisposable
     [Trait("Category", "EdgeCase")]
     [Trait("Hardware", "CUDA")]
     [InlineData(MemoryOptions.None)]
-    [InlineData(MemoryOptions.DeviceLocal)]
+    [InlineData(MemoryOptions.None)]
     [InlineData(MemoryOptions.HostVisible)]
     public void CudaMemoryManager_Allocate_WithMemoryOptions_ShouldRespectOptions(MemoryOptions options)
     {

@@ -11,7 +11,7 @@ namespace DotCompute.Core.Kernels;
 /// Production Metal kernel compiler implementation using Metal runtime compilation.
 /// Provides comprehensive compilation, validation, and optimization for Metal Shading Language.
 /// </summary>
-public sealed class MetalKernelCompiler : IKernelCompiler
+public sealed class MetalKernelCompiler : DotCompute.Abstractions.IKernelCompiler
 {
     private readonly ILogger<MetalKernelCompiler> _logger;
     private readonly bool _isSupported;
@@ -38,20 +38,26 @@ public sealed class MetalKernelCompiler : IKernelCompiler
     }
 
     /// <inheritdoc/>
-    public AcceleratorType AcceleratorType => AcceleratorType.Metal;
+    public string Name => "Metal Kernel Compiler";
 
     /// <inheritdoc/>
-    public async ValueTask<ManagedCompiledKernel> CompileAsync(GeneratedKernel kernel, CompilationOptions options, CancellationToken cancellationToken = default)
+    public KernelSourceType[] SupportedSourceTypes { get; } = [KernelSourceType.Metal, KernelSourceType.Binary];
+
+    /// <inheritdoc/>
+    public async ValueTask<ICompiledKernel> CompileAsync(
+        KernelDefinition definition,
+        DotCompute.Abstractions.CompilationOptions? options = null,
+        CancellationToken cancellationToken = default)
     {
-        ArgumentNullException.ThrowIfNull(kernel);
-        ArgumentNullException.ThrowIfNull(options);
+        ArgumentNullException.ThrowIfNull(definition);
+        options ??= new DotCompute.Abstractions.CompilationOptions();
+        
+        var coreOptions = options.ToCoreOptions();
+        var kernel = ConvertToGeneratedKernel(definition);
 
-        if (kernel.Language != KernelLanguage.Metal)
-        {
-            throw new ArgumentException($"Expected Metal kernel but received {kernel.Language}", nameof(kernel));
-        }
+        // Language validation is done in the converter
 
-        _logger.LogInformation("Compiling Metal kernel '{KernelName}'", kernel.Name);
+        _logger.LogInformation("Compiling Metal kernel '{KernelName}'", definition.Name);
 
         try
         {
@@ -60,12 +66,14 @@ public sealed class MetalKernelCompiler : IKernelCompiler
 #if MACOS || IOS
             if (_isSupported)
             {
-                return await CompileWithMetalAsync(kernel, options, cancellationToken);
+                var result = await CompileWithMetalAsync(kernel, coreOptions, cancellationToken);
+                return result;
             }
 #endif
             // Fall back to stub implementation for unsupported platforms
             _logger.LogWarning("Falling back to stub implementation for kernel '{KernelName}'", kernel.Name);
-            return await CompileStubAsync(kernel, options, cancellationToken);
+            var stubResult = await CompileStubAsync(kernel, coreOptions, cancellationToken);
+            return stubResult;
         }
         catch (Exception ex)
         {
@@ -207,25 +215,24 @@ public sealed class MetalKernelCompiler : IKernelCompiler
     }
 
     /// <inheritdoc/>
-    public KernelValidationResult Validate(GeneratedKernel kernel)
+    public ValidationResult Validate(KernelDefinition definition)
     {
-        ArgumentNullException.ThrowIfNull(kernel);
-
-        if (kernel.Language != KernelLanguage.Metal)
+        ArgumentNullException.ThrowIfNull(definition);
+        
+        if (string.IsNullOrEmpty(definition.Name))
         {
-            return new KernelValidationResult
-            {
-                IsValid = false,
-                Errors =
-                [
-                    new ValidationError
-                    {
-                        Code = "INVALID_LANGUAGE",
-                        Message = $"Expected Metal kernel but received {kernel.Language}"
-                    }
-                ]
-            };
+            return ValidationResult.Failure("Kernel name cannot be empty");
         }
+
+        if (definition.Code == null || definition.Code.Length == 0)
+        {
+            return ValidationResult.Failure("Kernel code cannot be empty");
+        }
+        
+        // Convert to GeneratedKernel for validation
+        var kernel = ConvertToGeneratedKernel(definition);
+
+        // Language validation is implicit in converter
 
         var warnings = new List<ValidationWarning>();
         var errors = new List<ValidationError>();
@@ -263,17 +270,15 @@ public sealed class MetalKernelCompiler : IKernelCompiler
             OccupancyEstimate = _isSupported ? 0.8f : 0.0f
         };
 
-        return new KernelValidationResult
+        var result = errors.Count == 0 ? ValidationResult.Success() : ValidationResult.Failure(string.Join("; ", errors.Select(e => e.Message)));
+        foreach (var warning in warnings)
         {
-            IsValid = errors.Count == 0,
-            Errors = errors,
-            Warnings = warnings,
-            ResourceUsage = resourceUsage
-        };
+            result.AddWarning(warning.Message);
+        }
+        return result;
     }
 
-    /// <inheritdoc/>
-    public CompilationOptions GetDefaultOptions()
+    private CompilationOptions GetCoreDefaultOptions()
     {
         var capabilities = DetectMetalCapabilities();
         
@@ -669,6 +674,29 @@ public sealed class MetalKernelCompiler : IKernelCompiler
     }
     
     /// <summary>
+    /// Converts KernelDefinition to GeneratedKernel for internal processing.
+    /// </summary>
+    private static GeneratedKernel ConvertToGeneratedKernel(KernelDefinition definition)
+    {
+        var sourceCode = System.Text.Encoding.UTF8.GetString(definition.Code);
+        return new GeneratedKernel
+        {
+            Name = definition.Name,
+            Source = sourceCode,
+            Language = KernelLanguage.Metal,
+            Parameters = GetParametersFromMetadata(definition)?.Select(arg => new KernelParameter
+            {
+                Name = arg.Name,
+                Type = arg.Type,
+                IsReadOnly = arg.IsReadOnly,
+                MemorySpace = MemorySpace.Global // Default
+            }).ToArray() ?? [],
+            RequiredWorkGroupSize = null,
+            SharedMemorySize = 0
+        };
+    }
+    
+    /// <summary>
     /// Represents Metal device capabilities.
     /// </summary>
     private sealed class MetalDeviceCapabilities
@@ -680,5 +708,17 @@ public sealed class MetalKernelCompiler : IKernelCompiler
         public required int ThreadgroupMemorySize { get; init; }
         public required bool SupportsSimdGroups { get; init; }
         public required bool SupportsIndirectCommandBuffers { get; init; }
+    }
+
+    /// <summary>
+    /// Gets kernel parameters from metadata.
+    /// </summary>
+    private static KernelParameter[]? GetParametersFromMetadata(KernelDefinition definition)
+    {
+        if (definition.Metadata?.TryGetValue("Parameters", out var paramsObj) == true && paramsObj is KernelParameter[] parameters)
+        {
+            return parameters;
+        }
+        return null;
     }
 }

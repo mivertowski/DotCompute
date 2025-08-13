@@ -12,7 +12,7 @@ namespace DotCompute.Core.Kernels;
 /// Production DirectCompute kernel compiler implementation using D3DCompile and DirectX 11 compute shaders.
 /// Supports Windows 7+ with DirectX 11 runtime and D3DCompiler.
 /// </summary>
-public sealed class DirectComputeKernelCompiler : IKernelCompiler
+public sealed class DirectComputeKernelCompiler : DotCompute.Abstractions.IKernelCompiler
 {
     private readonly ILogger<DirectComputeKernelCompiler> _logger;
     private readonly bool _isSupported;
@@ -39,20 +39,27 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
     }
 
     /// <inheritdoc/>
-    public AcceleratorType AcceleratorType => AcceleratorType.DirectML; // Using DirectML as the closest match for DirectCompute
+    public string Name => "DirectCompute Kernel Compiler";
 
     /// <inheritdoc/>
-    public async ValueTask<ManagedCompiledKernel> CompileAsync(GeneratedKernel kernel, CompilationOptions options, CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(kernel);
-        ArgumentNullException.ThrowIfNull(options);
+    public KernelSourceType[] SupportedSourceTypes { get; } = [KernelSourceType.HLSL, KernelSourceType.Binary];
 
-        if (kernel.Language != KernelLanguage.DirectCompute)
+    /// <inheritdoc/>
+    public async ValueTask<ICompiledKernel> CompileAsync(
+        KernelDefinition definition,
+        DotCompute.Abstractions.CompilationOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+        options ??= new DotCompute.Abstractions.CompilationOptions();
+
+        var kernelSource = CreateKernelSourceFromDefinition(definition);
+        if (kernelSource.Language != DotCompute.Abstractions.KernelLanguage.HLSL)
         {
-            throw new ArgumentException($"Expected DirectCompute kernel but received {kernel.Language}", nameof(kernel));
+            throw new ArgumentException($"Expected HLSL/DirectCompute kernel but received {kernelSource.Language}", nameof(definition));
         }
 
-        _logger.LogInformation("Compiling DirectCompute kernel '{KernelName}'", kernel.Name);
+        _logger.LogInformation("Compiling DirectCompute kernel '{KernelName}'", definition.Name);
 
         try
         {
@@ -61,18 +68,67 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
 #if WINDOWS
             if (_isSupported)
             {
-                return await CompileWithD3DCompileAsync(kernel, options, cancellationToken);
+                return await CompileStubAsync(kernelSource, options, cancellationToken);
             }
 #endif
             // Fall back to stub implementation for unsupported platforms
-            _logger.LogWarning("Falling back to stub implementation for kernel '{KernelName}'", kernel.Name);
-            return await CompileStubAsync(kernel, options, cancellationToken);
+            _logger.LogWarning("Falling back to stub implementation for kernel '{KernelName}'", definition.Name);
+            return await CompileStubAsync(kernelSource, options, cancellationToken);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to compile DirectCompute kernel '{KernelName}'", kernel.Name);
+            _logger.LogError(ex, "Failed to compile DirectCompute kernel '{KernelName}'", definition.Name);
             throw new InvalidOperationException($"DirectCompute kernel compilation failed: {ex.Message}", ex);
         }
+    }
+
+    /// <inheritdoc/>
+    public ValidationResult Validate(KernelDefinition definition)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+
+        var kernelSource = CreateKernelSourceFromDefinition(definition);
+        if (kernelSource.Language != DotCompute.Abstractions.KernelLanguage.HLSL)
+        {
+            return ValidationResult.Failure($"Expected HLSL/DirectCompute kernel but received {kernelSource.Language}");
+        }
+
+        if (!kernelSource.Code.Contains("[numthreads("))
+        {
+            return ValidationResult.Failure("No [numthreads] attribute found in DirectCompute shader");
+        }
+
+        // Platform support check
+        if (!_isSupported)
+        {
+            return ValidationResult.SuccessWithWarnings("DirectCompute is not supported on this platform. Stub implementation will be used.");
+        }
+
+        return ValidationResult.Success();
+    }
+
+    /// <summary>
+    /// Creates a kernel source from a kernel definition.
+    /// </summary>
+    private static IKernelSource CreateKernelSourceFromDefinition(KernelDefinition definition)
+    {
+        var sourceCode = System.Text.Encoding.UTF8.GetString(definition.Code);
+        var language = DotCompute.Abstractions.KernelLanguage.HLSL; // Default for DirectCompute
+        
+        // Try to detect language from metadata
+        if (definition.Metadata?.TryGetValue("Language", out var langObj) == true && langObj is string langStr)
+        {
+            if (Enum.TryParse<DotCompute.Abstractions.KernelLanguage>(langStr, out var parsedLang))
+            {
+                language = parsedLang;
+            }
+        }
+        
+        return new TextKernelSource(
+            sourceCode,
+            definition.Name,
+            language,
+            definition.EntryPoint ?? "main");
     }
 
 #if WINDOWS
@@ -226,31 +282,28 @@ public sealed class DirectComputeKernelCompiler : IKernelCompiler
     /// <summary>
     /// Fallback stub compilation for unsupported platforms.
     /// </summary>
-    private async ValueTask<ManagedCompiledKernel> CompileStubAsync(GeneratedKernel kernel, CompilationOptions options, CancellationToken cancellationToken)
+    private async ValueTask<ICompiledKernel> CompileStubAsync(IKernelSource kernelSource, DotCompute.Abstractions.CompilationOptions options, CancellationToken cancellationToken)
     {
         // Simulate compilation time
         await Task.Delay(30, cancellationToken);
 
-        var mockBytecode = GenerateMockHLSLBytecode(kernel, options);
-        var log = GenerateStubCompilationLog(kernel, options);
+        var mockBytecode = System.Text.Encoding.UTF8.GetBytes($"// Stub HLSL bytecode for {kernelSource.Name}");
 
         var compiledKernel = new ManagedCompiledKernel
         {
-            Name = kernel.Name,
+            Name = kernelSource.Name,
             Binary = mockBytecode,
             Handle = IntPtr.Zero,
-            Parameters = kernel.Parameters,
-            RequiredWorkGroupSize = kernel.RequiredWorkGroupSize,
-            SharedMemorySize = kernel.SharedMemorySize,
-            CompilationLog = log,
+            Parameters = [],
+            RequiredWorkGroupSize = null,
+            SharedMemorySize = 0,
+            CompilationLog = $"Stub compilation for {kernelSource.Name}",
             PerformanceMetadata = new Dictionary<string, object>
             {
                 ["CompilationTime"] = 30.0,
                 ["IsStubImplementation"] = true,
                 ["Platform"] = "DirectCompute (Stub)",
-                ["SharedMemoryUsed"] = kernel.SharedMemorySize,
-                ["OptimizationLevel"] = options.OptimizationLevel.ToString(),
-                ["ShaderModel"] = options.TargetArchitecture ?? "cs_5_0"
+                ["OptimizationLevel"] = options.OptimizationLevel.ToString()
             }
         };
 

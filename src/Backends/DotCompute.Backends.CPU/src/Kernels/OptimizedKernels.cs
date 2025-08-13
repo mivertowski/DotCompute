@@ -8,9 +8,10 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions;
+using DotCompute.Backends.CPU.Accelerators;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Compute;
+namespace DotCompute.Backends.CPU.Kernels;
 
 /// <summary>
 /// Base class for optimized kernel implementations.
@@ -73,116 +74,14 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
         await Task.Run(() => ExecuteVectorAddOptimized(bufferA, bufferB, bufferResult, elementCount), cancellationToken);
     }
 
-    private unsafe void ExecuteVectorAddOptimized(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
+    private async void ExecuteVectorAddOptimized(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
     {
-        if (bufferA is not HighPerformanceMemoryBuffer hpBufferA ||
-            bufferB is not HighPerformanceMemoryBuffer hpBufferB ||
-            bufferResult is not HighPerformanceMemoryBuffer hpBufferResult)
-        {
-            // Fallback to generic implementation
-            ExecuteVectorAddGeneric(bufferA, bufferB, bufferResult, elementCount);
-            return;
-        }
-
-        var ptrA = hpBufferA.GetFloatPtr();
-        var ptrB = hpBufferB.GetFloatPtr();
-        var ptrResult = hpBufferResult.GetFloatPtr();
-
-        // Use SIMD for maximum performance
-        if (Avx.IsSupported && elementCount >= 8)
-        {
-            ExecuteVectorAddAvx(ptrA, ptrB, ptrResult, elementCount);
-        }
-        else if (Sse.IsSupported && elementCount >= 4)
-        {
-            ExecuteVectorAddSse(ptrA, ptrB, ptrResult, elementCount);
-        }
-        else if (Vector.IsHardwareAccelerated && elementCount >= Vector<float>.Count)
-        {
-            ExecuteVectorAddVector(ptrA, ptrB, ptrResult, elementCount);
-        }
-        else
-        {
-            ExecuteVectorAddScalar(ptrA, ptrB, ptrResult, elementCount);
-        }
+        // Use generic implementation since we don't have direct access to HighPerformanceMemoryBuffer here
+        // This could be optimized further by exposing unsafe pointers through IMemoryBuffer
+        await ExecuteVectorAddGeneric(bufferA, bufferB, bufferResult, elementCount);
     }
 
-    private static unsafe void ExecuteVectorAddAvx(float* ptrA, float* ptrB, float* ptrResult, int elementCount)
-    {
-        const int vectorSize = 8;
-        var vectorCount = elementCount / vectorSize;
-        var remainder = elementCount % vectorSize;
-
-        // Process 8 elements at a time with AVX
-        for (var i = 0; i < vectorCount; i++)
-        {
-            var offset = i * vectorSize;
-            var vecA = Avx.LoadVector256(ptrA + offset);
-            var vecB = Avx.LoadVector256(ptrB + offset);
-            var result = Avx.Add(vecA, vecB);
-            Avx.Store(ptrResult + offset, result);
-        }
-
-        // Handle remaining elements
-        for (var i = vectorCount * vectorSize; i < elementCount; i++)
-        {
-            ptrResult[i] = ptrA[i] + ptrB[i];
-        }
-    }
-
-    private static unsafe void ExecuteVectorAddSse(float* ptrA, float* ptrB, float* ptrResult, int elementCount)
-    {
-        const int vectorSize = 4;
-        var vectorCount = elementCount / vectorSize;
-
-        // Process 4 elements at a time with SSE
-        for (var i = 0; i < vectorCount; i++)
-        {
-            var offset = i * vectorSize;
-            var vecA = Sse.LoadVector128(ptrA + offset);
-            var vecB = Sse.LoadVector128(ptrB + offset);
-            var result = Sse.Add(vecA, vecB);
-            Sse.Store(ptrResult + offset, result);
-        }
-
-        // Handle remaining elements
-        for (var i = vectorCount * vectorSize; i < elementCount; i++)
-        {
-            ptrResult[i] = ptrA[i] + ptrB[i];
-        }
-    }
-
-    private static unsafe void ExecuteVectorAddVector(float* ptrA, float* ptrB, float* ptrResult, int elementCount)
-    {
-        var vectorSize = Vector<float>.Count;
-        var vectorCount = elementCount / vectorSize;
-
-        // Use .NET Vector<T> SIMD
-        for (var i = 0; i < vectorCount; i++)
-        {
-            var offset = i * vectorSize;
-            var vecA = Unsafe.ReadUnaligned<Vector<float>>(ptrA + offset);
-            var vecB = Unsafe.ReadUnaligned<Vector<float>>(ptrB + offset);
-            var result = vecA + vecB;
-            Unsafe.WriteUnaligned(ptrResult + offset, result);
-        }
-
-        // Handle remaining elements
-        for (var i = vectorCount * vectorSize; i < elementCount; i++)
-        {
-            ptrResult[i] = ptrA[i] + ptrB[i];
-        }
-    }
-
-    private static unsafe void ExecuteVectorAddScalar(float* ptrA, float* ptrB, float* ptrResult, int elementCount)
-    {
-        for (var i = 0; i < elementCount; i++)
-        {
-            ptrResult[i] = ptrA[i] + ptrB[i];
-        }
-    }
-
-    private async void ExecuteVectorAddGeneric(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
+    private async Task ExecuteVectorAddGeneric(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
     {
         var dataA = new float[elementCount];
         var dataB = new float[elementCount];
@@ -236,63 +135,7 @@ internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
         var bufferC = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
         var size = Convert.ToInt32(arguments.Arguments[3]);
 
-        await Task.Run(() => ExecuteMatrixMultiplyOptimized(bufferA, bufferB, bufferC, size), cancellationToken);
-    }
-
-    private unsafe void ExecuteMatrixMultiplyOptimized(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferC, int size)
-    {
-        if (bufferA is HighPerformanceMemoryBuffer hpBufferA &&
-            bufferB is HighPerformanceMemoryBuffer hpBufferB &&
-            bufferC is HighPerformanceMemoryBuffer hpBufferC)
-        {
-            var ptrA = hpBufferA.GetFloatPtr();
-            var ptrB = hpBufferB.GetFloatPtr();
-            var ptrC = hpBufferC.GetFloatPtr();
-
-            ExecuteMatrixMultiplyBlocked(ptrA, ptrB, ptrC, size);
-        }
-        else
-        {
-            ExecuteMatrixMultiplyGenericAsync(bufferA, bufferB, bufferC, size).Wait();
-        }
-    }
-
-    private static unsafe void ExecuteMatrixMultiplyBlocked(float* a, float* b, float* c, int size)
-    {
-        const int blockSize = 64; // Optimize for L1 cache
-
-        // Initialize result matrix to zero
-        for (var i = 0; i < size * size; i++)
-        {
-            c[i] = 0.0f;
-        }
-
-        // Blocked matrix multiplication for cache efficiency
-        for (var ii = 0; ii < size; ii += blockSize)
-        {
-            for (var jj = 0; jj < size; jj += blockSize)
-            {
-                for (var kk = 0; kk < size; kk += blockSize)
-                {
-                    var iEnd = Math.Min(ii + blockSize, size);
-                    var jEnd = Math.Min(jj + blockSize, size);
-                    var kEnd = Math.Min(kk + blockSize, size);
-
-                    for (var i = ii; i < iEnd; i++)
-                    {
-                        for (var j = jj; j < jEnd; j++)
-                        {
-                            var sum = c[i * size + j];
-                            for (var k = kk; k < kEnd; k++)
-                            {
-                                sum += a[i * size + k] * b[k * size + j];
-                            }
-                            c[i * size + j] = sum;
-                        }
-                    }
-                }
-            }
-        }
+        await Task.Run(() => ExecuteMatrixMultiplyGenericAsync(bufferA, bufferB, bufferC, size), cancellationToken);
     }
 
     private async Task ExecuteMatrixMultiplyGenericAsync(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferC, int size)
@@ -344,86 +187,7 @@ internal class OptimizedReductionKernel : OptimizedKernelBase
 
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
         
-        await Task.Run(() => ExecuteReductionOptimized(inputBuffer, outputBuffer, elementCount), cancellationToken);
-    }
-
-    private unsafe void ExecuteReductionOptimized(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
-    {
-        if (inputBuffer is HighPerformanceMemoryBuffer hpInputBuffer &&
-            outputBuffer is HighPerformanceMemoryBuffer hpOutputBuffer)
-        {
-            var inputPtr = hpInputBuffer.GetFloatPtr();
-            var outputPtr = hpOutputBuffer.GetFloatPtr();
-
-            *outputPtr = ExecuteTreeReduction(inputPtr, elementCount);
-        }
-        else
-        {
-            ExecuteReductionGenericAsync(inputBuffer, outputBuffer, elementCount).Wait();
-        }
-    }
-
-    private static unsafe float ExecuteTreeReduction(float* input, int elementCount)
-    {
-        // Use parallel tree reduction for logarithmic complexity
-        var workSize = elementCount;
-        var tempBuffer = stackalloc float[Environment.ProcessorCount];
-        var numThreads = Math.Min(Environment.ProcessorCount, workSize);
-
-        // First level: parallel reduction to per-thread sums
-        Parallel.For(0, numThreads, threadId =>
-        {
-            var elementsPerThread = workSize / numThreads;
-            var start = threadId * elementsPerThread;
-            var end = (threadId == numThreads - 1) ? workSize : start + elementsPerThread;
-
-            var sum = 0.0f;
-            
-            // Vectorized reduction within thread
-            if (Avx.IsSupported)
-            {
-                var vectorSum = Vector256<float>.Zero;
-                var vectorCount = (end - start) / 8;
-                
-                for (var i = 0; i < vectorCount; i++)
-                {
-                    var vec = Avx.LoadVector256(input + start + i * 8);
-                    vectorSum = Avx.Add(vectorSum, vec);
-                }
-                
-                // Sum vector elements
-                var temp = stackalloc float[8];
-                Avx.Store(temp, vectorSum);
-                for (var i = 0; i < 8; i++)
-                {
-                    sum += temp[i];
-                }
-                
-                // Handle remaining elements
-                for (var i = start + vectorCount * 8; i < end; i++)
-                {
-                    sum += input[i];
-                }
-            }
-            else
-            {
-                for (var i = start; i < end; i++)
-                {
-                    sum += input[i];
-                }
-            }
-            
-            tempBuffer[threadId] = sum;
-        });
-
-        // Second level: tree reduction of per-thread sums
-        var totalSum = 0.0f;
-        for (var i = 0; i < numThreads; i++)
-        {
-            totalSum += tempBuffer[i];
-        }
-
-        return totalSum;
+        await Task.Run(() => ExecuteReductionGenericAsync(inputBuffer, outputBuffer, elementCount), cancellationToken);
     }
 
     private async Task ExecuteReductionGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
@@ -476,38 +240,7 @@ internal class OptimizedMemoryKernel : OptimizedKernelBase
 
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
         
-        await Task.Run(() => ExecuteMemoryIntensiveOptimized(inputBuffer, outputBuffer, elementCount), cancellationToken);
-    }
-
-    private unsafe void ExecuteMemoryIntensiveOptimized(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
-    {
-        if (inputBuffer is HighPerformanceMemoryBuffer hpInputBuffer &&
-            outputBuffer is HighPerformanceMemoryBuffer hpOutputBuffer)
-        {
-            var inputPtr = hpInputBuffer.GetFloatPtr();
-            var outputPtr = hpOutputBuffer.GetFloatPtr();
-
-            // Memory-intensive operations with prefetching
-            for (var i = 0; i < elementCount; i++)
-            {
-                // Prefetch next cache lines
-                if (i + 16 < elementCount)
-                {
-                    Sse.Prefetch0(inputPtr + i + 16);
-                }
-
-                var value = inputPtr[i];
-                value += inputPtr[i]; // Read again
-                value *= inputPtr[i]; // Read again
-                value /= inputPtr[i] + 1.0f; // Read again
-
-                outputPtr[i] = value;
-            }
-        }
-        else
-        {
-            ExecuteMemoryIntensiveGenericAsync(inputBuffer, outputBuffer, elementCount).Wait();
-        }
+        await Task.Run(() => ExecuteMemoryIntensiveGenericAsync(inputBuffer, outputBuffer, elementCount), cancellationToken);
     }
 
     private async Task ExecuteMemoryIntensiveGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
@@ -603,113 +336,7 @@ internal class OptimizedVectorScaleKernel : OptimizedKernelBase
 
         var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
         
-        await Task.Run(() => ExecuteVectorScaleOptimized(inputBuffer, resultBuffer, scaleFactor, elementCount), cancellationToken);
-    }
-
-    private unsafe void ExecuteVectorScaleOptimized(IMemoryBuffer inputBuffer, IMemoryBuffer resultBuffer, float scaleFactor, int elementCount)
-    {
-        if (inputBuffer is HighPerformanceMemoryBuffer hpInputBuffer &&
-            resultBuffer is HighPerformanceMemoryBuffer hpResultBuffer)
-        {
-            var inputPtr = hpInputBuffer.GetFloatPtr();
-            var resultPtr = hpResultBuffer.GetFloatPtr();
-
-            // Use SIMD for maximum performance
-            if (Avx.IsSupported && elementCount >= 8)
-            {
-                ExecuteVectorScaleAvx(inputPtr, resultPtr, scaleFactor, elementCount);
-            }
-            else if (Sse.IsSupported && elementCount >= 4)
-            {
-                ExecuteVectorScaleSse(inputPtr, resultPtr, scaleFactor, elementCount);
-            }
-            else if (Vector.IsHardwareAccelerated && elementCount >= Vector<float>.Count)
-            {
-                ExecuteVectorScaleVector(inputPtr, resultPtr, scaleFactor, elementCount);
-            }
-            else
-            {
-                ExecuteVectorScaleScalar(inputPtr, resultPtr, scaleFactor, elementCount);
-            }
-        }
-        else
-        {
-            ExecuteVectorScaleGeneric(inputBuffer, resultBuffer, scaleFactor, elementCount).Wait();
-        }
-    }
-
-    private static unsafe void ExecuteVectorScaleAvx(float* inputPtr, float* resultPtr, float scaleFactor, int elementCount)
-    {
-        const int vectorSize = 8;
-        var vectorCount = elementCount / vectorSize;
-        var scaleVec = Vector256.Create(scaleFactor);
-
-        // Process 8 elements at a time with AVX
-        for (int i = 0; i < vectorCount; i++)
-        {
-            var offset = i * vectorSize;
-            var inputVec = Avx.LoadVector256(inputPtr + offset);
-            var result = Avx.Multiply(inputVec, scaleVec);
-            Avx.Store(resultPtr + offset, result);
-        }
-
-        // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < elementCount; i++)
-        {
-            resultPtr[i] = inputPtr[i] * scaleFactor;
-        }
-    }
-
-    private static unsafe void ExecuteVectorScaleSse(float* inputPtr, float* resultPtr, float scaleFactor, int elementCount)
-    {
-        const int vectorSize = 4;
-        var vectorCount = elementCount / vectorSize;
-        var scaleVec = Vector128.Create(scaleFactor);
-
-        // Process 4 elements at a time with SSE
-        for (int i = 0; i < vectorCount; i++)
-        {
-            var offset = i * vectorSize;
-            var inputVec = Sse.LoadVector128(inputPtr + offset);
-            var result = Sse.Multiply(inputVec, scaleVec);
-            Sse.Store(resultPtr + offset, result);
-        }
-
-        // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < elementCount; i++)
-        {
-            resultPtr[i] = inputPtr[i] * scaleFactor;
-        }
-    }
-
-    private static unsafe void ExecuteVectorScaleVector(float* inputPtr, float* resultPtr, float scaleFactor, int elementCount)
-    {
-        var vectorSize = Vector<float>.Count;
-        var vectorCount = elementCount / vectorSize;
-        var scaleVec = new Vector<float>(scaleFactor);
-
-        // Use .NET Vector<T> SIMD
-        for (int i = 0; i < vectorCount; i++)
-        {
-            var offset = i * vectorSize;
-            var inputVec = Unsafe.ReadUnaligned<Vector<float>>(inputPtr + offset);
-            var result = inputVec * scaleVec;
-            Unsafe.WriteUnaligned(resultPtr + offset, result);
-        }
-
-        // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < elementCount; i++)
-        {
-            resultPtr[i] = inputPtr[i] * scaleFactor;
-        }
-    }
-
-    private static unsafe void ExecuteVectorScaleScalar(float* inputPtr, float* resultPtr, float scaleFactor, int elementCount)
-    {
-        for (int i = 0; i < elementCount; i++)
-        {
-            resultPtr[i] = inputPtr[i] * scaleFactor;
-        }
+        await Task.Run(() => ExecuteVectorScaleGeneric(inputBuffer, resultBuffer, scaleFactor, elementCount), cancellationToken);
     }
 
     private async Task ExecuteVectorScaleGeneric(IMemoryBuffer inputBuffer, IMemoryBuffer resultBuffer, float scaleFactor, int elementCount)
@@ -842,4 +469,32 @@ internal class GenericOptimizedKernel : OptimizedKernelBase
             Logger.LogInformation("Generic element-wise operation executed: {Elements} elements copied", elementCount);
         }
     }
+}
+
+// Supporting data structures
+internal enum KernelType
+{
+    Generic,
+    VectorAdd,
+    VectorMultiply,
+    VectorScale,
+    MatrixMultiply,
+    Reduction,
+    MemoryIntensive,
+    ComputeIntensive
+}
+
+internal class KernelInfo
+{
+    public string Name { get; set; } = string.Empty;
+    public KernelType Type { get; set; }
+    public string Source { get; set; } = string.Empty;
+    public List<KernelParameter> Parameters { get; set; } = [];
+}
+
+internal class KernelParameter
+{
+    public string Name { get; set; } = string.Empty;
+    public string Type { get; set; } = string.Empty;
+    public bool IsGlobal { get; set; }
 }

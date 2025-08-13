@@ -1,13 +1,12 @@
-using Xunit;
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using FluentAssertions;
 using CoreMemory = DotCompute.Core.Memory;
 using AbstractionsMemory = DotCompute.Abstractions;
 
@@ -170,9 +169,9 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
         _memoryManagerMock.Verify(m => m.DisposeAsync(), Times.Once);
     }
 
-    private static CoreMemory.IBuffer<T> CreateMockBuffer<T>(int elementCount) where T : unmanaged
+    private static DotCompute.Abstractions.IBuffer<T> CreateMockBuffer<T>(int elementCount) where T : unmanaged
     {
-        var mockBuffer = new Mock<CoreMemory.IBuffer<T>>();
+        var mockBuffer = new Mock<DotCompute.Abstractions.IBuffer<T>>();
         mockBuffer.Setup(b => b.ElementCount).Returns(elementCount);
         mockBuffer.Setup(b => b.SizeInBytes).Returns(elementCount * System.Runtime.InteropServices.Marshal.SizeOf<T>());
         return mockBuffer.Object;

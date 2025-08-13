@@ -7,6 +7,7 @@ using BenchmarkDotNet.Running;
 using DotCompute.Tests.Shared.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Performance;

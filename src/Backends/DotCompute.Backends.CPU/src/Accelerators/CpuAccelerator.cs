@@ -105,7 +105,19 @@ public sealed class CpuAccelerator : IAccelerator
             Logger = _logger
         };
 
-        // Compile the kernel with vectorization support
+        // Check if we should try optimized kernel compilation first
+        if (_options.EnableAutoVectorization && _options.PreferPerformanceOverPower)
+        {
+            var optimizedKernel = TryCreateOptimizedKernel(definition, options);
+            if (optimizedKernel != null)
+            {
+                _logger.LogDebug("Successfully compiled optimized kernel '{KernelName}' with {VectorWidth}-bit vectorization",
+                    definition.Name, SimdCapabilities.PreferredVectorWidth);
+                return optimizedKernel;
+            }
+        }
+
+        // Fall back to standard compilation
         // Use AOT-compatible compiler when dynamic code compilation is not available
         var coreCompiledKernel = System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled
             ? await CpuKernelCompiler.CompileAsync(compilationContext, cancellationToken).ConfigureAwait(false)
@@ -116,6 +128,37 @@ public sealed class CpuAccelerator : IAccelerator
 
         // Wrap the Core compiled kernel to implement Abstractions.ICompiledKernel
         return new CompiledKernelAdapter(coreCompiledKernel);
+    }
+
+    /// <summary>
+    /// Attempts to create an optimized kernel for known patterns.
+    /// </summary>
+    private ICompiledKernel? TryCreateOptimizedKernel(KernelDefinition definition, CompilationOptions options)
+    {
+        try
+        {
+            // Parse kernel source to detect optimization opportunities
+            var sourceCode = System.Text.Encoding.UTF8.GetString(definition.Code);
+            var kernelParser = new OpenCLKernelParser(_logger);
+            var kernelInfo = kernelParser.ParseKernel(sourceCode, definition.EntryPoint ?? "main");
+
+            // Create optimized kernel based on type
+            return kernelInfo.Type switch
+            {
+                KernelType.VectorAdd => new OptimizedVectorAddKernel(kernelInfo.Name, options, _logger),
+                KernelType.VectorScale => new OptimizedVectorScaleKernel(kernelInfo.Name, options, _logger),
+                KernelType.MatrixMultiply => new OptimizedMatrixMultiplyKernel(kernelInfo.Name, options, _logger),
+                KernelType.Reduction => new OptimizedReductionKernel(kernelInfo.Name, options, _logger),
+                KernelType.MemoryIntensive => new OptimizedMemoryKernel(kernelInfo.Name, options, _logger),
+                KernelType.ComputeIntensive => new OptimizedComputeKernel(kernelInfo.Name, options, _logger),
+                _ => new GenericOptimizedKernel(kernelInfo.Name, kernelInfo, options, _logger)
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed to create optimized kernel for {KernelName}, falling back to standard compilation", definition.Name);
+            return null;
+        }
     }
 
     /// <inheritdoc/>

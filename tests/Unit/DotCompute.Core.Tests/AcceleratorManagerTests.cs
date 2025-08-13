@@ -4,7 +4,6 @@ using DotCompute.Core.Compute;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
-using Xunit;
 
 namespace DotCompute.Tests.Unit;
 

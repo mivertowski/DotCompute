@@ -1,9 +1,9 @@
-using Xunit;
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Aot;
+using DotCompute.Core.Pipelines;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;

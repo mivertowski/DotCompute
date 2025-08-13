@@ -1,4 +1,3 @@
-using Xunit;
 using FluentAssertions;
 using Xunit;
 

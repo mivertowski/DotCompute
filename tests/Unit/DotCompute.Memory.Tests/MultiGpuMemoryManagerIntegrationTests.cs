@@ -1,4 +1,3 @@
-using Xunit;
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -8,11 +7,11 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution;
-using DotCompute.Core.Memory;
+using DotCompute.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests;
 
 /// <summary>
 /// Integration tests for MultiGpuMemoryManager with real P2P scenarios.
@@ -367,7 +366,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
     private async Task<IBuffer<T>> CreateMockBuffer<T>(IAccelerator device, int elementCount) where T : unmanaged
     {
         var sizeInBytes = elementCount * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-        var memoryBuffer = await device.Memory.AllocateAsync(sizeInBytes, MemoryOptions.None);
+        var memoryBuffer = await device.Memory.AllocateAsync(sizeInBytes, Abstractions.MemoryOptions.None);
         return new MockBuffer<T>(memoryBuffer, device, elementCount);
     }
 
@@ -400,7 +399,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         public long SizeInBytes => _memoryBuffer.SizeInBytes;
         public IAccelerator Accelerator { get; }
         public MemoryType MemoryType => MemoryType.Device;
-        public MemoryOptions Options => _memoryBuffer.Options;
+        public Abstractions.MemoryOptions Options => _memoryBuffer.Options;
         public bool IsDisposed => _disposed;
 
         public Task CopyFromHostAsync<TData>(TData[] source, int offset, CancellationToken cancellationToken = default) where TData : unmanaged
@@ -551,14 +550,8 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         }
 
         public AcceleratorInfo Info { get; }
-        public AcceleratorType Type => Info.DeviceType switch
-        {
-            "CUDA" => AcceleratorType.CUDA,
-            "ROCm" => AcceleratorType.ROCm,
-            "CPU" => AcceleratorType.CPU,
-            _ => AcceleratorType.CPU
-        };
-        public DotCompute.Abstractions.IMemoryManager Memory { get; }
+        public AcceleratorType Type => (AcceleratorType)Enum.Parse(typeof(AcceleratorType), Info.DeviceType);
+        public IMemoryManager Memory { get; }
         public bool IsDisposed { get; private set; }
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(
@@ -589,11 +582,11 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
     /// <summary>
     /// Mock memory manager for integration testing.
     /// </summary>
-    private sealed class MockMemoryManager : DotCompute.Abstractions.IMemoryManager
+    private sealed class MockMemoryManager : IMemoryManager
     {
         public ValueTask<IMemoryBuffer> AllocateAsync(
             long sizeInBytes,
-            MemoryOptions options,
+            Abstractions.MemoryOptions options,
             CancellationToken cancellationToken = default)
         {
             return ValueTask.FromResult<IMemoryBuffer>(new MockMemoryBuffer(sizeInBytes, options));
@@ -601,7 +594,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
 
         public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
             ReadOnlyMemory<T> source,
-            MemoryOptions options,
+            Abstractions.MemoryOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
@@ -619,14 +612,14 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
     /// </summary>
     private sealed class MockMemoryBuffer : IMemoryBuffer
     {
-        public MockMemoryBuffer(long sizeInBytes, MemoryOptions options)
+        public MockMemoryBuffer(long sizeInBytes, Abstractions.MemoryOptions options)
         {
             SizeInBytes = sizeInBytes;
             Options = options;
         }
 
         public long SizeInBytes { get; }
-        public MemoryOptions Options { get; }
+        public Abstractions.MemoryOptions Options { get; }
         public bool IsDisposed { get; private set; }
 
         public ValueTask CopyFromHostAsync<T>(

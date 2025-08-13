@@ -41,8 +41,8 @@ public class CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger) : IA
             true // is unified memory
         );
 
-        // Create CPU accelerator with proper DI support
-        var accelerator = new CpuAccelerator(cpuInfo, _logger);
+        // Create a simple CPU accelerator implementation
+        var accelerator = new SimpleCpuAccelerator(cpuInfo, _logger);
         return ValueTask.FromResult<IEnumerable<IAccelerator>>(new[] { accelerator });
     }
 
@@ -53,7 +53,7 @@ public class CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger) : IA
             throw new ArgumentException("Can only create CPU accelerators", nameof(info));
         }
 
-        var accelerator = new CpuAccelerator(info, _logger);
+        var accelerator = new SimpleCpuAccelerator(info, _logger);
         return ValueTask.FromResult<IAccelerator>(accelerator);
     }
 
@@ -236,19 +236,20 @@ public class CpuAcceleratorProvider(ILogger<CpuAcceleratorProvider> logger) : IA
 }
 
 /// <summary>
-/// CPU accelerator implementation.
+/// Simple CPU accelerator implementation for Core.
+/// The optimized implementation is available in DotCompute.Backends.CPU.
 /// </summary>
-internal class CpuAccelerator : IAccelerator
+internal class SimpleCpuAccelerator : IAccelerator
 {
     private readonly ILogger _logger;
-    private readonly CpuMemoryManager _memoryManager;
+    private readonly SimpleCpuMemoryManager _memoryManager;
     private bool _disposed;
 
-    public CpuAccelerator(AcceleratorInfo info, ILogger logger)
+    public SimpleCpuAccelerator(AcceleratorInfo info, ILogger logger)
     {
         Info = info ?? throw new ArgumentNullException(nameof(info));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _memoryManager = new CpuMemoryManager(this, logger);
+        _memoryManager = new SimpleCpuMemoryManager(this, logger);
     }
 
     public AcceleratorInfo Info { get; }
@@ -265,93 +266,13 @@ internal class CpuAccelerator : IAccelerator
         ArgumentNullException.ThrowIfNull(definition);
         options ??= new CompilationOptions();
 
-        _logger.LogDebug("Compiling CPU kernel: {KernelName}", definition.Name);
+        _logger.LogDebug("Compiling simple CPU kernel: {KernelName}", definition.Name);
 
-        // Validate kernel definition
-        if (definition.Code == null || definition.Code.Length == 0)
-        {
-            throw new ArgumentException("Kernel code cannot be null or empty", nameof(definition));
-        }
-
-        try
-        {
-            // Create kernel compilation context
-            var context = new CpuKernelCompilationContext
-            {
-                Definition = definition,
-                Options = options,
-                TargetArchitecture = Environment.ProcessorCount > 0 ? "x64" : "x86",
-                SimdSupport = System.Numerics.Vector.IsHardwareAccelerated,
-                OptimizationLevel = options.OptimizationLevel
-            };
-
-            // Determine kernel type from metadata or assume C# by default
-            ICompiledKernel compiledKernel;
-            var kernelType = definition.Metadata?.GetValueOrDefault("SourceType")?.ToString() ?? "CSharp";
-
-            if (kernelType == "CSharp")
-            {
-                compiledKernel = await CompileCSharpKernelAsync(context, cancellationToken);
-            }
-            else if (kernelType == "Native")
-            {
-                compiledKernel = await CompileNativeKernelAsync(context, cancellationToken);
-            }
-            else
-            {
-                throw new NotSupportedException($"Kernel source type {kernelType} is not supported by CPU accelerator");
-            }
-
-            _logger.LogInformation("Successfully compiled CPU kernel: {KernelName}", definition.Name);
-            return compiledKernel;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to compile CPU kernel: {KernelName}", definition.Name);
-            throw new InvalidOperationException($"Kernel compilation failed: {ex.Message}", ex);
-        }
-    }
-
-    private static async ValueTask<ICompiledKernel> CompileCSharpKernelAsync(
-        CpuKernelCompilationContext context,
-        CancellationToken cancellationToken)
-    {
-        // For C# kernels, we could use Roslyn or expression trees
-        // This is a production implementation that creates an executable function
-        await Task.Yield(); // Simulate compilation work
-
-        Action<KernelExecutionContext> compiledFunction = execContext =>
-        {
-            // Execute the kernel logic
-            // In a real implementation, this would be generated from the kernel source
-            var workSize = execContext.WorkDimensions?.FirstOrDefault() ?? 1;
-            for (long i = 0; i < workSize; i++)
-            {
-                if (execContext.CancellationToken.IsCancellationRequested)
-                {
-                    break;
-                }
-                // Kernel execution logic would go here
-            }
-        };
-
-        return new CpuCompiledKernel(context.Definition.Name, context.Definition, compiledFunction);
-    }
-
-    private static async ValueTask<ICompiledKernel> CompileNativeKernelAsync(
-        CpuKernelCompilationContext context,
-        CancellationToken cancellationToken)
-    {
-        // For native kernels, we would compile to machine code
-        await Task.Yield(); // Simulate compilation work
-
-        Action<KernelExecutionContext> compiledFunction = execContext =>
-        {
-            // Execute native kernel
-            // This would invoke compiled native code
-        };
-
-        return new CpuCompiledKernel(context.Definition.Name, context.Definition, compiledFunction);
+        // Create a simple compiled kernel that does basic execution
+        var compiledKernel = new SimpleCpuCompiledKernel(definition.Name, definition);
+        
+        _logger.LogInformation("Successfully compiled simple CPU kernel: {KernelName}", definition.Name);
+        return await ValueTask.FromResult<ICompiledKernel>(compiledKernel);
     }
 
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
@@ -372,18 +293,18 @@ internal class CpuAccelerator : IAccelerator
 /// <summary>
 /// Simple CPU memory manager implementation.
 /// </summary>
-internal class CpuMemoryManager(IAccelerator accelerator, ILogger logger) : IMemoryManager, IDisposable
+internal class SimpleCpuMemoryManager(IAccelerator accelerator, ILogger logger) : IMemoryManager, IDisposable
 {
     private readonly IAccelerator _accelerator = accelerator;
     private readonly ILogger _logger = logger;
-    private readonly List<CpuMemoryBuffer> _allocatedBuffers = [];
+    private readonly List<SimpleCpuMemoryBuffer> _allocatedBuffers = [];
 
     public ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default)
     {
-        var buffer = new CpuMemoryBuffer(sizeInBytes, options);
+        var buffer = new SimpleCpuMemoryBuffer(sizeInBytes, options);
         _allocatedBuffers.Add(buffer);
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
@@ -394,20 +315,20 @@ internal class CpuMemoryManager(IAccelerator accelerator, ILogger logger) : IMem
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
-        var buffer = new CpuMemoryBuffer(sizeInBytes, options);
-        await buffer.CopyFromHostAsync(source, cancellationToken: cancellationToken).AsTask();
+        var buffer = new SimpleCpuMemoryBuffer(sizeInBytes, options);
+        await buffer.CopyFromHostAsync(source, cancellationToken: cancellationToken);
         _allocatedBuffers.Add(buffer);
-        return await ValueTask.FromResult<IMemoryBuffer>(buffer);
+        return buffer;
     }
 
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
-        if (buffer is not CpuMemoryBuffer cpuBuffer)
+        if (buffer is not SimpleCpuMemoryBuffer cpuBuffer)
         {
             throw new ArgumentException("Buffer must be a CPU buffer", nameof(buffer));
         }
 
-        return new CpuMemoryBufferView(cpuBuffer, offset, length);
+        return new SimpleCpuMemoryBufferView(cpuBuffer, offset, length);
     }
 
     public void Dispose()
@@ -423,12 +344,12 @@ internal class CpuMemoryManager(IAccelerator accelerator, ILogger logger) : IMem
 /// <summary>
 /// Simple CPU memory buffer implementation.
 /// </summary>
-internal class CpuMemoryBuffer : IMemoryBuffer
+internal class SimpleCpuMemoryBuffer : IMemoryBuffer
 {
     private readonly byte[] _data;
     internal bool _disposed;
 
-    public CpuMemoryBuffer(long sizeInBytes, MemoryOptions options)
+    public SimpleCpuMemoryBuffer(long sizeInBytes, MemoryOptions options)
     {
         if (sizeInBytes > int.MaxValue)
         {
@@ -492,9 +413,9 @@ internal class CpuMemoryBuffer : IMemoryBuffer
 /// <summary>
 /// View over a CPU memory buffer.
 /// </summary>
-internal class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long length) : IMemoryBuffer
+internal class SimpleCpuMemoryBufferView(SimpleCpuMemoryBuffer parent, long offset, long length) : IMemoryBuffer
 {
-    private readonly CpuMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+    private readonly SimpleCpuMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
     private readonly long _offset = offset;
 
     public long SizeInBytes { get; } = length;
@@ -524,67 +445,28 @@ internal class CpuMemoryBufferView(CpuMemoryBuffer parent, long offset, long len
 }
 
 /// <summary>
-/// Production CPU compiled kernel with full execution support.
+/// Simple CPU compiled kernel implementation.
 /// </summary>
-internal class CpuCompiledKernel(string name, KernelDefinition definition, Action<KernelExecutionContext>? compiledFunction = null) : ICompiledKernel
+internal class SimpleCpuCompiledKernel(string name, KernelDefinition definition) : ICompiledKernel
 {
     private readonly KernelDefinition _definition = definition;
-    private readonly Action<KernelExecutionContext>? _compiledFunction = compiledFunction ?? DefaultKernelFunction;
     private bool _disposed;
 
     public string Name { get; } = name;
 
-    private static void DefaultKernelFunction(KernelExecutionContext context)
-    {
-        // Default no-op implementation for testing
-        // In production, this would be replaced by actual compiled code
-    }
-
-    public async ValueTask ExecuteAsync(
+    public ValueTask ExecuteAsync(
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
-
         if (_disposed)
         {
-            throw new ObjectDisposedException(nameof(CpuCompiledKernel));
+            throw new ObjectDisposedException(nameof(SimpleCpuCompiledKernel));
         }
 
-        try
-        {
-            if (_compiledFunction == null)
-            {
-                throw new InvalidOperationException("Kernel function is not compiled");
-            }
-
-            // Convert KernelArguments to KernelExecutionContext
-            var context = new KernelExecutionContext
-            {
-                Name = Name,
-                Arguments = arguments.Arguments.ToArray(),
-                WorkDimensions = new[] { 1024L }, // Default work size
-                LocalWorkSize = new[] { 64L },    // Default local work size
-                CancellationToken = cancellationToken
-            };
-
-            // Execute with timeout protection
-            using var timeoutCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            timeoutCts.CancelAfter(TimeSpan.FromMinutes(5)); // 5-minute timeout
-
-            await Task.Run(() => _compiledFunction(context), timeoutCts.Token);
-        }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
-        {
-            throw;
-        }
-        catch (OperationCanceledException)
-        {
-            throw new TimeoutException("Kernel execution timed out after 5 minutes");
-        }
-        catch (Exception ex)
-        {
-            throw new InvalidOperationException($"Kernel execution failed: {ex.Message}", ex);
-        }
+        // Simple kernel execution - in a real implementation,
+        // this would parse and execute the kernel code
+        // For now, this is a no-op placeholder
+        return ValueTask.CompletedTask;
     }
 
     public ValueTask DisposeAsync()
@@ -592,16 +474,4 @@ internal class CpuCompiledKernel(string name, KernelDefinition definition, Actio
         _disposed = true;
         return ValueTask.CompletedTask;
     }
-}
-
-/// <summary>
-/// Compilation context for CPU kernels.
-/// </summary>
-internal class CpuKernelCompilationContext
-{
-    public KernelDefinition Definition { get; set; } = null!;
-    public CompilationOptions Options { get; set; } = null!;
-    public string TargetArchitecture { get; set; } = "x64";
-    public bool SimdSupport { get; set; }
-    public OptimizationLevel OptimizationLevel { get; set; }
 }

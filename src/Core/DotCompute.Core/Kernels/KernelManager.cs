@@ -342,10 +342,16 @@ public sealed partial class KernelManager : IDisposable
         }
 
         // Get compilation options
-        options ??= compiler.GetDefaultOptions();
+        options ??= GetDefaultCompilationOptions();
 
+        // Convert GeneratedKernel to KernelDefinition
+        var kernelDefinition = ConvertToKernelDefinition(generatedKernel);
+        
         // Compile kernel
-        return await compiler.CompileAsync(generatedKernel, options, cancellationToken).ConfigureAwait(false);
+        var compiledKernel = await compiler.CompileAsync(kernelDefinition, ConvertToAbstractionsOptions(options), cancellationToken).ConfigureAwait(false);
+        
+        // Convert back to ManagedCompiledKernel
+        return ConvertToManagedCompiledKernel(compiledKernel, generatedKernel);
     }
 
     private async ValueTask<ManagedCompiledKernel> GenerateAndCompileOperationKernelAsync(
@@ -391,10 +397,16 @@ public sealed partial class KernelManager : IDisposable
         }
 
         // Get compilation options
-        options ??= compiler.GetDefaultOptions();
+        options ??= GetDefaultCompilationOptions();
 
+        // Convert GeneratedKernel to KernelDefinition
+        var kernelDefinition = ConvertToKernelDefinition(generatedKernel);
+        
         // Compile kernel
-        return await compiler.CompileAsync(generatedKernel, options, cancellationToken).ConfigureAwait(false);
+        var compiledKernel = await compiler.CompileAsync(kernelDefinition, ConvertToAbstractionsOptions(options), cancellationToken).ConfigureAwait(false);
+        
+        // Convert back to ManagedCompiledKernel
+        return ConvertToManagedCompiledKernel(compiledKernel, generatedKernel);
     }
 
     private static string GenerateCacheKey(Expression expression, AcceleratorInfo acceleratorInfo)
@@ -502,6 +514,104 @@ public sealed partial class KernelManager : IDisposable
     private void LogKernelProfilingStarted(string kernelName, int iterations) => Log.KernelProfilingStarted(_logger, kernelName, iterations);
     private void LogKernelProfilingCompleted(string kernelName, double averageTimeMs, double throughputGFLOPS) => Log.KernelProfilingCompleted(_logger, kernelName, averageTimeMs, throughputGFLOPS);
     private void LogKernelCacheCleared(int kernelCount) => Log.KernelCacheCleared(_logger, kernelCount);
+
+    /// <summary>
+    /// Gets default compilation options.
+    /// </summary>
+    private static CompilationOptions GetDefaultCompilationOptions()
+    {
+        return new CompilationOptions
+        {
+            OptimizationLevel = OptimizationLevel.O2,
+            GenerateDebugInfo = false,
+            EnableFastMath = true,
+            FiniteMathOnly = true,
+            EnableUnsafeOptimizations = false
+        };
+    }
+
+    /// <summary>
+    /// Converts GeneratedKernel to KernelDefinition.
+    /// </summary>
+    private static KernelDefinition ConvertToKernelDefinition(GeneratedKernel generatedKernel)
+    {
+        var kernelSource = new TextKernelSource(
+            generatedKernel.Source,
+            generatedKernel.Name,
+            ConvertKernelLanguage(generatedKernel.Language),
+            generatedKernel.EntryPoint);
+
+        var compilationOptions = new DotCompute.Abstractions.CompilationOptions
+        {
+            OptimizationLevel = DotCompute.Abstractions.OptimizationLevel.Default
+        };
+
+        return new KernelDefinition(generatedKernel.Name, kernelSource, compilationOptions);
+    }
+
+    /// <summary>
+    /// Converts Core KernelLanguage to Abstractions KernelLanguage.
+    /// </summary>
+    private static DotCompute.Abstractions.KernelLanguage ConvertKernelLanguage(KernelLanguage language)
+    {
+        return language switch
+        {
+            KernelLanguage.CSharp => DotCompute.Abstractions.KernelLanguage.CSharpIL,
+            KernelLanguage.OpenCL => DotCompute.Abstractions.KernelLanguage.OpenCL,
+            KernelLanguage.CUDA => DotCompute.Abstractions.KernelLanguage.Cuda,
+            KernelLanguage.Metal => DotCompute.Abstractions.KernelLanguage.Metal,
+            KernelLanguage.DirectCompute => DotCompute.Abstractions.KernelLanguage.HLSL,
+            KernelLanguage.Vulkan => DotCompute.Abstractions.KernelLanguage.SPIRV,
+            KernelLanguage.WebGPU => DotCompute.Abstractions.KernelLanguage.SPIRV,
+            _ => DotCompute.Abstractions.KernelLanguage.CSharpIL
+        };
+    }
+
+    /// <summary>
+    /// Converts Core CompilationOptions to Abstractions CompilationOptions.
+    /// </summary>
+    private static DotCompute.Abstractions.CompilationOptions ConvertToAbstractionsOptions(CompilationOptions options)
+    {
+        return new DotCompute.Abstractions.CompilationOptions
+        {
+            OptimizationLevel = ConvertOptimizationLevel(options.OptimizationLevel),
+            EnableDebugInfo = options.GenerateDebugInfo,
+            FastMath = options.EnableFastMath,
+            AdditionalFlags = options.AdditionalFlags?.ToArray(),
+            Defines = options.Defines
+        };
+    }
+
+    /// <summary>
+    /// Converts ICompiledKernel back to ManagedCompiledKernel.
+    /// </summary>
+    private static ManagedCompiledKernel ConvertToManagedCompiledKernel(ICompiledKernel compiledKernel, GeneratedKernel generatedKernel)
+    {
+        return new ManagedCompiledKernel
+        {
+            Name = generatedKernel.Name,
+            Binary = System.Text.Encoding.UTF8.GetBytes(generatedKernel.Source), // Fallback to source
+            Parameters = generatedKernel.Parameters,
+            RequiredWorkGroupSize = generatedKernel.RequiredWorkGroupSize,
+            SharedMemorySize = generatedKernel.SharedMemorySize
+        };
+    }
+
+    /// <summary>
+    /// Converts Core OptimizationLevel to Abstractions OptimizationLevel.
+    /// </summary>
+    private static DotCompute.Abstractions.OptimizationLevel ConvertOptimizationLevel(OptimizationLevel level)
+    {
+        return level switch
+        {
+            OptimizationLevel.O0 => DotCompute.Abstractions.OptimizationLevel.None,
+            OptimizationLevel.O1 => DotCompute.Abstractions.OptimizationLevel.Debug,
+            OptimizationLevel.O2 => DotCompute.Abstractions.OptimizationLevel.Default,
+            OptimizationLevel.O3 => DotCompute.Abstractions.OptimizationLevel.Maximum,
+            OptimizationLevel.Os => DotCompute.Abstractions.OptimizationLevel.Release,
+            _ => DotCompute.Abstractions.OptimizationLevel.Default
+        };
+    }
 
     #endregion
 }

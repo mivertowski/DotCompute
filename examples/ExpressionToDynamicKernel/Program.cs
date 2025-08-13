@@ -41,7 +41,7 @@ class Program
         Console.WriteLine("===================================");
 
         var optimizer = new ExpressionOptimizer(loggerFactory.CreateLogger<ExpressionOptimizer>());
-        var options = new CompilationOptions { EnableOperatorFusion = true };
+        var options = new DotCompute.Linq.Compilation.CompilationOptions { EnableOperatorFusion = true };
 
         // Create sample data
         var numbers = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }.AsQueryable();
@@ -301,15 +301,7 @@ class Program
 /// </summary>
 public class MockAccelerator : IAccelerator
 {
-    public AcceleratorInfo Info { get; } = new AcceleratorInfo
-    {
-        Name = "Demo GPU Accelerator",
-        Type = AcceleratorType.CUDA,
-        MaxWorkGroupSize = 1024,
-        GlobalMemorySize = 8L * 1024 * 1024 * 1024, // 8GB
-        LocalMemorySize = 48 * 1024, // 48KB
-        MaxComputeUnits = 80
-    };
+    public AcceleratorInfo Info { get; } = new AcceleratorInfo(AcceleratorType.CUDA, "Demo GPU Accelerator", "1.0.0", 8L * 1024 * 1024 * 1024);
 
     public AcceleratorType Type => AcceleratorType.CUDA;
 
@@ -324,6 +316,22 @@ public class MockAccelerator : IAccelerator
         return await operation();
     }
 
+    public async ValueTask<ICompiledKernel> CompileKernelAsync(
+        KernelDefinition definition,
+        DotCompute.Abstractions.CompilationOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        // Simulate kernel compilation
+        await Task.Delay(50, cancellationToken);
+        return new MockCompiledKernel(definition.Name);
+    }
+
+    public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+    {
+        // Simulate synchronization delay
+        await Task.Delay(5, cancellationToken);
+    }
+
     public void Dispose() { }
     public ValueTask DisposeAsync() => default;
 }
@@ -336,27 +344,27 @@ public class MockMemoryManager : IMemoryManager
     public async ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
     {
         await Task.Delay(1, cancellationToken); // Simulate allocation time
-        return new MockMemoryBuffer(sizeInBytes);
+        return new MockMemoryBuffer(sizeInBytes, options);
     }
 
-    public ValueTask FreeAsync(IMemoryBuffer buffer, CancellationToken cancellationToken = default)
+    public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
+        ReadOnlyMemory<T> source,
+        MemoryOptions options = MemoryOptions.None,
+        CancellationToken cancellationToken = default) where T : unmanaged
     {
-        buffer.Dispose();
-        return default;
+        await Task.Delay(2, cancellationToken); // Simulate allocation and copy time
+        var buffer = new MockMemoryBuffer(source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>(), options);
+        await buffer.CopyFromHostAsync(source, 0, cancellationToken);
+        return buffer;
     }
 
-    public MemoryInfo GetMemoryInfo()
+    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
-        return new MemoryInfo
-        {
-            TotalMemory = 8L * 1024 * 1024 * 1024,
-            AvailableMemory = 7L * 1024 * 1024 * 1024,
-            UsedMemory = 1L * 1024 * 1024 * 1024
-        };
+        if (buffer is not MockMemoryBuffer mockBuffer)
+            throw new ArgumentException("Buffer must be a MockMemoryBuffer", nameof(buffer));
+        
+        return new MockMemoryBufferView(mockBuffer, offset, length);
     }
-
-    public void Dispose() { }
-    public ValueTask DisposeAsync() => default;
 }
 
 /// <summary>
@@ -364,13 +372,24 @@ public class MockMemoryManager : IMemoryManager
 /// </summary>
 public class MockMemoryBuffer : IMemoryBuffer
 {
-    public MockMemoryBuffer(long size)
+    public MockMemoryBuffer(long size, MemoryOptions options = MemoryOptions.None)
     {
         SizeInBytes = size;
+        Options = options;
     }
 
     public long SizeInBytes { get; }
+    public MemoryOptions Options { get; }
     public bool IsDisposed => false;
+
+    public ValueTask CopyFromHostAsync<T>(
+        ReadOnlyMemory<T> source,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        // Simulate copy from host operation
+        return default;
+    }
 
     public ValueTask WriteAsync<T>(ReadOnlyMemory<T> data, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
@@ -384,12 +403,75 @@ public class MockMemoryBuffer : IMemoryBuffer
         return default;
     }
 
-    public ValueTask CopyToHostAsync<T>(Memory<T> hostMemory, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
+    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
         // Simulate copy to host
         return default;
     }
 
     public void Dispose() { }
+    public ValueTask DisposeAsync() => default;
+}
+
+/// <summary>
+/// Mock memory buffer view for demonstration.
+/// </summary>
+public class MockMemoryBufferView : IMemoryBuffer
+{
+    private readonly MockMemoryBuffer _parentBuffer;
+    private readonly long _offset;
+    private readonly long _length;
+
+    public MockMemoryBufferView(MockMemoryBuffer parentBuffer, long offset, long length)
+    {
+        _parentBuffer = parentBuffer;
+        _offset = offset;
+        _length = length;
+    }
+
+    public long SizeInBytes => _length;
+    public MemoryOptions Options => _parentBuffer.Options;
+    public bool IsDisposed => _parentBuffer.IsDisposed;
+
+    public ValueTask CopyFromHostAsync<T>(
+        ReadOnlyMemory<T> source,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return _parentBuffer.CopyFromHostAsync(source, _offset + offset, cancellationToken);
+    }
+
+    public ValueTask CopyToHostAsync<T>(
+        Memory<T> destination,
+        long offset = 0,
+        CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+    }
+
+    public void Dispose() { }
+    public ValueTask DisposeAsync() => default;
+}
+
+/// <summary>
+/// Mock compiled kernel for demonstration.
+/// </summary>
+public class MockCompiledKernel : ICompiledKernel
+{
+    public MockCompiledKernel(string name)
+    {
+        Name = name;
+    }
+
+    public string Name { get; }
+
+    public async ValueTask ExecuteAsync(
+        KernelArguments arguments,
+        CancellationToken cancellationToken = default)
+    {
+        // Simulate kernel execution
+        await Task.Delay(20, cancellationToken);
+    }
+
     public ValueTask DisposeAsync() => default;
 }

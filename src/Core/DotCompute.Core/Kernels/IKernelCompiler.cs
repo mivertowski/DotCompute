@@ -6,56 +6,18 @@ using DotCompute.Abstractions;
 namespace DotCompute.Core.Kernels;
 
 /// <summary>
-/// Interface for compiling kernels for specific accelerators.
-/// </summary>
-public interface IKernelCompiler
-{
-    /// <summary>
-    /// Gets the supported accelerator type.
-    /// </summary>
-    AcceleratorType AcceleratorType { get; }
-
-    /// <summary>
-    /// Compiles a kernel from source code.
-    /// </summary>
-    /// <param name="kernel">The generated kernel to compile.</param>
-    /// <param name="options">Compilation options.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The compiled kernel.</returns>
-    ValueTask<ManagedCompiledKernel> CompileAsync(GeneratedKernel kernel, CompilationOptions options, CancellationToken cancellationToken = default);
-
-
-    /// <summary>
-    /// Validates kernel source code.
-    /// </summary>
-    /// <param name="kernel">The kernel to validate.</param>
-    /// <returns>Validation result with any errors or warnings.</returns>
-    KernelValidationResult Validate(GeneratedKernel kernel);
-
-    /// <summary>
-    /// Gets the default compilation options for this compiler.
-    /// </summary>
-    /// <returns>Default compilation options.</returns>
-    CompilationOptions GetDefaultOptions();
-}
-
-/// <summary>
-/// Extension methods for IKernelCompiler to provide compatibility with Abstractions types.
+/// Extension methods for IKernelCompiler to provide compatibility with Core types.
 /// </summary>
 public static class KernelCompilerExtensions
 {
     /// <summary>
-    /// Compiles a kernel from source code (Abstractions compatibility).
+    /// Converts Abstractions.CompilationOptions to Core.CompilationOptions.
     /// </summary>
-    /// <param name="compiler">The kernel compiler.</param>
-    /// <param name="kernel">The generated kernel to compile.</param>
-    /// <param name="options">Compilation options.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>The compiled kernel.</returns>
-    public static ValueTask<ManagedCompiledKernel> CompileAsync(this IKernelCompiler compiler, GeneratedKernel kernel, DotCompute.Abstractions.CompilationOptions options, CancellationToken cancellationToken = default)
+    /// <param name="options">The abstractions compilation options.</param>
+    /// <returns>Core compilation options.</returns>
+    public static CompilationOptions ToCoreOptions(this DotCompute.Abstractions.CompilationOptions options)
     {
-        // Convert Abstractions.CompilationOptions to Core.CompilationOptions
-        var coreOptions = new CompilationOptions
+        return new CompilationOptions
         {
             OptimizationLevel = ConvertOptimizationLevel(options.OptimizationLevel),
             GenerateDebugInfo = options.EnableDebugInfo,
@@ -64,8 +26,6 @@ public static class KernelCompilerExtensions
             AdditionalFlags = options.AdditionalFlags?.ToList() ?? [],
             Defines = options.Defines?.ToDictionary(kvp => kvp.Key, kvp => kvp.Value) ?? []
         };
-        
-        return compiler.CompileAsync(kernel, coreOptions, cancellationToken);
     }
 
     private static OptimizationLevel ConvertOptimizationLevel(DotCompute.Abstractions.OptimizationLevel level)
@@ -86,7 +46,7 @@ public static class KernelCompilerExtensions
 /// <summary>
 /// Represents a compiled kernel ready for execution.
 /// </summary>
-public sealed class ManagedCompiledKernel : IDisposable
+public sealed class ManagedCompiledKernel : ICompiledKernel, IDisposable
 {
     private bool _disposed;
 
@@ -141,6 +101,16 @@ public sealed class ManagedCompiledKernel : IDisposable
     public Dictionary<string, object>? Metadata => PerformanceMetadata;
 
     /// <summary>
+    /// Executes the kernel with the specified arguments.
+    /// </summary>
+    public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+    {
+        // Stub implementation for now
+        await Task.CompletedTask;
+        throw new NotImplementedException("Kernel execution is not yet implemented in this stub compiler");
+    }
+
+    /// <summary>
     /// Disposes the compiled kernel.
     /// </summary>
     public void Dispose()
@@ -154,6 +124,15 @@ public sealed class ManagedCompiledKernel : IDisposable
             }
             _disposed = true;
         }
+    }
+
+    /// <summary>
+    /// Async dispose implementation.
+    /// </summary>
+    public async ValueTask DisposeAsync()
+    {
+        Dispose();
+        await Task.CompletedTask;
     }
 
     /// <summary>

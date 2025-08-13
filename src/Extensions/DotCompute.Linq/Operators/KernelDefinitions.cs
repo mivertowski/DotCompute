@@ -214,7 +214,7 @@ public class KernelDefinition
     /// <summary>
     /// Gets or sets the kernel parameters.
     /// </summary>
-    public KernelParameter[] Parameters { get; set; } = [];
+    public IList<KernelParameter> Parameters { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the kernel language.

@@ -1,4 +1,3 @@
-using Xunit;
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -7,10 +6,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
+using DotCompute.Memory;
+using AbstractionsMemoryManager = DotCompute.Abstractions.IMemoryManager;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests;
 
 /// <summary>
 /// Comprehensive tests for P2P capability detection including hardware-specific scenarios.
@@ -364,15 +365,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     private sealed class MockAccelerator : IAccelerator
     {
         public required AcceleratorInfo Info { get; init; }
-        public AcceleratorType Type => Info.DeviceType switch
-        {
-            "CUDA" => AcceleratorType.CUDA,
-            "ROCm" => AcceleratorType.ROCm,
-            "CPU" => AcceleratorType.CPU,
-            "OpenCL" => AcceleratorType.OpenCL,
-            _ => AcceleratorType.CPU
-        };
-        public DotCompute.Abstractions.IMemoryManager Memory { get; } = new MockMemoryManager();
+        public AcceleratorType Type => (AcceleratorType)Enum.Parse(typeof(AcceleratorType), Info.DeviceType);
+        public AbstractionsMemoryManager Memory { get; } = new MockMemoryManager();
         public bool IsDisposed => false;
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(
@@ -395,11 +389,11 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     /// <summary>
     /// Mock memory manager for testing.
     /// </summary>
-    private sealed class MockMemoryManager : DotCompute.Abstractions.IMemoryManager
+    private sealed class MockMemoryManager : AbstractionsMemoryManager
     {
         public ValueTask<IMemoryBuffer> AllocateAsync(
             long sizeInBytes,
-            MemoryOptions options,
+            Abstractions.MemoryOptions options,
             CancellationToken cancellationToken = default)
         {
             return ValueTask.FromResult<IMemoryBuffer>(new MockMemoryBuffer(sizeInBytes, options));
@@ -407,7 +401,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
 
         public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
             ReadOnlyMemory<T> source,
-            MemoryOptions options,
+            Abstractions.MemoryOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
@@ -425,14 +419,14 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     /// </summary>
     private sealed class MockMemoryBuffer : IMemoryBuffer
     {
-        public MockMemoryBuffer(long sizeInBytes, MemoryOptions options)
+        public MockMemoryBuffer(long sizeInBytes, Abstractions.MemoryOptions options)
         {
             SizeInBytes = sizeInBytes;
             Options = options;
         }
 
         public long SizeInBytes { get; }
-        public MemoryOptions Options { get; }
+        public Abstractions.MemoryOptions Options { get; }
         public bool IsDisposed => false;
 
         public ValueTask CopyFromHostAsync<T>(

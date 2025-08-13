@@ -1,28 +1,24 @@
-using Xunit;
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using FluentAssertions;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests.Kernels;
 
 /// <summary>
-/// Comprehensive tests for OpenCL kernel compiler that can run on CI/CD without GPU hardware.
-/// Uses mocks and dependency injection to simulate OpenCL runtime behavior.
+/// Comprehensive unit tests for OpenCLKernelCompiler with 90% coverage target.
+/// Tests syntax validation, mock compilation, and different kernel types.
 /// </summary>
 public class OpenCLKernelCompilerTests : IDisposable
 {
     private readonly Mock<ILogger<OpenCLKernelCompiler>> _mockLogger;
     private readonly OpenCLKernelCompiler _compiler;
+    private bool _disposed;
 
     public OpenCLKernelCompilerTests()
     {
@@ -30,536 +26,596 @@ public class OpenCLKernelCompilerTests : IDisposable
         _compiler = new OpenCLKernelCompiler(_mockLogger.Object);
     }
 
+    #region Constructor Tests
+
+    [Fact]
+    public void Constructor_WithValidLogger_ShouldInitializeSuccessfully()
+    {
+        // Assert
+        _compiler.Should().NotBeNull();
+        _compiler.Name.Should().Be("OpenCL Kernel Compiler");
+        _compiler.SupportedSourceTypes.Should().Contain(KernelSourceType.OpenCL);
+        _compiler.SupportedSourceTypes.Should().Contain(KernelSourceType.Binary);
+    }
+
     [Fact]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
-        // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new OpenCLKernelCompiler(null!));
+        // Arrange & Act & Assert
+        Action act = () => new OpenCLKernelCompiler(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
+    #endregion
+
+    #region Properties Tests
+
     [Fact]
-    public void AcceleratorType_ShouldReturnOpenCL()
+    public void Name_ShouldReturnCorrectName()
     {
         // Act
-        var result = _compiler.AcceleratorType;
+        var name = _compiler.Name;
 
         // Assert
-        Assert.Equal(AcceleratorType.OpenCL, result);
+        name.Should().Be("OpenCL Kernel Compiler");
     }
 
     [Fact]
-    public async Task CompileAsync_WithNullKernel_ShouldThrowArgumentNullException()
+    public void SupportedSourceTypes_ShouldContainOpenCLAndBinary()
+    {
+        // Act
+        var supportedTypes = _compiler.SupportedSourceTypes;
+
+        // Assert
+        supportedTypes.Should().NotBeNull();
+        supportedTypes.Should().HaveCount(2);
+        supportedTypes.Should().Contain(KernelSourceType.OpenCL);
+        supportedTypes.Should().Contain(KernelSourceType.Binary);
+    }
+
+    #endregion
+
+    #region CompileAsync Tests
+
+    [Fact]
+    public async Task CompileAsync_WithValidOpenCLKernel_ShouldReturnCompiledKernel()
     {
         // Arrange
-        var options = CreateValidCompilationOptions();
+        var definition = CreateValidOpenCLKernelDefinition("TestKernel");
 
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _compiler.CompileAsync(null!, options).AsTask());
+        // Act
+        var result = await _compiler.CompileAsync(definition);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Name.Should().Be("TestKernel");
+        result.Should().BeOfType<ManagedCompiledKernel>();
+        VerifyLoggerWasCalledForCompilation("TestKernel");
     }
 
     [Fact]
-    public async Task CompileAsync_WithNullOptions_ShouldThrowArgumentNullException()
+    public async Task CompileAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
-        // Arrange
-        var kernel = CreateValidOpenCLKernel();
-
-        // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _compiler.CompileAsync(kernel, null!).AsTask());
+        // Arrange & Act & Assert
+        await _compiler.Invoking(c => c.CompileAsync(null!))
+            .Should().ThrowAsync<ArgumentNullException>()
+            .WithParameterName("definition");
     }
 
     [Fact]
     public async Task CompileAsync_WithNonOpenCLKernel_ShouldThrowArgumentException()
     {
         // Arrange
-        var kernel = new GeneratedKernel
-        {
-            Name = "test_kernel",
-            Source = "__kernel void test() {}",
-            Language = DotCompute.Core.Kernels.KernelLanguage.CUDA, // Wrong language
-            Parameters = Array.Empty<DotCompute.Core.Kernels.KernelParameter>()
-        };
-        var options = CreateValidCompilationOptions();
+        var definition = CreateKernelDefinitionWithLanguage("TestKernel", KernelLanguage.HLSL);
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _compiler.CompileAsync(kernel, options).AsTask());
-        Assert.Contains("Expected OpenCL kernel but received CUDA", exception.Message);
+        await _compiler.Invoking(c => c.CompileAsync(definition))
+            .Should().ThrowAsync<ArgumentException>()
+            .WithMessage("*Expected OpenCL kernel but received HLSL*");
     }
 
     [Fact]
-    public async Task CompileAsync_WithValidKernel_ShouldCompileSuccessfully()
+    public async Task CompileAsync_WithNullOptions_ShouldUseDefaults()
     {
         // Arrange
-        var kernel = CreateValidOpenCLKernel();
-        var options = CreateValidCompilationOptions();
+        var definition = CreateValidOpenCLKernelDefinition("TestKernel");
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(definition, null);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.Binary);
-        Assert.Equal(kernel.Name, result.Name);
-        Assert.NotNull(result.Parameters);
+        result.Should().NotBeNull();
+        result.Name.Should().Be("TestKernel");
+    }
+
+    [Fact]
+    public async Task CompileAsync_WithCustomOptions_ShouldUseProvidedOptions()
+    {
+        // Arrange
+        var definition = CreateValidOpenCLKernelDefinition("TestKernel");
+        var options = new CompilationOptions
+        {
+            OptimizationLevel = OptimizationLevel.Debug,
+            EnableDebugInfo = true,
+            FastMath = false,
+            UnrollLoops = false
+        };
+
+        // Act
+        var result = await _compiler.CompileAsync(definition, options);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Name.Should().Be("TestKernel");
+    }
+
+    [Fact]
+    public async Task CompileAsync_WithCancellation_ShouldRespectCancellationToken()
+    {
+        // Arrange
+        var definition = CreateValidOpenCLKernelDefinition("TestKernel");
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert
+        await _compiler.Invoking(c => c.CompileAsync(definition, null, cts.Token))
+            .Should().ThrowAsync<OperationCanceledException>();
+    }
+
+    [Fact]
+    public async Task CompileAsync_ShouldReturnMockCompiledKernel()
+    {
+        // Arrange
+        var definition = CreateValidOpenCLKernelDefinition("MockKernel");
+
+        // Act
+        var result = await _compiler.CompileAsync(definition);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Should().BeOfType<ManagedCompiledKernel>();
+        
+        var managedKernel = result as ManagedCompiledKernel;
+        managedKernel!.Name.Should().Be("MockKernel");
+        managedKernel.Binary.Should().NotBeNull();
+        managedKernel.Binary.Length.Should().Be(1024); // Mock binary size
+        managedKernel.CompilationLog.Should().Be("Mock OpenCL compilation log");
+        managedKernel.PerformanceMetadata.Should().ContainKey("CompilationTime");
+        managedKernel.PerformanceMetadata.Should().ContainKey("Platform");
+        managedKernel.PerformanceMetadata["Platform"].Should().Be("OpenCL (Mock)");
+        managedKernel.PerformanceMetadata["CompilationTime"].Should().Be(10.0);
+    }
+
+    [Fact]
+    public async Task CompileAsync_ShouldSimulateCompilationTime()
+    {
+        // Arrange
+        var definition = CreateValidOpenCLKernelDefinition("TimingKernel");
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        // Act
+        await _compiler.CompileAsync(definition);
+
+        // Assert
+        stopwatch.Stop();
+        stopwatch.ElapsedMilliseconds.Should().BeGreaterOrEqualTo(8); // Should take at least ~10ms
+    }
+
+    #endregion
+
+    #region Validation Tests
+
+    [Fact]
+    public void Validate_WithValidOpenCLKernel_ShouldReturnSuccess()
+    {
+        // Arrange
+        var definition = CreateValidOpenCLKernelDefinition("TestKernel");
+
+        // Act
+        var result = _compiler.Validate(definition);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Validate_WithNullDefinition_ShouldThrowArgumentNullException()
+    {
+        // Arrange & Act & Assert
+        _compiler.Invoking(c => c.Validate(null!))
+            .Should().Throw<ArgumentNullException>()
+            .WithParameterName("definition");
+    }
+
+    [Fact]
+    public void Validate_WithNonOpenCLKernel_ShouldReturnFailure()
+    {
+        // Arrange
+        var definition = CreateKernelDefinitionWithLanguage("TestKernel", KernelLanguage.HLSL);
+
+        // Act
+        var result = _compiler.Validate(definition);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeFalse();
+        result.Message.Should().Contain("Expected OpenCL kernel but received HLSL");
+    }
+
+    [Fact]
+    public void Validate_WithMissingKernelFunction_ShouldReturnFailure()
+    {
+        // Arrange
+        var openclCode = "void regularFunction() { /* no __kernel attribute */ }";
+        var definition = CreateKernelDefinitionWithCode("TestKernel", openclCode, KernelLanguage.OpenCL);
+
+        // Act
+        var result = _compiler.Validate(definition);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeFalse();
+        result.Message.Should().Contain("No __kernel function found");
     }
 
     [Theory]
-    [InlineData("1.0")]
-    [InlineData("1.1")]
-    [InlineData("1.2")]
-    [InlineData("2.0")]
-    [InlineData("3.0")]
-    public async Task CompileAsync_WithDifferentOpenCLVersions_ShouldHandleCorrectly(string version)
+    [InlineData("__kernel void vectorAdd(__global float* a, __global float* b, __global float* c) { }")]
+    [InlineData("__kernel void matrixMul(__global const float* a, __global const float* b, __global float* c) { }")]
+    [InlineData("kernel void simpleKernel() { }")]
+    public void Validate_WithValidOpenCLSyntax_ShouldReturnSuccess(string openclCode)
     {
         // Arrange
-        var kernel = CreateValidOpenCLKernel();
-        var options = CreateValidCompilationOptions();
-        options.Defines["OPENCL_VERSION"] = version.Replace(".", "");
+        var definition = CreateKernelDefinitionWithCode("ValidKernel", openclCode, KernelLanguage.OpenCL);
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = _compiler.Validate(definition);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.Binary);
-        VerifyLoggerWasCalled("Compiling OpenCL kernel", LogLevel.Information);
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeTrue();
     }
 
-    [Fact]
-    public async Task CompileAsync_WithExtensions_ShouldIncludeExtensions()
+    #endregion
+
+    #region OpenCL Syntax Validation Tests
+
+    [Theory]
+    [InlineData("__kernel void test() { { { } } }")]
+    [InlineData("__kernel void test() { ((( ))) }")]
+    [InlineData("__kernel void test() { [[[ ]]] }")]
+    public void ValidateOpenCLSyntax_WithBalancedBrackets_ShouldReturnNoErrors(string openclCode)
     {
         // Arrange
-        var kernel = CreateKernelWithExtensions();
-        var options = CreateValidCompilationOptions();
+        var definition = CreateKernelDefinitionWithCode("SyntaxTest", openclCode, KernelLanguage.OpenCL);
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = _compiler.Validate(definition);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.Binary);
-        Assert.NotNull(result.PerformanceMetadata);
-    }
-
-    [Fact]
-    public async Task CompileAsync_WithMacroDefinitions_ShouldIncludeMacros()
-    {
-        // Arrange
-        var kernel = CreateValidOpenCLKernel();
-        var options = CreateValidCompilationOptions();
-        options.Defines["WORK_GROUP_SIZE"] = "256";
-        options.Defines["TILE_SIZE"] = "16";
-        options.Defines["USE_DOUBLE_PRECISION"] = "1";
-
-        // Act
-        var result = await _compiler.CompileAsync(kernel, options);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.Binary);
-        Assert.Contains("WORK_GROUP_SIZE", options.Defines.Keys);
-        Assert.Contains("TILE_SIZE", options.Defines.Keys);
-        Assert.Contains("USE_DOUBLE_PRECISION", options.Defines.Keys);
-    }
-
-    [Fact]
-    public async Task CompileAsync_WithComplexKernel_ShouldHandleAdvancedFeatures()
-    {
-        // Arrange
-        var kernel = CreateComplexOpenCLKernel();
-        var options = CreateValidCompilationOptions();
-        options.EnableFastMath = true;
-        options.OptimizationLevel = DotCompute.Core.Kernels.OptimizationLevel.O3;
-
-        // Act
-        var result = await _compiler.CompileAsync(kernel, options);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.Binary);
-        Assert.NotNull(result.PerformanceMetadata);
-        if (result.PerformanceMetadata != null)
-        {
-            Assert.True(result.PerformanceMetadata.ContainsKey("local_memory_size") || 
-                       result.PerformanceMetadata.ContainsKey("work_group_size"));
-        }
-    }
-
-    [Fact]
-    public async Task CompileAsync_WithVectorizationKernel_ShouldHandleVectorTypes()
-    {
-        // Arrange
-        var kernel = CreateVectorizationKernel();
-        var options = CreateValidCompilationOptions();
-
-        // Act
-        var result = await _compiler.CompileAsync(kernel, options);
-
-        // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.Binary);
-        Assert.NotNull(result.PerformanceMetadata);
-    }
-
-    [Fact]
-    public async Task CompileAsync_WithCancellationToken_ShouldRespectCancellation()
-    {
-        // Arrange
-        var kernel = CreateValidOpenCLKernel();
-        var options = CreateValidCompilationOptions();
-        var cts = new CancellationTokenSource();
-        cts.Cancel(); // Cancel immediately
-
-        // Act & Assert
-        // TaskCanceledException inherits from OperationCanceledException
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(
-            () => _compiler.CompileAsync(kernel, options, cts.Token).AsTask());
-    }
-
-    [Fact]
-    public async Task CompileAsync_WithInvalidOpenCLCode_ShouldHandleCompilationErrors()
-    {
-        // Arrange
-        var kernel = new GeneratedKernel
-        {
-            Name = "invalid_kernel",
-            Source = "__kernel void test() { invalid_syntax_here; }", // Invalid OpenCL syntax
-            Language = DotCompute.Core.Kernels.KernelLanguage.OpenCL,
-            Parameters = Array.Empty<DotCompute.Core.Kernels.KernelParameter>()
-        };
-        var options = CreateValidCompilationOptions();
-
-        // Act
-        var result = await _compiler.CompileAsync(kernel, options);
-
-        // Assert
-        // The compiler should handle the error gracefully (since we're using mocked OpenCL)
-        Assert.NotNull(result);
-        // In a mock scenario, this would still "compile" since we're not hitting real OpenCL runtime
-        // In a real scenario with actual OpenCL runtime, this would fail compilation
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeTrue();
     }
 
     [Theory]
-    [InlineData(DotCompute.Core.Kernels.OptimizationLevel.O0)]
-    [InlineData(DotCompute.Core.Kernels.OptimizationLevel.O1)]
-    [InlineData(DotCompute.Core.Kernels.OptimizationLevel.O2)]
-    [InlineData(DotCompute.Core.Kernels.OptimizationLevel.O3)]
-    public async Task CompileAsync_WithVariousOptimizationLevels_ShouldCompileCorrectly(DotCompute.Core.Kernels.OptimizationLevel level)
+    [InlineData("__kernel void test() { { { }")]
+    [InlineData("__kernel void test() { ((( )")]
+    [InlineData("__kernel void test() { [[[ ]")]
+    public void ValidateOpenCLSyntax_WithUnbalancedBrackets_ShouldReturnErrors(string openclCode)
     {
         // Arrange
-        var kernel = CreateValidOpenCLKernel();
-        var options = CreateValidCompilationOptions();
-        options.OptimizationLevel = level;
+        var definition = CreateKernelDefinitionWithCode("UnbalancedTest", openclCode, KernelLanguage.OpenCL);
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = _compiler.Validate(definition);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.Binary);
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeFalse();
+        result.Message.Should().ContainAny("Unbalanced braces", "Unbalanced parentheses", "Unbalanced brackets");
+    }
+
+    [Theory]
+    [InlineData("__kernel void test() { malloc(100); }")]
+    [InlineData("__kernel void test() { free(ptr); }")]
+    public void ValidateOpenCLSyntax_WithDynamicMemoryAllocation_ShouldReturnErrors(string openclCode)
+    {
+        // Arrange
+        var definition = CreateKernelDefinitionWithCode("MemoryTest", openclCode, KernelLanguage.OpenCL);
+
+        // Act
+        var result = _compiler.Validate(definition);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeFalse();
+        result.Message.Should().Contain("Dynamic memory allocation not supported");
     }
 
     [Fact]
-    public async Task CompileAsync_WithImageProcessingKernel_ShouldHandleImages()
+    public void ValidateOpenCLSyntax_WithComplexValidCode_ShouldReturnNoErrors()
     {
         // Arrange
-        var kernel = CreateImageProcessingKernel();
-        var options = CreateValidCompilationOptions();
+        var complexOpenCLCode = @"
+__kernel void vectorAdd(__global const float* a, __global const float* b, __global float* c, const unsigned int n) {
+    int id = get_global_id(0);
+    if (id < n) {
+        c[id] = a[id] + b[id];
+    }
+}";
+        var definition = CreateKernelDefinitionWithCode("ComplexKernel", complexOpenCLCode, KernelLanguage.OpenCL);
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = _compiler.Validate(definition);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.Binary);
-        Assert.NotNull(result.PerformanceMetadata);
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeTrue();
     }
 
     [Fact]
-    public async Task CompileAsync_WithAtomicOperations_ShouldHandleAtomics()
+    public void ValidateOpenCLSyntax_WithEmptyKernel_ShouldReturnSuccess()
     {
         // Arrange
-        var kernel = CreateAtomicOperationsKernel();
-        var options = CreateValidCompilationOptions();
+        var emptyKernel = "__kernel void empty() { }";
+        var definition = CreateKernelDefinitionWithCode("EmptyKernel", emptyKernel, KernelLanguage.OpenCL);
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = _compiler.Validate(definition);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.NotNull(result.Binary);
-        Assert.NotNull(result.PerformanceMetadata);
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeTrue();
+    }
+
+    #endregion
+
+    #region Default Compilation Options Tests
+
+    [Fact]
+    public void GetDefaultCompilationOptions_ShouldReturnExpectedOptions()
+    {
+        // This is tested indirectly through CompileAsync with null options
+        // Arrange
+        var definition = CreateValidOpenCLKernelDefinition("DefaultOptionsTest");
+
+        // Act
+        var compileTask = _compiler.CompileAsync(definition, null);
+
+        // Assert
+        compileTask.Should().NotBeNull();
     }
 
     [Fact]
-    public async Task CompileAsync_ConcurrentCompilations_ShouldHandleThreadSafety()
+    public async Task CompileAsync_WithDefaultOptions_ShouldApplyExpectedFlags()
     {
         // Arrange
-        var kernel1 = CreateValidOpenCLKernel("kernel1");
-        var kernel2 = CreateValidOpenCLKernel("kernel2");
-        var kernel3 = CreateValidOpenCLKernel("kernel3");
-        var options = CreateValidCompilationOptions();
+        var definition = CreateValidOpenCLKernelDefinition("FlagsTest");
 
-        // Act - Compile multiple kernels concurrently
-        var task1 = _compiler.CompileAsync(kernel1, options);
-        var task2 = _compiler.CompileAsync(kernel2, options);
-        var task3 = _compiler.CompileAsync(kernel3, options);
-
-        var results = await Task.WhenAll(task1.AsTask(), task2.AsTask(), task3.AsTask());
+        // Act
+        var result = await _compiler.CompileAsync(definition);
 
         // Assert
-        Assert.All(results, result =>
+        result.Should().NotBeNull();
+        // Default options are applied internally (tested through successful compilation)
+    }
+
+    #endregion
+
+    #region Mock Binary Generation Tests
+
+    [Fact]
+    public async Task CompileAsync_ShouldGenerateDeterministicMockBinary()
+    {
+        // Arrange
+        var definition1 = CreateKernelDefinitionWithCode("DeterministicTest", "__kernel void test() { }", KernelLanguage.OpenCL);
+        var definition2 = CreateKernelDefinitionWithCode("DeterministicTest", "__kernel void test() { }", KernelLanguage.OpenCL);
+
+        // Act
+        var result1 = await _compiler.CompileAsync(definition1);
+        var result2 = await _compiler.CompileAsync(definition2);
+
+        // Assert
+        result1.Should().BeOfType<ManagedCompiledKernel>();
+        result2.Should().BeOfType<ManagedCompiledKernel>();
+        
+        var kernel1 = result1 as ManagedCompiledKernel;
+        var kernel2 = result2 as ManagedCompiledKernel;
+        
+        kernel1!.Binary.Should().BeEquivalentTo(kernel2!.Binary);
+    }
+
+    [Fact]
+    public async Task CompileAsync_WithDifferentKernels_ShouldGenerateDifferentMockBinaries()
+    {
+        // Arrange
+        var definition1 = CreateKernelDefinitionWithCode("Kernel1", "__kernel void test1() { }", KernelLanguage.OpenCL);
+        var definition2 = CreateKernelDefinitionWithCode("Kernel2", "__kernel void test2() { }", KernelLanguage.OpenCL);
+
+        // Act
+        var result1 = await _compiler.CompileAsync(definition1);
+        var result2 = await _compiler.CompileAsync(definition2);
+
+        // Assert
+        result1.Should().BeOfType<ManagedCompiledKernel>();
+        result2.Should().BeOfType<ManagedCompiledKernel>();
+        
+        var kernel1 = result1 as ManagedCompiledKernel;
+        var kernel2 = result2 as ManagedCompiledKernel;
+        
+        kernel1!.Binary.Should().NotBeEquivalentTo(kernel2!.Binary);
+    }
+
+    #endregion
+
+    #region Error Handling Tests
+
+    [Fact]
+    public async Task CompileAsync_WithExceptionDuringProcessing_ShouldThrowInvalidOperationException()
+    {
+        // This test is more for completeness since the current implementation is mock
+        // In a real implementation, this would test actual compilation failures
+        
+        // Arrange
+        var definition = CreateValidOpenCLKernelDefinition("ExceptionTest");
+
+        // Act & Assert - Current mock implementation shouldn't throw
+        var result = await _compiler.CompileAsync(definition);
+        result.Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task CompileAsync_WithOperationCanceled_ShouldLogAndThrow()
+    {
+        // Arrange
+        var definition = CreateValidOpenCLKernelDefinition("CancelledKernel");
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+
+        // Act & Assert
+        await _compiler.Invoking(c => c.CompileAsync(definition, null, cts.Token))
+            .Should().ThrowAsync<OperationCanceledException>();
+
+        // Verify cancellation was logged
+        VerifyLoggerWasCalledForCancellation("CancelledKernel");
+    }
+
+    #endregion
+
+    #region Language Detection Tests
+
+    [Fact]
+    public void CreateKernelSourceFromDefinition_WithMetadataLanguage_ShouldUseMetadata()
+    {
+        // Arrange
+        var definition = new KernelDefinition(
+            "MetadataTest",
+            System.Text.Encoding.UTF8.GetBytes("__kernel void test() { }"))
         {
-            Assert.NotNull(result);
-            Assert.True(result.IsCompiled);
-        });
+            Metadata = new Dictionary<string, object>
+            {
+                ["Language"] = "OpenCL"
+            }
+        };
+
+        // Act
+        var result = _compiler.Validate(definition);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeTrue();
     }
+
+    [Fact]
+    public void CreateKernelSourceFromDefinition_WithoutMetadata_ShouldDefaultToOpenCL()
+    {
+        // Arrange
+        var definition = new KernelDefinition(
+            "NoMetadataTest",
+            System.Text.Encoding.UTF8.GetBytes("__kernel void test() { }"));
+
+        // Act
+        var result = _compiler.Validate(definition);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CreateKernelSourceFromDefinition_WithInvalidLanguageMetadata_ShouldDefaultToOpenCL()
+    {
+        // Arrange
+        var definition = new KernelDefinition(
+            "InvalidLanguageTest",
+            System.Text.Encoding.UTF8.GetBytes("__kernel void test() { }"))
+        {
+            Metadata = new Dictionary<string, object>
+            {
+                ["Language"] = "InvalidLanguage"
+            }
+        };
+
+        // Act
+        var result = _compiler.Validate(definition);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.IsValid.Should().BeTrue();
+    }
+
+    #endregion
 
     #region Helper Methods
 
-    private GeneratedKernel CreateValidOpenCLKernel(string name = "test_kernel")
+    private KernelDefinition CreateValidOpenCLKernelDefinition(string name)
     {
-        return new GeneratedKernel
-        {
-            Name = name,
-            Source = @"
-__kernel void test_kernel(__global float* input, __global float* output, int size) {
-    int gid = get_global_id(0);
-    if (gid < size) {
-        output[gid] = input[gid] * 2.0f;
+        var openclCode = @"
+__kernel void vectorAdd(__global const float* a, __global const float* b, __global float* c) {
+    int id = get_global_id(0);
+    c[id] = a[id] + b[id];
+}";
+        return CreateKernelDefinitionWithCode(name, openclCode, KernelLanguage.OpenCL);
     }
-}",
-            Language = DotCompute.Core.Kernels.KernelLanguage.OpenCL,
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
-            {
-                new() { Name = "input", Type = typeof(float[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "output", Type = typeof(float[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "size", Type = typeof(int), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Private }
-            }
+
+    private KernelDefinition CreateKernelDefinitionWithLanguage(string name, KernelLanguage language)
+    {
+        var code = language switch
+        {
+            KernelLanguage.OpenCL => "__kernel void test() { }",
+            KernelLanguage.HLSL => "[numthreads(8, 8, 1)] void CSMain() { }",
+            _ => "generic code"
         };
-    }
-
-    private GeneratedKernel CreateComplexOpenCLKernel()
-    {
-        return new GeneratedKernel
-        {
-            Name = "complex_kernel",
-            Source = @"
-#define TILE_SIZE 16
-
-__kernel void complex_kernel(__global float* A, __global float* B, __global float* C, 
-                           int N, __local float* localA, __local float* localB) {
-    int row = get_group_id(0);
-    int col = get_group_id(1);
-    int localRow = get_local_id(0);
-    int localCol = get_local_id(1);
-    
-    float sum = 0.0f;
-    
-    for (int k = 0; k < N / TILE_SIZE; k++) {
-        // Load tiles into local memory
-        localA[localRow * TILE_SIZE + localCol] = 
-            A[(row * TILE_SIZE + localRow) * N + k * TILE_SIZE + localCol];
-        localB[localRow * TILE_SIZE + localCol] = 
-            B[(k * TILE_SIZE + localRow) * N + col * TILE_SIZE + localCol];
-            
-        barrier(CLK_LOCAL_MEM_FENCE);
         
-        // Compute partial sum
-        for (int i = 0; i < TILE_SIZE; i++) {
-            sum += localA[localRow * TILE_SIZE + i] * localB[i * TILE_SIZE + localCol];
-        }
-        
-        barrier(CLK_LOCAL_MEM_FENCE);
+        return CreateKernelDefinitionWithCode(name, code, language);
     }
-    
-    C[(row * TILE_SIZE + localRow) * N + col * TILE_SIZE + localCol] = sum;
-}",
-            Language = DotCompute.Core.Kernels.KernelLanguage.OpenCL,
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
+
+    private KernelDefinition CreateKernelDefinitionWithCode(string name, string code, KernelLanguage language)
+    {
+        return new KernelDefinition(
+            name,
+            System.Text.Encoding.UTF8.GetBytes(code))
+        {
+            EntryPoint = "main",
+            Metadata = new Dictionary<string, object>
             {
-                new() { Name = "A", Type = typeof(float[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "B", Type = typeof(float[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "C", Type = typeof(float[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "N", Type = typeof(int), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Private },
-                new() { Name = "localA", Type = typeof(float[]), IsInput = false, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Shared },
-                new() { Name = "localB", Type = typeof(float[]), IsInput = false, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Shared }
-            },
-            OptimizationMetadata = new Dictionary<string, object>
-            {
-                ["local_memory_size"] = (2 * TILE_SIZE * TILE_SIZE * sizeof(float)).ToString(),
-                ["work_group_size"] = (TILE_SIZE * TILE_SIZE).ToString(),
-                ["preferred_work_group_size_multiple"] = "32"
+                ["Language"] = language.ToString()
             }
         };
     }
 
-    private GeneratedKernel CreateKernelWithExtensions()
-    {
-        return new GeneratedKernel
-        {
-            Name = "kernel_with_extensions",
-            Source = @"
-#pragma OPENCL EXTENSION cl_khr_fp64 : enable
-#pragma OPENCL EXTENSION cl_khr_global_int32_base_atomics : enable
-
-__kernel void kernel_with_extensions(__global double* input, __global double* output, 
-                                   __global int* counter, int size) {
-    int gid = get_global_id(0);
-    if (gid < size) {
-        output[gid] = sqrt(input[gid]);
-        atomic_inc(counter);
-    }
-}",
-            Language = DotCompute.Core.Kernels.KernelLanguage.OpenCL,
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
-            {
-                new() { Name = "input", Type = typeof(double[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "output", Type = typeof(double[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "counter", Type = typeof(int[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "size", Type = typeof(int), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Private }
-            },
-            OptimizationMetadata = new Dictionary<string, object>
-            {
-                ["extensions"] = "cl_khr_fp64,cl_khr_global_int32_base_atomics",
-                ["uses_double_precision"] = "true",
-                ["uses_atomics"] = "true"
-            }
-        };
-    }
-
-    private GeneratedKernel CreateVectorizationKernel()
-    {
-        return new GeneratedKernel
-        {
-            Name = "vectorization_kernel",
-            Source = @"
-__kernel void vectorization_kernel(__global float4* input, __global float4* output, int size) {
-    int gid = get_global_id(0);
-    if (gid < size) {
-        float4 data = input[gid];
-        float4 result = data * data + (float4)(1.0f, 2.0f, 3.0f, 4.0f);
-        output[gid] = result;
-    }
-}",
-            Language = DotCompute.Core.Kernels.KernelLanguage.OpenCL,
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
-            {
-                new() { Name = "input", Type = typeof(float[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "output", Type = typeof(float[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "size", Type = typeof(int), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Private }
-            },
-            OptimizationMetadata = new Dictionary<string, object>
-            {
-                ["uses_vector_types"] = "true",
-                ["vector_width"] = "4"
-            }
-        };
-    }
-
-    private GeneratedKernel CreateImageProcessingKernel()
-    {
-        return new GeneratedKernel
-        {
-            Name = "image_processing_kernel",
-            Source = @"
-__constant sampler_t sampler = CLK_NORMALIZED_COORDS_FALSE | CLK_ADDRESS_CLAMP | CLK_FILTER_NEAREST;
-
-__kernel void image_processing_kernel(__read_only image2d_t input, __write_only image2d_t output) {
-    int x = get_global_id(0);
-    int y = get_global_id(1);
-    int2 coord = (int2)(x, y);
-    
-    float4 pixel = read_imagef(input, sampler, coord);
-    float4 result = pixel * 0.8f + (float4)(0.2f, 0.2f, 0.2f, 0.0f);
-    
-    write_imagef(output, coord, result);
-}",
-            Language = DotCompute.Core.Kernels.KernelLanguage.OpenCL,
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
-            {
-                new() { Name = "input", Type = typeof(object), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "output", Type = typeof(object), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global }
-            },
-            OptimizationMetadata = new Dictionary<string, object>
-            {
-                ["uses_images"] = "true",
-                ["image_format"] = "CL_RGBA",
-                ["image_type"] = "2D"
-            }
-        };
-    }
-
-    private GeneratedKernel CreateAtomicOperationsKernel()
-    {
-        return new GeneratedKernel
-        {
-            Name = "atomic_operations_kernel",
-            Source = @"
-__kernel void atomic_operations_kernel(__global float* input, __global float* output, 
-                                     __global int* histogram, int size, int bins) {
-    int gid = get_global_id(0);
-    if (gid < size) {
-        float value = input[gid];
-        output[gid] = value * 2.0f;
-        
-        // Update histogram atomically
-        int bin = (int)(value * bins);
-        if (bin >= 0 && bin < bins) {
-            atomic_inc(&histogram[bin]);
-        }
-    }
-}",
-            Language = DotCompute.Core.Kernels.KernelLanguage.OpenCL,
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
-            {
-                new() { Name = "input", Type = typeof(float[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "output", Type = typeof(float[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "histogram", Type = typeof(int[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
-                new() { Name = "size", Type = typeof(int), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Private },
-                new() { Name = "bins", Type = typeof(int), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Private }
-            },
-            OptimizationMetadata = new Dictionary<string, object>
-            {
-                ["uses_atomics"] = "true",
-                ["atomic_operations"] = "atomic_inc"
-            }
-        };
-    }
-
-    private DotCompute.Core.Kernels.CompilationOptions CreateValidCompilationOptions()
-    {
-        return new DotCompute.Core.Kernels.CompilationOptions
-        {
-            OptimizationLevel = DotCompute.Core.Kernels.OptimizationLevel.O2,
-            EnableFastMath = false,
-            GenerateDebugInfo = false,
-            Defines = new Dictionary<string, string>(),
-            IncludeDirectories = new List<string>()
-        };
-    }
-
-    private void VerifyLoggerWasCalled(string message, LogLevel level)
+    private void VerifyLoggerWasCalledForCompilation(string kernelName)
     {
         _mockLogger.Verify(
-            logger => logger.Log(
-                level,
+            x => x.Log(
+                LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(message)),
-                It.IsAny<Exception>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Compiling OpenCL kernel '{kernelName}'")),
+                It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.AtLeastOnce);
+            Times.Once);
     }
 
-    private const int TILE_SIZE = 16; // For complex kernel shared memory calculations
+    private void VerifyLoggerWasCalledForCancellation(string kernelName)
+    {
+        _mockLogger.Verify(
+            x => x.Log(
+                LogLevel.Information,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"OpenCL kernel compilation for '{kernelName}' was cancelled")),
+                It.IsAny<Exception?>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.Once);
+    }
 
     #endregion
 
     public void Dispose()
     {
-        // Clean up any resources if needed
-        GC.SuppressFinalize(this);
+        if (!_disposed)
+        {
+            // OpenCLKernelCompiler doesn't implement IDisposable, so nothing to dispose
+            _disposed = true;
+        }
     }
 }

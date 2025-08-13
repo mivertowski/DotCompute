@@ -357,7 +357,7 @@ internal class PlaceholderKernel : IKernel
     public IReadOnlyList<KernelParameter> GetParameterInfo()
     {
         // Return parameters from definition if available
-        return _definition.Parameters;
+        return _definition.Parameters.ToArray();
     }
 
     /// <summary>

@@ -66,4 +66,45 @@ public sealed class KernelParameter(string name, Type type, int index, bool isIn
     /// Gets whether this is a constant parameter that should never be null.
     /// </summary>
     public bool IsConstant { get; } = isConstant;
+
+    /// <summary>
+    /// Gets whether this parameter is read-only.
+    /// </summary>
+    public bool IsReadOnly => IsInput && !IsOutput;
+
+    /// <summary>
+    /// Gets the memory space for this parameter.
+    /// </summary>
+    public MemorySpace MemorySpace { get; init; } = MemorySpace.Global;
+}
+
+/// <summary>
+/// Defines the memory space where kernel parameters reside.
+/// </summary>
+public enum MemorySpace
+{
+    /// <summary>
+    /// Global memory space accessible by all work items.
+    /// </summary>
+    Global,
+
+    /// <summary>
+    /// Local memory space shared within a work group.
+    /// </summary>
+    Local,
+
+    /// <summary>
+    /// Shared memory space within a thread block (CUDA terminology).
+    /// </summary>
+    Shared,
+
+    /// <summary>
+    /// Constant memory space for read-only data.
+    /// </summary>
+    Constant,
+
+    /// <summary>
+    /// Private memory space for each work item.
+    /// </summary>
+    Private
 }

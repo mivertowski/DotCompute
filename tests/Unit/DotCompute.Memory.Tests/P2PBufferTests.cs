@@ -1,4 +1,3 @@
-using Xunit;
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -7,11 +6,13 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
+using DotCompute.Memory;
+using AbstractionsMemoryManager = DotCompute.Abstractions.IMemoryManager;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
-using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests;
 
 /// <summary>
 /// Comprehensive tests for P2P buffer functionality including type-aware transfers.
@@ -26,7 +27,7 @@ public sealed class P2PBufferTests : IDisposable
     {
         _logger = NullLogger<P2PBuffer<float>>.Instance;
         _mockAccelerator = new MockAccelerator("test-device-0", "CUDA", "Test GPU");
-        _mockMemoryBuffer = new MockMemoryBuffer(1024 * sizeof(float), MemoryOptions.None);
+        _mockMemoryBuffer = new MockMemoryBuffer(1024 * sizeof(float), Abstractions.MemoryOptions.None);
     }
 
     [Fact]
@@ -203,7 +204,7 @@ public sealed class P2PBufferTests : IDisposable
         // Arrange
         var sourceBuffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var targetAccelerator = new MockAccelerator("test-device-1", "CUDA", "Test GPU 2");
-        var targetMemoryBuffer = new MockMemoryBuffer(1024 * sizeof(float), MemoryOptions.None);
+        var targetMemoryBuffer = new MockMemoryBuffer(1024 * sizeof(float), Abstractions.MemoryOptions.None);
         var targetBuffer = new P2PBuffer<float>(targetMemoryBuffer, targetAccelerator, 256, true, _logger);
 
         // Act
@@ -231,7 +232,7 @@ public sealed class P2PBufferTests : IDisposable
         // Arrange
         var sourceBuffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var targetAccelerator = new MockAccelerator("test-device-1", "CUDA", "Test GPU 2");
-        var targetMemoryBuffer = new MockMemoryBuffer(1024 * sizeof(float), MemoryOptions.None);
+        var targetMemoryBuffer = new MockMemoryBuffer(1024 * sizeof(float), Abstractions.MemoryOptions.None);
         var targetBuffer = new P2PBuffer<float>(targetMemoryBuffer, targetAccelerator, 256, true, _logger);
 
         // Act & Assert - valid range
@@ -526,8 +527,8 @@ public sealed class P2PBufferTests : IDisposable
         }
 
         public AcceleratorInfo Info { get; }
-        public AcceleratorType Type => AcceleratorType.CPU;
-        public DotCompute.Abstractions.IMemoryManager Memory { get; }
+        public AcceleratorType Type => (AcceleratorType)Enum.Parse(typeof(AcceleratorType), Info.DeviceType);
+        public AbstractionsMemoryManager Memory { get; }
         public bool IsDisposed { get; private set; }
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(
@@ -558,11 +559,11 @@ public sealed class P2PBufferTests : IDisposable
     /// <summary>
     /// Mock memory manager for testing.
     /// </summary>
-    private sealed class MockMemoryManager : DotCompute.Abstractions.IMemoryManager
+    private sealed class MockMemoryManager : AbstractionsMemoryManager
     {
         public ValueTask<IMemoryBuffer> AllocateAsync(
             long sizeInBytes,
-            MemoryOptions options,
+            Abstractions.MemoryOptions options,
             CancellationToken cancellationToken = default)
         {
             return ValueTask.FromResult<IMemoryBuffer>(new MockMemoryBuffer(sizeInBytes, options));
@@ -570,7 +571,7 @@ public sealed class P2PBufferTests : IDisposable
 
         public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
             ReadOnlyMemory<T> source,
-            MemoryOptions options,
+            Abstractions.MemoryOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
@@ -588,14 +589,14 @@ public sealed class P2PBufferTests : IDisposable
     /// </summary>
     private sealed class MockMemoryBuffer : IMemoryBuffer
     {
-        public MockMemoryBuffer(long sizeInBytes, MemoryOptions options)
+        public MockMemoryBuffer(long sizeInBytes, Abstractions.MemoryOptions options)
         {
             SizeInBytes = sizeInBytes;
             Options = options;
         }
 
         public long SizeInBytes { get; }
-        public MemoryOptions Options { get; }
+        public Abstractions.MemoryOptions Options { get; }
         public bool IsDisposed { get; private set; }
 
         public ValueTask CopyFromHostAsync<T>(

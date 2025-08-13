@@ -282,10 +282,12 @@ public class ComputeEngineUnitTests : CoverageTestBase
     private class TestAcceleratorManager : IAcceleratorManager
     {
         private readonly HardwareSimulator _simulator;
+        private readonly List<IAccelerator> _accelerators;
 
         public TestAcceleratorManager(HardwareSimulator simulator)
         {
             _simulator = simulator;
+            _accelerators = _simulator.GetAllAccelerators().Cast<IAccelerator>().ToList();
         }
 
         public Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(CancellationToken cancellationToken = default)
@@ -307,8 +309,68 @@ public class ComputeEngineUnitTests : CoverageTestBase
             return Task.FromResult(accelerators.Cast<IAccelerator?>().FirstOrDefault());
         }
 
-        public void Dispose() => _simulator.Dispose();
+        public ValueTask InitializeAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        public IAccelerator GetAccelerator(int index)
+        {
+            if (index < 0 || index >= _accelerators.Count)
+                throw new ArgumentOutOfRangeException(nameof(index));
+            return _accelerators[index];
+        }
+
+        public IAccelerator? GetAcceleratorById(string id)
+        {
+            return _accelerators.FirstOrDefault(a => a.Info.Id == id);
+        }
+
+        public IEnumerable<IAccelerator> GetAcceleratorsByType(AcceleratorType type)
+        {
+            return _accelerators.Where(a => a.Type == type);
+        }
+
+        public IAccelerator? SelectBest(AcceleratorSelectionCriteria criteria)
+        {
+            var candidates = criteria.PreferredType.HasValue 
+                ? _accelerators.Where(a => a.Type == criteria.PreferredType.Value)
+                : _accelerators;
+            
+            return candidates.FirstOrDefault();
+        }
+
+        public AcceleratorContext CreateContext(IAccelerator accelerator)
+        {
+            return new AcceleratorContext();
+        }
+
+        public void RegisterProvider(IAcceleratorProvider provider)
+        {
+            // No-op for tests
+        }
+
+        public ValueTask RefreshAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        public IAccelerator Default => _accelerators.FirstOrDefault() ?? throw new InvalidOperationException("No accelerators available");
+        public IReadOnlyList<IAccelerator> AvailableAccelerators => _accelerators;
+        public int Count => _accelerators.Count;
+
+        public ValueTask DisposeAsync()
+        {
+            _simulator.Dispose();
+            return ValueTask.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            _simulator.Dispose();
+        }
     }
+
 
     /// <summary>
     /// Test compute engine interface

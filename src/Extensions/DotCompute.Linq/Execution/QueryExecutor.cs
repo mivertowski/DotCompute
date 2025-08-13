@@ -51,7 +51,7 @@ public class QueryExecutor : IQueryExecutor
         var validation = Validate(context.Plan, context.Accelerator);
         if (!validation.IsValid)
         {
-            throw new InvalidOperationException($"Plan validation failed: {validation.Message}");
+            throw new InvalidOperationException($"Plan validation failed: {validation.ErrorMessage}");
         }
 
         // Get or create memory manager for the accelerator
@@ -100,19 +100,19 @@ public class QueryExecutor : IQueryExecutor
     }
 
     /// <inheritdoc/>
-    public Compilation.ValidationResult Validate(IComputePlan plan, IAccelerator accelerator)
+    public DotCompute.Abstractions.ValidationResult Validate(IComputePlan plan, IAccelerator accelerator)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(accelerator);
 
-        var errors = new List<Compilation.ValidationError>();
+        var hasErrors = false;
+        var errorMessage = "Plan validation failed";
 
         // Validate memory requirements
         if (plan.EstimatedMemoryUsage > accelerator.Info.MemorySize)
         {
-            errors.Add(new Compilation.ValidationError(
-                "INSUFFICIENT_MEMORY",
-                $"Plan requires {plan.EstimatedMemoryUsage} bytes but accelerator only has {accelerator.Info.MemorySize} bytes"));
+            hasErrors = true;
+            errorMessage = $"Plan requires {plan.EstimatedMemoryUsage} bytes but accelerator only has {accelerator.Info.MemorySize} bytes";
         }
 
         // Validate stages
@@ -128,18 +128,18 @@ public class QueryExecutor : IQueryExecutor
             
             if (blockSize > maxThreads)
             {
-                errors.Add(new Compilation.ValidationError(
-                    "INVALID_BLOCK_SIZE",
-                    $"Stage {stage.Id} block size {blockSize} exceeds maximum {maxThreads}"));
+                hasErrors = true;
+                errorMessage = $"Stage {stage.Id} block size {blockSize} exceeds maximum {maxThreads}";
+                break;
             }
         }
 
-        if (errors.Count > 0)
+        if (hasErrors)
         {
-            return new Compilation.ValidationResult(false, "Plan validation failed", errors);
+            return DotCompute.Abstractions.ValidationResult.Failure(errorMessage);
         }
 
-        return new Compilation.ValidationResult(true, "Plan is valid for execution");
+        return DotCompute.Abstractions.ValidationResult.Success();
     }
 
     private IMemoryManager GetMemoryManager(IAccelerator accelerator)

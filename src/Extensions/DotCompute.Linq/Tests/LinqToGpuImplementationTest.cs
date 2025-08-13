@@ -199,8 +199,8 @@ public class LinqToGpuImplementationTest
         var validation = _executor.Validate(plan, accelerator);
         if (!validation.IsValid)
         {
-            _logger.LogError("Query execution validation failed: {Message}", validation.Message);
-            throw new InvalidOperationException($"Validation failed: {validation.Message}");
+            _logger.LogError("Query execution validation failed: {Message}", validation.ErrorMessage);
+            throw new InvalidOperationException($"Validation failed: {validation.ErrorMessage}");
         }
         
         // Test execution

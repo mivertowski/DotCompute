@@ -1,4 +1,3 @@
-using Xunit;
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
@@ -489,7 +488,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                           KernelGenerationContext context, DotCompute.Core.Kernels.CompilationOptions options, CancellationToken ct) =>
             {
                 // Create a concrete instance since ManagedCompiledKernel has required properties
-                return new ManagedCompiledKernel
+                return new DotCompute.Core.Kernels.ManagedCompiledKernel
                 {
                     Name = kernelName,
                     Binary = new byte[] { 0x01, 0x02, 0x03 }, // Dummy binary data
@@ -518,7 +517,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
 
         // Setup ExecuteKernelAsync to return successful results
         _mockKernelManager.Setup(m => m.ExecuteKernelAsync(
-            It.IsAny<ManagedCompiledKernel>(),
+            It.IsAny<DotCompute.Core.Kernels.ManagedCompiledKernel>(),
             It.IsAny<KernelArgument[]>(),
             It.IsAny<IAccelerator>(),
             It.IsAny<KernelExecutionConfig>(),
@@ -559,7 +558,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
     private ModelParallelWorkload<T> CreateMockModelParallelWorkload<T>() where T : unmanaged
     {
         // Create actual ManagedCompiledKernel instances instead of mocking them
-        var kernel1 = new ManagedCompiledKernel
+        var kernel1 = new DotCompute.Core.Kernels.ManagedCompiledKernel
         {
             Name = "linear_kernel",
             Binary = new byte[] { 0x01, 0x02, 0x03, 0x04 },
@@ -585,7 +584,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
             SharedMemorySize = 1024
         };
 
-        var kernel2 = new ManagedCompiledKernel
+        var kernel2 = new DotCompute.Core.Kernels.ManagedCompiledKernel
         {
             Name = "relu_kernel",
             Binary = new byte[] { 0x05, 0x06, 0x07, 0x08 },
