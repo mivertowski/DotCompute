@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Backends.CUDA;
 
@@ -16,12 +17,7 @@ public static class Phase1ValidationProgram
     /// <param name="args">Command line arguments.</param>
     public static int Main(string[] args)
     {
-        using var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
-        {
-            builder.AddConsole().SetMinimumLevel(LogLevel.Information);
-        });
-
-        var logger = loggerFactory.CreateLogger("CudaPhase1Validation");
+        var logger = NullLogger.Instance;
 
         Console.WriteLine("=== CUDA Phase 1 Implementation Validation ===");
         Console.WriteLine();

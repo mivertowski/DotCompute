@@ -132,32 +132,19 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
                 return new KernelExecutionResult
                 {
                     Success = true,
-                    Handle = new KernelExecutionHandle
-                    {
-                        Id = execution.Id,
-                        KernelName = execution.KernelName,
-                        SubmittedAt = execution.SubmittedAt,
-                        IsCompleted = execution.IsCompleted,
-                        CompletedAt = execution.CompletedAt,
-                        EventHandle = execution.EndEvent
-                    },
+                    Handle = CreateExecutionHandle(execution),
                     Timings = timings
                 };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to execute kernel {KernelName}", kernel.Name);
+                execution.IsCompleted = true;
+                execution.CompletedAt = DateTimeOffset.UtcNow;
                 return new KernelExecutionResult
                 {
                     Success = false,
-                    Handle = new KernelExecutionHandle
-                    {
-                        Id = execution.Id,
-                        KernelName = execution.KernelName,
-                        SubmittedAt = execution.SubmittedAt,
-                        IsCompleted = true,
-                        CompletedAt = DateTimeOffset.UtcNow
-                    },
+                    Handle = CreateExecutionHandle(execution),
                     ErrorMessage = ex.Message
                 };
             }
@@ -231,13 +218,7 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
             }
         });
 
-        return new KernelExecutionHandle
-        {
-            Id = execution.Id,
-            KernelName = execution.KernelName,
-            SubmittedAt = execution.SubmittedAt,
-            EventHandle = execution.EndEvent
-        };
+        return CreateExecutionHandle(execution);
     }
 
     /// <summary>
@@ -280,15 +261,7 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
         return new KernelExecutionResult
         {
             Success = true,
-            Handle = new KernelExecutionHandle
-            {
-                Id = handle.Id,
-                KernelName = handle.KernelName,
-                SubmittedAt = handle.SubmittedAt,
-                IsCompleted = true,
-                CompletedAt = execution.CompletedAt,
-                EventHandle = handle.EventHandle
-            },
+            Handle = CreateExecutionHandle(execution),
             Timings = timings
         };
     }
@@ -501,9 +474,11 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
         IntPtr stream,
         CancellationToken cancellationToken = default)
     {
-        if (kernel is not CudaCompiledKernel cudaKernel)
+        // Convert CompiledKernel struct to CudaCompiledKernel
+        var cudaKernel = CudaCompiledKernel.FromCompiledKernel(kernel);
+        if (cudaKernel == null)
         {
-            throw new ArgumentException("Kernel must be a CudaCompiledKernel", nameof(kernel));
+            throw new ArgumentException("Kernel must be a valid CUDA kernel", nameof(kernel));
         }
 
         // Set CUDA context
@@ -641,6 +616,29 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
         return ((value + multiple - 1) / multiple) * multiple;
     }
 
+    private KernelExecutionHandle CreateExecutionHandle(CudaKernelExecution execution)
+    {
+        // Since KernelExecutionHandle properties have internal setters,
+        // we need to use reflection to set them from outside the Core assembly
+        var handle = new KernelExecutionHandle
+        {
+            Id = execution.Id,
+            KernelName = execution.KernelName,
+            SubmittedAt = execution.SubmittedAt,
+            EventHandle = execution.EndEvent
+        };
+        
+        // Use reflection to set internal properties
+        var handleType = typeof(KernelExecutionHandle);
+        var isCompletedProperty = handleType.GetProperty(nameof(KernelExecutionHandle.IsCompleted));
+        var completedAtProperty = handleType.GetProperty(nameof(KernelExecutionHandle.CompletedAt));
+        
+        isCompletedProperty?.SetValue(handle, execution.IsCompleted);
+        completedAtProperty?.SetValue(handle, execution.CompletedAt);
+        
+        return handle;
+    }
+    
     private void ThrowIfDisposed()
     {
         if (_disposed)

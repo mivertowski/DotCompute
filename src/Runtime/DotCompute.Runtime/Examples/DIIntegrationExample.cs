@@ -126,7 +126,7 @@ public static class DIIntegrationExample
     /// <summary>
     /// Example showing plugin DI integration
     /// </summary>
-    public static async Task PluginDIExample()
+    public static Task PluginDIExample()
     {
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole());
@@ -166,12 +166,14 @@ public static class DIIntegrationExample
         
         pluginScope.Dispose();
         serviceProvider.Dispose();
+        
+        return Task.CompletedTask;
     }
     
     /// <summary>
     /// Example showing hosted service integration
     /// </summary>
-    public static async Task HostedServiceExample()
+    public static Task HostedServiceExample()
     {
         throw new NotImplementedException("HostedServiceExample requires Microsoft.Extensions.Hosting package");
         /*

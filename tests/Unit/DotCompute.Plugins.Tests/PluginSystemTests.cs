@@ -331,7 +331,9 @@ public class PluginSystemTests : IDisposable
         public bool IsDisposed { get; private set; }
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+#pragma warning disable CS0067 // The event is never used
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+#pragma warning restore CS0067
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
@@ -384,7 +386,9 @@ public class PluginSystemTests : IDisposable
         public PluginHealth Health => PluginHealth.Unknown;
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+#pragma warning disable CS0067 // The event is never used
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+#pragma warning restore CS0067
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }

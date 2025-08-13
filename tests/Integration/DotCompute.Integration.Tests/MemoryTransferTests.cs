@@ -36,7 +36,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         if (!accelerators.Any())
         {
-            Logger.LogInformation("Skipping host-to-device transfer test - no accelerators available");
+            LoggerMessages.SkippingTestNoAccelerators(Logger, "host-to-device transfer test");
             return;
         }
 
@@ -75,7 +75,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         if (!accelerators.Any())
         {
-            Logger.LogInformation("Skipping device-to-host transfer test - no accelerators available");
+            LoggerMessages.SkippingTestNoAccelerators(Logger, "device-to-host transfer test");
             return;
         }
 
@@ -120,7 +120,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         if (unifiedMemoryAccelerator == null)
         {
-            Logger.LogInformation("Skipping unified memory test - no unified memory accelerators available");
+            LoggerMessages.SkippingTestNoAccelerators(Logger, "unified memory test - no unified memory accelerators available");
             return;
         }
 
@@ -155,7 +155,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         if (!accelerators.Any())
         {
-            Logger.LogInformation("Skipping async transfer test - no accelerators available");
+            LoggerMessages.SkippingTestNoAccelerators(Logger, "async transfer test");
             return;
         }
 
@@ -183,8 +183,8 @@ public class MemoryTransferTests : IntegrationTestBase
         var totalTransferTime = asyncResults.Sum(r => r.TransferTime.TotalMilliseconds);
         var concurrentTime = stopwatch.Elapsed.TotalMilliseconds;
         
-        Logger.LogInformation($"Total individual transfer time: {totalTransferTime:F2}ms");
-        Logger.LogInformation($"Actual concurrent execution time: {concurrentTime:F2}ms");
+        LoggerMessages.TotalTransferTime(Logger, totalTransferTime);
+        LoggerMessages.ConcurrentExecutionTime(Logger, concurrentTime);
         
         // Instead of strict performance assertions, verify that async transfers completed
         // and that we didn't exceed a reasonable timeout based on data size
@@ -212,7 +212,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         if (!accelerators.Any())
         {
-            Logger.LogInformation("Skipping pinned memory test - no accelerators available");
+            LoggerMessages.SkippingTestNoAccelerators(Logger, "pinned memory test");
             return;
         }
 
@@ -240,10 +240,10 @@ public class MemoryTransferTests : IntegrationTestBase
         var regularThroughput = dataSize / regularResult.TransferTime.TotalSeconds;
         var pinnedThroughput = dataSize / pinnedResult.TransferTime.TotalSeconds;
         
-        Logger.LogInformation($"Regular memory throughput: {regularThroughput / (1024 * 1024):F2} MB/s");
-        Logger.LogInformation($"Pinned memory throughput: {pinnedThroughput / (1024 * 1024):F2} MB/s");
-        Logger.LogInformation($"Regular transfer time: {regularResult.TransferTime.TotalMilliseconds:F2}ms");
-        Logger.LogInformation($"Pinned transfer time: {pinnedResult.TransferTime.TotalMilliseconds:F2}ms");
+        LoggerMessages.RegularMemoryThroughput(Logger, regularThroughput / (1024 * 1024));
+        LoggerMessages.PinnedMemoryThroughput(Logger, pinnedThroughput / (1024 * 1024));
+        LoggerMessages.RegularTransferTime(Logger, regularResult.TransferTime.TotalMilliseconds);
+        LoggerMessages.PinnedTransferTime(Logger, pinnedResult.TransferTime.TotalMilliseconds);
         
         // Instead of requiring pinned memory to be faster (which isn't guaranteed on all platforms),
         // verify that both transfers completed successfully with reasonable performance
@@ -276,7 +276,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         if (accelerators.Count < 2)
         {
-            Logger.LogInformation("Skipping multi-device transfer test - need at least 2 accelerators");
+            LoggerMessages.SkippingTestNeedTwoAccelerators(Logger, "multi-device transfer test");
             return;
         }
 
@@ -320,7 +320,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         if (!accelerators.Any())
         {
-            Logger.LogInformation($"Skipping {memoryType} memory test - no accelerators available");
+            LoggerMessages.SkippingMemoryTypeTest(Logger, memoryType.ToString());
             return;
         }
 
@@ -370,7 +370,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         if (!accelerators.Any())
         {
-            Logger.LogInformation("Skipping large dataset test - no accelerators available");
+            LoggerMessages.SkippingTestNoAccelerators(Logger, "large dataset test");
             return;
         }
 
@@ -380,13 +380,13 @@ public class MemoryTransferTests : IntegrationTestBase
         // Check if device has enough memory
         if (accelerator.Info.AvailableMemory < largeDataSize * 2)
         {
-            Logger.LogInformation("Skipping large dataset test - insufficient device memory");
+            LoggerMessages.SkippingTestInsufficientMemory(Logger, "large dataset test");
             return;
         }
 
-        Logger.LogInformation($"Generating test data for {largeDataSize / sizeof(float)} elements");
+        LoggerMessages.GeneratingTestData(Logger, largeDataSize / sizeof(float));
         var largeTestData = GenerateTestData(largeDataSize / sizeof(float));
-        Logger.LogInformation($"Test data generated successfully: {largeTestData.Length} elements");
+        LoggerMessages.TestDataGenerated(Logger, largeTestData.Length);
 
         // Act
         var largeTransferResult = await PerformLargeDataTransfer(
@@ -415,7 +415,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         if (!accelerators.Any())
         {
-            Logger.LogInformation("Skipping error recovery test - no accelerators available");
+            LoggerMessages.SkippingTestNoAccelerators(Logger, "error recovery test");
             return;
         }
 
@@ -473,7 +473,7 @@ public class MemoryTransferTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Host to device transfer failed");
+            LoggerMessages.HostToDeviceTransferFailed(Logger, ex);
             return new TransferResult
             {
                 Success = false,
@@ -507,7 +507,7 @@ public class MemoryTransferTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Device to host transfer failed");
+            LoggerMessages.DeviceToHostTransferFailed(Logger, ex);
             return new TransferResult
             {
                 Success = false,
@@ -547,7 +547,7 @@ public class MemoryTransferTests : IntegrationTestBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Unified memory test failed");
+            LoggerMessages.UnifiedMemoryTestFailed(Logger, ex);
             return new UnifiedMemoryResult
             {
                 Success = false,
@@ -624,7 +624,7 @@ public class MemoryTransferTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Pinned memory transfer failed");
+            LoggerMessages.PinnedMemoryTransferFailed(Logger, ex);
             return new TransferResult
             {
                 Success = false,
@@ -679,7 +679,7 @@ public class MemoryTransferTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, $"Memory type {memoryType} test failed");
+            LoggerMessages.MemoryTypeTestFailed(Logger, memoryType.ToString(), ex);
             return new MemoryTypeResult
             {
                 Success = false,
@@ -699,18 +699,18 @@ public class MemoryTransferTests : IntegrationTestBase
         
         try
         {
-            Logger.LogInformation($"Attempting to create input buffer for {largeTestData.Length} elements ({largeTestData.Length * sizeof(float) / (1024 * 1024)}MB)");
+            LoggerMessages.CreatingInputBuffer(Logger, largeTestData.Length, largeTestData.Length * sizeof(float) / (1024 * 1024));
             var buffer = await CreateInputBuffer(memoryManager, largeTestData);
-            Logger.LogInformation("Input buffer created successfully");
+            LoggerMessages.InputBufferCreated(Logger);
             
-            Logger.LogInformation("Reading data back from buffer...");
+            LoggerMessages.ReadingDataBack(Logger);
             var readData = await ReadBufferAsync<float>(buffer);
             stopwatch.Stop();
             
-            Logger.LogInformation($"Read data result: {(readData != null ? $"{readData.Length} elements" : "null")}");
+            LoggerMessages.ReadDataResult(Logger, readData != null ? $"{readData.Length} elements" : "null");
 
             var integrity = readData != null && readData.Length == largeTestData.Length;
-            Logger.LogInformation($"Initial integrity check: {integrity} (readData != null: {readData != null}, lengths match: {readData?.Length == largeTestData.Length})");
+            LoggerMessages.InitialIntegrityCheck(Logger, integrity, readData != null, readData?.Length == largeTestData.Length);
             
             if (integrity && readData != null)
             {
@@ -725,7 +725,7 @@ public class MemoryTransferTests : IntegrationTestBase
                     sampleIndices[i] = random.Next(0, largeTestData.Length);
                 }
                 
-                Logger.LogInformation($"Performing spot check on {sampleSize} random samples...");
+                LoggerMessages.PerformingSpotCheck(Logger, sampleSize);
                 
                 int mismatchCount = 0;
                 for (int i = 0; i < sampleIndices.Length; i++)
@@ -741,13 +741,13 @@ public class MemoryTransferTests : IntegrationTestBase
                             mismatchCount++;
                             if (mismatchCount <= 5) // Log first few mismatches
                             {
-                                Logger.LogWarning($"Data mismatch at index {index}: expected {largeTestData[index]}, got {readData[index]}, diff: {diff}");
+                                LoggerMessages.DataMismatch(Logger, index, largeTestData[index], readData[index], diff);
                             }
                         }
                     }
                     else
                     {
-                        Logger.LogError($"Index {index} out of bounds! readData.Length: {readData.Length}, largeTestData.Length: {largeTestData.Length}");
+                        LoggerMessages.IndexOutOfBounds(Logger, index, readData.Length, largeTestData.Length);
                         integrity = false;
                         break;
                     }
@@ -755,16 +755,16 @@ public class MemoryTransferTests : IntegrationTestBase
                 
                 // Allow a small percentage of mismatches for large datasets due to potential floating point precision issues
                 var mismatchRate = (double)mismatchCount / sampleSize;
-                Logger.LogInformation($"Mismatch rate: {mismatchRate:P2} ({mismatchCount}/{sampleSize})");
+                LoggerMessages.MismatchRate(Logger, mismatchRate, mismatchCount, sampleSize);
                 
                 if (mismatchRate > 0.01) // Allow up to 1% mismatch rate
                 {
-                    Logger.LogWarning($"Too many mismatches: {mismatchRate:P2}");
+                    LoggerMessages.TooManyMismatches(Logger, mismatchRate);
                     integrity = false;
                 }
             }
 
-            Logger.LogInformation($"Final integrity result: {integrity}");
+            LoggerMessages.FinalIntegrityResult(Logger, integrity);
 
             return new TransferResult
             {
@@ -778,7 +778,7 @@ public class MemoryTransferTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Large data transfer failed");
+            LoggerMessages.LargeDataTransferFailed(Logger, ex);
             return new TransferResult
             {
                 Success = false,

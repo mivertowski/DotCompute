@@ -118,9 +118,9 @@ public sealed class CudaMemoryStatistics
 /// </summary>
 internal sealed class ValidationResult
 {
-    public bool IsValid { get; private set; }
-    public string? ErrorMessage { get; private set; }
-    public string[]? Warnings { get; private set; }
+    public bool IsValid { get; set; }
+    public string? ErrorMessage { get; set; }
+    public List<string>? Warnings { get; set; }
 
     private ValidationResult() { }
 
@@ -129,7 +129,13 @@ internal sealed class ValidationResult
     public static ValidationResult SuccessWithWarnings(params string[] warnings) => new()
     {
         IsValid = true,
-        Warnings = warnings
+        Warnings = warnings.ToList()
+    };
+    
+    public static ValidationResult Success(string? warningMessage) => new()
+    {
+        IsValid = true,
+        Warnings = warningMessage != null ? new List<string> { warningMessage } : null
     };
 
     public static ValidationResult Failure(string errorMessage) => new()
@@ -137,4 +143,17 @@ internal sealed class ValidationResult
         IsValid = false,
         ErrorMessage = errorMessage
     };
+}
+
+/// <summary>
+/// Cache statistics for CUDA kernel compiler
+/// </summary>
+public sealed class CacheStatistics
+{
+    public int TotalEntries { get; set; }
+    public long TotalSizeBytes { get; set; }
+    public double AverageAccessCount { get; set; }
+    public DateTime? OldestEntryTime { get; set; }
+    public DateTime? NewestEntryTime { get; set; }
+    public double HitRate { get; set; }
 }

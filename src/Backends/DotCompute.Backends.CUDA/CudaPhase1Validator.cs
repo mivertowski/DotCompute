@@ -212,7 +212,7 @@ public static class CudaPhase1Validator
             }
 
             // Test accelerator creation
-            using var accelerator = new CudaAccelerator(0, logger);
+            using var accelerator = new CudaAccelerator(0, null);
             logger.LogInformation("CudaAccelerator created successfully for device 0");
 
             // Validate accelerator info
@@ -251,7 +251,7 @@ public static class CudaPhase1Validator
             result.Details["PluginVersion"] = plugin.Version.ToString();
 
             // Test backend factory
-            var factory = new CudaBackendFactory(logger);
+            var factory = new CudaBackendFactory(null);
             var isAvailable = factory.IsAvailable();
             logger.LogInformation("Backend factory availability: {IsAvailable}", isAvailable);
 

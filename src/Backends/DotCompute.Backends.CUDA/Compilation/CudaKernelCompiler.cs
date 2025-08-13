@@ -136,7 +136,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
                 throw new KernelCompilationException($"CUDA source validation failed for '{source.Name}': {validationResult.ErrorMessage}");
             }
 
-            if (validationResult.Warnings != null && validationResult.Warnings.Length > 0)
+            if (validationResult.Warnings != null && validationResult.Warnings.Count > 0)
             {
                 foreach (var warning in validationResult.Warnings)
                 {
@@ -735,7 +735,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
     /// <summary>
     /// Validates CUDA source code for common issues before compilation
     /// </summary>
-    private ValidationResult ValidateCudaSource(string cudaSource, string kernelName)
+    private Types.ValidationResult ValidateCudaSource(string cudaSource, string kernelName)
     {
         var warnings = new List<string>();
 
@@ -744,7 +744,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             // Check for basic CUDA kernel structure
             if (!cudaSource.Contains("__global__", StringComparison.Ordinal) && !cudaSource.Contains("__device__", StringComparison.Ordinal))
             {
-                return ValidationResult.Failure("CUDA source must contain at least one __global__ or __device__ function");
+                return Types.ValidationResult.Failure("CUDA source must contain at least one __global__ or __device__ function");
             }
 
             // Check for potential issues
@@ -771,13 +771,13 @@ public sealed partial class CudaKernelCompiler : IDisposable
             }
 
             return warnings.Count > 0
-                ? ValidationResult.Success([.. warnings])
-                : ValidationResult.Success();
+                ? Types.ValidationResult.SuccessWithWarnings(warnings.ToArray())
+                : Types.ValidationResult.Success();
         }
         catch (Exception ex)
         {
             LogCudaSourceValidationError(_logger, ex, kernelName);
-            return ValidationResult.Success("Source validation failed, proceeding with compilation");
+            return Types.ValidationResult.Success("Source validation failed, proceeding with compilation");
         }
     }
 
@@ -998,7 +998,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
     /// <summary>
     /// Gets cache statistics for monitoring and debugging
     /// </summary>
-    public CacheStatistics GetCacheStatistics()
+    public Types.CacheStatistics GetCacheStatistics()
     {
         ThrowIfDisposed();
 
@@ -1008,7 +1008,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
         var oldestEntry = _cacheMetadata.Values.MinBy(m => m.CompileTime)?.CompileTime;
         var newestEntry = _cacheMetadata.Values.MaxBy(m => m.CompileTime)?.CompileTime;
 
-        return new CacheStatistics
+        return new Types.CacheStatistics
         {
             TotalEntries = totalEntries,
             TotalSizeBytes = totalSize,

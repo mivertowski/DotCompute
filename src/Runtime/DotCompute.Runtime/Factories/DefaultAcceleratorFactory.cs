@@ -249,7 +249,7 @@ public class DefaultAcceleratorFactory : IAcceleratorFactory, IDisposable
         throw new NotSupportedException($"No provider found for accelerator type {type}");
     }
 
-    private async Task<object> CreateProviderAsync(Type providerType, IServiceProvider serviceProvider)
+    private Task<object> CreateProviderAsync(Type providerType, IServiceProvider serviceProvider)
     {
         var constructors = providerType.GetConstructors();
         var bestConstructor = constructors.OrderByDescending(c => c.GetParameters().Length).FirstOrDefault();
@@ -273,7 +273,8 @@ public class DefaultAcceleratorFactory : IAcceleratorFactory, IDisposable
             dependencies[i] = dependency!;
         }
 
-        return Activator.CreateInstance(providerType, dependencies)!;
+        var instance = Activator.CreateInstance(providerType, dependencies)!;
+        return Task.FromResult(instance);
     }
 
     private async Task<AcceleratorValidationResult> ValidateAcceleratorAsync(IAccelerator accelerator)

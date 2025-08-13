@@ -32,6 +32,8 @@ public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
     public IntPtr FunctionHandle => _function;
 
     private readonly string _entryPoint;
+    private static readonly Dictionary<IntPtr, CudaCompiledKernel> _kernelLookup = new();
+    private readonly object _lookupLock = new();
 
     public CudaCompiledKernel(
         CudaContext context,
@@ -50,6 +52,37 @@ public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
         _launcher = new CudaKernelLauncher(_context, _logger);
 
         LoadModule();
+        
+        // Register in lookup table
+        lock (_lookupLock)
+        {
+            _kernelLookup[_function] = this;
+        }
+    }
+    
+    /// <summary>
+    /// Converts this CudaCompiledKernel to a CompiledKernel struct
+    /// </summary>
+    public CompiledKernel ToCompiledKernel()
+    {
+        var kernelId = Guid.NewGuid(); // Generate unique ID for this kernel instance
+        var configuration = new KernelConfiguration(
+            new Dim3(1), // Default grid dimensions
+            new Dim3(1)  // Default block dimensions
+        );
+        
+        return new CompiledKernel(kernelId, _function, 0, configuration);
+    }
+    
+    /// <summary>
+    /// Attempts to retrieve the CudaCompiledKernel from a CompiledKernel struct
+    /// </summary>
+    public static CudaCompiledKernel? FromCompiledKernel(CompiledKernel kernel)
+    {
+        lock (_kernelLookup)
+        {
+            return _kernelLookup.TryGetValue(kernel.NativeHandle, out var cudaKernel) ? cudaKernel : null;
+        }
     }
 
     private void LoadModule()
@@ -219,6 +252,12 @@ public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
             }
         }
 
+        // Remove from lookup table
+        lock (_lookupLock)
+        {
+            _kernelLookup.Remove(_function);
+        }
+        
         _disposed = true;
     }
 }

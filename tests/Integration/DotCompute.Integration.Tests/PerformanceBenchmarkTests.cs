@@ -51,7 +51,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         var elementsPerSecond = vectorSize / benchmarkResult.ExecutionTime.TotalSeconds;
         benchmarkResult.ThroughputElementsPerSecond = elementsPerSecond;
         
-        Logger.LogInformation($"Vector size: {vectorSize:N0}, Throughput: {elementsPerSecond:N0} elements/sec");
+        LoggerMessages.VectorPerformance(Logger, vectorSize, elementsPerSecond);
         
         // Should process at least 1M elements per second (very conservative)
         elementsPerSecond.Should().BeGreaterThan(1_000_000);
@@ -61,7 +61,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         var mbPerSecond = bytesPerSecond / (1024 * 1024);
         benchmarkResult.MemoryBandwidthMBs = mbPerSecond;
         
-        Logger.LogInformation($"Memory bandwidth: {mbPerSecond:F2} MB/s");
+        LoggerMessages.MemoryBandwidth(Logger, mbPerSecond);
         mbPerSecond.Should().BeGreaterThan(100); // At least 100 MB/s
     }
 
@@ -93,7 +93,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         
         benchmarkResult.GigaFlopsPerSecond = gflops;
         
-        Logger.LogInformation($"Matrix {matrixSize}x{matrixSize2}: {gflops:F3} GFLOPS");
+        LoggerMessages.MatrixPerformance(Logger, matrixSize, matrixSize2, gflops);
         
         // Should achieve at least some reasonable performance
         gflops.Should().BeGreaterThan(0.1); // Conservative threshold
@@ -127,7 +127,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         var elementsPerSecond = dataSize / benchmarkResult.ExecutionTime.TotalSeconds;
         benchmarkResult.ThroughputElementsPerSecond = elementsPerSecond;
         
-        Logger.LogInformation($"Reduction {dataSize:N0} elements: {elementsPerSecond:N0} elements/sec");
+        LoggerMessages.ReductionPerformance(Logger, dataSize, elementsPerSecond);
         
         // Reduction should still achieve good throughput
         elementsPerSecond.Should().BeGreaterThan(10_000_000);
@@ -158,7 +158,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         var mbPerSecond = bytesTransferred / benchmarkResult.ExecutionTime.TotalSeconds / (1024 * 1024);
         benchmarkResult.MemoryBandwidthMBs = mbPerSecond;
         
-        Logger.LogInformation($"Memory-intensive workload: {mbPerSecond:F2} MB/s");
+        LoggerMessages.MemoryIntensiveWorkload(Logger, mbPerSecond);
         
         // Should achieve reasonable memory bandwidth
         mbPerSecond.Should().BeGreaterThan(1000); // At least 1 GB/s
@@ -189,7 +189,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         
         benchmarkResult.GigaOperationsPerSecond = gops;
         
-        Logger.LogInformation($"Compute-intensive workload: {gops:F3} GOPS");
+        LoggerMessages.ComputeIntensiveWorkload(Logger, gops);
         
         // Should achieve reasonable compute throughput
         gops.Should().BeGreaterThan(0.5); // At least 0.5 GOPS
@@ -219,7 +219,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         var totalThroughput = benchmarkResult.ThreadResults.Sum(r => r.ElementsPerSecond);
         var averageLatency = benchmarkResult.ThreadResults.Average(r => r.AverageLatency.TotalMilliseconds);
         
-        Logger.LogInformation($"Parallel {threadCount} threads: {totalThroughput:N0} total elements/sec, {averageLatency:F2}ms avg latency");
+        LoggerMessages.ParallelPerformance(Logger, threadCount, totalThroughput, averageLatency);
         
         // Parallel efficiency
         if (threadCount > 1)
@@ -227,7 +227,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             var efficiency = totalThroughput / (benchmarkResult.SingleThreadThroughput * threadCount);
             benchmarkResult.ParallelEfficiency = efficiency;
             
-            Logger.LogInformation($"Parallel efficiency: {efficiency:P2}");
+            LoggerMessages.ParallelEfficiency(Logger, efficiency);
             
             // Should achieve at least 50% efficiency with multiple threads
             efficiency.Should().BeGreaterThan(0.5);
@@ -257,7 +257,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         var pixelsPerSecond = (imageWidth * imageHeight) / benchmarkResult.ExecutionTime.TotalSeconds;
         var megapixelsPerSecond = pixelsPerSecond / 1_000_000.0;
         
-        Logger.LogInformation($"Image processing: {megapixelsPerSecond:F2} MP/s");
+        LoggerMessages.ImageProcessingPerformance(Logger, megapixelsPerSecond);
         
         // Should process at least 100 MP/s for basic operations
         megapixelsPerSecond.Should().BeGreaterThan(100);
@@ -289,7 +289,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         var samplesPerSecond = sampleCount / benchmarkResult.ExecutionTime.TotalSeconds;
         var realTimeRatio = samplesPerSecond / sampleRate;
         
-        Logger.LogInformation($"Signal processing: {samplesPerSecond:N0} samples/sec, {realTimeRatio:F2}x real-time");
+        LoggerMessages.SignalProcessingPerformance(Logger, samplesPerSecond, realTimeRatio);
         
         // Should process faster than real-time for audio applications
         realTimeRatio.Should().BeGreaterThan(10); // At least 10x real-time
@@ -319,7 +319,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         
         var elementsPerSecond = dataSize / benchmarkResult.ExecutionTime.TotalSeconds;
         
-        Logger.LogInformation($"Optimization {optimizationLevel}: {elementsPerSecond:N0} elements/sec");
+        LoggerMessages.OptimizationLevelPerformance(Logger, optimizationLevel.ToString(), elementsPerSecond);
         
         // All optimization levels should work
         elementsPerSecond.Should().BeGreaterThan(100_000);
@@ -386,7 +386,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Vector operation benchmark failed");
+            LoggerMessages.VectorOperationBenchmarkFailed(Logger, ex);
             
             return new BenchmarkResult
             {
@@ -441,7 +441,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Matrix multiplication benchmark failed");
+            LoggerMessages.MatrixMultiplicationBenchmarkFailed(Logger, ex);
             
             return new BenchmarkResult
             {
@@ -498,7 +498,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Reduction operation benchmark failed");
+            LoggerMessages.ReductionOperationBenchmarkFailed(Logger, ex);
             
             return new BenchmarkResult
             {
@@ -561,7 +561,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Memory-intensive workload benchmark failed");
+            LoggerMessages.MemoryIntensiveWorkloadBenchmarkFailed(Logger, ex);
             
             return new BenchmarkResult
             {
@@ -628,7 +628,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Compute-intensive workload benchmark failed");
+            LoggerMessages.ComputeIntensiveWorkloadBenchmarkFailed(Logger, ex);
             
             return new BenchmarkResult
             {
@@ -758,7 +758,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Image processing benchmark failed");
+            LoggerMessages.ImageProcessingBenchmarkFailed(Logger, ex);
             
             return new BenchmarkResult
             {
@@ -825,7 +825,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Signal processing benchmark failed");
+            LoggerMessages.SignalProcessingBenchmarkFailed(Logger, ex);
             
             return new BenchmarkResult
             {

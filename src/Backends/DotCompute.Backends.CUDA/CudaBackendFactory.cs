@@ -76,10 +76,7 @@ public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IB
                         device.Name, device.DeviceId, device.ArchitectureGeneration, device.IsRTX2000Ada);
 
                     // Create logger for this specific device
-                    var deviceLogger = _logger is ILoggerFactory loggerFactory
-                        ? loggerFactory.CreateLogger<CudaAccelerator>()
-                        : new NullLogger<CudaAccelerator>();
-
+                    var loggerFactory = _logger is ILoggerFactory factory ? factory : null;
                     var acceleratorLogger = loggerFactory?.CreateLogger<CudaAccelerator>() ?? new NullLogger<CudaAccelerator>();
                     var accelerator = new CudaAccelerator(device.DeviceId, acceleratorLogger);
                     createdAccelerators.Add(accelerator);
@@ -124,11 +121,8 @@ public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IB
             _logger.LogInformation("Creating default CUDA accelerator for {DeviceName} (Arch: {Architecture}, RTX2000Ada: {IsRTX2000})",
                 defaultDevice.Name, defaultDevice.ArchitectureGeneration, defaultDevice.IsRTX2000Ada);
 
-            var deviceLogger = _logger is ILoggerFactory loggerFactory
-                ? loggerFactory.CreateLogger<CudaAccelerator>()
-                : new NullLogger<CudaAccelerator>();
-
-            var acceleratorLogger = _logger is ILoggerFactory lf ? lf.CreateLogger<CudaAccelerator>() : new NullLogger<CudaAccelerator>();
+            var loggerFactory = _logger is ILoggerFactory lf ? lf : null;
+            var acceleratorLogger = loggerFactory?.CreateLogger<CudaAccelerator>() ?? new NullLogger<CudaAccelerator>();
             return new CudaAccelerator(0, acceleratorLogger);
         }
         catch (Exception ex)

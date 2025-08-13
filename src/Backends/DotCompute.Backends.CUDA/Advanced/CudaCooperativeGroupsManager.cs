@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;

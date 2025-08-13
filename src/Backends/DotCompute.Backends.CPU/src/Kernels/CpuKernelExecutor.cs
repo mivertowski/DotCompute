@@ -21,13 +21,15 @@ internal sealed class CpuKernelExecutor
 {
     private readonly CpuThreadPool _threadPool;
     private readonly ILogger _logger;
+    private readonly SimdSummary _simdCapabilities;
     private long _executionCount;
     private double _totalExecutionTime;
 
-    public CpuKernelExecutor(CpuThreadPool threadPool, ILogger logger)
+    public CpuKernelExecutor(CpuThreadPool threadPool, ILogger logger, SimdSummary? simdCapabilities = null)
     {
         _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _simdCapabilities = simdCapabilities ?? SimdCapabilities.GetSummary();
     }
 
     /// <summary>
@@ -191,7 +193,11 @@ internal sealed class CpuKernelExecutor
 
             tasks[workerId] = _threadPool.EnqueueAsync(() =>
             {
-                ExecuteVectorizedWorker(definition, vectorizedArgs, startVector, endVector, elementsPerVector, vectorWidth, cancellationToken);
+                // Re-obtain vectorized buffers inside the lambda to avoid ref struct capture
+                if (TryGetVectorizedBuffers(arguments, out var localVectorizedArgs))
+                {
+                    ExecuteVectorizedWorker(definition, localVectorizedArgs, startVector, endVector, elementsPerVector, vectorWidth, cancellationToken);
+                }
             }, cancellationToken).AsTask();
         }
 
@@ -860,9 +866,10 @@ internal sealed class CpuKernelExecutor
     {
         // For now, assume the size is determined by buffer size
         // In a real implementation, this would be configurable
-        if (arguments.Arguments.Any(arg => arg is IMemoryBuffer buffer))
+        var argumentsArray = arguments.Arguments.ToArray();
+        if (argumentsArray.Any(arg => arg is IMemoryBuffer))
         {
-            var firstBuffer = arguments.Arguments.OfType<IMemoryBuffer>().First();
+            var firstBuffer = argumentsArray.OfType<IMemoryBuffer>().First();
             return firstBuffer.SizeInBytes / sizeof(float);
         }
 
@@ -895,7 +902,8 @@ internal sealed class CpuKernelExecutor
     {
         vectorizedArgs = default;
 
-        var buffers = arguments.Arguments.OfType<CpuMemoryBuffer>().ToArray();
+        var argumentsArray = arguments.Arguments.ToArray();
+        var buffers = argumentsArray.OfType<CpuMemoryBuffer>().ToArray();
         if (buffers.Length < 2)
         {
             return false;

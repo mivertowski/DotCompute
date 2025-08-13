@@ -21,14 +21,14 @@ public sealed class CudaBackendIntegration : IDisposable
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger _logger;
     private readonly CudaContext _context;
-    private readonly CudaStreamManager _streamManager = null!;
-    private readonly CudaEventManager _eventManager = null!;
-    private readonly CudaKernelExecutor _kernelExecutor = null!;
-    private readonly CudaGraphSupport _graphSupport = null!;
-    private readonly CudaP2PManager _p2pManager = null!;
-    private readonly CudaAdvancedFeatures _advancedFeatures = null!;
-    private readonly CudaPerformanceMonitor _performanceMonitor = null!;
-    private readonly Timer _healthCheckTimer = null!;
+    private readonly CudaStreamManager _streamManager;
+    private readonly CudaEventManager _eventManager;
+    private readonly CudaKernelExecutor _kernelExecutor;
+    private readonly CudaGraphSupport _graphSupport;
+    private readonly CudaP2PManager _p2pManager;
+    private readonly CudaAdvancedFeatures _advancedFeatures;
+    private readonly CudaPerformanceMonitor _performanceMonitor;
+    private readonly Timer _healthCheckTimer;
     private bool _disposed;
 
     public CudaBackendIntegration(
@@ -113,8 +113,9 @@ public sealed class CudaBackendIntegration : IDisposable
                 .ConfigureAwait(false);
 
             // Execute with the kernel executor
+            var compiledKernel = kernel.ToCompiledKernel();
             var executionResult = await _kernelExecutor.ExecuteAndWaitAsync(
-                kernel, arguments, execConfig, cancellationToken)
+                compiledKernel, arguments, execConfig, cancellationToken)
                 .ConfigureAwait(false);
 
             var endTime = DateTimeOffset.UtcNow;

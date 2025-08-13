@@ -15,6 +15,97 @@ public class AdvancedLinearAlgebraExample
     private readonly IAccelerator _accelerator;
     private readonly ILogger<AdvancedLinearAlgebraExample> _logger;
 
+    // Logger message delegates for structured logging
+    private static readonly Action<ILogger, int, int, Exception?> LogMatrixDimensions =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(1, nameof(LogMatrixDimensions)),
+            "Matrix A ({Rows}x{Columns}):");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogQMatrixDimensions =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(2, nameof(LogQMatrixDimensions)),
+            "Q matrix ({Rows}x{Columns}):");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogRMatrixDimensions =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(3, nameof(LogRMatrixDimensions)),
+            "R matrix ({Rows}x{Columns}):");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogUMatrixDimensions =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(4, nameof(LogUMatrixDimensions)),
+            "U matrix ({Rows}x{Columns}):");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogVTMatrixDimensions =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(5, nameof(LogVTMatrixDimensions)),
+            "V^T matrix ({Rows}x{Columns}):");
+
+    private static readonly Action<ILogger, int, float, Exception?> LogSingularValue =
+        LoggerMessage.Define<int, float>(
+            LogLevel.Information,
+            new EventId(6, nameof(LogSingularValue)),
+            "σ[{Index}] = {Value:F6}");
+
+    private static readonly Action<ILogger, float, Exception?> LogConditionNumber =
+        LoggerMessage.Define<float>(
+            LogLevel.Information,
+            new EventId(7, nameof(LogConditionNumber)),
+            "Condition number: {ConditionNumber:F6}");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogPositiveDefiniteMatrix =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(8, nameof(LogPositiveDefiniteMatrix)),
+            "Positive definite matrix A ({Rows}x{Columns}):");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogCholeskyFactor =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(9, nameof(LogCholeskyFactor)),
+            "Cholesky factor L ({Rows}x{Columns}):");
+
+    private static readonly Action<ILogger, string, Exception?> LogCholeskyError =
+        LoggerMessage.Define<string>(
+            LogLevel.Error,
+            new EventId(10, nameof(LogCholeskyError)),
+            "Matrix is not positive definite: {ErrorMessage}");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogSymmetricMatrix =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(11, nameof(LogSymmetricMatrix)),
+            "Symmetric matrix A ({Rows}x{Columns}):");
+
+    private static readonly Action<ILogger, int, float, Exception?> LogEigenvalue =
+        LoggerMessage.Define<int, float>(
+            LogLevel.Information,
+            new EventId(12, nameof(LogEigenvalue)),
+            "λ[{Index}] = {Value:F6}");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogEigenvectors =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(13, nameof(LogEigenvectors)),
+            "Eigenvectors ({Rows}x{Columns}):");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogCoefficientMatrix =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(14, nameof(LogCoefficientMatrix)),
+            "Coefficient matrix A ({Rows}x{Columns}):");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogRightHandSide =
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(15, nameof(LogRightHandSide)),
+            "Right-hand side b ({Rows}x{Columns}):");
+
     public AdvancedLinearAlgebraExample(IAccelerator accelerator, ILogger<AdvancedLinearAlgebraExample> logger)
     {
         _accelerator = accelerator;
@@ -37,16 +128,16 @@ public class AdvancedLinearAlgebraExample
             { 1, 4 }
         });
 
-        _logger.LogInformation($"Matrix A ({A.Rows}x{A.Columns}):");
+        LogMatrixDimensions(_logger, A.Rows, A.Columns, null);
         _logger.LogInformation(A.ToString());
 
         // Perform QR decomposition
         var (Q, R) = await MatrixMath.QRDecompositionAsync(A, _accelerator);
 
-        _logger.LogInformation($"Q matrix ({Q.Rows}x{Q.Columns}):");
+        LogQMatrixDimensions(_logger, Q.Rows, Q.Columns, null);
         _logger.LogInformation(Q.ToString());
 
-        _logger.LogInformation($"R matrix ({R.Rows}x{R.Columns}):");
+        LogRMatrixDimensions(_logger, R.Rows, R.Columns, null);
         _logger.LogInformation(R.ToString());
 
         // Verify Q*R = A
@@ -69,27 +160,27 @@ public class AdvancedLinearAlgebraExample
             { 3, -5 }
         });
 
-        _logger.LogInformation($"Matrix A ({A.Rows}x{A.Columns}):");
+        LogMatrixDimensions(_logger, A.Rows, A.Columns, null);
         _logger.LogInformation(A.ToString());
 
         // Perform SVD
         var (U, S, VT) = await MatrixMath.SVDAsync(A, _accelerator);
 
-        _logger.LogInformation($"U matrix ({U.Rows}x{U.Columns}):");
+        LogUMatrixDimensions(_logger, U.Rows, U.Columns, null);
         _logger.LogInformation(U.ToString());
 
-        _logger.LogInformation($"Singular values:");
+        _logger.LogInformation("Singular values:");
         for (int i = 0; i < S.Rows; i++)
         {
-            _logger.LogInformation($"σ[{i}] = {S[i, i]:F6}");
+            LogSingularValue(_logger, i, S[i, i], null);
         }
 
-        _logger.LogInformation($"V^T matrix ({VT.Rows}x{VT.Columns}):");
+        LogVTMatrixDimensions(_logger, VT.Rows, VT.Columns, null);
         _logger.LogInformation(VT.ToString());
 
         // Compute condition number
         var conditionNumber = await MatrixMath.ConditionNumberAsync(A, _accelerator);
-        _logger.LogInformation($"Condition number: {conditionNumber:F6}");
+        LogConditionNumber(_logger, conditionNumber, null);
     }
 
     /// <summary>
@@ -107,7 +198,7 @@ public class AdvancedLinearAlgebraExample
             { 1, 0.5f, 2 }
         });
 
-        _logger.LogInformation($"Positive definite matrix A ({A.Rows}x{A.Columns}):");
+        LogPositiveDefiniteMatrix(_logger, A.Rows, A.Columns, null);
         _logger.LogInformation(A.ToString());
 
         try
@@ -115,7 +206,7 @@ public class AdvancedLinearAlgebraExample
             // Perform Cholesky decomposition
             var L = await MatrixMath.CholeskyDecompositionAsync(A, _accelerator);
 
-            _logger.LogInformation($"Cholesky factor L ({L.Rows}x{L.Columns}):");
+            LogCholeskyFactor(_logger, L.Rows, L.Columns, null);
             _logger.LogInformation(L.ToString());
 
             // Verify L*L^T = A
@@ -127,7 +218,7 @@ public class AdvancedLinearAlgebraExample
         }
         catch (InvalidOperationException ex)
         {
-            _logger.LogError($"Matrix is not positive definite: {ex.Message}");
+            LogCholeskyError(_logger, ex.Message, null);
         }
     }
 
@@ -145,7 +236,7 @@ public class AdvancedLinearAlgebraExample
             { 1, 3 }
         });
 
-        _logger.LogInformation($"Symmetric matrix A ({A.Rows}x{A.Columns}):");
+        LogSymmetricMatrix(_logger, A.Rows, A.Columns, null);
         _logger.LogInformation(A.ToString());
 
         // Perform eigenvalue decomposition
@@ -155,10 +246,10 @@ public class AdvancedLinearAlgebraExample
         _logger.LogInformation("Eigenvalues:");
         for (int i = 0; i < eigenvalues.Rows; i++)
         {
-            _logger.LogInformation($"λ[{i}] = {eigenvalues[i, 0]:F6}");
+            LogEigenvalue(_logger, i, eigenvalues[i, 0], null);
         }
 
-        _logger.LogInformation($"Eigenvectors ({eigenvectors.Rows}x{eigenvectors.Columns}):");
+        LogEigenvectors(_logger, eigenvectors.Rows, eigenvectors.Columns, null);
         _logger.LogInformation(eigenvectors.ToString());
     }
 
@@ -184,15 +275,15 @@ public class AdvancedLinearAlgebraExample
             { 6 }
         });
 
-        _logger.LogInformation($"Coefficient matrix A ({A.Rows}x{A.Columns}):");
+        LogCoefficientMatrix(_logger, A.Rows, A.Columns, null);
         _logger.LogInformation(A.ToString());
 
-        _logger.LogInformation($"Right-hand side b ({b.Rows}x{b.Columns}):");
+        LogRightHandSide(_logger, b.Rows, b.Columns, null);
         _logger.LogInformation(b.ToString());
 
         // Check condition number
         var conditionNumber = await MatrixMath.ConditionNumberAsync(A, _accelerator);
-        _logger.LogInformation($"Condition number: {conditionNumber:F6}");
+        LogConditionNumber(_logger, conditionNumber, null);
 
         // Solve using basic method
         var x1 = await MatrixMath.SolveAsync(A, b, _accelerator);

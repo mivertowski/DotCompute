@@ -127,7 +127,7 @@ internal sealed class CpuKernelProfiler : IDisposable
     private readonly object _lock = new();
     private readonly ConcurrentDictionary<string, ProfileData> _kernelProfiles = new();
     private readonly Timer _samplingTimer;
-    private readonly PerformanceCounterManager _perfCounters;
+    internal readonly PerformanceCounterManager _perfCounters;
     private readonly int _samplingIntervalMs;
     private int _disposed;
 
@@ -496,6 +496,7 @@ internal sealed class PerformanceCounterManager : IDisposable
             {
                 _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total", true);
                 _memoryCounter = new PerformanceCounter("Memory", "Available MBytes", true);
+                _cacheCounter = new PerformanceCounter("Memory", "Cache Bytes", true);
             }
             // Linux performance counters would be implemented using perf_event_open
             // macOS would use system_profiler or similar APIs

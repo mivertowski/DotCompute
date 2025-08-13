@@ -374,8 +374,8 @@ public sealed class CudaP2PManager : IDisposable
         ThrowIfDisposed();
 
         var enabledConnections = _connections.Values.Count(c => c.IsEnabled);
-        var totalTransfers = _connections.Values.Sum(c => c.TransferCount);
-        var totalBytesTransferred = _connections.Values.Sum(c => c.TotalBytesTransferred);
+        var totalTransfers = _connections.Values.Sum(c => (long)c.TransferCount);
+        var totalBytesTransferred = _connections.Values.Sum(c => (long)c.TotalBytesTransferred);
         var avgBandwidth = _connections.Values.Where(c => c.AverageBandwidthGBps > 0)
             .Select(c => c.AverageBandwidthGBps).DefaultIfEmpty(0).Average();
 
@@ -385,7 +385,7 @@ public sealed class CudaP2PManager : IDisposable
             TotalConnections = _connections.Count,
             EnabledConnections = enabledConnections,
             TotalTransfers = totalTransfers,
-            TotalBytesTransferred = totalBytesTransferred,
+            TotalBytesTransferred = (ulong)Math.Max(0, totalBytesTransferred),
             AverageBandwidthGBps = avgBandwidth,
             ConnectionUtilization = _connections.Values.ToDictionary(
                 c => $"{c.SourceDevice}->{c.DestinationDevice}",

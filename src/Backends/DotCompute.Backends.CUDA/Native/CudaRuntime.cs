@@ -219,6 +219,10 @@ public static class CudaRuntime
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cudaEventElapsedTime(ref float ms, IntPtr start, IntPtr end);
 
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaEventQuery(IntPtr eventPtr);
+
 
     // Peer-to-Peer Memory Access
     [DllImport(CUDA_LIBRARY)]

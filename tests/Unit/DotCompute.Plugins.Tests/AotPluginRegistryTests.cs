@@ -318,7 +318,9 @@ public class AotPluginRegistryTests : IDisposable
         public PluginHealth Health => PluginHealth.Healthy;
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+#pragma warning disable CS0067 // The event is never used
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+#pragma warning restore CS0067
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }
@@ -442,7 +444,9 @@ public class AotPluginSystemTests : IDisposable
         public PluginHealth Health => PluginHealth.Healthy;
 
         public event EventHandler<PluginStateChangedEventArgs>? StateChanged;
+#pragma warning disable CS0067 // The event is never used
         public event EventHandler<PluginErrorEventArgs>? ErrorOccurred;
+#pragma warning restore CS0067
         public event EventHandler<PluginHealthChangedEventArgs>? HealthChanged;
 
         public void ConfigureServices(IServiceCollection services, IConfiguration configuration) { }

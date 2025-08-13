@@ -28,6 +28,83 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
     private readonly CancellationTokenSource _shutdownTokenSource;
     private bool _disposed;
 
+    // High-performance logging delegates
+    private static readonly Action<ILogger, string, int, Exception?> LogStartingDataParallel =
+        LoggerMessage.Define<string, int>(LogLevel.Information, new EventId(1001, nameof(LogStartingDataParallel)),
+            "Starting data parallel execution of kernel '{KernelName}' across {DeviceCount} devices");
+
+    private static readonly Action<ILogger, double, double, Exception?> LogDataParallelCompleted =
+        LoggerMessage.Define<double, double>(LogLevel.Information, new EventId(1002, nameof(LogDataParallelCompleted)),
+            "Data parallel execution completed in {ExecutionTimeMs:F2}ms with {EfficiencyPercentage:F1}% efficiency");
+
+    private static readonly Action<ILogger, string, int, Exception?> LogStartingModelParallel =
+        LoggerMessage.Define<string, int>(LogLevel.Information, new EventId(1003, nameof(LogStartingModelParallel)),
+            "Starting model parallel execution of kernel '{KernelName}' with {LayerCount} layers");
+
+    private static readonly Action<ILogger, int, Exception?> LogStartingPipelineParallel =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(1004, nameof(LogStartingPipelineParallel)),
+            "Starting pipeline parallel execution with {StageCount} stages");
+
+    private static readonly Action<ILogger, int, Exception?> LogStartingWorkStealing =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(1005, nameof(LogStartingWorkStealing)),
+            "Starting work-stealing execution with {WorkItemCount} work items");
+
+    private static readonly Action<ILogger, Exception?> LogSynchronizingAccelerators =
+        LoggerMessage.Define(LogLevel.Debug, new EventId(1006, nameof(LogSynchronizingAccelerators)),
+            "Synchronizing all accelerators");
+
+    private static readonly Action<ILogger, Exception?> LogAcceleratorsSynchronized =
+        LoggerMessage.Define(LogLevel.Debug, new EventId(1007, nameof(LogAcceleratorsSynchronized)),
+            "All accelerators synchronized");
+
+    private static readonly Action<ILogger, Exception?> LogDisposingStrategy =
+        LoggerMessage.Define(LogLevel.Information, new EventId(1008, nameof(LogDisposingStrategy)),
+            "Disposing ParallelExecutionStrategy");
+
+    private static readonly Action<ILogger, Exception?> LogStrategyDisposed =
+        LoggerMessage.Define(LogLevel.Information, new EventId(1009, nameof(LogStrategyDisposed)),
+            "ParallelExecutionStrategy disposed");
+
+    private static readonly Action<ILogger, Exception?> LogErrorDuringSync =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(1010, nameof(LogErrorDuringSync)),
+            "Error during final synchronization");
+
+    private static readonly Action<ILogger, string, Exception?> LogInitializedStrategies =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(1011, nameof(LogInitializedStrategies)),
+            "Initialized with strategies: {Strategies}");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogBufferSizeMismatch =
+        LoggerMessage.Define<int, int>(LogLevel.Warning, new EventId(1012, nameof(LogBufferSizeMismatch)),
+            "Input buffer size {ElementCount} is not evenly divisible by device count {DeviceCount}. This may lead to load imbalance.");
+
+    private static readonly Action<ILogger, string, Exception?> LogErrorExecutingOnDevice =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(1013, nameof(LogErrorExecutingOnDevice)),
+            "Error executing on device {DeviceId}");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogCreatingModelParallelPlan =
+        LoggerMessage.Define<int, int>(LogLevel.Debug, new EventId(1014, nameof(LogCreatingModelParallelPlan)),
+            "Creating model parallel execution plan with {LayerCount} layers across {DeviceCount} devices");
+
+    private static readonly Action<ILogger, int, Exception?> LogExecutingModelParallelPlan =
+        LoggerMessage.Define<int>(LogLevel.Debug, new EventId(1015, nameof(LogExecutingModelParallelPlan)),
+            "Executing model parallel plan with {LayerCount} layers");
+
+    private static readonly Action<ILogger, int, Exception?> LogErrorExecutingLayer =
+        LoggerMessage.Define<int>(LogLevel.Error, new EventId(1016, nameof(LogErrorExecutingLayer)),
+            "Error executing layer {LayerId}");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogCreatingPipelinePlan =
+        LoggerMessage.Define<int, int>(LogLevel.Debug, new EventId(1017, nameof(LogCreatingPipelinePlan)),
+            "Creating pipeline execution plan with {StageCount} stages across {DeviceCount} devices");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogExecutingPipelinePlan =
+        LoggerMessage.Define<int, int>(LogLevel.Debug, new EventId(1018, nameof(LogExecutingPipelinePlan)),
+            "Executing pipeline plan with {StageCount} stages and {MicrobatchCount} microbatches");
+
+    private static readonly Action<ILogger, int, Exception?> LogErrorInPipelineStage =
+        LoggerMessage.Define<int>(LogLevel.Error, new EventId(1019, nameof(LogErrorInPipelineStage)),
+            "Error in pipeline stage {StageId}");
+
     public ParallelExecutionStrategy(
         ILogger<ParallelExecutionStrategy> logger,
         IAcceleratorManager acceleratorManager,
@@ -75,8 +152,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
         try
         {
-            _logger.LogInformation("Starting data parallel execution of kernel '{KernelName}' across {DeviceCount} devices", 
-                kernelName, options.TargetDevices?.Length ?? _acceleratorManager.Count);
+            LogStartingDataParallel(_logger, kernelName, options.TargetDevices?.Length ?? _acceleratorManager.Count, null);
 
             var startTime = Stopwatch.StartNew();
             var devices = SelectOptimalDevices(options);
@@ -105,8 +181,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
             };
 
             _performanceMonitor.RecordExecution(finalResult);
-            _logger.LogInformation("Data parallel execution completed in {ExecutionTimeMs:F2}ms with {EfficiencyPercentage:F1}% efficiency",
-                finalResult.TotalExecutionTimeMs, finalResult.EfficiencyPercentage);
+            LogDataParallelCompleted(_logger, finalResult.TotalExecutionTimeMs, finalResult.EfficiencyPercentage, null);
 
             return finalResult;
         }
@@ -131,8 +206,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
         try
         {
-            _logger.LogInformation("Starting model parallel execution of kernel '{KernelName}' with {LayerCount} layers", 
-                kernelName, workload.ModelLayers.Count);
+            LogStartingModelParallel(_logger, kernelName, workload.ModelLayers.Count, null);
 
             var startTime = Stopwatch.StartNew();
             var devices = SelectOptimalDevices(options.ToDataParallelOptions());
@@ -180,7 +254,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
         try
         {
-            _logger.LogInformation("Starting pipeline parallel execution with {StageCount} stages", pipeline.Stages.Count);
+            LogStartingPipelineParallel(_logger, pipeline.Stages.Count, null);
 
             var startTime = Stopwatch.StartNew();
             var devices = SelectOptimalDevices(options.ToDataParallelOptions());
@@ -228,8 +302,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         await _executionSemaphore.WaitAsync(combinedToken.Token).ConfigureAwait(false);
         try
         {
-            _logger.LogInformation("Starting work-stealing execution with {WorkItemCount} work items", 
-                workload.WorkItems.Count);
+            LogStartingWorkStealing(_logger, workload.WorkItems.Count, null);
 
             var startTime = Stopwatch.StartNew();
             var devices = SelectOptimalDevices(options.ToDataParallelOptions());
@@ -269,7 +342,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
     /// </summary>
     public async ValueTask SynchronizeAllAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogDebug("Synchronizing all accelerators");
+        LogSynchronizingAccelerators(_logger, null);
 
         var tasks = _acceleratorManager.AvailableAccelerators
             .Select(accelerator => accelerator.SynchronizeAsync(cancellationToken).AsTask())
@@ -277,7 +350,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
 
         await Task.WhenAll(tasks).ConfigureAwait(false);
         
-        _logger.LogDebug("All accelerators synchronized");
+        LogAcceleratorsSynchronized(_logger, null);
     }
 
     /// <summary>
@@ -306,7 +379,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
             return;
         }
 
-        _logger.LogInformation("Disposing ParallelExecutionStrategy");
+        LogDisposingStrategy(_logger, null);
 
         _shutdownTokenSource.Cancel();
 
@@ -316,7 +389,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error during final synchronization");
+            LogErrorDuringSync(_logger, ex);
         }
 
         await _memoryManager.DisposeAsync().ConfigureAwait(false);
@@ -327,7 +400,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         _shutdownTokenSource.Dispose();
         
         _disposed = true;
-        _logger.LogInformation("ParallelExecutionStrategy disposed");
+        LogStrategyDisposed(_logger, null);
     }
 
     #region Private Implementation
@@ -366,8 +439,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         }
 
         AvailableStrategies = strategies.AsReadOnly();
-        _logger.LogInformation("Initialized with strategies: {Strategies}", 
-            string.Join(", ", strategies));
+        LogInitializedStrategies(_logger, string.Join(", ", strategies), null);
     }
 
     private IAccelerator[] SelectOptimalDevices(DataParallelismOptions options)
@@ -422,8 +494,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
             var bufferElementCount = (int)(buffer.SizeInBytes / System.Runtime.InteropServices.Marshal.SizeOf<T>());
             if (bufferElementCount % devices.Length != 0)
             {
-                _logger.LogWarning("Input buffer size {ElementCount} is not evenly divisible by device count {DeviceCount}. " +
-                    "This may lead to load imbalance.", bufferElementCount, devices.Length);
+                LogBufferSizeMismatch(_logger, bufferElementCount, devices.Length, null);
             }
         }
     }
@@ -588,7 +659,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error executing on device {DeviceId}", task.Device.Info.Id);
+                    LogErrorExecutingOnDevice(_logger, task.Device.Info.Id, ex);
                     return new DeviceExecutionResult
                     {
                         DeviceId = task.Device.Info.Id,
@@ -675,8 +746,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         string kernelName, ModelParallelWorkload<T> workload, IAccelerator[] devices, 
         ModelParallelismOptions options, CancellationToken cancellationToken) where T : unmanaged
     {
-        _logger.LogDebug("Creating model parallel execution plan with {LayerCount} layers across {DeviceCount} devices", 
-            workload.ModelLayers.Count, devices.Length);
+        LogCreatingModelParallelPlan(_logger, workload.ModelLayers.Count, devices.Length, null);
 
         // Simple layer-to-device assignment using round-robin
         var layerAssignments = new Dictionary<int, IAccelerator>();
@@ -707,7 +777,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
     private async ValueTask<DeviceExecutionResult[]> ExecuteModelParallelPlanAsync<T>(
         ModelParallelExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
     {
-        _logger.LogDebug("Executing model parallel plan with {LayerCount} layers", plan.ModelLayers.Length);
+        LogExecutingModelParallelPlan(_logger, plan.ModelLayers.Length, null);
 
         var deviceResults = new List<DeviceExecutionResult>();
         var startTime = Stopwatch.StartNew();
@@ -736,7 +806,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error executing layer {LayerId}", layer.LayerId);
+                LogErrorExecutingLayer(_logger, layer.LayerId, ex);
                 deviceResults.Add(new DeviceExecutionResult
                 {
                     DeviceId = device.Info.Id,
@@ -754,8 +824,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         PipelineDefinition<T> pipeline, IAccelerator[] devices, 
         PipelineParallelismOptions options, CancellationToken cancellationToken) where T : unmanaged
     {
-        _logger.LogDebug("Creating pipeline execution plan with {StageCount} stages across {DeviceCount} devices", 
-            pipeline.Stages.Count, devices.Length);
+        LogCreatingPipelinePlan(_logger, pipeline.Stages.Count, devices.Length, null);
 
         if (devices.Length < pipeline.Stages.Count)
         {
@@ -807,8 +876,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
     private async ValueTask<DeviceExecutionResult[]> ExecutePipelinePlanAsync<T>(
         PipelineExecutionPlan<T> plan, CancellationToken cancellationToken) where T : unmanaged
     {
-        _logger.LogDebug("Executing pipeline plan with {StageCount} stages and {MicrobatchCount} microbatches", 
-            plan.Stages.Length, plan.MicrobatchConfig.Count);
+        LogExecutingPipelinePlan(_logger, plan.Stages.Length, plan.MicrobatchConfig.Count, null);
 
         var deviceResults = new List<DeviceExecutionResult>();
         var startTime = Stopwatch.StartNew();
@@ -840,7 +908,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in pipeline stage {StageId}", stage.StageId);
+                LogErrorInPipelineStage(_logger, stage.StageId, ex);
                 return new DeviceExecutionResult
                 {
                     DeviceId = stage.Device.Info.Id,

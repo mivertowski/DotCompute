@@ -59,8 +59,8 @@ public class RealWorldScenarioTests : IntegrationTestBase
         trainingResult.FinalLoss.Should().BeLessThan(trainingResult.InitialLoss);
         trainingResult.TrainingTime.Should().BeLessThan(TimeSpan.FromMinutes(5));
         
-        Logger.LogInformation($"Neural network training completed in {trainingResult.TrainingTime.TotalSeconds:F2}s");
-        Logger.LogInformation($"Loss reduction: {trainingResult.InitialLoss:F4} -> {trainingResult.FinalLoss:F4}");
+        LoggerMessages.NeuralNetworkTrainingCompleted(Logger, trainingResult.TrainingTime.TotalSeconds);
+        LoggerMessages.LossReduction(Logger, trainingResult.InitialLoss, trainingResult.FinalLoss);
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         processingResult.ProcessingTime.Should().BeLessThan(TimeSpan.FromSeconds(10));
         
         var megapixelsPerSecond = (imageWidth * imageHeight) / processingResult.ProcessingTime.TotalSeconds / 1_000_000.0;
-        Logger.LogInformation($"Image processing: {megapixelsPerSecond:F2} MP/s");
+        LoggerMessages.ImageProcessing(Logger, megapixelsPerSecond);
         
         megapixelsPerSecond.Should().BeGreaterThan(1); // Should process at least 1 MP/s on CPU
     }
@@ -128,7 +128,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         simulationResult.SimulationTime.Should().BeLessThan(TimeSpan.FromMinutes(2));
         
         var cellUpdatesPerSecond = (long)gridWidth * gridHeight * timeSteps / simulationResult.SimulationTime.TotalSeconds;
-        Logger.LogInformation($"CFD simulation: {cellUpdatesPerSecond:N0} cell updates/sec");
+        LoggerMessages.CFDSimulation(Logger, cellUpdatesPerSecond);
         
         cellUpdatesPerSecond.Should().BeGreaterThan(1_000_000); // At least 1M cell updates/sec
     }
@@ -167,7 +167,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         simulationResult.OptionPrice.Should().BeLessThan(spotPrice);
         
         var simulationsPerSecond = numSimulations / simulationResult.ExecutionTime.TotalSeconds;
-        Logger.LogInformation($"Monte Carlo: {simulationsPerSecond:N0} simulations/sec, Option price: ${simulationResult.OptionPrice:F4}");
+        LoggerMessages.MonteCarlo(Logger, simulationsPerSecond, simulationResult.OptionPrice);
         
         simulationsPerSecond.Should().BeGreaterThan(1_000); // At least 1K simulations/sec on CPU
     }
@@ -196,7 +196,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         hashResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromMinutes(1));
         
         var hashesPerSecond = numHashes / hashResult.ExecutionTime.TotalSeconds;
-        Logger.LogInformation($"Hash computation: {hashesPerSecond:N0} hashes/sec");
+        LoggerMessages.HashComputation(Logger, hashesPerSecond);
         
         hashesPerSecond.Should().BeGreaterThan(10_000); // At least 10K hashes/sec
     }
@@ -232,7 +232,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         physicsResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(10)); // Reasonable CPU performance
         
         var particleUpdatesPerSecond = (long)numParticles * simulationSteps / physicsResult.ExecutionTime.TotalSeconds;
-        Logger.LogInformation($"Physics simulation: {particleUpdatesPerSecond:N0} particle updates/sec");
+        LoggerMessages.PhysicsSimulation(Logger, particleUpdatesPerSecond);
         
         // Should complete physics simulation within reasonable time
         particleUpdatesPerSecond.Should().BeGreaterThan(100_000); // At least 100K particle updates/sec
@@ -271,7 +271,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         var processingTimeSeconds = audioResult.ExecutionTime.TotalSeconds;
         var realTimeRatio = processingTimeSeconds / realTimeSeconds;
         
-        Logger.LogInformation($"Audio processing: {realTimeRatio:F2}x real-time");
+        LoggerMessages.AudioProcessing(Logger, realTimeRatio);
         
         // Should process reasonably close to real-time (CPU backend may be slower)
         realTimeRatio.Should().BeLessThan(100.0); // Processing shouldn't be 100x slower than real-time
@@ -301,7 +301,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         analyticsResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
         
         var recordsPerSecond = recordCount / analyticsResult.ExecutionTime.TotalSeconds;
-        Logger.LogInformation($"Data analytics: {recordsPerSecond:N0} records/sec");
+        LoggerMessages.DataAnalytics(Logger, recordsPerSecond);
         
         recordsPerSecond.Should().BeGreaterThan(100_000); // At least 100K records/sec
     }
@@ -375,7 +375,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Neural network training failed");
+            LoggerMessages.NeuralNetworkTrainingFailed(Logger, ex);
             
             return new NeuralNetworkTrainingResult
             {
@@ -452,7 +452,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Image processing pipeline failed");
+            LoggerMessages.ImageProcessingPipelineFailed(Logger, ex);
             
             return new ImageProcessingResult
             {
@@ -536,7 +536,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "CFD simulation failed");
+            LoggerMessages.CFDSimulationFailed(Logger, ex);
             
             return new CFDSimulationResult
             {
@@ -632,7 +632,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Monte Carlo simulation failed");
+            LoggerMessages.MonteCarloSimulationFailed(Logger, ex);
             
             return new MonteCarloResult
             {
@@ -741,7 +741,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, "Audio processing failed");
+            LoggerMessages.AudioProcessingFailed(Logger, ex);
             
             return new AudioProcessingResult
             {

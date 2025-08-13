@@ -17,7 +17,7 @@ using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-#pragma warning disable CA1848 // Use the LoggerMessage delegates - NuGet plugin loading has dynamic logging requirements
+// CA1848 warnings are addressed by using LoggerMessage delegates for high-performance logging
 
 namespace DotCompute.Plugins.Loaders
 {
@@ -35,6 +35,67 @@ namespace DotCompute.Plugins.Loaders
         private readonly DependencyResolver _dependencyResolver;
         private readonly CompatibilityChecker _compatibilityChecker;
         private bool _disposed;
+
+        // High-performance logging delegates
+        private static readonly Action<ILogger, string, Exception?> LogPluginDirectoryNotFound =
+            LoggerMessage.Define<string>(LogLevel.Warning, new EventId(2001, nameof(LogPluginDirectoryNotFound)),
+                "Plugin directory does not exist: {Directory}");
+
+        private static readonly Action<ILogger, string, Exception?> LogDiscoveringPlugins =
+            LoggerMessage.Define<string>(LogLevel.Information, new EventId(2002, nameof(LogDiscoveringPlugins)),
+                "Discovering plugins in directory: {Directory}");
+
+        private static readonly Action<ILogger, string, Exception?> LogFailedToDiscoverInDirectory =
+            LoggerMessage.Define<string>(LogLevel.Error, new EventId(2003, nameof(LogFailedToDiscoverInDirectory)),
+                "Failed to discover plugins in directory: {Directory}");
+
+        private static readonly Action<ILogger, int, Exception?> LogDiscoveredPlugins =
+            LoggerMessage.Define<int>(LogLevel.Information, new EventId(2004, nameof(LogDiscoveredPlugins)),
+                "Discovered {Count} plugins");
+
+        private static readonly Action<ILogger, string, string, Exception?> LogLoadingPlugin =
+            LoggerMessage.Define<string, string>(LogLevel.Information, new EventId(2005, nameof(LogLoadingPlugin)),
+                "Loading plugin: {PluginId} v{Version}");
+
+        private static readonly Action<ILogger, string, Exception?> LogSuccessfullyLoadedPlugin =
+            LoggerMessage.Define<string>(LogLevel.Information, new EventId(2006, nameof(LogSuccessfullyLoadedPlugin)),
+                "Successfully loaded plugin: {PluginId}");
+
+        private static readonly Action<ILogger, string, Exception?> LogFailedToLoadPlugin =
+            LoggerMessage.Define<string>(LogLevel.Error, new EventId(2007, nameof(LogFailedToLoadPlugin)),
+                "Failed to load plugin: {PluginId}");
+
+        private static readonly Action<ILogger, string, Exception?> LogValidationFailed =
+            LoggerMessage.Define<string>(LogLevel.Error, new EventId(2008, nameof(LogValidationFailed)),
+                "Validation failed for plugin: {PluginId}");
+
+        private static readonly Action<ILogger, string, Exception?> LogUnloadingPlugin =
+            LoggerMessage.Define<string>(LogLevel.Information, new EventId(2009, nameof(LogUnloadingPlugin)),
+                "Unloading plugin: {PluginId}");
+
+        private static readonly Action<ILogger, string, Exception?> LogSuccessfullyUnloadedPlugin =
+            LoggerMessage.Define<string>(LogLevel.Information, new EventId(2010, nameof(LogSuccessfullyUnloadedPlugin)),
+                "Successfully unloaded plugin: {PluginId}");
+
+        private static readonly Action<ILogger, string, Exception?> LogFailedToUnloadPlugin =
+            LoggerMessage.Define<string>(LogLevel.Error, new EventId(2011, nameof(LogFailedToUnloadPlugin)),
+                "Failed to unload plugin: {PluginId}");
+
+        private static readonly Action<ILogger, string, Exception?> LogFailedToParseManifest =
+            LoggerMessage.Define<string>(LogLevel.Warning, new EventId(2012, nameof(LogFailedToParseManifest)),
+                "Failed to parse plugin manifest: {File}");
+
+        private static readonly Action<ILogger, string, Exception?> LogFailedToExtractManifest =
+            LoggerMessage.Define<string>(LogLevel.Warning, new EventId(2013, nameof(LogFailedToExtractManifest)),
+                "Failed to extract manifest from package: {Package}");
+
+        private static readonly Action<ILogger, string, Exception?> LogVulnerabilitiesFound =
+            LoggerMessage.Define<string>(LogLevel.Warning, new EventId(2014, nameof(LogVulnerabilitiesFound)),
+                "Vulnerabilities found in plugin {PluginId}");
+
+        private static readonly Action<ILogger, string, Exception?> LogErrorDisposingPlugin =
+            LoggerMessage.Define<string>(LogLevel.Error, new EventId(2015, nameof(LogErrorDisposingPlugin)),
+                "Error disposing plugin: {PluginId}");
 
         /// <summary>
         /// Initializes a new instance of the <see cref="NuGetPluginLoader"/> class.
@@ -61,11 +122,11 @@ namespace DotCompute.Plugins.Loaders
             {
                 if (!Directory.Exists(directory))
                 {
-                    _logger.LogWarning("Plugin directory does not exist: {Directory}", directory);
+                    LogPluginDirectoryNotFound(_logger, directory, null);
                     continue;
                 }
 
-                _logger.LogInformation("Discovering plugins in directory: {Directory}", directory);
+                LogDiscoveringPlugins(_logger, directory, null);
 
                 try
                 {
@@ -76,11 +137,11 @@ namespace DotCompute.Plugins.Loaders
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Failed to discover plugins in directory: {Directory}", directory);
+                    LogFailedToDiscoverInDirectory(_logger, directory, ex);
                 }
             }
 
-            _logger.LogInformation("Discovered {Count} plugins", manifests.Count);
+            LogDiscoveredPlugins(_logger, manifests.Count, null);
             return manifests.AsReadOnly();
         }
 
@@ -101,7 +162,7 @@ namespace DotCompute.Plugins.Loaders
                     return NuGetPluginLoadResult.AlreadyLoaded(manifest.Id);
                 }
 
-                _logger.LogInformation("Loading plugin: {PluginId} v{Version}", manifest.Id, manifest.Version);
+                LogLoadingPlugin(_logger, manifest.Id, manifest.Version, null);
 
                 // Validate plugin
                 var validationResult = await ValidatePluginAsync(manifest, cancellationToken);
@@ -144,12 +205,12 @@ namespace DotCompute.Plugins.Loaders
 
                 _loadedPlugins.TryAdd(manifest.Id, loadedPlugin);
 
-                _logger.LogInformation("Successfully loaded plugin: {PluginId}", manifest.Id);
+                LogSuccessfullyLoadedPlugin(_logger, manifest.Id, null);
                 return NuGetPluginLoadResult.Success(loadedPlugin);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to load plugin: {PluginId}", manifest.Id);
+                LogFailedToLoadPlugin(_logger, manifest.Id, ex);
                 return NuGetPluginLoadResult.LoadError(manifest.Id, ex.Message);
             }
             finally
@@ -186,7 +247,7 @@ namespace DotCompute.Plugins.Loaders
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Validation failed for plugin: {PluginId}", manifest.Id);
+                LogValidationFailed(_logger, manifest.Id, ex);
                 result.IsValid = false;
                 result.ValidationErrors.Add($"Validation error: {ex.Message}");
             }
@@ -210,7 +271,7 @@ namespace DotCompute.Plugins.Loaders
                     return false;
                 }
 
-                _logger.LogInformation("Unloading plugin: {PluginId}", pluginId);
+                LogUnloadingPlugin(_logger, pluginId, null);
 
                 // Dispose the plugin
                 loadedPlugin.Plugin?.Dispose();
@@ -221,12 +282,12 @@ namespace DotCompute.Plugins.Loaders
                 // Unload the load context
                 loadedPlugin.LoadContext?.Unload();
 
-                _logger.LogInformation("Successfully unloaded plugin: {PluginId}", pluginId);
+                LogSuccessfullyUnloadedPlugin(_logger, pluginId, null);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to unload plugin: {PluginId}", pluginId);
+                LogFailedToUnloadPlugin(_logger, pluginId, ex);
                 return false;
             }
             finally
@@ -272,7 +333,7 @@ namespace DotCompute.Plugins.Loaders
                 {
                     // Store the scan result for this plugin
                     // Note: We'd need to add a dictionary to track these if needed
-                    _logger.LogWarning($"Vulnerabilities found in plugin {plugin.Manifest.Id}");
+                    LogVulnerabilitiesFound(_logger, plugin.Manifest.Id, null);
                 }
             }
 
@@ -311,7 +372,7 @@ namespace DotCompute.Plugins.Loaders
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to parse plugin manifest: {File}", file);
+                    LogFailedToParseManifest(_logger, file, ex);
                 }
                 
                 if (manifest != null)
@@ -334,7 +395,7 @@ namespace DotCompute.Plugins.Loaders
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogWarning(ex, "Failed to extract manifest from package: {Package}", packageFile);
+                    LogFailedToExtractManifest(_logger, packageFile, ex);
                 }
                 
                 if (manifest != null)
@@ -602,7 +663,7 @@ namespace DotCompute.Plugins.Loaders
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error disposing plugin: {PluginId}", plugin.Manifest.Id);
+                    LogErrorDisposingPlugin(_logger, plugin.Manifest.Id, ex);
                 }
             }
 
