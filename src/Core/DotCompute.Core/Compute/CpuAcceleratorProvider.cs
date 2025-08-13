@@ -258,6 +258,8 @@ internal class SimpleCpuAccelerator : IAccelerator
 
     public IMemoryManager Memory => _memoryManager;
 
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+
     public async ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,

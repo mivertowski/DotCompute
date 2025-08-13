@@ -295,6 +295,11 @@ public class ComputeEngineUnitTests : CoverageTestBase
             return Task.FromResult(_simulator.GetAllAccelerators().Cast<IAccelerator>());
         }
 
+        public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(_simulator.GetAllAccelerators().Cast<IAccelerator>());
+        }
+
         public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
         {
             return Task.FromResult(_simulator.GetAccelerators(type).Cast<IAccelerator>());

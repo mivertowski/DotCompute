@@ -77,6 +77,29 @@ public interface IAcceleratorManager : IAsyncDisposable
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>A task representing the async operation.</returns>
     public ValueTask RefreshAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets all available accelerators asynchronously.
+    /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the async operation that returns all available accelerators.</returns>
+    public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets accelerators of a specific type asynchronously.
+    /// </summary>
+    /// <param name="type">The type of accelerators to get.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the async operation that returns accelerators of the specified type.</returns>
+    public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the best accelerator for the specified type asynchronously.
+    /// </summary>
+    /// <param name="type">The preferred accelerator type, or null for any type.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>A task representing the async operation that returns the best matching accelerator, or null if none match.</returns>
+    public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default);
 }
 
 /// <summary>

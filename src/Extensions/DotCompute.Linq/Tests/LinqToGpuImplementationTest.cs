@@ -315,6 +315,7 @@ internal class MockAccelerator : IAccelerator
     
     public AcceleratorType Type => AcceleratorType.CUDA;
     public IMemoryManager Memory { get; } = new MockMemoryManager();
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
 
     public ValueTask<DotCompute.Abstractions.ICompiledKernel> CompileKernelAsync(
         DotCompute.Abstractions.KernelDefinition definition,

@@ -367,6 +367,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         public required AcceleratorInfo Info { get; init; }
         public AcceleratorType Type => (AcceleratorType)Enum.Parse(typeof(AcceleratorType), Info.DeviceType);
         public AbstractionsMemoryManager Memory { get; } = new MockMemoryManager();
+        public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
         public bool IsDisposed => false;
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(

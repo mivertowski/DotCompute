@@ -275,6 +275,7 @@ internal class MockCpuAccelerator : IAccelerator
     public AcceleratorInfo Info => _info;
     public AcceleratorType Type => AcceleratorType.CPU;
     public IMemoryManager Memory => _memory;
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
 
     public async ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,

@@ -1758,6 +1758,7 @@ internal sealed class MockAcceleratorForBufferPool : IAccelerator
     public AcceleratorType Type => AcceleratorType.Custom;
     
     public AbstractionsMemory.IMemoryManager Memory => new MockMemoryManager();
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
     public bool IsDisposed => false;
     
     public ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)

@@ -33,6 +33,9 @@ public sealed class CpuAccelerator : IAccelerator
     /// <inheritdoc/>
     public AcceleratorType Type => AcceleratorType.CPU;
 
+    /// <inheritdoc/>
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+
     public CpuAccelerator(
         IOptions<CpuAcceleratorOptions> options,
         IOptions<CpuThreadPoolOptions> threadPoolOptions,

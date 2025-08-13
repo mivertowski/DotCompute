@@ -101,6 +101,9 @@ public sealed class MetalAccelerator : IAccelerator
     public IMemoryManager Memory => _memoryManager;
 
     /// <inheritdoc/>
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+
+    /// <inheritdoc/>
     public async ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,

@@ -552,6 +552,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         public AcceleratorInfo Info { get; }
         public AcceleratorType Type => (AcceleratorType)Enum.Parse(typeof(AcceleratorType), Info.DeviceType);
         public IMemoryManager Memory { get; }
+        public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
         public bool IsDisposed { get; private set; }
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(

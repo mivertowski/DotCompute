@@ -402,6 +402,7 @@ internal sealed class MockAcceleratorForTest : IAccelerator
     public AcceleratorType Type => AcceleratorType.Custom;
     
     public AbstractionsMemory.IMemoryManager Memory { get; }
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
     public bool IsDisposed => false;
     
     public ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)

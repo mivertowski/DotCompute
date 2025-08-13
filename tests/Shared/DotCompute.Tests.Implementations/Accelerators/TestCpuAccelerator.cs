@@ -17,6 +17,8 @@ public class TestCpuAccelerator : IAccelerator
     private readonly ConcurrentDictionary<string, TestCompiledKernel> _compiledKernels;
     private bool _disposed;
 
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+
     public TestCpuAccelerator(string name = "Test CPU Accelerator")
     {
         Info = new AcceleratorInfo

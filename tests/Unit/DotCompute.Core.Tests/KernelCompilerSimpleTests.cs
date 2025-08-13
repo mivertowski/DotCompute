@@ -332,7 +332,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 {
     // Simple compute shader
 }";
-        return CreateKernelDefinitionWithCode(name, hlslCode, KernelLanguage.HLSL);
+        return CreateKernelDefinitionWithCode(name, hlslCode, DotCompute.Abstractions.KernelLanguage.HLSL);
     }
 
     private KernelDefinition CreateOpenCLKernelDefinition(string name)
@@ -342,21 +342,14 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
     int id = get_global_id(0);
     c[id] = a[id] + b[id];
 }";
-        return CreateKernelDefinitionWithCode(name, openclCode, KernelLanguage.OpenCL);
+        return CreateKernelDefinitionWithCode(name, openclCode, DotCompute.Abstractions.KernelLanguage.OpenCL);
     }
 
     private KernelDefinition CreateKernelDefinitionWithCode(string name, string code, DotCompute.Abstractions.KernelLanguage language)
     {
-        return new KernelDefinition(
-            name,
-            System.Text.Encoding.UTF8.GetBytes(code))
-        {
-            EntryPoint = "main",
-            Metadata = new Dictionary<string, object>
-            {
-                ["Language"] = language.ToString()
-            }
-        };
+        var source = new TextKernelSource(code, name, language, "main");
+        var options = new CompilationOptions();
+        return new KernelDefinition(name, source, options);
     }
 
     #endregion

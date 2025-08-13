@@ -377,6 +377,8 @@ internal sealed class NamedAcceleratorWrapper(string name, IAccelerator accelera
 
     public IMemoryManager Memory => _accelerator.Memory;
 
+    public AcceleratorContext Context => _accelerator.Context;
+
     public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = default,

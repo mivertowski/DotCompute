@@ -17,6 +17,9 @@ public interface IAccelerator : IAsyncDisposable
     /// <summary>Gets memory manager for this accelerator.</summary>
     public IMemoryManager Memory { get; }
 
+    /// <summary>Gets the accelerator context.</summary>
+    public AcceleratorContext Context { get; }
+
     /// <summary>Compiles a kernel for execution.</summary>
     public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,

@@ -492,16 +492,16 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                 {
                     Name = kernelName,
                     Binary = new byte[] { 0x01, 0x02, 0x03 }, // Dummy binary data
-                    Parameters = new DotCompute.Core.Kernels.KernelParameter[]
+                    Parameters = new DotCompute.Core.Execution.KernelParameter[]
                     {
-                        new DotCompute.Core.Kernels.KernelParameter 
+                        new DotCompute.Core.Execution.KernelParameter 
                         { 
                             Name = "input", 
                             Type = typeof(float), 
                             IsInput = true,
                             IsOutput = false
                         },
-                        new DotCompute.Core.Kernels.KernelParameter 
+                        new DotCompute.Core.Execution.KernelParameter 
                         { 
                             Name = "output", 
                             Type = typeof(float), 
@@ -558,20 +558,20 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
     private ModelParallelWorkload<T> CreateMockModelParallelWorkload<T>() where T : unmanaged
     {
         // Create actual ManagedCompiledKernel instances instead of mocking them
-        var kernel1 = new DotCompute.Core.Kernels.ManagedCompiledKernel
+        var kernel1 = new DotCompute.Core.Execution.ManagedCompiledKernel
         {
             Name = "linear_kernel",
             Binary = new byte[] { 0x01, 0x02, 0x03, 0x04 },
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
+            Parameters = new DotCompute.Core.Execution.KernelParameter[]
             {
-                new DotCompute.Core.Kernels.KernelParameter 
+                new DotCompute.Core.Execution.KernelParameter 
                 { 
                     Name = "input", 
                     Type = typeof(T), 
                     IsInput = true,
                     IsOutput = false
                 },
-                new DotCompute.Core.Kernels.KernelParameter 
+                new DotCompute.Core.Execution.KernelParameter 
                 { 
                     Name = "output", 
                     Type = typeof(T), 
@@ -584,20 +584,20 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
             SharedMemorySize = 1024
         };
 
-        var kernel2 = new DotCompute.Core.Kernels.ManagedCompiledKernel
+        var kernel2 = new DotCompute.Core.Execution.ManagedCompiledKernel
         {
             Name = "relu_kernel",
             Binary = new byte[] { 0x05, 0x06, 0x07, 0x08 },
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
+            Parameters = new DotCompute.Core.Execution.KernelParameter[]
             {
-                new DotCompute.Core.Kernels.KernelParameter 
+                new DotCompute.Core.Execution.KernelParameter 
                 { 
                     Name = "input", 
                     Type = typeof(T), 
                     IsInput = true,
                     IsOutput = false
                 },
-                new DotCompute.Core.Kernels.KernelParameter 
+                new DotCompute.Core.Execution.KernelParameter 
                 { 
                     Name = "output", 
                     Type = typeof(T), 

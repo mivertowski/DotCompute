@@ -529,6 +529,7 @@ public sealed class P2PBufferTests : IDisposable
         public AcceleratorInfo Info { get; }
         public AcceleratorType Type => (AcceleratorType)Enum.Parse(typeof(AcceleratorType), Info.DeviceType);
         public AbstractionsMemoryManager Memory { get; }
+        public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
         public bool IsDisposed { get; private set; }
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(

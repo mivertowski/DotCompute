@@ -380,6 +380,42 @@ public class StubAcceleratorManager : IAcceleratorManager
         return ValueTask.CompletedTask;
     }
 
+    public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
+    {
+        if (IsDisposed)
+            throw new ObjectDisposedException(nameof(StubAcceleratorManager));
+
+        return Task.FromResult<IEnumerable<IAccelerator>>(_accelerators.AsReadOnly());
+    }
+
+    public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
+    {
+        if (IsDisposed)
+            throw new ObjectDisposedException(nameof(StubAcceleratorManager));
+
+        var result = GetAcceleratorsByType(type);
+        return Task.FromResult(result);
+    }
+
+    public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default)
+    {
+        if (IsDisposed)
+            throw new ObjectDisposedException(nameof(StubAcceleratorManager));
+
+        IAccelerator? result;
+        if (type.HasValue)
+        {
+            var criteria = new AcceleratorSelectionCriteria { PreferredType = type.Value };
+            result = SelectBest(criteria);
+        }
+        else
+        {
+            result = _accelerators.FirstOrDefault();
+        }
+
+        return Task.FromResult(result);
+    }
+
     public ValueTask DisposeAsync()
     {
         if (!IsDisposed)

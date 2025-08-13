@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Plugins.Core;
@@ -244,6 +245,8 @@ internal sealed class NamedAcceleratorWrapper(string name, AbstractionsIAccelera
     public AbstractionsAcceleratorInfo Info => _accelerator.Info;
 
     public AbstractionsIMemoryManager Memory => _accelerator.Memory;
+
+    public AcceleratorContext Context => _accelerator.Context;
 
     public ValueTask<AbstractionsICompiledKernel> CompileKernelAsync(
         AbstractionsKernelDefinition definition,

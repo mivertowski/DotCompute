@@ -126,6 +126,7 @@ public class SimulatedAccelerator : IAccelerator
     public AcceleratorType Type { get; }
     public AcceleratorInfo Info { get; }
     public IMemoryManager Memory => _memoryManager;
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
     public long AvailableMemory => Info.TotalMemory - _memory.Values.Sum(m => m.Length);
     public bool IsAvailable => _failureMessage == null && !_disposed;
 

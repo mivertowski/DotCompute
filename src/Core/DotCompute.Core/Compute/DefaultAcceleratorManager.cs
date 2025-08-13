@@ -196,6 +196,48 @@ public class DefaultAcceleratorManager(ILogger<DefaultAcceleratorManager> logger
         await InitializeAsync(cancellationToken);
     }
 
+    public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_initialized)
+        {
+            throw new InvalidOperationException("AcceleratorManager must be initialized");
+        }
+
+        return Task.FromResult<IEnumerable<IAccelerator>>(_accelerators.AsReadOnly());
+    }
+
+    public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
+    {
+        if (!_initialized)
+        {
+            throw new InvalidOperationException("AcceleratorManager must be initialized");
+        }
+
+        var result = GetAcceleratorsByType(type);
+        return Task.FromResult(result);
+    }
+
+    public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default)
+    {
+        if (!_initialized)
+        {
+            throw new InvalidOperationException("AcceleratorManager must be initialized");
+        }
+
+        IAccelerator? result;
+        if (type.HasValue)
+        {
+            var criteria = new AcceleratorSelectionCriteria { PreferredType = type.Value };
+            result = SelectBest(criteria);
+        }
+        else
+        {
+            result = Default;
+        }
+
+        return Task.FromResult(result);
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_disposed)

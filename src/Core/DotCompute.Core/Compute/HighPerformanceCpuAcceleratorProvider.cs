@@ -129,6 +129,8 @@ internal class HighPerformanceCpuAccelerator : IAccelerator
     
     public IMemoryManager Memory => _memoryManager;
 
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+
     public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,

@@ -344,6 +344,42 @@ public class MockAcceleratorManager : IAcceleratorManager
         _isInitialized = false;
         await InitializeAsync(cancellationToken);
     }
+
+    public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
+    {
+        if (_isDisposed)
+            throw new ObjectDisposedException(nameof(MockAcceleratorManager));
+
+        return Task.FromResult<IEnumerable<IAccelerator>>(_accelerators.AsReadOnly());
+    }
+
+    public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
+    {
+        if (_isDisposed)
+            throw new ObjectDisposedException(nameof(MockAcceleratorManager));
+
+        var result = GetAcceleratorsByType(type);
+        return Task.FromResult(result);
+    }
+
+    public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default)
+    {
+        if (_isDisposed)
+            throw new ObjectDisposedException(nameof(MockAcceleratorManager));
+
+        IAccelerator? result;
+        if (type.HasValue)
+        {
+            var criteria = new DotCompute.Abstractions.AcceleratorSelectionCriteria { PreferredType = type.Value };
+            result = SelectBest(criteria);
+        }
+        else
+        {
+            result = _accelerators.FirstOrDefault();
+        }
+
+        return Task.FromResult(result);
+    }
     
     public async ValueTask DisposeAsync()
     {

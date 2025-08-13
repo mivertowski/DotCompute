@@ -16,6 +16,11 @@ public interface IBuffer<T> : IMemoryBuffer where T : unmanaged
     public int Length { get; }
 
     /// <summary>
+    /// Gets the number of elements in the buffer (alias for Length).
+    /// </summary>
+    public int ElementCount => Length;
+
+    /// <summary>
     /// Gets the accelerator this buffer is associated with.
     /// </summary>
     public IAccelerator Accelerator { get; }

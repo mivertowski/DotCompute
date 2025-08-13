@@ -35,6 +35,9 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
     /// <inheritdoc/>
     public IMemoryManager Memory => _memoryAdapter;
 
+    /// <inheritdoc/>
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+
     /// <summary>
     /// Gets the underlying CUDA device.
     /// </summary>

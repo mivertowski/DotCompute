@@ -307,6 +307,8 @@ public class MockAccelerator : IAccelerator
 
     public IMemoryManager Memory { get; } = new MockMemoryManager();
 
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+
     public bool IsDisposed => false;
 
     public async ValueTask<TResult> ExecuteAsync<TResult>(Func<ValueTask<TResult>> operation, CancellationToken cancellationToken = default)

@@ -214,6 +214,44 @@ public class TestAcceleratorManager : IAcceleratorManager
         await InitializeAsync(cancellationToken);
     }
 
+    public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
+    {
+        if (!_initialized)
+        {
+            throw new InvalidOperationException("Accelerator manager not initialized. Call InitializeAsync first.");
+        }
+        return Task.FromResult<IEnumerable<IAccelerator>>(_accelerators.AsEnumerable());
+    }
+
+    public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
+    {
+        if (!_initialized)
+        {
+            throw new InvalidOperationException("Accelerator manager not initialized. Call InitializeAsync first.");
+        }
+        var filtered = _accelerators.Where(a => a.Type == type);
+        return Task.FromResult<IEnumerable<IAccelerator>>(filtered);
+    }
+
+    public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? preferredType = null, CancellationToken cancellationToken = default)
+    {
+        if (!_initialized)
+        {
+            throw new InvalidOperationException("Accelerator manager not initialized. Call InitializeAsync first.");
+        }
+        
+        IAccelerator? best = null;
+        if (preferredType.HasValue)
+        {
+            best = _accelerators.FirstOrDefault(a => a.Type == preferredType.Value);
+        }
+        
+        // Fallback to any accelerator if no preferred type match or no preferred type specified
+        best ??= _accelerators.FirstOrDefault();
+        
+        return Task.FromResult(best);
+    }
+
     public async ValueTask DisposeAsync()
     {
         if (_disposed)
@@ -317,6 +355,7 @@ public class TestGpuAcceleratorProvider : IAcceleratorProvider
 public class TestGpuAccelerator : IAccelerator
 {
     public AcceleratorType Type => AcceleratorType.CUDA;
+    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
     private readonly IMemoryManager _memoryManager;
     private readonly ConcurrentDictionary<string, TestCompiledKernel> _compiledKernels;
     private bool _disposed;
