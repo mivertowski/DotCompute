@@ -129,7 +129,7 @@ public class ExpressionKernelGenerator
             AcceleratorType.CUDA => Core.Kernels.KernelLanguage.CUDA,
             AcceleratorType.OpenCL => Core.Kernels.KernelLanguage.OpenCL,
             AcceleratorType.Metal => Core.Kernels.KernelLanguage.Metal,
-            AcceleratorType.Vulkan => Core.Kernels.KernelLanguage.SPIRV,
+            AcceleratorType.CPU => Core.Kernels.KernelLanguage.CSharp,
             _ => Core.Kernels.KernelLanguage.CSharp
         };
     }
@@ -174,7 +174,7 @@ public class ExpressionKernelGenerator
         };
 
         // Add fusion metadata if available
-        var fusionMetadata = FusionMetadataStore.GetMetadata(expression.ToString());
+        var fusionMetadata = Expressions.FusionMetadataStore.Instance.GetMetadata(expression.ToString());
         if (fusionMetadata != null)
         {
             metadata["FusionData"] = fusionMetadata;

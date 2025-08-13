@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
@@ -499,7 +500,7 @@ public sealed class CudaGraphSupport : IDisposable
         };
 
         // Prepare kernel arguments
-        var argPointers = PrepareKernelArguments(operation.Arguments);
+        var argPointers = PrepareCudaKernelArguments(operation.Arguments);
         nodeParams.KernelParams = argPointers;
 
         var nodeHandle = IntPtr.Zero;
@@ -515,7 +516,7 @@ public sealed class CudaGraphSupport : IDisposable
         return nodeHandle;
     }
 
-    private IntPtr PrepareKernelArguments(KernelArguments arguments)
+    private IntPtr PrepareCudaKernelArguments(CudaKernelArguments arguments)
     {
         // Convert arguments to format suitable for graph nodes
         // This is a simplified version - production would need more sophisticated handling
@@ -714,7 +715,7 @@ public sealed class CudaGraphInstance : IDisposable
 public sealed class CudaKernelOperation
 {
     public CudaCompiledKernel Kernel { get; set; } = null!;
-    public KernelArguments Arguments { get; set; } = null!;
+    public CudaKernelArguments Arguments { get; set; } = null!;
     public CudaLaunchConfig LaunchConfig { get; set; }
 }
 
@@ -757,12 +758,12 @@ public sealed class CudaGraphUpdateParameters
 
 public sealed class CudaKernelFusionOptions
 {
-    private readonly Dictionary<CudaCompiledKernel, KernelArguments> _arguments = [];
+    private readonly Dictionary<CudaCompiledKernel, CudaKernelArguments> _arguments = [];
     private readonly Dictionary<CudaCompiledKernel, CudaLaunchConfig> _configs = [];
 
-    public KernelArguments GetArgumentsForKernel(CudaCompiledKernel kernel)
+    public CudaKernelArguments GetArgumentsForKernel(CudaCompiledKernel kernel)
     {
-        return _arguments.TryGetValue(kernel, out var args) ? args : new KernelArguments([]);
+        return _arguments.TryGetValue(kernel, out var args) ? args : new CudaKernelArguments([]);
     }
 
     public CudaLaunchConfig GetLaunchConfigForKernel(CudaCompiledKernel kernel)
@@ -770,7 +771,7 @@ public sealed class CudaKernelFusionOptions
         return _configs.TryGetValue(kernel, out var config) ? config : new CudaLaunchConfig(1, 1, 1, 256, 1, 1);
     }
 
-    public void SetKernelArguments(CudaCompiledKernel kernel, KernelArguments arguments)
+    public void SetCudaKernelArguments(CudaCompiledKernel kernel, CudaKernelArguments arguments)
     {
         _arguments[kernel] = arguments;
     }

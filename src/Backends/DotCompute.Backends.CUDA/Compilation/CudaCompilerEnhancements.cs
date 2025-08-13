@@ -128,7 +128,7 @@ public static class CudaCompilerEnhancements
     /// <summary>
     /// Prepares enhanced CUDA source code with architecture-specific optimizations.
     /// </summary>
-    public static async Task<string> PrepareEnhancedCudaSourceAsync(
+    internal static async Task<string> PrepareEnhancedCudaSourceAsync(
         KernelSource source, 
         CompilationOptions? options, 
         int deviceId)
@@ -352,15 +352,15 @@ public static class CudaCompilerEnhancements
             var supportedArchs = NvrtcInterop.GetSupportedArchitectures();
             if (supportedArchs.Contains(89)) // 8.9 for Ada
             {
-                return ComputeCapabilityExtensions.Common.Ada_89;
+                return ComputeCapabilityExtensions.KnownComputeCapabilities.Ada_89;
             }
             if (supportedArchs.Contains(86)) // 8.6 for RTX 30 series
             {
-                return ComputeCapabilityExtensions.Common.Ampere_86;
+                return ComputeCapabilityExtensions.KnownComputeCapabilities.Ampere_86;
             }
             if (supportedArchs.Contains(80)) // 8.0 for A100
             {
-                return ComputeCapabilityExtensions.Common.Ampere_80;
+                return ComputeCapabilityExtensions.KnownComputeCapabilities.Ampere_80;
             }
         }
         catch
@@ -369,7 +369,7 @@ public static class CudaCompilerEnhancements
         }
 
         // Safe default for modern development
-        return ComputeCapabilityExtensions.Common.Ampere_80;
+        return ComputeCapabilityExtensions.KnownComputeCapabilities.Ampere_80;
     }
 
     /// <summary>

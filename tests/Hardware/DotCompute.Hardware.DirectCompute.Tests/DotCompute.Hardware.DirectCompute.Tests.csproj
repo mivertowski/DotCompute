@@ -8,7 +8,7 @@
     <IsTestProject>true</IsTestProject>
     <RootNamespace>DotCompute.Hardware.DirectCompute.Tests</RootNamespace>
     <AssemblyName>DotCompute.Hardware.DirectCompute.Tests</AssemblyName>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>

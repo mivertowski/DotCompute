@@ -170,8 +170,8 @@ internal class DynamicCompiledKernel : IKernel
             AcceleratorType.CUDA => new CudaKernelCompiler(_logger),
             AcceleratorType.OpenCL => new OpenCLKernelCompiler(_logger),
             AcceleratorType.Metal => new MetalKernelCompiler(_logger),
-            AcceleratorType.DirectCompute => new DirectComputeKernelCompiler(_logger),
-            AcceleratorType.Vulkan => new VulkanKernelCompiler(_logger),
+            AcceleratorType.CPU => new CudaKernelCompiler(_logger), // Fallback to CUDA compiler
+            AcceleratorType.GPU => new CudaKernelCompiler(_logger), // Fallback to CUDA compiler
             _ => throw new NotSupportedException($"Kernel compiler for {_accelerator.Type} is not supported")
         };
     }

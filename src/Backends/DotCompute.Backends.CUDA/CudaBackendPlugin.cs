@@ -370,6 +370,8 @@ internal sealed class NamedAcceleratorWrapper(string name, IAccelerator accelera
     private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
 
     public string Name => _name;
+    
+    public AcceleratorType Type => _accelerator.Type;
 
     public AcceleratorInfo Info => _accelerator.Info;
 

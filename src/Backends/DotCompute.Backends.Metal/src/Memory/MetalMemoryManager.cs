@@ -167,6 +167,8 @@ internal sealed class MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryO
 
     public MemoryOptions Options { get; } = options;
 
+    public bool IsDisposed => _disposed > 0;
+
     public async ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
@@ -266,6 +268,28 @@ internal sealed class MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryO
         GC.SuppressFinalize(this);
     }
 
+    public void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            return;
+        }
+
+        try
+        {
+            // Dispose synchronously - simplified approach for sync dispose
+            if (Buffer != IntPtr.Zero)
+            {
+                MetalNative.ReleaseBuffer(Buffer);
+            }
+            _manager.OnMemoryFreed(this);
+        }
+        finally
+        {
+            GC.SuppressFinalize(this);
+        }
+    }
+
     ~MetalMemoryBuffer()
     {
         if (_disposed == 0 && Buffer != IntPtr.Zero)
@@ -289,6 +313,8 @@ internal sealed class MetalMemoryBufferView(MetalMemoryBuffer parent, long offse
 
     public MemoryOptions Options => _parent.Options;
 
+    public bool IsDisposed => _parent.IsDisposed;
+
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
@@ -300,4 +326,9 @@ internal sealed class MetalMemoryBufferView(MetalMemoryBuffer parent, long offse
         CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask; // Views don't own the underlying buffer
+
+    public void Dispose()
+    {
+        // Views don't own the underlying buffer, so nothing to dispose
+    }
 }

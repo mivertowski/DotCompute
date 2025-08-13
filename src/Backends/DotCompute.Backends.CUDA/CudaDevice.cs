@@ -15,7 +15,7 @@ namespace DotCompute.Backends.CUDA;
 /// </summary>
 public sealed class CudaDevice : IDisposable
 {
-    private readonly ILogger<CudaDevice> _logger;
+    private readonly ILogger _logger;
     private readonly int _deviceId;
     private readonly CudaDeviceProperties _deviceProperties;
     private readonly Dictionary<string, object> _capabilities;
@@ -169,14 +169,14 @@ public sealed class CudaDevice : IDisposable
     /// <param name="logger">Optional logger instance.</param>
     /// <exception cref="ArgumentOutOfRangeException">Thrown when deviceId is negative.</exception>
     /// <exception cref="InvalidOperationException">Thrown when device properties cannot be retrieved.</exception>
-    public CudaDevice(int deviceId, ILogger<CudaDevice>? logger = null)
+    public CudaDevice(int deviceId, ILogger? logger = null)
     {
         if (deviceId < 0)
         {
             throw new ArgumentOutOfRangeException(nameof(deviceId), "Device ID must be non-negative");
         }
 
-        _logger = logger ?? NullLogger<CudaDevice>.Instance;
+        _logger = logger ?? NullLogger.Instance;
         _deviceId = deviceId;
         
         // Query device properties using P/Invoke
@@ -229,7 +229,7 @@ public sealed class CudaDevice : IDisposable
     /// </summary>
     /// <param name="logger">Optional logger instance.</param>
     /// <returns>An enumerable of detected CudaDevice instances.</returns>
-    public static IEnumerable<CudaDevice> DetectAll(ILogger<CudaDevice>? logger = null)
+    public static IEnumerable<CudaDevice> DetectAll(ILogger? logger = null)
     {
         var devices = new List<CudaDevice>();
 

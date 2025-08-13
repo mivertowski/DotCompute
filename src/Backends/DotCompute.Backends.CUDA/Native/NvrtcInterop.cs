@@ -485,7 +485,7 @@ public static class ComputeCapabilityExtensions
     /// <summary>
     /// Common compute capabilities with latest GPU generations.
     /// </summary>
-    public static class Common
+    public static class KnownComputeCapabilities
     {
         // Legacy generations
         public static readonly (int major, int minor) Fermi = (2, 0);

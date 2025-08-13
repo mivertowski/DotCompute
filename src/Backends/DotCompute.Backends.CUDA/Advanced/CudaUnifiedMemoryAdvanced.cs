@@ -3,6 +3,7 @@
 
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Memory;
+using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Advanced;
@@ -45,11 +46,11 @@ public sealed class CudaUnifiedMemoryAdvanced : IDisposable
     {
         if (!IsSupported)
         {
-            return new CudaOptimizationResult
+            return await Task.FromResult(new CudaOptimizationResult
             {
                 Success = false,
                 ErrorMessage = "Unified Memory not supported on this device"
-            };
+            });
         }
 
         try
@@ -68,28 +69,28 @@ public sealed class CudaUnifiedMemoryAdvanced : IDisposable
 
                 _metrics.PageFaults = (ulong)(unifiedBuffers.Count * 10); // Estimate
                 
-                return new CudaOptimizationResult
+                return await Task.FromResult(new CudaOptimizationResult
                 {
                     Success = true,
                     OptimizationsApplied = ["Unified Memory access patterns optimized"],
                     PerformanceGain = 1.2
-                };
+                });
             }
 
-            return new CudaOptimizationResult
+            return await Task.FromResult(new CudaOptimizationResult
             {
                 Success = false,
                 ErrorMessage = "No unified memory buffers found"
-            };
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error optimizing unified memory access");
-            return new CudaOptimizationResult
+            return await Task.FromResult(new CudaOptimizationResult
             {
                 Success = false,
                 ErrorMessage = ex.Message
-            };
+            });
         }
     }
 
@@ -121,7 +122,7 @@ public sealed class CudaUnifiedMemoryAdvanced : IDisposable
     /// <summary>
     /// Sets optimal memory advice for a unified memory buffer
     /// </summary>
-    public async Task<bool> SetOptimalAdviceAsync(
+    public Task<bool> SetOptimalAdviceAsync(
         CudaUnifiedMemoryBuffer buffer,
         CudaMemoryUsageHint usageHint,
         CancellationToken cancellationToken = default)
@@ -129,19 +130,19 @@ public sealed class CudaUnifiedMemoryAdvanced : IDisposable
         try
         {
             var advice = ConvertToAdvice(usageHint);
-            var result = CudaRuntime.cudaMemAdvise(
+            var result = Native.CudaRuntime.cudaMemAdvise(
                 buffer.DevicePointer, 
-                buffer.SizeInBytes, 
+                (ulong)buffer.SizeInBytes, 
                 advice, 
                 _context.DeviceId);
             
-            CudaRuntime.CheckError(result, "setting memory advice");
-            return true;
+            Native.CudaRuntime.CheckError(result, "setting memory advice");
+            return Task.FromResult(true);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error setting memory advice");
-            return false;
+            return Task.FromResult(false);
         }
     }
 
@@ -197,13 +198,13 @@ public sealed class CudaUnifiedMemoryAdvanced : IDisposable
         {
             _context.MakeCurrent();
             
-            var result = CudaRuntime.cudaMemPrefetchAsync(
+            var result = Native.CudaRuntime.cudaMemPrefetchAsync(
                 buffer.DevicePointer,
-                buffer.SizeInBytes,
+                (ulong)buffer.SizeInBytes,
                 targetDevice,
                 IntPtr.Zero);
             
-            CudaRuntime.CheckError(result, "prefetching unified memory");
+            Native.CudaRuntime.CheckError(result, "prefetching unified memory");
             
             await Task.Delay(1, cancellationToken); // Simulate async operation
         }

@@ -258,6 +258,27 @@ public class CompilationOptions
 
     /// <summary>Gets or sets whether to enable loop unrolling.</summary>
     public bool UnrollLoops { get; init; }
+    
+    /// <summary>Gets or sets preferred block size for GPU kernels.</summary>
+    public Dim3 PreferredBlockSize { get; init; } = new(256, 1, 1);
+    
+    /// <summary>Gets or sets shared memory size for GPU kernels.</summary>
+    public long SharedMemorySize { get; init; }
+    
+    /// <summary>Gets or sets maximum threads per block.</summary>
+    public int MaxThreadsPerBlock { get; init; } = 1024;
+    
+    /// <summary>Gets or sets whether to enable memory coalescing optimization.</summary>
+    public bool EnableMemoryCoalescing { get; init; } = true;
+    
+    /// <summary>Gets or sets whether to enable operator fusion.</summary>
+    public bool EnableOperatorFusion { get; init; } = true;
+    
+    /// <summary>Gets or sets whether to enable parallel execution.</summary>
+    public bool EnableParallelExecution { get; init; } = true;
+    
+    /// <summary>Gets or sets whether to generate debug information.</summary>
+    public bool GenerateDebugInfo { get; init; }
 }
 
 /// <summary>

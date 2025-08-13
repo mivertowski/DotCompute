@@ -15,13 +15,14 @@ namespace DotCompute.Linq.Compilation;
 /// <summary>
 /// Compiles LINQ expression trees into GPU kernels with support for expression fusion and optimization.
 /// </summary>
-public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
+public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, IDisposable
 {
     private readonly IKernelFactory _kernelFactory;
     private readonly IExpressionOptimizer _optimizer;
     private readonly ILogger<ExpressionToKernelCompiler> _logger;
     private readonly Dictionary<string, KernelTemplate> _templateCache;
     private readonly SemaphoreSlim _compilationSemaphore;
+    private bool _disposed;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ExpressionToKernelCompiler"/> class.
@@ -115,7 +116,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         };
     }
 
-    private async Task<Operators.IKernel> CompileFusedExpressionAsync(
+    private Task<Operators.IKernel> CompileFusedExpressionAsync(
         Expression expression,
         IAccelerator accelerator,
         FusionContext fusionContext,
@@ -136,10 +137,10 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         if (_kernelFactory is DefaultKernelFactory enhancedFactory)
         {
             var context = CreateGenerationContext(accelerator, options, fusionContext.Metadata);
-            return enhancedFactory.CreateKernelFromExpression(accelerator, expression, context);
+            return Task.FromResult(enhancedFactory.CreateKernelFromExpression(accelerator, expression, context));
         }
         
-        return _kernelFactory.CreateKernel(accelerator, definition);
+        return Task.FromResult(_kernelFactory.CreateKernel(accelerator, definition));
     }
 
     private async Task<Operators.IKernel> CompileSimpleExpressionAsync(
@@ -173,7 +174,19 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         return _kernelFactory.CreateKernel(accelerator, definition);
     }
 
-    private ExpressionAnalysisResult AnalyzeExpression(Expression expression)
+    /// <summary>
+    /// Disposes the compiler and releases resources.
+    /// </summary>
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _compilationSemaphore?.Dispose();
+            _disposed = true;
+        }
+    }
+
+    private static ExpressionAnalysisResult AnalyzeExpression(Expression expression)
     {
         var visitor = new ExpressionAnalysisVisitor();
         visitor.Visit(expression);
@@ -184,7 +197,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
     {
         // Check if expression has fusion metadata
         var key = expression.ToString();
-        var metadata = FusionMetadataStore.GetMetadata(key);
+        var metadata = FusionMetadataStore.Instance.GetMetadata(key);
         
         if (metadata != null)
         {
@@ -193,7 +206,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
             
             return new FusionContext
             {
-                FusedOperations = operations.ToList(),
+                FusedOperations = operations,
                 FusionType = fusionType,
                 Metadata = metadata,
                 EstimatedSpeedup = (double)(metadata.GetValueOrDefault("EstimatedSpeedup", 1.2))
@@ -211,19 +224,19 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         var parameterTypes = ExtractParameterTypes(expression);
         var outputType = expression.Type;
         
-        var parameters = new List<KernelParameter>();
+        var parameters = new List<Operators.KernelParameter>();
         
         // Add input parameters
         for (int i = 0; i < parameterTypes.Count; i++)
         {
-            parameters.Add(new KernelParameter($"input_{i}", parameterTypes[i], ParameterDirection.In));
+            parameters.Add(new Operators.KernelParameter($"input_{i}", parameterTypes[i], ParameterDirection.In));
         }
         
         // Add output parameter
-        parameters.Add(new KernelParameter("output", outputType, ParameterDirection.Out));
+        parameters.Add(new Operators.KernelParameter("output", outputType, ParameterDirection.Out));
         
         // Add size parameter
-        parameters.Add(new KernelParameter("size", typeof(int), ParameterDirection.In));
+        parameters.Add(new Operators.KernelParameter("size", typeof(int), ParameterDirection.In));
         
         return new Operators.KernelDefinition
         {
@@ -239,19 +252,19 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
         };
     }
 
-    private Operators.KernelDefinition CreateKernelDefinition(ExpressionAnalysisResult analysis, Expression expression)
+    private static Operators.KernelDefinition CreateKernelDefinition(ExpressionAnalysisResult analysis, Expression expression)
     {
         var name = $"expression_kernel_{expression.NodeType.ToString().ToLowerInvariant()}_{Guid.NewGuid():N}";
-        var parameters = new List<KernelParameter>();
+        var parameters = new List<Operators.KernelParameter>();
         
         // Add parameters based on analysis
         foreach (var paramType in analysis.ParameterTypes)
         {
-            parameters.Add(new KernelParameter($"param_{parameters.Count}", paramType, ParameterDirection.In));
+            parameters.Add(new Operators.KernelParameter($"param_{parameters.Count}", paramType, ParameterDirection.In));
         }
         
         // Add output parameter
-        parameters.Add(new KernelParameter("output", analysis.OutputType, ParameterDirection.Out));
+        parameters.Add(new Operators.KernelParameter("output", analysis.OutputType, ParameterDirection.Out));
         
         return new Operators.KernelDefinition
         {
@@ -277,7 +290,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler
             DeviceInfo = accelerator.Info,
             UseSharedMemory = options.EnableMemoryCoalescing,
             UseVectorTypes = true,
-            Precision = PrecisionMode.Single,
+            Precision = Operators.PrecisionMode.Single,
             WorkGroupDimensions = new[] { options.MaxThreadsPerBlock, 1, 1 },
             Metadata = new Dictionary<string, object>
             {
@@ -430,22 +443,28 @@ public interface IExpressionToKernelCompiler
 /// <summary>
 /// Represents analysis results for an expression.
 /// </summary>
-public class ExpressionAnalysisResult
+public sealed class ExpressionAnalysisResult
 {
-    public bool IsCompilable { get; init; }
-    public List<string> SupportedOperations { get; init; } = new();
-    public List<Type> ParameterTypes { get; init; } = new();
-    public Type OutputType { get; init; } = typeof(object);
-    public int ComplexityScore { get; init; }
+    private readonly List<string> _supportedOperations = new();
+    private readonly List<Type> _parameterTypes = new();
+    
+    public bool IsCompilable { get; set; }
+    public IReadOnlyList<string> SupportedOperations => _supportedOperations;
+    public IReadOnlyList<Type> ParameterTypes => _parameterTypes;
+    public Type OutputType { get; set; } = typeof(object);
+    public int ComplexityScore { get; set; }
     public Dictionary<string, object> Metadata { get; init; } = new();
+    
+    internal List<string> SupportedOperationsInternal => _supportedOperations;
+    internal List<Type> ParameterTypesInternal => _parameterTypes;
 }
 
 /// <summary>
 /// Represents fusion context for multiple operations.
 /// </summary>
-public class FusionContext
+public sealed class FusionContext
 {
-    public List<string> FusedOperations { get; init; } = new();
+    public IReadOnlyList<string> FusedOperations { get; init; } = new List<string>();
     public string FusionType { get; init; } = string.Empty;
     public Dictionary<string, object> Metadata { get; init; } = new();
     public double EstimatedSpeedup { get; init; } = 1.0;
@@ -454,7 +473,7 @@ public class FusionContext
 /// <summary>
 /// Represents resource estimation for expression compilation.
 /// </summary>
-public class ExpressionResourceEstimate
+public sealed class ExpressionResourceEstimate
 {
     public long EstimatedMemoryUsage { get; init; }
     public TimeSpan EstimatedCompilationTime { get; init; }
@@ -466,7 +485,7 @@ public class ExpressionResourceEstimate
 /// <summary>
 /// Template for generating kernels from similar expressions.
 /// </summary>
-public class KernelTemplate
+public sealed class KernelTemplate
 {
     public string Name { get; init; } = string.Empty;
     public Func<Expression, Operators.KernelDefinition> CreateDefinition { get; init; } = _ => new Operators.KernelDefinition();
@@ -493,14 +512,14 @@ internal class ExpressionAnalysisVisitor : ExpressionVisitor
         
         if (IsLinqMethod(node))
         {
-            _result.SupportedOperations.Add(node.Method.Name);
+            _result.SupportedOperationsInternal.Add(node.Method.Name);
         }
         else
         {
             // Check if it's a supported math operation
             if (IsMathMethod(node))
             {
-                _result.SupportedOperations.Add($"Math.{node.Method.Name}");
+                _result.SupportedOperationsInternal.Add($"Math.{node.Method.Name}");
             }
             else
             {
@@ -516,7 +535,7 @@ internal class ExpressionAnalysisVisitor : ExpressionVisitor
     protected override Expression VisitBinary(BinaryExpression node)
     {
         _complexityScore++;
-        _result.SupportedOperations.Add(node.NodeType.ToString());
+        _result.SupportedOperationsInternal.Add(node.NodeType.ToString());
         return base.VisitBinary(node);
     }
 
@@ -524,7 +543,7 @@ internal class ExpressionAnalysisVisitor : ExpressionVisitor
     {
         if (!_result.ParameterTypes.Contains(node.Type))
         {
-            _result.ParameterTypes.Add(node.Type);
+            _result.ParameterTypesInternal.Add(node.Type);
         }
         return base.VisitParameter(node);
     }

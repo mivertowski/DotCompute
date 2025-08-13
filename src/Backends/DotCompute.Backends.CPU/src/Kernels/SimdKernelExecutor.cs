@@ -13,7 +13,7 @@ namespace DotCompute.Backends.CPU.Kernels;
 /// <summary>
 /// High-performance SIMD kernel executor with hardware-specific optimizations.
 /// </summary>
-public sealed class SimdKernelExecutor
+public sealed class HardwareSimdKernelExecutor
 {
     private readonly SimdSummary _simdCapabilities;
     private readonly int _preferredVectorWidth;
@@ -21,7 +21,7 @@ public sealed class SimdKernelExecutor
     private readonly bool _supportsAvx2;
     private readonly bool _supportsFma;
 
-    public SimdKernelExecutor(SimdSummary simdCapabilities)
+    public HardwareSimdKernelExecutor(SimdSummary simdCapabilities)
     {
         _simdCapabilities = simdCapabilities ?? throw new ArgumentNullException(nameof(simdCapabilities));
         _preferredVectorWidth = simdCapabilities.PreferredVectorWidth;
@@ -542,7 +542,7 @@ public sealed class SimdKernelExecutor
 /// <summary>
 /// Unary operations supported by the SIMD kernel executor.
 /// </summary>
-internal enum UnaryOperation
+public enum UnaryOperation
 {
     Copy,
     Sqrt,

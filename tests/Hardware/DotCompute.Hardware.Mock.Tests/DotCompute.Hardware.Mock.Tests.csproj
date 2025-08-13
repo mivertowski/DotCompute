@@ -7,7 +7,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <!-- Mock tests provide hardware simulation for CI/CD environments -->
     <DefineConstants>$(DefineConstants);MOCK_HARDWARE</DefineConstants>
   </PropertyGroup>

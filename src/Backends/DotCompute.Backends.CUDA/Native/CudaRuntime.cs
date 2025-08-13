@@ -3,6 +3,7 @@
 
 using System.Runtime.InteropServices;
 using System.Text;
+using DotCompute.Backends.CUDA.Native;
 
 namespace DotCompute.Backends.CUDA.Native;
 
@@ -218,18 +219,6 @@ public static class CudaRuntime
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cudaEventElapsedTime(ref float ms, IntPtr start, IntPtr end);
 
-    // Unified Memory Management
-    [DllImport(CUDA_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaMallocManaged(ref IntPtr devPtr, ulong size, uint flags = 0);
-
-    [DllImport(CUDA_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaMemPrefetchAsync(IntPtr devPtr, ulong count, int dstDevice, IntPtr stream);
-
-    [DllImport(CUDA_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern CudaError cudaMemAdvise(IntPtr devPtr, ulong count, CudaMemoryAdvise advice, int device);
 
     // Peer-to-Peer Memory Access
     [DllImport(CUDA_LIBRARY)]
@@ -611,148 +600,8 @@ public class CudaException : Exception
     }
 }
 
-/// <summary>
-/// P/Invoke wrapper for NVRTC (NVIDIA Runtime Compilation) API
-/// </summary>
-public static class NvrtcRuntime
-{
-    private const string NVRTC_LIBRARY = "nvrtc";
 
-    // NVRTC Core Functions
-    [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcVersion(out int major, out int minor);
 
-    [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetSupportedArchs(out int[] supportedArchs);
-
-    [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - Explicit marshaling is already specified
-    internal static extern NvrtcResult nvrtcCreateProgram(
-        out IntPtr prog,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string src,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string? name,
-        int numHeaders,
-        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPUTF8Str)] string[]? headers,
-        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPUTF8Str)] string[]? includeNames);
-#pragma warning restore CA2101
-
-    [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcDestroyProgram(ref IntPtr prog);
-
-    [DllImport(NVRTC_LIBRARY, CharSet = CharSet.Ansi)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcCompileProgram(
-        IntPtr prog,
-        int numOptions,
-        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPUTF8Str)] string[]? options);
-
-    [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetPTXSize(IntPtr prog, out IntPtr ptxSizeRet);
-
-    [DllImport(NVRTC_LIBRARY, CharSet = CharSet.Ansi)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-#pragma warning disable CA1838 // Avoid 'StringBuilder' parameters for P/Invokes - Performance optimization is handled by the caller
-#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is implicit
-    internal static extern NvrtcResult nvrtcGetPTX(IntPtr prog, [Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder ptx);
-#pragma warning restore CA2101
-#pragma warning restore CA1838
-
-    [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetCUBINSize(IntPtr prog, out IntPtr cubinSizeRet);
-
-    [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetCUBIN(IntPtr prog, [Out] byte[] cubin);
-
-    [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern NvrtcResult nvrtcGetProgramLogSize(IntPtr prog, out IntPtr logSizeRet);
-
-    [DllImport(NVRTC_LIBRARY, CharSet = CharSet.Ansi)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-#pragma warning disable CA1838 // Avoid 'StringBuilder' parameters for P/Invokes - Performance optimization is handled by the caller
-#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is implicit
-    internal static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, [Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder log);
-#pragma warning restore CA2101
-#pragma warning restore CA1838
-
-    [DllImport(NVRTC_LIBRARY)]
-    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    internal static extern IntPtr nvrtcGetErrorString(NvrtcResult result);
-
-    // Helper Methods
-    public static string GetErrorString(NvrtcResult result)
-    {
-        var ptr = nvrtcGetErrorString(result);
-        return Marshal.PtrToStringAnsi(ptr) ?? result.ToString();
-    }
-
-    public static void CheckResult(NvrtcResult result, string operation = "")
-    {
-        if (result != NvrtcResult.Success)
-        {
-            var message = string.IsNullOrEmpty(operation)
-                ? $"NVRTC error: {GetErrorString(result)}"
-                : $"NVRTC error during {operation}: {GetErrorString(result)}";
-            throw new NvrtcException(message, result);
-        }
-    }
-}
-
-/// <summary>
-/// NVRTC result codes
-/// </summary>
-public enum NvrtcResult
-{
-    Success = 0,
-    OutOfMemory = 1,
-    ProgramCreationFailure = 2,
-    InvalidInput = 3,
-    InvalidProgram = 4,
-    InvalidOption = 5,
-    Compilation = 6,
-    BuiltinOperationFailure = 7,
-    NoLoweredNamesBeforeCompilation = 8,
-    NoNameExpressionsAfterCompilation = 9,
-    CompilationFailure = 10,
-    InternalError = 11
-}
-
-/// <summary>
-/// NVRTC compilation exception
-/// </summary>
-public class NvrtcException : Exception
-{
-    public NvrtcResult ResultCode { get; }
-
-    public NvrtcException() : base()
-    {
-    }
-
-    public NvrtcException(string message) : base(message)
-    {
-    }
-
-    public NvrtcException(string message, Exception innerException) : base(message, innerException)
-    {
-    }
-
-    public NvrtcException(string message, NvrtcResult resultCode) : base(message)
-    {
-        ResultCode = resultCode;
-    }
-
-    public NvrtcException(string message, NvrtcResult resultCode, Exception innerException) : base(message, innerException)
-    {
-        ResultCode = resultCode;
-    }
-}
 
 /// <summary>
 /// CUDA compute capability helper
@@ -774,7 +623,7 @@ public static class ComputeCapability
     // Common compute capabilities
 #pragma warning disable CA1724 // Type names should not match namespaces - Common is a descriptive nested class name in this context
 #pragma warning disable CA1034 // Nested types should not be visible - Common is appropriately nested within ComputeCapability
-    public static class Common
+    public static class KnownCapabilities
     {
         public static readonly (int major, int minor) Kepler = (3, 5);
         public static readonly (int major, int minor) Maxwell = (5, 0);
@@ -789,27 +638,3 @@ public static class ComputeCapability
 #pragma warning restore CA1724
 }
 
-/// <summary>
-/// Compilation exception for kernel compilation failures
-/// </summary>
-public class KernelCompilationException : Exception
-{
-    public string? CompilerLog { get; }
-
-    public KernelCompilationException(string message) : base(message) { }
-
-    public KernelCompilationException(string message, Exception innerException) : base(message, innerException) { }
-
-    public KernelCompilationException(string message, string? compilerLog) : base(message)
-    {
-        CompilerLog = compilerLog;
-    }
-
-    public KernelCompilationException(string message, string? compilerLog, Exception innerException) : base(message, innerException)
-    {
-        CompilerLog = compilerLog;
-    }
-    public KernelCompilationException()
-    {
-    }
-}

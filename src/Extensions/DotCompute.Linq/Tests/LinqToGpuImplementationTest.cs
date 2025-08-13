@@ -106,7 +106,7 @@ public class LinqToGpuImplementationTest
     {
         _logger.LogInformation("Testing expression optimization");
         
-        var options = new CompilationOptions
+        var options = new Compilation.CompilationOptions
         {
             EnableOperatorFusion = true,
             EnableMemoryCoalescing = true,
@@ -190,7 +190,7 @@ public class LinqToGpuImplementationTest
         // Create execution context
         var accelerator = new MockAccelerator();
         var plan = CreateMockComputePlan(expression);
-        var context = new ExecutionContext(accelerator, plan);
+        var context = new Execution.ExecutionContext(accelerator, plan);
         
         // Add test data
         context.Parameters["input_data"] = Enumerable.Range(1, 1000).ToArray();
@@ -305,10 +305,12 @@ internal class MockAccelerator : IAccelerator
     {
         Id = "mock_gpu_0",
         Name = "Mock GPU Accelerator",
-        Type = AcceleratorType.CUDA,
-        MemorySize = 8L * 1024 * 1024 * 1024, // 8GB
-        MaxThreadsPerBlock = 1024,
-        MultiProcessorCount = 68
+        DeviceType = AcceleratorType.CUDA.ToString(),
+        Vendor = "Mock",
+        DriverVersion = "1.0",
+        TotalMemory = 8L * 1024 * 1024 * 1024, // 8GB
+        MaxThreadsPerBlock = 1024
+        // Note: MultiProcessorCount is not available in AcceleratorInfo
     };
     
     public AcceleratorType Type => AcceleratorType.CUDA;
@@ -343,7 +345,7 @@ internal class MockMemoryManager : IMemoryManager
         return ValueTask.FromResult<IMemoryBuffer>(new MockMemoryBuffer(sizeInBytes));
     }
 
-    public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> data, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+    public unsafe ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> data, DotCompute.Abstractions.MemoryOptions options = DotCompute.Abstractions.MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
     {
         var buffer = new MockMemoryBuffer(data.Length * sizeof(T));
         return ValueTask.FromResult<IMemoryBuffer>(buffer);

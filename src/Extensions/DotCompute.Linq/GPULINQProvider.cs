@@ -137,7 +137,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
         _kernelManager = new KernelManager(kernelLogger);
         
         // Initialize expression compilation pipeline
-        _optimizer = new ExpressionOptimizer(logger);
+        _optimizer = new Expressions.ExpressionOptimizer(new LoggerWrapper<Expressions.ExpressionOptimizer>(logger));
         var kernelFactory = new DefaultKernelFactory(new KernelFactoryLoggerWrapper(logger));
         _expressionCompiler = new ExpressionToKernelCompiler(kernelFactory, _optimizer, 
             new ExpressionCompilerLoggerWrapper(logger));
@@ -169,6 +169,17 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
         ArgumentNullException.ThrowIfNull(expression);
         
         var elementType = GetElementType(expression.Type);
+        // AOT-compatible generic type creation
+        if (elementType == typeof(int))
+            return new GPUQueryable<int>(this, expression);
+        if (elementType == typeof(float))
+            return new GPUQueryable<float>(this, expression);
+        if (elementType == typeof(double))
+            return new GPUQueryable<double>(this, expression);
+        if (elementType == typeof(long))
+            return new GPUQueryable<long>(this, expression);
+        
+        // Fallback for other types
         var queryableType = typeof(GPUQueryable<>).MakeGenericType(elementType);
         return (IQueryable)Activator.CreateInstance(queryableType, this, expression)!;
     }
@@ -194,7 +205,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
                 return task.Result;
             }
             // Use ConfigureAwait(false) to avoid deadlocks in sync context
-            return task.GetAwaiter().GetResult();
+            return task.ConfigureAwait(false).GetAwaiter().GetResult();
         }
         catch (Exception ex)
         {
@@ -249,7 +260,7 @@ public sealed partial class GPULINQProvider : IQueryProvider, IDisposable
                 estimate.EstimatedMemoryUsage, estimate.EstimatedCompilationTime);
 
             // Compile expression to kernel
-            var compilationOptions = new CompilationOptions
+            var compilationOptions = new Compilation.CompilationOptions
             {
                 EnableOperatorFusion = true,
                 EnableMemoryCoalescing = true,
@@ -677,17 +688,46 @@ internal class ParameterExtractor : ExpressionVisitor
         var paramName = node.Name ?? $"param_{_parameterIndex++}";
         if (!_parameters.ContainsKey(paramName))
         {
-            _parameters[paramName] = CreateDefaultValue(node.Type);
+            _parameters[paramName] = CreateDefaultValueAotCompatible(node.Type) ?? new object();
         }
         return base.VisitParameter(node);
     }
 
-    [RequiresDynamicCode("Activator.CreateInstance requires dynamic code")]
-    [RequiresUnreferencedCode("Creating instances may require unreferenced code")]
-    private static object? CreateDefaultValue(Type type)
+    private static object? CreateDefaultValueAotCompatible(Type type)
     {
-        return type.IsValueType ? Activator.CreateInstance(type) : null;
+        if (type == typeof(int)) return 0;
+        if (type == typeof(long)) return 0L;
+        if (type == typeof(float)) return 0.0f;
+        if (type == typeof(double)) return 0.0;
+        if (type == typeof(bool)) return false;
+        if (type == typeof(byte)) return (byte)0;
+        if (type == typeof(short)) return (short)0;
+        if (type == typeof(uint)) return 0U;
+        if (type == typeof(ulong)) return 0UL;
+        if (type == typeof(ushort)) return (ushort)0;
+        if (type == typeof(char)) return '\0';
+        if (type == typeof(decimal)) return 0m;
+        return null;
     }
+
+}
+
+/// <summary>
+/// Simple logger wrapper to adapt ILogger to different generic types.
+/// </summary>
+public class LoggerWrapper<T> : ILogger<T>
+{
+    private readonly ILogger _baseLogger;
+
+    public LoggerWrapper(ILogger baseLogger)
+    {
+        _baseLogger = baseLogger;
+    }
+
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => _baseLogger.BeginScope(state);
+    public bool IsEnabled(LogLevel logLevel) => _baseLogger.IsEnabled(logLevel);
+    public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
+        => _baseLogger.Log(logLevel, eventId, state, exception, formatter);
 }
 
 /// <summary>
@@ -703,7 +743,7 @@ internal class DataSizeEstimator : ExpressionVisitor
         {
             EstimatedSize = Math.Max(EstimatedSize, array.Length);
         }
-        else if (node.Value is ICollection collection)
+        else if (node.Value is System.Collections.ICollection collection)
         {
             EstimatedSize = Math.Max(EstimatedSize, collection.Count);
         }

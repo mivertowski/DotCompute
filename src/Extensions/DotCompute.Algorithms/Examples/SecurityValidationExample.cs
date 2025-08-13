@@ -478,6 +478,7 @@ public static class SecurityValidationExample
             "1.0.0", 
             1024 * 1024 * 1024); // 1GB
 
+        public AcceleratorType Type => AcceleratorType.CPU;
         public IMemoryManager Memory { get; } = new MockMemoryManager();
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(

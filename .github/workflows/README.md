@@ -4,16 +4,28 @@ This directory contains all GitHub Actions workflows for the DotCompute project.
 
 ## Workflows Overview
 
-### 🚀 Main CI/CD Pipeline (`main.yml`)
+### 🚀 Alpha Release Pipeline (`alpha-release.yml`) - NEW
+- **Triggers**: Push to main/develop, PRs, tags, manual dispatch
+- **Purpose**: Optimized pipeline for v0.1.0-alpha.1 release
+- **Features**:
+  - Multi-platform builds (Linux, Windows, macOS) with .NET 9.0
+  - Comprehensive test coverage with Coverlet (80% threshold)
+  - Codecov integration for coverage reports
+  - NuGet package creation with GitVersion
+  - Optional CUDA testing (graceful degradation)
+  - Security validation and readiness assessment
+  - Alpha release status reporting
+
+### 🔧 Main CI/CD Pipeline (`ci.yml`) - EXISTING
 - **Triggers**: Push to main/develop, PRs, manual dispatch
-- **Purpose**: Primary build, test, and release pipeline
+- **Purpose**: Comprehensive CI/CD with advanced features
 - **Features**:
   - Multi-platform builds (Linux, Windows, macOS)
-  - Comprehensive testing with coverage
-  - Security scanning
-  - NuGet package creation
-  - Release automation
-  - Performance benchmarks
+  - GitVersion integration
+  - AOT validation
+  - CodeQL security scanning
+  - Quality gates and automated releases
+  - Documentation deployment
 
 ### 🌙 Nightly Build (`nightly.yml`)
 - **Triggers**: Daily at 2 AM UTC, manual dispatch
@@ -197,13 +209,64 @@ When adding new workflows:
 5. Include proper error handling
 6. Upload relevant artifacts
 
-## Phase 4 Test Coverage
+## Alpha Release v0.1.0-alpha.1 Features
 
-The workflows are configured to test all Phase 4 features:
-- ✅ GPU Backend Tests (CUDA, OpenCL, DirectCompute)
-- ✅ Security Validation System
-- ✅ Parallel Execution Strategies
-- ✅ Linear Algebra Kernels
-- ✅ NuGet Plugin System
-- ✅ 16,000+ lines of test code
-- ✅ ~78% code coverage target
+The new `alpha-release.yml` workflow specifically supports:
+
+### ✅ Core Features Ready for Alpha
+- Production-ready CPU backend with SIMD optimizations (23x speedups)
+- 90% complete CUDA backend implementation
+- Metal and OpenCL backend foundations
+- LINQ-to-GPU expression compilation
+- Comprehensive algorithm library
+- Native AOT compatibility
+- Advanced memory management with unified buffers
+
+### ✅ Test Coverage Strategy
+- **Unit Tests**: Core functionality validation
+- **Integration Tests**: Component interaction testing  
+- **Hardware Mock Tests**: Simulated hardware testing
+- **CUDA Tests**: Real hardware testing (when available)
+- **Performance Tests**: Benchmark validation
+- **Coverage Target**: 80% minimum for alpha release
+
+### ✅ Package Creation
+**Critical Packages**:
+- `DotCompute.Abstractions`
+- `DotCompute.Core` 
+- `DotCompute.Memory`
+- `DotCompute.Backends.CPU`
+- `DotCompute.Linq`
+- `DotCompute.Runtime`
+
+**Optional for Alpha**:
+- `DotCompute.Algorithms` (allowed to fail)
+- `DotCompute.Backends.CUDA` (90% complete)
+- `DotCompute.Backends.Metal` (foundation)
+
+### ✅ Quality Gates
+- Multi-platform compatibility (Linux, Windows, macOS)
+- Security vulnerability scanning
+- Code coverage validation
+- Package integrity verification
+- Alpha release readiness assessment
+
+## Usage for Alpha Release
+
+### Trigger Alpha Release Pipeline
+```bash
+# Automatic triggers
+git push origin main                    # Development builds
+git tag v0.1.0-alpha.1 && git push --tags  # Official alpha release
+
+# Manual trigger (GitHub UI)
+Actions → Alpha Release Pipeline → Run workflow
+```
+
+### Monitor Alpha Release Status
+The workflow provides comprehensive status reporting including:
+- Build and test results across all platforms
+- Code coverage metrics and threshold validation
+- NuGet package creation status
+- Security audit results
+- Overall alpha release readiness assessment

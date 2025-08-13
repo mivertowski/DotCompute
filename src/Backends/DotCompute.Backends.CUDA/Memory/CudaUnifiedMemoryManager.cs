@@ -4,6 +4,7 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
@@ -35,7 +36,7 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         
         _memoryPool = new CudaMemoryPool(context, logger);
-        _statistics = new CudaMemoryStatistics(context, logger);
+        _statistics = new CudaMemoryStatistics();
         
         // Set up memory pressure monitoring
         _memoryPressureTimer = new Timer(CheckMemoryPressure, null, 
@@ -84,7 +85,8 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
                 throw new MemoryException("Failed to track allocated buffer");
             }
 
-            _statistics.RecordAllocation(sizeInBytes, useUnifiedMemory);
+            _statistics.AllocationCount++;
+            _statistics.UsedMemoryBytes += sizeInBytes;
             
             _logger.LogDebug("Successfully allocated CUDA buffer of {Size}MB", 
                 sizeInBytes / (1024 * 1024));

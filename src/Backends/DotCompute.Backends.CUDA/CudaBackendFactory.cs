@@ -80,7 +80,8 @@ public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IB
                         ? loggerFactory.CreateLogger<CudaAccelerator>()
                         : new NullLogger<CudaAccelerator>();
 
-                    var accelerator = new CudaAccelerator(device.DeviceId, deviceLogger);
+                    var acceleratorLogger = loggerFactory?.CreateLogger<CudaAccelerator>() ?? new NullLogger<CudaAccelerator>();
+                    var accelerator = new CudaAccelerator(device.DeviceId, acceleratorLogger);
                     createdAccelerators.Add(accelerator);
                 }
                 catch (Exception ex)
@@ -112,7 +113,8 @@ public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IB
         try
         {
             // Detect the default device (device 0) with enhanced detection
-            var defaultDevice = CudaDevice.Detect(0, _logger);
+            var deviceLogger = _logger is ILoggerFactory factory ? factory.CreateLogger<CudaDevice>() : new NullLogger<CudaDevice>();
+            var defaultDevice = CudaDevice.Detect(0, deviceLogger);
             if (defaultDevice == null)
             {
                 _logger.LogWarning("Default CUDA device (device 0) not found");
@@ -126,7 +128,8 @@ public class CudaBackendFactory(ILogger<CudaBackendFactory>? logger = null) : IB
                 ? loggerFactory.CreateLogger<CudaAccelerator>()
                 : new NullLogger<CudaAccelerator>();
 
-            return new CudaAccelerator(0, deviceLogger);
+            var acceleratorLogger = _logger is ILoggerFactory lf ? lf.CreateLogger<CudaAccelerator>() : new NullLogger<CudaAccelerator>();
+            return new CudaAccelerator(0, acceleratorLogger);
         }
         catch (Exception ex)
         {

@@ -21,14 +21,14 @@ public sealed class CudaBackendIntegration : IDisposable
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger _logger;
     private readonly CudaContext _context;
-    private readonly CudaStreamManager _streamManager;
-    private readonly CudaEventManager _eventManager;
-    private readonly CudaKernelExecutor _kernelExecutor;
-    private readonly CudaGraphSupport _graphSupport;
-    private readonly CudaP2PManager _p2pManager;
-    private readonly CudaAdvancedFeatures _advancedFeatures;
-    private readonly CudaPerformanceMonitor _performanceMonitor;
-    private readonly Timer _healthCheckTimer;
+    private readonly CudaStreamManager _streamManager = null!;
+    private readonly CudaEventManager _eventManager = null!;
+    private readonly CudaKernelExecutor _kernelExecutor = null!;
+    private readonly CudaGraphSupport _graphSupport = null!;
+    private readonly CudaP2PManager _p2pManager = null!;
+    private readonly CudaAdvancedFeatures _advancedFeatures = null!;
+    private readonly CudaPerformanceMonitor _performanceMonitor = null!;
+    private readonly Timer _healthCheckTimer = null!;
     private bool _disposed;
 
     public CudaBackendIntegration(
@@ -329,12 +329,13 @@ public sealed class CudaBackendIntegration : IDisposable
 
     private void InitializeComponents()
     {
-        var streamLogger = _serviceProvider.GetRequiredService<ILogger<CudaStreamManager>>();
-        var eventLogger = _serviceProvider.GetRequiredService<ILogger<CudaEventManager>>();
-        var executorLogger = _serviceProvider.GetRequiredService<ILogger<CudaKernelExecutor>>();
-        var graphLogger = _serviceProvider.GetRequiredService<ILogger<CudaGraphSupport>>();
-        var p2pLogger = _serviceProvider.GetRequiredService<ILogger<CudaP2PManager>>();
-        var advancedLogger = _serviceProvider.GetRequiredService<ILogger<CudaAdvancedFeatures>>();
+        var loggerFactory = _serviceProvider.GetRequiredService<ILoggerFactory>();
+        var streamLogger = loggerFactory.CreateLogger<CudaStreamManager>();
+        var eventLogger = loggerFactory.CreateLogger<CudaEventManager>();
+        var executorLogger = loggerFactory.CreateLogger<CudaKernelExecutor>();
+        var graphLogger = loggerFactory.CreateLogger<CudaGraphSupport>();
+        var p2pLogger = loggerFactory.CreateLogger<CudaP2PManager>();
+        var advancedLogger = loggerFactory.CreateLogger<CudaAdvancedFeatures>();
 
         _streamManager = new CudaStreamManager(_context, streamLogger);
         _eventManager = new CudaEventManager(_context, eventLogger);

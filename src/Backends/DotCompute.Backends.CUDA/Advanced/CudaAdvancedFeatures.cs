@@ -34,8 +34,8 @@ public sealed class CudaAdvancedFeatures : IDisposable
 
         // Get device properties
         _deviceProperties = new CudaDeviceProperties();
-        var result = CudaRuntime.cudaGetDeviceProperties(ref _deviceProperties, context.DeviceId);
-        CudaRuntime.CheckError(result, "getting device properties");
+        var result = Native.CudaRuntime.cudaGetDeviceProperties(ref _deviceProperties, context.DeviceId);
+        Native.CudaRuntime.CheckError(result, "getting device properties");
 
         // Initialize feature managers
         _cooperativeGroups = new CudaCooperativeGroupsManager(context, _deviceProperties, logger);

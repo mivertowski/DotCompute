@@ -2,8 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
+using DotCompute.Backends.CUDA.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
@@ -147,15 +149,15 @@ public sealed class CudaCooperativeGroupsManager : IDisposable
                 launchConfig.Stream,
                 launchParams);
 
-            CudaRuntime.CheckError(result, "launching cooperative kernel");
+            Native.CudaRuntime.CheckError(result, "launching cooperative kernel");
 
             // Synchronize if required
             if (launchConfig.Synchronize)
             {
                 await Task.Run(() =>
                 {
-                    var syncResult = CudaRuntime.cudaStreamSynchronize(launchConfig.Stream);
-                    CudaRuntime.CheckError(syncResult, "synchronizing cooperative kernel");
+                    var syncResult = Native.CudaRuntime.cudaStreamSynchronize(launchConfig.Stream);
+                    Native.CudaRuntime.CheckError(syncResult, "synchronizing cooperative kernel");
                 }, cancellationToken).ConfigureAwait(false);
             }
 

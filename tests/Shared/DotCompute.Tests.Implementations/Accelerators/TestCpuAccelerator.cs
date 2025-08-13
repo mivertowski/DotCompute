@@ -13,7 +13,6 @@ namespace DotCompute.Tests.Shared.Accelerators;
 /// </summary>
 public class TestCpuAccelerator : IAccelerator
 {
-    public AcceleratorType Type => AcceleratorType.CPU;
     private readonly TestMemoryManager _memoryManager;
     private readonly ConcurrentDictionary<string, TestCompiledKernel> _compiledKernels;
     private bool _disposed;

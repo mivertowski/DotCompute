@@ -8,6 +8,7 @@ using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Compilation;
@@ -21,7 +22,7 @@ internal sealed class KernelSource
     public KernelLanguage Language { get; set; }
 }
 
-internal enum KernelLanguage
+public enum KernelLanguage
 {
     Cuda,
     OpenCL,
@@ -43,18 +44,6 @@ internal sealed class KernelCacheMetadata
     public int PtxSize { get; set; }
 }
 
-/// <summary>
-/// Cache performance statistics
-/// </summary>
-public class CacheStatistics
-{
-    public int TotalEntries { get; set; }
-    public long TotalSizeBytes { get; set; }
-    public double AverageAccessCount { get; set; }
-    public DateTime? OldestEntryTime { get; set; }
-    public DateTime? NewestEntryTime { get; set; }
-    public double HitRate { get; set; }
-}
 
 /// <summary>
 /// CUDA kernel compiler implementation using NVRTC
@@ -380,7 +369,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             LogNvrtcCompilationStart(_logger, kernelName);
 
             // Create NVRTC program
-            var result = NvrtcRuntime.nvrtcCreateProgram(
+            var result = NvrtcInterop.nvrtcCreateProgram(
                 out program,
                 cudaSource,
                 kernelName + ".cu",
@@ -388,7 +377,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
                 null, // headers
                 null  // includeNames
             );
-            NvrtcRuntime.CheckResult(result, "creating NVRTC program");
+            NvrtcInterop.CheckResult(result, "creating NVRTC program");
 
             // Build compilation options
             var compilationOptions = BuildCompilationOptions(options);
@@ -396,7 +385,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             LogNvrtcCompilationOptions(_logger, string.Join(" ", compilationOptions));
 
             // Compile the program
-            result = NvrtcRuntime.nvrtcCompileProgram(
+            result = NvrtcInterop.nvrtcCompileProgram(
                 program,
                 compilationOptions.Length,
                 compilationOptions);
@@ -420,18 +409,18 @@ public sealed partial class CudaKernelCompiler : IDisposable
             if (result != NvrtcResult.Success)
             {
                 throw new KernelCompilationException(
-                    $"NVRTC compilation failed for kernel '{kernelName}': {NvrtcRuntime.GetErrorString(result)}",
+                    $"NVRTC compilation failed for kernel '{kernelName}': {NvrtcInterop.GetErrorString(result)}",
                     compilerLog);
             }
 
             // Get PTX size
-            result = NvrtcRuntime.nvrtcGetPTXSize(program, out var ptxSize);
-            NvrtcRuntime.CheckResult(result, "getting PTX size");
+            result = NvrtcInterop.nvrtcGetPTXSize(program, out var ptxSize);
+            NvrtcInterop.CheckResult(result, "getting PTX size");
 
             // Get PTX code
             var ptxBuilder = new StringBuilder((int)ptxSize);
-            result = NvrtcRuntime.nvrtcGetPTX(program, ptxBuilder);
-            NvrtcRuntime.CheckResult(result, "getting PTX code");
+            result = NvrtcInterop.nvrtcGetPTX(program, ptxBuilder);
+            NvrtcInterop.CheckResult(result, "getting PTX code");
 
             var ptxString = ptxBuilder.ToString();
             var ptxBytes = Encoding.UTF8.GetBytes(ptxString);
@@ -453,7 +442,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             {
                 try
                 {
-                    NvrtcRuntime.nvrtcDestroyProgram(ref program);
+                    NvrtcInterop.nvrtcDestroyProgram(ref program);
                 }
                 catch (Exception ex)
                 {
@@ -468,7 +457,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
         try
         {
             // Get log size
-            var result = NvrtcRuntime.nvrtcGetProgramLogSize(program, out var logSize);
+            var result = NvrtcInterop.nvrtcGetProgramLogSize(program, out var logSize);
             if (result != NvrtcResult.Success || logSize <= 1)
             {
                 return Task.FromResult(string.Empty);
@@ -476,7 +465,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
 
             // Get log content
             var logBuilder = new StringBuilder((int)logSize);
-            result = NvrtcRuntime.nvrtcGetProgramLog(program, logBuilder);
+            result = NvrtcInterop.nvrtcGetProgramLog(program, logBuilder);
             if (result != NvrtcResult.Success)
             {
                 return Task.FromResult("Failed to retrieve compilation log");
@@ -562,7 +551,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
         }
 
         // Default to a widely supported compute capability (Maxwell generation)
-        return ComputeCapability.Common.Maxwell;
+        return ComputeCapability.KnownCapabilities.Maxwell;
     }
 
     /// <summary>
@@ -578,7 +567,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             LogNvrtcCubinCompilationStart(_logger, kernelName);
 
             // Create NVRTC program
-            var result = NvrtcRuntime.nvrtcCreateProgram(
+            var result = NvrtcInterop.nvrtcCreateProgram(
                 out program,
                 cudaSource,
                 kernelName + ".cu",
@@ -586,7 +575,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
                 null, // headers
                 null  // includeNames
             );
-            NvrtcRuntime.CheckResult(result, "creating NVRTC program");
+            NvrtcInterop.CheckResult(result, "creating NVRTC program");
 
             // Build compilation options for CUBIN (use code generation instead of compute architecture)
             var compilationOptions = BuildCompilationOptionsForCubin(options);
@@ -594,7 +583,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             LogNvrtcCubinCompilationOptions(_logger, string.Join(" ", compilationOptions));
 
             // Compile the program
-            result = NvrtcRuntime.nvrtcCompileProgram(
+            result = NvrtcInterop.nvrtcCompileProgram(
                 program,
                 compilationOptions.Length,
                 compilationOptions);
@@ -618,18 +607,18 @@ public sealed partial class CudaKernelCompiler : IDisposable
             if (result != NvrtcResult.Success)
             {
                 throw new KernelCompilationException(
-                    $"NVRTC CUBIN compilation failed for kernel '{kernelName}': {NvrtcRuntime.GetErrorString(result)}",
+                    $"NVRTC CUBIN compilation failed for kernel '{kernelName}': {NvrtcInterop.GetErrorString(result)}",
                     compilerLog);
             }
 
             // Get CUBIN size
-            result = NvrtcRuntime.nvrtcGetCUBINSize(program, out var cubinSize);
-            NvrtcRuntime.CheckResult(result, "getting CUBIN size");
+            result = NvrtcInterop.nvrtcGetCUBINSize(program, out var cubinSize);
+            NvrtcInterop.CheckResult(result, "getting CUBIN size");
 
             // Get CUBIN code
             var cubinData = new byte[(int)cubinSize];
-            result = NvrtcRuntime.nvrtcGetCUBIN(program, cubinData);
-            NvrtcRuntime.CheckResult(result, "getting CUBIN code");
+            result = NvrtcInterop.nvrtcGetCUBIN(program, cubinData);
+            NvrtcInterop.CheckResult(result, "getting CUBIN code");
 
             stopwatch.Stop();
             LogNvrtcCubinKernelCompilationSuccess(_logger, kernelName, stopwatch.ElapsedMilliseconds, cubinData.Length);
@@ -648,7 +637,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
             {
                 try
                 {
-                    NvrtcRuntime.nvrtcDestroyProgram(ref program);
+                    NvrtcInterop.nvrtcDestroyProgram(ref program);
                 }
                 catch (Exception ex)
                 {
@@ -782,13 +771,13 @@ public sealed partial class CudaKernelCompiler : IDisposable
             }
 
             return warnings.Count > 0
-                ? ValidationResult.SuccessWithWarnings([.. warnings])
+                ? ValidationResult.Success([.. warnings])
                 : ValidationResult.Success();
         }
         catch (Exception ex)
         {
             LogCudaSourceValidationError(_logger, ex, kernelName);
-            return ValidationResult.SuccessWithWarnings("Source validation failed, proceeding with compilation");
+            return ValidationResult.Success("Source validation failed, proceeding with compilation");
         }
     }
 
@@ -844,7 +833,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
     {
         try
         {
-            var result = NvrtcRuntime.nvrtcVersion(out var major, out var minor);
+            var result = NvrtcInterop.nvrtcVersion(out var major, out var minor);
             return result == NvrtcResult.Success && major >= 11; // Require NVRTC 11.0+
         }
         catch
@@ -860,7 +849,7 @@ public sealed partial class CudaKernelCompiler : IDisposable
     {
         try
         {
-            var result = NvrtcRuntime.nvrtcVersion(out var major, out var minor);
+            var result = NvrtcInterop.nvrtcVersion(out var major, out var minor);
             if (result == NvrtcResult.Success)
             {
                 return (major, minor);

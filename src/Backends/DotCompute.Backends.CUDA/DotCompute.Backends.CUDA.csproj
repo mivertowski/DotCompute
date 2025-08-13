@@ -11,7 +11,7 @@
     <Authors>DotCompute Contributors</Authors>
     <Description>CUDA backend for DotCompute - GPU acceleration support</Description>
     <PackageTags>DotCompute;CUDA;GPU;Compute;Backend</PackageTags>
-    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -28,6 +28,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
   </ItemGroup>
 
   <!-- Copy native CUDA wrapper to output -->

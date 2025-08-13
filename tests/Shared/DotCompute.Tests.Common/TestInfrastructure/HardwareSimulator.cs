@@ -121,21 +121,37 @@ public class SimulatedAccelerator : IAccelerator
     private readonly Dictionary<string, byte[]> _memory = new();
     private bool _disposed;
     private string? _failureMessage;
+    private readonly IMemoryManager _memoryManager;
 
     public AcceleratorType Type { get; }
-    public string Name { get; }
-    public long TotalMemory { get; }
-    public long AvailableMemory => TotalMemory - _memory.Values.Sum(m => m.Length);
+    public AcceleratorInfo Info { get; }
+    public IMemoryManager Memory => _memoryManager;
+    public long AvailableMemory => Info.TotalMemory - _memory.Values.Sum(m => m.Length);
     public bool IsAvailable => _failureMessage == null && !_disposed;
-    public AcceleratorContext Context { get; }
 
     public SimulatedAccelerator(AcceleratorType type, string name, long totalMemory, ILogger logger)
     {
         Type = type;
-        Name = name;
-        TotalMemory = totalMemory;
         _logger = logger;
-        Context = new SimulatedAcceleratorContext(this);
+        _memoryManager = new TestMemoryManager();
+        
+        Info = new AcceleratorInfo
+        {
+            Id = $"sim_{type}_{Guid.NewGuid():N}",
+            Name = name,
+            DeviceType = type.ToString(),
+            Vendor = "Test Vendor",
+            DriverVersion = "1.0.0",
+            TotalMemory = totalMemory,
+            AvailableMemory = totalMemory,
+            MaxSharedMemoryPerBlock = 48 * 1024,
+            MaxMemoryAllocationSize = totalMemory,
+            LocalMemorySize = 64 * 1024,
+            IsUnifiedMemory = type == AcceleratorType.CPU,
+            ComputeUnits = 8,
+            MaxClockFrequency = 1500,
+            MaxThreadsPerBlock = 1024
+        };
     }
 
     /// <summary>
@@ -144,7 +160,7 @@ public class SimulatedAccelerator : IAccelerator
     public void SimulateFailure(string errorMessage)
     {
         _failureMessage = errorMessage;
-        _logger.LogWarning("Simulated failure on {Name}: {Error}", Name, errorMessage);
+        _logger.LogWarning("Simulated failure on {Name}: {Error}", Info.Name, errorMessage);
     }
 
     /// <summary>
@@ -153,7 +169,31 @@ public class SimulatedAccelerator : IAccelerator
     public void ResetFailure()
     {
         _failureMessage = null;
-        _logger.LogInformation("Reset failure simulation on {Name}", Name);
+        _logger.LogInformation("Reset failure simulation on {Name}", Info.Name);
+    }
+    
+    public ValueTask<ICompiledKernel> CompileKernelAsync(
+        KernelDefinition definition,
+        CompilationOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(SimulatedAccelerator));
+            
+        if (!IsAvailable)
+            throw new InvalidOperationException(_failureMessage ?? "Accelerator not available");
+            
+        var kernel = new TestCompiledKernel(definition.Name, definition.Code, options ?? new CompilationOptions());
+        return ValueTask.FromResult<ICompiledKernel>(kernel);
+    }
+    
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+    {
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(SimulatedAccelerator));
+            
+        // Simulate async synchronization
+        return ValueTask.CompletedTask;
     }
 
     /// <summary>
@@ -165,13 +205,13 @@ public class SimulatedAccelerator : IAccelerator
         
         if (size > AvailableMemory)
         {
-            throw new OutOfMemoryException($"Not enough memory on {Name}. Requested: {size}, Available: {AvailableMemory}");
+            throw new OutOfMemoryException($"Not enough memory on {Info.Name}. Requested: {size}, Available: {AvailableMemory}");
         }
 
         var handle = Guid.NewGuid().ToString();
         _memory[handle] = new byte[size];
         
-        _logger.LogDebug("Allocated {Size} bytes on {Name}, handle: {Handle}", size, Name, handle);
+        _logger.LogDebug("Allocated {Size} bytes on {Name}, handle: {Handle}", size, Info.Name, handle);
         return handle;
     }
 
@@ -182,7 +222,7 @@ public class SimulatedAccelerator : IAccelerator
     {
         if (_memory.Remove(handle))
         {
-            _logger.LogDebug("Freed memory on {Name}, handle: {Handle}", Name, handle);
+            _logger.LogDebug("Freed memory on {Name}, handle: {Handle}", Info.Name, handle);
         }
     }
 
@@ -197,7 +237,7 @@ public class SimulatedAccelerator : IAccelerator
         var executionTime = TimeSpan.FromMilliseconds(Random.Shared.Next(10, 100));
         await Task.Delay(executionTime, cancellationToken);
         
-        _logger.LogDebug("Executed kernel on {Name} in {Time}ms", Name, executionTime.TotalMilliseconds);
+        _logger.LogDebug("Executed kernel on {Name} in {Time}ms", Info.Name, executionTime.TotalMilliseconds);
         return executionTime;
     }
 
@@ -223,7 +263,7 @@ public class SimulatedAccelerator : IAccelerator
         await Task.Delay(copyTime, cancellationToken);
         
         Array.Copy(source, destination, source.Length);
-        _logger.LogDebug("Copied {Size} bytes to {Name} in {Time}ms", source.Length, Name, copyTime.TotalMilliseconds);
+        _logger.LogDebug("Copied {Size} bytes to {Name} in {Time}ms", source.Length, Info.Name, copyTime.TotalMilliseconds);
     }
 
     private void ThrowIfFailed()
@@ -242,7 +282,13 @@ public class SimulatedAccelerator : IAccelerator
 
         _memory.Clear();
         _disposed = true;
-        _logger.LogDebug("Disposed simulated accelerator {Name}", Name);
+        _logger.LogDebug("Disposed simulated accelerator {Name}", Info.Name);
+    }
+    
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
     }
 }
 
@@ -250,7 +296,7 @@ public class SimulatedAccelerator : IAccelerator
 /// Simulated accelerator context
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class SimulatedAcceleratorContext : AcceleratorContext
+public class SimulatedAcceleratorContext
 {
     private readonly SimulatedAccelerator _accelerator;
 
@@ -259,18 +305,18 @@ public class SimulatedAcceleratorContext : AcceleratorContext
         _accelerator = accelerator;
     }
 
-    public override void Synchronize()
+    public void Synchronize()
     {
         // Simulate synchronization
         Thread.Sleep(1);
     }
 
-    public override Task SynchronizeAsync(CancellationToken cancellationToken = default)
+    public Task SynchronizeAsync(CancellationToken cancellationToken = default)
     {
         return Task.Delay(1, cancellationToken);
     }
 
-    protected override void DisposeCore()
+    public void Dispose()
     {
         // Nothing to dispose for simulation
     }

@@ -37,7 +37,7 @@ public class QueryExecutor : IQueryExecutor
     public object? Execute(ExecutionContext context)
     {
         // For synchronous execution, call the async version and wait
-        return ExecuteAsync(context, CancellationToken.None).GetAwaiter().GetResult();
+        return ExecuteAsync(context, CancellationToken.None).ConfigureAwait(false).GetAwaiter().GetResult();
     }
 
     /// <inheritdoc/>
@@ -110,7 +110,7 @@ public class QueryExecutor : IQueryExecutor
         // Validate memory requirements
         if (plan.EstimatedMemoryUsage > accelerator.Info.MemorySize)
         {
-            errors.Add(new ValidationError(
+            errors.Add(new Compilation.ValidationError(
                 "INSUFFICIENT_MEMORY",
                 $"Plan requires {plan.EstimatedMemoryUsage} bytes but accelerator only has {accelerator.Info.MemorySize} bytes"));
         }
@@ -462,6 +462,6 @@ public class DefaultMemoryManagerFactory : IMemoryManagerFactory
     /// <inheritdoc/>
     public IMemoryManager CreateMemoryManager(IAccelerator accelerator)
     {
-        return new UnifiedMemoryManager(accelerator.Memory, _logger);
+        return new UnifiedMemoryManager(accelerator.Memory);
     }
 }

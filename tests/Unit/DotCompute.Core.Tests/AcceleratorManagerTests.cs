@@ -1,3 +1,4 @@
+using Xunit;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using FluentAssertions;

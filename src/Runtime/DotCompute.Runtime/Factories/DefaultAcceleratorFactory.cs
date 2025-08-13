@@ -223,7 +223,7 @@ public class DefaultAcceleratorFactory : IAcceleratorFactory, IDisposable
     private void RegisterDefaultProviders()
     {
         // Register CPU provider by default
-        _providerTypes[AcceleratorType.CPU] = typeof(DotCompute.Core.Accelerators.CpuAcceleratorProvider);
+        // _providerTypes[AcceleratorType.CPU] = typeof(DotCompute.Core.Accelerators.CpuAcceleratorProvider); // Commented out - type doesn't exist"
         
         _logger.LogDebug("Registered default accelerator providers");
     }

@@ -31,7 +31,7 @@ public sealed class CudaStreamManager : IDisposable
     private const uint CudaStreamNonBlocking = 0x01;
     private const uint CudaStreamDefault = 0x00;
 
-    public CudaStreamManager(CudaContext context, ILogger<CudaStreamManager> logger)
+    public CudaStreamManager(CudaContext context, ILogger logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -113,8 +113,8 @@ public sealed class CudaStreamManager : IDisposable
 
         var stream = IntPtr.Zero;
         var cudaFlags = ConvertToCudaFlags(flags);
-        var result = CudaRuntime.cudaStreamCreateWithFlags(ref stream, cudaFlags);
-        CudaRuntime.CheckError(result, "creating CUDA stream");
+        var result = Native.CudaRuntime.cudaStreamCreateWithFlags(ref stream, cudaFlags);
+        Native.CudaRuntime.CheckError(result, "creating CUDA stream");
 
         _logger.LogDebug("Created new CUDA stream {Stream} with flags {Flags}", stream, flags);
         return stream;
@@ -132,11 +132,11 @@ public sealed class CudaStreamManager : IDisposable
         }
 
         _context.MakeCurrent();
-        var result = CudaRuntime.cudaStreamDestroy(stream);
+        var result = Native.CudaRuntime.cudaStreamDestroy(stream);
         if (result != CudaError.Success)
         {
             _logger.LogWarning("Failed to destroy CUDA stream {Stream}: {Error}", 
-                stream, CudaRuntime.GetErrorString(result));
+                stream, Native.CudaRuntime.GetErrorString(result));
         }
         else
         {
@@ -154,8 +154,8 @@ public sealed class CudaStreamManager : IDisposable
 
         await Task.Run(() =>
         {
-            var result = CudaRuntime.cudaStreamSynchronize(stream);
-            CudaRuntime.CheckError(result, $"synchronizing stream {stream}");
+            var result = Native.CudaRuntime.cudaStreamSynchronize(stream);
+            Native.CudaRuntime.CheckError(result, $"synchronizing stream {stream}");
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -167,7 +167,7 @@ public sealed class CudaStreamManager : IDisposable
         ThrowIfDisposed();
         _context.MakeCurrent();
 
-        var result = CudaRuntime.cudaStreamQuery(stream);
+        var result = Native.CudaRuntime.cudaStreamQuery(stream);
         return result == CudaError.Success;
     }
 
@@ -547,8 +547,8 @@ internal sealed class CudaStreamPool : IDisposable
         _context.MakeCurrent();
         
         var stream = IntPtr.Zero;
-        var result = CudaRuntime.cudaStreamCreateWithFlags(ref stream, 0x01); // NonBlocking
-        CudaRuntime.CheckError(result, $"creating {priority} priority stream");
+        var result = Native.CudaRuntime.cudaStreamCreateWithFlags(ref stream, 0x01); // NonBlocking
+        Native.CudaRuntime.CheckError(result, $"creating {priority} priority stream");
         
         return stream;
     }
@@ -558,11 +558,11 @@ internal sealed class CudaStreamPool : IDisposable
         while (queue.Count > maxCount && queue.TryDequeue(out var stream))
         {
             _context.MakeCurrent();
-            var result = CudaRuntime.cudaStreamDestroy(stream);
+            var result = Native.CudaRuntime.cudaStreamDestroy(stream);
             if (result != CudaError.Success)
             {
                 _logger.LogWarning("Failed to destroy excess stream: {Error}", 
-                    CudaRuntime.GetErrorString(result));
+                    Native.CudaRuntime.GetErrorString(result));
             }
         }
     }
@@ -589,7 +589,7 @@ internal sealed class CudaStreamPool : IDisposable
             try
             {
                 _context.MakeCurrent();
-                CudaRuntime.cudaStreamDestroy(stream);
+                Native.CudaRuntime.cudaStreamDestroy(stream);
             }
             catch (Exception ex)
             {

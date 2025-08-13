@@ -54,28 +54,40 @@ public abstract class CompilerSpecificOptions
 /// <summary>
 /// Represents a validation result.
 /// </summary>
-public readonly struct ValidationResult : IEquatable<ValidationResult>
+public class ValidationResult : IEquatable<ValidationResult>
 {
+    private readonly List<string> _warnings = new();
+    
     /// <summary>
     /// Gets whether the validation passed.
     /// </summary>
-    public bool IsValid { get; }
+    public bool IsValid { get; private set; }
 
     /// <summary>
     /// Gets the error message if validation failed.
     /// </summary>
-    public string? ErrorMessage { get; }
+    public string? ErrorMessage { get; private set; }
 
     /// <summary>
     /// Gets any warnings from validation.
     /// </summary>
-    public string[]? Warnings { get; }
+    public string[] Warnings => _warnings.ToArray();
 
     private ValidationResult(bool isValid, string? errorMessage, string[]? warnings)
     {
         IsValid = isValid;
         ErrorMessage = errorMessage;
-        Warnings = warnings;
+        if (warnings != null)
+            _warnings.AddRange(warnings);
+    }
+    
+    /// <summary>
+    /// Adds a warning to this validation result.
+    /// </summary>
+    public void AddWarning(string warning)
+    {
+        if (!string.IsNullOrEmpty(warning))
+            _warnings.Add(warning);
     }
 
     /// <summary>
@@ -108,12 +120,9 @@ public readonly struct ValidationResult : IEquatable<ValidationResult>
         var hash = new HashCode();
         hash.Add(IsValid);
         hash.Add(ErrorMessage);
-        if (Warnings != null)
+        foreach (var warning in Warnings)
         {
-            foreach (var warning in Warnings)
-            {
-                hash.Add(warning);
-            }
+            hash.Add(warning);
         }
         return hash.ToHashCode();
     }
@@ -128,12 +137,12 @@ public readonly struct ValidationResult : IEquatable<ValidationResult>
         return !(left == right);
     }
 
-    public bool Equals(ValidationResult other)
+    public bool Equals(ValidationResult? other)
     {
+        if (other is null) return false;
         return IsValid == other.IsValid &&
                ErrorMessage == other.ErrorMessage &&
-               ((Warnings == null && other.Warnings == null) ||
-                (Warnings != null && other.Warnings != null && Warnings.SequenceEqual(other.Warnings)));
+               Warnings.SequenceEqual(other.Warnings);
     }
 }
 

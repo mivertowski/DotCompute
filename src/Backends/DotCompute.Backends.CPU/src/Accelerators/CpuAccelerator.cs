@@ -30,6 +30,9 @@ public sealed class CpuAccelerator : IAccelerator
     private readonly CoreAcceleratorInfo _info;
     private int _disposed;
 
+    /// <inheritdoc/>
+    public AcceleratorType Type => AcceleratorType.CPU;
+
     public CpuAccelerator(
         IOptions<CpuAcceleratorOptions> options,
         IOptions<CpuThreadPoolOptions> threadPoolOptions,
@@ -535,43 +538,3 @@ internal sealed class CompiledKernelAdapter(CoreICompiledKernel coreKernel) : IC
     public ValueTask DisposeAsync() => _coreKernel.DisposeAsync();
 }
 
-/// <summary>
-/// Configuration options for the CPU accelerator.
-/// </summary>
-public sealed class CpuAcceleratorOptions
-{
-    /// <summary>
-    /// Gets or sets the maximum work group size.
-    /// </summary>
-    public int MaxWorkGroupSize { get; set; } = 1024;
-
-    /// <summary>
-    /// Gets or sets the maximum memory allocation size.
-    /// </summary>
-    public long MaxMemoryAllocation { get; set; } = 2L * 1024 * 1024 * 1024; // 2GB
-
-    /// <summary>
-    /// Gets or sets whether to enable auto-vectorization.
-    /// </summary>
-    public bool EnableAutoVectorization { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets whether to use NUMA-aware memory allocation.
-    /// </summary>
-    public bool EnableNumaAwareAllocation { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the minimum work size for vectorization.
-    /// </summary>
-    public int MinVectorizationWorkSize { get; set; } = 256;
-
-    /// <summary>
-    /// Gets or sets whether to enable aggressive loop unrolling.
-    /// </summary>
-    public bool EnableLoopUnrolling { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the target vector width in bits (0 = auto-detect).
-    /// </summary>
-    public int TargetVectorWidth { get; set; }
-}

@@ -75,8 +75,8 @@ public sealed class CudaEventManager : IDisposable
         // Create new event
         var eventHandle = IntPtr.Zero;
         var cudaFlags = ConvertToCudaFlags(flags);
-        var result = CudaRuntime.cudaEventCreateWithFlags(ref eventHandle, cudaFlags);
-        CudaRuntime.CheckError(result, "creating CUDA event");
+        var result = Native.CudaRuntime.cudaEventCreateWithFlags(ref eventHandle, cudaFlags);
+        Native.CudaRuntime.CheckError(result, "creating CUDA event");
 
         var eventInfo = new CudaEventInfo
         {
@@ -128,11 +128,11 @@ public sealed class CudaEventManager : IDisposable
 
         // Actually destroy the event
         _context.MakeCurrent();
-        var result = CudaRuntime.cudaEventDestroy(eventHandle);
+        var result = Native.CudaRuntime.cudaEventDestroy(eventHandle);
         if (result != CudaError.Success)
         {
             _logger.LogWarning("Failed to destroy CUDA event {Event}: {Error}", 
-                eventHandle, CudaRuntime.GetErrorString(result));
+                eventHandle, Native.CudaRuntime.GetErrorString(result));
         }
         else
         {
@@ -148,8 +148,8 @@ public sealed class CudaEventManager : IDisposable
         ThrowIfDisposed();
         _context.MakeCurrent();
 
-        var result = CudaRuntime.cudaEventRecord(eventHandle, stream);
-        CudaRuntime.CheckError(result, $"recording event {eventHandle} on stream {stream}");
+        var result = Native.CudaRuntime.cudaEventRecord(eventHandle, stream);
+        Native.CudaRuntime.CheckError(result, $"recording event {eventHandle} on stream {stream}");
 
         if (_events.TryGetValue(eventHandle, out var eventInfo))
         {
@@ -170,8 +170,8 @@ public sealed class CudaEventManager : IDisposable
 
         await Task.Run(() =>
         {
-            var result = CudaRuntime.cudaEventSynchronize(eventHandle);
-            CudaRuntime.CheckError(result, $"synchronizing event {eventHandle}");
+            var result = Native.CudaRuntime.cudaEventSynchronize(eventHandle);
+            Native.CudaRuntime.CheckError(result, $"synchronizing event {eventHandle}");
         }, cancellationToken).ConfigureAwait(false);
 
         if (_events.TryGetValue(eventHandle, out var eventInfo))
@@ -190,7 +190,7 @@ public sealed class CudaEventManager : IDisposable
         ThrowIfDisposed();
         _context.MakeCurrent();
 
-        var result = CudaRuntime.cudaEventQuery(eventHandle);
+        var result = Native.CudaRuntime.cudaEventQuery(eventHandle);
         return result == CudaError.Success;
     }
 
@@ -235,8 +235,8 @@ public sealed class CudaEventManager : IDisposable
         _context.MakeCurrent();
 
         var milliseconds = 0f;
-        var result = CudaRuntime.cudaEventElapsedTime(ref milliseconds, startEvent, endEvent);
-        CudaRuntime.CheckError(result, $"calculating elapsed time between events {startEvent} and {endEvent}");
+        var result = Native.CudaRuntime.cudaEventElapsedTime(ref milliseconds, startEvent, endEvent);
+        Native.CudaRuntime.CheckError(result, $"calculating elapsed time between events {startEvent} and {endEvent}");
 
         _logger.LogTrace("Elapsed time between events {Start} and {End}: {Time}ms", 
             startEvent, endEvent, milliseconds);
@@ -430,7 +430,7 @@ public sealed class CudaEventManager : IDisposable
         for (int i = 0; i < InitialEventPoolSize; i++)
         {
             var eventHandle = IntPtr.Zero;
-            var result = CudaRuntime.cudaEventCreateWithFlags(ref eventHandle, CudaEventDefault);
+            var result = Native.CudaRuntime.cudaEventCreateWithFlags(ref eventHandle, CudaEventDefault);
             if (result == CudaError.Success)
             {
                 _eventPool.Enqueue(eventHandle);
@@ -438,7 +438,7 @@ public sealed class CudaEventManager : IDisposable
             else
             {
                 _logger.LogWarning("Failed to pre-allocate event {Index}: {Error}", 
-                    i, CudaRuntime.GetErrorString(result));
+                    i, Native.CudaRuntime.GetErrorString(result));
                 break;
             }
         }
@@ -516,7 +516,7 @@ public sealed class CudaEventManager : IDisposable
                 try
                 {
                     _context.MakeCurrent();
-                    CudaRuntime.cudaEventDestroy(eventHandle);
+                    Native.CudaRuntime.cudaEventDestroy(eventHandle);
                 }
                 catch (Exception ex)
                 {
@@ -530,7 +530,7 @@ public sealed class CudaEventManager : IDisposable
                 try
                 {
                     _context.MakeCurrent();
-                    CudaRuntime.cudaEventDestroy(eventHandle);
+                    Native.CudaRuntime.cudaEventDestroy(eventHandle);
                 }
                 catch (Exception ex)
                 {

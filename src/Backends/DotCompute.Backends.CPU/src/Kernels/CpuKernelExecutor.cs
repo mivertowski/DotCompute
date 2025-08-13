@@ -21,7 +21,6 @@ internal sealed class CpuKernelExecutor
 {
     private readonly CpuThreadPool _threadPool;
     private readonly ILogger _logger;
-    private readonly SimdCapabilities _simdCapabilities;
     private long _executionCount;
     private double _totalExecutionTime;
 
@@ -29,7 +28,6 @@ internal sealed class CpuKernelExecutor
     {
         _threadPool = threadPool ?? throw new ArgumentNullException(nameof(threadPool));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _simdCapabilities = new SimdCapabilities();
     }
 
     /// <summary>
@@ -200,7 +198,7 @@ internal sealed class CpuKernelExecutor
         await Task.WhenAll(tasks).ConfigureAwait(false);
     }
 
-    private async ValueTask ExecuteVectorizedKernelAsync(
+    private ValueTask ExecuteVectorizedKernelAsync(
         KernelDefinition definition,
         VectorizedBuffers vectorizedArgs,
         long totalItems,
@@ -217,7 +215,7 @@ internal sealed class CpuKernelExecutor
             ExecuteVectorizedOperation(definition, vectorizedArgs, startElement, elementsToProcess, elementsPerVector);
         }
 
-        await Task.CompletedTask;
+        return ValueTask.CompletedTask;
     }
 
     private void ExecuteVectorizedWorker(
@@ -1012,7 +1010,7 @@ internal enum VectorOperationType
 /// <summary>
 /// Vectorized buffer arguments for SIMD operations.
 /// </summary>
-internal readonly struct VectorizedBuffers
+internal readonly ref struct VectorizedBuffers
 {
     public required Span<byte> Input1 { get; init; }
     public Span<byte> Input2 { get; init; }

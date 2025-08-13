@@ -95,6 +95,9 @@ public sealed class MetalAccelerator : IAccelerator
     public AcceleratorInfo Info => _info;
 
     /// <inheritdoc/>
+    public AcceleratorType Type => AcceleratorType.Metal;
+
+    /// <inheritdoc/>
     public IMemoryManager Memory => _memoryManager;
 
     /// <inheritdoc/>

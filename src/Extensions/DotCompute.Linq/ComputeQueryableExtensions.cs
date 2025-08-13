@@ -39,7 +39,17 @@ public static class ComputeQueryableExtensions
         var provider = CreateQueryProvider(accelerator, actualOptions);
         
         // Create a constant expression for the source
-        var sourceExpression = Expression.Constant(source.AsQueryable());
+        // Use alternative to AsQueryable to avoid AOT issues
+        IQueryable queryableSource;
+        if (source is IQueryable alreadyQueryable)
+        {
+            queryableSource = alreadyQueryable;
+        }
+        else
+        {
+            queryableSource = source.AsQueryable();
+        }
+        var sourceExpression = Expression.Constant(queryableSource);
         
         return new ComputeQueryable<T>(provider, sourceExpression);
     }

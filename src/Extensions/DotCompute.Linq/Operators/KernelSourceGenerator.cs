@@ -91,8 +91,8 @@ public class KernelSourceGenerator
             case AcceleratorType.Metal:
                 GenerateMetalKernel(sourceBuilder, definition);
                 break;
-            case AcceleratorType.Vulkan:
-                GenerateVulkanKernel(sourceBuilder, definition);
+            case AcceleratorType.CPU:
+                GenerateCSharpKernel(sourceBuilder, definition);
                 break;
             default:
                 GenerateCSharpKernel(sourceBuilder, definition);
@@ -220,7 +220,7 @@ public class KernelSourceGenerator
         sourceBuilder.AppendLine($"        output[idx] = left[idx] {operatorSymbol} right[idx];");
     }
 
-    private void GenerateCudaKernel(StringBuilder sourceBuilder, KernelDefinition definition)
+    private static void GenerateCudaKernel(StringBuilder sourceBuilder, KernelDefinition definition)
     {
         sourceBuilder.AppendLine($"__global__ void {definition.Name}(");
         GenerateParameters(sourceBuilder, definition, "");
@@ -230,7 +230,7 @@ public class KernelSourceGenerator
         sourceBuilder.AppendLine("}");
     }
 
-    private void GenerateOpenCLKernel(StringBuilder sourceBuilder, KernelDefinition definition)
+    private static void GenerateOpenCLKernel(StringBuilder sourceBuilder, KernelDefinition definition)
     {
         sourceBuilder.AppendLine($"__kernel void {definition.Name}(");
         GenerateParameters(sourceBuilder, definition, "__global ");
@@ -240,7 +240,7 @@ public class KernelSourceGenerator
         sourceBuilder.AppendLine("}");
     }
 
-    private void GenerateMetalKernel(StringBuilder sourceBuilder, KernelDefinition definition)
+    private static void GenerateMetalKernel(StringBuilder sourceBuilder, KernelDefinition definition)
     {
         sourceBuilder.AppendLine($"kernel void {definition.Name}(");
         GenerateParameters(sourceBuilder, definition, "device ");
@@ -261,7 +261,7 @@ public class KernelSourceGenerator
         sourceBuilder.AppendLine("}");
     }
 
-    private void GenerateCSharpKernel(StringBuilder sourceBuilder, KernelDefinition definition)
+    private static void GenerateCSharpKernel(StringBuilder sourceBuilder, KernelDefinition definition)
     {
         sourceBuilder.AppendLine($"public void {definition.Name}(");
         GenerateParameters(sourceBuilder, definition, "");

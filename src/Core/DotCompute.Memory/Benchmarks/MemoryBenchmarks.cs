@@ -948,8 +948,11 @@ public static class MemoryBenchmarks
     /// </summary>
     private sealed class TestMemoryBuffer : IMemoryBuffer
     {
+        private bool _disposed;
+        
         public long SizeInBytes { get; }
         public DotCompute.Abstractions.MemoryOptions Options { get; }
+        public bool IsDisposed => _disposed;
         
         public TestMemoryBuffer(long sizeInBytes, DotCompute.Abstractions.MemoryOptions options)
         {
@@ -969,7 +972,13 @@ public static class MemoryBenchmarks
         
         public ValueTask DisposeAsync()
         {
+            _disposed = true;
             return ValueTask.CompletedTask;
+        }
+        
+        public void Dispose()
+        {
+            _disposed = true;
         }
     }
 }

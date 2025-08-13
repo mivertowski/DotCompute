@@ -184,6 +184,19 @@ public sealed partial class MetalBackendPlugin : BackendPluginBase
             // Ignore errors in metrics collection
         }
     }
+
+    #region Logger Message Delegates
+
+    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Initializing Metal backend plugin")]
+    private static partial void LogInitializing(ILogger logger);
+
+    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Starting Metal backend plugin")]
+    private static partial void LogStarting(ILogger logger);
+
+    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Stopping Metal backend plugin")]
+    private static partial void LogStopping(ILogger logger);
+
+    #endregion
 }
 
 /// <summary>
@@ -281,7 +294,7 @@ public enum MetalDeviceSelector
 /// <summary>
 /// Wrapper to provide named accelerator support.
 /// </summary>
-internal sealed class NamedAcceleratorWrapper(string name, IAccelerator accelerator) : IAccelerator
+internal sealed partial class NamedAcceleratorWrapper(string name, IAccelerator accelerator) : IAccelerator
 {
     private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
     private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
@@ -289,6 +302,8 @@ internal sealed class NamedAcceleratorWrapper(string name, IAccelerator accelera
     public string Name => _name;
 
     public AcceleratorInfo Info => _accelerator.Info;
+
+    public AcceleratorType Type => _accelerator.Type;
 
     public IMemoryManager Memory => _accelerator.Memory;
 
@@ -300,17 +315,4 @@ internal sealed class NamedAcceleratorWrapper(string name, IAccelerator accelera
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => _accelerator.SynchronizeAsync(cancellationToken);
 
     public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
-
-    #region Logger Message Delegates
-
-    [LoggerMessage(EventId = 1, Level = LogLevel.Information, Message = "Initializing Metal backend plugin")]
-    private static partial void LogInitializing(ILogger logger);
-
-    [LoggerMessage(EventId = 2, Level = LogLevel.Information, Message = "Starting Metal backend plugin")]
-    private static partial void LogStarting(ILogger logger);
-
-    [LoggerMessage(EventId = 3, Level = LogLevel.Information, Message = "Stopping Metal backend plugin")]
-    private static partial void LogStopping(ILogger logger);
-
-    #endregion
 }

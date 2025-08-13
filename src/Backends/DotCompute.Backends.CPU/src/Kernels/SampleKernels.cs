@@ -381,7 +381,7 @@ public static class SampleKernels
 /// <summary>
 /// Kernel execution utilities for CPU vectorization.
 /// </summary>
-public static class CpuKernelExecutor
+public static class CpuKernelUtils
 {
     /// <summary>
     /// Executes a vectorized kernel with automatic SIMD selection.

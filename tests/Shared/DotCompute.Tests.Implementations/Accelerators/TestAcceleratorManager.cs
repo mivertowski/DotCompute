@@ -316,7 +316,7 @@ public class TestGpuAcceleratorProvider : IAcceleratorProvider
 /// </summary>
 public class TestGpuAccelerator : IAccelerator
 {
-    public AcceleratorType Type => AcceleratorType.GPU;
+    public AcceleratorType Type => AcceleratorType.CUDA;
     private readonly IMemoryManager _memoryManager;
     private readonly ConcurrentDictionary<string, TestCompiledKernel> _compiledKernels;
     private bool _disposed;
@@ -352,7 +352,6 @@ public class TestGpuAccelerator : IAccelerator
     }
 
     public AcceleratorInfo Info { get; }
-    public AcceleratorType Type => AcceleratorType.CUDA;
     public IMemoryManager Memory => _memoryManager;
 
     public async ValueTask<ICompiledKernel> CompileKernelAsync(
@@ -387,7 +386,10 @@ public class TestGpuAccelerator : IAccelerator
         {
             _disposed = true;
             await SynchronizeAsync();
-            _memoryManager.Dispose();
+            if (_memoryManager is IDisposable disposable)
+            {
+                disposable.Dispose();
+            }
         }
     }
 }

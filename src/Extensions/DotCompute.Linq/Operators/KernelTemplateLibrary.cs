@@ -232,7 +232,7 @@ public class MapKernelTemplate : IKernelTemplate
             KernelLanguage.CUDA => Core.Kernels.KernelLanguage.CUDA,
             KernelLanguage.OpenCL => Core.Kernels.KernelLanguage.OpenCL,
             KernelLanguage.Metal => Core.Kernels.KernelLanguage.Metal,
-            KernelLanguage.SPIRV => Core.Kernels.KernelLanguage.SPIRV,
+            KernelLanguage.SPIRV => Core.Kernels.KernelLanguage.OpenCL, // SPIRV not available, fallback to OpenCL
             _ => Core.Kernels.KernelLanguage.CSharp
         };
     }

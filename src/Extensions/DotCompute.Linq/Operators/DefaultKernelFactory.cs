@@ -267,7 +267,7 @@ public class DefaultKernelFactory : IKernelFactory
             var testOutputType = typeof(float[]);
             var testContext = new KernelGenerationContext
             {
-                DeviceInfo = new AcceleratorInfo { Name = "Test", Type = AcceleratorType.CPU },
+                DeviceInfo = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024*1024*1024),
                 UseSharedMemory = false,
                 UseVectorTypes = false
             };
@@ -285,12 +285,12 @@ public class DefaultKernelFactory : IKernelFactory
     {
         return acceleratorType switch
         {
-            AcceleratorType.CUDA => Core.Kernels.KernelLanguage.CUDA,
-            AcceleratorType.OpenCL => Core.Kernels.KernelLanguage.OpenCL,
-            AcceleratorType.Metal => Core.Kernels.KernelLanguage.Metal,
-            AcceleratorType.DirectCompute => Core.Kernels.KernelLanguage.DirectCompute,
-            AcceleratorType.Vulkan => Core.Kernels.KernelLanguage.Vulkan,
-            _ => Core.Kernels.KernelLanguage.OpenCL
+            AcceleratorType.CUDA => KernelLanguage.CUDA,
+            AcceleratorType.OpenCL => KernelLanguage.OpenCL,
+            AcceleratorType.Metal => KernelLanguage.Metal,
+            AcceleratorType.CPU => KernelLanguage.OpenCL,
+            AcceleratorType.GPU => KernelLanguage.OpenCL,
+            _ => KernelLanguage.OpenCL
         };
     }
 }

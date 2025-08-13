@@ -14,6 +14,7 @@ using AbstractionsCompilationOptions = DotCompute.Abstractions.CompilationOption
 using AbstractionsIAccelerator = DotCompute.Abstractions.IAccelerator;
 using AbstractionsICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using AbstractionsIMemoryManager = DotCompute.Abstractions.IMemoryManager;
+using AcceleratorType = DotCompute.Abstractions.AcceleratorType;
 using AbstractionsKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using IAccelerator = DotCompute.Abstractions.IAccelerator;
 
@@ -237,6 +238,8 @@ internal sealed class NamedAcceleratorWrapper(string name, AbstractionsIAccelera
     private readonly AbstractionsIAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
 
     public string Name => _name;
+
+    public AcceleratorType Type => _accelerator.Type;
 
     public AbstractionsAcceleratorInfo Info => _accelerator.Info;
 

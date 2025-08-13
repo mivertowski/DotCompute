@@ -1,0 +1,63 @@
+// Copyright (c) 2025 Michael Ivertowski
+// Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+// This is a redirect to the main Complex implementation
+using DotCompute.Algorithms.SignalProcessing;
+
+// Re-export the Complex type for compatibility
+namespace DotCompute.Algorithms.Types.SignalProcessing
+{
+    /// <summary>
+    /// Complex number type alias for compatibility.
+    /// </summary>
+    public readonly struct Complex
+    {
+        private readonly DotCompute.Algorithms.SignalProcessing.Complex _inner;
+
+        /// <summary>
+        /// Initializes a new instance of the Complex struct.
+        /// </summary>
+        /// <param name="real">The real component.</param>
+        /// <param name="imaginary">The imaginary component.</param>
+        public Complex(float real, float imaginary)
+        {
+            _inner = new DotCompute.Algorithms.SignalProcessing.Complex(real, imaginary);
+        }
+
+        /// <summary>
+        /// Gets the real component.
+        /// </summary>
+        public float Real => _inner.Real;
+
+        /// <summary>
+        /// Gets the imaginary component.
+        /// </summary>
+        public float Imaginary => _inner.Imaginary;
+
+        /// <summary>
+        /// Gets the magnitude.
+        /// </summary>
+        public float Magnitude => _inner.Magnitude;
+
+        /// <summary>
+        /// Gets the phase.
+        /// </summary>
+        public float Phase => _inner.Phase;
+
+        /// <summary>
+        /// Implicit conversion from the main Complex type.
+        /// </summary>
+        public static implicit operator Complex(DotCompute.Algorithms.SignalProcessing.Complex complex)
+        {
+            return new Complex(complex.Real, complex.Imaginary);
+        }
+
+        /// <summary>
+        /// Implicit conversion to the main Complex type.
+        /// </summary>
+        public static implicit operator DotCompute.Algorithms.SignalProcessing.Complex(Complex complex)
+        {
+            return complex._inner;
+        }
+    }
+}

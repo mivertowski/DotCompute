@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Aot;
+using DotCompute.Core.Pipelines;
 
 namespace DotCompute.Tests.Shared.Pipelines;
 

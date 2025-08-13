@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Algorithms.Types;
 using DotCompute.Algorithms.Types.Kernels;
 using DotCompute.Core.Extensions;
 using DotCompute.Core.Kernels;

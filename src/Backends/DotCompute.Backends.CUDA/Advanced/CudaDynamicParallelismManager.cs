@@ -41,18 +41,18 @@ public sealed class CudaDynamicParallelismManager : IDisposable
     /// <summary>
     /// Optimizes a kernel for dynamic parallelism
     /// </summary>
-    public async Task<CudaOptimizationResult> OptimizeKernelAsync(
+    public Task<CudaOptimizationResult> OptimizeKernelAsync(
         CudaCompiledKernel kernel,
         KernelArgument[] arguments,
         CancellationToken cancellationToken = default)
     {
         if (!IsSupported)
         {
-            return new CudaOptimizationResult
+            return Task.FromResult(new CudaOptimizationResult
             {
                 Success = false,
                 ErrorMessage = "Dynamic Parallelism not supported on this device"
-            };
+            });
         }
 
         try
@@ -64,28 +64,28 @@ public sealed class CudaDynamicParallelismManager : IDisposable
             {
                 _metrics.ChildKernelLaunches++;
                 
-                return new CudaOptimizationResult
+                return Task.FromResult(new CudaOptimizationResult
                 {
                     Success = true,
                     OptimizationsApplied = ["Dynamic parallelism patterns optimized"],
                     PerformanceGain = 1.4 // Estimated gain
-                };
+                });
             }
 
-            return new CudaOptimizationResult
+            return Task.FromResult(new CudaOptimizationResult
             {
                 Success = false,
                 ErrorMessage = "Kernel not suitable for dynamic parallelism"
-            };
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error optimizing kernel for dynamic parallelism");
-            return new CudaOptimizationResult
+            return Task.FromResult(new CudaOptimizationResult
             {
                 Success = false,
                 ErrorMessage = ex.Message
-            };
+            });
         }
     }
 

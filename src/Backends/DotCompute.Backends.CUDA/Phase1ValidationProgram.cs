@@ -16,7 +16,7 @@ public static class Phase1ValidationProgram
     /// <param name="args">Command line arguments.</param>
     public static int Main(string[] args)
     {
-        using var loggerFactory = LoggerFactory.Create(builder =>
+        using var loggerFactory = Microsoft.Extensions.Logging.LoggerFactory.Create(builder =>
         {
             builder.AddConsole().SetMinimumLevel(LogLevel.Information);
         });

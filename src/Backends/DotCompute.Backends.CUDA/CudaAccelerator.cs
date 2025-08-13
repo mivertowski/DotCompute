@@ -27,6 +27,9 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
     private bool _disposed;
 
     /// <inheritdoc/>
+    public AcceleratorType Type => AcceleratorType.CUDA;
+    
+    /// <inheritdoc/>
     public AcceleratorInfo Info => _info;
 
     /// <inheritdoc/>
@@ -89,7 +92,7 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
         ArgumentNullException.ThrowIfNull(definition);
         options ??= new CompilationOptions();
 
-        _logger.LogDebug("Compiling kernel '{KernelName}' for CUDA device {DeviceId}", definition.Name, _deviceId);
+        _logger.LogDebug("Compiling kernel '{KernelName}' for CUDA device {DeviceId}", definition.Name, DeviceId);
 
         try
         {
@@ -111,7 +114,7 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
 
         try
         {
-            _logger.LogTrace("Synchronizing CUDA device {DeviceId}", _deviceId);
+            _logger.LogTrace("Synchronizing CUDA device {DeviceId}", DeviceId);
 
             // Run synchronization on a background thread to avoid blocking
             await Task.Run(() =>
@@ -123,11 +126,11 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
                 }
             }, cancellationToken).ConfigureAwait(false);
 
-            _logger.LogTrace("CUDA device {DeviceId} synchronized", _deviceId);
+            _logger.LogTrace("CUDA device {DeviceId} synchronized", DeviceId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to synchronize CUDA device {DeviceId}", _deviceId);
+            _logger.LogError(ex, "Failed to synchronize CUDA device {DeviceId}", DeviceId);
             throw;
         }
     }

@@ -156,7 +156,9 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
         {
             var elementType = netType.GetElementType()!;
             var optimalElementType = GetOptimalGpuType(elementType);
-            return optimalElementType.MakeArrayType();
+            // AOT-compatible array type creation
+            var arrayType = typeof(Array).Assembly.GetType(optimalElementType.FullName + "[]");
+            return arrayType ?? typeof(Array);
         }
 
         // Handle generic types
@@ -173,7 +175,7 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
         return netType;
     }
 
-    private Dictionary<Type, TypeCapabilities> InitializeTypeCapabilities()
+    private static Dictionary<Type, TypeCapabilities> InitializeTypeCapabilities()
     {
         return new Dictionary<Type, TypeCapabilities>
         {
@@ -325,12 +327,12 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
         return _typeCapabilities.TryGetValue(type, out var capabilities) ? capabilities.VectorType : null;
     }
 
-    private bool CanReducePrecision(Type type)
+    private static bool CanReducePrecision(Type type)
     {
         return type == typeof(double) || type == typeof(decimal);
     }
 
-    private Type GetReducedPrecisionType(Type type)
+    private static Type GetReducedPrecisionType(Type type)
     {
         return type switch
         {
@@ -340,7 +342,7 @@ public sealed class TypeInferenceEngine : ITypeInferenceEngine
         };
     }
 
-    private bool RequiresMemoryLayoutOptimization(Type type)
+    private static bool RequiresMemoryLayoutOptimization(Type type)
     {
         if (!type.IsValueType || type.IsPrimitive)
         {
