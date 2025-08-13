@@ -14,6 +14,7 @@ using System.Text.RegularExpressions;
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Exceptions;
 using DotCompute.Plugins.Interfaces;
+using DotCompute.Plugins.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -1121,6 +1122,11 @@ namespace DotCompute.Plugins.Loaders
         private readonly DependencyGraph _dependencyGraph;
         private readonly AssemblyDependencyResolver _resolver;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="NuGetPluginLoadContext"/> class.
+        /// </summary>
+        /// <param name="manifest">The manifest.</param>
+        /// <param name="dependencyGraph">The dependency graph.</param>
         public NuGetPluginLoadContext(NuGetPluginManifest manifest, DependencyGraph dependencyGraph) 
             : base($"Plugin_{manifest.Id}_{manifest.Version}", isCollectible: true)
         {
@@ -1129,6 +1135,13 @@ namespace DotCompute.Plugins.Loaders
             _resolver = new AssemblyDependencyResolver(manifest.AssemblyPath);
         }
 
+        /// <summary>
+        /// When overridden in a derived class, allows an assembly to be resolved based on its <see cref="T:System.Reflection.AssemblyName" />.
+        /// </summary>
+        /// <param name="assemblyName">The object that describes the assembly to be resolved.</param>
+        /// <returns>
+        /// The resolved assembly, or <see langword="null" />.
+        /// </returns>
         protected override Assembly? Load(AssemblyName assemblyName)
         {
             var assemblyPath = _resolver.ResolveAssemblyToPath(assemblyName);
@@ -1149,6 +1162,13 @@ namespace DotCompute.Plugins.Loaders
             return null;
         }
 
+        /// <summary>
+        /// Allows derived class to load an unmanaged library by name.
+        /// </summary>
+        /// <param name="unmanagedDllName">Name of the unmanaged library. Typically this is the filename without its path or extensions.</param>
+        /// <returns>
+        /// A handle to the loaded library, or <see cref="F:System.IntPtr.Zero" />.
+        /// </returns>
         protected override IntPtr LoadUnmanagedDll(string unmanagedDllName)
         {
             var libraryPath = _resolver.ResolveUnmanagedDllToPath(unmanagedDllName);

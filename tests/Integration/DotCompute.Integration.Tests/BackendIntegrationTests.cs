@@ -187,7 +187,7 @@ public class BackendIntegrationTests : CoverageTestBase
     }
 
     [Fact] 
-    public async Task Backend_ResourceCleanup_ReleasesMemoryProperly()
+    public Task Backend_ResourceCleanup_ReleasesMemoryProperly()
     {
         // Arrange
         _hardwareSimulator.CreateCpuOnlySetup();
@@ -205,6 +205,8 @@ public class BackendIntegrationTests : CoverageTestBase
         // Assert
         Assert.True(memoryAfterAlloc < initialMemory);
         Assert.Equal(initialMemory, memoryAfterFree);
+
+        return Task.CompletedTask;
     }
 
     [Fact]
