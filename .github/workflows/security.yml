@@ -2,11 +2,11 @@ name: Security
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main ]
   pull_request:
     branches: [ main ]
   schedule:
-    - cron: '0 2 * * 0' # Weekly on Sundays at 2am UTC
+    - cron: '0 0 * * 0'  # Weekly on Sunday at midnight
 
 permissions:
   contents: read
@@ -16,16 +16,17 @@ jobs:
   codeql:
     name: CodeQL Analysis
     runs-on: ubuntu-latest
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
     
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v3
       with:
         languages: csharp
         queries: security-and-quality
-    
+
     - name: Setup .NET
       uses: actions/setup-dotnet@v4
       with:
