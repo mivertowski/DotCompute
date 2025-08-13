@@ -21,6 +21,7 @@
     <ProjectReference Include="../../../src/Backends/DotCompute.Backends.CPU/DotCompute.Backends.CPU.csproj" />
     <ProjectReference Include="../../../src/Core/DotCompute.Abstractions/DotCompute.Abstractions.csproj" />
     <ProjectReference Include="../../../src/Core/DotCompute.Core/DotCompute.Core.csproj" />
+    <ProjectReference Include="..\..\Shared\DotCompute.Tests.Common\DotCompute.Tests.Common.csproj" />
   </ItemGroup>
 
   <ItemGroup>
