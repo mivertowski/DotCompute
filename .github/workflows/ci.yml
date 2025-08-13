@@ -113,7 +113,7 @@ jobs:
 
     - name: Upload coverage to Codecov
       if: hashFiles('./coverage/**/*.xml') != ''
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         directory: ./coverage
         flags: unittests
