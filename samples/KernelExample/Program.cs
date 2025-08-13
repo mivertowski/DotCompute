@@ -17,15 +17,13 @@ namespace DotCompute.Samples.KernelExample
         {
             Console.WriteLine("DotCompute Kernel Source Generator Example");
             Console.WriteLine("==========================================");
+            Console.WriteLine("Note: This is a simplified demonstration of the kernel generation system.");
 
-            // Create memory manager
-            var memoryManager = new UnifiedMemoryManager();
-
-            // Allocate buffers
+            // Create test data using regular arrays for this example
             const int size = 1024 * 1024; // 1M elements
-            var a = memoryManager.Allocate<float>(size);
-            var b = memoryManager.Allocate<float>(size);
-            var result = memoryManager.Allocate<float>(size);
+            var a = new float[size];
+            var b = new float[size];
+            var result = new float[size];
 
             // Initialize data
             InitializeData(a.AsSpan(), b.AsSpan());
@@ -34,12 +32,11 @@ namespace DotCompute.Samples.KernelExample
             Console.WriteLine("\nExecuting vector addition kernel...");
             var sw = System.Diagnostics.Stopwatch.StartNew();
             
-            // This will call the generated implementation
-            VectorMath.AddVectors(
-                (float*)a.DataPointer,
-                (float*)b.DataPointer,
-                (float*)result.DataPointer,
-                size);
+            // This demonstrates the kernel interface - in real scenarios this would work with GPU memory
+            fixed (float* aPtr = a, bPtr = b, resultPtr = result)
+            {
+                VectorMath.AddVectors(aPtr, bPtr, resultPtr, size);
+            }
             
             sw.Stop();
             Console.WriteLine($"Completed in {sw.ElapsedMilliseconds}ms");
@@ -47,13 +44,8 @@ namespace DotCompute.Samples.KernelExample
             // Verify results
             VerifyResults(a.AsSpan(), b.AsSpan(), result.AsSpan());
 
-            // Cleanup
-            a.Dispose();
-            b.Dispose();
-            result.Dispose();
-            memoryManager.Dispose();
-
             Console.WriteLine("\nExample completed successfully!");
+            Console.WriteLine("In production, this would use actual GPU memory buffers and execute on the GPU.");
         }
 
         private static void InitializeData(Span<float> a, Span<float> b)

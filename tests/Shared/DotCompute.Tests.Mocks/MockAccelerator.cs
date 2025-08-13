@@ -212,6 +212,37 @@ public class MockMemoryManager : IMemoryManager
         return new MockMemoryBufferView((MockMemoryBuffer)buffer, offset, length);
     }
 
+    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        return AllocateAsync(sizeInBytes);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        if (buffer is MockMemoryBuffer mockBuffer)
+        {
+            // Simulate copying data to the mock buffer
+            var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
+            bytes.CopyTo(mockBuffer.GetData().AsSpan());
+        }
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        if (buffer is MockMemoryBuffer mockBuffer)
+        {
+            // Simulate copying data from the mock buffer
+            var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
+            mockBuffer.GetData().AsSpan()[..bytes.Length].CopyTo(bytes);
+        }
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        buffer?.Dispose();
+    }
+
     public ValueTask DisposeAsync()
     {
         if (_isDisposed) return ValueTask.CompletedTask;

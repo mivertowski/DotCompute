@@ -357,6 +357,27 @@ internal class MockMemoryManager : IMemoryManager
         return new MockMemoryBuffer(length);
     }
 
+    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        return AllocateAsync(sizeInBytes);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        // Mock implementation - just simulate the operation
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        // Mock implementation - just simulate the operation
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        buffer?.Dispose();
+    }
+
     public void Dispose() { }
 }
 

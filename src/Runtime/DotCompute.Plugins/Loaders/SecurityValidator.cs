@@ -739,19 +739,6 @@ namespace DotCompute.Plugins.Loaders
         public string? ErrorMessage { get; set; }
     }
 
-    /// <summary>
-    /// Plugin signature information with validation errors.
-    /// </summary>
-    public class PluginSignature
-    {
-        public bool IsSigned { get; set; }
-        public bool IsValid { get; set; }
-        public bool HasStrongName { get; set; }
-        public string? Publisher { get; set; }
-        public string? CertificateThumbprint { get; set; }
-        public string? SigningAlgorithm { get; set; }
-        public List<string> ValidationErrors { get; set; } = new();
-    }
 
     /// <summary>
     /// Represents a security vulnerability.

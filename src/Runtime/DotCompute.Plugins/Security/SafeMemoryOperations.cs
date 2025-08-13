@@ -20,7 +20,7 @@ namespace DotCompute.Plugins.Security
         /// <summary>
         /// Maximum allowed array length to prevent integer overflow attacks.
         /// </summary>
-        public const int MaxArrayLength = Array.MaxLength;
+        public static readonly int MaxArrayLength = Array.MaxLength;
 
         /// <summary>
         /// Safely copies data between memory spans with comprehensive bounds checking.
