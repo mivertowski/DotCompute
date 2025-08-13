@@ -1,4 +1,5 @@
 using System.Buffers;
+using DotCompute.Memory;
 using FluentAssertions;
 using Xunit;
 

@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using DotCompute.Core.Pipelines;
 
 namespace DotCompute.Tests.Integration;
 

@@ -9,6 +9,7 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Tests.Unit;
 

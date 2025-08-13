@@ -5,11 +5,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Shared.Kernels;
-using DotCompute.Tests.Shared.Kernels.Accelerators;
-using DotCompute.Tests.Shared.Kernels;
-using DotCompute.Tests.Shared.Kernels.Memory;
-using Xunit;
 using Xunit.Abstractions;
+using DotCompute.Tests.Shared.Accelerators;
 
 namespace DotCompute.Tests.Unit;
 

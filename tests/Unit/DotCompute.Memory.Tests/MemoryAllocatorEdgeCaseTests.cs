@@ -4,6 +4,7 @@
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using DotCompute.Memory;
 using FluentAssertions;
 using Xunit;
 

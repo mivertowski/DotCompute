@@ -462,7 +462,7 @@ public class OpenCLKernelExecutorTests : IDisposable
             EntryPoint = name,
             NativeHandle = new IntPtr(0x12345678), // Mock handle
             IsCompiled = true,
-            Language = DotCompute.Tests.Common.KernelLanguage.OpenCL,
+            Language = KernelLanguage.OpenCL,
             Metadata = new Dictionary<string, string>
             {
                 ["preferred_work_group_size"] = "256",

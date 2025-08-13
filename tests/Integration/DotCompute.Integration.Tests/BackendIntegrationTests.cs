@@ -1,6 +1,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Tests.Shared.TestInfrastructure;
 using Microsoft.Extensions.Logging;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Integration;

@@ -11,7 +11,6 @@ using DotCompute.Backends.CPU;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
-using DotCompute.Tests.Shared;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;

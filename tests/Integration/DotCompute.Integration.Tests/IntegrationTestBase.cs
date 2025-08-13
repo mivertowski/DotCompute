@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using MemoryOptions = DotCompute.Abstractions.MemoryOptions;
+using DotCompute.Core.Pipelines;
 
 namespace DotCompute.Tests.Integration;
 

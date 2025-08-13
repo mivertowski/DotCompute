@@ -5,6 +5,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
+using DotCompute.Core.Memory;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -390,7 +391,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     {
         public ValueTask<IMemoryBuffer> AllocateAsync(
             long sizeInBytes,
-            MemoryOptions options,
+            Abstractions.MemoryOptions options,
             CancellationToken cancellationToken = default)
         {
             return ValueTask.FromResult<IMemoryBuffer>(new MockMemoryBuffer(sizeInBytes, options));
@@ -398,7 +399,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
 
         public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
             ReadOnlyMemory<T> source,
-            MemoryOptions options,
+            Abstractions.MemoryOptions options,
             CancellationToken cancellationToken = default) where T : unmanaged
         {
             var sizeInBytes = source.Length * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
@@ -416,14 +417,14 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     /// </summary>
     private sealed class MockMemoryBuffer : IMemoryBuffer
     {
-        public MockMemoryBuffer(long sizeInBytes, MemoryOptions options)
+        public MockMemoryBuffer(long sizeInBytes, Abstractions.MemoryOptions options)
         {
             SizeInBytes = sizeInBytes;
             Options = options;
         }
 
         public long SizeInBytes { get; }
-        public MemoryOptions Options { get; }
+        public Abstractions.MemoryOptions Options { get; }
         public bool IsDisposed => false;
 
         public ValueTask CopyFromHostAsync<T>(

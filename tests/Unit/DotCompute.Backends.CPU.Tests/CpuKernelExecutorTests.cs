@@ -5,7 +5,6 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
-using Microsoft.Extensions.Logging.Testing;
 using Microsoft.Extensions.Options;
 
 namespace DotCompute.Backends.CPU;
