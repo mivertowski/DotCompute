@@ -3,8 +3,8 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Core.Tests.Memory;
 
@@ -23,11 +23,11 @@ public class MemoryManagerInterfaceTests
         var interfaceType = typeof(IMemoryManager);
 
         // Assert
-        interfaceType.Should().NotBeNull();
-        interfaceType.GetMethod("CreateBufferAsync").Should().NotBeNull();
-        interfaceType.GetMethod("CopyAsync").Should().NotBeNull();
-        interfaceType.GetMethod("GetStatistics").Should().NotBeNull();
-        interfaceType.GetProperty("AvailableLocations").Should().NotBeNull();
+        Assert.NotNull(interfaceType);
+        interfaceType.GetMethod("CreateBufferAsync").NotBeNull();
+        interfaceType.GetMethod("CopyAsync").NotBeNull();
+        interfaceType.GetMethod("GetStatistics").NotBeNull();
+        interfaceType.GetProperty("AvailableLocations").NotBeNull();
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class MemoryManagerInterfaceTests
         var interfaceType = typeof(IMemoryManager);
 
         // Assert
-        interfaceType.GetInterfaces().Should().Contain(typeof(IAsyncDisposable));
+        interfaceType.GetInterfaces().Contain(typeof(IAsyncDisposable));
     }
 
     #endregion
@@ -48,7 +48,7 @@ public class MemoryManagerInterfaceTests
     public void MemoryLocation_ShouldHaveExpectedValues()
     {
         // Act & Assert
-        Enum.GetValues<MemoryLocation>().Should().Contain(new[]
+        Enum.GetValues<MemoryLocation>().Contain(new[]
         {
             MemoryLocation.Host,
             MemoryLocation.Device,
@@ -70,7 +70,7 @@ public class MemoryManagerInterfaceTests
         var name = location.ToString();
 
         // Assert
-        name.Should().Be(expectedName);
+        Assert.Equal(expectedName, name);
     }
 
     #endregion
@@ -110,7 +110,7 @@ public class MemoryManagerInterfaceTests
         var result = combined.HasFlag(flag);
 
         // Assert
-        result.Should().Be(hasFlag);
+        Assert.Equal(hasFlag, result);
     }
 
     #endregion
@@ -121,7 +121,7 @@ public class MemoryManagerInterfaceTests
     public void MemoryMapMode_ShouldHaveExpectedValues()
     {
         // Act & Assert
-        Enum.GetValues<MemoryMapMode>().Should().Contain(new[]
+        Enum.GetValues<MemoryMapMode>().Contain(new[]
         {
             MemoryMapMode.ReadOnly,
             MemoryMapMode.WriteOnly,
@@ -140,11 +140,11 @@ public class MemoryManagerInterfaceTests
         var interfaceType = typeof(IMemoryMapping<>);
 
         // Assert
-        interfaceType.Should().NotBeNull();
-        interfaceType.GetProperty("Span").Should().NotBeNull();
-        interfaceType.GetProperty("Mode").Should().NotBeNull();
-        interfaceType.GetProperty("IsValid").Should().NotBeNull();
-        interfaceType.GetMethod("Flush").Should().NotBeNull();
+        Assert.NotNull(interfaceType);
+        interfaceType.GetProperty("Span").NotBeNull();
+        interfaceType.GetProperty("Mode").NotBeNull();
+        interfaceType.GetProperty("IsValid").NotBeNull();
+        interfaceType.GetMethod("Flush").NotBeNull();
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class MemoryManagerInterfaceTests
         var interfaceType = typeof(IMemoryMapping<>);
 
         // Assert
-        interfaceType.GetInterfaces().Should().Contain(typeof(IDisposable));
+        interfaceType.GetInterfaces().Contain(typeof(IDisposable));
     }
 
     #endregion
@@ -168,13 +168,13 @@ public class MemoryManagerInterfaceTests
         var interfaceType = typeof(IMemoryStatistics);
 
         // Assert
-        interfaceType.Should().NotBeNull();
-        interfaceType.GetProperty("TotalAllocatedBytes").Should().NotBeNull();
-        interfaceType.GetProperty("AvailableBytes").Should().NotBeNull();
-        interfaceType.GetProperty("PeakUsageBytes").Should().NotBeNull();
-        interfaceType.GetProperty("AllocationCount").Should().NotBeNull();
-        interfaceType.GetProperty("FragmentationPercentage").Should().NotBeNull();
-        interfaceType.GetProperty("UsageByLocation").Should().NotBeNull();
+        Assert.NotNull(interfaceType);
+        interfaceType.GetProperty("TotalAllocatedBytes").NotBeNull();
+        interfaceType.GetProperty("AvailableBytes").NotBeNull();
+        interfaceType.GetProperty("PeakUsageBytes").NotBeNull();
+        interfaceType.GetProperty("AllocationCount").NotBeNull();
+        interfaceType.GetProperty("FragmentationPercentage").NotBeNull();
+        interfaceType.GetProperty("UsageByLocation").NotBeNull();
     }
 
     [Fact]
@@ -222,8 +222,8 @@ public class MemoryManagerInterfaceTests
         // Act & Assert
         foreach (var location in allLocations)
         {
-            location.Should().BeDefined();
-            ((int)location).Should().BeGreaterOrEqualTo(0);
+            location.BeDefined();
+            ((int)location).BeGreaterOrEqualTo(0);
         }
     }
 
@@ -240,7 +240,7 @@ public class MemoryManagerInterfaceTests
     public void MemoryAccess_ValidCombinations_ShouldBeSupported(MemoryAccess access)
     {
         // Act & Assert
-        access.Should().BeDefined();
+        access.BeDefined();
         ((int)access).Should().BeGreaterThan(0);
     }
 
@@ -253,7 +253,7 @@ public class MemoryManagerInterfaceTests
         // Assert
         readWrite.HasFlag(MemoryAccess.ReadOnly).Should().BeTrue();
         readWrite.HasFlag(MemoryAccess.WriteOnly).Should().BeTrue();
-        readWrite.Should().Be(MemoryAccess.ReadOnly | MemoryAccess.WriteOnly);
+        Assert.Equal(MemoryAccess.ReadOnly | MemoryAccess.WriteOnly, readWrite);
     }
 
     #endregion
@@ -270,20 +270,20 @@ public class MemoryManagerInterfaceTests
             .ToArray();
 
         // Act & Assert
-        createBufferMethods.Should().HaveCount(2); // Two overloads
+        Assert.Equal(2, createBufferMethods.Count()); // Two overloads
         
         // Check first overload (elementCount)
         var firstOverload = createBufferMethods.FirstOrDefault(m => 
             m.GetParameters().Length >= 2 && 
             m.GetParameters()[0].ParameterType == typeof(int));
-        firstOverload.Should().NotBeNull();
+        Assert.NotNull(firstOverload);
         firstOverload!.IsGenericMethodDefinition.Should().BeTrue();
         
         // Check second overload (data)
         var secondOverload = createBufferMethods.FirstOrDefault(m => 
             m.GetParameters().Length >= 2 && 
             m.GetParameters()[0].ParameterType.IsGenericType);
-        secondOverload.Should().NotBeNull();
+        Assert.NotNull(secondOverload);
         secondOverload!.IsGenericMethodDefinition.Should().BeTrue();
     }
 
@@ -295,11 +295,11 @@ public class MemoryManagerInterfaceTests
         var copyMethod = interfaceType.GetMethod("CopyAsync");
 
         // Act & Assert
-        copyMethod.Should().NotBeNull();
+        Assert.NotNull(copyMethod);
         copyMethod!.IsGenericMethodDefinition.Should().BeTrue();
         
         var parameters = copyMethod.GetParameters();
-        parameters.Should().HaveCountGreaterThan(2);
+        parameters.HaveCountGreaterThan(2);
         parameters[0].Name.Should().Be("source");
         parameters[1].Name.Should().Be("destination");
     }
@@ -316,7 +316,7 @@ public class MemoryManagerInterfaceTests
         var properties = interfaceType.GetProperties();
 
         // Act & Assert
-        properties.Should().HaveCount(6);
+        Assert.Equal(6, properties.Count());
         
         // Verify all properties are read-only (no setters)
         foreach (var property in properties)
@@ -334,7 +334,7 @@ public class MemoryManagerInterfaceTests
         var property = interfaceType.GetProperty("UsageByLocation");
 
         // Act & Assert
-        property.Should().NotBeNull();
+        Assert.NotNull(property);
         property!.PropertyType.Should().Be(typeof(IReadOnlyDictionary<MemoryLocation, long>));
         
         // Should be read-only dictionary to prevent external modification
@@ -358,8 +358,8 @@ public class MemoryInterfaceUsageTests
         var indices = allLocations.Cast<int>().ToArray();
 
         // Act & Assert
-        indices.Should().OnlyHaveUniqueItems();
-        indices.Should().AllSatisfy(i => i.Should().BeGreaterOrEqualTo(0));
+        indices.OnlyHaveUniqueItems();
+        indices.Should().AllSatisfy(i => i.BeGreaterOrEqualTo(0));
     }
 
     [Theory]
@@ -372,7 +372,7 @@ public class MemoryInterfaceUsageTests
     {
         // This test validates that the enum values match their documented purposes
         // Act & Assert
-        location.Should().BeDefined();
+        location.BeDefined();
         
         // The descriptions are validated through XML documentation and usage patterns
         // This test ensures the enum values exist and can be used as expected
@@ -409,10 +409,10 @@ public class MemoryInterfaceUsageTests
         var allModes = Enum.GetValues<MemoryMapMode>();
 
         // Act & Assert
-        allModes.Should().Contain(MemoryMapMode.ReadOnly);
-        allModes.Should().Contain(MemoryMapMode.WriteOnly);
-        allModes.Should().Contain(MemoryMapMode.ReadWrite);
-        allModes.Should().HaveCount(3);
+        Assert.Contains(MemoryMapMode.ReadOnly, allModes);
+        Assert.Contains(MemoryMapMode.WriteOnly, allModes);
+        Assert.Contains(MemoryMapMode.ReadWrite, allModes);
+        Assert.Equal(3, allModes.Count());
     }
 
     [Theory]
@@ -425,22 +425,22 @@ public class MemoryInterfaceUsageTests
         // The actual enforcement would be in the implementation
         
         // Act & Assert
-        mode.Should().BeDefined();
+        mode.BeDefined();
         
         // Test logical consistency
         switch (mode)
         {
             case MemoryMapMode.ReadOnly:
-                canRead.Should().BeTrue();
-                canWrite.Should().BeFalse();
+                Assert.True(canRead);
+                Assert.False(canWrite);
                 break;
             case MemoryMapMode.WriteOnly:
-                canRead.Should().BeFalse();
-                canWrite.Should().BeTrue();
+                Assert.False(canRead);
+                Assert.True(canWrite);
                 break;
             case MemoryMapMode.ReadWrite:
-                canRead.Should().BeTrue();
-                canWrite.Should().BeTrue();
+                Assert.True(canRead);
+                Assert.True(canWrite);
                 break;
         }
     }

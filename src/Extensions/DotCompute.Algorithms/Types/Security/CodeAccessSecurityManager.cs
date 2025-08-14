@@ -218,7 +218,7 @@ public class CodeAccessSecurityManager : IDisposable
     private void AddLocalIntranetPermissions(PermissionSet permissionSet)
     {
         // High trust for local intranet
-        permissionSet.SetPermission(new FileIOPermission(FileIOPermissionAccess.Read | FileIOPermissionAccess.PathDiscovery, _options.AllowedFileSystemPaths.ToArray()));
+        permissionSet.SetPermission(new FileIOPermission(FileIOPermissionAccess.Read | FileIOPermissionAccess.PathDiscovery, _options.AllowedFileSystemPaths.ToArray();
         permissionSet.SetPermission(new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess));
         permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
     }
@@ -228,7 +228,7 @@ public class CodeAccessSecurityManager : IDisposable
         // Medium trust for trusted sites
         if (_options.AllowedFileSystemPaths.Count > 0)
         {
-            permissionSet.SetPermission(new FileIOPermission(FileIOPermissionAccess.Read, _options.AllowedFileSystemPaths.ToArray()));
+            permissionSet.SetPermission(new FileIOPermission(FileIOPermissionAccess.Read, _options.AllowedFileSystemPaths.ToArray();
         }
         permissionSet.SetPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
     }
@@ -264,7 +264,7 @@ public class CodeAccessSecurityManager : IDisposable
             var filePermission = permissionSet.GetPermission(typeof(FileIOPermission)) as FileIOPermission;
             return filePermission != null && (filePermission.IsUnrestricted() || 
                    string.IsNullOrEmpty(target) || 
-                   _options.AllowedFileSystemPaths.Any(path => target.StartsWith(path, StringComparison.OrdinalIgnoreCase)));
+                   _options.AllowedFileSystemPaths.Any(path => target.StartsWith(path, StringComparison.OrdinalIgnoreCase);
         }
         catch
         {

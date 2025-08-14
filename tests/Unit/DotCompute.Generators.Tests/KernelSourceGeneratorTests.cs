@@ -4,11 +4,11 @@
 using System.Collections.Immutable;
 using System.Reflection;
 using DotCompute.Generators.Kernel;
-using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -26,7 +26,7 @@ public class KernelSourceGeneratorTests
         _generator.Initialize(context);
         
         // Assert
-        context.SyntaxProviders.Should().HaveCount(2, "Should register providers for kernel methods and classes");
+        context."Should register providers for kernel methods and classes", SyntaxProviders.Count.Should().Be(2));
     }
 
     [Fact]
@@ -35,6 +35,7 @@ public class KernelSourceGeneratorTests
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class TestKernels
 {
@@ -53,11 +54,11 @@ public class TestKernels
 
         // Assert
         result.Diagnostics.Should().BeEmpty("Generator should not produce diagnostics for valid kernel");
-        result.GeneratedSources.Should().ContainSingle(s => s.HintName == "KernelRegistry.g.cs");
+        result.GeneratedSources.ContainSingle(s => s.HintName == "KernelRegistry.g.cs");
         
         var registrySource = result.GeneratedSources.First(s => s.HintName == "KernelRegistry.g.cs");
-        registrySource.SourceText.ToString().Should().Contain("KernelRegistry");
-        registrySource.SourceText.ToString().Should().Contain("TestKernels.AddArrays");
+        registrySource.SourceText.ToString().Contain("KernelRegistry");
+        registrySource.SourceText.ToString().Contain("TestKernels.AddArrays");
     }
 
     [Fact]
@@ -66,6 +67,7 @@ public class TestKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class MathKernels
 {
@@ -83,12 +85,12 @@ public class MathKernels
         var result = TestHelper.RunGenerator(_generator, source);
 
         // Assert
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("MathKernels_MultiplyArrays_CPU.g.cs"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("MathKernels_MultiplyArrays_CPU.g.cs"));
         
         var cpuImpl = result.GeneratedSources.First(s => s.HintName.Contains("CPU.g.cs"));
-        cpuImpl.SourceText.ToString().Should().Contain("MultiplyArraysCpuKernel");
-        cpuImpl.SourceText.ToString().Should().Contain("ExecuteSIMD");
-        cpuImpl.SourceText.ToString().Should().Contain("ExecuteScalar");
+        cpuImpl.SourceText.ToString().Contain("MultiplyArraysCpuKernel");
+        cpuImpl.SourceText.ToString().Contain("ExecuteSIMD");
+        cpuImpl.SourceText.ToString().Contain("ExecuteScalar");
     }
 
     [Fact]
@@ -97,6 +99,7 @@ public class MathKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class MultiBackendKernel
 {
@@ -114,9 +117,9 @@ public class MultiBackendKernel
         var result = TestHelper.RunGenerator(_generator, source);
 
         // Assert
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("_CPU.g.cs"));
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("_CUDA.g.cs"));
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("_Metal.g.cs"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("_CPU.g.cs"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("_CUDA.g.cs"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("_Metal.g.cs"));
     }
 
     [Fact]
@@ -125,6 +128,7 @@ public class MultiBackendKernel
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class ComplexKernels
 {
@@ -139,12 +143,12 @@ public class ComplexKernels
         var result = TestHelper.RunGenerator(_generator, source);
 
         // Assert
-        result.GeneratedSources.Should().Contain(s => s.HintName == "ComplexKernelsInvoker.g.cs");
+        result.Assert.Contains(s => s.HintName == "ComplexKernelsInvoker.g.cs", GeneratedSources);
         
         var invoker = result.GeneratedSources.First(s => s.HintName == "ComplexKernelsInvoker.g.cs");
-        invoker.SourceText.ToString().Should().Contain("InvokeAdd");
-        invoker.SourceText.ToString().Should().Contain("InvokeMultiply");
-        invoker.SourceText.ToString().Should().Contain("InvokeKernel");
+        invoker.SourceText.ToString().Contain("InvokeAdd");
+        invoker.SourceText.ToString().Contain("InvokeMultiply");
+        invoker.SourceText.ToString().Contain("InvokeKernel");
     }
 
     [Fact]
@@ -153,6 +157,7 @@ public class ComplexKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class ParallelKernels
 {
@@ -171,8 +176,8 @@ public class ParallelKernels
 
         // Assert
         var cpuImpl = result.GeneratedSources.First(s => s.HintName.Contains("CPU.g.cs"));
-        cpuImpl.SourceText.ToString().Should().Contain("ExecuteParallel");
-        cpuImpl.SourceText.ToString().Should().Contain("Parallel.ForEach");
+        cpuImpl.SourceText.ToString().Contain("ExecuteParallel");
+        cpuImpl.SourceText.ToString().Contain("Parallel.ForEach");
     }
 
     [Fact]
@@ -181,6 +186,7 @@ public class ParallelKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class OptimizedKernels
 {
@@ -199,7 +205,7 @@ public class OptimizedKernels
         var result = TestHelper.RunGenerator(_generator, source);
 
         // Assert
-        result.Diagnostics.Should().BeEmpty();
+        result.Assert.Empty(Diagnostics);
         result.GeneratedSources.Should().NotBeEmpty();
     }
 
@@ -209,6 +215,7 @@ public class OptimizedKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class GpuKernels
 {
@@ -225,9 +232,9 @@ public class GpuKernels
         var result = TestHelper.RunGenerator(_generator, source);
 
         // Assert
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("_CUDA.g.cs"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("_CUDA.g.cs"));
         var cudaImpl = result.GeneratedSources.First(s => s.HintName.Contains("CUDA.g.cs"));
-        cudaImpl.SourceText.ToString().Should().Contain("MatrixMultiply_cuda_kernel");
+        cudaImpl.SourceText.ToString().Contain("MatrixMultiply_cuda_kernel");
     }
 
     [Fact]
@@ -236,6 +243,7 @@ public class GpuKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class TypedKernels
 {
@@ -253,13 +261,13 @@ public class TypedKernels
         var result = TestHelper.RunGenerator(_generator, source);
 
         // Assert
-        result.GeneratedSources.Should().HaveCountGreaterThan(3);
+        result.GeneratedSources.HaveCountGreaterThan(3);
         result.GeneratedSources.SelectMany(s => s.SourceText.ToString().Split('\n'))
-            .Should().ContainMatch("*int*");
+            .ContainMatch("*int*");
         result.GeneratedSources.SelectMany(s => s.SourceText.ToString().Split('\n'))
-            .Should().ContainMatch("*double*");
+            .ContainMatch("*double*");
         result.GeneratedSources.SelectMany(s => s.SourceText.ToString().Split('\n'))
-            .Should().ContainMatch("*float**");
+            .ContainMatch("*float**");
     }
 
     [Fact]
@@ -286,6 +294,7 @@ public class NonKernelClass
         var source = @"
 using DotCompute.Generators.Kernel;
 using System;
+using FluentAssertions;
 
 public class ComplexKernels
 {
@@ -311,10 +320,10 @@ public class ComplexKernels
         var result = TestHelper.RunGenerator(_generator, source);
 
         // Assert
-        result.Diagnostics.Should().BeEmpty();
+        result.Assert.Empty(Diagnostics);
         result.GeneratedSources.Should().NotBeEmpty();
         var cpuImpl = result.GeneratedSources.First(s => s.HintName.Contains("CPU.g.cs"));
-        cpuImpl.SourceText.ToString().Should().Contain("ComplexOperationCpuKernel");
+        cpuImpl.SourceText.ToString().Contain("ComplexOperationCpuKernel");
     }
 
     [Fact]
@@ -323,6 +332,7 @@ public class ComplexKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class GenericKernels<T> where T : unmanaged
 {
@@ -342,7 +352,7 @@ public class GenericKernels<T> where T : unmanaged
         // Assert
         // Note: Generators may skip or handle generics differently
         // This test ensures no crashes occur with generic types
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
     }
 }
 

@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
+using FluentAssertions;
 using CompiledKernel = DotCompute.Tests.Common.CompiledKernel;
 using KernelArgument = DotCompute.Tests.Common.KernelArgument;
 using KernelConfiguration = DotCompute.Tests.Common.KernelConfiguration;
@@ -422,7 +423,7 @@ public class OpenCLKernelExecutorTests : IDisposable
             MaxThreadsPerBlock = 256
         });
 
-        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()))
+        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()
             .Returns(ValueTask.CompletedTask);
 
         return mock;

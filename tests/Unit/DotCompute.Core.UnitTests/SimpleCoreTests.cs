@@ -1,6 +1,7 @@
 using DotCompute.Core.Aot;
 using DotCompute.Abstractions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 

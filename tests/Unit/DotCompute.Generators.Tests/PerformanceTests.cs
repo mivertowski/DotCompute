@@ -3,8 +3,8 @@
 
 using System.Diagnostics;
 using DotCompute.Generators.Kernel;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -29,7 +29,7 @@ public class PerformanceTests
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000, "Single kernel generation should complete within 5 seconds");
+        stopwatch.ElapsedMilliseconds < 5000, "Single kernel generation should complete within 5 seconds".Should().BeTrue();
         result.GeneratedSources.Should().NotBeEmpty();
     }
 
@@ -53,8 +53,8 @@ public class PerformanceTests
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000, "Multiple kernel generation should complete within 10 seconds");
-        result.GeneratedSources.Should().HaveCountGreaterThan(5); // Should generate multiple files
+        stopwatch.ElapsedMilliseconds < 10000, "Multiple kernel generation should complete within 10 seconds".Should().BeTrue();
+        result.GeneratedSources.HaveCountGreaterThan(5); // Should generate multiple files
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public class PerformanceTests
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(8000, "Large kernel generation should complete within 8 seconds");
+        stopwatch.ElapsedMilliseconds < 8000, "Large kernel generation should complete within 8 seconds".Should().BeTrue();
         result.GeneratedSources.Should().NotBeEmpty();
     }
 
@@ -97,13 +97,13 @@ public class PerformanceTests
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(6000, "Multi-backend generation should complete within 6 seconds");
+        stopwatch.ElapsedMilliseconds < 6000, "Multi-backend generation should complete within 6 seconds".Should().BeTrue();
         
         // Should generate for all backends
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("CPU"));
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("CUDA"));
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("Metal"));
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("OpenCL"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("CPU"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("CUDA"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("Metal"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("OpenCL"));
     }
 
     [Fact]
@@ -118,8 +118,8 @@ public class PerformanceTests
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(15000, "Many kernels in one class should complete within 15 seconds");
-        result.GeneratedSources.Length.Should().BeGreaterThan(20); // Registry + implementations
+        stopwatch.ElapsedMilliseconds < 15000, "Many kernels in one class should complete within 15 seconds".Should().BeTrue();
+        result.GeneratedSources.Length > 20.Should().BeTrue(); // Registry + implementations
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public class PerformanceTests
         // Assert
         result1.GeneratedSources.Length.Should().Be(result2.GeneratedSources.Length);
         // Second run might be faster due to caching, but this is hard to guarantee in tests
-        stopwatch2.ElapsedMilliseconds.Should().BeLessThan(stopwatch1.ElapsedMilliseconds + 1000);
+        stopwatch2.ElapsedMilliseconds < stopwatch1.ElapsedMilliseconds + 1000.Should().BeTrue();
     }
 
     [Fact]
@@ -193,7 +193,7 @@ public class PerformanceTests
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(7000, "Complex kernel generation should complete within 7 seconds");
+        stopwatch.ElapsedMilliseconds < 7000, "Complex kernel generation should complete within 7 seconds".Should().BeTrue();
         result.GeneratedSources.Should().NotBeEmpty();
     }
 
@@ -224,10 +224,10 @@ public class PerformanceTests
 
         // Assert
         var memoryIncrease = finalMemory - initialMemory;
-        memoryIncrease.Should().BeLessThan(50 * 1024 * 1024, "Memory usage should not exceed 50MB for 10 kernels");
+        Assert.True(memoryIncrease < 50 * 1024 * 1024, "Memory usage should not exceed 50MB for 10 kernels");
         
-        results.Should().HaveCount(10);
-        results.Should().OnlyContain(r => r.GeneratedSources.Length > 0);
+        Assert.Equal(10, results.Count());
+        results.OnlyContain(r => r.GeneratedSources.Length > 0);
     }
 
     [Theory]
@@ -258,10 +258,10 @@ public class PerformanceTests
         
         // Reasonable time scaling: should be roughly linear
         var expectedMaxTime = Math.Max(2000, kernelCount * 400); // Base 2s + 400ms per kernel
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(expectedMaxTime,
+        stopwatch.Assert.True(ElapsedMilliseconds < expectedMaxTime,
             $"Generation of {kernelCount} kernels should complete within {expectedMaxTime}ms");
         
-        result.GeneratedSources.Length.Should().BeGreaterOrEqualTo(kernelCount);
+        result.GeneratedSources.Length >= kernelCount.Should().BeTrue();
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public class PerformanceTests
 
         // Act
         var tasks = sources.Select(source => Task.Run(() => 
-            TestHelper.RunIncrementalGenerator(_generator, source))).ToArray();
+            TestHelper.RunIncrementalGenerator(_generator, source).ToArray();
 
         var stopwatch = Stopwatch.StartNew();
         var results = Task.WaitAll(tasks, TimeSpan.FromSeconds(10));

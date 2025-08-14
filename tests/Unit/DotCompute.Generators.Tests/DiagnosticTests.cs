@@ -3,10 +3,10 @@
 
 using System.Collections.Immutable;
 using DotCompute.Generators.Kernel;
-using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -37,6 +37,7 @@ public class DiagnosticTests
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class BrokenKernels
 {
@@ -58,6 +59,7 @@ public class BrokenKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 [Kernel]
 public static void GlobalKernel(float[] input, float[] output, int length)
@@ -73,7 +75,7 @@ public static void GlobalKernel(float[] input, float[] output, int length)
 
         // Assert
         // Should handle global scope methods gracefully
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
     }
 
     [Fact]
@@ -83,6 +85,7 @@ public static void GlobalKernel(float[] input, float[] output, int length)
         var source = @"
 using DotCompute.Generators.Kernel;
 using System;
+using FluentAssertions;
 
 public class GenericKernels
 {
@@ -110,6 +113,7 @@ public class GenericKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class OuterClass
 {
@@ -132,7 +136,7 @@ public class OuterClass
         // Assert
         result.GeneratedSources.Should().NotBeEmpty();
         var registryCode = TestHelper.GetGeneratedSource(result, "KernelRegistry.g.cs");
-        registryCode.Should().Contain("OuterClass+NestedKernels.NestedKernel");
+        Assert.Contains("OuterClass+NestedKernels.NestedKernel", registryCode);
     }
 
     [Fact]
@@ -141,6 +145,7 @@ public class OuterClass
         // Arrange
         var source1 = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public partial class PartialKernels
 {
@@ -156,6 +161,7 @@ public partial class PartialKernels
 
         var source2 = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public partial class PartialKernels
 {
@@ -174,15 +180,15 @@ public partial class PartialKernels
 
         // Assert
         result.GeneratedSources.Should().NotBeEmpty();
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("FirstKernel"));
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("SecondKernel"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("FirstKernel"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("SecondKernel"));
         
         var invokerCode = result.GeneratedSources.FirstOrDefault(s => s.HintName.Contains("Invoker.g.cs"));
         if (invokerCode != null)
         {
             var code = invokerCode.SourceText.ToString();
-            code.Should().Contain("FirstKernel");
-            code.Should().Contain("SecondKernel");
+            Assert.Contains("FirstKernel", code);
+            Assert.Contains("SecondKernel", code);
         }
     }
 
@@ -192,6 +198,7 @@ public partial class PartialKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class KernelClass1
 {
@@ -224,12 +231,12 @@ public class KernelClass2
         result.GeneratedSources.Should().NotBeEmpty();
         
         // Should generate separate implementations for each class
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("KernelClass1_Process"));
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains("KernelClass2_Process"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("KernelClass1_Process"));
+        result.GeneratedSources.Contain(s => s.HintName.Contains("KernelClass2_Process"));
         
         var registryCode = TestHelper.GetGeneratedSource(result, "KernelRegistry.g.cs");
-        registryCode.Should().Contain("KernelClass1.Process");
-        registryCode.Should().Contain("KernelClass2.Process");
+        Assert.Contains("KernelClass1.Process", registryCode);
+        Assert.Contains("KernelClass2.Process", registryCode);
     }
 
     [Fact]
@@ -238,6 +245,7 @@ public class KernelClass2
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class OverloadedKernels
 {
@@ -268,7 +276,7 @@ public class OverloadedKernels
         
         // Should generate implementations for both overloads
         // The generator should handle this by including parameter types in file names or method names
-        result.GeneratedSources.Count(s => s.HintName.Contains("Process")).Should().BeGreaterOrEqualTo(2);
+        result.GeneratedSources.Count(s => s.HintName.Contains("Process")).BeGreaterOrEqualTo(2);
     }
 
     [Fact]
@@ -287,7 +295,7 @@ public class OverloadedKernels
 
         // Assert
         result.GeneratedSources.Should().NotBeEmpty();
-        result.GeneratedSources.Should().Contain(s => s.HintName.Contains(longMethodName));
+        result.GeneratedSources.Contain(s => s.HintName.Contains(longMethodName));
     }
 
     [Fact]
@@ -296,6 +304,7 @@ public class OverloadedKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class CommentKernels
 {
@@ -329,6 +338,7 @@ public class CommentKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class ExpressionKernels
 {
@@ -351,7 +361,7 @@ public class ExpressionKernels
         // Assert
         result.GeneratedSources.Should().NotBeEmpty();
         var cpuCode = result.GeneratedSources.FirstOrDefault(s => s.HintName.Contains("CPU.g.cs"));
-        cpuCode.Should().NotBeNull();
+        Assert.NotNull(cpuCode);
     }
 
     [Fact]
@@ -361,6 +371,7 @@ public class ExpressionKernels
         var source = @"
 using DotCompute.Generators.Kernel;
 using System.Threading.Tasks;
+using FluentAssertions;
 
 public class AsyncKernels
 {
@@ -382,7 +393,7 @@ public class AsyncKernels
 
         // Assert
         // Async kernels might be ignored or handled specially
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // The generator should not crash regardless
     }
 
@@ -392,6 +403,7 @@ public class AsyncKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class GenericKernels
 {
@@ -410,7 +422,7 @@ public class GenericKernels
 
         // Assert
         // Generic kernels might be handled specially or ignored
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // The generator should not crash with generic methods
     }
 
@@ -443,15 +455,15 @@ public class GenericKernels
 
         // Assert
         result.GeneratedSources.Should().NotBeEmpty();
-        result.GeneratedSources.Length.Should().BeGreaterThan(50); // Registry + implementations
+        result.GeneratedSources.Length > 50.Should().BeTrue(); // Registry + implementations
         
         var registryCode = TestHelper.GetGeneratedSource(result, "KernelRegistry.g.cs");
-        registryCode.Should().NotBeNull();
+        Assert.NotNull(registryCode);
         
         // Should contain all kernels
         for (int i = 0; i < 50; i++)
         {
-            registryCode.Should().Contain($"Kernel{i:D3}");
+            Assert.Contains($"Kernel{i:D3}", registryCode);
         }
     }
 }

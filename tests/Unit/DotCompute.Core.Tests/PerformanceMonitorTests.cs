@@ -8,6 +8,7 @@ using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using FluentAssertions;
 using ExecutionParallelExecutionResult = DotCompute.Core.Execution.ParallelExecutionResult;
 using ExecutionDeviceExecutionResult = DotCompute.Core.Execution.DeviceExecutionResult;
 using ExecutionExecutionStrategyType = DotCompute.Core.Execution.ExecutionStrategyType;
@@ -37,7 +38,7 @@ public sealed class PerformanceMonitorTests : IDisposable
     }
 
     [Fact]
-    public void RecordExecution_WithValidResult_ShouldNotThrow()
+    public void RecordExecution_WithValidResult_ShouldShould().NotThrow()
     {
         // Arrange
         var result = CreateMockParallelExecutionResult();
@@ -52,7 +53,7 @@ public sealed class PerformanceMonitorTests : IDisposable
     }
 
     [Fact]
-    public void RecordKernelExecution_WithValidParameters_ShouldNotThrow()
+    public void RecordKernelExecution_WithValidParameters_ShouldShould().NotThrow()
     {
         // Act & Assert (should not throw)
         _performanceMonitor.RecordKernelExecution("TestKernel", "Device1", 100.5, 15.2);

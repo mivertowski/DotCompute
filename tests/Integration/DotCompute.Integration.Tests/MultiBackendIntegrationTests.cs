@@ -4,11 +4,11 @@
 using DotCompute.Abstractions;
 using DotCompute.Tests.Integration.Infrastructure;
 using DotCompute.Tests.Common.Hardware;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -87,7 +87,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
             totalSequentialTime, actualParallelTime, 
             (totalSequentialTime - actualParallelTime) / totalSequentialTime);
 
-        actualParallelTime.Should().BeLessThan(totalSequentialTime * 0.8); // At least 20% improvement
+        Assert.True(actualParallelTime < totalSequentialTime * 0.8); // At least 20% improvement
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         
         // Since CUDA failed, execution should have fallen back to CPU
         var actualBackend = DetectActualBackendUsed(result);
-        actualBackend.Should().Be(ComputeBackendType.CPU);
+        Assert.Equal(ComputeBackendType.CPU, actualBackend);
 
         Logger.LogInformation("Successfully fell back from CUDA to CPU execution");
     }
@@ -185,7 +185,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         var throughputMBps = totalDataMB / totalTime.TotalSeconds;
         
         Logger.LogInformation("Cross-backend pipeline throughput: {Throughput:F2} MB/s", throughputMBps);
-        throughputMBps.Should().BeGreaterThan(10); // Minimum acceptable throughput
+        Assert.True(throughputMBps > 10); // Minimum acceptable throughput
     }
 
     [Theory]
@@ -269,7 +269,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         }
 
         // Assert
-        results.Should().NotBeEmpty();
+        Assert.NotEmpty(results);
         
         if (results.Count > 1)
         {
@@ -285,7 +285,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
                     var difference = Math.Abs(referenceResult[i] - backendResult[i]);
                     var tolerance = Math.Max(Math.Abs(referenceResult[i]) * 0.001f, 1e-5f);
                     
-                    difference.Should().BeLessThan(tolerance,
+                    Assert.True(difference < tolerance,
                         $"Results should be similar across backends at index {i}. " +
                         $"Reference: {referenceResult[i]}, {backend}: {backendResult[i]}");
                 }
@@ -331,7 +331,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         // Verify that the selection made reasonable choices
         // (In a real implementation, this would validate against actual performance characteristics)
         var avgPerformance = results.Average(r => r.Performance);
-        avgPerformance.Should().BeGreaterThan(10); // Minimum acceptable performance score
+        Assert.True(avgPerformance > 10); // Minimum acceptable performance score
     }
 
     // Helper methods
@@ -576,20 +576,20 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         {
             case ComputeBackendType.CPU:
                 // CPU should have consistent performance with good memory efficiency
-                metrics.ResourceUtilization.CpuUsagePercent.Should().BeGreaterThan(10);
+                metrics.ResourceUtilization.CpuUsagePercent > 10.Should().BeTrue();
                 break;
                 
             case ComputeBackendType.CUDA:
                 // CUDA should show high throughput for large workloads
                 if (dataSize > 1024)
                 {
-                    metrics.ThroughputMBps.Should().BeGreaterThan(20);
+                    metrics.ThroughputMBps > 20.Should().BeTrue();
                 }
                 break;
                 
             case ComputeBackendType.Metal:
                 // Metal should show good performance with balanced resource usage
-                metrics.ResourceUtilization.GpuUsagePercent.Should().BeGreaterThan(5);
+                metrics.ResourceUtilization.GpuUsagePercent > 5.Should().BeTrue();
                 break;
         }
     }

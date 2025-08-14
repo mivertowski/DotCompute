@@ -6,10 +6,10 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Tests.Shared;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.Hardware;
 
@@ -44,10 +44,10 @@ public class RTX2000ValidationTests : IDisposable
         // Assert
         if (IsRTX2000Series(info.Name))
         {
-            info.Should().NotBeNull();
-            info.Type.Should().Be(AcceleratorType.CUDA);
+            Assert.NotNull(info);
+            info.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
             info.ComputeCapability.Should().NotBeNull();
-            info.ComputeCapability.Major.Should().BeGreaterOrEqualTo(7); // RTX 2000 series has compute capability 7.5
+            (info.ComputeCapability.Major >= 7).Should().BeTrue(); // RTX 2000 series has compute capability 7.5
             
             _output.WriteLine($"Detected RTX 2000 series GPU: {info.Name}");
             _output.WriteLine($"Compute Capability: {info.ComputeCapability.Major}.{info.ComputeCapability.Minor}");
@@ -85,7 +85,7 @@ public class RTX2000ValidationTests : IDisposable
         concurrentKernels.Should().BeTrue("RTX 2000 series should support concurrent kernel execution");
 
         var asyncEngines = Convert.ToInt32(info.Capabilities["AsyncEngineCount"]);
-        asyncEngines.Should().BeGreaterOrEqualTo(2, "RTX 2000 series should have multiple async engines");
+        Assert.True(asyncEngines >= 2, "RTX 2000 series should have multiple async engines");
 
         _output.WriteLine($"Turing Architecture Features Verified:");
         _output.WriteLine($"  Concurrent Kernels: {concurrentKernels}");
@@ -112,7 +112,7 @@ public class RTX2000ValidationTests : IDisposable
         memoryGB.Should().BeInRange(4.0, 12.0, "RTX 2000 series should have between 4GB and 12GB memory");
 
         var memoryBandwidth = Convert.ToDouble(info.Capabilities["MemoryBandwidth"]);
-        memoryBandwidth.Should().BeGreaterThan(200.0, "RTX 2000 series should have >200 GB/s memory bandwidth");
+        Assert.True(memoryBandwidth > 200.0, "RTX 2000 series should have >200 GB/s memory bandwidth");
 
         var memoryBusWidth = Convert.ToInt32(info.Capabilities["MemoryBusWidth"]);
         memoryBusWidth.Should().BeInRange(192, 384, "RTX 2000 series should have 192-384 bit memory bus");
@@ -139,16 +139,16 @@ public class RTX2000ValidationTests : IDisposable
         // Assert - RTX 2000 series SM specifications
         var smCount = Convert.ToInt32(info.Capabilities["MultiprocessorCount"]);
         smCount.Should().BeInRange(30, 72, "RTX 2000 series should have 30-72 SMs depending on model");
-        smCount.Should().Be(info.ComputeUnits, "SM count should match compute units");
+        Assert.Equal(info.ComputeUnits, smCount); // SM count should match compute units
 
         var maxThreadsPerBlock = Convert.ToInt32(info.Capabilities["MaxThreadsPerBlock"]);
-        maxThreadsPerBlock.Should().Be(1024, "RTX 2000 series should support 1024 threads per block");
+        Assert.Equal(1024, maxThreadsPerBlock); // RTX 2000 series should support 1024 threads per block;
 
         var maxThreadsPerSM = Convert.ToInt32(info.Capabilities["MaxThreadsPerMultiprocessor"]);
-        maxThreadsPerSM.Should().Be(1024, "Turing architecture should support 1024 threads per SM");
+        Assert.Equal(1024, maxThreadsPerSM); // Turing architecture should support 1024 threads per SM;
 
         var warpSize = Convert.ToInt32(info.Capabilities["WarpSize"]);
-        warpSize.Should().Be(32, "CUDA warp size should be 32");
+        Assert.Equal(32, warpSize); // CUDA warp size should be 32;
 
         _output.WriteLine($"RTX 2000 SM Specifications:");
         _output.WriteLine($"  SM Count: {smCount}");
@@ -175,7 +175,7 @@ public class RTX2000ValidationTests : IDisposable
         sharedMemPerBlock.Should().BeInRange(48 * 1024L, 96 * 1024L, "RTX 2000 series should support 48-96KB shared memory per block");
 
         var sharedMemPerSM = Convert.ToInt64(info.Capabilities["SharedMemoryPerBlock"]);
-        sharedMemPerSM.Should().Be(sharedMemPerBlock, "Shared memory values should be consistent");
+        Assert.Equal(sharedMemPerBlock, sharedMemPerSM); // Shared memory values should be consistent
 
         _output.WriteLine($"RTX 2000 Shared Memory:");
         _output.WriteLine($"  Shared Memory/Block: {sharedMemPerBlock / 1024} KB");
@@ -221,8 +221,8 @@ public class RTX2000ValidationTests : IDisposable
         if (!IsRTX2000Series(info.Name)) return;
 
         // Assert - RTX 2000 series should have first-generation Tensor Cores
-        info.ComputeCapability.Major.Should().Be(7, "RTX 2000 series has first-gen Tensor Cores with compute capability 7.x");
-        info.ComputeCapability.Minor.Should().Be(5, "RTX 2000 series specifically has compute capability 7.5");
+        info.ComputeCapability.Major.Should().Be(7);
+        info.ComputeCapability.Minor.Should().Be(5);
 
         // Note: Tensor Core availability is implicit in compute capability 7.5
         _output.WriteLine($"RTX 2000 Tensor Core Support:");
@@ -244,7 +244,7 @@ public class RTX2000ValidationTests : IDisposable
         if (!IsRTX2000Series(info.Name)) return;
 
         // Assert - RTX 2000 series should have first-generation RT Cores
-        info.ComputeCapability.Major.Should().Be(7, "RTX 2000 series has first-gen RT Cores");
+        info.ComputeCapability.Major.Should().Be(7);
         
         // RT Cores are hardware-specific and not directly exposed via CUDA properties
         // But we can infer their presence from RTX branding and compute capability
@@ -279,12 +279,12 @@ public class RTX2000ValidationTests : IDisposable
         var compiledKernel = await accelerator.CompileKernelAsync(kernelDefinition, options);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be("turing_optimized");
 
         _output.WriteLine($"Successfully compiled Turing-optimized kernel with {optimizationLevel} optimization");
 
-        compiledKernel.Dispose();
+        (compiledKernel as IDisposable)?.Dispose();
     }
 
     [Fact]
@@ -305,8 +305,8 @@ public class RTX2000ValidationTests : IDisposable
         var stats = memoryManager!.GetStatistics();
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.TotalMemory.Should().BeGreaterThan(0);
+        Assert.NotNull(stats);
+(stats.TotalMemory > 0).Should().BeTrue();
 
         var expectedMemoryGB = GetExpectedMemoryForRTX2000(info.Name);
         var actualMemoryGB = stats.TotalMemory / (1024.0 * 1024.0 * 1024.0);
@@ -364,7 +364,7 @@ public class RTX2000ValidationTests : IDisposable
             await accelerator.SynchronizeAsync();
 
             // Assert
-            buffers.Should().HaveCount(stressIterations, "All allocations should succeed under thermal stress");
+            Assert.Equal(stressIterations, buffers.Count()); // All allocations should succeed under thermal stress
 
             _output.WriteLine($"Thermal stress test completed successfully");
         }

@@ -3,9 +3,9 @@
 
 using System;
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Abstractions.Tests;
 
@@ -21,6 +21,14 @@ public class MappedMemoryTests
         _mockBuffer = new Mock<IBuffer<float>>();
     }
 
+    private static MappedMemory<T> CreateMappedMemory<T>(IBuffer<T> buffer, Memory<T> memory, MapMode mode) where T : unmanaged
+    {
+        // Use reflection to create MappedMemory since constructor is internal
+        var constructor = typeof(MappedMemory<T>).GetConstructors(
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)[0];
+        return (MappedMemory<T>)constructor.Invoke(new object[] { buffer, memory, mode });
+    }
+
     #region Property Tests
 
     [Fact]
@@ -30,14 +38,14 @@ public class MappedMemoryTests
         var sourceData = new float[] { 1.0f, 2.0f, 3.0f, 4.0f };
         var memory = new Memory<float>(sourceData);
         var mode = MapMode.ReadWrite;
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, mode);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, mode);
 
         // Act
         var actualMemory = mappedMemory.Memory;
 
         // Assert
         actualMemory.Length.Should().Be(sourceData.Length);
-        actualMemory.Span.ToArray().Should().BeEquivalentTo(sourceData);
+        actualMemory.Span.ToArray().BeEquivalentTo(sourceData);
     }
 
     [Fact]
@@ -45,14 +53,14 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[10]);
-        var mode = MapMode.ReadOnly;
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, mode);
+        var mode = MapMode.Read;
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, mode);
 
         // Act
         var actualMode = mappedMemory.Mode;
 
         // Assert
-        actualMode.Should().Be(mode);
+        Assert.Equal(mode, actualMode);
     }
 
     [Theory]
@@ -66,13 +74,13 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[5]);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, mode);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, mode);
 
         // Act
         var actualMode = mappedMemory.Mode;
 
         // Assert
-        actualMode.Should().Be(mode);
+        Assert.Equal(mode, actualMode);
     }
 
     [Fact]
@@ -81,14 +89,14 @@ public class MappedMemoryTests
         // Arrange
         var sourceData = new float[] { 10.0f, 20.0f, 30.0f };
         var memory = new Memory<float>(sourceData);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act
         var span = mappedMemory.Span;
 
         // Assert
         span.Length.Should().Be(sourceData.Length);
-        span.ToArray().Should().BeEquivalentTo(sourceData);
+        span.ToArray().BeEquivalentTo(sourceData);
     }
 
     [Fact]
@@ -97,7 +105,7 @@ public class MappedMemoryTests
         // Arrange
         var sourceData = new float[] { 1.0f, 2.0f, 3.0f };
         var memory = new Memory<float>(sourceData);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act
         var span = mappedMemory.Span;
@@ -124,10 +132,10 @@ public class MappedMemoryTests
         // Arrange
         var sourceData = new float[] { 1.0f, 2.0f };
         var memory = new Memory<float>(sourceData);
-        var mode = MapMode.ReadOnly;
+        var mode = MapMode.Read;
 
         // Act
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, mode);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, mode);
 
         // Assert
         mappedMemory.Memory.Length.Should().Be(2);
@@ -143,7 +151,7 @@ public class MappedMemoryTests
         var mode = MapMode.ReadWrite;
 
         // Act
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, emptyMemory, mode);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, emptyMemory, mode);
 
         // Assert
         mappedMemory.Memory.Length.Should().Be(0);
@@ -160,7 +168,7 @@ public class MappedMemoryTests
         var mode = MapMode.ReadWrite;
 
         // Act
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, mode);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, mode);
 
         // Assert
         mappedMemory.Memory.Length.Should().Be(1000000);
@@ -177,7 +185,7 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[10]);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act & Assert (should not throw)
         mappedMemory.Dispose();
@@ -188,7 +196,7 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[5]);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act & Assert (should not throw)
         mappedMemory.Dispose();
@@ -202,7 +210,7 @@ public class MappedMemoryTests
         // Arrange
         var sourceData = new float[] { 1.0f, 2.0f, 3.0f };
         var memory = new Memory<float>(sourceData);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act
         mappedMemory.Dispose();
@@ -222,7 +230,7 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[10]);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act & Assert
         mappedMemory.Equals(mappedMemory).Should().BeTrue();
@@ -237,10 +245,10 @@ public class MappedMemoryTests
         var sourceData = new float[] { 1.0f, 2.0f, 3.0f };
         var memory1 = new Memory<float>(sourceData);
         var memory2 = new Memory<float>(sourceData); // Same underlying data
-        var mode = MapMode.ReadOnly;
+        var mode = MapMode.Read;
 
-        var mappedMemory1 = new MappedMemory<float>(_mockBuffer.Object, memory1, mode);
-        var mappedMemory2 = new MappedMemory<float>(_mockBuffer.Object, memory2, mode);
+        var mappedMemory1 = CreateMappedMemory(_mockBuffer.Object, memory1, mode);
+        var mappedMemory2 = CreateMappedMemory(_mockBuffer.Object, memory2, mode);
 
         // Act & Assert
         mappedMemory1.Equals(mappedMemory2).Should().BeTrue();
@@ -256,8 +264,8 @@ public class MappedMemoryTests
         var memory = new Memory<float>(new float[5]);
         var mode = MapMode.ReadWrite;
 
-        var mappedMemory1 = new MappedMemory<float>(_mockBuffer.Object, memory, mode);
-        var mappedMemory2 = new MappedMemory<float>(mockBuffer2.Object, memory, mode);
+        var mappedMemory1 = CreateMappedMemory(_mockBuffer.Object, memory, mode);
+        var mappedMemory2 = CreateMappedMemory(mockBuffer2.Object, memory, mode);
 
         // Act & Assert
         mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
@@ -270,8 +278,8 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[5]);
-        var mappedMemory1 = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.Read);
-        var mappedMemory2 = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.Write);
+        var mappedMemory1 = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.Read);
+        var mappedMemory2 = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.Write);
 
         // Act & Assert
         mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
@@ -287,8 +295,8 @@ public class MappedMemoryTests
         var memory2 = new Memory<float>(new float[5]);
         var mode = MapMode.ReadWrite;
 
-        var mappedMemory1 = new MappedMemory<float>(_mockBuffer.Object, memory1, mode);
-        var mappedMemory2 = new MappedMemory<float>(_mockBuffer.Object, memory2, mode);
+        var mappedMemory1 = CreateMappedMemory(_mockBuffer.Object, memory1, mode);
+        var mappedMemory2 = CreateMappedMemory(_mockBuffer.Object, memory2, mode);
 
         // Act & Assert
         mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
@@ -301,7 +309,7 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[5]);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act & Assert
         mappedMemory.Equals(null).Should().BeFalse();
@@ -312,7 +320,7 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[5]);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
         var otherObject = "not a mapped memory";
 
         // Act & Assert
@@ -328,14 +336,14 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[10]);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act
         var hashCode1 = mappedMemory.GetHashCode();
         var hashCode2 = mappedMemory.GetHashCode();
 
         // Assert
-        hashCode1.Should().Be(hashCode2);
+        Assert.Equal(hashCode2, hashCode1);
     }
 
     [Fact]
@@ -345,17 +353,17 @@ public class MappedMemoryTests
         var sourceData = new float[] { 1.0f, 2.0f, 3.0f };
         var memory1 = new Memory<float>(sourceData);
         var memory2 = new Memory<float>(sourceData);
-        var mode = MapMode.ReadOnly;
+        var mode = MapMode.Read;
 
-        var mappedMemory1 = new MappedMemory<float>(_mockBuffer.Object, memory1, mode);
-        var mappedMemory2 = new MappedMemory<float>(_mockBuffer.Object, memory2, mode);
+        var mappedMemory1 = CreateMappedMemory(_mockBuffer.Object, memory1, mode);
+        var mappedMemory2 = CreateMappedMemory(_mockBuffer.Object, memory2, mode);
 
         // Act
         var hashCode1 = mappedMemory1.GetHashCode();
         var hashCode2 = mappedMemory2.GetHashCode();
 
         // Assert
-        hashCode1.Should().Be(hashCode2);
+        Assert.Equal(hashCode2, hashCode1);
     }
 
     [Fact]
@@ -366,15 +374,15 @@ public class MappedMemoryTests
         var memory = new Memory<float>(new float[5]);
         var mode = MapMode.ReadWrite;
 
-        var mappedMemory1 = new MappedMemory<float>(_mockBuffer.Object, memory, mode);
-        var mappedMemory2 = new MappedMemory<float>(mockBuffer2.Object, memory, mode);
+        var mappedMemory1 = CreateMappedMemory(_mockBuffer.Object, memory, mode);
+        var mappedMemory2 = CreateMappedMemory(mockBuffer2.Object, memory, mode);
 
         // Act
         var hashCode1 = mappedMemory1.GetHashCode();
         var hashCode2 = mappedMemory2.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        hashCode1.Should().Not.Be(hashCode2);
     }
 
     [Fact]
@@ -382,15 +390,15 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[5]);
-        var mappedMemory1 = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.Read);
-        var mappedMemory2 = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.Write);
+        var mappedMemory1 = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.Read);
+        var mappedMemory2 = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.Write);
 
         // Act
         var hashCode1 = mappedMemory1.GetHashCode();
         var hashCode2 = mappedMemory2.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        hashCode1.Should().Not.Be(hashCode2);
     }
 
     #endregion
@@ -410,16 +418,16 @@ public class MappedMemoryTests
         var byteMemory = new Memory<byte>(new byte[] { 0x01, 0x02, 0x03 });
 
         // Act
-        var intMappedMemory = new MappedMemory<int>(intBuffer.Object, intMemory, MapMode.ReadWrite);
-        var doubleMappedMemory = new MappedMemory<double>(doubleBuffer.Object, doubleMemory, MapMode.ReadOnly);
-        var byteMappedMemory = new MappedMemory<byte>(byteBuffer.Object, byteMemory, MapMode.Write);
+        var intMappedMemory = CreateMappedMemory(intBuffer.Object, intMemory, MapMode.ReadWrite);
+        var doubleMappedMemory = CreateMappedMemory(doubleBuffer.Object, doubleMemory, MapMode.Read);
+        var byteMappedMemory = CreateMappedMemory(byteBuffer.Object, byteMemory, MapMode.Write);
 
         // Assert
         intMappedMemory.Memory.Length.Should().Be(3);
         intMappedMemory.Mode.Should().Be(MapMode.ReadWrite);
         
         doubleMappedMemory.Memory.Length.Should().Be(3);
-        doubleMappedMemory.Mode.Should().Be(MapMode.ReadOnly);
+        doubleMappedMemory.Mode.Should().Be(MapMode.Read);
         
         byteMappedMemory.Memory.Length.Should().Be(3);
         byteMappedMemory.Mode.Should().Be(MapMode.Write);
@@ -436,7 +444,7 @@ public class MappedMemoryTests
         var type = typeof(MappedMemory<float>);
 
         // Assert
-        type.Should().BeAssignableTo<IDisposable>();
+        Assert.IsAssignableFrom<IDisposable>(type);
     }
 
     [Fact]
@@ -461,7 +469,7 @@ public class MappedMemoryTests
         var disposeCalled = false;
 
         // Act & Assert (should not throw)
-        using (var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite))
+        using (var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite))
         {
             mappedMemory.Memory.Length.Should().Be(10);
             mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
@@ -477,7 +485,7 @@ public class MappedMemoryTests
     {
         // Arrange
         var emptyMemory = Memory<float>.Empty;
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, emptyMemory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, emptyMemory, MapMode.ReadWrite);
 
         // Act & Assert
         mappedMemory.Memory.Length.Should().Be(0);
@@ -494,7 +502,7 @@ public class MappedMemoryTests
         // Arrange
         var sourceData = new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f };
         var slicedMemory = new Memory<float>(sourceData, 1, 3); // Elements 2, 3, 4
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, slicedMemory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, slicedMemory, MapMode.ReadWrite);
 
         // Act & Assert
         mappedMemory.Memory.Length.Should().Be(3);
@@ -510,7 +518,7 @@ public class MappedMemoryTests
         // Arrange
         var sourceData = new float[] { 10.0f, 20.0f, 30.0f };
         var memory = new Memory<float>(sourceData);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act
         mappedMemory.Span[1] = 999.0f;
@@ -528,7 +536,7 @@ public class MappedMemoryTests
         
         // Arrange
         var memory = new Memory<float>(new float[] { 1.0f, 2.0f });
-        var mappedMemory = new MappedMemory<float>(null!, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(null!, memory, MapMode.ReadWrite);
 
         // Act & Assert
         mappedMemory.Memory.Length.Should().Be(2);
@@ -546,7 +554,7 @@ public class MappedMemoryTests
         // Arrange
         var sourceData = new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f };
         var memory = new Memory<float>(sourceData);
-        var mappedMemory = new MappedMemory<float>(_mockBuffer.Object, memory, MapMode.ReadWrite);
+        var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
 
@@ -559,9 +567,9 @@ public class MappedMemoryTests
                 var memoryLength = mappedMemory.Memory.Length;
                 var spanLength = mappedMemory.Span.Length;
                 
-                mode.Should().Be(MapMode.ReadWrite);
-                memoryLength.Should().Be(5);
-                spanLength.Should().Be(5);
+                Assert.Equal(MapMode.ReadWrite, mode);
+                Assert.Equal(5, memoryLength);
+                Assert.Equal(5, spanLength);
             }));
         }
 

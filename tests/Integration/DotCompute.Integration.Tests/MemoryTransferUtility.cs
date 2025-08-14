@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Memory;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 

@@ -709,7 +709,7 @@ extern ""C"" __global__ void atomic_lu_decomposition_cuda(
     // Step 6: Update determinant
     if (threadIdx.x == 0 && row == step + 1) {
         float det_factor = A[step * n + step];
-        atomicAdd(determinant, logf(fabsf(det_factor))); // Use log for numerical stability
+        atomicAdd(determinant, logf(fabsf(det_factor); // Use log for numerical stability
     }
 }";
 

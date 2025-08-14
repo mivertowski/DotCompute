@@ -2,10 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Algorithms.Types.Security;
-using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Security.Cryptography.X509Certificates;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Security;
 
@@ -86,7 +86,7 @@ public sealed class SecurityPolicyTests : IDisposable
         var result = _securityPolicy.RemoveSecurityRule("TestRule");
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class SecurityPolicyTests : IDisposable
         var result = _securityPolicy.RemoveSecurityRule("NonExistingRule");
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -135,7 +135,7 @@ public sealed class SecurityPolicyTests : IDisposable
 
         // Assert
         result.IsAllowed.Should().BeFalse();
-        result.Violations.Should().Contain(v => v.Contains("minimum security level"));
+        result.Violations.Contain(v => v.Contains("minimum security level"));
     }
 
     [Theory]
@@ -174,7 +174,7 @@ public sealed class SecurityPolicyTests : IDisposable
         var result = _securityPolicy.RemoveTrustedPublisher(thumbprint);
 
         // Assert
-        result.Should().BeTrue();
+        Assert.True(result);
         _securityPolicy.IsTrustedPublisher(thumbprint).Should().BeFalse();
     }
 
@@ -185,7 +185,7 @@ public sealed class SecurityPolicyTests : IDisposable
         var result = _securityPolicy.RemoveTrustedPublisher("NonExistingThumbprint");
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Theory]
@@ -198,7 +198,7 @@ public sealed class SecurityPolicyTests : IDisposable
         var result = _securityPolicy.IsTrustedPublisher(thumbprint!);
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -238,9 +238,9 @@ public sealed class SecurityPolicyTests : IDisposable
             _securityPolicy.EnableMetadataAnalysis.Should().BeFalse();
             _securityPolicy.EnableMalwareScanning.Should().BeFalse();
             _securityPolicy.MaxAssemblySize.Should().Be(100 * 1024 * 1024);
-            _securityPolicy.TrustedPublishers.Should().Contain("TESTTHUMBPRINT1");
-            _securityPolicy.TrustedPublishers.Should().Contain("TESTTHUMBPRINT2");
-            _securityPolicy.BlockedAssemblies.Should().Contain("BADASSEMBLY.DLL");
+            _securityPolicy.Assert.Contains("TESTTHUMBPRINT1", TrustedPublishers);
+            _securityPolicy.Assert.Contains("TESTTHUMBPRINT2", TrustedPublishers);
+            _securityPolicy.Assert.Contains("BADASSEMBLY.DLL", BlockedAssemblies);
             _securityPolicy.DirectoryPolicies.Should().ContainKey("/trusted");
             _securityPolicy.DirectoryPolicies.Should().ContainKey("/untrusted");
         }
@@ -251,7 +251,7 @@ public sealed class SecurityPolicyTests : IDisposable
     }
 
     [Fact]
-    public async Task LoadPolicyFromFile_NonExistentFile_ShouldNotThrow()
+    public async Task LoadPolicyFromFile_NonExistentFile_ShouldShould().NotThrow()
     {
         // Arrange
         var nonExistentFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -294,9 +294,9 @@ public sealed class SecurityPolicyTests : IDisposable
 
             // Assert
             var savedContent = await File.ReadAllTextAsync(tempFile);
-            savedContent.Should().NotBeEmpty();
-            savedContent.Should().Contain("requireDigitalSignature");
-            savedContent.Should().Contain("TestThumbprint");
+            Assert.NotEmpty(savedContent);
+            Assert.Contains("requireDigitalSignature", savedContent);
+            Assert.Contains("TestThumbprint", savedContent);
         }
         finally
         {
@@ -328,9 +328,9 @@ public sealed class SecurityPolicyTests : IDisposable
 
         // Assert
         context.AssemblyPath.Should().Be("test.dll");
-        context.AssemblyBytes.Should().Equal([1, 2, 3]);
-        context.Certificate.Should().BeNull();
-        context.StrongNameKey.Should().Equal([4, 5, 6]);
+        context.AssemblyBytes.Equal([1, 2, 3]);
+        context.Assert.Null(Certificate);
+        context.StrongNameKey.Equal([4, 5, 6]);
         context.Metadata.Should().ContainKey("TestKey");
         context.Metadata["TestKey"].Should().Be("TestValue");
     }
@@ -344,9 +344,9 @@ public sealed class SecurityPolicyTests : IDisposable
         // Assert
         result.IsAllowed.Should().BeTrue();
         result.SecurityLevel.Should().Be(SecurityLevel.High);
-        result.Violations.Should().BeEmpty();
-        result.Warnings.Should().BeEmpty();
-        result.Metadata.Should().BeEmpty();
+        result.Assert.Empty(Violations);
+        result.Assert.Empty(Warnings);
+        result.Assert.Empty(Metadata);
     }
 
     public void Dispose()

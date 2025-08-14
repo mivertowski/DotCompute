@@ -6,6 +6,7 @@ using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Options;
+using FluentAssertions;
 
 namespace DotCompute.Backends.CPU;
 
@@ -31,7 +32,7 @@ public class CpuKernelExecutorTests
     public void Constructor_ShouldInitializeSuccessfully()
     {
         // Assert
-        _executor.Should().NotBeNull();
+        Assert.NotNull(_executor);
     }
 
     [Fact]
@@ -71,7 +72,7 @@ public class CpuKernelExecutorTests
 
         // Act & Assert
         await _executor.Invoking(e => e.ExecuteAsync(definition, arguments, executionPlan))
-            .Should().NotThrowAsync();
+            .NotThrowAsync();
     }
 
     [Fact]
@@ -82,8 +83,7 @@ public class CpuKernelExecutorTests
         var executionPlan = new KernelExecutionPlan();
 
         // Act & Assert
-        await _executor.Invoking(e => e.ExecuteAsync(null!, arguments, executionPlan))
-            .Should().ThrowAsync<ArgumentNullException>();
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _executor.MethodCall().AsTask());
     }
 
     [Fact]
@@ -94,8 +94,7 @@ public class CpuKernelExecutorTests
         var executionPlan = new KernelExecutionPlan();
 
         // Act & Assert
-        await _executor.Invoking(e => e.ExecuteAsync(definition, null!, executionPlan))
-            .Should().ThrowAsync<ArgumentNullException>();
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _executor.MethodCall().AsTask());
     }
 
     [Fact]
@@ -135,7 +134,7 @@ public class CpuKernelExecutorTests
 
         // Act & Assert
         await _executor.Invoking(e => e.ExecuteAsync(definition, arguments, executionPlan))
-            .Should().NotThrowAsync();
+            .NotThrowAsync();
     }
 
     [Fact]
@@ -145,9 +144,9 @@ public class CpuKernelExecutorTests
         var metrics = _executor.GetPerformanceMetrics();
 
         // Assert
-        metrics.Should().NotBeNull();
-        metrics.ExecutionCount.Should().BeGreaterOrEqualTo(0);
-        metrics.TotalExecutionTimeMs.Should().BeGreaterOrEqualTo(0);
+        Assert.NotNull(metrics);
+        metrics.ExecutionCount >= 0.Should().BeTrue();
+        metrics.TotalExecutionTimeMs >= 0.Should().BeTrue();
         metrics.ThreadPoolStatistics.Should().NotBeNull();
     }
 
@@ -162,8 +161,7 @@ public class CpuKernelExecutorTests
         cts.Cancel(); // Cancel immediately
 
         // Act & Assert
-        await _executor.Invoking(e => e.ExecuteAsync(definition, arguments, executionPlan, cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => _executor.MethodCall().AsTask());
     }
 
     public void Dispose()
@@ -191,7 +189,7 @@ public class SimdKernelExecutorTests
     public void Constructor_WithValidCapabilities_ShouldInitialize()
     {
         // Assert
-        _executor.Should().NotBeNull();
+        Assert.NotNull(_executor);
     }
 
     [Fact]
@@ -199,7 +197,7 @@ public class SimdKernelExecutorTests
     {
         // Act & Assert
         Action action = () => new SimdKernelExecutor(null!);
-        action.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(() => action());
     }
 
     [Fact]
@@ -225,7 +223,7 @@ public class SimdKernelExecutorTests
 
         // Act & Assert
         _executor.Invoking(e => e.Execute(input1, input2, output, elementCount, 256))
-            .Should().NotThrow();
+            .NotThrow();
 
         // Verify results
         fixed (byte* pOut = output)
@@ -316,8 +314,8 @@ public class SimdKernelExecutorTests
         var maxElements = _executor.GetMaxVectorElements();
 
         // Assert
-        maxElements.Should().BeGreaterThan(0);
-        maxElements.Should().BeLessOrEqualTo(16); // AVX-512 max
+        Assert.True(maxElements > 0);
+        Assert.True(maxElements <= 16); // AVX-512 max
     }
 
     [Fact]
@@ -327,7 +325,7 @@ public class SimdKernelExecutorTests
         var beneficial = _executor.IsVectorizationBeneficial(32);
 
         // Assert
-        beneficial.Should().BeTrue();
+        Assert.True(beneficial);
     }
 
     [Fact]
@@ -337,7 +335,7 @@ public class SimdKernelExecutorTests
         var beneficial = _executor.IsVectorizationBeneficial(1);
 
         // Assert
-        beneficial.Should().BeFalse();
+        Assert.False(beneficial);
     }
 
     [Fact]
@@ -347,8 +345,8 @@ public class SimdKernelExecutorTests
         var workGroupSize = _executor.GetOptimalWorkGroupSize();
 
         // Assert
-        workGroupSize.Should().BeGreaterThan(0);
-        workGroupSize.Should().BeLessOrEqualTo(1024);
+        Assert.True(workGroupSize > 0);
+        Assert.True(workGroupSize <= 1024);
     }
 
     [Theory]
@@ -373,7 +371,7 @@ public class SimdKernelExecutorTests
 
         // Act & Assert
         _executor.Invoking(e => e.ExecuteUnary(input, output, elementCount, operation))
-            .Should().NotThrow();
+            .NotThrow();
     }
 
     [Fact]
@@ -386,7 +384,7 @@ public class SimdKernelExecutorTests
 
         // Act & Assert
         _executor.Invoking(e => e.Execute(smallBuffer, normalBuffer, normalBuffer, elementCount, 256))
-            .Should().Throw<ArgumentException>();
+            .Throw<ArgumentException>();
     }
 }
 
@@ -413,7 +411,7 @@ public class CpuThreadPoolTests
         using var threadPool = new CpuThreadPool(_optionsWrapper);
 
         // Assert
-        threadPool.Should().NotBeNull();
+        Assert.NotNull(threadPool);
         threadPool.WorkerCount.Should().Be(_options.WorkerThreads);
     }
 
@@ -430,7 +428,7 @@ public class CpuThreadPoolTests
         // Assert
         // Give some time for execution
         await Task.Delay(100);
-        executed.Should().BeTrue();
+        Assert.True(executed);
     }
 
     [Fact]
@@ -443,7 +441,7 @@ public class CpuThreadPoolTests
         var result = await threadPool.EnqueueAsync(() => 42);
 
         // Assert
-        result.Should().Be(42);
+        Assert.Equal(42, result);
     }
 
     [Fact]
@@ -453,7 +451,7 @@ public class CpuThreadPoolTests
         using var threadPool = new CpuThreadPool(_optionsWrapper);
         var executionCount = 0;
         var actions = Enumerable.Range(0, 10)
-            .Select(_ => new Action(() => Interlocked.Increment(ref executionCount)))
+            .Select(_ => new Action(() => Interlocked.Increment(ref executionCount)
             .ToArray();
 
         // Act
@@ -462,7 +460,7 @@ public class CpuThreadPoolTests
         // Assert
         // Give some time for execution
         await Task.Delay(200);
-        executionCount.Should().Be(10);
+        Assert.Equal(10, executionCount);
     }
 
     [Fact]
@@ -475,10 +473,10 @@ public class CpuThreadPoolTests
         var stats = threadPool.GetStatistics();
 
         // Assert
-        stats.Should().NotBeNull();
+        Assert.NotNull(stats);
         stats.ThreadCount.Should().Be(_options.WorkerThreads);
-        stats.LocalQueueCounts.Should().HaveCount(_options.WorkerThreads);
-        stats.TotalQueuedItems.Should().BeGreaterOrEqualTo(0);
+        stats.LocalQueueCounts.Count.Should().Be(_options.WorkerThreads));
+        stats.TotalQueuedItems >= 0.Should().BeTrue();
     }
 
     [Fact]
@@ -490,8 +488,7 @@ public class CpuThreadPoolTests
         cts.Cancel();
 
         // Act & Assert
-        await threadPool.Invoking(tp => tp.EnqueueAsync(() => { }, cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => threadPool.MethodCall().AsTask());
     }
 
     [Fact]
@@ -502,7 +499,7 @@ public class CpuThreadPoolTests
 
         // Act & Assert
         await threadPool.Invoking(tp => tp.DisposeAsync().AsTask())
-            .Should().NotThrowAsync();
+            .NotThrowAsync();
     }
 
     [Fact]
@@ -513,8 +510,7 @@ public class CpuThreadPoolTests
         await threadPool.DisposeAsync();
 
         // Act & Assert
-        await threadPool.Invoking(tp => tp.EnqueueAsync(() => { }))
-            .Should().ThrowAsync<ObjectDisposedException>();
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => threadPool.MethodCall().AsTask());
     }
 
     [Fact]
@@ -536,6 +532,6 @@ public class CpuThreadPoolTests
 
         // Act & Assert
         await threadPool.Invoking(tp => tp.EnqueueBatchAsync(emptyActions))
-            .Should().CompleteWithinAsync(TimeSpan.FromMilliseconds(100));
+            .CompleteWithinAsync(TimeSpan.FromMilliseconds(100));
     }
 }

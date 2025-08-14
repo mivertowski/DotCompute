@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using FluentAssertions;
 using CoreMemory = DotCompute.Core.Memory;
 using AbstractionsMemory = DotCompute.Abstractions;
 
@@ -54,7 +55,7 @@ public sealed class MemoryManagerTests : IDisposable
         mockBuffer.Setup(b => b.Access).Returns(CoreMemory.MemoryAccess.ReadWrite);
         
         _coreMemoryManagerMock
-            .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
+            .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()
             .ReturnsAsync(mockBuffer.Object);
 
         // Act
@@ -71,7 +72,7 @@ public sealed class MemoryManagerTests : IDisposable
     {
         // Arrange
         _coreMemoryManagerMock
-            .Setup(m => m.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
+            .Setup(m => m.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()
             .ThrowsAsync(new ArgumentException("Element count must be positive"));
 
         // Act & Assert
@@ -87,7 +88,7 @@ public sealed class MemoryManagerTests : IDisposable
         var destBuffer = Mock.Of<CoreMemory.IBuffer<float>>();
         
         _coreMemoryManagerMock
-            .Setup(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>()))
+            .Setup(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>()
             .Returns(ValueTask.CompletedTask);
 
         // Act & Assert (should not throw)
@@ -120,7 +121,7 @@ public sealed class MemoryManagerTests : IDisposable
         mockBuffer.Setup(b => b.Options).Returns(AbstractionsMemory.MemoryOptions.None);
         
         _abstractionsMemoryManagerMock
-            .Setup(m => m.AllocateAsync(1024, AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()))
+            .Setup(m => m.AllocateAsync(1024, AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()
             .ReturnsAsync(mockBuffer.Object);
 
         // Act
@@ -136,7 +137,7 @@ public sealed class MemoryManagerTests : IDisposable
     {
         // Arrange
         _abstractionsMemoryManagerMock
-            .Setup(m => m.AllocateAsync(0, It.IsAny<AbstractionsMemory.MemoryOptions>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.AllocateAsync(0, It.IsAny<AbstractionsMemory.MemoryOptions>(), It.IsAny<CancellationToken>()
             .ThrowsAsync(new ArgumentException("Size must be positive"));
 
         // Act & Assert
@@ -153,7 +154,7 @@ public sealed class MemoryManagerTests : IDisposable
         mockBuffer.Setup(b => b.SizeInBytes).Returns(sourceData.Length * sizeof(int));
         
         _abstractionsMemoryManagerMock
-            .Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()))
+            .Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()
             .ReturnsAsync(mockBuffer.Object);
 
         // Act

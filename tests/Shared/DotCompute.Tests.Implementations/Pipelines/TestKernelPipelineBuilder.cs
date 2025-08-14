@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using DotCompute.Abstractions;
 using DotCompute.Core.Aot;
 using DotCompute.Core.Pipelines;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.Pipelines;
 

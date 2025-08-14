@@ -1,7 +1,7 @@
 using Xunit;
+using FluentAssertions;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
@@ -39,7 +39,7 @@ public class AcceleratorManagerTests
 
         // Act & Assert
         var act = () => manager.RegisterProvider(null!);
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(() => act());
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class AcceleratorManagerTests
         var act = () => manager.RegisterProvider(provider);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Throw<InvalidOperationException>()
             .WithMessage("*Cannot register providers after initialization*");
     }
 
@@ -79,7 +79,7 @@ public class AcceleratorManagerTests
         var result = manager.GetAccelerator(0);
 
         // Assert
-        result.Should().BeSameAs(accelerator);
+        result.BeSameAs(accelerator);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class AcceleratorManagerTests
         var act = () => manager.GetAccelerator(0);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        act.Throw<InvalidOperationException>()
             .WithMessage("*must be initialized*");
     }
 
@@ -116,7 +116,7 @@ public class AcceleratorManagerTests
         var result = manager.GetAcceleratorById("CPU_Test");
 
         // Assert
-        result.Should().BeSameAs(accelerator);
+        result.BeSameAs(accelerator);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class AcceleratorManagerTests
         var result = manager.GetAcceleratorById("NonExisting");
 
         // Assert
-        result.Should().BeNull();
+        Assert.Null(result);
     }
 
     [Fact]
@@ -159,10 +159,10 @@ public class AcceleratorManagerTests
         var gpus = manager.GetAcceleratorsByType(AcceleratorType.OpenCL).ToList();
 
         // Assert
-        cpus.Should().HaveCount(1);
-        cpus.Should().Contain(cpuAccel);
-        gpus.Should().HaveCount(1);
-        gpus.Should().Contain(gpuAccel);
+        Assert.Equal(1, cpus.Count());
+        Assert.Contains(cpuAccel, cpus);
+        Assert.Equal(1, gpus.Count());
+        Assert.Contains(gpuAccel, gpus);
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public class AcceleratorManagerTests
 
         // Assert
         manager.Count.Should().Be(3);
-        manager.AvailableAccelerators.Should().HaveCount(3);
+        manager.AvailableAccelerators.Count.Should().Be(3);
         // Since none have DeviceType == "GPU", it should fall back to first CPU
         manager.Default.Should().BeSameAs(accel1); // Falls back to CPU since no GPU found
     }
@@ -238,7 +238,7 @@ public class AcceleratorManagerTests
         var result = manager.SelectBest(criteria);
 
         // Assert
-        result.Should().BeSameAs(accel3); // GPU2 with 4GB
+        result.BeSameAs(accel3); // GPU2 with 4GB
     }
 
     [Fact]
@@ -261,7 +261,7 @@ public class AcceleratorManagerTests
         var context = manager.CreateContext(accelerator);
 
         // Assert
-        context.Should().NotBeNull();
+        Assert.NotNull(context);
         context.DeviceId.Should().Be(0);
     }
 

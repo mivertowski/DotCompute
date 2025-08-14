@@ -5,8 +5,8 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Moq;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Core.Tests.Kernels;
 
@@ -32,10 +32,10 @@ public class OpenCLKernelCompilerTests : IDisposable
     public void Constructor_WithValidLogger_ShouldInitializeSuccessfully()
     {
         // Assert
-        _compiler.Should().NotBeNull();
+        Assert.NotNull(_compiler);
         _compiler.Name.Should().Be("OpenCL Kernel Compiler");
-        _compiler.SupportedSourceTypes.Should().Contain(KernelSourceType.OpenCL);
-        _compiler.SupportedSourceTypes.Should().Contain(KernelSourceType.Binary);
+        _compiler.Assert.Contains(KernelSourceType.OpenCL, SupportedSourceTypes);
+        _compiler.Assert.Contains(KernelSourceType.Binary, SupportedSourceTypes);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class OpenCLKernelCompilerTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new OpenCLKernelCompiler(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        act.Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     #endregion
@@ -57,7 +57,7 @@ public class OpenCLKernelCompilerTests : IDisposable
         var name = _compiler.Name;
 
         // Assert
-        name.Should().Be("OpenCL Kernel Compiler");
+        Assert.Equal("OpenCL Kernel Compiler", name);
     }
 
     [Fact]
@@ -67,10 +67,10 @@ public class OpenCLKernelCompilerTests : IDisposable
         var supportedTypes = _compiler.SupportedSourceTypes;
 
         // Assert
-        supportedTypes.Should().NotBeNull();
-        supportedTypes.Should().HaveCount(2);
-        supportedTypes.Should().Contain(KernelSourceType.OpenCL);
-        supportedTypes.Should().Contain(KernelSourceType.Binary);
+        Assert.NotNull(supportedTypes);
+        Assert.Equal(2, supportedTypes.Count());
+        Assert.Contains(KernelSourceType.OpenCL, supportedTypes);
+        Assert.Contains(KernelSourceType.Binary, supportedTypes);
     }
 
     #endregion
@@ -87,9 +87,9 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
-        result.Should().BeOfType<ManagedCompiledKernel>();
+        Assert.IsType<ManagedCompiledKernel>(result);
         VerifyLoggerWasCalledForCompilation("TestKernel");
     }
 
@@ -97,8 +97,7 @@ public class OpenCLKernelCompilerTests : IDisposable
     public async Task CompileAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        await _compiler.Invoking(c => c.CompileAsync(null!))
-            .Should().ThrowAsync<ArgumentNullException>()
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _compiler.MethodCall().AsTask())
             .WithParameterName("definition");
     }
 
@@ -109,8 +108,7 @@ public class OpenCLKernelCompilerTests : IDisposable
         var definition = CreateKernelDefinitionWithLanguage("TestKernel", KernelLanguage.HLSL);
 
         // Act & Assert
-        await _compiler.Invoking(c => c.CompileAsync(definition))
-            .Should().ThrowAsync<ArgumentException>()
+        await Assert.ThrowsAsync<ArgumentException>(() => _compiler.MethodCall().AsTask())
             .WithMessage("*Expected OpenCL kernel but received HLSL*");
     }
 
@@ -124,7 +122,7 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition, null);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
     }
 
@@ -145,7 +143,7 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition, options);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
     }
 
@@ -158,8 +156,7 @@ public class OpenCLKernelCompilerTests : IDisposable
         cts.Cancel();
 
         // Act & Assert
-        await _compiler.Invoking(c => c.CompileAsync(definition, null, cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => _compiler.MethodCall().AsTask());
     }
 
     [Fact]
@@ -172,8 +169,8 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().BeOfType<ManagedCompiledKernel>();
+        Assert.NotNull(result);
+        Assert.IsType<ManagedCompiledKernel>(result);
         
         var managedKernel = result as ManagedCompiledKernel;
         managedKernel!.Name.Should().Be("MockKernel");
@@ -198,7 +195,7 @@ public class OpenCLKernelCompilerTests : IDisposable
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds.Should().BeGreaterOrEqualTo(8); // Should take at least ~10ms
+        stopwatch.ElapsedMilliseconds >= 8.Should().BeTrue(); // Should take at least ~10ms
     }
 
     #endregion
@@ -215,7 +212,7 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 
@@ -224,7 +221,7 @@ public class OpenCLKernelCompilerTests : IDisposable
     {
         // Arrange & Act & Assert
         _compiler.Invoking(c => c.Validate(null!))
-            .Should().Throw<ArgumentNullException>()
+            .Throw<ArgumentNullException>()
             .WithParameterName("definition");
     }
 
@@ -238,9 +235,9 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.Should().Contain("Expected OpenCL kernel but received HLSL");
+        result.Assert.Contains("Expected OpenCL kernel but received HLSL", Message);
     }
 
     [Fact]
@@ -254,9 +251,9 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.Should().Contain("No __kernel function found");
+        result.Assert.Contains("No __kernel function found", Message);
     }
 
     [Theory]
@@ -272,7 +269,7 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 
@@ -282,7 +279,7 @@ public class OpenCLKernelCompilerTests : IDisposable
 
     [Theory]
     [InlineData("__kernel void test() { { { } } }")]
-    [InlineData("__kernel void test() { ((( ))) }")]
+    [InlineData("__kernel void test() { (( ) }")]
     [InlineData("__kernel void test() { [[[ ]]] }")]
     public void ValidateOpenCLSyntax_WithBalancedBrackets_ShouldReturnNoErrors(string openclCode)
     {
@@ -293,13 +290,13 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 
     [Theory]
     [InlineData("__kernel void test() { { { }")]
-    [InlineData("__kernel void test() { ((( )")]
+    [InlineData("__kernel void test() { (( )")]
     [InlineData("__kernel void test() { [[[ ]")]
     public void ValidateOpenCLSyntax_WithUnbalancedBrackets_ShouldReturnErrors(string openclCode)
     {
@@ -310,9 +307,9 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.Should().ContainAny("Unbalanced braces", "Unbalanced parentheses", "Unbalanced brackets");
+        result.Message.ContainAny("Unbalanced braces", "Unbalanced parentheses", "Unbalanced brackets");
     }
 
     [Theory]
@@ -327,9 +324,9 @@ public class OpenCLKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.Should().Contain("Dynamic memory allocation not supported");
+        result.Assert.Contains("Dynamic memory allocation not supported", Message);
     }
 
     [Fact]
@@ -349,7 +346,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 
@@ -364,7 +361,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 
@@ -383,7 +380,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var compileTask = _compiler.CompileAsync(definition, null);
 
         // Assert
-        compileTask.Should().NotBeNull();
+        Assert.NotNull(compileTask);
     }
 
     [Fact]
@@ -396,7 +393,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var result = await _compiler.CompileAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // Default options are applied internally (tested through successful compilation)
     }
 
@@ -416,13 +413,13 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var result2 = await _compiler.CompileAsync(definition2);
 
         // Assert
-        result1.Should().BeOfType<ManagedCompiledKernel>();
-        result2.Should().BeOfType<ManagedCompiledKernel>();
+        Assert.IsType<ManagedCompiledKernel>(result1);
+        Assert.IsType<ManagedCompiledKernel>(result2);
         
         var kernel1 = result1 as ManagedCompiledKernel;
         var kernel2 = result2 as ManagedCompiledKernel;
         
-        kernel1!.Binary.Should().BeEquivalentTo(kernel2!.Binary);
+        kernel1!.Binary.BeEquivalentTo(kernel2!.Binary);
     }
 
     [Fact]
@@ -437,13 +434,13 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var result2 = await _compiler.CompileAsync(definition2);
 
         // Assert
-        result1.Should().BeOfType<ManagedCompiledKernel>();
-        result2.Should().BeOfType<ManagedCompiledKernel>();
+        Assert.IsType<ManagedCompiledKernel>(result1);
+        Assert.IsType<ManagedCompiledKernel>(result2);
         
         var kernel1 = result1 as ManagedCompiledKernel;
         var kernel2 = result2 as ManagedCompiledKernel;
         
-        kernel1!.Binary.Should().NotBeEquivalentTo(kernel2!.Binary);
+        kernel1!.Binary.NotBeEquivalentTo(kernel2!.Binary);
     }
 
     #endregion
@@ -461,7 +458,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
 
         // Act & Assert - Current mock implementation shouldn't throw
         var result = await _compiler.CompileAsync(definition);
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
     }
 
     [Fact]
@@ -473,8 +470,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         cts.Cancel();
 
         // Act & Assert
-        await _compiler.Invoking(c => c.CompileAsync(definition, null, cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => _compiler.MethodCall().AsTask());
 
         // Verify cancellation was logged
         VerifyLoggerWasCalledForCancellation("CancelledKernel");
@@ -502,7 +498,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 
@@ -518,7 +514,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 
@@ -540,7 +536,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 

@@ -1,6 +1,6 @@
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -33,7 +33,7 @@ public class KernelArgumentsTests
         // Assert
         args.Get(0).Should().Be(testValue);
         args.Get(1).Should().Be(testString);
-        args.Get(2).Should().BeEquivalentTo(testArray);
+        args.Get(2).BeEquivalentTo(testArray);
     }
 
     [Fact]
@@ -44,7 +44,7 @@ public class KernelArgumentsTests
 
         // Act & Assert
         var act = () => args.Get(5);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class KernelArgumentsTests
 
         // Act & Assert
         var act = () => args.Get(0);
-        act.Should().Throw<InvalidOperationException>();
+        Assert.Throws<InvalidOperationException>(() => act());
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public class KernelArgumentsTests
         args.Set(0, null!);
 
         // Assert
-        args.Get(0).Should().BeNull();
+        args.Get(0).BeNull();
     }
 
     [Fact]

@@ -3,11 +3,11 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -45,11 +45,11 @@ public class MultiAcceleratorTests : IntegrationTestBase
             inputData);
 
         // Assert
-        results.Should().HaveCount(2);
-        results.All(r => r.Success).Should().BeTrue();
+        Assert.Equal(2, results.Count());
+        results.Should().AllSatisfy(r => r.Success);
         
         var totalProcessed = results.Sum(r => r.ProcessedItems);
-        totalProcessed.Should().Be(totalWorkItems);
+        Assert.Equal(totalWorkItems, totalProcessed);
     }
 
     [Fact]
@@ -75,8 +75,8 @@ public class MultiAcceleratorTests : IntegrationTestBase
             inputData);
 
         // Assert
-        results.Should().NotBeEmpty();
-        results.All(r => r.Success).Should().BeTrue();
+        Assert.NotEmpty(results);
+        results.Should().AllSatisfy(r => r.Success);
         
         // Verify work distribution is reasonable (no device should have 0 or all work)
         var workDistribution = results.Select(r => r.ProcessedItems).ToList();
@@ -113,12 +113,12 @@ public class MultiAcceleratorTests : IntegrationTestBase
             sharedData);
 
         // Assert
-        coherenceResults.Should().NotBeEmpty();
-        coherenceResults.All(r => r.DataIntegrity).Should().BeTrue();
+        Assert.NotEmpty(coherenceResults);
+        coherenceResults.Should().AllSatisfy(r => r.DataIntegrity);
         
         // All accelerators should see the same final data
         var finalStates = coherenceResults.Select(r => r.FinalChecksum).Distinct().ToList();
-        finalStates.Should().HaveCount(1, "All accelerators should see consistent data");
+        Assert.Equal(1, "All accelerators should see consistent data", finalStates.Count());
     }
 
     [Fact]
@@ -147,14 +147,14 @@ public class MultiAcceleratorTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        concurrentResults.Should().HaveCount(accelerators.Count);
-        concurrentResults.All(r => r.Success).Should().BeTrue();
+        Assert.Equal(accelerators.Count, concurrentResults.Count());
+        concurrentResults.Should().AllSatisfy(r => r.Success);
         
         // Concurrent execution should be faster than sequential
         var totalExecutionTime = stopwatch.Elapsed;
         var expectedSequentialTime = concurrentResults.Sum(r => r.ExecutionTime.TotalMilliseconds);
         
-        totalExecutionTime.TotalMilliseconds.Should().BeLessThan(
+        totalExecutionTime.Assert.True(TotalMilliseconds < 
             expectedSequentialTime * 0.8, // Should be at least 20% faster
             "Concurrent execution should show performance benefit");
     }
@@ -183,14 +183,14 @@ public class MultiAcceleratorTests : IntegrationTestBase
             failureIndex: 1);
 
         // Assert
-        faultTolerantResults.Should().NotBeEmpty();
-        faultTolerantResults.Count(r => r.Success).Should().BeGreaterThanOrEqualTo(accelerators.Count - 1);
+        Assert.NotEmpty(faultTolerantResults);
+        faultTolerantResults.Count(r => r.Success).BeGreaterThanOrEqualTo(accelerators.Count - 1);
         
         var totalProcessed = faultTolerantResults
             .Where(r => r.Success)
             .Sum(r => r.ProcessedItems);
         
-        totalProcessed.Should().Be(totalWorkItems, "Work should be redistributed after failure");
+        Assert.Equal(totalWorkItems, "Work should be redistributed after failure", totalProcessed);
     }
 
     [Theory]
@@ -223,8 +223,8 @@ public class MultiAcceleratorTests : IntegrationTestBase
             workItemsPerDevice);
 
         // Assert
-        heterogeneousResults.Should().HaveCount(2);
-        heterogeneousResults.All(r => r.Success).Should().BeTrue();
+        Assert.Equal(2, heterogeneousResults.Count());
+        heterogeneousResults.Should().AllSatisfy(r => r.Success);
         
         // Results should be equivalent regardless of backend
         var results1 = heterogeneousResults[0].Results;
@@ -258,7 +258,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             testData);
 
         // Assert
-        transferResults.Should().NotBeNull();
+        Assert.NotNull(transferResults);
         transferResults.Success.Should().BeTrue();
         transferResults.TransferTime.Should().BePositive();
         transferResults.DataIntegrity.Should().BeTrue();

@@ -326,6 +326,14 @@ public class KernelDefinition
     public Dictionary<string, object>? Metadata { get; init; }
 
     /// <summary>
+    /// Initializes a new instance of the KernelDefinition class using object initializer syntax.
+    /// </summary>
+    public KernelDefinition()
+    {
+        // Required properties will be set by the object initializer
+    }
+
+    /// <summary>
     /// Initializes a new instance of the KernelDefinition class.
     /// </summary>
     /// <param name="name">The kernel name.</param>

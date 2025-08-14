@@ -3,9 +3,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.NVRTC;
 
@@ -95,7 +95,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         {
             // Create NVRTC program
             var result = NvrtcCreateProgram(ref program, kernelSource, "vectorAdd.cu", 0, null, null);
-            result.Should().Be(0, "NVRTC program creation should succeed");
+            Assert.Equal(0, result); // NVRTC program creation should succeed;
 
             _output.WriteLine("NVRTC program created successfully");
 
@@ -124,7 +124,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                     _output.WriteLine($"Compilation log:\n{logString}");
                 }
                 
-                result.Should().Be(0, "Kernel compilation should succeed");
+                Assert.Equal(0, result); // Kernel compilation should succeed;
             }
 
             _output.WriteLine("Kernel compiled successfully");
@@ -132,19 +132,19 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             // Get compiled PTX
             long ptxSize = 0;
             result = NvrtcGetPTXSize(program, ref ptxSize);
-            result.Should().Be(0, "PTX size query should succeed");
+            Assert.Equal(0, result); // PTX size query should succeed;
 
             var ptx = new byte[ptxSize];
             result = NvrtcGetPTX(program, ptx);
-            result.Should().Be(0, "PTX retrieval should succeed");
+            Assert.Equal(0, result); // PTX retrieval should succeed;
 
             var ptxString = Encoding.ASCII.GetString(ptx).TrimEnd('\0');
             _output.WriteLine($"Generated PTX ({ptxSize} bytes)");
             _output.WriteLine($"PTX preview: {ptxString.Substring(0, Math.Min(200, ptxString.Length))}...");
 
             // Validate PTX contains expected elements
-            ptxString.Should().Contain("vectorAdd", "PTX should contain the kernel name");
-            ptxString.Should().Contain("sm_89", "PTX should be compiled for compute capability 8.9");
+            Assert.Contains("vectorAdd", ptxString); // "PTX should contain the kernel name";
+            Assert.Contains("sm_89", ptxString); // "PTX should be compiled for compute capability 8.9";
         }
         finally
         {
@@ -183,11 +183,11 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         {
             // Compile kernel
             var result = NvrtcCreateProgram(ref program, kernelSource, "vectorAdd.cu", 0, null, null);
-            result.Should().Be(0, "Program creation should succeed");
+            Assert.Equal(0, result); // Program creation should succeed;
 
             var options = new[] { "--gpu-architecture=compute_89" };
             result = NvrtcCompileProgram(program, options.Length, options);
-            result.Should().Be(0, "Kernel compilation should succeed");
+            Assert.Equal(0, result); // Kernel compilation should succeed;
 
             // Get PTX
             long ptxSize = 0;
@@ -197,21 +197,21 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 
             // Load module from PTX
             result = CuModuleLoadData(ref module, ptx);
-            result.Should().Be(0, "Module loading should succeed");
+            Assert.Equal(0, result); // Module loading should succeed;
 
             // Get kernel function
             var kernelName = "vectorAdd";
             var kernelNameBytes = Encoding.ASCII.GetBytes(kernelName);
             result = CuModuleGetFunction(ref kernel, module, kernelNameBytes);
-            result.Should().Be(0, "Kernel function retrieval should succeed");
+            Assert.Equal(0, result); // Kernel function retrieval should succeed;
 
             // Allocate device memory
             result = CudaMalloc(ref d_a, size);
-            result.Should().Be(0, "Memory allocation for a should succeed");
+            Assert.Equal(0, result); // Memory allocation for a should succeed;
             result = CudaMalloc(ref d_b, size);
-            result.Should().Be(0, "Memory allocation for b should succeed");
+            Assert.Equal(0, result); // Memory allocation for b should succeed;
             result = CudaMalloc(ref d_c, size);
-            result.Should().Be(0, "Memory allocation for c should succeed");
+            Assert.Equal(0, result); // Memory allocation for c should succeed;
 
             // Prepare host data
             var h_a = new float[N];
@@ -230,9 +230,9 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             try
             {
                 result = CudaMemcpyHtoD(d_a, h_a_handle.AddrOfPinnedObject(), size);
-                result.Should().Be(0, "H2D copy for a should succeed");
+                Assert.Equal(0, result); // H2D copy for a should succeed;
                 result = CudaMemcpyHtoD(d_b, h_b_handle.AddrOfPinnedObject(), size);
-                result.Should().Be(0, "H2D copy for b should succeed");
+                Assert.Equal(0, result); // H2D copy for b should succeed;
             }
             finally
             {
@@ -275,21 +275,21 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                         kernelParamsPtr,        // parameters
                         IntPtr.Zero             // extra parameters
                     );
-                    result.Should().Be(0, "Kernel launch should succeed");
+                    Assert.Equal(0, result); // Kernel launch should succeed;
 
                     // Synchronize
                     result = CudaCtxSynchronize();
-                    result.Should().Be(0, "Context synchronization should succeed");
+                    Assert.Equal(0, result); // Context synchronization should succeed;
                     sw.Stop();
 
-                    _output.WriteLine($"Kernel executed in {sw.ElapsedMicroseconds} microseconds");
+                    _output.WriteLine($"Kernel executed in {sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency:F1} microseconds");
 
                     // Copy result back
                     var h_c_handle = GCHandle.Alloc(h_c, GCHandleType.Pinned);
                     try
                     {
                         result = CudaMemcpyDtoH(h_c_handle.AddrOfPinnedObject(), d_c, size);
-                        result.Should().Be(0, "D2H copy should succeed");
+                        Assert.Equal(0, result); // D2H copy should succeed;
                     }
                     finally
                     {
@@ -416,7 +416,7 @@ extern ""C"" __global__ void fastMatrixMul(
         try
         {
             var result = NvrtcCreateProgram(ref program, complexKernelSource, "matrixMul.cu", 0, null, null);
-            result.Should().Be(0, "Complex program creation should succeed");
+            Assert.Equal(0, result); // Complex program creation should succeed;
 
             // Use aggressive optimization options for RTX 2000 Ada Gen
             var options = new[]
@@ -448,7 +448,7 @@ extern ""C"" __global__ void fastMatrixMul(
                 }
             }
 
-            result.Should().Be(0, "Complex kernel compilation should succeed");
+            Assert.Equal(0, result); // Complex kernel compilation should succeed;
             _output.WriteLine($"Complex kernel compiled successfully in {sw.ElapsedMilliseconds} ms");
 
             // Get PTX and validate optimization
@@ -461,9 +461,9 @@ extern ""C"" __global__ void fastMatrixMul(
             _output.WriteLine($"Generated optimized PTX ({ptxSize} bytes)");
 
             // Check for optimization indicators
-            ptxString.Should().Contain("matrixMul", "PTX should contain matrix multiplication kernel");
-            ptxString.Should().Contain("fastMatrixMul", "PTX should contain optimized matrix multiplication kernel");
-            ptxString.Should().Contain("shared", "PTX should indicate shared memory usage");
+            Assert.Contains("matrixMul", ptxString); // "PTX should contain matrix multiplication kernel";
+            Assert.Contains("fastMatrixMul", ptxString); // "PTX should contain optimized matrix multiplication kernel";
+            Assert.Contains("shared", ptxString); // "PTX should indicate shared memory usage";
         }
         finally
         {
@@ -500,7 +500,7 @@ extern ""C"" __global__ void benchmark(float* data, int n)
             try
             {
                 var result = NvrtcCreateProgram(ref program, kernelSource, $"benchmark_{run}.cu", 0, null, null);
-                result.Should().Be(0, "Program creation should succeed");
+                Assert.Equal(0, result); // Program creation should succeed;
 
                 var options = new[] { "--gpu-architecture=compute_89" };
 
@@ -508,7 +508,7 @@ extern ""C"" __global__ void benchmark(float* data, int n)
                 result = NvrtcCompileProgram(program, options.Length, options);
                 sw.Stop();
 
-                result.Should().Be(0, "Compilation should succeed");
+                Assert.Equal(0, result); // Compilation should succeed;
                 compilationTimes.Add(sw.ElapsedMilliseconds);
             }
             finally
@@ -530,8 +530,8 @@ extern ""C"" __global__ void benchmark(float* data, int n)
         _output.WriteLine($"  Max: {maxTime} ms");
 
         // NVRTC should compile simple kernels reasonably quickly
-        averageTime.Should().BeLessThan(1000, "Average compilation time should be under 1 second");
-        maxTime.Should().BeLessThan(2000, "Maximum compilation time should be under 2 seconds");
+        Assert.True(averageTime < 1000, "Average compilation time should be under 1 second");
+        Assert.True(maxTime < 2000, "Maximum compilation time should be under 2 seconds");
 
         await Task.CompletedTask;
     }

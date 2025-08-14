@@ -5,8 +5,8 @@ using System;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Abstractions.Tests;
 
@@ -24,9 +24,9 @@ public class ExceptionTests
         var exception = new AcceleratorException();
 
         // Assert
-        exception.Should().NotBeNull();
+        Assert.NotNull(exception);
         exception.Message.Should().NotBeNullOrEmpty();
-        exception.InnerException.Should().BeNull();
+        exception.Assert.Null(InnerException);
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class ExceptionTests
 
         // Assert
         exception.Message.Should().Be(expectedMessage);
-        exception.InnerException.Should().BeNull();
+        exception.Assert.Null(InnerException);
     }
 
     [Fact]
@@ -65,7 +65,7 @@ public class ExceptionTests
         var exception = new AcceleratorException(null!);
 
         // Assert
-        exception.Should().NotBeNull();
+        Assert.NotNull(exception);
         // Message behavior with null is framework-dependent
     }
 
@@ -76,7 +76,7 @@ public class ExceptionTests
         var exception = new AcceleratorException(string.Empty);
 
         // Assert
-        exception.Should().NotBeNull();
+        Assert.NotNull(exception);
         exception.Message.Should().Be(string.Empty);
     }
 
@@ -87,11 +87,11 @@ public class ExceptionTests
         const string message = "Test message";
 
         // Act
-        var exception = new AcceleratorException(message, null);
+        var exception = new AcceleratorException(message, null!);
 
         // Assert
         exception.Message.Should().Be(message);
-        exception.InnerException.Should().BeNull();
+        exception.Assert.Null(InnerException);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class ExceptionTests
         var exception = new AcceleratorException();
 
         // Assert
-        exception.Should().BeAssignableTo<Exception>();
+        Assert.IsAssignableFrom<Exception>(exception);
     }
 
     [Theory]
@@ -129,7 +129,7 @@ public class ExceptionTests
         // Act & Assert
         topException.InnerException.Should().Be(middleException);
         topException.InnerException!.InnerException.Should().Be(rootException);
-        topException.InnerException.InnerException!.InnerException.Should().BeNull();
+        topException.InnerException.InnerException!.Assert.Null(InnerException);
     }
 
     #endregion
@@ -143,9 +143,9 @@ public class ExceptionTests
         var exception = new MemoryException();
 
         // Assert
-        exception.Should().NotBeNull();
+        Assert.NotNull(exception);
         exception.Message.Should().NotBeNullOrEmpty();
-        exception.InnerException.Should().BeNull();
+        exception.Assert.Null(InnerException);
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public class ExceptionTests
 
         // Assert
         exception.Message.Should().Be(expectedMessage);
-        exception.InnerException.Should().BeNull();
+        exception.Assert.Null(InnerException);
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public class ExceptionTests
         var exception = new MemoryException(null!);
 
         // Assert
-        exception.Should().NotBeNull();
+        Assert.NotNull(exception);
         // Message behavior with null is framework-dependent
     }
 
@@ -195,7 +195,7 @@ public class ExceptionTests
         var exception = new MemoryException(string.Empty);
 
         // Assert
-        exception.Should().NotBeNull();
+        Assert.NotNull(exception);
         exception.Message.Should().Be(string.Empty);
     }
 
@@ -206,11 +206,11 @@ public class ExceptionTests
         const string message = "Test message";
 
         // Act
-        var exception = new MemoryException(message, null);
+        var exception = new MemoryException(message, null!);
 
         // Assert
         exception.Message.Should().Be(message);
-        exception.InnerException.Should().BeNull();
+        exception.Assert.Null(InnerException);
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public class ExceptionTests
         var exception = new MemoryException();
 
         // Assert
-        exception.Should().BeAssignableTo<Exception>();
+        Assert.IsAssignableFrom<Exception>(exception);
     }
 
     [Theory]
@@ -248,7 +248,7 @@ public class ExceptionTests
         // Act & Assert
         topException.InnerException.Should().Be(middleException);
         topException.InnerException!.InnerException.Should().Be(rootException);
-        topException.InnerException.InnerException!.InnerException.Should().BeNull();
+        topException.InnerException.InnerException!.Assert.Null(InnerException);
     }
 
     #endregion
@@ -263,8 +263,8 @@ public class ExceptionTests
         var memoryException = new MemoryException();
 
         // Assert
-        acceleratorException.Should().BeAssignableTo<Exception>();
-        memoryException.Should().BeAssignableTo<Exception>();
+        Assert.IsAssignableFrom<Exception>(acceleratorException);
+        Assert.IsAssignableFrom<Exception>(memoryException);
     }
 
     [Fact]
@@ -275,8 +275,8 @@ public class ExceptionTests
         var memoryException = new MemoryException();
 
         // Assert
-        acceleratorException.Should().NotBeAssignableTo<MemoryException>();
-        memoryException.Should().NotBeAssignableTo<AcceleratorException>();
+        acceleratorException.NotBeAssignableTo<MemoryException>();
+        memoryException.NotBeAssignableTo<AcceleratorException>();
     }
 
     [Fact]
@@ -288,9 +288,9 @@ public class ExceptionTests
         var exceptionType = typeof(Exception);
 
         // Assert
-        acceleratorType.Should().NotBe(memoryType);
-        acceleratorType.Should().NotBe(exceptionType);
-        memoryType.Should().NotBe(exceptionType);
+        acceleratorType.Should().Not.Be(memoryType);
+        acceleratorType.Should().Not.Be(exceptionType);
+        memoryType.Should().Not.Be(exceptionType);
 
         acceleratorType.IsSubclassOf(exceptionType).Should().BeTrue();
         memoryType.IsSubclassOf(exceptionType).Should().BeTrue();
@@ -318,8 +318,8 @@ public class ExceptionTests
         }
 
         // Assert
-        caughtException.Should().NotBeNull();
-        caughtException.Should().BeOfType<AcceleratorException>();
+        Assert.NotNull(caughtException);
+        Assert.IsType<AcceleratorException>(caughtException);
         caughtException!.Message.Should().Be(expectedMessage);
     }
 
@@ -341,8 +341,8 @@ public class ExceptionTests
         }
 
         // Assert
-        caughtException.Should().NotBeNull();
-        caughtException.Should().BeOfType<MemoryException>();
+        Assert.NotNull(caughtException);
+        Assert.IsType<MemoryException>(caughtException);
         caughtException!.Message.Should().Be(expectedMessage);
     }
 
@@ -364,7 +364,7 @@ public class ExceptionTests
         }
 
         // Assert
-        caughtException.Should().NotBeNull();
+        Assert.NotNull(caughtException);
         caughtException!.Message.Should().Be(expectedMessage);
     }
 
@@ -386,7 +386,7 @@ public class ExceptionTests
         }
 
         // Assert
-        caughtException.Should().NotBeNull();
+        Assert.NotNull(caughtException);
         caughtException!.Message.Should().Be(expectedMessage);
     }
 
@@ -417,9 +417,9 @@ public class ExceptionTests
         }
 
         // Assert
-        memoryExceptionThrown.Should().BeTrue();
-        caughtAcceleratorException.Should().BeNull();
-        caughtMemoryException.Should().NotBeNull();
+        Assert.True(memoryExceptionThrown);
+        Assert.Null(caughtAcceleratorException);
+        Assert.NotNull(caughtMemoryException);
     }
 
     #endregion
@@ -460,11 +460,11 @@ public class ExceptionTests
         var memoryString = memoryException.ToString();
 
         // Assert
-        acceleratorString.Should().Contain(nameof(AcceleratorException));
-        acceleratorString.Should().Contain(message);
+        acceleratorString.Contain(nameof(AcceleratorException));
+        Assert.Contains(message, acceleratorString);
 
-        memoryString.Should().Contain(nameof(MemoryException));
-        memoryString.Should().Contain(message);
+        memoryString.Contain(nameof(MemoryException));
+        Assert.Contains(message, memoryString);
     }
 
     [Fact]
@@ -557,7 +557,7 @@ public class ExceptionTests
         {
             var exception = new AcceleratorException(scenario);
             exception.Message.Should().Be(scenario);
-            exception.Should().BeAssignableTo<Exception>();
+            Assert.IsAssignableFrom<Exception>(exception);
         }
     }
 
@@ -578,7 +578,7 @@ public class ExceptionTests
         {
             var exception = new MemoryException(scenario);
             exception.Message.Should().Be(scenario);
-            exception.Should().BeAssignableTo<Exception>();
+            Assert.IsAssignableFrom<Exception>(exception);
         }
     }
 
@@ -600,10 +600,10 @@ public class ExceptionTests
         var acceleratorAction = () => SimulateAcceleratorOperation();
         var memoryAction = () => SimulateMemoryOperation();
 
-        acceleratorAction.Should().Throw<AcceleratorException>()
+        acceleratorAction.Throw<AcceleratorException>()
                         .WithMessage("Simulated accelerator failure");
 
-        memoryAction.Should().Throw<MemoryException>()
+        memoryAction.Throw<MemoryException>()
                    .WithMessage("Simulated memory failure");
     }
 

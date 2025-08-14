@@ -1,4 +1,5 @@
 using Xunit;
+using FluentAssertions;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +11,7 @@ using DotCompute.Tests.Shared.Kernels;
 using DotCompute.Tests.Shared.Kernels.Memory;
 using DotCompute.Tests.Shared.Kernels.Pipelines;
 using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Unit;
@@ -151,7 +153,7 @@ public class PipelineIntegrationTests : IAsyncLifetime
                 trueBranch => trueBranch.AddKernel("TruePath", kernelTrue, cfg => cfg
                     .MapOutput("result", "true_output")),
                 falseBranch => falseBranch.AddKernel("FalsePath", kernelFalse, cfg => cfg
-                    .MapOutput("result", "false_output")));
+                    .MapOutput("result", "false_output");
 
         var pipeline = builder.Build();
 
@@ -198,7 +200,7 @@ public class PipelineIntegrationTests : IAsyncLifetime
             .AddLoop(
                 (context, iteration) => iteration < maxIterations,
                 body => body.AddKernel("IterationKernel", kernel, cfg => cfg
-                    .MapOutput("result", $"iteration_output")));
+                    .MapOutput("result", $"iteration_output");
 
         var pipeline = builder.Build();
 

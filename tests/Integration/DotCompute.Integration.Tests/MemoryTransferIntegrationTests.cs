@@ -4,11 +4,11 @@
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Integration.Infrastructure;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -50,7 +50,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         transferStopwatch.Stop();
 
         // Assert
-        retrievedData.Should().BeEquivalentTo(originalData, options => options.WithStrictOrdering());
+        retrievedData.BeEquivalentTo(originalData, options => options.WithStrictOrdering());
         
         var transferredMB = (size * sizeof(float) * 2) / 1024.0 / 1024.0; // Round trip
         var bandwidthMBps = transferredMB / transferStopwatch.Elapsed.TotalSeconds;
@@ -58,7 +58,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Host-Device transfer: {Size} elements, {Bandwidth:F2} MB/s, Options: {Options}",
             size, bandwidthMBps, options);
         
-        bandwidthMBps.Should().BeGreaterThan(10, "Transfer bandwidth should be reasonable");
+        Assert.True(bandwidthMBps > 10, "Transfer bandwidth should be reasonable");
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         result.Success.Should().BeTrue();
         var copiedData = (float[])result.Results["destination"];
         
-        copiedData.Should().BeEquivalentTo(sourceData, options => options.WithStrictOrdering());
+        copiedData.BeEquivalentTo(sourceData, options => options.WithStrictOrdering());
         
         var transferredMB = (dataSize * sizeof(float)) / 1024.0 / 1024.0;
         var bandwidthMBps = transferredMB / transferStopwatch.Elapsed.TotalSeconds;
@@ -132,7 +132,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Device-to-device transfer: {Size} elements, {Bandwidth:F2} MB/s",
             dataSize, bandwidthMBps);
         
-        bandwidthMBps.Should().BeGreaterThan(50, "Device-to-device transfers should be faster than host transfers");
+        Assert.True(bandwidthMBps > 50, "Device-to-device transfers should be faster than host transfers");
     }
 
     [Fact]
@@ -206,11 +206,11 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Should().HaveCount(2);
+        result.ExecutionResults.Count.Should().Be(2));
         result.ExecutionResults.Values.Should().AllSatisfy(r => r.Success.Should().BeTrue());
         
         var finalResult = (float[])result.Results["result"];
-        finalResult.Should().BeEquivalentTo(originalData, options => options.WithStrictOrdering());
+        finalResult.BeEquivalentTo(originalData, options => options.WithStrictOrdering());
         
         LogPerformanceMetrics("P2PTransfer", result.Duration, dataSize);
     }
@@ -343,11 +343,11 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             transferStopwatch.Stop();
 
             // Assert
-            results.Should().HaveCount(datasets.Length);
+            Assert.Equal(datasets.Length, results.Count());
             
             for (int i = 0; i < datasets.Length; i++)
             {
-                results[i].Should().BeEquivalentTo(datasets[i], 
+                results[i].BeEquivalentTo(datasets[i], 
                     options => options.WithStrictOrdering());
             }
             
@@ -359,7 +359,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
                 datasets.Length, dataSize, effectiveBandwidthMBps);
             
             // Parallel transfers should be more efficient than sequential
-            effectiveBandwidthMBps.Should().BeGreaterThan(20);
+            Assert.True(effectiveBandwidthMBps > 20);
         }
         finally
         {
@@ -395,7 +395,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             stopwatch.Stop();
             allocationTimes.Add(stopwatch.Elapsed.TotalMilliseconds);
             
-            retrieved.Should().BeEquivalentTo(data, options => options.WithStrictOrdering());
+            retrieved.BeEquivalentTo(data, options => options.WithStrictOrdering());
             
             // Small delay to allow memory pooling to take effect
             await Task.Delay(1);
@@ -410,7 +410,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         
         // Later allocations should be faster due to memory pooling
         // (In a real implementation with actual memory pooling)
-        avgLaterAllocations.Should().BeLessThan(avgEarlyAllocations * 1.5,
+        Assert.True(avgLaterAllocations < avgEarlyAllocations * 1.5,
             "Memory pooling should improve allocation performance");
     }
 
@@ -445,7 +445,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             transferStopwatch.Stop();
 
             // Assert
-            retrieved.Should().BeEquivalentTo(largeData, options => options.WithStrictOrdering());
+            retrieved.BeEquivalentTo(largeData, options => options.WithStrictOrdering());
             
             var transferredMB = (largeSize * sizeof(float) * 2) / 1024.0 / 1024.0;
             var bandwidthMBps = transferredMB / transferStopwatch.Elapsed.TotalSeconds;
@@ -453,7 +453,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             Logger.LogInformation("Large fragmented transfer: {Size} elements, {Bandwidth:F2} MB/s",
                 largeSize, bandwidthMBps);
             
-            bandwidthMBps.Should().BeGreaterThan(5, "Should handle fragmented large transfers");
+            Assert.True(bandwidthMBps > 5, "Should handle fragmented large transfers");
         }
         finally
         {
@@ -530,7 +530,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         // Performance should be good due to memory alignment
         if (result.Metrics != null)
         {
-            result.Metrics.ThroughputMBps.Should().BeGreaterThan(30,
+            result.Metrics.Assert.True(ThroughputMBps > 30,
                 "Aligned memory access should show good performance");
         }
         

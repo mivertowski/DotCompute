@@ -1,4 +1,5 @@
 using Xunit;
+using FluentAssertions;
 using System;
 using System.Diagnostics;
 using System.Linq;
@@ -322,7 +323,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
                             Code = "test", 
                             Language = KernelLanguage.OpenCL 
                         },
-                        new CompilationOptions()));
+                        new CompilationOptions();
                 
                 var args = new KernelArguments();
                 await kernel.ExecuteAsync(args);
@@ -364,7 +365,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
             _kernelExecutor.ExecuteAsync(
                 kernel,
                 new KernelArguments(),
-                new KernelConfiguration(new Dim3(64), new Dim3(64))))
+                new KernelConfiguration(new Dim3(64), new Dim3(64))
             .ToArray();
 
         // Monitor queue
@@ -400,9 +401,9 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         var view3 = accelerator.Memory.CreateView(mainBuffer, viewOffset * 2, viewSize);
         
         // Initialize data through views
-        var data1 = Enumerable.Range(0, (int)(viewSize / sizeof(int))).ToArray();
-        var data2 = Enumerable.Range(1000, (int)(viewSize / sizeof(int))).ToArray();
-        var data3 = Enumerable.Range(2000, (int)(viewSize / sizeof(int))).ToArray();
+        var data1 = Enumerable.Range(0, (int)(viewSize / sizeof(int).ToArray();
+        var data2 = Enumerable.Range(1000, (int)(viewSize / sizeof(int).ToArray();
+        var data3 = Enumerable.Range(2000, (int)(viewSize / sizeof(int).ToArray();
         
         await view1.CopyFromHostAsync<int>(data1.AsMemory());
         await view2.CopyFromHostAsync<int>(data2.AsMemory());

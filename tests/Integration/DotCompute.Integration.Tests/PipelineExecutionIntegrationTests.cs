@@ -6,10 +6,10 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 using DotCompute.Tests.Integration.Infrastructure;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -35,7 +35,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Should().HaveCount(4);
+        result.ExecutionResults.Count.Should().Be(4));
         
         // Verify stages executed in correct order
         var executionTimes = result.ExecutionResults
@@ -45,7 +45,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Each stage should have had time to complete before the next started
         Logger.LogInformation("Stage execution times: {Times}", 
-            string.Join(", ", executionTimes.Select(t => $"{t:F1}ms")));
+            string.Join(", ", executionTimes.Select(t => $"{t:F1}ms");
         
         executionTimes.Should().AllSatisfy(t => t.Should().BeGreaterThan(0));
         
@@ -63,14 +63,14 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Should().HaveCount(5); // 1 setup + 3 parallel + 1 merge
+        result.ExecutionResults.Count.Should().Be(5)); // 1 setup + 3 parallel + 1 merge
         
         // Verify parallel stages
         var parallelStages = result.ExecutionResults
             .Where(r => r.Key.Contains("parallel"))
             .ToList();
         
-        parallelStages.Should().HaveCount(3);
+        Assert.Equal(3, parallelStages.Count());
         parallelStages.Should().AllSatisfy(stage => 
             stage.Value.Success.Should().BeTrue());
         
@@ -82,7 +82,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Parallel efficiency: {Efficiency:P1} (Sequential: {Sequential:F1}ms, Parallel: {Parallel:F1}ms)",
             parallelEfficiency, sequentialTime, parallelExecutionTime);
         
-        parallelEfficiency.Should().BeGreaterThan(0.3, "Parallel execution should show significant improvement");
+        Assert.True(parallelEfficiency > 0.3, "Parallel execution should show significant improvement");
         
         LogPerformanceMetrics("ParallelPipeline", result.Duration, 1024 * 3);
     }
@@ -98,7 +98,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Should().HaveCount(7);
+        result.ExecutionResults.Count.Should().Be(7));
         
         // Verify dependency execution order
         ValidateDAGExecutionOrder(result.ExecutionResults);
@@ -106,7 +106,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         // Check that all final outputs are present and valid
         result.Results.Should().ContainKey("final_output");
         var finalOutput = (float[])result.Results["final_output"];
-        finalOutput.Should().NotBeEmpty();
+        Assert.NotEmpty(finalOutput);
         finalOutput.Should().NotContain(float.NaN);
         
         LogPerformanceMetrics("ComplexDAGPipeline", result.Duration, 2048);
@@ -158,10 +158,10 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         chunkResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
-        results.Should().HaveCount(totalDataSize / chunkSize);
+        Assert.Equal(totalDataSize / chunkSize, results.Count());
         
         var totalProcessedElements = results.Sum(chunk => chunk.Length);
-        totalProcessedElements.Should().Be(totalDataSize);
+        Assert.Equal(totalDataSize, totalProcessedElements);
         
         var streamingThroughput = (totalDataSize * sizeof(float)) / 1024.0 / 1024.0 / 
                                  processingStopwatch.Elapsed.TotalSeconds;
@@ -169,7 +169,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Streaming pipeline: {Chunks} chunks, {Throughput:F2} MB/s",
             chunkResults.Length, streamingThroughput);
         
-        streamingThroughput.Should().BeGreaterThan(5, "Streaming should maintain reasonable throughput");
+        Assert.True(streamingThroughput > 5, "Streaming should maintain reasonable throughput");
         
         LogPerformanceMetrics("StreamingPipeline", processingStopwatch.Elapsed, totalDataSize);
     }
@@ -196,7 +196,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         if (result.Metrics != null)
         {
             var resourceUtil = result.Metrics.ResourceUtilization;
-            resourceUtil.MemoryUsagePercent.Should().BeLessThan(90, 
+            resourceUtil.Assert.True(MemoryUsagePercent < 90, 
                 "Adaptive pipeline should manage memory pressure");
         }
         
@@ -234,7 +234,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         var iterationsCount = (float[])result.Results["iterations_count"];
         var convergenceAchieved = (float[])result.Results["convergence_achieved"];
         
-        iterationsCount[0].Should().BeLessOrEqualTo(maxIterations);
+        iterationsCount[0].BeLessOrEqualTo(maxIterations);
         convergenceAchieved[0].Should().Be(1.0f, "Algorithm should converge");
         
         Logger.LogInformation("Feedback pipeline converged in {Iterations} iterations", iterationsCount[0]);
@@ -246,7 +246,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
     public async Task PipelineErrorHandling_PartialFailure_ShouldRecoverGracefully()
     {
         // Arrange - Pipeline with intentional failure in middle stage
-        var pipeline = CreateErrorProneP ipeline();
+        var pipeline = CreateErrorPronePipeline();
         
         // Act
         var result = await ExecuteComputeWorkflowAsync("ErrorRecoveryPipeline", pipeline);
@@ -259,8 +259,8 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Pipeline execution: {Successful} successful, {Failed} failed stages",
             successfulStages, failedStages);
         
-        failedStages.Should().BeGreaterThan(0, "Should have simulated failures");
-        successfulStages.Should().BeGreaterThan(failedStages, "Should recover from most failures");
+        Assert.True(failedStages > 0, "Should have simulated failures");
+        Assert.True(successfulStages > failedStages, "Should recover from most failures");
         
         // Should have partial results available
         result.Results.Should().NotBeEmpty();
@@ -280,16 +280,16 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Should().HaveCount(stages);
+        result.ExecutionResults.Count.Should().Be(stages));
         
         // Verify performance scaling
         if (result.Metrics != null)
         {
             var throughputPerStage = result.Metrics.ThroughputMBps / stages;
-            throughputPerStage.Should().BeGreaterThan(1, "Each stage should maintain reasonable throughput");
+            Assert.True(throughputPerStage > 1, "Each stage should maintain reasonable throughput");
             
             var executionTimePerElement = result.Metrics.ExecutionTime / dataSize;
-            executionTimePerElement.Should().BeLessThan(1, "Per-element processing should be efficient");
+            Assert.True(executionTimePerElement < 1, "Per-element processing should be efficient");
         }
         
         LogPerformanceMetrics($"ScalablePipeline_{stages}_{dataSize}", result.Duration, dataSize * stages);
@@ -694,13 +694,13 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         // Note: In a real implementation, we'd have actual start/end timestamps
         // For testing, we validate logical dependencies
         
-        stages.Should().Contain("stage_preprocess");
-        stages.Should().Contain("stage_extract_a");
-        stages.Should().Contain("stage_extract_b");
-        stages.Should().Contain("stage_normalize_a");
-        stages.Should().Contain("stage_normalize_b");
-        stages.Should().Contain("stage_classify");
-        stages.Should().Contain("stage_postprocess");
+        Assert.Contains("stage_preprocess", stages);
+        Assert.Contains("stage_extract_a", stages);
+        Assert.Contains("stage_extract_b", stages);
+        Assert.Contains("stage_normalize_a", stages);
+        Assert.Contains("stage_normalize_b", stages);
+        Assert.Contains("stage_classify", stages);
+        Assert.Contains("stage_postprocess", stages);
         
         Logger.LogInformation("DAG execution validated: all {Count} stages present and executed", stages.Count);
     }

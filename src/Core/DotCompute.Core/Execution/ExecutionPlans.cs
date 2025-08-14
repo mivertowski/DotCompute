@@ -2740,7 +2740,7 @@ public sealed class ResourceScheduler
         
         // Calculate device weights based on performance characteristics
         var deviceWeights = await Task.WhenAll(
-            devices.Select(async d => await _performanceEstimator.CalculateDeviceWeightAsync(d, cancellationToken)));
+            devices.Select(async d => await _performanceEstimator.CalculateDeviceWeightAsync(d, cancellationToken)).ToList());
             
         var totalWeight = deviceWeights.Sum();
         

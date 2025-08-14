@@ -99,7 +99,7 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
             options,
             _logger,
             "CUDA",
-            _kernelCompiler.CompileAsync,
+            async (def, opt, ct) => await _kernelCompiler.CompileAsync(def, opt, ct).ConfigureAwait(false),
             cancellationToken).ConfigureAwait(false);
     }
 
@@ -202,7 +202,7 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
         await AcceleratorUtilities.DisposeWithSynchronizationAsync(
             _logger,
             "CUDA",
-            SynchronizeAsync,
+            async () => await SynchronizeAsync().ConfigureAwait(false),
             _kernelCompiler, _memoryManager, _context, _device);
 
         _disposed = true;

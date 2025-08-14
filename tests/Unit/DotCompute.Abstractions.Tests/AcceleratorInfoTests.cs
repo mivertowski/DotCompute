@@ -1,6 +1,6 @@
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -92,7 +92,7 @@ public class AcceleratorInfoTests
         // Act & Assert
         var act = () => new AcceleratorInfo(name, vendor, driverVersion, type,
             7.5, 1024, 49152, 8589934592L, 8589934592L);
-        act.Should().Throw<ArgumentException>();
+        Assert.Throws<ArgumentException>(() => act());
     }
 
     [Theory]
@@ -104,7 +104,7 @@ public class AcceleratorInfoTests
         // Act & Assert
         var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             computeCapability, 1024, 49152, 8589934592L, 8589934592L);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Theory]
@@ -116,7 +116,7 @@ public class AcceleratorInfoTests
         // Act & Assert
         var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, maxThreadsPerBlock, 49152, 8589934592L, 8589934592L);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Fact]
@@ -125,7 +125,7 @@ public class AcceleratorInfoTests
         // Act & Assert
         var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, 1024, -1, 8589934592L, 8589934592L);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Theory]
@@ -138,7 +138,7 @@ public class AcceleratorInfoTests
         // Act & Assert
         var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, 1024, 49152, totalMemory, availableMemory);
-        act.Should().Throw<ArgumentException>();
+        Assert.Throws<ArgumentException>(() => act());
     }
 
     [Fact]

@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware;
 

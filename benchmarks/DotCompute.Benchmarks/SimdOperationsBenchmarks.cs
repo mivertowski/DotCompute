@@ -359,7 +359,10 @@ public class SimdOperationsBenchmarks
             
             // Horizontal add to get final sum
             var temp = new float[8];
-            Avx.Store(temp, sum);
+            fixed (float* pTemp = temp)
+            {
+                Avx.Store(pTemp, sum);
+            }
             float result = 0;
             for (int i = 0; i < 8; i++)
             {
@@ -441,7 +444,7 @@ public class SimdOperationsBenchmarks
         var unalignedData = new float[DataSize + 1].AsSpan(1); // Unaligned by 4 bytes
         
         // Copy test data
-        _inputA.CopyTo(alignedData);
+        _inputA.CopyTo(alignedData.AsSpan());
         _inputA.CopyTo(unalignedData);
         
         // Perform vectorized operations on both

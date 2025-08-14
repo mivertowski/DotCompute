@@ -63,6 +63,9 @@ public class ComputeKernelsBenchmarks
             _inputA[i] = (float)(random.NextDouble() * 2.0 - 1.0); // [-1, 1]
             _inputB[i] = (float)(random.NextDouble() * 2.0 - 1.0);
         }
+        
+        // Fix CS1998: Add minimal await to satisfy async method requirement
+        await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
     }
 
     private async Task CompileKernels()
@@ -82,12 +85,8 @@ public class ComputeKernelsBenchmarks
                 }
             }";
         
-        var vectorAddDef = new KernelDefinition
-        {
-            Name = "vector_add",
-            Code = Encoding.UTF8.GetBytes(vectorAddSource),
-            EntryPoint = "vector_add"
-        };
+        var vectorAddSource_obj = new TextKernelSource(vectorAddSource, "vector_add", KernelLanguage.OpenCL, "vector_add");
+        var vectorAddDef = new KernelDefinition("vector_add", vectorAddSource_obj, options);
         _kernels["VectorAdd"] = await _accelerator.CompileKernelAsync(vectorAddDef, options);
 
         // Vector multiplication kernel
@@ -99,12 +98,8 @@ public class ComputeKernelsBenchmarks
                 }
             }";
         
-        var vectorMultiplyDef = new KernelDefinition
-        {
-            Name = "vector_multiply",
-            Code = Encoding.UTF8.GetBytes(vectorMultiplySource),
-            EntryPoint = "vector_multiply"
-        };
+        var vectorMultiplySource_obj = new TextKernelSource(vectorMultiplySource, "vector_multiply", KernelLanguage.OpenCL, "vector_multiply");
+        var vectorMultiplyDef = new KernelDefinition("vector_multiply", vectorMultiplySource_obj, options);
         _kernels["VectorMultiply"] = await _accelerator.CompileKernelAsync(vectorMultiplyDef, options);
 
         // Dot product kernel with reduction
@@ -132,12 +127,8 @@ public class ComputeKernelsBenchmarks
                 }
             }";
         
-        var dotProductDef = new KernelDefinition
-        {
-            Name = "dot_product",
-            Code = Encoding.UTF8.GetBytes(dotProductSource),
-            EntryPoint = "dot_product"
-        };
+        var dotProductSource_obj = new TextKernelSource(dotProductSource, "dot_product", KernelLanguage.OpenCL, "dot_product");
+        var dotProductDef = new KernelDefinition("dot_product", dotProductSource_obj, options);
         _kernels["DotProduct"] = await _accelerator.CompileKernelAsync(dotProductDef, options);
 
         // Matrix multiplication kernel
@@ -156,12 +147,8 @@ public class ComputeKernelsBenchmarks
                 }
             }";
         
-        var matrixMultiplyDef = new KernelDefinition
-        {
-            Name = "matrix_multiply",
-            Code = Encoding.UTF8.GetBytes(matrixMultiplySource),
-            EntryPoint = "matrix_multiply"
-        };
+        var matrixMultiplySource_obj = new TextKernelSource(matrixMultiplySource, "matrix_multiply", KernelLanguage.OpenCL, "matrix_multiply");
+        var matrixMultiplyDef = new KernelDefinition("matrix_multiply", matrixMultiplySource_obj, options);
         _kernels["MatrixMultiply"] = await _accelerator.CompileKernelAsync(matrixMultiplyDef, options);
 
         // Reduction sum kernel
@@ -187,12 +174,8 @@ public class ComputeKernelsBenchmarks
                 }
             }";
         
-        var reductionDef = new KernelDefinition
-        {
-            Name = "reduction_sum",
-            Code = Encoding.UTF8.GetBytes(reductionSource),
-            EntryPoint = "reduction_sum"
-        };
+        var reductionSource_obj = new TextKernelSource(reductionSource, "reduction_sum", KernelLanguage.OpenCL, "reduction_sum");
+        var reductionDef = new KernelDefinition("reduction_sum", reductionSource_obj, options);
         _kernels["Reduction"] = await _accelerator.CompileKernelAsync(reductionDef, options);
 
         // 1D Convolution kernel
@@ -210,12 +193,8 @@ public class ComputeKernelsBenchmarks
                 }
             }";
         
-        var convolutionDef = new KernelDefinition
-        {
-            Name = "convolution_1d",
-            Code = Encoding.UTF8.GetBytes(convolutionSource),
-            EntryPoint = "convolution_1d"
-        };
+        var convolutionSource_obj = new TextKernelSource(convolutionSource, "convolution_1d", KernelLanguage.OpenCL, "convolution_1d");
+        var convolutionDef = new KernelDefinition("convolution_1d", convolutionSource_obj, options);
         _kernels["Convolution"] = await _accelerator.CompileKernelAsync(convolutionDef, options);
     }
 

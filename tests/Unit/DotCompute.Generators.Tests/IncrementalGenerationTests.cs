@@ -2,10 +2,10 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Generators.Kernel;
-using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -50,6 +50,7 @@ public class IncrementalGenerationTests
 
         var updatedSource = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class TestKernels
 {
@@ -77,8 +78,8 @@ public class TestKernels
         var updatedResult = TestHelper.RunIncrementalGenerator(_generator, updatedSource);
 
         // Assert
-        updatedResult.GeneratedSources.Length.Should().BeGreaterThan(initialResult.GeneratedSources.Length);
-        updatedResult.GeneratedSources.Should().Contain(s => s.HintName.Contains("MultiplyArrays"));
+        updatedResult.GeneratedSources.Length > initialResult.GeneratedSources.Length.Should().BeTrue();
+        updatedResult.GeneratedSources.Contain(s => s.HintName.Contains("MultiplyArrays"));
     }
 
     [Fact]
@@ -87,6 +88,7 @@ public class TestKernels
         // Arrange
         var initialSource = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class TestKernels
 {
@@ -120,7 +122,7 @@ public class TestKernels
         var updatedResult = TestHelper.RunIncrementalGenerator(_generator, updatedSource);
 
         // Assert
-        initialResult.GeneratedSources.Should().Contain(s => s.HintName.Contains("MultiplyArrays"));
+        initialResult.GeneratedSources.Contain(s => s.HintName.Contains("MultiplyArrays"));
         updatedResult.GeneratedSources.Should().NotContain(s => s.HintName.Contains("MultiplyArrays"));
     }
 
@@ -148,7 +150,7 @@ public class TestKernels
 
         // Assert
         // Should have CUDA implementation in updated version
-        updatedResult.GeneratedSources.Should().Contain(s => s.HintName.Contains("CUDA"));
+        updatedResult.GeneratedSources.Contain(s => s.HintName.Contains("CUDA"));
         initialResult.GeneratedSources.Should().NotContain(s => s.HintName.Contains("CUDA"));
     }
 
@@ -176,7 +178,7 @@ public class TestKernels
         var initialCpu = initialResult.GeneratedSources.First(s => s.HintName.Contains("CPU"));
         var updatedCpu = updatedResult.GeneratedSources.First(s => s.HintName.Contains("CPU"));
         
-        initialCpu.SourceText.ToString().Should().NotBe(updatedCpu.SourceText.ToString());
+        initialCpu.SourceText.ToString().Should().Not.Be(updatedCpu.SourceText.ToString());
     }
 
     [Fact]
@@ -185,6 +187,7 @@ public class TestKernels
         // Arrange
         var initialSource = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class TestKernels
 {
@@ -205,6 +208,7 @@ public class TestKernels
 
         var updatedSource = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class TestKernels
 {
@@ -280,14 +284,14 @@ public class TestKernels
         var initialKernels1Files = initialResult.GeneratedSources.Where(s => s.HintName.Contains("Kernels1"));
         var updatedKernels1Files = updatedResult.GeneratedSources.Where(s => s.HintName.Contains("Kernels1"));
         
-        initialKernels1Files.Should().NotBeEquivalentTo(updatedKernels1Files);
+        initialKernels1Files.NotBeEquivalentTo(updatedKernels1Files);
         
         // Kernels2-related files should be the same
         var initialKernels2Files = initialResult.GeneratedSources.Where(s => s.HintName.Contains("Kernels2"));
         var updatedKernels2Files = updatedResult.GeneratedSources.Where(s => s.HintName.Contains("Kernels2"));
         
         initialKernels2Files.Select(f => f.SourceText.ToString())
-            .Should().BeEquivalentTo(updatedKernels2Files.Select(f => f.SourceText.ToString()));
+            .BeEquivalentTo(updatedKernels2Files.Select(f => f.SourceText.ToString();
     }
 
     [Fact]
@@ -311,10 +315,10 @@ public class TestKernels
         var updatedResult = TestHelper.RunIncrementalGenerator(_generator, updatedSource);
 
         // Assert
-        initialResult.GeneratedSources.Should().Contain(s => s.HintName.Contains("OldClassName"));
+        initialResult.GeneratedSources.Contain(s => s.HintName.Contains("OldClassName"));
         initialResult.GeneratedSources.Should().NotContain(s => s.HintName.Contains("NewClassName"));
         
-        updatedResult.GeneratedSources.Should().Contain(s => s.HintName.Contains("NewClassName"));
+        updatedResult.GeneratedSources.Contain(s => s.HintName.Contains("NewClassName"));
         updatedResult.GeneratedSources.Should().NotContain(s => s.HintName.Contains("OldClassName"));
     }
 
@@ -324,6 +328,7 @@ public class TestKernels
         // Arrange - Start with multiple kernels
         var initialSource = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class MathKernels
 {
@@ -358,6 +363,7 @@ public class MathKernels
         // Complex change: Remove one kernel, modify another, add new one
         var updatedSource = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class MathKernels
 {
@@ -398,21 +404,21 @@ public class MathKernels
 
         // Assert
         // Should have Multiply in initial but not updated
-        initialResult.GeneratedSources.Should().Contain(s => s.HintName.Contains("Multiply"));
+        initialResult.GeneratedSources.Contain(s => s.HintName.Contains("Multiply"));
         updatedResult.GeneratedSources.Should().NotContain(s => s.HintName.Contains("Multiply"));
 
         // Should have Subtract in updated but not initial
         initialResult.GeneratedSources.Should().NotContain(s => s.HintName.Contains("Subtract"));
-        updatedResult.GeneratedSources.Should().Contain(s => s.HintName.Contains("Subtract"));
+        updatedResult.GeneratedSources.Contain(s => s.HintName.Contains("Subtract"));
 
         // Should have Add in both, but different due to vector size change
         var initialAdd = initialResult.GeneratedSources.Where(s => s.HintName.Contains("Add")).ToList();
         var updatedAdd = updatedResult.GeneratedSources.Where(s => s.HintName.Contains("Add")).ToList();
         
-        initialAdd.Should().NotBeEmpty();
-        updatedAdd.Should().NotBeEmpty();
+        Assert.NotEmpty(initialAdd);
+        Assert.NotEmpty(updatedAdd);
         initialAdd.Select(s => s.SourceText.ToString())
-            .Should().NotBeEquivalentTo(updatedAdd.Select(s => s.SourceText.ToString()));
+            .NotBeEquivalentTo(updatedAdd.Select(s => s.SourceText.ToString();
     }
 
     [Fact]
@@ -427,6 +433,7 @@ public class MathKernels
 
         var invalidSource = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class InvalidKernels
 {

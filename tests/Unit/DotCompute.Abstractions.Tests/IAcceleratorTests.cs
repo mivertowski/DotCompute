@@ -6,9 +6,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Common;
-using FluentAssertions;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Abstractions.Tests;
 
@@ -42,8 +42,8 @@ public class IAcceleratorTests
         var info = _mockAccelerator.Object.Info;
 
         // Assert
-        info.Should().NotBeNull();
-        info.Should().Be(_testAcceleratorInfo);
+        Assert.NotNull(info);
+        Assert.Equal(_testAcceleratorInfo, info);
         info.Name.Should().Be("Test Device");
         info.DeviceType.Should().Be("Test");
     }
@@ -59,7 +59,7 @@ public class IAcceleratorTests
         var type = _mockAccelerator.Object.Type;
 
         // Assert
-        type.Should().Be(expectedType);
+        Assert.Equal(expectedType, type);
     }
 
     [Fact]
@@ -72,8 +72,8 @@ public class IAcceleratorTests
         var memory = _mockAccelerator.Object.Memory;
 
         // Assert
-        memory.Should().NotBeNull();
-        memory.Should().Be(_mockMemoryManager.Object);
+        Assert.NotNull(memory);
+        Assert.Equal(_mockMemoryManager.Object, memory);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public class IAcceleratorTests
         var context = _mockAccelerator.Object.Context;
 
         // Assert
-        context.Should().Be(_testContext);
+        Assert.Equal(_testContext, context);
         context.IsValid.Should().BeTrue();
         context.DeviceId.Should().Be(0);
     }
@@ -111,7 +111,7 @@ public class IAcceleratorTests
         var result = await _mockAccelerator.Object.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("test");
         _mockAccelerator.Verify(a => a.CompileKernelAsync(definition, null, CancellationToken.None), Times.Once);
     }
@@ -137,7 +137,7 @@ public class IAcceleratorTests
         var result = await _mockAccelerator.Object.CompileKernelAsync(definition, options);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         _mockAccelerator.Verify(a => a.CompileKernelAsync(definition, options, CancellationToken.None), Times.Once);
     }
 
@@ -277,7 +277,7 @@ public class IAcceleratorTests
         var type = typeof(IAccelerator);
 
         // Assert
-        type.Should().BeAssignableTo<IAsyncDisposable>();
+        Assert.IsAssignableFrom<IAsyncDisposable>(type);
     }
 
     [Fact]
@@ -310,11 +310,11 @@ public class IAcceleratorTests
         await accelerator.DisposeAsync();
 
         // Assert
-        info.Should().NotBeNull();
-        type.Should().Be(AcceleratorType.CUDA);
-        memory.Should().NotBeNull();
+        Assert.NotNull(info);
+        Assert.Equal(AcceleratorType.CUDA, type);
+        Assert.NotNull(memory);
         context.IsValid.Should().BeTrue();
-        kernel.Should().NotBeNull();
+        Assert.NotNull(kernel);
 
         // Verify all methods were called
         _mockAccelerator.Verify(a => a.CompileKernelAsync(definition, null, CancellationToken.None), Times.Once);
@@ -341,7 +341,7 @@ public class IAcceleratorTests
         var type = _mockAccelerator.Object.Type;
 
         // Assert
-        type.Should().Be(acceleratorType);
+        Assert.Equal(acceleratorType, type);
     }
 
     [Fact]

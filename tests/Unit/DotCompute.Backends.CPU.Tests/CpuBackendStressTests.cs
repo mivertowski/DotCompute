@@ -9,8 +9,8 @@ using System.Runtime.Intrinsics.X86;
 using System.Security.Cryptography;
 using DotCompute.Backends.CPU;
 using DotCompute.Backends.CPU.Intrinsics;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Backends.CPU;
 
@@ -30,7 +30,7 @@ public sealed class CpuBackendStressTests
 
         // Assert - Verify detection logic
         capabilities.IsHardwareAccelerated.Should().Be(Vector.IsHardwareAccelerated);
-        capabilities.PreferredVectorWidth.Should().BeGreaterThan(0);
+        (capabilities.PreferredVectorWidth > 0).Should().BeTrue();
         capabilities.SupportedInstructionSets.Should().NotBeEmpty();
 
         // On ARM systems
@@ -121,7 +121,7 @@ public sealed class CpuBackendStressTests
         var act = () => ProcessDataWithSimd(data, result);
 
         // Assert - Should not throw, even with extreme values
-        act.Should().NotThrow("SIMD operations should handle extreme values gracefully");
+        act.NotThrow("SIMD operations should handle extreme values gracefully");
 
         // For non-NaN inputs, verify basic properties
         if (!float.IsNaN(extremeValue))
@@ -162,7 +162,7 @@ public sealed class CpuBackendStressTests
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(100, 
+        stopwatch.Assert.True(ElapsedMilliseconds < 100, 
             "SIMD operations on large datasets should complete quickly");
 
         // Verify correctness on sample points
@@ -241,7 +241,7 @@ public sealed class CpuBackendStressTests
         // Assert
         exceptions.Should().BeEmpty("High concurrency should not cause exceptions");
         results.Count.Should().Be(threadCount);
-        results.Should().OnlyContain(r => r.Success, "All threads should complete successfully");
+        results.OnlyContain(r => r.Success, "All threads should complete successfully");
     }
 
     [Fact]
@@ -353,7 +353,7 @@ public sealed class CpuBackendStressTests
 
         // Act & Assert - Should not cause stack overflow
         var act = () => source.AsSpan().CopyTo(destination.AsSpan());
-        act.Should().NotThrow("Large memory operations should not cause stack overflow");
+        act.NotThrow("Large memory operations should not cause stack overflow");
 
         // Verify some sample points
         for (int i = 0; i < 1000; i += 100)
@@ -375,7 +375,7 @@ public sealed class CpuBackendStressTests
 
         // Act & Assert
         var act = () => ProcessDataWithSimd(nullData, result);
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(() => act());
     }
 
     [Fact]
@@ -387,7 +387,7 @@ public sealed class CpuBackendStressTests
 
         // Act & Assert
         var act = () => ProcessDataWithSimd(data, result);
-        act.Should().Throw<ArgumentException>();
+        Assert.Throws<ArgumentException>(() => act());
     }
 
     [Fact]
@@ -400,12 +400,12 @@ public sealed class CpuBackendStressTests
         var act = () => SimdCapabilities.GetSummary();
 
         // Assert - Should not throw, even on unsupported platforms
-        act.Should().NotThrow("Capability detection should be robust");
+        act.NotThrow("Capability detection should be robust");
 
         var capabilities = SimdCapabilities.GetSummary();
         
         // Should have reasonable defaults
-        capabilities.Should().NotBeNull();
+        Assert.NotNull(capabilities);
         
         // At least one of these should typically be available on modern systems
         var hasAnySimd = capabilities.HasSse41 || capabilities.HasAvx2 || 
@@ -481,8 +481,8 @@ public sealed class CpuBackendStressTests
         Task.WaitAll(loadTasks, TimeSpan.FromSeconds(10));
 
         // Assert
-        correctResults.Should().Be(totalResults, 
-            "All operations should be correct even under high system load");
+        Assert.Equal(totalResults, 
+            "All operations should be correct even under high system load", correctResults);
     }
 
     #endregion
@@ -525,7 +525,7 @@ public sealed class CpuBackendStressTests
         var memoryGrowth = finalMemory - initialMemory;
 
         // Assert - Memory growth should be minimal
-        memoryGrowth.Should().BeLessThan(10 * 1024 * 1024, // 10MB threshold
+        Assert.True(memoryGrowth < 10 * 1024 * 1024, // 10MB threshold
             "Repeated operations should not cause significant memory growth");
     }
 

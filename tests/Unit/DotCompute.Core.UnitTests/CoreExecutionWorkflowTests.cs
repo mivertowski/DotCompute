@@ -3,6 +3,7 @@ using DotCompute.Core.Kernels;
 using DotCompute.Abstractions;
 using Xunit;
 using NSubstitute;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -81,7 +82,7 @@ public class CoreExecutionWorkflowTests
     }
     
     [Fact]
-    public async Task CompiledKernelCache_EvictLeastRecentlyUsedAsync_EmptyCache_ShouldNotThrow()
+    public async Task CompiledKernelCache_EvictLeastRecentlyUsedAsync_EmptyCache_ShouldShould().NotThrow()
     {
         // Arrange
         await using var cache = new CompiledKernelCache();

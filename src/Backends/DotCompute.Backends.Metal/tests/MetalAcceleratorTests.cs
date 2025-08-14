@@ -61,7 +61,7 @@ public class MetalAcceleratorTests : IClassFixture<MetalTestFixture>
 
         memory.Should().NotBeNull();
         memory.SizeInBytes.Should().Be(size);
-        memory.Handle.Should().NotBe(IntPtr.Zero);
+        memory.Handle.Should().NotShould().Should().Be(IntPtr.Zero);
 
         accelerator.Memory.Free(memory);
     }
@@ -123,8 +123,8 @@ public class MetalAcceleratorTests : IClassFixture<MetalTestFixture>
         try
         {
             // Copy data to GPU
-            accelerator.Memory.CopyToDevice(bufferA, MemoryMarshal.AsBytes(a.AsSpan()));
-            accelerator.Memory.CopyToDevice(bufferB, MemoryMarshal.AsBytes(b.AsSpan()));
+            accelerator.Memory.CopyToDevice(bufferA, MemoryMarshal.AsBytes(a.AsSpan();
+            accelerator.Memory.CopyToDevice(bufferB, MemoryMarshal.AsBytes(b.AsSpan();
 
             // Compile kernel
             var kernel = await accelerator.CompileKernelAsync(Kernels.MetalOptimizedKernels.CreateVectorAddKernel());
@@ -250,7 +250,7 @@ public class MetalAcceleratorTests : IClassFixture<MetalTestFixture>
         try
         {
             // Copy data to GPU
-            accelerator.Memory.CopyToDevice(inputBuffer, MemoryMarshal.AsBytes(testData.AsSpan()));
+            accelerator.Memory.CopyToDevice(inputBuffer, MemoryMarshal.AsBytes(testData.AsSpan();
 
             // Compile and execute kernel
             var kernel = await accelerator.CompileKernelAsync(TestKernels.MetalVectorScale);
@@ -295,8 +295,8 @@ public class MetalAcceleratorTests : IClassFixture<MetalTestFixture>
 
         try
         {
-            accelerator.Memory.CopyToDevice(buffer1, MemoryMarshal.AsBytes(data1.AsSpan()));
-            accelerator.Memory.CopyToDevice(buffer2, MemoryMarshal.AsBytes(data2.AsSpan()));
+            accelerator.Memory.CopyToDevice(buffer1, MemoryMarshal.AsBytes(data1.AsSpan();
+            accelerator.Memory.CopyToDevice(buffer2, MemoryMarshal.AsBytes(data2.AsSpan();
 
             var kernel1 = await accelerator.CompileKernelAsync(TestKernels.MetalVectorAdd);
             var kernel2 = await accelerator.CompileKernelAsync(TestKernels.MetalVectorMultiply);
@@ -378,7 +378,7 @@ public class MetalAcceleratorTests : IClassFixture<MetalTestFixture>
         {
             // Measure upload bandwidth
             var uploadStopwatch = Stopwatch.StartNew();
-            accelerator.Memory.CopyToDevice(buffer, MemoryMarshal.AsBytes(testData.AsSpan()));
+            accelerator.Memory.CopyToDevice(buffer, MemoryMarshal.AsBytes(testData.AsSpan();
             uploadStopwatch.Stop();
 
             // Measure download bandwidth
@@ -416,8 +416,8 @@ public class MetalAcceleratorTests : IClassFixture<MetalTestFixture>
 
         try
         {
-            accelerator.Memory.CopyToDevice(bufferA, MemoryMarshal.AsBytes(a.AsSpan()));
-            accelerator.Memory.CopyToDevice(bufferB, MemoryMarshal.AsBytes(b.AsSpan()));
+            accelerator.Memory.CopyToDevice(bufferA, MemoryMarshal.AsBytes(a.AsSpan();
+            accelerator.Memory.CopyToDevice(bufferB, MemoryMarshal.AsBytes(b.AsSpan();
 
             var kernel = await accelerator.CompileKernelAsync(TestKernels.MetalVectorAdd);
             await kernel.ExecuteAsync(new KernelArguments(bufferA, bufferB, bufferResult, size));

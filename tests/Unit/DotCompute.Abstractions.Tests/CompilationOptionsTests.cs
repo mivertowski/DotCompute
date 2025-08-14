@@ -1,6 +1,6 @@
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -15,8 +15,8 @@ public class CompilationOptionsTests
         // Assert
         options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
         options.EnableDebugInfo.Should().BeFalse();
-        options.AdditionalFlags.Should().BeNull();
-        options.Defines.Should().BeNull();
+        options.Assert.Null(AdditionalFlags);
+        options.Assert.Null(Defines);
         options.FastMath.Should().BeFalse();
         options.UnrollLoops.Should().BeFalse();
     }
@@ -42,8 +42,8 @@ public class CompilationOptionsTests
         // Assert
         options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
         options.EnableDebugInfo.Should().BeTrue();
-        options.AdditionalFlags.Should().BeEquivalentTo(flags);
-        options.Defines.Should().BeEquivalentTo(defines);
+        options.AdditionalFlags.BeEquivalentTo(flags);
+        options.Defines.BeEquivalentTo(defines);
         options.FastMath.Should().BeTrue();
         options.UnrollLoops.Should().BeTrue();
     }
@@ -94,7 +94,7 @@ public class CompilationOptionsTests
         var options = new CompilationOptions { Defines = null };
 
         // Assert
-        options.Defines.Should().BeNull();
+        options.Assert.Null(Defines);
     }
 
     [Fact]
@@ -104,6 +104,6 @@ public class CompilationOptionsTests
         var options = new CompilationOptions { AdditionalFlags = [] };
 
         // Assert
-        options.AdditionalFlags.Should().BeEmpty();
+        options.Assert.Empty(AdditionalFlags);
     }
 }

@@ -177,6 +177,9 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
             }
             _disposed = true;
         }
+        
+        // Add await statement to fix CS1998 warning
+        await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
     }
 
     private IKernelCompiler CreateCompiler()

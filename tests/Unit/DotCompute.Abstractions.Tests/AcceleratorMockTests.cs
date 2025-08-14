@@ -1,7 +1,7 @@
 using DotCompute.Abstractions;
-using FluentAssertions;
 using NSubstitute;
 using Xunit;
+using FluentAssertions;
 
 #pragma warning disable CA2012 // Use ValueTasks correctly - NSubstitute mock setup requires storing ValueTask
 
@@ -31,9 +31,9 @@ public class AcceleratorMockTests
         var compiled = await accelerator.CompileKernelAsync(kernelDef);
 
         // Assert
-        actualInfo.Should().BeSameAs(info);
-        memory.Should().BeSameAs(memoryManager);
-        compiled.Should().BeSameAs(compiledKernel);
+        actualInfo.BeSameAs(info);
+        memory.BeSameAs(memoryManager);
+        compiled.BeSameAs(compiledKernel);
     }
 
     [Fact]
@@ -79,8 +79,8 @@ public class BufferMockTests
         var size = buffer.SizeInBytes;
 
         // Assert
-        acc.Should().BeSameAs(accelerator);
-        size.Should().Be(4096);
+        acc.BeSameAs(accelerator);
+        Assert.Equal(4096, size);
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public class BufferMockTests
         var result = buffer.Slice(100, 200);
 
         // Assert
-        result.Should().BeSameAs(sliced);
+        result.BeSameAs(sliced);
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class BufferMockTests
         var result = buffer.AsType<int>();
 
         // Assert
-        result.Should().BeSameAs(newBuffer);
+        result.BeSameAs(newBuffer);
     }
 
     [Fact]
@@ -202,7 +202,7 @@ public class CompiledKernelMockTests
         var name = kernel.Name;
 
         // Assert
-        name.Should().Be("TestKernel");
+        Assert.Equal("TestKernel", name);
     }
 
     [Fact]
@@ -261,11 +261,11 @@ public class AcceleratorProviderMockTests
         var created = await provider.CreateAsync(info1);
 
         // Assert
-        name.Should().Be("TestProvider");
-        types.Should().BeEquivalentTo(new[] { AcceleratorType.CUDA, AcceleratorType.CPU });
-        discovered.Should().HaveCount(2);
-        discovered.First().Should().BeSameAs(accelerator1);
-        created.Should().BeSameAs(accelerator1);
+        Assert.Equal("TestProvider", name);
+        types.BeEquivalentTo(new[] { AcceleratorType.CUDA, AcceleratorType.CPU });
+        Assert.Equal(2, discovered.Count());
+        discovered.First().BeSameAs(accelerator1);
+        created.BeSameAs(accelerator1);
     }
 }
 
@@ -285,7 +285,7 @@ public class MemoryManagerMockTests
         var result = await memoryManager.AllocateAsync(1024);
 
         // Assert
-        result.Should().BeSameAs(buffer);
+        result.BeSameAs(buffer);
         result.SizeInBytes.Should().Be(1024);
     }
 
@@ -303,7 +303,7 @@ public class MemoryManagerMockTests
         var result = await memoryManager.AllocateAndCopyAsync<int>(new ReadOnlyMemory<int>(data));
 
         // Assert
-        result.Should().BeSameAs(buffer);
+        result.BeSameAs(buffer);
     }
 
     [Fact]
@@ -319,7 +319,7 @@ public class MemoryManagerMockTests
         var result = memoryManager.CreateView(buffer, 100, 200);
 
         // Assert
-        result.Should().BeSameAs(view);
+        result.BeSameAs(view);
     }
 }
 

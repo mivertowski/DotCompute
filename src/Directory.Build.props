@@ -45,7 +45,7 @@
   <!-- Build Configuration -->
   <PropertyGroup>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>CA2002;CA1707;CA1819;CA1001;CA1063;CA1824;CA1852;CA1822;CA2227;CA5394;CA1508;CA1849;CA1823;CA1805;IDE0011;IDE0044;IDE0059;IDE2001;IDE2006;IDE0040;CS1998;VSTHRD002;VSTHRD103;VSTHRD200;IL2026;IL2055;IL2067;IL2070;IL2072;IL3050;SYSLIB0057</NoWarn>
+    <!-- All warnings must be fixed - treat warnings as errors -->
     <DebugType>full</DebugType>
     <DebugSymbols>true</DebugSymbols>
     <EmbedAllSources>true</EmbedAllSources>

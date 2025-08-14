@@ -1,6 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using FluentAssertions;
+
 namespace DotCompute.Tests.Shared;
 
 /// <summary>
@@ -197,6 +199,33 @@ public static class TestDataGenerator
             current = increment(current);
         }
         return result;
+    }
+
+    /// <summary>
+    /// Generates a 2D float matrix with random values.
+    /// </summary>
+#pragma warning disable CA1814 // Prefer jagged arrays over multidimensional - Multidimensional arrays are required for matrix operations
+    public static float[,] GenerateFloatMatrix(int rows, int cols)
+    {
+        var matrix = new float[rows, cols];
+        for (var i = 0; i < rows; i++)
+        {
+            for (var j = 0; j < cols; j++)
+            {
+                matrix[i, j] = (float)Random.NextDouble() * 2.0f - 1.0f; // Range: -1.0 to 1.0
+            }
+        }
+        return matrix;
+    }
+#pragma warning restore CA1814
+
+    /// <summary>
+    /// Fills an existing byte array with random bytes.
+    /// </summary>
+    public static void FillRandomBytes(byte[] data)
+    {
+        ArgumentNullException.ThrowIfNull(data);
+        Random.NextBytes(data);
     }
 }
 #pragma warning restore CA5394

@@ -358,6 +358,16 @@ public sealed class PipelineOptimizationSettings
     public bool EnableMemoryOptimization { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets whether to enable buffer reuse.
+    /// </summary>
+    public bool EnableBufferReuse { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets whether to enable streaming support.
+    /// </summary>
+    public bool EnableStreaming { get; set; } = false;
+
+    /// <summary>
     /// Gets or sets whether to enable parallel stage merging.
     /// </summary>
     public bool EnableParallelMerging { get; set; } = true;
@@ -392,6 +402,32 @@ public enum PipelineOptimizationLevel
     /// Aggressive optimization.
     /// </summary>
     Aggressive
+}
+
+/// <summary>
+/// Error handling result options.
+/// </summary>
+public enum ErrorHandlingResult
+{
+    /// <summary>
+    /// Continue execution, ignoring the error.
+    /// </summary>
+    Continue,
+
+    /// <summary>
+    /// Retry the failed operation.
+    /// </summary>
+    Retry,
+
+    /// <summary>
+    /// Skip the failed stage and continue.
+    /// </summary>
+    Skip,
+
+    /// <summary>
+    /// Abort the entire pipeline execution.
+    /// </summary>
+    Abort
 }
 
 /// <summary>
@@ -583,28 +619,3 @@ public enum PipelineEventType
     MemoryReleased
 }
 
-/// <summary>
-/// Error handling result.
-/// </summary>
-public enum ErrorHandlingResult
-{
-    /// <summary>
-    /// Continue execution.
-    /// </summary>
-    Continue,
-
-    /// <summary>
-    /// Retry the failed stage.
-    /// </summary>
-    Retry,
-
-    /// <summary>
-    /// Skip the failed stage.
-    /// </summary>
-    Skip,
-
-    /// <summary>
-    /// Abort the pipeline.
-    /// </summary>
-    Abort
-}

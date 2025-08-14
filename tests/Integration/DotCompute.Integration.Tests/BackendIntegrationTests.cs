@@ -3,6 +3,7 @@ using DotCompute.Tests.Shared.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -16,7 +17,7 @@ public class BackendIntegrationTests : CoverageTestBase
 
     public BackendIntegrationTests(ITestOutputHelper output) : base(output)
     {
-        _hardwareSimulator = RegisterDisposable(new HardwareSimulator(Logger));
+        _hardwareSimulator = RegisterDisposable(new HardwareSimulator());
     }
 
     [Fact]
@@ -40,7 +41,7 @@ public class BackendIntegrationTests : CoverageTestBase
     [SkippableTheory]
     [InlineData(AcceleratorType.CUDA)]
     [InlineData(AcceleratorType.OpenCL)]
-    [InlineData(AcceleratorType.DirectCompute)]
+    [InlineData(AcceleratorType.DirectML)]
     public async Task GpuBackend_BasicOperation_ExecutesSuccessfully(AcceleratorType type)
     {
         // Arrange
@@ -231,7 +232,7 @@ public class BackendIntegrationTests : CoverageTestBase
             AcceleratorType.CPU => "kernel void cpuTest() { }",
             AcceleratorType.CUDA => "__global__ void cudaTest() { }",
             AcceleratorType.OpenCL => "kernel void openclTest() { }",
-            AcceleratorType.DirectCompute => "[numthreads(1,1,1)] void dcTest() { }",
+            AcceleratorType.DirectML => "[numthreads(1,1,1)] void dcTest() { }",
             AcceleratorType.Metal => "kernel void metalTest(uint id [[thread_position_in_grid]]) { }",
             _ => "kernel void genericTest() { }"
         };

@@ -384,6 +384,8 @@ public sealed class CudaErrorRecovery : IDisposable
 
     private async Task<bool> CheckDeviceAvailabilityAsync()
     {
+        await Task.Delay(1).ConfigureAwait(false);
+        
         try
         {
             var result = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
@@ -397,6 +399,8 @@ public sealed class CudaErrorRecovery : IDisposable
 
     private async Task<CudaMemoryStatus> CheckMemoryStatusAsync()
     {
+        await Task.Delay(1).ConfigureAwait(false);
+        
         try
         {
             _context.MakeCurrent();
@@ -423,6 +427,8 @@ public sealed class CudaErrorRecovery : IDisposable
 
     private async Task<bool> CheckContextStatusAsync()
     {
+        await Task.Delay(1).ConfigureAwait(false);
+        
         try
         {
             _context.MakeCurrent();

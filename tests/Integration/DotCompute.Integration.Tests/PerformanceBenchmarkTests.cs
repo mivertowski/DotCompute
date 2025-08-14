@@ -3,12 +3,12 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -43,7 +43,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             testDataB);
 
         // Assert
-        benchmarkResult.Should().NotBeNull();
+        Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         benchmarkResult.ElementsProcessed.Should().Be(vectorSize);
         
@@ -54,7 +54,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         LoggerMessages.VectorPerformance(Logger, vectorSize, elementsPerSecond);
         
         // Should process at least 1M elements per second (very conservative)
-        elementsPerSecond.Should().BeGreaterThan(1_000_000);
+        Assert.True(elementsPerSecond > 1_000_000);
         
         // Memory bandwidth utilization
         var bytesPerSecond = (vectorSize * sizeof(float) * 3) / benchmarkResult.ExecutionTime.TotalSeconds; // 3 arrays: A, B, Result
@@ -62,7 +62,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         benchmarkResult.MemoryBandwidthMBs = mbPerSecond;
         
         LoggerMessages.MemoryBandwidth(Logger, mbPerSecond);
-        mbPerSecond.Should().BeGreaterThan(100); // At least 100 MB/s
+        Assert.True(mbPerSecond > 100); // At least 100 MB/s
     }
 
     [Theory]
@@ -84,7 +84,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             matrixSize);
 
         // Assert
-        benchmarkResult.Should().NotBeNull();
+        Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         
         var totalOperations = (long)matrixSize * matrixSize * matrixSize2 * 2; // Multiply-add operations
@@ -96,7 +96,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         LoggerMessages.MatrixPerformance(Logger, matrixSize, matrixSize2, gflops);
         
         // Should achieve at least some reasonable performance
-        gflops.Should().BeGreaterThan(0.1); // Conservative threshold
+        Assert.True(gflops > 0.1); // Conservative threshold
         
         // Execution time should be reasonable
         benchmarkResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
@@ -120,7 +120,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             expectedSum);
 
         // Assert
-        benchmarkResult.Should().NotBeNull();
+        Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         benchmarkResult.ResultAccurate.Should().BeTrue();
         
@@ -130,11 +130,11 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         LoggerMessages.ReductionPerformance(Logger, dataSize, elementsPerSecond);
         
         // Reduction should still achieve good throughput
-        elementsPerSecond.Should().BeGreaterThan(10_000_000);
+        Assert.True(elementsPerSecond > 10_000_000);
         
         // Time complexity should be reasonable (better than O(n) on CPU)
         var expectedLinearTime = dataSize / 500_000_000.0; // More realistic: assume 500 MHz effective rate
-        benchmarkResult.ExecutionTime.TotalSeconds.Should().BeLessThan(expectedLinearTime * 4); // Allow more variance
+        (benchmarkResult.ExecutionTime.TotalSeconds < expectedLinearTime * 4).Should().BeTrue(); // Allow more variance
     }
 
     [Fact]
@@ -151,7 +151,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             sourceData);
 
         // Assert
-        benchmarkResult.Should().NotBeNull();
+        Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         
         var bytesTransferred = dataSize * sizeof(float) * 4; // Multiple reads/writes per element
@@ -161,7 +161,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         LoggerMessages.MemoryIntensiveWorkload(Logger, mbPerSecond);
         
         // Should achieve reasonable memory bandwidth
-        mbPerSecond.Should().BeGreaterThan(1000); // At least 1 GB/s
+        Assert.True(mbPerSecond > 1000); // At least 1 GB/s
     }
 
     [Fact]
@@ -180,7 +180,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             iterations);
 
         // Assert
-        benchmarkResult.Should().NotBeNull();
+        Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         
         var totalOperations = (long)dataSize * iterations * 10; // ~10 ops per element per iteration
@@ -192,7 +192,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         LoggerMessages.ComputeIntensiveWorkload(Logger, gops);
         
         // Should achieve reasonable compute throughput
-        gops.Should().BeGreaterThan(0.5); // At least 0.5 GOPS
+        Assert.True(gops > 0.5); // At least 0.5 GOPS
     }
 
     [Theory]
@@ -212,9 +212,9 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             workPerThread);
 
         // Assert
-        benchmarkResult.Should().NotBeNull();
+        Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
-        benchmarkResult.ThreadResults.Should().HaveCount(threadCount);
+        benchmarkResult.ThreadResults.Count.Should().Be(threadCount);
         
         var totalThroughput = benchmarkResult.ThreadResults.Sum(r => r.ElementsPerSecond);
         var averageLatency = benchmarkResult.ThreadResults.Average(r => r.AverageLatency.TotalMilliseconds);
@@ -230,7 +230,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             LoggerMessages.ParallelEfficiency(Logger, efficiency);
             
             // Should achieve at least 50% efficiency with multiple threads
-            efficiency.Should().BeGreaterThan(0.5);
+            Assert.True(efficiency > 0.5);
         }
     }
 
@@ -251,7 +251,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             imageHeight);
 
         // Assert
-        benchmarkResult.Should().NotBeNull();
+        Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         
         var pixelsPerSecond = (imageWidth * imageHeight) / benchmarkResult.ExecutionTime.TotalSeconds;
@@ -260,7 +260,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         LoggerMessages.ImageProcessingPerformance(Logger, megapixelsPerSecond);
         
         // Should process at least 100 MP/s for basic operations
-        megapixelsPerSecond.Should().BeGreaterThan(100);
+        Assert.True(megapixelsPerSecond > 100);
         
         // Processing time should be acceptable for real-time scenarios
         benchmarkResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(500)); // More generous for test stability
@@ -283,7 +283,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             sampleRate);
 
         // Assert
-        benchmarkResult.Should().NotBeNull();
+        Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         
         var samplesPerSecond = sampleCount / benchmarkResult.ExecutionTime.TotalSeconds;
@@ -292,7 +292,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         LoggerMessages.SignalProcessingPerformance(Logger, samplesPerSecond, realTimeRatio);
         
         // Should process faster than real-time for audio applications
-        realTimeRatio.Should().BeGreaterThan(10); // At least 10x real-time
+        Assert.True(realTimeRatio > 10); // At least 10x real-time
     }
 
     [Theory]
@@ -313,7 +313,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             optimizationLevel);
 
         // Assert
-        benchmarkResult.Should().NotBeNull();
+        Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         benchmarkResult.OptimizationLevel.Should().Be(optimizationLevel);
         
@@ -322,7 +322,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         LoggerMessages.OptimizationLevelPerformance(Logger, optimizationLevel.ToString(), elementsPerSecond);
         
         // All optimization levels should work
-        elementsPerSecond.Should().BeGreaterThan(100_000);
+        Assert.True(elementsPerSecond > 100_000);
         
         // Store results for comparison if needed
         benchmarkResult.ThroughputElementsPerSecond = elementsPerSecond;

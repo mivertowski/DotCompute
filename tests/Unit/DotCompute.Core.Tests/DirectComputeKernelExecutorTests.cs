@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
+using FluentAssertions;
 using CompiledKernel = DotCompute.Tests.Common.CompiledKernel;
 using KernelArgument = DotCompute.Tests.Common.KernelArgument;
 using KernelConfiguration = DotCompute.Tests.Common.KernelConfiguration;
@@ -207,7 +208,7 @@ public class DirectComputeKernelExecutorTests : IDisposable
         Assert.True(config.GlobalWorkSize![0] >= problemSize[0]);
         Assert.True(config.LocalWorkSize![0] > 0);
         // DirectCompute typically uses higher thread counts
-        Assert.Contains(config.LocalWorkSize![0], new[] { 64, 256 });
+        Assert.Contains(config.LocalWorkSize![0], 256 }); // new[] { 64;
     }
 
     [Theory]
@@ -444,7 +445,7 @@ public class DirectComputeKernelExecutorTests : IDisposable
             MaxThreadsPerBlock = 1024
         });
 
-        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()))
+        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()
             .Returns(ValueTask.CompletedTask);
 
         return mock;

@@ -3,9 +3,9 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Tests.Integration.Infrastructure;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -236,7 +236,7 @@ public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Should().HaveCount(3);
+        result.ExecutionResults.Count.Should().Be(3));
         result.ExecutionResults.Values.Should().AllSatisfy(r => r.Success.Should().BeTrue());
         
         // Verify all stages executed in correct order
@@ -415,7 +415,7 @@ public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         if (arraySize > 64)
         {
             var throughputMBps = result.Metrics?.ThroughputMBps ?? 0;
-            throughputMBps.Should().BeGreaterThan(0);
+            Assert.True(throughputMBps > 0);
         }
 
         LogPerformanceMetrics($"Reduction_{arraySize}", result.Duration, arraySize);
@@ -478,7 +478,7 @@ public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         if (result.Length != size * size) return false;
         
         // Check for valid values
-        if (result.Any(x => float.IsNaN(x) || float.IsInfinity(x))) return false;
+        if (result.Any(x => float.IsNaN(x) || float.IsInfinity(x) return false;
         
         // Spot check a few elements using CPU computation
         for (int i = 0; i < Math.Min(4, size); i++)
@@ -502,7 +502,7 @@ public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
 
     private static bool ValidateConvolutionOutput(float[] result, int outputChannels)
     {
-        if (result.Any(x => float.IsNaN(x) || float.IsInfinity(x))) return false;
+        if (result.Any(x => float.IsNaN(x) || float.IsInfinity(x) return false;
         
         // Check that we have reasonable activation values
         var activations = result.Where(x => Math.Abs(x) > 1e-6f).Count();
@@ -513,7 +513,7 @@ public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
 /// <summary>
 /// Collection of kernel source code for testing.
 /// </summary>
-internal static class KernelSources
+internal static partial class KernelSources
 {
     public const string VectorAdd = @"
 __kernel void vector_add(__global const float* a, __global const float* b, __global float* result) {

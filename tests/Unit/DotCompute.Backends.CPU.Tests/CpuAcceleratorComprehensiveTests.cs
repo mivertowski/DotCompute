@@ -3,13 +3,14 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
+using FluentAssertions;
 // Memory types are in the main namespace
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Backends.CPU.Tests.Accelerators;
 
@@ -57,7 +58,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
     public void Constructor_ShouldInitializeSuccessfully()
     {
         // Assert
-        _accelerator.Should().NotBeNull();
+        Assert.NotNull(_accelerator);
         _accelerator.Type.Should().Be(AcceleratorType.CPU);
         _accelerator.Info.Should().NotBeNull();
         _accelerator.Memory.Should().NotBeNull();
@@ -71,7 +72,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
             null!,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("options");
+        act.Throw<ArgumentNullException>().WithParameterName("options");
     }
 
     [Fact]
@@ -82,7 +83,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
             _mockOptions.Object,
             null!,
             _mockLogger.Object);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("threadPoolOptions");
+        act.Throw<ArgumentNullException>().WithParameterName("threadPoolOptions");
     }
 
     [Fact]
@@ -93,7 +94,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
             _mockOptions.Object,
             _mockThreadPoolOptions.Object,
             null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        act.Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     #endregion
@@ -107,7 +108,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var type = _accelerator.Type;
 
         // Assert
-        type.Should().Be(AcceleratorType.CPU);
+        Assert.Equal(AcceleratorType.CPU, type);
     }
 
     [Fact]
@@ -117,13 +118,13 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var info = _accelerator.Info;
 
         // Assert
-        info.Should().NotBeNull();
+        Assert.NotNull(info);
         info.Type.Should().Be(AcceleratorType.CPU);
         info.Name.Should().NotBeNullOrEmpty();
-        info.Name.Should().Contain("CPU");
-        info.Name.Should().Contain("cores");
-        info.DeviceMemory.Should().BeGreaterThan(0);
-        info.ComputeUnits.Should().BeGreaterThan(0);
+        info.Assert.Contains("CPU", Name);
+        info.Assert.Contains("cores", Name);
+((info.DeviceMemory > 0).Should().BeTrue();
+((info.ComputeUnits > 0).Should().BeTrue();
         info.ComputeUnits.Should().Be(Environment.ProcessorCount);
         info.IsUnified.Should().BeTrue();
         info.Capabilities.Should().NotBeNull();
@@ -142,9 +143,9 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         capabilities.Should().ContainKey("NumaNodes");
         capabilities.Should().ContainKey("CacheLineSize");
 
-        capabilities["SimdWidth"].Should().BeOfType<int>();
-        capabilities["ThreadCount"].Should().BeOfType<int>();
-        capabilities["NumaNodes"].Should().BeOfType<int>();
+        capabilities["SimdWidth"].BeOfType<int>();
+        capabilities["ThreadCount"].BeOfType<int>();
+        capabilities["NumaNodes"].BeOfType<int>();
         capabilities["CacheLineSize"].Should().Be(64);
     }
 
@@ -155,8 +156,8 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var memory = _accelerator.Memory;
 
         // Assert
-        memory.Should().NotBeNull();
-        memory.Should().BeAssignableTo<IMemoryManager>();
+        Assert.NotNull(memory);
+        Assert.IsAssignableFrom<IMemoryManager>(memory);
     }
 
     #endregion
@@ -173,7 +174,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var result = await _accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
     }
 
@@ -181,8 +182,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
     public async Task CompileKernelAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        await _accelerator.Invoking(a => a.CompileKernelAsync(null!))
-            .Should().ThrowAsync<ArgumentNullException>()
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _accelerator.MethodCall().AsTask())
             .WithParameterName("definition");
     }
 
@@ -196,7 +196,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var result = await _accelerator.CompileKernelAsync(definition, null);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
     }
 
@@ -222,7 +222,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("VectorAddKernel");
     }
 
@@ -248,7 +248,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("StandardKernel");
     }
 
@@ -268,7 +268,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var result = await _accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be($"{kernelType}Kernel");
     }
 
@@ -282,8 +282,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         cts.Cancel();
 
         // Act & Assert
-        await _accelerator.Invoking(a => a.CompileKernelAsync(definition, cancellationToken: cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => _accelerator.MethodCall().AsTask());
     }
 
     [Fact]
@@ -298,7 +297,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var result = await _accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull(); // Should fall back to standard compilation
+        Assert.NotNull(result); // Should fall back to standard compilation
         result.Name.Should().Be("InvalidKernel");
     }
 
@@ -353,7 +352,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public async Task DisposeAsync_CalledMultipleTimes_ShouldNotThrow()
+    public async Task DisposeAsync_CalledMultipleTimes_ShouldShould().NotThrow()
     {
         // Arrange
         using var accelerator = new CpuAccelerator(
@@ -397,7 +396,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var info = _accelerator.Info;
 
         // Assert
-        info.DeviceMemory.Should().BeGreaterOrEqualTo(minExpected);
+        info.DeviceMemory >= minExpected.Should().BeTrue();
     }
 
     [Fact]
@@ -408,8 +407,8 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
 
         // Assert
         info.Name.Should().NotBeNullOrEmpty();
-        info.Name.Should().Contain("CPU");
-        info.Name.Should().Contain("cores");
+        info.Assert.Contains("CPU", Name);
+        info.Assert.Contains("cores", Name);
         info.Name.Should().MatchRegex(@"\d+\s+cores");
     }
 
@@ -421,7 +420,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
 
         // Assert
         capabilities.Should().ContainKey("NumaNodes");
-        capabilities["NumaNodes"].Should().BeOfType<int>();
+        capabilities["NumaNodes"].BeOfType<int>();
         ((int)capabilities["NumaNodes"]).Should().BeGreaterThan(0);
     }
 
@@ -452,7 +451,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var result = await _accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("ProblematicKernel");
     }
 
@@ -468,7 +467,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var result = _accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
     }
 
     [Fact]
@@ -477,7 +476,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         // This is tested indirectly through CompileKernelAsync calls
         // The conversion should work for all optimization levels
         var result = true; // Placeholder
-        result.Should().BeTrue();
+        Assert.True(result);
     }
 
     #endregion

@@ -2,6 +2,7 @@ using DotCompute.Core.Execution;
 using DotCompute.Core.Types;
 using DotCompute.Abstractions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 

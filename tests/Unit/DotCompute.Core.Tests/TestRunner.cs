@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Unit;

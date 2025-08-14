@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Linq;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Expressions;
+using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
 
 /// <summary>
@@ -37,6 +38,9 @@ class Program
 
     private static async Task DemonstrateExpressionFusion(IAccelerator accelerator, ILoggerFactory loggerFactory, ILogger logger)
     {
+        // Add minimal async operation to satisfy compiler
+        await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
+        
         Console.WriteLine("1. Expression Fusion Demonstration");
         Console.WriteLine("===================================");
 
@@ -49,10 +53,7 @@ class Program
         try
         {
             // Create a compute queryable
-            var computeQuery = numbers.AsComputeQueryable(accelerator, new ComputeQueryOptions
-            {
-                LoggerFactory = loggerFactory
-            });
+            var computeQuery = numbers.AsComputeQueryable(accelerator);
 
             // Chain operations that can be fused
             var result = computeQuery
@@ -87,6 +88,9 @@ class Program
 
     private static async Task DemonstrateTypeInference(IAccelerator accelerator, ILoggerFactory loggerFactory, ILogger logger)
     {
+        // Add minimal async operation to satisfy compiler
+        await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
+        
         Console.WriteLine("2. Type Inference and Validation");
         Console.WriteLine("=================================");
 
@@ -143,6 +147,9 @@ class Program
 
     private static async Task DemonstrateResourceEstimation(IAccelerator accelerator, ILoggerFactory loggerFactory, ILogger logger)
     {
+        // Add minimal async operation to satisfy compiler
+        await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
+        
         Console.WriteLine("3. Resource Estimation");
         Console.WriteLine("======================");
 
@@ -192,6 +199,9 @@ class Program
 
     private static async Task DemonstrateDynamicCompilation(IAccelerator accelerator, ILoggerFactory loggerFactory, ILogger logger)
     {
+        // Add minimal async operation to satisfy compiler
+        await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
+        
         Console.WriteLine("4. Dynamic Kernel Compilation");
         Console.WriteLine("=============================");
 
@@ -238,7 +248,7 @@ class Program
         finally
         {
             // Clean up fusion metadata
-            FusionMetadataStore.Clear();
+            FusionMetadataStore.Instance.Clear();
         }
 
         Console.WriteLine();
@@ -318,8 +328,8 @@ public class MockAccelerator : IAccelerator
         return await operation();
     }
 
-    public async ValueTask<ICompiledKernel> CompileKernelAsync(
-        KernelDefinition definition,
+    public async ValueTask<DotCompute.Abstractions.ICompiledKernel> CompileKernelAsync(
+        DotCompute.Abstractions.KernelDefinition definition,
         DotCompute.Abstractions.CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
@@ -367,6 +377,44 @@ public class MockMemoryManager : IMemoryManager
         
         return new MockMemoryBufferView(mockBuffer, offset, length);
     }
+
+    public async ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        var sizeInBytes = count * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        return await AllocateAsync(sizeInBytes);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        // Synchronous copy - for mock implementation, just simulate
+        if (buffer is not MockMemoryBuffer mockBuffer)
+            throw new ArgumentException("Buffer must be a MockMemoryBuffer", nameof(buffer));
+        
+        // In a real implementation, this would copy data to the device
+        // For mock, we just validate the operation
+        var dataSize = data.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        if (dataSize > mockBuffer.SizeInBytes)
+            throw new ArgumentException("Data size exceeds buffer size");
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        // Synchronous copy - for mock implementation, just simulate
+        if (buffer is not MockMemoryBuffer mockBuffer)
+            throw new ArgumentException("Buffer must be a MockMemoryBuffer", nameof(buffer));
+        
+        // In a real implementation, this would copy data from the device
+        // For mock, we just validate the operation
+        var dataSize = data.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        if (dataSize > mockBuffer.SizeInBytes)
+            throw new ArgumentException("Data size exceeds buffer size");
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        // Synchronously free the buffer
+        buffer?.Dispose();
+    }
 }
 
 /// <summary>
@@ -393,17 +441,6 @@ public class MockMemoryBuffer : IMemoryBuffer
         return default;
     }
 
-    public ValueTask WriteAsync<T>(ReadOnlyMemory<T> data, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        // Simulate write operation
-        return default;
-    }
-
-    public ValueTask ReadAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        // Simulate read operation
-        return default;
-    }
 
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
     {
@@ -458,7 +495,7 @@ public class MockMemoryBufferView : IMemoryBuffer
 /// <summary>
 /// Mock compiled kernel for demonstration.
 /// </summary>
-public class MockCompiledKernel : ICompiledKernel
+public class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
 {
     public MockCompiledKernel(string name)
     {

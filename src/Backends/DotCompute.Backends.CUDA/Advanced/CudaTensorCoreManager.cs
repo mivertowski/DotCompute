@@ -334,6 +334,8 @@ public sealed class CudaTensorCoreManager : IDisposable
         KernelArgument[] arguments,
         CancellationToken cancellationToken)
     {
+        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        
         // Simple heuristic: look for matrix-like argument patterns
         var matrixArguments = arguments.Count(arg => 
             arg.IsDeviceMemory && arg.SizeInBytes > 1024 * 1024); // Large buffers

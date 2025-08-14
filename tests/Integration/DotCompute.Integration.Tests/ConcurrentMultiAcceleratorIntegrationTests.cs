@@ -6,11 +6,11 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Common.Hardware;
 using DotCompute.Tests.Integration.Infrastructure;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -67,11 +67,11 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         var backendUsage = results.GroupBy(r => DetectBackendFromResult(r))
                                 .ToDictionary(g => g.Key, g => g.Count());
 
-        backendUsage.Should().NotBeEmpty();
+        Assert.NotEmpty(backendUsage);
         Logger.LogInformation("Backend usage: {Usage}", 
-            string.Join(", ", backendUsage.Select(kvp => $"{kvp.Key}: {kvp.Value}")));
+            string.Join(", ", backendUsage.Select(kvp => $"{kvp.Key}: {kvp.Value}");
 
-        parallelThroughput.Should().BeGreaterThan(50, "Parallel execution should achieve good throughput");
+        Assert.True(parallelThroughput > 50, "Parallel execution should achieve good throughput");
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Well-balanced execution should have relatively low variance
         var normalizedVariance = executionTimeVariance / maxExecutionTime;
-        normalizedVariance.Should().BeLessThan(0.5, "Load balancing should minimize execution time variance");
+        Assert.True(normalizedVariance < 0.5, "Load balancing should minimize execution time variance");
     }
 
     [Fact]
@@ -143,7 +143,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Assert
         tasks.Select(t => t.Result).Should().AllSatisfy(r => r.Success.Should().BeTrue());
-        results.Should().HaveCount(4);
+        Assert.Equal(4, results.Count());
 
         // Verify data consistency across all workers
         var referenceResult = results.Values.First();
@@ -188,7 +188,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         Logger.LogInformation("Resource coordination: Total memory used: {Total}MB, Peak usage: {Peak:F1}%",
             totalMemoryUsed / (1024 * 1024), peakMemoryUsage);
 
-        peakMemoryUsage.Should().BeLessThan(90, "Resource coordination should prevent memory exhaustion");
+        Assert.True(peakMemoryUsage < 90, "Resource coordination should prevent memory exhaustion");
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
             successfulResults.Length, failedResults.Length);
 
         // At least half should succeed despite failures
-        successfulResults.Length.Should().BeGreaterOrEqualTo(workflows.Length / 2,
+        successfulResults.Assert.True(Length >= workflows.Length / 2,
             "Fault tolerance should allow majority of work to complete");
 
         // Failed results should have meaningful error information
@@ -290,7 +290,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Assert
         scalingResults.Should().AllSatisfy(r => 
-            r.SuccessfulWorkflows.Should().BeGreaterOrEqualTo(r.WorkflowCount / 2));
+            r.SuccessfulWorkflows.BeGreaterOrEqualTo(r.WorkflowCount / 2));
 
         // Verify scaling behavior
         ValidateScalingBehavior(scalingResults);
@@ -310,7 +310,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Should().HaveCount(pipelineDepth);
+        result.ExecutionResults.Count.Should().Be(pipelineDepth));
 
         // All stages should complete successfully
         result.ExecutionResults.Values.Should().AllSatisfy(stage => 
@@ -325,7 +325,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
                              "Stage time: {StageTime:F1}ms, Pipeline time: {PipelineTime:F1}ms",
             pipelineDepth, pipelineEfficiency, totalStageTime, actualPipelineTime);
 
-        pipelineEfficiency.Should().BeGreaterThan(0.2, "Pipeline should show parallelism benefits");
+        Assert.True(pipelineEfficiency > 0.2, "Pipeline should show parallelism benefits");
     }
 
     [Theory]
@@ -358,16 +358,16 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
                              "{Workflows} workflows, {SuccessRate:P1} success rate, {Duration:F1}ms",
             acceleratorCount, workflows.Length, successRate, concurrencyStopwatch.ElapsedMilliseconds);
 
-        successRate.Should().BeGreaterOrEqualTo(0.75, "Most workflows should complete successfully");
+        Assert.True(successRate >= 0.75, "Most workflows should complete successfully");
 
         // Calculate effective throughput
-        var totalDataMB = workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length * sizeof(float))) / 1024.0 / 1024.0;
+        var totalDataMB = workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length * sizeof(float) / 1024.0 / 1024.0;
         var effectiveThroughput = totalDataMB / concurrencyStopwatch.Elapsed.TotalSeconds;
 
-        effectiveThroughput.Should().BeGreaterThan(10, "Concurrent execution should maintain good throughput");
+        Assert.True(effectiveThroughput > 10, "Concurrent execution should maintain good throughput");
 
         LogPerformanceMetrics($"ConcurrencyScaling_{acceleratorCount}", 
-            concurrencyStopwatch.Elapsed, workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length)));
+            concurrencyStopwatch.Elapsed, workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length);
     }
 
     // Helper methods and classes
@@ -733,11 +733,11 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Success rate should remain reasonable even at peak load
         var peakSuccessRate = (double)peakLoad.SuccessfulWorkflows / peakLoad.WorkflowCount;
-        peakSuccessRate.Should().BeGreaterOrEqualTo(0.6, "System should handle peak load gracefully");
+        Assert.True(peakSuccessRate >= 0.6, "System should handle peak load gracefully");
 
         // Memory usage should scale reasonably
         var maxMemoryUsage = scalingResults.Max(r => r.PeakMemoryUsage);
-        maxMemoryUsage.Should().BeLessThan(95, "System should not exhaust memory during scaling");
+        Assert.True(maxMemoryUsage < 95, "System should not exhaust memory during scaling");
     }
 }
 

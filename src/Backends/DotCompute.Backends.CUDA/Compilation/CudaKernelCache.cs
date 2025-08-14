@@ -289,6 +289,8 @@ public sealed class CudaKernelCache : IDisposable
     /// </summary>
     public async Task<int> CleanupExpiredAsync(CancellationToken cancellationToken = default)
     {
+        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        
         var expiredKeys = new List<string>();
 
         _cacheLock.EnterReadLock();
@@ -380,6 +382,8 @@ public sealed class CudaKernelCache : IDisposable
 
     private async Task CleanupDiskEntry(string cacheKey)
     {
+        await Task.Delay(1).ConfigureAwait(false);
+        
         try
         {
             var cacheFile = Path.Combine(_cacheDirectory, $"{SanitizeFileName(cacheKey)}.cache");
@@ -487,6 +491,8 @@ public sealed class CudaKernelCache : IDisposable
 
     private async Task LoadExistingCacheAsync()
     {
+        await Task.Delay(1).ConfigureAwait(false);
+        
         try
         {
             if (!Directory.Exists(_cacheDirectory))
@@ -556,6 +562,8 @@ public sealed class CudaKernelCache : IDisposable
 
     private async Task EnsureCacheCapacityAsync(CancellationToken cancellationToken)
     {
+        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        
         if (_memoryCache.Count < MaxMemoryCacheEntries)
         {
             return;

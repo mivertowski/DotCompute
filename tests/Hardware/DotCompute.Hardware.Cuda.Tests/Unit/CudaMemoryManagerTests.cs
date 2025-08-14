@@ -6,9 +6,9 @@ using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Tests.Shared;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Hardware.Unit;
@@ -48,7 +48,7 @@ public class CudaMemoryManagerTests : IDisposable
         _buffers.Add(buffer);
 
         // Assert
-        buffer.Should().NotBeNull();
+        Assert.NotNull(buffer);
         buffer.SizeInBytes.Should().Be(1024);
         buffer.IsDisposed.Should().BeFalse();
     }
@@ -73,7 +73,7 @@ public class CudaMemoryManagerTests : IDisposable
         _buffers.Add(buffer);
 
         // Assert
-        buffer.Should().NotBeNull();
+        Assert.NotNull(buffer);
         buffer.SizeInBytes.Should().Be(sizeInBytes);
     }
 
@@ -90,7 +90,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert
         Action allocateZero = () => syncMemoryManager!.Allocate(0);
-        allocateZero.Should().Throw<ArgumentException>()
+        allocateZero.Throw<ArgumentException>()
             .WithMessage("*Size must be greater than zero*");
     }
 
@@ -107,7 +107,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert
         Action allocateNegative = () => syncMemoryManager!.Allocate(-1024);
-        allocateNegative.Should().Throw<ArgumentException>()
+        allocateNegative.Throw<ArgumentException>()
             .WithMessage("*Size must be greater than zero*");
     }
 
@@ -130,8 +130,8 @@ public class CudaMemoryManagerTests : IDisposable
         _buffers.Add(buffer);
 
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.SizeInBytes.Should().BeGreaterOrEqualTo(4096);
+        Assert.NotNull(buffer);
+        (buffer.SizeInBytes >= 4096).Should().BeTrue();
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert
         Action allocateInvalidAlignment = () => syncMemoryManager!.AllocateAligned(1024, 100); // Not a power of 2
-        allocateInvalidAlignment.Should().Throw<ArgumentException>()
+        allocateInvalidAlignment.Throw<ArgumentException>()
             .WithMessage("*Alignment must be a power of 2*");
     }
 
@@ -201,7 +201,7 @@ public class CudaMemoryManagerTests : IDisposable
         }
 
         // Assert
-        retrievedData.Should().BeEquivalentTo(hostData, "Data should be preserved during GPU round-trip");
+        retrievedData.BeEquivalentTo(hostData, "Data should be preserved during GPU round-trip");
     }
 
     [Fact]
@@ -220,7 +220,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert
         Action copyAction = () => syncMemoryManager.Copy(sourceBuffer, destBuffer, 512);
-        copyAction.Should().NotThrow();
+        copyAction(); // Should not throw
     }
 
     [Fact]
@@ -239,7 +239,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert - Copy more than buffer size
         Action copyTooMuch = () => syncMemoryManager.Copy(sourceBuffer, destBuffer, 2048);
-        copyTooMuch.Should().Throw<ArgumentException>()
+        copyTooMuch.Throw<ArgumentException>()
             .WithMessage("*would exceed buffer bounds*");
     }
 
@@ -261,7 +261,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert
         Action fillAction = () => syncMemoryManager.Fill(buffer, fillValue, 512);
-        fillAction.Should().NotThrow();
+        fillAction(); // Should not throw
     }
 
     [Fact]
@@ -279,7 +279,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert
         Action zeroAction = () => syncMemoryManager.Zero(buffer);
-        zeroAction.Should().NotThrow();
+        zeroAction(); // Should not throw
     }
 
     [Fact]
@@ -297,11 +297,11 @@ public class CudaMemoryManagerTests : IDisposable
         var stats = syncMemoryManager!.GetStatistics();
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.TotalMemory.Should().BeGreaterThan(0);
-        stats.FreeMemory.Should().BeGreaterOrEqualTo(0);
-        stats.UsedMemory.Should().BeGreaterOrEqualTo(0);
-        stats.AllocationCount.Should().BeGreaterOrEqualTo(0);
+        Assert.NotNull(stats);
+((stats.TotalMemory > 0).Should().BeTrue();
+        (stats.FreeMemory >= 0).Should().BeTrue();
+        (stats.UsedMemory >= 0).Should().BeTrue();
+        (stats.AllocationCount >= 0).Should().BeTrue();
         stats.TotalMemory.Should().Be(stats.FreeMemory + stats.UsedMemory);
     }
 
@@ -326,8 +326,8 @@ public class CudaMemoryManagerTests : IDisposable
         var afterAllocStats = syncMemoryManager.GetStatistics();
 
         // Assert
-        afterAllocStats.AllocationCount.Should().BeGreaterOrEqualTo(initialStats.AllocationCount + 2);
-        afterAllocStats.AllocatedMemory.Should().BeGreaterOrEqualTo(initialStats.AllocatedMemory + 3072);
+        afterAllocStats.AllocationCount >= initialStats.AllocationCount + 2.Should().BeTrue();
+        afterAllocStats.AllocatedMemory >= initialStats.AllocatedMemory + 3072.Should().BeTrue();
     }
 
     [Fact]
@@ -386,7 +386,7 @@ public class CudaMemoryManagerTests : IDisposable
         for (int i = 0; i < iterationCount; i++)
         {
             var buffer = syncMemoryManager!.Allocate(1024 * (i % 10 + 1));
-            buffer.Should().NotBeNull();
+            Assert.NotNull(buffer);
             
             if (i % 2 == 0) // Free every other allocation
             {
@@ -399,7 +399,7 @@ public class CudaMemoryManagerTests : IDisposable
         }
 
         var finalStats = syncMemoryManager!.GetStatistics();
-        finalStats.AllocationCount.Should().BeGreaterOrEqualTo(iterationCount / 2);
+        finalStats.AllocationCount >= iterationCount / 2.Should().BeTrue();
     }
 
     [Theory]
@@ -420,7 +420,7 @@ public class CudaMemoryManagerTests : IDisposable
         var buffer = syncMemoryManager!.Allocate(1024, options);
         _buffers.Add(buffer);
         
-        buffer.Should().NotBeNull();
+        Assert.NotNull(buffer);
         buffer.SizeInBytes.Should().Be(1024);
     }
 
@@ -444,8 +444,8 @@ public class CudaMemoryManagerTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        buffer.Should().NotBeNull();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000, "Large allocation should complete within 5 seconds");
+        Assert.NotNull(buffer);
+        stopwatch.ElapsedMilliseconds < 5000, "Large allocation should complete within 5 seconds".Should().BeTrue();
         
         _output.WriteLine($"100MB allocation took {stopwatch.ElapsedMilliseconds}ms");
     }

@@ -5,9 +5,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Abstractions.Tests;
 
@@ -36,7 +36,7 @@ public class IMemoryBufferTests
         var size = _mockBuffer.Object.SizeInBytes;
 
         // Assert
-        size.Should().Be(expectedSize);
+        Assert.Equal(expectedSize, size);
     }
 
     [Theory]
@@ -54,7 +54,7 @@ public class IMemoryBufferTests
         var actualSize = _mockBuffer.Object.SizeInBytes;
 
         // Assert
-        actualSize.Should().Be(size);
+        Assert.Equal(size, actualSize);
     }
 
     [Fact]
@@ -68,7 +68,7 @@ public class IMemoryBufferTests
         var options = _mockBuffer.Object.Options;
 
         // Assert
-        options.Should().Be(expectedOptions);
+        Assert.Equal(expectedOptions, options);
     }
 
     [Theory]
@@ -88,7 +88,7 @@ public class IMemoryBufferTests
         var actualOptions = _mockBuffer.Object.Options;
 
         // Assert
-        actualOptions.Should().Be(options);
+        Assert.Equal(options, actualOptions);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public class IMemoryBufferTests
         var isDisposed = _mockBuffer.Object.IsDisposed;
 
         // Assert
-        isDisposed.Should().BeFalse();
+        Assert.False(isDisposed);
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class IMemoryBufferTests
         var isDisposed = _mockBuffer.Object.IsDisposed;
 
         // Assert
-        isDisposed.Should().BeTrue();
+        Assert.True(isDisposed);
     }
 
     #endregion
@@ -197,7 +197,7 @@ public class IMemoryBufferTests
         var sourceData = new float[] { 1.0f };
         var sourceMemory = new ReadOnlyMemory<float>(sourceData);
 
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+        _mockBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()
                   .ThrowsAsync(new ObjectDisposedException("Buffer has been disposed"));
 
         // Act & Assert
@@ -334,7 +334,7 @@ public class IMemoryBufferTests
         var destinationData = new float[1];
         var destinationMemory = new Memory<float>(destinationData);
 
-        _mockBuffer.Setup(b => b.CopyToHostAsync(It.IsAny<Memory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+        _mockBuffer.Setup(b => b.CopyToHostAsync(It.IsAny<Memory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()
                   .ThrowsAsync(new ObjectDisposedException("Buffer has been disposed"));
 
         // Act & Assert
@@ -405,7 +405,7 @@ public class IMemoryBufferTests
         _mockBuffer.Object.Dispose();
 
         // Assert
-        callCount.Should().Be(3);
+        Assert.Equal(3, callCount);
         _mockBuffer.Verify(b => b.Dispose(), Times.Exactly(3));
     }
 
@@ -424,7 +424,7 @@ public class IMemoryBufferTests
         await _mockBuffer.Object.DisposeAsync();
 
         // Assert
-        callCount.Should().Be(3);
+        Assert.Equal(3, callCount);
         _mockBuffer.Verify(b => b.DisposeAsync(), Times.Exactly(3));
     }
 
@@ -439,7 +439,7 @@ public class IMemoryBufferTests
         var type = typeof(IMemoryBuffer);
 
         // Assert
-        type.Should().BeAssignableTo<IAsyncDisposable>();
+        Assert.IsAssignableFrom<IAsyncDisposable>(type);
     }
 
     [Fact]
@@ -449,7 +449,7 @@ public class IMemoryBufferTests
         var type = typeof(IMemoryBuffer);
 
         // Assert
-        type.Should().BeAssignableTo<IDisposable>();
+        Assert.IsAssignableFrom<IDisposable>(type);
     }
 
     #endregion
@@ -486,9 +486,9 @@ public class IMemoryBufferTests
         await buffer.DisposeAsync();
 
         // Assert
-        size.Should().Be(bufferSize);
-        options.Should().Be(MemoryOptions.None);
-        isDisposed.Should().BeFalse();
+        Assert.Equal(bufferSize, size);
+        Assert.Equal(MemoryOptions.None, options);
+        Assert.False(isDisposed);
 
         // Verify all methods were called
         _mockBuffer.Verify(b => b.CopyFromHostAsync(sourceMemory, 0, CancellationToken.None), Times.Once);
@@ -591,10 +591,10 @@ public class IMemoryBufferTests
         var destinationMemory = new Memory<float>(data);
 
         _mockBuffer.SetupGet(b => b.IsDisposed).Returns(true);
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
-                  .ThrowsAsync(new ObjectDisposedException(nameof(IMemoryBuffer)));
-        _mockBuffer.Setup(b => b.CopyToHostAsync(It.IsAny<Memory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
-                  .ThrowsAsync(new ObjectDisposedException(nameof(IMemoryBuffer)));
+        _mockBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()
+                  .ThrowsAsync(new ObjectDisposedException(nameof(IMemoryBuffer);
+        _mockBuffer.Setup(b => b.CopyToHostAsync(It.IsAny<Memory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()
+                  .ThrowsAsync(new ObjectDisposedException(nameof(IMemoryBuffer);
 
         // Act & Assert
         var exception1 = await Assert.ThrowsAsync<ObjectDisposedException>(
@@ -626,9 +626,9 @@ public class IMemoryBufferTests
         var isDisposed = _mockBuffer.Object.IsDisposed;
 
         // Assert
-        actualSize.Should().Be(size);
-        actualOptions.Should().Be(options);
-        isDisposed.Should().BeTrue();
+        Assert.Equal(size, actualSize);
+        Assert.Equal(options, actualOptions);
+        Assert.True(isDisposed);
     }
 
     #endregion

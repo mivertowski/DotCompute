@@ -6,10 +6,10 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Tests.Shared;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.Integration;
 
@@ -60,7 +60,7 @@ public class CudaMemoryTransferTests : IDisposable
         }
 
         // Assert
-        retrievedData.Should().BeEquivalentTo(hostData, $"{description} data should be preserved in round-trip transfer");
+        retrievedData.BeEquivalentTo(hostData, $"{description} data should be preserved in round-trip transfer");
     }
 
     [Theory]
@@ -79,7 +79,7 @@ public class CudaMemoryTransferTests : IDisposable
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
 
         const int elementCount = 10000;
-        var hostData = TestDataGenerator.GenerateArray<T>(elementCount);
+        var hostData = GenerateTypedTestData<T>(elementCount);
         var retrievedData = new T[elementCount];
 
         var sizeInBytes = elementCount * sizeof(T);
@@ -95,7 +95,7 @@ public class CudaMemoryTransferTests : IDisposable
         }
 
         // Assert
-        retrievedData.Should().BeEquivalentTo(hostData, $"{typeof(T).Name} data should be preserved accurately");
+        retrievedData.BeEquivalentTo(hostData, $"{typeof(T).Name} data should be preserved accurately");
     }
 
     [Fact]
@@ -132,7 +132,7 @@ public class CudaMemoryTransferTests : IDisposable
 
         // Assert
         var expectedData = hostData.Skip(offsetFloats).Take(transferFloats).ToArray();
-        retrievedData.Should().BeEquivalentTo(expectedData, "Partial transfer with offset should retrieve correct data segment");
+        retrievedData.BeEquivalentTo(expectedData, "Partial transfer with offset should retrieve correct data segment");
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public class CudaMemoryTransferTests : IDisposable
         // Assert
         for (int i = 0; i < bufferCount; i++)
         {
-            retrievedDataArrays[i].Should().BeEquivalentTo(hostDataArrays[i], $"Buffer {i} should preserve data integrity");
+            retrievedDataArrays[i].BeEquivalentTo(hostDataArrays[i], $"Buffer {i} should preserve data integrity");
         }
     }
 
@@ -234,8 +234,8 @@ public class CudaMemoryTransferTests : IDisposable
         var uploadBandwidth = sizeMB / (uploadStopwatch.ElapsedMilliseconds / 1000.0);
         var downloadBandwidth = sizeMB / (downloadStopwatch.ElapsedMilliseconds / 1000.0);
 
-        uploadBandwidth.Should().BeGreaterThan(10.0, $"Upload bandwidth should be reasonable for {sizeMB:F1}MB");
-        downloadBandwidth.Should().BeGreaterThan(10.0, $"Download bandwidth should be reasonable for {sizeMB:F1}MB");
+        Assert.True(uploadBandwidth > 10.0, $"Upload bandwidth should be reasonable for {sizeMB:F1}MB");
+        Assert.True(downloadBandwidth > 10.0, $"Download bandwidth should be reasonable for {sizeMB:F1}MB");
 
         _output.WriteLine($"{sizeMB:F1}MB Upload: {uploadStopwatch.ElapsedMilliseconds}ms ({uploadBandwidth:F1} MB/s)");
         _output.WriteLine($"{sizeMB:F1}MB Download: {downloadStopwatch.ElapsedMilliseconds}ms ({downloadBandwidth:F1} MB/s)");
@@ -262,8 +262,8 @@ public class CudaMemoryTransferTests : IDisposable
             Action uploadZero = () => memoryManager.CopyFromHost(hostPtr, deviceBuffer, 0);
             Action downloadZero = () => memoryManager.CopyToHost(deviceBuffer, hostPtr, 0);
             
-            uploadZero.Should().NotThrow("Zero-sized upload should be handled gracefully");
-            downloadZero.Should().NotThrow("Zero-sized download should be handled gracefully");
+            uploadZero.NotThrow("Zero-sized upload should be handled gracefully");
+            downloadZero.NotThrow("Zero-sized download should be handled gracefully");
         }
     }
 
@@ -289,15 +289,15 @@ public class CudaMemoryTransferTests : IDisposable
         {
             // Act & Assert - Transfer exactly buffer size should work
             Action transferExact = () => memoryManager.CopyFromHost(hostPtr, deviceBuffer, bufferSize);
-            transferExact.Should().NotThrow("Transfer of exact buffer size should succeed");
+            transferExact.NotThrow("Transfer of exact buffer size should succeed");
 
             // Transfer beyond buffer should throw
             Action transferTooMuch = () => memoryManager.CopyFromHost(hostPtr, deviceBuffer, bufferSize + 1);
-            transferTooMuch.Should().Throw<ArgumentException>("Transfer beyond buffer bounds should be rejected");
+            transferTooMuch.Throw<ArgumentException>("Transfer beyond buffer bounds should be rejected");
 
             // Transfer with offset at boundary should throw
             Action transferWithBadOffset = () => memoryManager.CopyFromHost(hostPtr, deviceBuffer, 1, bufferSize);
-            transferWithBadOffset.Should().Throw<ArgumentException>("Transfer with offset beyond bounds should be rejected");
+            transferWithBadOffset.Throw<ArgumentException>("Transfer with offset beyond bounds should be rejected");
         }
     }
 
@@ -335,8 +335,8 @@ public class CudaMemoryTransferTests : IDisposable
                 };
 
                 // Assert
-                transfer.Should().NotThrow($"Transfer of {size} bytes should handle alignment automatically");
-                retrievedData.Should().BeEquivalentTo(hostData, $"Data integrity should be preserved for {size} bytes");
+                transfer.NotThrow($"Transfer of {size} bytes should handle alignment automatically");
+                retrievedData.BeEquivalentTo(hostData, $"Data integrity should be preserved for {size} bytes");
             }
         }
     }
@@ -372,7 +372,7 @@ public class CudaMemoryTransferTests : IDisposable
                 memoryManager.CopyToHost(deviceBuffer, hostPtr, dataSize);
                 stopwatch.Stop();
 
-                transferTimes.Add(stopwatch.ElapsedMicroseconds);
+                transferTimes.Add(stopwatch.ElapsedTicks * 1000000.0 / Stopwatch.Frequency);
 
                 if (i % 100 == 0)
                 {
@@ -386,7 +386,7 @@ public class CudaMemoryTransferTests : IDisposable
         var lastQuarter = transferTimes.Skip(3 * transferCount / 4).Average();
         var performanceDegradation = lastQuarter / firstQuarter;
 
-        performanceDegradation.Should().BeLessThan(2.0, "Performance should not degrade significantly with repeated transfers");
+        Assert.True(performanceDegradation < 2.0, "Performance should not degrade significantly with repeated transfers");
         
         _output.WriteLine($"First quarter avg: {firstQuarter:F2}μs, Last quarter avg: {lastQuarter:F2}μs");
         _output.WriteLine($"Performance degradation: {performanceDegradation:F2}x");
@@ -459,7 +459,7 @@ public class CudaMemoryTransferTests : IDisposable
         Task.WaitAll(tasks);
 
         // Assert
-        results.Should().HaveCount(threadCount);
+        Assert.Equal(threadCount, results.Count());
         results.Should().AllSatisfy(result => result.Should().BeTrue("All concurrent transfers should succeed"));
     }
 
@@ -478,17 +478,31 @@ public class CudaMemoryTransferTests : IDisposable
 
         // Act & Assert
         Action uploadWithNullPtr = () => memoryManager.CopyFromHost(null, deviceBuffer, 1024);
-        uploadWithNullPtr.Should().Throw<ArgumentNullException>("Upload with null source should throw");
+        uploadWithNullPtr.Throw<ArgumentNullException>("Upload with null source should throw");
 
         var hostData = new byte[1024];
         fixed (byte* hostPtr = hostData)
         {
             Action downloadWithNullPtr = () => memoryManager.CopyToHost(deviceBuffer, null, 1024);
-            downloadWithNullPtr.Should().Throw<ArgumentNullException>("Download with null destination should throw");
+            downloadWithNullPtr.Throw<ArgumentNullException>("Download with null destination should throw");
         }
     }
 
     // Helper Methods
+    private static T[] GenerateTypedTestData<T>(int count) where T : unmanaged, IEquatable<T>
+    {
+        if (typeof(T) == typeof(float))
+            return (T[])(object)TestDataGenerator.GenerateFloatArray(count);
+        if (typeof(T) == typeof(double))
+            return (T[])(object)TestDataGenerator.GenerateDoubleArray(count);
+        if (typeof(T) == typeof(int))
+            return (T[])(object)TestDataGenerator.GenerateIntArray(count);
+        if (typeof(T) == typeof(long))
+            return (T[])(object)TestDataGenerator.GenerateArray(count, i => (long)Random.Shared.Next());
+        
+        throw new NotSupportedException($"Type {typeof(T)} is not supported for test data generation");
+    }
+
     private CudaAccelerator CreateAccelerator()
     {
         var accelerator = new CudaAccelerator(0, _logger);

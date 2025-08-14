@@ -3,9 +3,9 @@
 
 using DotCompute.Algorithms.Types;
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit.LinearAlgebra;
 
@@ -36,8 +36,8 @@ public class AdvancedMatrixMathTests
         var (q, r) = await MatrixMath.QRDecompositionAsync(matrix, _mockAccelerator);
 
         // Assert
-        q.Should().NotBeNull();
-        r.Should().NotBeNull();
+        Assert.NotNull(q);
+        Assert.NotNull(r);
         
         // Verify Q is orthogonal (Q^T * Q = I)
         var qTranspose = await MatrixMath.TransposeAsync(q, _mockAccelerator);
@@ -75,7 +75,7 @@ public class AdvancedMatrixMathTests
         var l = await MatrixMath.CholeskyDecompositionAsync(matrix, _mockAccelerator);
 
         // Assert
-        l.Should().NotBeNull();
+        Assert.NotNull(l);
         
         // Verify L is lower triangular
         for (int i = 0; i < l.Rows; i++)
@@ -113,9 +113,9 @@ public class AdvancedMatrixMathTests
         var (u, s, vt) = await MatrixMath.SVDAsync(matrix, _mockAccelerator);
 
         // Assert
-        u.Should().NotBeNull();
-        s.Should().NotBeNull();
-        vt.Should().NotBeNull();
+        Assert.NotNull(u);
+        Assert.NotNull(s);
+        Assert.NotNull(vt);
         
         // Verify dimensions
         u.Rows.Should().Be(matrix.Rows);
@@ -128,10 +128,10 @@ public class AdvancedMatrixMathTests
         // Verify singular values are non-negative and sorted
         for (int i = 0; i < s.Rows; i++)
         {
-            s[i, i].Should().BeGreaterOrEqualTo(0);
+            s[i, i].BeGreaterOrEqualTo(0);
             if (i > 0)
             {
-                s[i - 1, i - 1].Should().BeGreaterOrEqualTo(s[i, i]);
+                s[i - 1, i - 1].BeGreaterOrEqualTo(s[i, i]);
             }
         }
     }
@@ -150,8 +150,8 @@ public class AdvancedMatrixMathTests
         var (eigenvalues, eigenvectors) = await MatrixMath.EigenDecompositionAsync(matrix, _mockAccelerator);
 
         // Assert
-        eigenvalues.Should().NotBeNull();
-        eigenvectors.Should().NotBeNull();
+        Assert.NotNull(eigenvalues);
+        Assert.NotNull(eigenvectors);
         
         // Verify dimensions
         eigenvalues.Rows.Should().Be(matrix.Rows);
@@ -182,7 +182,7 @@ public class AdvancedMatrixMathTests
         var conditionNumber = await MatrixMath.ConditionNumberAsync(matrix, _mockAccelerator);
 
         // Assert
-        conditionNumber.Should().BeApproximately(1.0f, 1e-5f);
+        Assert.Equal(1.0f, conditionNumber, 1e-5f);
     }
 
     [Fact]
@@ -200,7 +200,7 @@ public class AdvancedMatrixMathTests
         var x = await MatrixMath.SolveWithRefinementAsync(a, b, _mockAccelerator);
 
         // Assert
-        x.Should().NotBeNull();
+        Assert.NotNull(x);
         x.Rows.Should().Be(2);
         x.Columns.Should().Be(1);
         
@@ -224,7 +224,7 @@ public class AdvancedMatrixMathTests
 
         // Act & Assert
         var act = async () => await MatrixMath.CholeskyDecompositionAsync(matrix, _mockAccelerator);
-        act.Should().ThrowAsync<InvalidOperationException>()
+        act.ThrowAsync<InvalidOperationException>()
            .WithMessage("Matrix is not positive definite.");
     }
 

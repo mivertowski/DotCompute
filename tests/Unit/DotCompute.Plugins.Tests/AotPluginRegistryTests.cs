@@ -4,12 +4,12 @@
 #pragma warning disable CS0067 // Event is never used - test events don't need to be raised
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
-using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -33,7 +33,7 @@ public class AotPluginRegistryTests : IDisposable
     {
         // Act & Assert
         Action act = () => new AotPluginRegistry(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        act.Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -43,10 +43,10 @@ public class AotPluginRegistryTests : IDisposable
         var availableTypes = _registry.GetAvailablePluginTypes();
 
         // Assert
-        availableTypes.Should().NotBeEmpty();
-        availableTypes.Should().Contain("DotCompute.Backends.CPU");
-        availableTypes.Should().Contain("DotCompute.Backends.CUDA");
-        availableTypes.Should().Contain("DotCompute.Backends.Metal");
+        Assert.NotEmpty(availableTypes);
+        Assert.Contains("DotCompute.Backends.CPU", availableTypes);
+        Assert.Contains("DotCompute.Backends.CUDA", availableTypes);
+        Assert.Contains("DotCompute.Backends.Metal", availableTypes);
     }
 
     [Fact]
@@ -56,24 +56,24 @@ public class AotPluginRegistryTests : IDisposable
         var plugin = _registry.CreatePlugin("DotCompute.Backends.CPU");
 
         // Assert
-        plugin.Should().NotBeNull();
+        Assert.NotNull(plugin);
         plugin!.Id.Should().Be("DotCompute.Backends.CPU");
         plugin.Name.Should().Be("CPU Backend");
-        plugin.Capabilities.Should().HaveFlag(PluginCapabilities.ComputeBackend);
+        plugin.Capabilities.HaveFlag(PluginCapabilities.ComputeBackend);
     }
 
     [Fact]
     public void CreatePlugin_WithCudaBackend_CreatesOrThrowsPlatformNotSupported()
     {
         // Act & Assert
-        if (Environment.Is64BitOperatingSystem && (OperatingSystem.IsWindows() || OperatingSystem.IsLinux()))
+        if (Environment.Is64BitOperatingSystem && (OperatingSystem.IsWindows() || OperatingSystem.IsLinux()
         {
             // On supported platforms, should either create or throw based on CUDA availability
             Action act = () => _registry.CreatePlugin("DotCompute.Backends.CUDA");
             try
             {
                 var plugin = _registry.CreatePlugin("DotCompute.Backends.CUDA");
-                plugin.Should().NotBeNull();
+                Assert.NotNull(plugin);
                 plugin!.Id.Should().Be("DotCompute.Backends.CUDA");
             }
             catch (PlatformNotSupportedException)
@@ -85,7 +85,7 @@ public class AotPluginRegistryTests : IDisposable
         {
             // On unsupported platforms, should return null or throw
             var plugin = _registry.CreatePlugin("DotCompute.Backends.CUDA");
-            plugin?.Should().BeNull();
+            plugin?.BeNull();
         }
     }
 
@@ -97,14 +97,14 @@ public class AotPluginRegistryTests : IDisposable
         {
             // On Apple platforms, should create successfully
             var plugin = _registry.CreatePlugin("DotCompute.Backends.Metal");
-            plugin.Should().NotBeNull();
+            Assert.NotNull(plugin);
             plugin!.Id.Should().Be("DotCompute.Backends.Metal");
         }
         else
         {
             // On non-Apple platforms, should throw PlatformNotSupportedException
             Action act = () => _registry.CreatePlugin("DotCompute.Backends.Metal");
-            act.Should().Throw<PlatformNotSupportedException>()
+            act.Throw<PlatformNotSupportedException>()
                 .WithMessage("*Metal backend is only available on macOS and iOS*");
         }
     }
@@ -116,7 +116,7 @@ public class AotPluginRegistryTests : IDisposable
         var plugin = _registry.CreatePlugin("Unknown.Plugin");
 
         // Assert
-        plugin.Should().BeNull();
+        Assert.Null(plugin);
     }
 
     [Fact]
@@ -126,8 +126,8 @@ public class AotPluginRegistryTests : IDisposable
         Action act1 = () => _registry.CreatePlugin(null!);
         Action act2 = () => _registry.CreatePlugin("");
         
-        act1.Should().Throw<ArgumentException>();
-        act2.Should().Throw<ArgumentException>();
+        Assert.Throws<ArgumentException>(() => act1());
+        Assert.Throws<ArgumentException>(() => act2());
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public class AotPluginRegistryTests : IDisposable
 
         // Act & Assert
         Action act = () => _registry.CreatePlugin("DotCompute.Backends.CPU");
-        act.Should().Throw<ObjectDisposedException>();
+        Assert.Throws<ObjectDisposedException>(() => act());
     }
 
     [Fact]
@@ -151,7 +151,7 @@ public class AotPluginRegistryTests : IDisposable
         var retrieved = _registry.GetPlugin(created!.Id);
 
         // Assert
-        retrieved.Should().BeSameAs(created);
+        retrieved.BeSameAs(created);
     }
 
     [Fact]
@@ -161,7 +161,7 @@ public class AotPluginRegistryTests : IDisposable
         var plugin = _registry.GetPlugin("non-existent");
 
         // Assert
-        plugin.Should().BeNull();
+        Assert.Null(plugin);
     }
 
     [Fact]
@@ -174,8 +174,8 @@ public class AotPluginRegistryTests : IDisposable
         var loaded = _registry.GetLoadedPlugins();
 
         // Assert
-        loaded.Should().HaveCount(1);
-        loaded.Should().Contain(plugin1!);
+        Assert.Equal(1, loaded.Count());
+        Assert.Contains(plugin1!, loaded);
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class AotPluginRegistryTests : IDisposable
         var loaded = _registry.GetLoadedPlugins();
 
         // Assert
-        loaded.Should().BeEmpty();
+        Assert.Empty(loaded);
     }
 
     [Fact]
@@ -199,8 +199,8 @@ public class AotPluginRegistryTests : IDisposable
         var result = _registry.UnloadPlugin(pluginId);
 
         // Assert
-        result.Should().BeTrue();
-        _registry.GetPlugin(pluginId).Should().BeNull();
+        Assert.True(result);
+        _registry.GetPlugin(pluginId).BeNull();
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class AotPluginRegistryTests : IDisposable
         var result = _registry.UnloadPlugin("non-existent");
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -220,8 +220,8 @@ public class AotPluginRegistryTests : IDisposable
         Action act1 = () => _registry.UnloadPlugin(null!);
         Action act2 = () => _registry.UnloadPlugin("");
 
-        act1.Should().Throw<ArgumentException>();
-        act2.Should().Throw<ArgumentException>();
+        Assert.Throws<ArgumentException>(() => act1());
+        Assert.Throws<ArgumentException>(() => act2());
     }
 
     [Fact]
@@ -236,10 +236,10 @@ public class AotPluginRegistryTests : IDisposable
 
         // Assert
         var availableTypes = _registry.GetAvailablePluginTypes();
-        availableTypes.Should().Contain("Custom.Plugin");
+        Assert.Contains("Custom.Plugin", availableTypes);
 
         var created = _registry.CreatePlugin("Custom.Plugin");
-        created.Should().BeSameAs(customPlugin);
+        created.BeSameAs(customPlugin);
     }
 
     [Fact]
@@ -247,7 +247,7 @@ public class AotPluginRegistryTests : IDisposable
     {
         // Act & Assert
         Action act = () => _registry.RegisterPluginFactory("test", null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("factory");
+        act.Throw<ArgumentNullException>().WithParameterName("factory");
     }
 
     [Fact]
@@ -260,8 +260,8 @@ public class AotPluginRegistryTests : IDisposable
         Action act1 = () => _registry.RegisterPluginFactory(null!, factory);
         Action act2 = () => _registry.RegisterPluginFactory("", factory);
 
-        act1.Should().Throw<ArgumentException>();
-        act2.Should().Throw<ArgumentException>();
+        Assert.Throws<ArgumentException>(() => act1());
+        Assert.Throws<ArgumentException>(() => act2());
     }
 
     [Fact]
@@ -279,11 +279,11 @@ public class AotPluginRegistryTests : IDisposable
         // Assert
         // After disposal, registry should throw ObjectDisposedException when accessed
         Action act = () => _registry.GetLoadedPlugins();
-        act.Should().Throw<ObjectDisposedException>();
+        Assert.Throws<ObjectDisposedException>(() => act());
     }
 
     [Fact]
-    public void Dispose_CalledMultipleTimes_DoesNotThrow()
+    public void Dispose_CalledMultipleTimes_DoesShould().NotThrow()
     {
         // Act & Assert
         Action act = () =>
@@ -291,7 +291,7 @@ public class AotPluginRegistryTests : IDisposable
             _registry.Dispose();
             _registry.Dispose(); // Should not throw
         };
-        act.Should().NotThrow();
+        act(); // Should not throw
     }
 
     public void Dispose()
@@ -356,7 +356,7 @@ public class AotPluginSystemTests : IDisposable
     {
         // Act & Assert
         Action act = () => new AotPluginSystem(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        act.Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -366,7 +366,7 @@ public class AotPluginSystemTests : IDisposable
         var plugin = await _system.LoadPluginAsync("/fake/path.dll", "DotCompute.Backends.CPU");
 
         // Assert
-        plugin.Should().NotBeNull();
+        Assert.NotNull(plugin);
         plugin!.Id.Should().Be("DotCompute.Backends.CPU");
     }
 
@@ -377,7 +377,7 @@ public class AotPluginSystemTests : IDisposable
         var plugin = await _system.LoadPluginAsync("/fake/path.dll", "Unknown.Plugin");
 
         // Assert
-        plugin.Should().BeNull();
+        Assert.Null(plugin);
     }
 
     [Fact]
@@ -391,8 +391,8 @@ public class AotPluginSystemTests : IDisposable
         var result = await _system.UnloadPluginAsync(pluginId);
 
         // Assert
-        result.Should().BeTrue();
-        _system.GetPlugin(pluginId).Should().BeNull();
+        Assert.True(result);
+        _system.GetPlugin(pluginId).BeNull();
     }
 
     [Fact]
@@ -402,10 +402,10 @@ public class AotPluginSystemTests : IDisposable
         var types = _system.GetAvailablePluginTypes();
 
         // Assert
-        types.Should().NotBeEmpty();
-        types.Should().Contain("DotCompute.Backends.CPU");
-        types.Should().Contain("DotCompute.Backends.CUDA");
-        types.Should().Contain("DotCompute.Backends.Metal");
+        Assert.NotEmpty(types);
+        Assert.Contains("DotCompute.Backends.CPU", types);
+        Assert.Contains("DotCompute.Backends.CUDA", types);
+        Assert.Contains("DotCompute.Backends.Metal", types);
     }
 
     [Fact]
@@ -420,7 +420,7 @@ public class AotPluginSystemTests : IDisposable
 
         // Assert
         var types = _system.GetAvailablePluginTypes();
-        types.Should().Contain("Custom.Plugin");
+        Assert.Contains("Custom.Plugin", types);
     }
 
     public void Dispose()
@@ -475,7 +475,7 @@ public class AotPluginHelpersTests
 
         // Assert
         // The value depends on the runtime, so we just verify it returns a boolean
-        isCompatible.Should().Be(isCompatible);
+        Assert.Equal(isCompatible, isCompatible);
     }
 
     [Fact]
@@ -488,7 +488,7 @@ public class AotPluginHelpersTests
         using var system = AotPluginHelpers.CreatePluginSystem(logger);
 
         // Assert
-        system.Should().NotBeNull();
-        system.Should().BeAssignableTo<IDisposable>();
+        Assert.NotNull(system);
+        Assert.IsAssignableFrom<IDisposable>(system);
     }
 }

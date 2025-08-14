@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using DotCompute.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.Kernels;
 

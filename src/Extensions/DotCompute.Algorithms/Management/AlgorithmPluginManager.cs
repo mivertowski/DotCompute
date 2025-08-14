@@ -269,7 +269,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
             {
                 LogNuGetDependenciesResolved(
                     loadResult.PackageIdentity.Id,
-                    string.Join(", ", loadResult.ResolvedDependencies.Select(d => $"{d.Id} {d.VersionRange}")));
+                    string.Join(", ", loadResult.ResolvedDependencies.Select(d => $"{d.Id} {d.VersionRange}");
             }
 
             // Log security validation results

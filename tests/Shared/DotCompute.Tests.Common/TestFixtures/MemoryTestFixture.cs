@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.TestFixtures;
 

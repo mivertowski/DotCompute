@@ -12,9 +12,9 @@ using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Tests.Shared;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests;
 
@@ -37,11 +37,11 @@ public class CpuBackendTests
         var cpuProvider = new CpuAcceleratorProvider();
         var accelerators = await cpuProvider.GetAvailableAcceleratorsAsync();
 
-        accelerators.Should().NotBeEmpty();
-        accelerators.Should().HaveCount(1); // Single CPU accelerator
+        Assert.NotEmpty(accelerators);
+        Assert.Equal(1, accelerators.Count()); // Single CPU accelerator
 
         var accelerator = accelerators.First();
-        accelerator.Info.DeviceType.Should().Be("CPU");
+        accelerator.Info.DeviceType.Should().Be(AcceleratorType.CPU);
         accelerator.Info.Name.Should().NotBeNullOrEmpty();
         accelerator.Info.MemorySize.Should().BeGreaterThan(0);
         accelerator.Info.IsUnifiedMemory.Should().BeTrue();
@@ -63,7 +63,7 @@ public class CpuBackendTests
         var compiledKernel = await accelerator.CompileKernelAsync(kernelSource);
         stopwatch.Stop();
 
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be(kernelSource.Name);
         
         _output.WriteLine($"SIMD kernel compilation took {stopwatch.ElapsedMicroseconds} μs");
@@ -147,8 +147,8 @@ public class CpuBackendTests
     {
         var numaInfo = NumaInfo.GetSystemInfo();
         
-        numaInfo.Should().NotBeNull();
-        numaInfo.NodeCount.Should().BeGreaterThan(0);
+        Assert.NotNull(numaInfo);
+        (numaInfo.NodeCount > 0).Should().BeTrue();
         numaInfo.ProcessorCount.Should().Be(Environment.ProcessorCount);
         
         _output.WriteLine($"NUMA Nodes: {numaInfo.NodeCount}");
@@ -176,12 +176,12 @@ public class CpuBackendTests
 
         try
         {
-            buffer.Should().NotBeNull();
+            Assert.NotNull(buffer);
             buffer.SizeInBytes.Should().Be(size);
             
             // CPU memory should be directly accessible
             var currentMemory = accelerator.Memory.GetAllocatedMemory();
-            currentMemory.Should().BeGreaterThan(initialMemory);
+            Assert.True(currentMemory > initialMemory);
             
             // Test unified memory access
             var testData = TestDataGenerator.GenerateFloatArray(size / sizeof(float));
@@ -190,7 +190,7 @@ public class CpuBackendTests
             var result = new float[testData.Length];
             accelerator.Memory.CopyFromDevice(MemoryMarshal.AsBytes(result.AsSpan()), buffer);
             
-            result.Should().BeEquivalentTo(testData);
+            result.BeEquivalentTo(testData);
             
             _output.WriteLine($"Unified memory allocation: {size:N0} bytes");
         }
@@ -210,7 +210,7 @@ public class CpuBackendTests
         var compiledKernel = await accelerator.CompileKernelAsync(kernelSource);
         stopwatch.Stop();
 
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be(kernelSource.Name);
         
         _output.WriteLine($"CPU kernel compilation took {stopwatch.ElapsedMicroseconds} μs");
@@ -275,11 +275,11 @@ public class CpuBackendTests
         
         stopwatch.Stop();
         
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Length.Should().Be(size);
         
         // CPU should complete within reasonable time
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000);
+        stopwatch.ElapsedMilliseconds < 1000.Should().BeTrue();
         
         _output.WriteLine($"CPU vector addition ({size} elements): {stopwatch.ElapsedMicroseconds} μs");
     }
@@ -290,9 +290,9 @@ public class CpuBackendTests
         var accelerator = await CreateCpuAccelerator();
         var capabilities = SimdCapabilities.GetSummary();
         
-        capabilities.Should().NotBeNull();
+        Assert.NotNull(capabilities);
         capabilities.IsHardwareAccelerated.Should().BeTrue();
-        capabilities.PreferredVectorWidth.Should().BeGreaterThan(0);
+        (capabilities.PreferredVectorWidth > 0).Should().BeTrue();
         capabilities.SupportedInstructionSets.Should().NotBeEmpty();
         
         _output.WriteLine($"Hardware acceleration: {capabilities.IsHardwareAccelerated}");
@@ -306,7 +306,7 @@ public class CpuBackendTests
         }
         else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
         {
-            capabilities.SupportedInstructionSets.Should().Contain("NEON");
+            capabilities.Assert.Contains("NEON", SupportedInstructionSets);
         }
     }
 
@@ -378,7 +378,7 @@ public class CpuBackendTests
         
         try
         {
-            alignedBuffer.Should().NotBeNull();
+            Assert.NotNull(alignedBuffer);
             alignedBuffer.SizeInBytes.Should().Be(size * sizeof(float));
             
             // Memory should be aligned for SIMD operations
@@ -413,8 +413,8 @@ public class CpuBackendTests
 
         try
         {
-            accelerator.Memory.CopyToDevice(bufferA, MemoryMarshal.AsBytes(a.AsSpan()));
-            accelerator.Memory.CopyToDevice(bufferB, MemoryMarshal.AsBytes(b.AsSpan()));
+            accelerator.Memory.CopyToDevice(bufferA, MemoryMarshal.AsBytes(a.AsSpan();
+            accelerator.Memory.CopyToDevice(bufferB, MemoryMarshal.AsBytes(b.AsSpan();
 
             var kernel = await accelerator.CompileKernelAsync(TestKernels.VectorizedAdd);
             await kernel.ExecuteAsync(new KernelArguments(bufferA, bufferB, bufferResult, size));

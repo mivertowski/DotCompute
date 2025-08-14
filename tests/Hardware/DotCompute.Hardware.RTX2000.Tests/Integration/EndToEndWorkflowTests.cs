@@ -1,12 +1,12 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 using DotCompute.Core;
 using DotCompute.Abstractions;
 using DotCompute.Memory;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.Integration;
 
@@ -109,7 +109,7 @@ public class EndToEndWorkflowTests : IDisposable
             _output.WriteLine($"  Elements/sec: {elementsPerSecond:E2}");
             _output.WriteLine($"  Effective bandwidth: {bandwidth:F2} GB/s");
 
-            elementsPerSecond.Should().BeGreaterThan(1e6, "Should process at least 1M elements per second");
+            Assert.True(elementsPerSecond > 1e6, "Should process at least 1M elements per second");
         }
         catch (Exception ex)
         {
@@ -179,7 +179,7 @@ public class EndToEndWorkflowTests : IDisposable
             _output.WriteLine($"  GFLOPS: {gflops:F2}");
             _output.WriteLine($"  Execution time: {kernelExecutionTime:F2} ms");
 
-            gflops.Should().BeGreaterThan(100, "Should achieve significant GFLOPS for matrix multiplication");
+            Assert.True(gflops > 100, "Should achieve significant GFLOPS for matrix multiplication");
         }
         catch (Exception ex)
         {
@@ -241,8 +241,8 @@ public class EndToEndWorkflowTests : IDisposable
             _output.WriteLine($"  Average per stage: {totalPipelineTime / 3:F2} ms");
 
             // Validate pipeline efficiency
-            throughput.Should().BeGreaterThan(1e6, "Pipeline should maintain high throughput");
-            totalPipelineTime.Should().BeLessThan(5000, "Pipeline should complete within reasonable time");
+            Assert.True(throughput > 1e6, "Pipeline should maintain high throughput");
+            Assert.True(totalPipelineTime < 5000, "Pipeline should complete within reasonable time");
 
             // Validate data integrity through pipeline
             ValidatePipelineResults(inputData, finalResults);

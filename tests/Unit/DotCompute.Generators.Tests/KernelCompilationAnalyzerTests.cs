@@ -3,12 +3,12 @@
 
 using System.Collections.Immutable;
 using DotCompute.Generators.Kernel;
-using FluentAssertions;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Testing;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -23,12 +23,12 @@ public class KernelCompilationAnalyzerTests
         var supportedDiagnostics = _analyzer.SupportedDiagnostics;
 
         // Assert
-        supportedDiagnostics.Should().HaveCount(5);
-        supportedDiagnostics.Should().Contain(d => d.Id == KernelCompilationAnalyzer.UnsupportedTypeId);
-        supportedDiagnostics.Should().Contain(d => d.Id == KernelCompilationAnalyzer.MissingBufferParameterId);
-        supportedDiagnostics.Should().Contain(d => d.Id == KernelCompilationAnalyzer.InvalidVectorSizeId);
-        supportedDiagnostics.Should().Contain(d => d.Id == KernelCompilationAnalyzer.UnsafeCodeRequiredId);
-        supportedDiagnostics.Should().Contain(d => d.Id == KernelCompilationAnalyzer.PerformanceWarningId);
+        Assert.Equal(5, supportedDiagnostics.Count());
+        Assert.Contains(d => d.Id == KernelCompilationAnalyzer.UnsupportedTypeId, supportedDiagnostics);
+        Assert.Contains(d => d.Id == KernelCompilationAnalyzer.MissingBufferParameterId, supportedDiagnostics);
+        Assert.Contains(d => d.Id == KernelCompilationAnalyzer.InvalidVectorSizeId, supportedDiagnostics);
+        Assert.Contains(d => d.Id == KernelCompilationAnalyzer.UnsafeCodeRequiredId, supportedDiagnostics);
+        Assert.Contains(d => d.Id == KernelCompilationAnalyzer.PerformanceWarningId, supportedDiagnostics);
     }
 
     [Fact]
@@ -37,6 +37,7 @@ public class KernelCompilationAnalyzerTests
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public unsafe class ValidKernels
 {
@@ -61,6 +62,7 @@ public unsafe class ValidKernels
         var source = @"
 using DotCompute.Generators.Kernel;
 using System;
+using FluentAssertions;
 
 public class InvalidKernels
 {
@@ -84,6 +86,7 @@ public class InvalidKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class InvalidKernels
 {
@@ -107,6 +110,7 @@ public class InvalidKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class InvalidKernels
 {
@@ -133,6 +137,7 @@ public class InvalidKernels
         // Arrange
         var source = $@"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public unsafe class ValidKernels
 {{
@@ -153,6 +158,7 @@ public unsafe class ValidKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class SafeKernels
 {
@@ -176,6 +182,7 @@ public class SafeKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public unsafe class UnsafeKernels
 {
@@ -196,6 +203,7 @@ public unsafe class UnsafeKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class SafeClass
 {
@@ -216,6 +224,7 @@ public class SafeClass
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public unsafe class PerformanceKernels
 {
@@ -246,6 +255,7 @@ public unsafe class PerformanceKernels
         var source = @"
 using DotCompute.Generators.Kernel;
 using System;
+using FluentAssertions;
 
 public unsafe class PerformanceKernels
 {
@@ -273,6 +283,7 @@ public unsafe class PerformanceKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public unsafe class PerformanceKernels
 {
@@ -301,6 +312,7 @@ public unsafe class PerformanceKernels
         var source = @"
 using DotCompute.Generators.Kernel;
 using System;
+using FluentAssertions;
 
 public unsafe class BufferKernels
 {
@@ -333,6 +345,7 @@ public unsafe class BufferKernels
         // Arrange
         var source = @"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class MultipleIssueKernels
 {
@@ -377,6 +390,7 @@ public class MultipleIssueKernels
         // Arrange
         var source = @"
 using System;
+using FluentAssertions;
 
 public class NonKernelClass
 {
@@ -425,7 +439,7 @@ public class XUnitVerifier : IVerifier
 
     public void Equal<T>(T expected, T actual, string? message = null)
     {
-        actual.Should().Be(expected, message);
+        Assert.Equal(expected, message, actual);
     }
 
     public void True(bool assert, string? message = null)

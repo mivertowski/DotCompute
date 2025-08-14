@@ -5,6 +5,7 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Common.Hardware;
 

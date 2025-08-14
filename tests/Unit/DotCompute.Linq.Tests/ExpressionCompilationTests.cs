@@ -10,6 +10,7 @@ using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests;
 

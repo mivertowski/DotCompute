@@ -181,6 +181,8 @@ public sealed class CudaP2PManager : IDisposable
     public async Task<bool> DisableP2PAccessAsync(int sourceDevice, int destinationDevice,
         CancellationToken cancellationToken = default)
     {
+        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        
         ThrowIfDisposed();
 
         var connectionKey = (sourceDevice, destinationDevice);
@@ -329,6 +331,8 @@ public sealed class CudaP2PManager : IDisposable
         CudaP2PTopology topology,
         CancellationToken cancellationToken = default)
     {
+        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        
         ThrowIfDisposed();
 
         var strategy = new CudaP2PPlacementStrategy();
@@ -417,6 +421,8 @@ public sealed class CudaP2PManager : IDisposable
 
     private async Task<CudaDeviceInfo> GetDeviceInfoAsync(int deviceId)
     {
+        await Task.Delay(1).ConfigureAwait(false);
+        
         var result = CudaRuntime.cudaSetDevice(deviceId);
         CudaRuntime.CheckError(result, $"setting device {deviceId}");
 
@@ -445,6 +451,8 @@ public sealed class CudaP2PManager : IDisposable
 
     private async Task<bool> TestP2PAccessAsync(int sourceDevice, int destinationDevice)
     {
+        await Task.Delay(1).ConfigureAwait(false);
+        
         try
         {
             var canAccess = 0;

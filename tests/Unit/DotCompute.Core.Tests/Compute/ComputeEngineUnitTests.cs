@@ -5,6 +5,7 @@ using DotCompute.Tests.Shared.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit.Compute;
 
@@ -21,7 +22,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
         _hardwareSimulator = RegisterDisposable(new HardwareSimulator(Logger));
         
         var services = new ServiceCollection();
-        services.AddLogging(builder => builder.AddProvider(new XUnitLoggerProvider(output)));
+        services.AddLogging(builder => builder.AddProvider(new XUnitLoggerProvider(output);
         services.AddSingleton<IAcceleratorManager>(sp => new TestAcceleratorManager(_hardwareSimulator));
         services.AddTransient<IComputeEngine, DefaultComputeEngine>();
         

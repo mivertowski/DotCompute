@@ -600,7 +600,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             }
             else
             {
-                LogNoCompatibleFrameworkFound(targetFramework, string.Join(", ", frameworkFolders.Select(f => f.Framework!.GetShortFolderName())));
+                LogNoCompatibleFrameworkFound(targetFramework, string.Join(", ", frameworkFolders.Select(f => f.Framework!.GetShortFolderName());
             }
         }
 

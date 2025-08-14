@@ -5,7 +5,6 @@ using System.Reflection;
 using DotCompute.Abstractions;
 using DotCompute.Plugins.Core;
 using DotCompute.Tests.Integration.Infrastructure;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
@@ -58,13 +57,13 @@ public class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var loadResult = await _pluginSystem.LoadPluginAsync(pluginAssemblyPath);
 
         // Assert
-        loadResult.Should().BeTrue();
+        Assert.True(loadResult);
         
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
         loadedPlugins.Should().ContainKey("TestAlgorithmPlugin");
         
         var plugin = loadedPlugins["TestAlgorithmPlugin"];
-        plugin.Should().NotBeNull();
+        Assert.NotNull(plugin);
         plugin.Name.Should().Be("TestAlgorithmPlugin");
         plugin.IsInitialized.Should().BeTrue();
         
@@ -146,7 +145,7 @@ public class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var loadResult = await _pluginSystem.LoadPluginAsync(pluginPath);
 
         // Assert
-        loadResult.Should().BeFalse();
+        Assert.False(loadResult);
         
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
         loadedPlugins.Should().NotContainKey("MaliciousPlugin");
@@ -169,11 +168,11 @@ public class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var load2Result = await _pluginSystem.LoadPluginAsync(plugin2Path);
 
         // Assert
-        load1Result.Should().BeTrue();
-        load2Result.Should().BeTrue();
+        Assert.True(load1Result);
+        Assert.True(load2Result);
         
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
-        loadedPlugins.Should().HaveCount(2);
+        Assert.Equal(2, loadedPlugins.Count());
         loadedPlugins.Should().ContainKey("Plugin1");
         loadedPlugins.Should().ContainKey("Plugin2");
         
@@ -196,17 +195,17 @@ public class PluginSystemIntegrationTests : ComputeWorkflowTestBase
 
         // Act & Assert - Load
         var loadResult = await _pluginSystem.LoadPluginAsync(pluginPath);
-        loadResult.Should().BeTrue();
+        Assert.True(loadResult);
         _pluginSystem.GetLoadedPlugins().Should().ContainKey("LifecycleTestPlugin");
 
         // Act & Assert - Unload
         var unloadResult = await _pluginSystem.UnloadPluginAsync("LifecycleTestPlugin");
-        unloadResult.Should().BeTrue();
+        Assert.True(unloadResult);
         _pluginSystem.GetLoadedPlugins().Should().NotContainKey("LifecycleTestPlugin");
 
         // Act & Assert - Reload
         var reloadResult = await _pluginSystem.LoadPluginAsync(pluginPath);
-        reloadResult.Should().BeTrue();
+        Assert.True(reloadResult);
         _pluginSystem.GetLoadedPlugins().Should().ContainKey("LifecycleTestPlugin");
         
         Logger.LogInformation("Successfully completed plugin lifecycle test");
@@ -227,8 +226,8 @@ public class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var dependentLoadResult = await _pluginSystem.LoadPluginAsync(dependentPath);
 
         // Assert
-        baseLoadResult.Should().BeTrue();
-        dependentLoadResult.Should().BeTrue();
+        Assert.True(baseLoadResult);
+        Assert.True(dependentLoadResult);
         
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
         loadedPlugins.Should().ContainKey("BasePlugin");
@@ -260,7 +259,7 @@ public class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var configResult = await _pluginSystem.ConfigurePluginAsync("ConfigurablePlugin", configuration);
 
         // Assert
-        configResult.Should().BeTrue();
+        Assert.True(configResult);
         
         var plugin = _pluginSystem.GetLoadedPlugins()["ConfigurablePlugin"];
         plugin.IsInitialized.Should().BeTrue();
@@ -313,7 +312,7 @@ public class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         if (baselineThroughput > 0)
         {
             var performanceRatio = pluginThroughput / baselineThroughput;
-            performanceRatio.Should().BeGreaterThan(0.5, "Plugin performance should be competitive");
+            Assert.True(performanceRatio > 0.5, "Plugin performance should be competitive");
             
             Logger.LogInformation("Plugin performance: {Plugin:F2} MB/s vs Baseline: {Baseline:F2} MB/s (Ratio: {Ratio:F2})",
                 pluginThroughput, baselineThroughput, performanceRatio);
@@ -337,7 +336,7 @@ public class PluginSystemIntegrationTests : ComputeWorkflowTestBase
 
         // Act & Assert - Hot-swap to version 2
         var hotswapResult = await _pluginSystem.HotSwapPluginAsync("HotswapPlugin", v2Path);
-        hotswapResult.Should().BeTrue();
+        Assert.True(hotswapResult);
         
         var v2Plugin = _pluginSystem.GetLoadedPlugins()["HotswapPlugin"];
         v2Plugin.Version.Should().Be("2.0");
@@ -367,12 +366,12 @@ public class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         }
 
         // Assert
-        loadResult.Should().BeTrue(); // Plugin should load
-        caughtException.Should().NotBeNull(); // But execution should fail gracefully
+        Assert.True(loadResult); // Plugin should load
+        Assert.NotNull(caughtException); // But execution should fail gracefully
         
         // System should still be operational
         var systemStatus = _pluginSystem.GetLoadedPlugins();
-        systemStatus.Should().NotBeEmpty(); // Plugin system should still work
+        Assert.NotEmpty(systemStatus); // Plugin system should still work
         
         Logger.LogInformation("Successfully handled plugin exception without system crash");
     }
@@ -654,6 +653,7 @@ namespace ConfigurablePlugin
 using System;
 using System.Threading.Tasks;
 using DotCompute.Plugins.Core;
+using FluentAssertions;
 
 namespace FaultyPlugin
 {

@@ -6,8 +6,8 @@ using DotCompute.Backends.CPU.Accelerators;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Backends.CPU.Tests.Simple;
 
@@ -45,7 +45,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
             _mockLogger.Object);
 
         // Assert
-        accelerator.Should().NotBeNull();
+        Assert.NotNull(accelerator);
         accelerator.Type.Should().Be(AcceleratorType.CPU);
         accelerator.Info.Should().NotBeNull();
         accelerator.Memory.Should().NotBeNull();
@@ -56,7 +56,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new CpuAccelerator(null!, _mockLogger.Object);
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(() => act());
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new CpuAccelerator(_mockOptions.Object, null!);
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(() => act());
     }
 
     #endregion
@@ -81,7 +81,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
         var type = accelerator.Type;
 
         // Assert
-        type.Should().Be(AcceleratorType.CPU);
+        Assert.Equal(AcceleratorType.CPU, type);
     }
 
     [Fact]
@@ -94,11 +94,11 @@ public class CpuAcceleratorSimpleTests : IDisposable
         var info = accelerator.Info;
 
         // Assert
-        info.Should().NotBeNull();
+        Assert.NotNull(info);
         info.Type.Should().Be(AcceleratorType.CPU);
         info.Name.Should().NotBeNullOrEmpty();
-        info.DeviceMemory.Should().BeGreaterThan(0);
-        info.ComputeUnits.Should().BeGreaterThan(0);
+(info.DeviceMemory > 0).Should().BeTrue();
+(info.ComputeUnits > 0).Should().BeTrue();
         info.IsUnified.Should().BeTrue();
         info.Capabilities.Should().NotBeNull();
     }
@@ -129,8 +129,8 @@ public class CpuAcceleratorSimpleTests : IDisposable
         var memory = accelerator.Memory;
 
         // Assert
-        memory.Should().NotBeNull();
-        memory.Should().BeAssignableTo<IMemoryManager>();
+        Assert.NotNull(memory);
+        Assert.IsAssignableFrom<IMemoryManager>(memory);
     }
 
     #endregion
@@ -148,7 +148,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
     }
 
@@ -159,8 +159,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
         using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
 
         // Act & Assert
-        await accelerator.Invoking(a => a.CompileKernelAsync(null!))
-            .Should().ThrowAsync<ArgumentNullException>();
+        await Assert.ThrowsAsync<ArgumentNullException>(() => accelerator.MethodCall().AsTask());
     }
 
     [Fact]
@@ -173,8 +172,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
         cts.Cancel();
 
         // Act & Assert
-        await accelerator.Invoking(a => a.CompileKernelAsync(definition, cancellationToken: cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => accelerator.MethodCall().AsTask());
     }
 
     [Theory]
@@ -191,7 +189,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be($"{kernelType}Kernel");
     }
 
@@ -243,7 +241,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
         using var buffer = await memory.CreateBufferAsync<float>(1024, MemoryLocation.Host);
 
         // Assert
-        buffer.Should().NotBeNull();
+        Assert.NotNull(buffer);
         buffer.ElementCount.Should().Be(1024);
     }
 
@@ -275,10 +273,10 @@ public class CpuAcceleratorSimpleTests : IDisposable
         var statistics = memory.GetStatistics();
 
         // Assert
-        statistics.Should().NotBeNull();
-        statistics.TotalAllocatedBytes.Should().BeGreaterOrEqualTo(0);
-        statistics.AvailableBytes.Should().BeGreaterThan(0);
-        statistics.AllocationCount.Should().BeGreaterOrEqualTo(0);
+        Assert.NotNull(statistics);
+        statistics.TotalAllocatedBytes >= 0.Should().BeTrue();
+(statistics.AvailableBytes > 0).Should().BeTrue();
+        statistics.AllocationCount >= 0.Should().BeTrue();
         statistics.FragmentationPercentage.Should().BeInRange(0.0, 100.0);
         statistics.UsageByLocation.Should().NotBeNull();
     }
@@ -327,7 +325,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
         options.EnableNumaAwareAllocation.Should().BeTrue();
         options.PreferPerformanceOverPower.Should().BeTrue();
         options.MemoryAlignment.Should().Be(64);
-        options.MaxMemoryAllocation.Should().BeGreaterThan(0);
+(options.MaxMemoryAllocation > 0).Should().BeTrue();
         options.EnableKernelCaching.Should().BeTrue();
     }
 
@@ -346,10 +344,10 @@ public class CpuAcceleratorSimpleTests : IDisposable
         var errors = options.Validate();
 
         // Assert
-        errors.Should().NotBeEmpty();
-        errors.Should().Contain(e => e.Contains("MaxWorkGroupSize"));
-        errors.Should().Contain(e => e.Contains("MaxMemoryAllocation"));
-        errors.Should().Contain(e => e.Contains("TargetVectorWidth"));
+        Assert.NotEmpty(errors);
+        errors.Contain(e => e.Contains("MaxWorkGroupSize"));
+        errors.Contain(e => e.Contains("MaxMemoryAllocation"));
+        errors.Contain(e => e.Contains("TargetVectorWidth"));
     }
 
     [Theory]
@@ -367,8 +365,8 @@ public class CpuAcceleratorSimpleTests : IDisposable
         var shouldNotUse = options.ShouldUseInstructionSet("UnknownSet");
 
         // Assert
-        shouldUse.Should().BeTrue();
-        shouldNotUse.Should().BeFalse();
+        Assert.True(shouldUse);
+        Assert.False(shouldNotUse);
     }
 
     [Fact]

@@ -9,10 +9,10 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution;
 using DotCompute.Memory;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -44,8 +44,8 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        readData.Should().HaveCount(dataSize, "Read data should match input size");
-        readData.Should().Equal(testData, "Data should be preserved through lifecycle");
+        Assert.Equal(dataSize, "Read data should match input size", readData.Count());
+        readData.Equal(testData, "Data should be preserved through lifecycle");
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000, "Memory operations should be fast");
 
         TestOutput.WriteLine($"Memory operations completed in {stopwatch.ElapsedMilliseconds}ms for {dataSize} elements");
@@ -70,9 +70,9 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        readData.Should().HaveCount(bufferSize, "Buffer size should be preserved");
+        Assert.Equal(bufferSize, "Buffer size should be preserved", readData.Count());
         var timePerElement = stopwatch.ElapsedTicks / (double)bufferSize;
-        timePerElement.Should().BeLessThan(10000, "Time per element should scale reasonably");
+        Assert.True(timePerElement < 10000, "Time per element should scale reasonably");
 
         TestOutput.WriteLine($"Buffer size {bufferSize}: {stopwatch.ElapsedMilliseconds}ms ({timePerElement:F2} ticks/element)");
     }
@@ -101,7 +101,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
             stopwatch.Stop();
 
             // Assert
-            buffers.Should().HaveCount(bufferCount, "All buffers should be allocated");
+            Assert.Equal(bufferCount, "All buffers should be allocated", buffers.Count());
             stopwatch.ElapsedMilliseconds.Should().BeLessThan(3000, "Multiple allocations should be efficient");
 
             TestOutput.WriteLine($"Managed {bufferCount} buffers of size {bufferSize} in {stopwatch.ElapsedMilliseconds}ms");
@@ -129,8 +129,8 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         // Act & Assert
         using (var unifiedManager = new UnifiedMemoryManager(baseMemoryManager))
         {
-            unifiedManager.Should().NotBeNull("UnifiedMemoryManager should be created successfully");
-            unifiedManager.Should().BeAssignableTo<IUnifiedMemoryManager>("Should implement interface");
+            unifiedManager.NotBeNull("UnifiedMemoryManager should be created successfully");
+            unifiedManager.BeAssignableTo<IUnifiedMemoryManager>("Should implement interface");
         }
 
         TestOutput.WriteLine("UnifiedMemoryManager creation and disposal validated successfully");
@@ -157,8 +157,8 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        readData.Length.Should().Be(testSize, "Buffer should have correct size");
-        readData.Should().Equal(testData, "Data should be preserved");
+        readData.Length.Should().Be(testSize);
+        readData.Equal(testData, "Data should be preserved");
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000, "Operations should be fast");
 
         TestOutput.WriteLine($"UnifiedBuffer operations completed in {stopwatch.ElapsedMilliseconds}ms");
@@ -176,13 +176,13 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         var stats = cache.GetStatistics();
 
         // Assert
-        cache.Should().NotBeNull("Cache should be created");
-        cache.Count.Should().Be(0, "New cache should be empty");
+        cache.NotBeNull("Cache should be created");
+        cache.Count.Should().Be(0);
         cache.IsEmpty.Should().BeTrue("New cache should report empty");
         
-        stats.Should().NotBeNull("Statistics should be available");
-        stats.TotalKernels.Should().Be(0, "No kernels should be cached initially");
-        stats.TotalAccessCount.Should().Be(0, "No accesses initially");
+        stats.NotBeNull("Statistics should be available");
+        stats.TotalKernels.Should().Be(0);
+        stats.TotalAccessCount.Should().Be(0);
 
         TestOutput.WriteLine("CompiledKernelCache initialization validated");
     }
@@ -198,13 +198,13 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         var stats = manager.GetStatistics();
 
         // Assert
-        cache1.Should().NotBeNull("First cache should be created");
-        cache1.Should().BeSameAs(cache2, "Same kernel name should return same cache");
+        cache1.NotBeNull("First cache should be created");
+        cache1.BeSameAs(cache2, "Same kernel name should return same cache");
         cache3.Should().NotBeSameAs(cache1, "Different kernel should get different cache");
         
-        stats.TotalCaches.Should().Be(2, "Should have 2 distinct caches");
-        stats.KernelNames.Should().Contain("test_kernel");
-        stats.KernelNames.Should().Contain("other_kernel");
+        stats.TotalCaches.Should().Be(2);
+        stats.Assert.Contains("test_kernel", KernelNames);
+        stats.Assert.Contains("other_kernel", KernelNames);
 
         TestOutput.WriteLine($"GlobalKernelCacheManager: {stats.TotalCaches} caches managed");
     }
@@ -236,9 +236,9 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        results.Should().OnlyContain(r => r, "All operations should succeed");
+        results.OnlyContain(r => r, "All operations should succeed");
         var operationsPerSecond = operationCount / Math.Max(stopwatch.ElapsedMilliseconds / 1000.0, 0.001);
-        operationsPerSecond.Should().BeGreaterThan(10, "Should maintain minimum throughput");
+        Assert.True(operationsPerSecond > 10, "Should maintain minimum throughput");
 
         TestOutput.WriteLine($"Completed {operationCount} concurrent operations in {stopwatch.ElapsedMilliseconds}ms ({operationsPerSecond:F2} ops/sec, max concurrent: {maxConcurrent})");
     }
@@ -275,7 +275,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
             }
 
             // Assert
-            successCount.Should().BeGreaterThan(0, "Should allocate some buffers");
+            Assert.True(successCount > 0, "Should allocate some buffers");
 
             TestOutput.WriteLine($"Stress test: Successfully allocated {successCount}/{maxAttempts} buffers");
         }
@@ -301,7 +301,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => 
-            CreateInputBuffer<float>(memoryManager, Array.Empty<float>()));
+            CreateInputBuffer<float>(memoryManager, Array.Empty<float>();
 
         TestOutput.WriteLine("Invalid input error handling validated");
     }
@@ -360,9 +360,9 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        processResult.Should().HaveCount(dataSize, "Processed data should maintain size");
-        processResult.Should().OnlyContain(x => x >= 0, "Squared values should be non-negative");
-        average.Should().BeGreaterThan(0, "Average of squared values should be positive");
+        Assert.Equal(dataSize, "Processed data should maintain size", processResult.Count());
+        processResult.OnlyContain(x => x >= 0, "Squared values should be non-negative");
+        Assert.True(average > 0, "Average of squared values should be positive");
 
         TestOutput.WriteLine($"Data processing pipeline completed in {stopwatch.ElapsedMilliseconds}ms: {dataSize} elements, avg={average:F2}");
 
@@ -396,9 +396,9 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        processedElements.Should().Be(totalElements, "All elements should be processed");
+        Assert.Equal(totalElements, "All elements should be processed", processedElements);
         var elementsPerSecond = processedElements / Math.Max(stopwatch.ElapsedMilliseconds / 1000.0, 0.001);
-        elementsPerSecond.Should().BeGreaterThan(1000, "Should maintain reasonable throughput");
+        Assert.True(elementsPerSecond > 1000, "Should maintain reasonable throughput");
 
         TestOutput.WriteLine($"Bulk operations: Processed {processedElements} elements in {stopwatch.ElapsedMilliseconds}ms ({elementsPerSecond:F0} elements/sec)");
     }

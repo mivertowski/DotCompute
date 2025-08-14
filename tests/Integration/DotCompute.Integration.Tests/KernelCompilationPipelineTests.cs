@@ -3,11 +3,11 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -43,7 +43,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             compilationOptions);
 
         // Assert
-        compilationResult.Should().NotBeNull();
+        Assert.NotNull(compilationResult);
         compilationResult.CompilationSuccess.Should().BeTrue();
         compilationResult.ExecutionSuccess.Should().BeTrue();
         compilationResult.CompilationTime.Should().BePositive();
@@ -83,14 +83,14 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        concurrentResults.Should().HaveCount(kernelSources.Length);
-        concurrentResults.All(r => r.CompilationSuccess).Should().BeTrue();
+        Assert.Equal(kernelSources.Length, concurrentResults.Count());
+        concurrentResults.Should().AllSatisfy(r => r.CompilationSuccess);
         
         var totalCompilationTime = concurrentResults.Sum(r => r.CompilationTime.TotalMilliseconds);
         var concurrentTime = stopwatch.Elapsed.TotalMilliseconds;
         
         // Concurrent compilation should show some parallelism benefit
-        concurrentTime.Should().BeLessThan(totalCompilationTime * 0.8);
+        Assert.True(concurrentTime < totalCompilationTime * 0.8);
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             compilationOptions);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.CompilationSuccess.Should().BeTrue();
         result.ExecutionSuccess.Should().BeTrue();
     }
@@ -168,8 +168,8 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<Exception>(async () =>
             await computeEngine.CompileKernelAsync(invalidKernel, "invalid_kernel", compilationOptions));
 
-        exception.Should().NotBeNull();
-        exception.Message.Should().Contain("compilation");
+        Assert.NotNull(exception);
+        exception.Assert.Contains("compilation", Message);
     }
 
     [Fact]
@@ -202,7 +202,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             compilationOptions);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.CompilationSuccess.Should().BeTrue();
         result.ExecutionSuccess.Should().BeTrue();
     }
@@ -236,7 +236,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             backendType);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.CompilationSuccess.Should().BeTrue();
         result.ExecutionSuccess.Should().BeTrue();
         result.TargetBackend.Should().Be(backendType);
@@ -262,7 +262,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             compilationOptions);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.CompilationSuccess.Should().BeTrue();
         result.CompilationTime.Should().BeLessThan(TimeSpan.FromMinutes(1));
     }
@@ -342,7 +342,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             compilationOptions);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.CompilationSuccess.Should().BeTrue();
         result.ExecutionSuccess.Should().BeTrue();
     }
@@ -377,7 +377,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             globalSize);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.CompilationSuccess.Should().BeTrue();
         result.ExecutionSuccess.Should().BeTrue();
         result.ExecutionTime.Should().BePositive();

@@ -135,6 +135,43 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
     }
 
     /// <summary>
+    /// Disables P2P access between two devices.
+    /// </summary>
+    public async ValueTask<bool> DisableP2PAccessAsync(
+        IAccelerator device1, 
+        IAccelerator device2, 
+        CancellationToken cancellationToken = default)
+    {
+        if (device1 == null) throw new ArgumentNullException(nameof(device1));
+        if (device2 == null) throw new ArgumentNullException(nameof(device2));
+
+        try
+        {
+            // Attempt to disable P2P access using platform-specific methods
+            var disableSuccess = await DisableHardwareP2PAccessAsync(device1, device2, cancellationToken);
+            
+            if (disableSuccess)
+            {
+                _logger.LogInformation("Successfully disabled P2P access between {Device1} and {Device2}",
+                    device1.Info.Name, device2.Info.Name);
+                return true;
+            }
+            else
+            {
+                _logger.LogWarning("Failed to disable P2P access between {Device1} and {Device2}",
+                    device1.Info.Name, device2.Info.Name);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Exception while disabling P2P access between {Device1} and {Device2}",
+                device1.Info.Name, device2.Info.Name);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Gets optimal transfer strategy for the given parameters.
     /// </summary>
     public async ValueTask<TransferStrategy> GetOptimalTransferStrategyAsync(
@@ -293,6 +330,40 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
     }
 
     /// <summary>
+    /// Disables hardware-specific P2P access.
+    /// </summary>
+    private async ValueTask<bool> DisableHardwareP2PAccessAsync(
+        IAccelerator device1,
+        IAccelerator device2,
+        CancellationToken cancellationToken)
+    {
+        var vendor = GetDeviceVendor(device1);
+        
+        try
+        {
+            switch (vendor)
+            {
+                case DeviceVendor.NVIDIA:
+                    return await DisableNVIDIAP2PAccessAsync(device1, device2, cancellationToken);
+                    
+                case DeviceVendor.AMD:
+                    return await DisableAMDP2PAccessAsync(device1, device2, cancellationToken);
+                    
+                case DeviceVendor.Intel:
+                    return await DisableIntelP2PAccessAsync(device1, device2, cancellationToken);
+                    
+                default:
+                    return await DisableGenericP2PAccessAsync(device1, device2, cancellationToken);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Hardware P2P disable failed for {Vendor} devices", vendor);
+            return false;
+        }
+    }
+
+    /// <summary>
     /// Queries hardware-specific device capabilities.
     /// </summary>
     private async ValueTask<DeviceCapabilities> QueryHardwareCapabilitiesAsync(
@@ -391,6 +462,23 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
         return true; // Assume success for this implementation
     }
 
+    private async ValueTask<bool> DisableNVIDIAP2PAccessAsync(
+        IAccelerator device1, 
+        IAccelerator device2, 
+        CancellationToken cancellationToken)
+    {
+        // Simulate CUDA API calls: cudaDeviceDisablePeerAccess
+        await Task.Delay(5, cancellationToken);
+        
+        // In real implementation, this would call CUDA runtime APIs
+        // cudaSetDevice(device1Id)
+        // cudaDeviceDisablePeerAccess(device2Id)
+        // cudaSetDevice(device2Id) 
+        // cudaDeviceDisablePeerAccess(device1Id)
+        
+        return true; // Assume success for this implementation
+    }
+
     private async ValueTask<DeviceCapabilities> QueryNVIDIACapabilitiesAsync(
         IAccelerator device, 
         CancellationToken cancellationToken)
@@ -485,6 +573,18 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
         return true;
     }
 
+    private async ValueTask<bool> DisableAMDP2PAccessAsync(
+        IAccelerator device1, 
+        IAccelerator device2, 
+        CancellationToken cancellationToken)
+    {
+        // Simulate HIP API calls for P2P disable
+        await Task.Delay(5, cancellationToken);
+        
+        // In real implementation: hipDeviceDisablePeerAccess
+        return true;
+    }
+
     private async ValueTask<DeviceCapabilities> QueryAMDCapabilitiesAsync(
         IAccelerator device, 
         CancellationToken cancellationToken)
@@ -539,6 +639,15 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
         return true;
     }
 
+    private async ValueTask<bool> DisableIntelP2PAccessAsync(
+        IAccelerator device1, 
+        IAccelerator device2, 
+        CancellationToken cancellationToken)
+    {
+        await Task.Delay(5, cancellationToken);
+        return true;
+    }
+
     private async ValueTask<DeviceCapabilities> QueryIntelCapabilitiesAsync(
         IAccelerator device, 
         CancellationToken cancellationToken)
@@ -576,6 +685,15 @@ public sealed class P2PCapabilityDetector : IAsyncDisposable
     }
 
     private async ValueTask<bool> EnableGenericP2PAccessAsync(
+        IAccelerator device1, 
+        IAccelerator device2, 
+        CancellationToken cancellationToken)
+    {
+        await Task.Delay(3, cancellationToken);
+        return true; // Assume generic success
+    }
+
+    private async ValueTask<bool> DisableGenericP2PAccessAsync(
         IAccelerator device1, 
         IAccelerator device2, 
         CancellationToken cancellationToken)

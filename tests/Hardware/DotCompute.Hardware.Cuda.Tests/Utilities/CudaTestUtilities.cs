@@ -6,8 +6,10 @@ using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
+using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.Utilities;
 
@@ -139,7 +141,7 @@ public static class CudaTestUtilities
     /// <summary>
     /// Create a test accelerator with proper logging
     /// </summary>
-    public static CudaAccelerator CreateTestAccelerator(int deviceId = 0, ILogger? logger = null)
+    public static CudaAccelerator CreateTestAccelerator(int deviceId = 0, ILogger<CudaAccelerator>? logger = null)
     {
         if (!IsValidDeviceId(deviceId))
         {
@@ -377,6 +379,7 @@ __global__ void math_kernel(float* input, float* output, int n)
             Code = Encoding.UTF8.GetBytes(@"
 #include <mma.h>
 using namespace nvcuda;
+using FluentAssertions;
 
 __global__ void tensor_core_gemm(half* a, half* b, float* c, int n)
 {

@@ -16,8 +16,9 @@ namespace DotCompute.Backends.CUDA;
 
 /// <summary>
 /// Plugin implementation for the CUDA backend.
+/// Consolidates duplicate registration patterns using BaseBackendPlugin.
 /// </summary>
-public sealed class CudaBackendPlugin : BackendPluginBase
+public sealed class CudaBackendPlugin : BaseBackendPlugin<CudaAccelerator, CudaBackendOptions>
 {
     /// <inheritdoc/>
     public override string Id => "dotcompute.backends.cuda";
@@ -38,52 +39,36 @@ public sealed class CudaBackendPlugin : BackendPluginBase
     public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable | PluginCapabilities.HotReloadable;
 
     /// <inheritdoc/>
-    public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-    {
-        base.ConfigureServices(services, configuration);
+    protected override string AcceleratorName => "cuda";
 
+    /// <inheritdoc/>
+    protected override string ConfigurationSectionName => "CudaBackend";
+
+    /// <inheritdoc/>
+    protected override void RegisterAccelerator(IServiceCollection services, IConfiguration configuration)
+    {
         // Register the CUDA backend factory
         services.TryAddSingleton<CudaBackendFactory>();
 
         // Register multiple CUDA accelerators (one per device)
-        services.AddSingleton(provider =>
+        services.AddSingleton<IEnumerable<IAccelerator>>(provider =>
         {
             var factory = provider.GetRequiredService<CudaBackendFactory>();
             return factory.CreateAccelerators();
         });
 
-        // Register a default CUDA accelerator
-        services.AddSingleton(provider =>
+        // Register a default CUDA accelerator as the primary CudaAccelerator
+        services.AddSingleton<CudaAccelerator>(provider =>
         {
             var factory = provider.GetRequiredService<CudaBackendFactory>();
             var defaultAccelerator = factory.CreateDefaultAccelerator();
 
             return defaultAccelerator == null
                 ? throw new InvalidOperationException("Failed to create default CUDA accelerator")
-                : (IAccelerator)new NamedAcceleratorWrapper("cuda", defaultAccelerator);
+                : (CudaAccelerator)defaultAccelerator;
         });
     }
 
-    /// <inheritdoc/>
-    protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
-    {
-        Logger?.LogInformation("Initializing CUDA backend plugin");
-        await base.OnInitializeAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc/>
-    protected override async Task OnStartAsync(CancellationToken cancellationToken)
-    {
-        Logger?.LogInformation("Starting CUDA backend plugin");
-        await base.OnStartAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc/>
-    protected override async Task OnStopAsync(CancellationToken cancellationToken)
-    {
-        Logger?.LogInformation("Stopping CUDA backend plugin");
-        await base.OnStopAsync(cancellationToken).ConfigureAwait(false);
-    }
 
     /// <inheritdoc/>
     protected override void OnValidate(PluginValidationResult result)
@@ -337,7 +322,7 @@ public static class CudaBackendPluginExtensions
 
             return defaultAccelerator == null
                 ? throw new InvalidOperationException("Failed to create default CUDA accelerator")
-                : (IAccelerator)new NamedAcceleratorWrapper("cuda", defaultAccelerator);
+                : (IAccelerator)new Plugins.Core.NamedAcceleratorWrapper("cuda", defaultAccelerator);
         });
 
         return services;
@@ -354,37 +339,10 @@ public static class CudaBackendPluginExtensions
         {
             var logger = provider.GetService<ILogger<CudaAccelerator>>();
             var accelerator = new CudaAccelerator(deviceId, logger);
-            return new NamedAcceleratorWrapper($"cuda-{deviceId}", accelerator);
+            return new Plugins.Core.NamedAcceleratorWrapper($"cuda-{deviceId}", accelerator);
         });
 
         return services;
     }
 }
 
-/// <summary>
-/// Wrapper to provide named accelerator support.
-/// </summary>
-internal sealed class NamedAcceleratorWrapper(string name, IAccelerator accelerator) : IAccelerator
-{
-    private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
-    private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-
-    public string Name => _name;
-    
-    public AcceleratorType Type => _accelerator.Type;
-
-    public AcceleratorInfo Info => _accelerator.Info;
-
-    public IMemoryManager Memory => _accelerator.Memory;
-
-    public AcceleratorContext Context => _accelerator.Context;
-
-    public ValueTask<ICompiledKernel> CompileKernelAsync(
-        KernelDefinition definition,
-        CompilationOptions? options = default,
-        CancellationToken cancellationToken = default) => _accelerator.CompileKernelAsync(definition, options, cancellationToken);
-
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => _accelerator.SynchronizeAsync(cancellationToken);
-
-    public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
-}

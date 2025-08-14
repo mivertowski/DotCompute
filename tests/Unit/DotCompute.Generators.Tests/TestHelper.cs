@@ -5,6 +5,7 @@ using System.Collections.Immutable;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -206,7 +207,7 @@ public static class TestHelper
     {
         if (result.Diagnostics.Any())
         {
-            var diagnosticMessages = string.Join("\n", result.Diagnostics.Select(d => d.ToString()));
+            var diagnosticMessages = string.Join("\n", result.Diagnostics.Select(d => d.ToString();
             throw new InvalidOperationException($"Expected no diagnostics, but got:\n{diagnosticMessages}");
         }
     }
@@ -235,6 +236,7 @@ public static class TestHelper
     {
         return $@"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class {className}
 {{
@@ -254,6 +256,7 @@ public class {className}
     {
         return $@"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public class {className}
 {{
@@ -272,6 +275,7 @@ public class {className}
     {
         return $@"
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 public unsafe class {className}
 {{

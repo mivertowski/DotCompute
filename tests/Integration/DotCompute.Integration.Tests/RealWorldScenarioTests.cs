@@ -6,11 +6,11 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using DotCompute.Core.Aot;
 using DotCompute.Memory;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -53,10 +53,10 @@ public class RealWorldScenarioTests : IntegrationTestBase
             epochs);
 
         // Assert
-        trainingResult.Should().NotBeNull();
+        Assert.NotNull(trainingResult);
         trainingResult.Success.Should().BeTrue();
         trainingResult.EpochsCompleted.Should().Be(epochs);
-        trainingResult.FinalLoss.Should().BeLessThan(trainingResult.InitialLoss);
+        trainingResult.FinalLoss < trainingResult.InitialLoss.Should().BeTrue();
         trainingResult.TrainingTime.Should().BeLessThan(TimeSpan.FromMinutes(5));
         
         LoggerMessages.NeuralNetworkTrainingCompleted(Logger, trainingResult.TrainingTime.TotalSeconds);
@@ -84,15 +84,15 @@ public class RealWorldScenarioTests : IntegrationTestBase
             channels);
 
         // Assert
-        processingResult.Should().NotBeNull();
+        Assert.NotNull(processingResult);
         processingResult.Success.Should().BeTrue();
-        processingResult.ProcessingSteps.Should().BeGreaterThan(0);
+((processingResult.ProcessingSteps > 0).Should().BeTrue();
         processingResult.ProcessingTime.Should().BeLessThan(TimeSpan.FromSeconds(10));
         
         var megapixelsPerSecond = (imageWidth * imageHeight) / processingResult.ProcessingTime.TotalSeconds / 1_000_000.0;
         LoggerMessages.ImageProcessing(Logger, megapixelsPerSecond);
         
-        megapixelsPerSecond.Should().BeGreaterThan(1); // Should process at least 1 MP/s on CPU
+        Assert.True(megapixelsPerSecond > 1); // Should process at least 1 MP/s on CPU
     }
 
     [Fact]
@@ -122,7 +122,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             dt);
 
         // Assert
-        simulationResult.Should().NotBeNull();
+        Assert.NotNull(simulationResult);
         simulationResult.Success.Should().BeTrue();
         simulationResult.TimeStepsCompleted.Should().Be(timeSteps);
         simulationResult.SimulationTime.Should().BeLessThan(TimeSpan.FromMinutes(2));
@@ -130,7 +130,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         var cellUpdatesPerSecond = (long)gridWidth * gridHeight * timeSteps / simulationResult.SimulationTime.TotalSeconds;
         LoggerMessages.CFDSimulation(Logger, cellUpdatesPerSecond);
         
-        cellUpdatesPerSecond.Should().BeGreaterThan(1_000_000); // At least 1M cell updates/sec
+        Assert.True(cellUpdatesPerSecond > 1_000_000); // At least 1M cell updates/sec
     }
 
     [Fact]
@@ -160,16 +160,16 @@ public class RealWorldScenarioTests : IntegrationTestBase
             strikePrice);
 
         // Assert
-        simulationResult.Should().NotBeNull();
+        Assert.NotNull(simulationResult);
         simulationResult.Success.Should().BeTrue();
         simulationResult.SimulationsCompleted.Should().Be(numSimulations);
-        simulationResult.OptionPrice.Should().BeGreaterThan(0);
-        simulationResult.OptionPrice.Should().BeLessThan(spotPrice);
+((simulationResult.OptionPrice > 0).Should().BeTrue();
+        simulationResult.OptionPrice < spotPrice.Should().BeTrue();
         
         var simulationsPerSecond = numSimulations / simulationResult.ExecutionTime.TotalSeconds;
         LoggerMessages.MonteCarlo(Logger, simulationsPerSecond, simulationResult.OptionPrice);
         
-        simulationsPerSecond.Should().BeGreaterThan(1_000); // At least 1K simulations/sec on CPU
+        Assert.True(simulationsPerSecond > 1_000); // At least 1K simulations/sec on CPU
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             dataSize);
 
         // Assert
-        hashResult.Should().NotBeNull();
+        Assert.NotNull(hashResult);
         hashResult.Success.Should().BeTrue();
         hashResult.HashesComputed.Should().Be(numHashes);
         hashResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromMinutes(1));
@@ -198,7 +198,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         var hashesPerSecond = numHashes / hashResult.ExecutionTime.TotalSeconds;
         LoggerMessages.HashComputation(Logger, hashesPerSecond);
         
-        hashesPerSecond.Should().BeGreaterThan(10_000); // At least 10K hashes/sec
+        Assert.True(hashesPerSecond > 10_000); // At least 10K hashes/sec
     }
 
     [Fact]
@@ -226,7 +226,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             deltaTime);
 
         // Assert
-        physicsResult.Should().NotBeNull();
+        Assert.NotNull(physicsResult);
         physicsResult.Success.Should().BeTrue();
         physicsResult.SimulationSteps.Should().Be(simulationSteps);
         physicsResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(10)); // Reasonable CPU performance
@@ -235,7 +235,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         LoggerMessages.PhysicsSimulation(Logger, particleUpdatesPerSecond);
         
         // Should complete physics simulation within reasonable time
-        particleUpdatesPerSecond.Should().BeGreaterThan(100_000); // At least 100K particle updates/sec
+        Assert.True(particleUpdatesPerSecond > 100_000); // At least 100K particle updates/sec
     }
 
     [Fact]
@@ -262,7 +262,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             bufferSize);
 
         // Assert
-        audioResult.Should().NotBeNull();
+        Assert.NotNull(audioResult);
         audioResult.Success.Should().BeTrue();
         audioResult.BuffersProcessed.Should().BeGreaterThan(0).And.BeLessThanOrEqualTo(numBuffers);
         
@@ -274,7 +274,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         LoggerMessages.AudioProcessing(Logger, realTimeRatio);
         
         // Should process reasonably close to real-time (CPU backend may be slower)
-        realTimeRatio.Should().BeLessThan(100.0); // Processing shouldn't be 100x slower than real-time
+        Assert.True(realTimeRatio < 100.0); // Processing shouldn't be 100x slower than real-time
     }
 
     [Fact]
@@ -295,7 +295,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             fieldsPerRecord);
 
         // Assert
-        analyticsResult.Should().NotBeNull();
+        Assert.NotNull(analyticsResult);
         analyticsResult.Success.Should().BeTrue();
         analyticsResult.RecordsProcessed.Should().Be(recordCount);
         analyticsResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
@@ -303,7 +303,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         var recordsPerSecond = recordCount / analyticsResult.ExecutionTime.TotalSeconds;
         LoggerMessages.DataAnalytics(Logger, recordsPerSecond);
         
-        recordsPerSecond.Should().BeGreaterThan(100_000); // At least 100K records/sec
+        Assert.True(recordsPerSecond > 100_000); // At least 100K records/sec
     }
 
     // Implementation methods for real-world scenarios
@@ -609,7 +609,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 // Approximate normal CDF using error function approximation
                 double approxNormalCDF(double x)
                 {
-                    return 0.5 * (1.0 + Math.Sign(x) * Math.Sqrt(1.0 - Math.Exp(-2.0 * x * x / Math.PI)));
+                    return 0.5 * (1.0 + Math.Sign(x) * Math.Sqrt(1.0 - Math.Exp(-2.0 * x * x / Math.PI);
                 }
                 
                 var callPrice = spotPrice * approxNormalCDF(d1) - strikePrice * Math.Exp(-riskFreeRate) * approxNormalCDF(d2);

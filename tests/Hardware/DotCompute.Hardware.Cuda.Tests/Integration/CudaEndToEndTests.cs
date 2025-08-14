@@ -6,10 +6,10 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Tests.Shared;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.Integration;
 
@@ -82,9 +82,9 @@ public class CudaEndToEndTests : IDisposable
         }
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be("vector_add");
-        hostC.Should().BeEquivalentTo(expectedResults, "Vector addition should produce correct results");
+        hostC.BeEquivalentTo(expectedResults, "Vector addition should produce correct results");
     }
 
     [Fact]
@@ -131,7 +131,7 @@ public class CudaEndToEndTests : IDisposable
         }
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be("matrix_multiply");
         matrixC.Should().AllSatisfy(x => x.Should().Be(0.0f), "Output buffer should be zeroed");
     }
@@ -193,10 +193,10 @@ public class CudaEndToEndTests : IDisposable
         await accelerator.SynchronizeAsync();
 
         // Assert
-        multiplyKernel.Should().NotBeNull();
-        addKernel.Should().NotBeNull();
+        Assert.NotNull(multiplyKernel);
+        Assert.NotNull(addKernel);
         var expectedResults = inputData.Select(x => x * 2.0f + 1.0f).ToArray();
-        outputData.Should().BeEquivalentTo(expectedResults, "Sequential kernel execution should produce correct results");
+        outputData.BeEquivalentTo(expectedResults, "Sequential kernel execution should produce correct results");
     }
 
     [Fact]
@@ -249,11 +249,11 @@ public class CudaEndToEndTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        compiledKernel.Should().NotBeNull();
-        outputData.Should().HaveCount(arraySize);
-        outputData.Should().NotContainNulls();
+        Assert.NotNull(compiledKernel);
+        Assert.Equal(arraySize, outputData.Count());
+        outputData.NotContainNulls();
         
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(30000, 
+        stopwatch.Assert.True(ElapsedMilliseconds < 30000, 
             "Large dataset processing should complete within 30 seconds");
             
         _output.WriteLine($"Processed {arraySize} elements in {stopwatch.ElapsedMilliseconds}ms");
@@ -273,12 +273,12 @@ public class CudaEndToEndTests : IDisposable
         // Try to compile an invalid kernel
         var invalidKernel = CreateInvalidKernel();
         var compileInvalidAction = async () => await accelerator.CompileKernelAsync(invalidKernel);
-        await compileInvalidAction.Should().ThrowAsync<InvalidOperationException>();
+        await await Assert.ThrowsAsync<InvalidOperationException>(async () => await compileInvalidAction());
 
         // Device should still be functional after compilation error
         var validKernel = CreateVectorAddKernel();
         var compileValidAction = async () => await accelerator.CompileKernelAsync(validKernel);
-        var compiledKernel = await compileValidAction.Should().NotThrowAsync();
+        var compiledKernel = await await compileValidAction(); // Should not throw
         
         if (compiledKernel.Result != null)
         {
@@ -312,7 +312,7 @@ public class CudaEndToEndTests : IDisposable
         await accelerator.SynchronizeAsync();
 
         // Assert
-        buffer2.Should().NotBeNull();
+        Assert.NotNull(buffer2);
         buffer2.SizeInBytes.Should().Be(2048);
     }
 
@@ -380,7 +380,7 @@ public class CudaEndToEndTests : IDisposable
 
         // Assert
         var completionAction = async () => await Task.WhenAll(tasks);
-        await completionAction.Should().NotThrowAsync("All stress test operations should complete successfully");
+        await completionAction.NotThrowAsync("All stress test operations should complete successfully");
         
         await accelerator.SynchronizeAsync();
     }
@@ -418,11 +418,11 @@ public class CudaEndToEndTests : IDisposable
         var afterFreeStats = memoryManager.GetStatistics();
 
         // Assert
-        afterAllocStats.AllocationCount.Should().BeGreaterThan(initialStats.AllocationCount);
-        afterAllocStats.AllocatedMemory.Should().BeGreaterThan(initialStats.AllocatedMemory);
+        afterAllocStats.AllocationCount > initialStats.AllocationCount.Should().BeTrue();
+        afterAllocStats.AllocatedMemory > initialStats.AllocatedMemory.Should().BeTrue();
         
         // Memory should be freed (though exact values may vary due to fragmentation)
-        afterFreeStats.AllocationCount.Should().BeLessOrEqualTo(afterAllocStats.AllocationCount);
+        (afterFreeStats.AllocationCount <= afterAllocStats.AllocationCount).Should().BeTrue();
     }
 
     // Helper Methods
@@ -582,7 +582,7 @@ __global__ void {name}(float* input, float* output, int n)
         {
             try
             {
-                kernel?.Dispose();
+                (kernel as IDisposable)?.Dispose();
             }
             catch (Exception ex)
             {

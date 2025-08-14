@@ -1,6 +1,6 @@
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -16,9 +16,9 @@ public class BasicApiTests
         var values = Enum.GetValues<AcceleratorType>();
 
         // Assert
-        values.Should().Contain(AcceleratorType.CPU);
-        values.Should().Contain(AcceleratorType.CUDA);
-        values.Should().Contain(AcceleratorType.Metal);
+        Assert.Contains(AcceleratorType.CPU, values);
+        Assert.Contains(AcceleratorType.CUDA, values);
+        Assert.Contains(AcceleratorType.Metal, values);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class BasicApiTests
         var retrieved = args.Get(0);
 
         // Assert
-        retrieved.Should().Be(testValue);
+        Assert.Equal(testValue, retrieved);
     }
 
     [Fact]
@@ -53,12 +53,12 @@ public class BasicApiTests
         var values = Enum.GetValues<MemoryOptions>();
 
         // Assert
-        values.Should().Contain(MemoryOptions.None);
-        values.Should().Contain(MemoryOptions.ReadOnly);
-        values.Should().Contain(MemoryOptions.WriteOnly);
-        values.Should().Contain(MemoryOptions.HostVisible);
-        values.Should().Contain(MemoryOptions.Cached);
-        values.Should().Contain(MemoryOptions.Atomic);
+        Assert.Contains(MemoryOptions.None, values);
+        Assert.Contains(MemoryOptions.ReadOnly, values);
+        Assert.Contains(MemoryOptions.WriteOnly, values);
+        Assert.Contains(MemoryOptions.HostVisible, values);
+        Assert.Contains(MemoryOptions.Cached, values);
+        Assert.Contains(MemoryOptions.Atomic, values);
     }
 
     [Fact]
@@ -111,9 +111,9 @@ public class BasicApiTests
         var values = Enum.GetValues<OptimizationLevel>();
 
         // Assert
-        values.Should().Contain(OptimizationLevel.None);
-        values.Should().Contain(OptimizationLevel.Default);
-        values.Length.Should().BeGreaterThan(1);
+        Assert.Contains(OptimizationLevel.None, values);
+        Assert.Contains(OptimizationLevel.Default, values);
+        values.Length > 1.Should().BeTrue();
     }
 
     [Fact]

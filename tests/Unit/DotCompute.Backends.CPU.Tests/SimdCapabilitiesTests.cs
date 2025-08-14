@@ -3,10 +3,12 @@
 
 
 using System.Numerics;
+using FluentAssertions;
 
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 #pragma warning disable CA1515 // Make types internal
 namespace DotCompute.Backends.CPU;

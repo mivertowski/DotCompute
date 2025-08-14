@@ -5,13 +5,13 @@ using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Configuration;
 using DotCompute.Plugins.Exceptions;
-using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Reflection;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -84,13 +84,13 @@ public class PluginIntegrationTests : IDisposable
         mockResult.Health.Should().Be(PluginHealth.Healthy);
 
         var cpuMetrics = cpuResult.GetMetrics();
-        cpuMetrics.Should().NotBeNull();
-        cpuMetrics.RequestCount.Should().BeGreaterThanOrEqualTo(0);
+        Assert.NotNull(cpuMetrics);
+        cpuMetrics.RequestCount.BeGreaterThanOrEqualTo(0);
 
         // Test unloading
         var unloadResult = await pluginSystem.UnloadPluginAsync(cpuResult.Id);
-        unloadResult.Should().BeTrue();
-        pluginSystem.GetPlugin(cpuResult.Id).Should().BeNull();
+        Assert.True(unloadResult);
+        pluginSystem.GetPlugin(cpuResult.Id).BeNull();
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public class PluginIntegrationTests : IDisposable
 
         // Assert
         plugin.TestService.Should().NotBeNull();
-        plugin.TestService.Should().BeOfType(typeof(TestService));
+        plugin.TestService.BeOfType(typeof(TestService));
     }
 
     [Fact]
@@ -162,8 +162,7 @@ public class PluginIntegrationTests : IDisposable
         await goodPlugin.StartAsync();
 
         // Try to load bad plugin
-        await FluentActions.Invoking(() => pluginSystem.LoadPluginAsync(badPlugin))
-            .Should().ThrowAsync<PluginLoadException>();
+        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask());
 
         // Assert - Good plugin should still be working
         pluginSystem.GetLoadedPlugins().Should().HaveCount(1);
@@ -229,8 +228,7 @@ public class PluginIntegrationTests : IDisposable
         var invalidPlugin = new InvalidPlugin();
 
         // Act & Assert
-        await FluentActions.Invoking(() => pluginSystem.LoadPluginAsync(invalidPlugin))
-            .Should().ThrowAsync<PluginLoadException>()
+        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask())
             .WithMessage("*Plugin validation failed*");
     }
 
@@ -241,8 +239,8 @@ public class PluginIntegrationTests : IDisposable
         using var system = AotPluginHelpers.CreatePluginSystem(_logger);
 
         // Assert
-        system.Should().NotBeNull();
-        system.Should().BeAssignableTo<IDisposable>();
+        Assert.NotNull(system);
+        Assert.IsAssignableFrom<IDisposable>(system);
     }
 
     [Fact]
@@ -293,9 +291,9 @@ public class PluginIntegrationTests : IDisposable
         await plugin.StopAsync();
 
         // Assert
-        stateEvents.Should().HaveCountGreaterThan(0);
-        healthEvents.Should().HaveCountGreaterThan(0);
-        errorEvents.Should().HaveCount(1);
+        stateEvents.HaveCountGreaterThan(0);
+        healthEvents.HaveCountGreaterThan(0);
+        Assert.Equal(1, errorEvents.Count());
     }
 
     [Fact]
@@ -323,8 +321,8 @@ public class PluginIntegrationTests : IDisposable
         var metrics2 = plugin2.GetMetrics();
 
         // Assert
-        metrics1.RequestCount.Should().BeGreaterThan(0);
-        metrics2.RequestCount.Should().BeGreaterThan(0);
+((metrics1.RequestCount > 0).Should().BeTrue();
+((metrics2.RequestCount > 0).Should().BeTrue();
         metrics1.CustomMetrics.Should().ContainKey("WorkCount");
         metrics2.CustomMetrics.Should().ContainKey("WorkCount");
     }

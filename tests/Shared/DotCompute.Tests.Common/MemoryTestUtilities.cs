@@ -6,6 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using DotCompute.Abstractions;
 using AbstractionsMemory = DotCompute.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared;
 

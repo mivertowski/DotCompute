@@ -15,6 +15,7 @@ using Xunit;
 using Xunit.Abstractions;
 using MemoryOptions = DotCompute.Abstractions.MemoryOptions;
 using DotCompute.Core.Pipelines;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -34,7 +35,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         Logger = new TestOutputLogger(output);
     }
 
-    public async Task InitializeAsync()
+    public virtual async Task InitializeAsync()
     {
         _host = CreateHost();
         await _host.StartAsync();
@@ -51,7 +52,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         await pluginSystem.InitializeAsync();
     }
 
-    public async Task DisposeAsync()
+    public virtual async Task DisposeAsync()
     {
         if (_host != null)
         {
@@ -714,6 +715,50 @@ internal class SimpleMemoryManager : IMemoryManager
         }
         throw new NotSupportedException("View creation only supported for SimpleMemoryBuffer");
     }
+
+    // Implement missing IMemoryManager interface members
+    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        var sizeInBytes = count * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        return AllocateAsync(sizeInBytes);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        if (buffer is SimpleMemoryBuffer simpleBuffer)
+        {
+            var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(data);
+            sourceBytes.CopyTo(simpleBuffer._data.AsSpan());
+        }
+        else
+        {
+            throw new NotSupportedException("CopyToDevice only supported for SimpleMemoryBuffer");
+        }
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        if (buffer is SimpleMemoryBuffer simpleBuffer)
+        {
+            var bufferBytes = simpleBuffer._data.AsSpan();
+            var destBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(data);
+            var bytesToCopy = Math.Min(bufferBytes.Length, destBytes.Length);
+            bufferBytes.Slice(0, bytesToCopy).CopyTo(destBytes);
+        }
+        else
+        {
+            throw new NotSupportedException("CopyFromDevice only supported for SimpleMemoryBuffer");
+        }
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        if (buffer is SimpleMemoryBuffer simpleBuffer)
+        {
+            Interlocked.Add(ref _totalAllocated, -simpleBuffer.SizeInBytes);
+            simpleBuffer.Dispose();
+        }
+    }
 }
 
 /// <summary>
@@ -792,3 +837,4 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
         }
     }
 }
+

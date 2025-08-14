@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Backends.CPU.Performance;
+using FluentAssertions;
 
 namespace DotCompute.Backends.CPU;
 
@@ -30,9 +31,9 @@ public class KernelPerformanceMetricsTests
 
         // Assert
         metrics.KernelName.Should().Be("TestKernel");
-        metrics.ThroughputOpsPerSec.Should().BeApproximately(100.0, 0.1); // 1000ms / 10ms = 100 ops/sec
+        metrics.ThroughputOpsPerSec, 0.1.Should().Be(100.0); // 1000ms / 10ms = 100 ops/sec
         metrics.VectorizationEnabled.Should().BeTrue();
-        metrics.InstructionSets.Should().Contain("AVX2");
+        metrics.Assert.Contains("AVX2", InstructionSets);
     }
 
     [Fact]
@@ -68,7 +69,7 @@ public class CpuKernelProfilerTests : IDisposable
     public void Constructor_ShouldInitializeSuccessfully()
     {
         // Assert
-        _profiler.Should().NotBeNull();
+        Assert.NotNull(_profiler);
     }
 
     [Fact]
@@ -78,11 +79,11 @@ public class CpuKernelProfilerTests : IDisposable
         using var session = _profiler.StartProfiling("TestKernel", true, 256);
 
         // Assert
-        session.Should().NotBeNull();
+        Assert.NotNull(session);
         session.KernelName.Should().Be("TestKernel");
         session.UseVectorization.Should().BeTrue();
         session.VectorWidth.Should().Be(256);
-        session.SessionId.Should().NotBe(Guid.Empty);
+        session.SessionId.Should().Not.Be(Guid.Empty);
     }
 
     [Fact]
@@ -92,7 +93,7 @@ public class CpuKernelProfilerTests : IDisposable
         var metrics = _profiler.GetMetrics("NonExistentKernel");
 
         // Assert
-        metrics.Should().NotBeNull();
+        Assert.NotNull(metrics);
         metrics.KernelName.Should().Be("NonExistentKernel");
         metrics.ExecutionCount.Should().Be(0);
         metrics.TotalExecutionTimeMs.Should().Be(0);
@@ -118,7 +119,7 @@ public class CpuKernelProfilerTests : IDisposable
         // Assert
         var metrics = _profiler.GetMetrics(kernelName);
         metrics.ExecutionCount.Should().Be(1);
-        metrics.TotalExecutionTimeMs.Should().BeGreaterThan(0);
+((metrics.TotalExecutionTimeMs > 0).Should().BeTrue();
         metrics.VectorizationEnabled.Should().BeTrue();
         metrics.VectorWidth.Should().Be(256);
     }
@@ -168,7 +169,7 @@ public class CpuKernelProfilerTests : IDisposable
 
         // Act & Assert
         _profiler.Invoking(p => p.StartProfiling("Test", false, 128))
-            .Should().Throw<ObjectDisposedException>();
+            .Throw<ObjectDisposedException>();
     }
 
     public void Dispose()
@@ -189,11 +190,11 @@ public class ProfilingSessionTests
         using var session = profiler.StartProfiling("TestKernel", true, 512);
 
         // Assert
-        session.SessionId.Should().NotBe(Guid.Empty);
+        session.SessionId.Should().Not.Be(Guid.Empty);
         session.KernelName.Should().Be("TestKernel");
         session.UseVectorization.Should().BeTrue();
         session.VectorWidth.Should().Be(512);
-        session.StartTime.Should().BeGreaterThan(0);
+((session.StartTime > 0).Should().BeTrue();
         session.StartCounters.Should().NotBeNull();
     }
 
@@ -215,8 +216,8 @@ public class ProfilingSessionTests
 
         // Assert
         var metrics = profiler.GetMetrics("TimingTest");
-        metrics.TotalExecutionTimeMs.Should().BeGreaterOrEqualTo(delayMs * 0.8); // Allow some tolerance
-        metrics.TotalExecutionTimeMs.Should().BeLessOrEqualTo(delayMs * 2.0); // Upper bound for CI environments
+        metrics.TotalExecutionTimeMs >= delayMs * 0.8.Should().BeTrue(); // Allow some tolerance
+        metrics.TotalExecutionTimeMs <= delayMs * 2.0.Should().BeTrue(); // Upper bound for CI environments
     }
 }
 
@@ -245,10 +246,10 @@ public class PerformanceAnalyzerTests
         var analysis = PerformanceAnalyzer.AnalyzeKernel(metrics);
 
         // Assert
-        analysis.PerformanceScore.Should().BeGreaterThan(80.0);
-        analysis.Issues.Should().BeEmpty();
-        analysis.Recommendations.Should().BeEmpty();
-        analysis.Analysis.Should().Contain("TestKernel");
+        analysis.PerformanceScore > 80.0.Should().BeTrue();
+        analysis.Assert.Empty(Issues);
+        analysis.Assert.Empty(Recommendations);
+        analysis.Assert.Contains("TestKernel", Analysis);
     }
 
     [Fact]
@@ -274,12 +275,12 @@ public class PerformanceAnalyzerTests
         var analysis = PerformanceAnalyzer.AnalyzeKernel(metrics);
 
         // Assert
-        analysis.PerformanceScore.Should().BeLessThan(60.0);
+        analysis.PerformanceScore < 60.0.Should().BeTrue();
         analysis.Issues.Should().NotBeEmpty();
-        analysis.Issues.Should().Contain(issue => issue.Contains("variance"));
-        analysis.Issues.Should().Contain(issue => issue.Contains("cache"));
-        analysis.Issues.Should().Contain(issue => issue.Contains("bandwidth"));
-        analysis.Issues.Should().Contain(issue => issue.Contains("vectorization"));
+        analysis.Issues.Contain(issue => issue.Contains("variance"));
+        analysis.Issues.Contain(issue => issue.Contains("cache"));
+        analysis.Issues.Contain(issue => issue.Contains("bandwidth"));
+        analysis.Issues.Contain(issue => issue.Contains("vectorization"));
         analysis.Recommendations.Should().NotBeEmpty();
     }
 
@@ -306,8 +307,8 @@ public class PerformanceAnalyzerTests
         var analysis = PerformanceAnalyzer.AnalyzeKernel(metrics);
 
         // Assert
-        analysis.Issues.Should().Contain(issue => issue.Contains("vectorization efficiency"));
-        analysis.Recommendations.Should().Contain(rec => rec.Contains("SIMD"));
+        analysis.Issues.Contain(issue => issue.Contains("vectorization efficiency"));
+        analysis.Recommendations.Contain(rec => rec.Contains("SIMD"));
     }
 
     [Theory]
@@ -342,17 +343,17 @@ public class PerformanceAnalyzerTests
         // Assert
         if (efficiency < 0.7 && vectorizationEnabled)
         {
-            analysis.Issues.Should().Contain(issue => issue.Contains("vectorization efficiency"));
+            analysis.Issues.Contain(issue => issue.Contains("vectorization efficiency"));
         }
         
         if (cacheHitRatio < 0.8)
         {
-            analysis.Issues.Should().Contain(issue => issue.Contains("cache"));
+            analysis.Issues.Contain(issue => issue.Contains("cache"));
         }
         
         if (memoryBandwidth > 0.8)
         {
-            analysis.Issues.Should().Contain(issue => issue.Contains("bandwidth"));
+            analysis.Issues.Contain(issue => issue.Contains("bandwidth"));
         }
     }
 
@@ -378,12 +379,12 @@ public class PerformanceAnalyzerTests
         var analysis = PerformanceAnalyzer.AnalyzeKernel(metrics);
 
         // Assert
-        analysis.Analysis.Should().Contain("AnalysisTestKernel");
-        analysis.Analysis.Should().Contain("42"); // Execution count
-        analysis.Analysis.Should().Contain("2.00"); // Average time
-        analysis.Analysis.Should().Contain("Enabled (256-bit)"); // Vectorization
-        analysis.Analysis.Should().Contain("AVX2"); // Instruction sets
-        analysis.Analysis.Should().Contain("FMA");
+        analysis.Assert.Contains("AnalysisTestKernel", Analysis);
+        analysis.Assert.Contains("42", Analysis); // Execution count
+        analysis.Assert.Contains("2.00", Analysis); // Average time
+        analysis.Analysis.Contain("Enabled (256-bit)"); // Vectorization
+        analysis.Assert.Contains("AVX2", Analysis); // Instruction sets
+        analysis.Assert.Contains("FMA", Analysis);
     }
 }
 
@@ -400,7 +401,7 @@ public class PerformanceCounterManagerTests : IDisposable
     public void Constructor_ShouldInitializeSuccessfully()
     {
         // Assert
-        _manager.Should().NotBeNull();
+        Assert.NotNull(_manager);
     }
 
     [Fact]
@@ -410,11 +411,11 @@ public class PerformanceCounterManagerTests : IDisposable
         var sample = _manager.Sample();
 
         // Assert
-        sample.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
-        sample.CpuUsagePercent.Should().BeGreaterOrEqualTo(0);
-        sample.AvailableMemoryMB.Should().BeGreaterOrEqualTo(0);
-        sample.CacheHitRatio.Should().BeGreaterOrEqualTo(0).And.BeLessOrEqualTo(1);
-        sample.MemoryBandwidthUtilization.Should().BeGreaterOrEqualTo(0).And.BeLessOrEqualTo(1);
+        sample.Timestamp.BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
+        sample.CpuUsagePercent >= 0.Should().BeTrue();
+        sample.AvailableMemoryMB >= 0.Should().BeTrue();
+        sample.CacheHitRatio.BeGreaterOrEqualTo(0).And.BeLessOrEqualTo(1);
+        sample.MemoryBandwidthUtilization.BeGreaterOrEqualTo(0).And.BeLessOrEqualTo(1);
     }
 
     [Fact]
@@ -426,7 +427,7 @@ public class PerformanceCounterManagerTests : IDisposable
         var sample2 = _manager.Sample();
 
         // Assert
-        sample2.Timestamp.Should().BeAfter(sample1.Timestamp);
+        sample2.Timestamp.BeAfter(sample1.Timestamp);
     }
 
     [Fact]

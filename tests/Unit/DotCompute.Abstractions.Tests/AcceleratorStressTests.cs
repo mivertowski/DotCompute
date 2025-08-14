@@ -3,8 +3,8 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -33,7 +33,7 @@ public sealed class AcceleratorStressTests
         );
 
         info.Type.Should().Be("GPU");
-        info.Name.Should().Contain("Long Name");
+        info.Assert.Contains("Long Name", Name);
         info.TotalMemory.Should().Be(long.MaxValue);
         info.ComputeUnits.Should().Be(int.MaxValue);
     }
@@ -82,7 +82,7 @@ public sealed class AcceleratorStressTests
 
         // Assert
         info.Type.Should().Be(type.ToString());
-        info.Name.Should().Contain(type.ToString());
+        info.Name.Contain(type.ToString());
     }
 
     #endregion
@@ -97,12 +97,12 @@ public sealed class AcceleratorStressTests
     public void MemoryOptions_WithAllFlags_ShouldWork(MemoryOptions memoryOptions)
     {
         // Act & Assert - Test that enum values are defined and work correctly
-        memoryOptions.Should().BeDefined();
+        memoryOptions.BeDefined();
         
         // Test flag combinations
         var combined = MemoryOptions.ReadOnly | MemoryOptions.HostVisible;
-        combined.Should().HaveFlag(MemoryOptions.ReadOnly);
-        combined.Should().HaveFlag(MemoryOptions.HostVisible);
+        combined.HaveFlag(MemoryOptions.ReadOnly);
+        combined.HaveFlag(MemoryOptions.HostVisible);
     }
 
     [Theory]
@@ -131,8 +131,8 @@ public sealed class AcceleratorStressTests
         var combined = MemoryOptions.ReadOnly | MemoryOptions.HostVisible;
 
         // Assert
-        combined.Should().HaveFlag(MemoryOptions.ReadOnly);
-        combined.Should().HaveFlag(MemoryOptions.HostVisible);
+        combined.HaveFlag(MemoryOptions.ReadOnly);
+        combined.HaveFlag(MemoryOptions.HostVisible);
         combined.Should().NotHaveFlag(MemoryOptions.WriteOnly);
     }
 
@@ -239,7 +239,7 @@ public sealed class AcceleratorStressTests
         var args = new KernelArguments(largeArray, largeString, int.MaxValue, long.MaxValue);
 
         // Assert
-        args.Get(0).Should().BeSameAs(largeArray);
+        args.Get(0).BeSameAs(largeArray);
         args.Get(1).Should().Be(largeString);
         args.Get(2).Should().Be(int.MaxValue);
         args.Get(3).Should().Be(long.MaxValue);
@@ -270,7 +270,7 @@ public sealed class AcceleratorStressTests
         var args = new KernelArguments(null!, "");
 
         // Assert
-        args.Get(0).Should().BeNull();
+        args.Get(0).BeNull();
         args.Get(1).Should().Be("");
         args.Length.Should().Be(2);
     }
@@ -388,7 +388,7 @@ public sealed class AcceleratorStressTests
     {
         // Act & Assert
         var act = () => new DeviceMemory(IntPtr.Zero, -1);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Fact]
@@ -422,7 +422,7 @@ public sealed class AcceleratorStressTests
         var act2 = () => new DeviceMemory(IntPtr.Zero, -1);     // Negative size
         
         // Only negative size should throw
-        act2.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(() => act2());
         
         // Invalid handles are allowed (they just result in invalid memory)
         var invalidMemory = new DeviceMemory(IntPtr.Zero, 0);
@@ -457,7 +457,7 @@ public sealed class AcceleratorStressTests
         var exception = new AcceleratorException("Outer error", innerException);
 
         // Assert
-        exception.InnerException.Should().BeSameAs(innerException);
+        exception.InnerException.BeSameAs(innerException);
         exception.Message.Should().Be("Outer error");
     }
 

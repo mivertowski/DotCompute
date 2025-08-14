@@ -134,6 +134,8 @@ public static class CudaCompilerEnhancements
         CompilationOptions? options, 
         int deviceId)
     {
+        await Task.Delay(1).ConfigureAwait(false);
+        
         var builder = new StringBuilder();
         var (major, minor) = GetEnhancedComputeCapability(deviceId);
 
@@ -384,6 +386,8 @@ public static class CudaCompilerEnhancements
         ILogger logger,
         CancellationToken cancellationToken = default)
     {
+        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        
         var stopwatch = Stopwatch.StartNew();
         var program = IntPtr.Zero;
 

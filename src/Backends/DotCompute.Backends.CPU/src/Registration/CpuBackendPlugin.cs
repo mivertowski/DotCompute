@@ -25,8 +25,9 @@ namespace DotCompute.Backends.CPU.Registration;
 
 /// <summary>
 /// Plugin implementation for the CPU backend.
+/// Consolidates duplicate registration patterns using BaseBackendPlugin.
 /// </summary>
-public sealed class CpuBackendPlugin : BackendPluginBase
+public sealed class CpuBackendPlugin : BaseBackendPlugin<CpuAccelerator, CpuAcceleratorOptions>
 {
     /// <inheritdoc/>
     public override string Id => "dotcompute.backends.cpu";
@@ -47,49 +48,32 @@ public sealed class CpuBackendPlugin : BackendPluginBase
     public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable | PluginCapabilities.HotReloadable;
 
     /// <inheritdoc/>
-    public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-    {
-        base.ConfigureServices(services, configuration);
+    protected override string AcceleratorName => "cpu";
 
-        // Configure CPU backend options
+    /// <inheritdoc/>
+    protected override string ConfigurationSectionName => "CpuBackend";
+
+    /// <inheritdoc/>
+    protected override void ConfigureBackendOptions(IServiceCollection services, IConfiguration configuration)
+    {
+        // Configure CPU accelerator options
 #pragma warning disable IL2026, IL3050 // Suppress AOT and trimming warnings for configuration binding
         services.Configure<CpuAcceleratorOptions>(options =>
             configuration.GetSection("CpuBackend:Accelerator").Bind(options));
+        
+        // Also configure thread pool options specific to CPU backend
         services.Configure<CpuThreadPoolOptions>(options =>
             configuration.GetSection("CpuBackend:ThreadPool").Bind(options));
 #pragma warning restore IL2026, IL3050
+    }
 
+    /// <inheritdoc/>
+    protected override void RegisterAccelerator(IServiceCollection services, IConfiguration configuration)
+    {
         // Register the CPU accelerator
         services.TryAddSingleton<CpuAccelerator>();
-
-        // Register as IAccelerator with a factory that includes the backend name
-        services.AddSingleton<IAccelerator>(provider =>
-        {
-            var accelerator = provider.GetRequiredService<CpuAccelerator>();
-            return new NamedAcceleratorWrapper("cpu", accelerator);
-        });
     }
 
-    /// <inheritdoc/>
-    protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
-    {
-        Logger?.LogInformation("Initializing CPU backend plugin");
-        await base.OnInitializeAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc/>
-    protected override async Task OnStartAsync(CancellationToken cancellationToken)
-    {
-        Logger?.LogInformation("Starting CPU backend plugin");
-        await base.OnStartAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc/>
-    protected override async Task OnStopAsync(CancellationToken cancellationToken)
-    {
-        Logger?.LogInformation("Stopping CPU backend plugin");
-        await base.OnStopAsync(cancellationToken).ConfigureAwait(false);
-    }
 
     /// <inheritdoc/>
     protected override void OnValidate(PluginValidationResult result)
@@ -218,7 +202,7 @@ public static class CpuBackendPluginExtensions
         services.AddSingleton<IAccelerator>(provider =>
         {
             var accelerator = provider.GetRequiredService<CpuAccelerator>();
-            return new NamedAcceleratorWrapper("cpu", accelerator);
+            return new Plugins.Core.NamedAcceleratorWrapper("cpu", accelerator);
         });
 
         return services;
@@ -230,32 +214,5 @@ public static class CpuBackendPluginExtensions
     public static IServiceCollection AddCpuBackend(this IServiceCollection services) => services.AddCpuBackend(null, null);
 }
 
-/// <summary>
-/// Wrapper to provide named accelerator support.
-/// </summary>
-internal sealed class NamedAcceleratorWrapper(string name, AbstractionsIAccelerator accelerator) : AbstractionsIAccelerator
-{
-    private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
-    private readonly AbstractionsIAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-
-    public string Name => _name;
-
-    public AcceleratorType Type => _accelerator.Type;
-
-    public AbstractionsAcceleratorInfo Info => _accelerator.Info;
-
-    public AbstractionsIMemoryManager Memory => _accelerator.Memory;
-
-    public AcceleratorContext Context => _accelerator.Context;
-
-    public ValueTask<AbstractionsICompiledKernel> CompileKernelAsync(
-        AbstractionsKernelDefinition definition,
-        AbstractionsCompilationOptions? options = default,
-        CancellationToken cancellationToken = default) => _accelerator.CompileKernelAsync(definition, options, cancellationToken);
-
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => _accelerator.SynchronizeAsync(cancellationToken);
-
-    public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
-}
 
 #pragma warning restore CA1848

@@ -16,8 +16,9 @@ namespace DotCompute.Backends.Metal.Registration;
 
 /// <summary>
 /// Plugin implementation for the Metal backend.
+/// Consolidates duplicate registration patterns using BaseBackendPlugin.
 /// </summary>
-public sealed partial class MetalBackendPlugin : BackendPluginBase
+public sealed partial class MetalBackendPlugin : BaseBackendPlugin<MetalAccelerator, MetalAcceleratorOptions>
 {
     /// <inheritdoc/>
     public override string Id => "dotcompute.backends.metal";
@@ -38,61 +39,33 @@ public sealed partial class MetalBackendPlugin : BackendPluginBase
     public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable;
 
     /// <inheritdoc/>
+    protected override string AcceleratorName => "metal";
+
+    /// <inheritdoc/>
+    protected override string ConfigurationSectionName => "MetalBackend";
+
+    /// <inheritdoc/>
     [UnconditionalSuppressMessage("AOT", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code", Justification = "Configuration options are preserved")]
     [UnconditionalSuppressMessage("AOT", "IL3050:Calling members annotated with 'RequiresDynamicCodeAttribute' may break functionality when AOT compiling.", Justification = "Configuration options are preserved")]
-    public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
+    protected override void ConfigureBackendOptions(IServiceCollection services, IConfiguration configuration)
     {
-        base.ConfigureServices(services, configuration);
+        // Configure Metal backend options  
+        services.Configure<MetalAcceleratorOptions>(configuration.GetSection("MetalBackend:Accelerator"));
+    }
 
+    /// <inheritdoc/>
+    protected override void RegisterAccelerator(IServiceCollection services, IConfiguration configuration)
+    {
         // Check platform support
         if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
         {
             throw new PlatformNotSupportedException("Metal backend is only supported on macOS and iOS platforms.");
         }
 
-        // Configure Metal backend options  
-        services.Configure<MetalAcceleratorOptions>(configuration.GetSection("MetalBackend:Accelerator"));
-
         // Register the Metal accelerator
         services.TryAddSingleton<MetalAccelerator>();
-
-        // Register as IAccelerator with a factory that includes the backend name
-        services.AddSingleton<IAccelerator>(provider =>
-        {
-            var accelerator = provider.GetRequiredService<MetalAccelerator>();
-            return new NamedAcceleratorWrapper("metal", accelerator);
-        });
     }
 
-    /// <inheritdoc/>
-    protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
-    {
-        if (Logger is ILogger<MetalBackendPlugin> typedLogger)
-        {
-            LogInitializing(typedLogger);
-        }
-        await base.OnInitializeAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc/>
-    protected override async Task OnStartAsync(CancellationToken cancellationToken)
-    {
-        if (Logger is ILogger<MetalBackendPlugin> typedLogger)
-        {
-            LogStarting(typedLogger);
-        }
-        await base.OnStartAsync(cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc/>
-    protected override async Task OnStopAsync(CancellationToken cancellationToken)
-    {
-        if (Logger is ILogger<MetalBackendPlugin> typedLogger)
-        {
-            LogStopping(typedLogger);
-        }
-        await base.OnStopAsync(cancellationToken).ConfigureAwait(false);
-    }
 
     /// <inheritdoc/>
     protected override void OnValidate(PluginValidationResult result)
@@ -234,7 +207,7 @@ public static class MetalBackendPluginExtensions
         services.AddSingleton<IAccelerator>(provider =>
         {
             var accelerator = provider.GetRequiredService<MetalAccelerator>();
-            return new NamedAcceleratorWrapper("metal", accelerator);
+            return new Plugins.Core.NamedAcceleratorWrapper("metal", accelerator);
         });
 
         return services;
@@ -291,30 +264,3 @@ public enum MetalDeviceSelector
     PreferDiscrete
 }
 
-/// <summary>
-/// Wrapper to provide named accelerator support.
-/// </summary>
-internal sealed partial class NamedAcceleratorWrapper(string name, IAccelerator accelerator) : IAccelerator
-{
-    private readonly string _name = name ?? throw new ArgumentNullException(nameof(name));
-    private readonly IAccelerator _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-
-    public string Name => _name;
-
-    public AcceleratorInfo Info => _accelerator.Info;
-
-    public AcceleratorType Type => _accelerator.Type;
-
-    public IMemoryManager Memory => _accelerator.Memory;
-
-    public AcceleratorContext Context => _accelerator.Context;
-
-    public ValueTask<ICompiledKernel> CompileKernelAsync(
-        KernelDefinition definition,
-        CompilationOptions? options = default,
-        CancellationToken cancellationToken = default) => _accelerator.CompileKernelAsync(definition, options, cancellationToken);
-
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => _accelerator.SynchronizeAsync(cancellationToken);
-
-    public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
-}

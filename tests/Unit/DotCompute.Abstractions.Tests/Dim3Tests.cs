@@ -3,8 +3,8 @@
 
 using System;
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Abstractions.Tests;
 
@@ -384,7 +384,7 @@ public class Dim3Tests
         var hashCode2 = dim3.GetHashCode();
 
         // Assert
-        hashCode1.Should().Be(hashCode2);
+        Assert.Equal(hashCode2, hashCode1);
     }
 
     [Fact]
@@ -399,7 +399,7 @@ public class Dim3Tests
         var hashCode2 = dim3b.GetHashCode();
 
         // Assert
-        hashCode1.Should().Be(hashCode2);
+        Assert.Equal(hashCode2, hashCode1);
     }
 
     [Fact]
@@ -416,7 +416,7 @@ public class Dim3Tests
         var hashCode2 = dim3b.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        hashCode1.Should().Not.Be(hashCode2);
     }
 
     [Fact]
@@ -431,7 +431,7 @@ public class Dim3Tests
         var hashCode2 = dim3b.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        hashCode1.Should().Not.Be(hashCode2);
     }
 
     #endregion
@@ -538,9 +538,9 @@ public class Dim3Tests
         foreach (var dim3 in testCases)
         {
             // Should not throw and should have reasonable values
-            dim3.X.Should().BeGreaterThan(0);
-            dim3.Y.Should().BeGreaterThan(0);
-            dim3.Z.Should().BeGreaterThan(0);
+(dim3.X > 0).Should().BeTrue();
+(dim3.Y > 0).Should().BeTrue();
+(dim3.Z > 0).Should().BeTrue();
         }
     }
 
@@ -572,27 +572,27 @@ public class Dim3Tests
         Dim3 fromInt2 = Dim3.FromInt32(42);
         var fromConstructor1 = new Dim3(42);
 
-        fromInt1.Should().Be(fromInt2);
-        fromInt1.Should().Be(fromConstructor1);
-        fromInt2.Should().Be(fromConstructor1);
+        Assert.Equal(fromInt2, fromInt1);
+        Assert.Equal(fromConstructor1, fromInt1);
+        Assert.Equal(fromConstructor1, fromInt2);
 
         // Two component tuple conversion
         Dim3 fromTuple2a = (10, 20);
         Dim3 fromTuple2b = Dim3.FromValueTuple((10, 20));
         var fromConstructor2 = new Dim3(10, 20);
 
-        fromTuple2a.Should().Be(fromTuple2b);
-        fromTuple2a.Should().Be(fromConstructor2);
-        fromTuple2b.Should().Be(fromConstructor2);
+        Assert.Equal(fromTuple2b, fromTuple2a);
+        Assert.Equal(fromConstructor2, fromTuple2a);
+        Assert.Equal(fromConstructor2, fromTuple2b);
 
         // Three component tuple conversion
         Dim3 fromTuple3a = (100, 200, 300);
         Dim3 fromTuple3b = Dim3.FromValueTuple((100, 200, 300));
         var fromConstructor3 = new Dim3(100, 200, 300);
 
-        fromTuple3a.Should().Be(fromTuple3b);
-        fromTuple3a.Should().Be(fromConstructor3);
-        fromTuple3b.Should().Be(fromConstructor3);
+        Assert.Equal(fromTuple3b, fromTuple3a);
+        Assert.Equal(fromConstructor3, fromTuple3a);
+        Assert.Equal(fromConstructor3, fromTuple3b);
     }
 
     #endregion
@@ -617,10 +617,10 @@ public class Dim3Tests
                 var hashCode = dim3.GetHashCode();
                 var equals = dim3.Equals(dim3);
 
-                x.Should().Be(123);
-                y.Should().Be(456);
-                z.Should().Be(789);
-                equals.Should().BeTrue();
+                Assert.Equal(123, x);
+                Assert.Equal(456, y);
+                Assert.Equal(789, z);
+                Assert.True(equals);
             }));
         }
 

@@ -1,6 +1,6 @@
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -47,8 +47,8 @@ public class MemoryOptionsTests
 
         // Assert
         ((int)options).Should().Be(1 | 8);
-        options.Should().HaveFlag(MemoryOptions.ReadOnly);
-        options.Should().HaveFlag(MemoryOptions.Cached);
+        options.HaveFlag(MemoryOptions.ReadOnly);
+        options.HaveFlag(MemoryOptions.Cached);
         options.Should().NotHaveFlag(MemoryOptions.WriteOnly);
     }
 

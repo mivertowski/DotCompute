@@ -5,10 +5,10 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Integration.Infrastructure;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -134,7 +134,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Should().HaveCount(3);
+        result.ExecutionResults.Count.Should().Be(3));
         
         var featureMaps = (float[])result.Results["feature_maps"];
         featureMaps.Should().NotContain(float.NaN);
@@ -142,7 +142,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         featureMaps.Should().NotContain(float.NegativeInfinity);
         
         // Verify activation outputs are reasonable (ReLU should produce non-negative values)
-        featureMaps.Should().AllSatisfy(value => value.Should().BeGreaterOrEqualTo(0f));
+        featureMaps.Should().AllSatisfy(value => value.BeGreaterOrEqualTo(0f));
         
         // Performance validation
         var totalDataMB = (trainingBatch.Length + weights.Length) * sizeof(float) / 1024.0 / 1024.0;
@@ -151,7 +151,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("ML Training performance: {Throughput:F2} MB/s, {Duration:F1}ms for batch size {BatchSize}",
             throughputMBps, result.Duration.TotalMilliseconds, batchSize);
         
-        throughputMBps.Should().BeGreaterThan(10, "ML workload should maintain good throughput");
+        Assert.True(throughputMBps > 10, "ML workload should maintain good throughput");
     }
 
     [Fact]
@@ -252,7 +252,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Scientific computing performance: {Score:E2} operations/ms for {Particles} particles",
             performanceScore, particleCount);
         
-        performanceScore.Should().BeGreaterThan(1e6, "MD simulation should achieve reasonable computational throughput");
+        Assert.True(performanceScore > 1e6, "MD simulation should achieve reasonable computational throughput");
     }
 
     [Fact]
@@ -347,7 +347,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Should().HaveCount(4);
+        result.ExecutionResults.Count.Should().Be(4));
         
         var enhancedImage = (float[])result.Results["enhanced_image"];
         
@@ -363,7 +363,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Image processing performance: {Rate:F2} MP/s ({Width}x{Height})",
             processingRate, imageWidth, imageHeight);
         
-        processingRate.Should().BeGreaterThan(10, "Image processing should achieve reasonable megapixel/second rate");
+        Assert.True(processingRate > 10, "Image processing should achieve reasonable megapixel/second rate");
         
         // Verify all processing stages completed in reasonable time
         result.ExecutionResults.Values.Should().AllSatisfy(stage =>
@@ -472,8 +472,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         var confidenceInterval = (float[])result.Results["confidence_interval"];
         
         // Validate financial model results
-        optionPrice.Should().BeGreaterThan(0f);
-        optionPrice.Should().BeLessThan(spotPrice); // Option price should be reasonable
+        Assert.True(optionPrice > 0f);
+        Assert.True(optionPrice < spotPrice); // Option price should be reasonable
         confidenceInterval[0].Should().BeLessThan(optionPrice);
         confidenceInterval[1].Should().BeGreaterThan(optionPrice);
         
@@ -487,12 +487,12 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
             confidenceInterval[0], confidenceInterval[1], simulationPaths);
         
         // Monte Carlo should be reasonably close to theoretical price
-        priceDifference.Should().BeLessThan(theoreticalPrice * 0.05f, 
+        Assert.True(priceDifference < theoreticalPrice * 0.05f, 
             "Monte Carlo price should be within 5% of theoretical price");
         
         // Performance validation for financial computing
         var pathsPerSecond = simulationPaths / result.Duration.TotalSeconds;
-        pathsPerSecond.Should().BeGreaterThan(10000, "Monte Carlo should process paths efficiently");
+        Assert.True(pathsPerSecond > 10000, "Monte Carlo should process paths efficiently");
     }
 
     [Fact]
@@ -605,8 +605,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                              "for {Records:E0} records",
             recordsPerSecond, throughputMBps, (double)recordCount);
         
-        recordsPerSecond.Should().BeGreaterThan(50000, "Big data processing should handle large record volumes efficiently");
-        throughputMBps.Should().BeGreaterThan(50, "Data analytics should maintain good memory throughput");
+        Assert.True(recordsPerSecond > 50000, "Big data processing should handle large record volumes efficiently");
+        Assert.True(throughputMBps > 50, "Data analytics should maintain good memory throughput");
     }
 
     [Theory]
@@ -632,11 +632,11 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Streaming workload {Type}: {Actual:F2} MB/s (expected: {Expected:F2} MB/s)",
             workloadType, actualThroughput, expectedThroughput);
         
-        actualThroughput.Should().BeGreaterThan(expectedThroughput * 0.7,
+        Assert.True(actualThroughput > expectedThroughput * 0.7,
             $"{workloadType} streaming should meet 70% of expected throughput");
         
         // Real-time workloads should complete within reasonable time
-        result.Duration.TotalSeconds.Should().BeLessThan(10,
+        result.Duration.Assert.True(TotalSeconds < 10,
             "Streaming workloads should complete quickly for real-time requirements");
     }
 
@@ -669,7 +669,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         
         // Energy should be roughly conserved (within numerical precision)
         var energyChange = Math.Abs(finalKE - initialKE) / initialKE;
-        energyChange.Should().BeLessThan(0.1, "Energy should be approximately conserved in MD simulation");
+        Assert.True(energyChange < 0.1, "Energy should be approximately conserved in MD simulation");
     }
 
     private float CalculateBlackScholesPrice(float S, float K, float r, float sigma, float T)
@@ -677,8 +677,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         var d1 = (Math.Log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.Sqrt(T));
         var d2 = d1 - sigma * Math.Sqrt(T);
         
-        var N_d1 = 0.5 * (1 + Erf(d1 / Math.Sqrt(2)));
-        var N_d2 = 0.5 * (1 + Erf(d2 / Math.Sqrt(2)));
+        var N_d1 = 0.5 * (1 + Erf(d1 / Math.Sqrt(2);
+        var N_d2 = 0.5 * (1 + Erf(d2 / Math.Sqrt(2);
         
         return (float)(S * N_d1 - K * Math.Exp(-r * T) * N_d2);
     }
@@ -697,7 +697,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         x = Math.Abs(x);
 
         var t = 1.0 / (1.0 + p * x);
-        var y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.Exp(-x * x);
+        var y = 1.0 - (((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.Exp(-x * x);
 
         return sign * y;
     }

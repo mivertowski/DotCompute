@@ -8,6 +8,7 @@ using DotCompute.Core.Pipelines;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -135,7 +136,7 @@ public sealed class PipelineTests
         stage1.Setup(s => s.Type).Returns(PipelineStageType.Custom);
         stage1.Setup(s => s.Dependencies).Returns(new List<string>());
         stage1.Setup(s => s.Metadata).Returns(new Dictionary<string, object>());
-        stage1.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()))
+        stage1.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()
             .Callback(() => executedStages.Add("Stage1"))
             .ReturnsAsync(new StageExecutionResult
             {
@@ -152,7 +153,7 @@ public sealed class PipelineTests
         stage2.Setup(s => s.Type).Returns(PipelineStageType.Custom);
         stage2.Setup(s => s.Dependencies).Returns(new List<string>());
         stage2.Setup(s => s.Metadata).Returns(new Dictionary<string, object>());
-        stage2.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()))
+        stage2.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()
             .Callback(() => executedStages.Add("Stage2"))
             .ReturnsAsync(new StageExecutionResult
             {
@@ -196,7 +197,7 @@ public sealed class PipelineTests
         stage1.Setup(s => s.Type).Returns(PipelineStageType.Custom);
         stage1.Setup(s => s.Dependencies).Returns(new List<string>());
         stage1.Setup(s => s.Metadata).Returns(new Dictionary<string, object>());
-        stage1.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()))
+        stage1.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()
             .Callback(() =>
             {
                 executedStages.Add("Stage1");
@@ -217,7 +218,7 @@ public sealed class PipelineTests
         stage2.Setup(s => s.Type).Returns(PipelineStageType.Custom);
         stage2.Setup(s => s.Dependencies).Returns(new List<string>());
         stage2.Setup(s => s.Metadata).Returns(new Dictionary<string, object>());
-        stage2.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()))
+        stage2.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()
             .Callback(() => executedStages.Add("Stage2"))
             .ReturnsAsync(new StageExecutionResult
             {
@@ -261,7 +262,7 @@ public sealed class PipelineTests
         stage1.Setup(s => s.Type).Returns(PipelineStageType.Custom);
         stage1.Setup(s => s.Dependencies).Returns(new List<string>());
         stage1.Setup(s => s.Metadata).Returns(new Dictionary<string, object>());
-        stage1.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()))
+        stage1.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()
             .ThrowsAsync(expectedException);
         stage1.Setup(s => s.Validate()).Returns(new StageValidationResult { IsValid = true });
         stage1.Setup(s => s.GetMetrics()).Returns(Mock.Of<IStageMetrics>());

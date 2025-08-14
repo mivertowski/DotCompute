@@ -117,7 +117,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
                                 new XAttribute("version", "8.0.0")),
                             new XElement("dependency",
                                 new XAttribute("id", "Microsoft.Extensions.Logging.Abstractions"),
-                                new XAttribute("version", "8.0.0")))))));
+                                new XAttribute("version", "8.0.0");
 
         return nuspec.ToString();
     }

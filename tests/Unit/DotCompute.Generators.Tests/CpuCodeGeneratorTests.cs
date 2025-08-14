@@ -3,10 +3,10 @@
 
 using System.Collections.Generic;
 using DotCompute.Generators.Backend;
-using FluentAssertions;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -32,14 +32,14 @@ public class CpuCodeGeneratorTests
 
         // Assert
         result.Should().NotBeNullOrEmpty();
-        result.Should().Contain("namespace DotCompute.Generated.Cpu");
-        result.Should().Contain($"public static unsafe class {methodName}Cpu");
-        result.Should().Contain("ExecuteScalar");
-        result.Should().Contain("ExecuteSimd");
-        result.Should().Contain("ExecuteAvx2");
-        result.Should().Contain("ExecuteAvx512");
-        result.Should().Contain("ExecuteParallel");
-        result.Should().Contain("Execute");
+        Assert.Contains("namespace DotCompute.Generated.Cpu", result);
+        Assert.Contains($"public static unsafe class {methodName}Cpu", result);
+        Assert.Contains("ExecuteScalar", result);
+        Assert.Contains("ExecuteSimd", result);
+        Assert.Contains("ExecuteAvx2", result);
+        Assert.Contains("ExecuteAvx512", result);
+        Assert.Contains("ExecuteParallel", result);
+        Assert.Contains("Execute", result);
     }
 
     [Fact]
@@ -62,11 +62,11 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("int[] intArray");
-        result.Should().Contain("double[] doubleArray");
-        result.Should().Contain("float* floatPtr");
-        result.Should().Contain("int count");
-        result.Should().Contain("double scale");
+        Assert.Contains("int[] intArray", result);
+        Assert.Contains("double[] doubleArray", result);
+        Assert.Contains("float* floatPtr", result);
+        Assert.Contains("int count", result);
+        Assert.Contains("double scale", result);
     }
 
     [Fact]
@@ -79,13 +79,13 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("using System;");
-        result.Should().Contain("using System.Runtime.CompilerServices;");
-        result.Should().Contain("using System.Runtime.Intrinsics;");
-        result.Should().Contain("using System.Runtime.Intrinsics.X86;");
-        result.Should().Contain("using System.Runtime.Intrinsics.Arm;");
-        result.Should().Contain("using System.Threading.Tasks;");
-        result.Should().Contain("using System.Numerics;");
+        Assert.Contains("using System;", result);
+        Assert.Contains("using System.Runtime.CompilerServices;", result);
+        Assert.Contains("using System.Runtime.Intrinsics;", result);
+        Assert.Contains("using System.Runtime.Intrinsics.X86;", result);
+        Assert.Contains("using System.Runtime.Intrinsics.Arm;", result);
+        Assert.Contains("using System.Threading.Tasks;", result);
+        Assert.Contains("using System.Numerics;", result);
     }
 
     [Fact]
@@ -98,9 +98,9 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("ExecuteScalar");
-        result.Should().Contain("ArgumentNullException.ThrowIfNull");
-        result.Should().Contain("/// Scalar implementation for compatibility");
+        Assert.Contains("ExecuteScalar", result);
+        Assert.Contains("ArgumentNullException.ThrowIfNull", result);
+        Assert.Contains("/// Scalar implementation for compatibility", result);
     }
 
     [Fact]
@@ -113,11 +113,11 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("ExecuteSimd");
-        result.Should().Contain("Vector<float>.Count");
-        result.Should().Contain("alignedEnd");
-        result.Should().Contain("vectorSize");
-        result.Should().Contain("/// SIMD implementation using platform-agnostic vectors");
+        Assert.Contains("ExecuteSimd", result);
+        Assert.Contains("Vector<float>.Count", result);
+        Assert.Contains("alignedEnd", result);
+        Assert.Contains("vectorSize", result);
+        Assert.Contains("/// SIMD implementation using platform-agnostic vectors", result);
     }
 
     [Fact]
@@ -130,9 +130,9 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("ExecuteAvx2");
-        result.Should().Contain("const int vectorSize = 8"); // 256-bit / 32-bit
-        result.Should().Contain("/// AVX2 optimized implementation");
+        Assert.Contains("ExecuteAvx2", result);
+        Assert.Contains("const int vectorSize = 8", result); // 256-bit / 32-bit
+        Assert.Contains("/// AVX2 optimized implementation", result);
     }
 
     [Fact]
@@ -145,9 +145,9 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("ExecuteAvx512");
-        result.Should().Contain("const int vectorSize = 16"); // 512-bit / 32-bit
-        result.Should().Contain("/// AVX-512 optimized implementation");
+        Assert.Contains("ExecuteAvx512", result);
+        Assert.Contains("const int vectorSize = 16", result); // 512-bit / 32-bit
+        Assert.Contains("/// AVX-512 optimized implementation", result);
     }
 
     [Fact]
@@ -160,11 +160,11 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("ExecuteParallel");
-        result.Should().Contain("Environment.ProcessorCount");
-        result.Should().Contain("Parallel.ForEach");
-        result.Should().Contain("Partitioner.Create");
-        result.Should().Contain("/// Parallel implementation using task parallelism");
+        Assert.Contains("ExecuteParallel", result);
+        Assert.Contains("Environment.ProcessorCount", result);
+        Assert.Contains("Parallel.ForEach", result);
+        Assert.Contains("Partitioner.Create", result);
+        Assert.Contains("/// Parallel implementation using task parallelism", result);
     }
 
     [Fact]
@@ -177,10 +177,10 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("Avx512F.IsSupported");
-        result.Should().Contain("Avx2.IsSupported");
-        result.Should().Contain("Vector.IsHardwareAccelerated");
-        result.Should().Contain("/// Main execution method that selects the best implementation");
+        Assert.Contains("Avx512F.IsSupported", result);
+        Assert.Contains("Avx2.IsSupported", result);
+        Assert.Contains("Vector.IsHardwareAccelerated", result);
+        Assert.Contains("/// Main execution method that selects the best implementation", result);
     }
 
     [Fact]
@@ -193,7 +193,7 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("/// Convenience overload for full array processing");
+        Assert.Contains("/// Convenience overload for full array processing", result);
         result.Should().MatchRegex(@"public static void Execute\([^,]+,\s*int length\)");
     }
 
@@ -215,8 +215,8 @@ public class CpuCodeGeneratorTests
 
         // Assert
         result.Should().NotBeNullOrEmpty();
-        result.Should().Contain("ComplexKernelCpu");
-        result.Should().Contain("ExecuteScalar");
+        Assert.Contains("ComplexKernelCpu", result);
+        Assert.Contains("ExecuteScalar", result);
     }
 
     [Fact]
@@ -230,10 +230,10 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("Vector.Add");
-        result.Should().Contain("Avx.Add");
-        result.Should().Contain("Avx512F.Add");
-        result.Should().Contain("fixed (float*");
+        Assert.Contains("Vector.Add", result);
+        Assert.Contains("Avx.Add", result);
+        Assert.Contains("Avx512F.Add", result);
+        Assert.Contains("fixed (float*", result);
     }
 
     [Fact]
@@ -247,9 +247,9 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("LoadVector256");
-        result.Should().Contain("Store");
-        result.Should().Contain("CopyTo");
+        Assert.Contains("LoadVector256", result);
+        Assert.Contains("Store", result);
+        Assert.Contains("CopyTo", result);
     }
 
     [Fact]
@@ -262,7 +262,7 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("[MethodImpl(MethodImplOptions.AggressiveInlining)]");
+        result.Contain("[MethodImpl(MethodImplOptions.AggressiveInlining)]");
     }
 
     [Fact]
@@ -275,9 +275,9 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("public static unsafe class");
-        result.Should().Contain("unsafe");
-        result.Should().Contain("fixed (float*");
+        Assert.Contains("public static unsafe class", result);
+        Assert.Contains("unsafe", result);
+        Assert.Contains("fixed (float*", result);
     }
 
     [Fact]
@@ -290,9 +290,9 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("// Process remainder");
-        result.Should().Contain("if (alignedEnd < end)");
-        result.Should().Contain("ExecuteScalar(");
+        Assert.Contains("// Process remainder", result);
+        result.Contain("if (alignedEnd < end)");
+        Assert.Contains("ExecuteScalar(", result);
     }
 
     [Fact]
@@ -305,13 +305,13 @@ public class CpuCodeGeneratorTests
         var result = generator.Generate();
 
         // Assert
-        result.Should().Contain("/// <summary>");
-        result.Should().Contain("/// CPU implementation for");
-        result.Should().Contain("/// Scalar implementation");
-        result.Should().Contain("/// SIMD implementation");
-        result.Should().Contain("/// AVX2 optimized");
-        result.Should().Contain("/// AVX-512 optimized");
-        result.Should().Contain("/// Parallel implementation");
+        Assert.Contains("/// <summary>", result);
+        Assert.Contains("/// CPU implementation for", result);
+        Assert.Contains("/// Scalar implementation", result);
+        Assert.Contains("/// SIMD implementation", result);
+        Assert.Contains("/// AVX2 optimized", result);
+        Assert.Contains("/// AVX-512 optimized", result);
+        Assert.Contains("/// Parallel implementation", result);
     }
 
     [Fact]
@@ -332,9 +332,9 @@ public class CpuCodeGeneratorTests
 
         // Assert
         result.Should().NotBeNullOrEmpty();
-        result.Should().Contain("SimpleCalculationCpu");
-        result.Should().Contain("float value");
-        result.Should().Contain("float multiplier");
+        Assert.Contains("SimpleCalculationCpu", result);
+        Assert.Contains("float value", result);
+        Assert.Contains("float multiplier", result);
     }
 
     private CpuCodeGenerator CreateBasicGenerator()

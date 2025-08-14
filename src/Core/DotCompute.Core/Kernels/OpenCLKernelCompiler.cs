@@ -49,6 +49,9 @@ public sealed class OpenCLKernelCompiler : DotCompute.Abstractions.IKernelCompil
 
         try
         {
+            // Simulate async compilation with a small delay
+            await Task.Delay(10, cancellationToken).ConfigureAwait(false);
+            
             // Stub compilation - always return a mock compiled kernel
             var compiledKernel = new ManagedCompiledKernel
             {

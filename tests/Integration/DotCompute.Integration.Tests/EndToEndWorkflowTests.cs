@@ -4,12 +4,12 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using DotCompute.Core.Aot;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using DotCompute.Core.Pipelines;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -40,11 +40,11 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             arraySize);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Success.Should().BeTrue();
         
         var output = result.GetOutput<float[]>("result");
-        output.Should().NotBeNull();
+        Assert.NotNull(output);
         output.Length.Should().Be(arraySize);
         
         for (int i = 0; i < arraySize; i++)
@@ -69,11 +69,11 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             matrixSize);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Success.Should().BeTrue();
         
         var output = result.GetOutput<float[]>("result");
-        output.Should().NotBeNull();
+        Assert.NotNull(output);
         output.Length.Should().Be(matrixSize * matrixSize);
     }
 
@@ -93,11 +93,11 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             arraySize);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Success.Should().BeTrue();
         
         var output = result.GetOutput<float>("result");
-        output.Should().BeApproximately(expected, 0.1f);
+        Assert.Equal(expected, output, 0.1f);
     }
 
     [Theory]
@@ -118,11 +118,11 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             size);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Success.Should().BeTrue();
         
         var output = result.GetOutput<float[]>("result");
-        output.Should().NotBeNull();
+        Assert.NotNull(output);
         output.Length.Should().Be(size);
         
         // Verify scaling
@@ -154,9 +154,9 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         var result = await pipeline.ExecuteAsync(context);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Success.Should().BeTrue();
-        result.StageResults.Should().HaveCount(3); // Three stages: load, transform, store
+        result.StageResults.Count.Should().Be(3)); // Three stages: load, transform, store
         
         foreach (var stageResult in result.StageResults)
         {
@@ -180,13 +180,13 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             arraySize);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Success.Should().BeTrue();
         result.Metrics.Should().NotBeNull();
         result.Metrics.Duration.Should().BePositive();
         result.Metrics.MemoryUsage.Should().NotBeNull();
-        result.Metrics.ComputeUtilization.Should().BeGreaterThanOrEqualTo(0);
-        result.Metrics.MemoryBandwidthUtilization.Should().BeGreaterThanOrEqualTo(0);
+        result.Metrics.ComputeUtilization.BeGreaterThanOrEqualTo(0);
+        result.Metrics.MemoryBandwidthUtilization.BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -201,8 +201,8 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         var exception = await Assert.ThrowsAsync<PipelineExecutionException>(() =>
             ExecuteEndToEndWorkflow("invalid", invalidKernel, Array.Empty<object>(), 0));
 
-        exception.Should().NotBeNull();
-        exception.Message.Should().Contain("compilation");
+        Assert.NotNull(exception);
+        exception.Assert.Contains("compilation", Message);
     }
 
     [Fact]

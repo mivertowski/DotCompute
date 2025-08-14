@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.TestInfrastructure;
 

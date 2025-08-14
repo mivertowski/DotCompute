@@ -7,8 +7,8 @@ using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Backends.CPU.Tests.Clean;
 
@@ -51,7 +51,7 @@ public class CpuAcceleratorTestsClean : IDisposable
         using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
 
         // Assert
-        accelerator.Should().NotBeNull();
+        Assert.NotNull(accelerator);
         accelerator.Type.Should().Be(AcceleratorType.CPU);
         accelerator.Memory.Should().NotBeNull();
     }
@@ -61,7 +61,7 @@ public class CpuAcceleratorTestsClean : IDisposable
     {
         // Act & Assert
         Action act = () => new CpuAccelerator(null!, _mockThreadPoolOptions.Object, _mockLogger.Object);
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(() => act());
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public class CpuAcceleratorTestsClean : IDisposable
     {
         // Act & Assert
         Action act = () => new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, null!);
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(() => act());
     }
 
     #endregion
@@ -111,7 +111,7 @@ public class CpuAcceleratorTestsClean : IDisposable
         var result = await accelerator.CompileKernelAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
     }
 
@@ -122,8 +122,8 @@ public class CpuAcceleratorTestsClean : IDisposable
         using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
 
         // Act & Assert
-        await accelerator.Invoking(a => a.CompileKernelAsync(null!))
-            .Should().ThrowAsync<ArgumentNullException>();
+        await Assert.ThrowsAsync<ArgumentNullException>(
+            () => accelerator.CompileKernelAsync(null!).AsTask());
     }
 
     [Fact]
@@ -136,8 +136,8 @@ public class CpuAcceleratorTestsClean : IDisposable
         cts.Cancel();
 
         // Act & Assert
-        await accelerator.Invoking(a => a.CompileKernelAsync(definition, cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => accelerator.CompileKernelAsync(definition, cts.Token).AsTask());
     }
 
     #endregion
@@ -151,8 +151,7 @@ public class CpuAcceleratorTestsClean : IDisposable
         using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
 
         // Act & Assert
-        await accelerator.Invoking(a => a.SynchronizeAsync())
-            .Should().NotThrowAsync();
+        await accelerator.SynchronizeAsync(); // Should not throw
     }
 
     [Fact]
@@ -164,8 +163,8 @@ public class CpuAcceleratorTestsClean : IDisposable
         cts.Cancel();
 
         // Act & Assert
-        await accelerator.Invoking(a => a.SynchronizeAsync(cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(
+            () => accelerator.SynchronizeAsync(cts.Token));
     }
 
     #endregion
@@ -182,7 +181,7 @@ public class CpuAcceleratorTestsClean : IDisposable
         using var buffer = await accelerator.Memory.CreateBufferAsync<float>(1024, MemoryLocation.Host, MemoryAccess.ReadWrite);
 
         // Assert
-        buffer.Should().NotBeNull();
+        Assert.NotNull(buffer);
         buffer.ElementCount.Should().Be(1024);
         buffer.Location.Should().Be(MemoryLocation.Host);
         buffer.Access.Should().Be(MemoryAccess.ReadWrite);
@@ -199,7 +198,7 @@ public class CpuAcceleratorTestsClean : IDisposable
         using var buffer = await accelerator.Memory.CreateBufferAsync(data, MemoryLocation.Host, MemoryAccess.ReadOnly);
 
         // Assert
-        buffer.Should().NotBeNull();
+        Assert.NotNull(buffer);
         buffer.ElementCount.Should().Be(4);
         buffer.Location.Should().Be(MemoryLocation.Host);
         buffer.Access.Should().Be(MemoryAccess.ReadOnly);
@@ -215,10 +214,10 @@ public class CpuAcceleratorTestsClean : IDisposable
         var stats = accelerator.Memory.GetStatistics();
 
         // Assert
-        stats.Should().NotBeNull();
-        stats.TotalAllocatedBytes.Should().BeGreaterOrEqualTo(0);
-        stats.AllocationCount.Should().BeGreaterOrEqualTo(0);
-        stats.DeallocationsCount.Should().BeGreaterOrEqualTo(0);
+        Assert.NotNull(stats);
+        stats.TotalAllocatedBytes >= 0.Should().BeTrue();
+        stats.AllocationCount >= 0.Should().BeTrue();
+        stats.DeallocationsCount >= 0.Should().BeTrue();
     }
 
     #endregion
@@ -232,7 +231,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
     int id = get_global_id(0);
     c[id] = a[id] + b[id];
 }";
-        return new KernelDefinition(name, System.Text.Encoding.UTF8.GetBytes(code));
+        return new KernelDefinition(name, System.Text.Encoding.UTF8.GetBytes(code), new CompilationOptions());
     }
 
     #endregion
@@ -283,7 +282,7 @@ public class CpuAcceleratorOptionsTests
         var errors = options.Validate();
 
         // Assert
-        errors.Should().BeEmpty();
+        Assert.Empty(errors);
     }
 
     [Theory]
@@ -301,7 +300,7 @@ public class CpuAcceleratorOptionsTests
         var errors = options.Validate();
 
         // Assert
-        errors.Should().Contain(expectedError);
+        Assert.Contains(expectedError, errors);
     }
 
     [Fact]
@@ -315,7 +314,7 @@ public class CpuAcceleratorOptionsTests
 
         // Assert
         workGroupSize.Should().BePositive();
-        workGroupSize.Should().BeLessOrEqualTo(1024);
+        Assert.True(workGroupSize <= 1024);
     }
 
     [Fact]
@@ -331,7 +330,7 @@ public class CpuAcceleratorOptionsTests
         var workGroupSize = options.GetEffectiveWorkGroupSize();
 
         // Assert
-        workGroupSize.Should().BeLessOrEqualTo(256);
+        Assert.True(workGroupSize <= 256);
         workGroupSize.Should().BePositive();
     }
 
@@ -356,7 +355,7 @@ public class CpuAcceleratorOptionsTests
         var shouldUse = options.ShouldUseInstructionSet(instructionSet);
 
         // Assert
-        shouldUse.Should().Be(expected);
+        Assert.Equal(expected, shouldUse);
     }
 
     [Fact]

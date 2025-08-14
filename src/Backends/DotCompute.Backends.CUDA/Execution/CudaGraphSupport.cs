@@ -106,6 +106,8 @@ public sealed class CudaGraphSupport : IDisposable
         string graphId,
         CancellationToken cancellationToken = default)
     {
+        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        
         ThrowIfDisposed();
 
         if (!_graphTemplates.TryGetValue(graphId, out var graph))
@@ -235,6 +237,8 @@ public sealed class CudaGraphSupport : IDisposable
         CudaGraphUpdateParameters updateParams,
         CancellationToken cancellationToken = default)
     {
+        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        
         ThrowIfDisposed();
 
         if (!instance.IsValid)
@@ -494,6 +498,8 @@ public sealed class CudaGraphSupport : IDisposable
         CudaKernelOperation operation,
         CancellationToken cancellationToken)
     {
+        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        
         var nodeParams = new CudaKernelNodeParams
         {
             Function = operation.Kernel.FunctionHandle,

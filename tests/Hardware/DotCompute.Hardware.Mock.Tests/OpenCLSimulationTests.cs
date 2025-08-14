@@ -5,6 +5,7 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware;
 

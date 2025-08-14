@@ -7,9 +7,9 @@ using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Tests.Shared;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Hardware.Unit;
@@ -48,7 +48,7 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.Add(compiledKernel);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be("vector_add");
     }
 
@@ -73,7 +73,7 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.Add(compiledKernel);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be("vector_add");
     }
 
@@ -98,7 +98,7 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.Add(compiledKernel);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be("vector_add");
     }
 
@@ -122,7 +122,7 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.Add(compiledKernel);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public class CudaKernelCompilerTests : IDisposable
 
         // Act & Assert
         var compileAction = async () => await accelerator.CompileKernelAsync(kernelDefinition);
-        await compileAction.Should().ThrowAsync<InvalidOperationException>()
+        await compileAction.ThrowAsync<InvalidOperationException>()
             .WithMessage("*Failed to compile CUDA kernel*");
     }
 
@@ -158,7 +158,7 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.Add(compiledKernel);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be("math_kernel");
     }
 
@@ -178,7 +178,7 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.Add(compiledKernel);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be("shared_memory_kernel");
     }
 
@@ -198,7 +198,7 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.Add(compiledKernel);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be("custom_kernel");
     }
 
@@ -221,8 +221,8 @@ public class CudaKernelCompilerTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        compiledKernel.Should().NotBeNull();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000, 
+        Assert.NotNull(compiledKernel);
+        stopwatch.Assert.True(ElapsedMilliseconds < 10000, 
             "Kernel compilation should complete within 10 seconds");
         
         _output.WriteLine($"Kernel compilation took {stopwatch.ElapsedMilliseconds}ms");
@@ -252,9 +252,9 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.Add(compiledKernel2);
 
         // Assert
-        compiledKernel1.Should().NotBeNull();
-        compiledKernel2.Should().NotBeNull();
-        stopwatch2.ElapsedMilliseconds.Should().BeLessThan(stopwatch1.ElapsedMilliseconds + 100,
+        Assert.NotNull(compiledKernel1);
+        Assert.NotNull(compiledKernel2);
+        stopwatch2.Assert.True(ElapsedMilliseconds < stopwatch1.ElapsedMilliseconds + 100,
             "Cached compilation should be faster or similar to first compilation");
             
         _output.WriteLine($"First compilation: {stopwatch1.ElapsedMilliseconds}ms, Second: {stopwatch2.ElapsedMilliseconds}ms");
@@ -276,7 +276,7 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.Add(compiledKernel);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
         compiledKernel.Name.Should().Be("matrix_multiply");
     }
 
@@ -301,7 +301,7 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.Add(compiledKernel);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
+        Assert.NotNull(compiledKernel);
     }
 
     [Fact]
@@ -316,7 +316,7 @@ public class CudaKernelCompilerTests : IDisposable
 
         // Act & Assert
         var compileAction = async () => await accelerator.CompileKernelAsync(null!);
-        await compileAction.Should().ThrowAsync<ArgumentNullException>();
+        await await Assert.ThrowsAsync<ArgumentNullException>(async () => await compileAction());
     }
 
     [Fact]
@@ -337,7 +337,7 @@ public class CudaKernelCompilerTests : IDisposable
 
         // Act & Assert
         var compileAction = async () => await accelerator.CompileKernelAsync(kernelDefinition);
-        await compileAction.Should().ThrowAsync<InvalidOperationException>();
+        await await Assert.ThrowsAsync<InvalidOperationException>(async () => await compileAction());
     }
 
     [Fact]
@@ -358,11 +358,11 @@ public class CudaKernelCompilerTests : IDisposable
             .Select(kernel => accelerator.CompileKernelAsync(kernel))
             .ToArray();
 
-        var compiledKernels = await Task.WhenAll(compileTasks);
+        var compiledKernels = await Task.WhenAll(compileTasks.Select(t => t.AsTask();
         _compiledKernels.AddRange(compiledKernels);
 
         // Assert
-        compiledKernels.Should().HaveCount(5);
+        Assert.Equal(5, compiledKernels.Count());
         compiledKernels.Should().AllSatisfy(k => k.Should().NotBeNull());
     }
 
@@ -542,7 +542,7 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
         {
             try
             {
-                kernel?.Dispose();
+                (kernel as IDisposable)?.Dispose();
             }
             catch (Exception ex)
             {

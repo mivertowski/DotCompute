@@ -3,6 +3,7 @@
 
 using System;
 using DotCompute.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared;
 /// <summary>

@@ -3,6 +3,7 @@
 
 using System;
 using DotCompute.Generators.Kernel;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit.TestData
 {

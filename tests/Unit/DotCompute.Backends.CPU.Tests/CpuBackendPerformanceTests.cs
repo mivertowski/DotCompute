@@ -3,14 +3,15 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
+using FluentAssertions;
 // Memory types are in the main namespace
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using FluentAssertions;
 using Xunit;
 using System.Diagnostics;
+using FluentAssertions;
 
 namespace DotCompute.Backends.CPU.Tests.Performance;
 
@@ -64,9 +65,9 @@ public class CpuBackendPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        buffer.Should().NotBeNull();
+        Assert.NotNull(buffer);
         buffer.ElementCount.Should().Be(elementCount);
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000); // Should complete within 1 second
+        stopwatch.ElapsedMilliseconds < 1000.Should().BeTrue(); // Should complete within 1 second
     }
 
     [Fact]
@@ -92,8 +93,8 @@ public class CpuBackendPerformanceTests : IDisposable
             stopwatch.Stop();
 
             // Assert
-            buffers.Should().HaveCount(allocationCount);
-            stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); // Should complete within 5 seconds
+            Assert.Equal(allocationCount, buffers.Count());
+            stopwatch.ElapsedMilliseconds < 5000.Should().BeTrue(); // Should complete within 5 seconds
             (stopwatch.ElapsedMilliseconds / (double)allocationCount).Should().BeLessThan(10); // Average <10ms per allocation
         }
         finally
@@ -131,7 +132,7 @@ public class CpuBackendPerformanceTests : IDisposable
         var dataSizeMB = (elementCount * sizeof(float)) / (1024.0 * 1024.0);
         var throughputMBps = dataSizeMB / (stopwatch.ElapsedMilliseconds / 1000.0);
         
-        throughputMBps.Should().BeGreaterThan(100); // Should achieve >100 MB/s
+        Assert.True(throughputMBps > 100); // Should achieve >100 MB/s
     }
 
     [Fact]
@@ -158,9 +159,9 @@ public class CpuBackendPerformanceTests : IDisposable
         // Assert
         try
         {
-            buffers.Should().HaveCount(concurrentTasks);
-            buffers.Should().AllSatisfy(b => b.Should().NotBeNull());
-            stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000); // Should complete within 10 seconds
+            Assert.Equal(concurrentTasks, buffers.Count());
+            buffers.Should().AllSatisfy(b => b.NotBeNull());
+            stopwatch.ElapsedMilliseconds < 10000.Should().BeTrue(); // Should complete within 10 seconds
         }
         finally
         {
@@ -194,8 +195,8 @@ public class CpuBackendPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        compiledKernel.Should().NotBeNull();
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); // Should compile within 5 seconds
+        Assert.NotNull(compiledKernel);
+        stopwatch.ElapsedMilliseconds < 5000.Should().BeTrue(); // Should compile within 5 seconds
     }
 
     [Theory]
@@ -224,12 +225,12 @@ public class CpuBackendPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        compiledKernels.Should().HaveCount(concurrentCompilations);
-        compiledKernels.Should().AllSatisfy(k => k.Should().NotBeNull());
+        Assert.Equal(concurrentCompilations, compiledKernels.Count());
+        compiledKernels.Should().AllSatisfy(k => k.NotBeNull());
         
         // Should scale reasonably - not linear due to CPU cores, but should be better than sequential
         var averageTimePerKernel = stopwatch.ElapsedMilliseconds / (double)concurrentCompilations;
-        averageTimePerKernel.Should().BeLessThan(1000); // Average <1 second per kernel
+        Assert.True(averageTimePerKernel < 1000); // Average <1 second per kernel
     }
 
     [Fact]
@@ -252,7 +253,7 @@ public class CpuBackendPerformanceTests : IDisposable
             var compiledKernel = await accelerator.CompileKernelAsync(definition);
             stopwatch.Stop();
 
-            compiledKernel.Should().NotBeNull();
+            Assert.NotNull(compiledKernel);
             compilationTimes.Add(stopwatch.ElapsedMilliseconds);
 
             await compiledKernel.DisposeAsync();
@@ -263,7 +264,7 @@ public class CpuBackendPerformanceTests : IDisposable
         var maxTime = compilationTimes.Max();
         var minTime = compilationTimes.Min();
 
-        averageTime.Should().BeLessThan(1000); // Average <1 second
+        Assert.True(averageTime < 1000); // Average <1 second
         (maxTime - minTime).Should().BeLessThan(averageTime); // Variance should be reasonable
     }
 
@@ -296,12 +297,12 @@ public class CpuBackendPerformanceTests : IDisposable
             }
 
             // Assert
-            buffers.Should().HaveCount(largeBufferCount);
+            Assert.Equal(largeBufferCount, buffers.Count());
             
             // Verify memory statistics are reasonable
             var statistics = memoryManager.GetStatistics();
-            statistics.TotalAllocatedBytes.Should().BeGreaterThan(0);
-            statistics.AllocationCount.Should().BeGreaterOrEqualTo(largeBufferCount);
+((statistics.TotalAllocatedBytes > 0).Should().BeTrue();
+            statistics.AllocationCount >= largeBufferCount.Should().BeTrue();
         }
         finally
         {
@@ -375,7 +376,7 @@ public class CpuBackendPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(30000); // Should complete within 30 seconds
+        stopwatch.ElapsedMilliseconds < 30000.Should().BeTrue(); // Should complete within 30 seconds
     }
 
     #endregion
@@ -414,7 +415,7 @@ public class CpuBackendPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000); // Should dispose within 10 seconds
+        stopwatch.ElapsedMilliseconds < 10000.Should().BeTrue(); // Should dispose within 10 seconds
 
         // Clean up remaining resources
         foreach (var buffer in buffers)
@@ -462,8 +463,8 @@ public class CpuBackendPerformanceTests : IDisposable
 
             // Assert
             var statistics = memoryManager.GetStatistics();
-            statistics.FragmentationPercentage.Should().BeLessThan(50); // Should maintain reasonable fragmentation
-            statistics.TotalAllocatedBytes.Should().BeGreaterThan(0);
+            statistics.FragmentationPercentage < 50.Should().BeTrue(); // Should maintain reasonable fragmentation
+((statistics.TotalAllocatedBytes > 0).Should().BeTrue();
         }
         finally
         {

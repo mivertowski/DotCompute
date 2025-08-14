@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared;
 
@@ -203,7 +204,7 @@ public class MockAcceleratorManager : IAcceleratorManager
     public MockAcceleratorManager()
     {
         // Add a default mock accelerator
-        _accelerators.Add(new MockAccelerator("DefaultMockGPU"));
+        _accelerators.Add(new MockAccelerator(name: "DefaultMockGPU"));
     }
 
     // IAcceleratorManager implementation

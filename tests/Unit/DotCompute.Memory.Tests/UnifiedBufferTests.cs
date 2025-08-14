@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
+using FluentAssertions;
 using DotCompute.Abstractions;
 using DotCompute.Memory;
-using FluentAssertions;
 using NSubstitute;
 using Xunit;
 
@@ -38,7 +38,7 @@ public sealed class UnifiedBufferTests : IDisposable
     {
         // Act & Assert
         var act = () => new UnifiedBuffer<int>(_memoryManager, 0);
-        act.Should().Throw<ArgumentOutOfRangeException>();
+        Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Fact]
@@ -46,7 +46,7 @@ public sealed class UnifiedBufferTests : IDisposable
     {
         // Act & Assert
         var act = () => new UnifiedBuffer<int>(null!, 1024);
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(() => act());
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public sealed class UnifiedBufferTests : IDisposable
         await buffer.CopyToAsync(destination);
 
         // Assert
-        destination.Should().BeEquivalentTo(sourceData);
+        destination.BeEquivalentTo(sourceData);
     }
 
     [Fact]
@@ -168,7 +168,7 @@ public sealed class UnifiedBufferTests : IDisposable
         var sizeInBytes = bufferType.GetProperty("SizeInBytes")!.GetValue(buffer);
 
         // Assert
-        sizeInBytes.Should().Be(10L * expectedElementSize);
+        Assert.Equal(10L * expectedElementSize, sizeInBytes);
 
         // Cleanup
         ((IDisposable)buffer!).Dispose();
@@ -181,7 +181,7 @@ public sealed class UnifiedBufferTests : IDisposable
         using var buffer = new UnifiedBuffer<int>(_memoryManager, 10);
 
         // Act & Assert
-        buffer.Accelerator.Should().BeNull();
+        buffer.Assert.Null(Accelerator);
     }
 
     [Fact]

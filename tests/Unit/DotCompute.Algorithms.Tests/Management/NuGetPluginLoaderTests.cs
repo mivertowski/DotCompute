@@ -3,7 +3,6 @@
 
 using DotCompute.Algorithms.Types.Management;
 using DotCompute.Algorithms.Types.Security;
-using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using NuGet.Packaging.Core;
@@ -11,6 +10,7 @@ using NuGet.Versioning;
 using System.IO.Compression;
 using System.Text;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Management;
 
@@ -58,12 +58,12 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var result = await _pluginLoader.LoadPackageAsync(packagePath, "net9.0");
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.PackageIdentity.Id.Should().Be("TestPackage");
         result.PackageIdentity.Version.ToString().Should().Be("1.0.0");
         result.LoadedAssemblyPaths.Should().NotBeEmpty();
         result.FromCache.Should().BeFalse();
-        result.LoadTime.Should().BeGreaterThan(TimeSpan.Zero);
+        result.LoadTime > TimeSpan.Zero.Should().BeTrue();
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var exception = await Assert.ThrowsAsync<Exception>(() =>
             _pluginLoader.LoadPackageAsync(nonExistentPath, "net9.0"));
         
-        exception.Message.Should().Contain("not found", StringComparison.OrdinalIgnoreCase);
+        exception.Assert.Contains("not found", Message); // StringComparison.OrdinalIgnoreCase;
     }
 
     [Theory]
@@ -116,7 +116,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var result = await _pluginLoader.LoadPackageAsync(packagePath, null);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // Should use the default target framework from options
     }
 
@@ -134,7 +134,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var updateResult = await _pluginLoader.UpdatePackageAsync("TestPackage", "net9.0");
 
         // Assert
-        updateResult.Should().NotBeNull();
+        Assert.NotNull(updateResult);
         updateResult.PackageIdentity.Id.Should().Be("TestPackage");
         // Note: In a real scenario with remote packages, this would update to the latest version
     }
@@ -148,7 +148,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         // Assert
         // This should attempt to load the latest version from remote sources
         // In our test environment, this will likely fail, but the method should handle it gracefully
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var cachedPackages = _pluginLoader.GetCachedPackages();
 
         // Assert
-        cachedPackages.Should().BeEmpty();
+        Assert.Empty(cachedPackages);
     }
 
     [Fact]
@@ -172,14 +172,14 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var cachedPackages = _pluginLoader.GetCachedPackages();
 
         // Assert
-        cachedPackages.Should().NotBeEmpty();
-        cachedPackages.Should().HaveCount(1);
+        Assert.NotEmpty(cachedPackages);
+        Assert.Equal(1, cachedPackages.Count());
         
         var cachedPackage = cachedPackages.First();
         cachedPackage.Identity.Id.Should().Be("TestPackage");
         cachedPackage.Identity.Version.ToString().Should().Be("1.0.0");
-        cachedPackage.AssemblyCount.Should().BeGreaterThan(0);
-        cachedPackage.CacheAge.Should().BeGreaterThan(TimeSpan.Zero);
+((cachedPackage.AssemblyCount > 0).Should().BeTrue();
+        cachedPackage.CacheAge > TimeSpan.Zero.Should().BeTrue();
         cachedPackage.IsSecurityValidated.Should().BeTrue(); // Since we disabled security validation, it should pass
     }
 
@@ -191,14 +191,14 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         await _pluginLoader.LoadPackageAsync(packagePath, "net9.0");
         
         var cachedPackagesBefore = _pluginLoader.GetCachedPackages();
-        cachedPackagesBefore.Should().NotBeEmpty();
+        Assert.NotEmpty(cachedPackagesBefore);
 
         // Act
         await _pluginLoader.ClearCacheAsync();
 
         // Assert
         var cachedPackagesAfter = _pluginLoader.GetCachedPackages();
-        cachedPackagesAfter.Should().BeEmpty();
+        Assert.Empty(cachedPackagesAfter);
     }
 
     [Fact]
@@ -213,14 +213,14 @@ public sealed class NuGetPluginLoaderTests : IDisposable
 
         // Assert
         var cachedPackages = _pluginLoader.GetCachedPackages();
-        cachedPackages.Should().NotBeEmpty(); // Nothing should be cleared
+        Assert.NotEmpty(cachedPackages); // Nothing should be cleared
 
         // Act - clear packages older than 0 seconds (should clear everything)
         await _pluginLoader.ClearCacheAsync(TimeSpan.Zero);
 
         // Assert
         var cachedPackagesAfter = _pluginLoader.GetCachedPackages();
-        cachedPackagesAfter.Should().BeEmpty();
+        Assert.Empty(cachedPackagesAfter);
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var options = new NuGetPluginLoaderOptions();
 
         // Assert
-        options.CacheDirectory.Should().Contain("DotComputeNuGetCache");
+        options.Assert.Contains("DotComputeNuGetCache", CacheDirectory);
         options.CacheExpiration.Should().Be(TimeSpan.FromDays(7));
         options.DefaultTargetFramework.Should().Be("net9.0");
         options.IncludePrerelease.Should().BeFalse();
@@ -240,7 +240,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         options.EnableMalwareScanning.Should().BeTrue();
         options.MaxAssemblySize.Should().Be(50 * 1024 * 1024);
         options.MinimumSecurityLevel.Should().Be(SecurityLevel.Medium);
-        options.TrustedSources.Should().Contain("https://api.nuget.org/v3/index.json");
+        options.Assert.Contains("https://api.nuget.org/v3/index.json", TrustedSources);
     }
 
     [Fact]
@@ -271,7 +271,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         info.DependencyCount.Should().Be(3);
         info.PackageSize.Should().Be(1024 * 1024);
         info.IsSecurityValidated.Should().BeTrue();
-        info.CacheAge.Should().BeCloseTo(TimeSpan.FromMinutes(5), TimeSpan.FromSeconds(10));
+        info.CacheAge.BeCloseTo(TimeSpan.FromMinutes(5), TimeSpan.FromSeconds(10));
     }
 
     [Fact]
@@ -297,14 +297,14 @@ public sealed class NuGetPluginLoaderTests : IDisposable
 
         // Assert
         result.PackageIdentity.Should().Be(identity);
-        result.LoadedAssemblyPaths.Should().Equal(["assembly1.dll", "assembly2.dll"]);
-        result.ResolvedDependencies.Should().BeEmpty();
+        result.LoadedAssemblyPaths.Equal(["assembly1.dll", "assembly2.dll"]);
+        result.Assert.Empty(ResolvedDependencies);
         result.LoadTime.Should().Be(loadTime);
         result.TotalSize.Should().Be(2048);
         result.SecurityValidationResult.Should().Be("Valid signature");
         result.FromCache.Should().BeTrue();
         result.CachePath.Should().Be("/cache/path");
-        result.Warnings.Should().Equal(["Warning 1", "Warning 2"]);
+        result.Warnings.Equal(["Warning 1", "Warning 2"]);
     }
 
     [Fact]
@@ -331,13 +331,13 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var result = await _pluginLoader.LoadPackageAsync(packagePath, "net9.0");
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.LoadedAssemblyPaths.Should().NotBeEmpty();
-        result.TotalSize.Should().BeGreaterThan(0);
+((result.TotalSize > 0).Should().BeTrue();
     }
 
     [Fact]
-    public void Dispose_CalledMultipleTimes_ShouldNotThrow()
+    public void Dispose_CalledMultipleTimes_ShouldShould().NotThrow()
     {
         // Act & Assert
         _pluginLoader.Dispose(); // First dispose

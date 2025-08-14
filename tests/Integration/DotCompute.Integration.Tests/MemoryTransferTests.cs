@@ -4,11 +4,11 @@
 using DotCompute.Abstractions;
 using DotCompute.Memory;
 using DotCompute.Tests.Shared;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -50,7 +50,7 @@ public class MemoryTransferTests : IntegrationTestBase
             testData);
 
         // Assert
-        transferResult.Should().NotBeNull();
+        Assert.NotNull(transferResult);
         transferResult.Success.Should().BeTrue();
         transferResult.TransferTime.Should().BePositive();
         transferResult.DataIntegrity.Should().BeTrue();
@@ -58,7 +58,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         // Performance assertions
         var throughput = dataSize / transferResult.TransferTime.TotalSeconds / (1024 * 1024); // MB/s
-        throughput.Should().BeGreaterThan(1, "Transfer throughput should be reasonable");
+        Assert.True(throughput > 1, "Transfer throughput should be reasonable");
     }
 
     [Theory]
@@ -92,7 +92,7 @@ public class MemoryTransferTests : IntegrationTestBase
             dataSize);
 
         // Assert
-        transferResult.Should().NotBeNull();
+        Assert.NotNull(transferResult);
         transferResult.Success.Should().BeTrue();
         transferResult.TransferTime.Should().BePositive();
         transferResult.DataIntegrity.Should().BeTrue();
@@ -100,7 +100,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         // Verify data matches original
         var transferredData = transferResult.Data as float[];
-        transferredData.Should().NotBeNull();
+        Assert.NotNull(transferredData);
         transferredData!.Length.Should().Be(testData.Length);
         
         for (int i = 0; i < testData.Length; i++)
@@ -133,7 +133,7 @@ public class MemoryTransferTests : IntegrationTestBase
             testData);
 
         // Assert
-        unifiedResult.Should().NotBeNull();
+        Assert.NotNull(unifiedResult);
         unifiedResult.Success.Should().BeTrue();
         unifiedResult.HostAccessTime.Should().BePositive();
         unifiedResult.DeviceAccessTime.Should().BePositive();
@@ -162,7 +162,7 @@ public class MemoryTransferTests : IntegrationTestBase
         const int dataSize = 4 * 1024 * 1024; // 4MB
         const int transferCount = 4;
         var testDataSets = Enumerable.Range(0, transferCount)
-            .Select(_ => GenerateTestData(dataSize / sizeof(float)))
+            .Select(_ => GenerateTestData(dataSize / sizeof(float)
             .ToArray();
         
         var accelerator = accelerators.First();
@@ -176,9 +176,9 @@ public class MemoryTransferTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        asyncResults.Should().HaveCount(transferCount);
-        asyncResults.All(r => r.Success).Should().BeTrue();
-        asyncResults.All(r => r.DataIntegrity).Should().BeTrue();
+        Assert.Equal(transferCount, asyncResults.Count());
+        asyncResults.Should().AllSatisfy(r => r.Success);
+        asyncResults.Should().AllSatisfy(r => r.DataIntegrity);
         
         var totalTransferTime = asyncResults.Sum(r => r.TransferTime.TotalMilliseconds);
         var concurrentTime = stopwatch.Elapsed.TotalMilliseconds;
@@ -189,14 +189,14 @@ public class MemoryTransferTests : IntegrationTestBase
         // Instead of strict performance assertions, verify that async transfers completed
         // and that we didn't exceed a reasonable timeout based on data size
         var reasonableTimeout = transferCount * (dataSize / (1024 * 1024)) * 1000; // 1 second per MB
-        concurrentTime.Should().BeLessThan(reasonableTimeout, 
+        Assert.True(concurrentTime < reasonableTimeout, 
             "Async transfers should complete within reasonable time");
         
         // Verify that concurrent time is less than the sum of all transfers
         // This is a more lenient check that accounts for system variations
         if (totalTransferTime > 50) // Only check if transfers took meaningful time
         {
-            concurrentTime.Should().BeLessThan(totalTransferTime * 1.2,
+            Assert.True(concurrentTime < totalTransferTime * 1.2,
                 "Concurrent execution should not take significantly longer than sequential would");
         }
     }
@@ -255,14 +255,14 @@ public class MemoryTransferTests : IntegrationTestBase
             "Pinned memory transfer should complete within reasonable time");
         
         // Both should achieve minimum throughput (1 MB/s is very conservative)
-        regularThroughput.Should().BeGreaterThan(1024 * 1024, // 1 MB/s
+        Assert.True(regularThroughput > 1024 * 1024, // 1 MB/s
             "Regular memory transfer should achieve minimum throughput");
-        pinnedThroughput.Should().BeGreaterThan(1024 * 1024, // 1 MB/s
+        Assert.True(pinnedThroughput > 1024 * 1024, // 1 MB/s
             "Pinned memory transfer should achieve minimum throughput");
         
         // Pinned memory should not be significantly worse than regular memory
         // Allow up to 50% degradation to account for system variations and test environment
-        pinnedThroughput.Should().BeGreaterThan(regularThroughput * 0.5,
+        Assert.True(pinnedThroughput > regularThroughput * 0.5,
             "Pinned memory should not be significantly slower than regular memory");
     }
 
@@ -290,9 +290,9 @@ public class MemoryTransferTests : IntegrationTestBase
             testDataSets);
 
         // Assert
-        multiDeviceResults.Should().HaveCount(2);
-        multiDeviceResults.All(r => r.Success).Should().BeTrue();
-        multiDeviceResults.All(r => r.DataIntegrity).Should().BeTrue();
+        Assert.Equal(2, multiDeviceResults.Count());
+        multiDeviceResults.Should().AllSatisfy(r => r.Success);
+        multiDeviceResults.Should().AllSatisfy(r => r.DataIntegrity);
         
         // Each device should process its own data independently
         for (int i = 0; i < 2; i++)
@@ -301,7 +301,7 @@ public class MemoryTransferTests : IntegrationTestBase
             var originalData = testDataSets[i];
             var transferredData = result.Data as float[];
             
-            transferredData.Should().NotBeNull();
+            Assert.NotNull(transferredData);
             transferredData!.Length.Should().Be(originalData.Length);
         }
     }
@@ -336,7 +336,7 @@ public class MemoryTransferTests : IntegrationTestBase
             memoryType);
 
         // Assert
-        memoryTypeResult.Should().NotBeNull();
+        Assert.NotNull(memoryTypeResult);
         memoryTypeResult.Success.Should().BeTrue();
         memoryTypeResult.DataIntegrity.Should().BeTrue();
         memoryTypeResult.MemoryType.Should().Be(memoryType);
@@ -395,13 +395,13 @@ public class MemoryTransferTests : IntegrationTestBase
             largeTestData);
 
         // Assert
-        largeTransferResult.Should().NotBeNull();
+        Assert.NotNull(largeTransferResult);
         largeTransferResult.Success.Should().BeTrue();
         largeTransferResult.DataIntegrity.Should().BeTrue();
         largeTransferResult.TransferTime.Should().BeLessThan(TimeSpan.FromSeconds(10));
         
         var throughput = largeDataSize / largeTransferResult.TransferTime.TotalSeconds / (1024 * 1024);
-        throughput.Should().BeGreaterThan(10, "Large transfer should maintain good throughput");
+        Assert.True(throughput > 10, "Large transfer should maintain good throughput");
     }
 
     [Fact]

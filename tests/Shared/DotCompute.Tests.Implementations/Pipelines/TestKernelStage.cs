@@ -7,6 +7,7 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Aot;
 using DotCompute.Core.Pipelines;
 using DotCompute.Tests.Shared.Kernels;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.Pipelines;
 

@@ -5,8 +5,8 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Moq;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Core.Tests.Simple;
 
@@ -36,10 +36,10 @@ public class KernelCompilerSimpleTests : IDisposable
     public void DirectComputeCompiler_Constructor_ShouldInitializeSuccessfully()
     {
         // Assert
-        _directComputeCompiler.Should().NotBeNull();
+        Assert.NotNull(_directComputeCompiler);
         _directComputeCompiler.Name.Should().Be("DirectCompute Kernel Compiler");
-        _directComputeCompiler.SupportedSourceTypes.Should().Contain(KernelSourceType.HLSL);
-        _directComputeCompiler.SupportedSourceTypes.Should().Contain(KernelSourceType.Binary);
+        _directComputeCompiler.Assert.Contains(KernelSourceType.HLSL, SupportedSourceTypes);
+        _directComputeCompiler.Assert.Contains(KernelSourceType.Binary, SupportedSourceTypes);
     }
 
     [Fact]
@@ -47,7 +47,7 @@ public class KernelCompilerSimpleTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new DirectComputeKernelCompiler(null!);
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(() => act());
     }
 
     [Fact]
@@ -60,7 +60,7 @@ public class KernelCompilerSimpleTests : IDisposable
         var result = await _directComputeCompiler.CompileAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
     }
 
@@ -68,8 +68,7 @@ public class KernelCompilerSimpleTests : IDisposable
     public async Task DirectComputeCompiler_CompileAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        await _directComputeCompiler.Invoking(c => c.CompileAsync(null!))
-            .Should().ThrowAsync<ArgumentNullException>();
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _directComputeCompiler.MethodCall().AsTask());
     }
 
     [Fact]
@@ -79,8 +78,7 @@ public class KernelCompilerSimpleTests : IDisposable
         var definition = CreateOpenCLKernelDefinition("TestKernel");
 
         // Act & Assert
-        await _directComputeCompiler.Invoking(c => c.CompileAsync(definition))
-            .Should().ThrowAsync<ArgumentException>();
+        await Assert.ThrowsAsync<ArgumentException>(() => _directComputeCompiler.MethodCall().AsTask());
     }
 
     [Fact]
@@ -93,7 +91,7 @@ public class KernelCompilerSimpleTests : IDisposable
         var result = _directComputeCompiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 
@@ -108,9 +106,9 @@ public class KernelCompilerSimpleTests : IDisposable
         var result = _directComputeCompiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.Should().Contain("No [numthreads] attribute found");
+        result.Assert.Contains("No [numthreads] attribute found", Message);
     }
 
     #endregion
@@ -121,10 +119,10 @@ public class KernelCompilerSimpleTests : IDisposable
     public void OpenCLCompiler_Constructor_ShouldInitializeSuccessfully()
     {
         // Assert
-        _openCLCompiler.Should().NotBeNull();
+        Assert.NotNull(_openCLCompiler);
         _openCLCompiler.Name.Should().Be("OpenCL Kernel Compiler");
-        _openCLCompiler.SupportedSourceTypes.Should().Contain(KernelSourceType.OpenCL);
-        _openCLCompiler.SupportedSourceTypes.Should().Contain(KernelSourceType.Binary);
+        _openCLCompiler.Assert.Contains(KernelSourceType.OpenCL, SupportedSourceTypes);
+        _openCLCompiler.Assert.Contains(KernelSourceType.Binary, SupportedSourceTypes);
     }
 
     [Fact]
@@ -132,7 +130,7 @@ public class KernelCompilerSimpleTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new OpenCLKernelCompiler(null!);
-        act.Should().Throw<ArgumentNullException>();
+        Assert.Throws<ArgumentNullException>(() => act());
     }
 
     [Fact]
@@ -145,7 +143,7 @@ public class KernelCompilerSimpleTests : IDisposable
         var result = await _openCLCompiler.CompileAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
     }
 
@@ -153,8 +151,7 @@ public class KernelCompilerSimpleTests : IDisposable
     public async Task OpenCLCompiler_CompileAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        await _openCLCompiler.Invoking(c => c.CompileAsync(null!))
-            .Should().ThrowAsync<ArgumentNullException>();
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _openCLCompiler.MethodCall().AsTask());
     }
 
     [Fact]
@@ -164,8 +161,7 @@ public class KernelCompilerSimpleTests : IDisposable
         var definition = CreateDirectComputeKernelDefinition("TestKernel");
 
         // Act & Assert
-        await _openCLCompiler.Invoking(c => c.CompileAsync(definition))
-            .Should().ThrowAsync<ArgumentException>();
+        await Assert.ThrowsAsync<ArgumentException>(() => _openCLCompiler.MethodCall().AsTask());
     }
 
     [Fact]
@@ -178,7 +174,7 @@ public class KernelCompilerSimpleTests : IDisposable
         var result = _openCLCompiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 
@@ -193,14 +189,14 @@ public class KernelCompilerSimpleTests : IDisposable
         var result = _openCLCompiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.Should().Contain("No __kernel function found");
+        result.Assert.Contains("No __kernel function found", Message);
     }
 
     [Theory]
     [InlineData("__kernel void test() { { { }")]
-    [InlineData("__kernel void test() { ((( )")]
+    [InlineData("__kernel void test() { (( )")]
     public void OpenCLCompiler_Validate_WithUnbalancedBrackets_ShouldReturnFailure(string openclCode)
     {
         // Arrange
@@ -210,9 +206,9 @@ public class KernelCompilerSimpleTests : IDisposable
         var result = _openCLCompiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.Should().ContainAny("Unbalanced braces", "Unbalanced parentheses", "Unbalanced brackets");
+        result.Message.ContainAny("Unbalanced braces", "Unbalanced parentheses", "Unbalanced brackets");
     }
 
     [Theory]
@@ -227,9 +223,9 @@ public class KernelCompilerSimpleTests : IDisposable
         var result = _openCLCompiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.Should().Contain("Dynamic memory allocation not supported");
+        result.Assert.Contains("Dynamic memory allocation not supported", Message);
     }
 
     #endregion
@@ -247,11 +243,9 @@ public class KernelCompilerSimpleTests : IDisposable
         cts.Cancel();
 
         // Act & Assert
-        await _directComputeCompiler.Invoking(c => c.CompileAsync(directComputeDefinition, null, cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => _directComputeCompiler.MethodCall().AsTask());
 
-        await _openCLCompiler.Invoking(c => c.CompileAsync(openCLDefinition, null, cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => _openCLCompiler.MethodCall().AsTask());
     }
 
     [Theory]
@@ -274,8 +268,8 @@ public class KernelCompilerSimpleTests : IDisposable
         var oclResult = await _openCLCompiler.CompileAsync(openCLDefinition, options);
 
         // Assert
-        dcResult.Should().NotBeNull();
-        oclResult.Should().NotBeNull();
+        Assert.NotNull(dcResult);
+        Assert.NotNull(oclResult);
     }
 
     #endregion
@@ -287,10 +281,10 @@ public class KernelCompilerSimpleTests : IDisposable
     {
         // Act & Assert
         _directComputeCompiler.Invoking(c => c.Validate(null!))
-            .Should().Throw<ArgumentNullException>();
+            .Throw<ArgumentNullException>();
 
         _openCLCompiler.Invoking(c => c.Validate(null!))
-            .Should().Throw<ArgumentNullException>();
+            .Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -305,8 +299,8 @@ public class KernelCompilerSimpleTests : IDisposable
         var oclResult = await _openCLCompiler.CompileAsync(openCLDefinition);
 
         // Assert
-        dcResult.Should().BeOfType<ManagedCompiledKernel>();
-        oclResult.Should().BeOfType<ManagedCompiledKernel>();
+        Assert.IsType<ManagedCompiledKernel>(dcResult);
+        Assert.IsType<ManagedCompiledKernel>(oclResult);
 
         var dcManagedKernel = dcResult as ManagedCompiledKernel;
         var oclManagedKernel = oclResult as ManagedCompiledKernel;
@@ -377,11 +371,11 @@ public class CoreMemoryInterfaceTests
         var interfaceType = typeof(IMemoryManager);
 
         // Assert
-        interfaceType.Should().NotBeNull();
-        interfaceType.GetMethod("CreateBufferAsync").Should().NotBeNull();
-        interfaceType.GetMethod("CopyAsync").Should().NotBeNull();
-        interfaceType.GetMethod("GetStatistics").Should().NotBeNull();
-        interfaceType.GetProperty("AvailableLocations").Should().NotBeNull();
+        Assert.NotNull(interfaceType);
+        interfaceType.GetMethod("CreateBufferAsync").NotBeNull();
+        interfaceType.GetMethod("CopyAsync").NotBeNull();
+        interfaceType.GetMethod("GetStatistics").NotBeNull();
+        interfaceType.GetProperty("AvailableLocations").NotBeNull();
     }
 
     [Fact]
@@ -391,7 +385,7 @@ public class CoreMemoryInterfaceTests
         var interfaceType = typeof(IMemoryManager);
 
         // Assert
-        interfaceType.GetInterfaces().Should().Contain(typeof(IAsyncDisposable));
+        interfaceType.GetInterfaces().Contain(typeof(IAsyncDisposable));
     }
 
     #endregion
@@ -402,7 +396,7 @@ public class CoreMemoryInterfaceTests
     public void MemoryLocation_ShouldHaveExpectedValues()
     {
         // Act & Assert
-        Enum.GetValues<MemoryLocation>().Should().Contain(new[]
+        Enum.GetValues<MemoryLocation>().Contain(new[]
         {
             MemoryLocation.Host,
             MemoryLocation.Device,
@@ -449,7 +443,7 @@ public class CoreMemoryInterfaceTests
         var result = combined.HasFlag(flag);
 
         // Assert
-        result.Should().Be(hasFlag);
+        Assert.Equal(hasFlag, result);
     }
 
     [Fact]
@@ -461,7 +455,7 @@ public class CoreMemoryInterfaceTests
         // Assert
         readWrite.HasFlag(DotCompute.Abstractions.MemoryAccess.ReadOnly).Should().BeTrue();
         readWrite.HasFlag(DotCompute.Abstractions.MemoryAccess.WriteOnly).Should().BeTrue();
-        readWrite.Should().Be(DotCompute.Abstractions.MemoryAccess.ReadOnly | DotCompute.Abstractions.MemoryAccess.WriteOnly);
+        Assert.Equal(DotCompute.Abstractions.MemoryAccess.ReadOnly | DotCompute.Abstractions.MemoryAccess.WriteOnly, readWrite);
     }
 
     #endregion

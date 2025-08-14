@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.TestInfrastructure;
 

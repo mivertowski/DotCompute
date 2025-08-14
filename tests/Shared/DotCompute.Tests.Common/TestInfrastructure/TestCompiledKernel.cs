@@ -3,6 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.TestInfrastructure;
 

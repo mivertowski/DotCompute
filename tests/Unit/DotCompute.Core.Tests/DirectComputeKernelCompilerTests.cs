@@ -5,8 +5,8 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Moq;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Core.Tests.Kernels;
 
@@ -32,10 +32,10 @@ public class DirectComputeKernelCompilerTests : IDisposable
     public void Constructor_WithValidLogger_ShouldInitializeSuccessfully()
     {
         // Assert
-        _compiler.Should().NotBeNull();
+        Assert.NotNull(_compiler);
         _compiler.Name.Should().Be("DirectCompute Kernel Compiler");
-        _compiler.SupportedSourceTypes.Should().Contain(KernelSourceType.HLSL);
-        _compiler.SupportedSourceTypes.Should().Contain(KernelSourceType.Binary);
+        _compiler.Assert.Contains(KernelSourceType.HLSL, SupportedSourceTypes);
+        _compiler.Assert.Contains(KernelSourceType.Binary, SupportedSourceTypes);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new DirectComputeKernelCompiler(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        act.Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     #endregion
@@ -57,7 +57,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var name = _compiler.Name;
 
         // Assert
-        name.Should().Be("DirectCompute Kernel Compiler");
+        Assert.Equal("DirectCompute Kernel Compiler", name);
     }
 
     [Fact]
@@ -67,10 +67,10 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var supportedTypes = _compiler.SupportedSourceTypes;
 
         // Assert
-        supportedTypes.Should().NotBeNull();
-        supportedTypes.Should().HaveCount(2);
-        supportedTypes.Should().Contain(KernelSourceType.HLSL);
-        supportedTypes.Should().Contain(KernelSourceType.Binary);
+        Assert.NotNull(supportedTypes);
+        Assert.Equal(2, supportedTypes.Count());
+        Assert.Contains(KernelSourceType.HLSL, supportedTypes);
+        Assert.Contains(KernelSourceType.Binary, supportedTypes);
     }
 
     #endregion
@@ -87,7 +87,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
         VerifyLoggerWasCalledForCompilation("TestKernel");
     }
@@ -96,8 +96,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
     public async Task CompileAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        await _compiler.Invoking(c => c.CompileAsync(null!))
-            .Should().ThrowAsync<ArgumentNullException>()
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _compiler.MethodCall().AsTask())
             .WithParameterName("definition");
     }
 
@@ -108,8 +107,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var definition = CreateKernelDefinitionWithLanguage("TestKernel", KernelLanguage.OpenCL);
 
         // Act & Assert
-        await _compiler.Invoking(c => c.CompileAsync(definition))
-            .Should().ThrowAsync<ArgumentException>()
+        await Assert.ThrowsAsync<ArgumentException>(() => _compiler.MethodCall().AsTask())
             .WithMessage("*Expected HLSL/DirectCompute kernel but received OpenCL*");
     }
 
@@ -123,7 +121,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition, null);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
     }
 
@@ -142,7 +140,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition, options);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.Name.Should().Be("TestKernel");
     }
 
@@ -155,8 +153,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         cts.Cancel();
 
         // Act & Assert
-        await _compiler.Invoking(c => c.CompileAsync(definition, null, cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => _compiler.MethodCall().AsTask());
     }
 
     [Fact]
@@ -169,13 +166,13 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().BeOfType<ManagedCompiledKernel>();
+        Assert.NotNull(result);
+        Assert.IsType<ManagedCompiledKernel>(result);
         
         var managedKernel = result as ManagedCompiledKernel;
         managedKernel!.Name.Should().Be("TestKernel");
         managedKernel.Binary.Should().NotBeNull();
-        managedKernel.CompilationLog.Should().Contain("Stub compilation");
+        managedKernel.Assert.Contains("Stub compilation", CompilationLog);
         managedKernel.PerformanceMetadata.Should().ContainKey("IsStubImplementation");
         managedKernel.PerformanceMetadata["IsStubImplementation"].Should().Be(true);
     }
@@ -194,7 +191,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
     }
 
@@ -203,7 +200,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
     {
         // Arrange & Act & Assert
         _compiler.Invoking(c => c.Validate(null!))
-            .Should().Throw<ArgumentNullException>()
+            .Throw<ArgumentNullException>()
             .WithParameterName("definition");
     }
 
@@ -217,9 +214,9 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.Should().Contain("Expected HLSL/DirectCompute kernel but received OpenCL");
+        result.Assert.Contains("Expected HLSL/DirectCompute kernel but received OpenCL", Message);
     }
 
     [Fact]
@@ -233,9 +230,9 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.Should().Contain("No [numthreads] attribute found");
+        result.Assert.Contains("No [numthreads] attribute found", Message);
     }
 
     [Fact]
@@ -248,7 +245,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // On non-Windows platforms, this should return success with warnings
         // The actual behavior depends on the platform detection logic
     }
@@ -264,8 +261,8 @@ public class DirectComputeKernelCompilerTests : IDisposable
         // and handles different platforms gracefully
         
         // Act & Assert
-        _compiler.Invoking(c => c.Validate(CreateValidHLSLKernelDefinition("Test")))
-            .Should().NotThrow();
+        _compiler.Invoking(c => c.Validate(CreateValidHLSLKernelDefinition("Test")
+            .NotThrow();
     }
 
     #endregion
@@ -292,7 +289,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
     [InlineData("void CSMain() { malloc(100); }", "Dynamic memory allocation")]
     [InlineData("void CSMain() { free(ptr); }", "Dynamic memory allocation")]
     [InlineData("[numthreads(8, 8, 1)]\nvoid CSMain() { { { } }", "Unbalanced braces")]
-    [InlineData("[numthreads(8, 8, 1)]\nvoid CSMain() { ((( } }", "Unbalanced parentheses")]
+    [InlineData("[numthreads(8, 8, 1)]\nvoid CSMain() { (( } }", "Unbalanced parentheses")]
     public void Validate_WithInvalidHLSLSyntax_ShouldDetectErrors(string hlslCode, string expectedError)
     {
         // Arrange
@@ -305,12 +302,12 @@ public class DirectComputeKernelCompilerTests : IDisposable
         if (expectedError == "Dynamic memory allocation")
         {
             // This should be detected during validation
-            result.Should().NotBeNull();
+            Assert.NotNull(result);
         }
         else
         {
             // Syntax errors should be caught
-            result.Should().NotBeNull();
+            Assert.NotNull(result);
         }
     }
 
@@ -329,7 +326,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // The validation may pass at the definition level but should be caught during detailed validation
     }
 
@@ -346,7 +343,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // Suboptimal sizes might generate warnings but should still be valid
     }
 
@@ -364,7 +361,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // Resource usage estimation is part of the validation process
     }
 
@@ -379,8 +376,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var definition = CreateKernelDefinitionWithCode("BadKernel", "invalid hlsl syntax {{{", KernelLanguage.HLSL);
 
         // Act & Assert
-        await _compiler.Invoking(c => c.CompileAsync(definition))
-            .Should().ThrowAsync<InvalidOperationException>()
+        await Assert.ThrowsAsync<InvalidOperationException>(() => _compiler.MethodCall().AsTask())
             .WithMessage("*DirectCompute kernel compilation failed*");
     }
 
@@ -418,14 +414,14 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = await _compiler.CompileAsync(definition);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().BeOfType<ManagedCompiledKernel>();
+        Assert.NotNull(result);
+        Assert.IsType<ManagedCompiledKernel>(result);
         
         var managedKernel = result as ManagedCompiledKernel;
         managedKernel!.Name.Should().Be("StubKernel");
         managedKernel.Binary.Should().NotBeNull();
-        managedKernel.Binary.Length.Should().BeGreaterThan(0);
-        managedKernel.CompilationLog.Should().Contain("Stub compilation for StubKernel");
+((managedKernel.(Binary.Length > 0).Should().BeTrue();
+        managedKernel.Assert.Contains("Stub compilation for StubKernel", CompilationLog);
         managedKernel.PerformanceMetadata.Should().ContainKey("CompilationTime");
         managedKernel.PerformanceMetadata.Should().ContainKey("IsStubImplementation");
         managedKernel.PerformanceMetadata.Should().ContainKey("Platform");
@@ -444,7 +440,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds.Should().BeGreaterOrEqualTo(25); // Should take at least ~30ms
+        stopwatch.ElapsedMilliseconds >= 25.Should().BeTrue(); // Should take at least ~30ms
     }
 
     #endregion
@@ -551,7 +547,7 @@ public class DirectComputeKernelCompilerAdvancedTests
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // Resource binding analysis is part of the validation process
     }
 
@@ -569,7 +565,7 @@ public class DirectComputeKernelCompilerAdvancedTests
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // Memory barrier analysis is part of the validation process
     }
 
@@ -590,7 +586,7 @@ void CSMain()
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // Shared memory usage analysis is part of the validation process
     }
 
@@ -607,7 +603,7 @@ void CSMain()
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // Texture sampling optimization hints are part of the validation process
     }
 
@@ -624,7 +620,7 @@ void CSMain()
         var result = _compiler.Validate(definition);
 
         // Assert
-        result.Should().NotBeNull();
+        Assert.NotNull(result);
         // Thread divergence warnings are part of the validation process
     }
 

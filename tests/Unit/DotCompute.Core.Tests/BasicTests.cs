@@ -1,5 +1,6 @@
 using System;
 using Xunit;
+using FluentAssertions;
 using DotCompute.Core;
 
 namespace DotCompute.Core.Tests

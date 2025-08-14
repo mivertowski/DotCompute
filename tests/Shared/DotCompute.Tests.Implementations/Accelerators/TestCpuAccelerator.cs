@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Shared.Memory;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.Accelerators;
 

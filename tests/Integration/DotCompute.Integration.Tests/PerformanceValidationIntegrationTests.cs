@@ -5,10 +5,10 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Integration.Infrastructure;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -52,7 +52,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         foreach (var (size, throughput) in throughputResults)
         {
             var expectedMinThroughput = CalculateExpectedMinThroughput(size, "vector_ops");
-            throughput.Should().BeGreaterThan(expectedMinThroughput, 
+            Assert.True(throughput > expectedMinThroughput, 
                 $"Throughput for {size} elements should meet minimum threshold");
         }
 
@@ -91,7 +91,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         foreach (var (size, latency) in latencyResults)
         {
             var expectedMaxLatency = CalculateExpectedMaxLatency(size);
-            latency.Should().BeLessThan(expectedMaxLatency, 
+            Assert.True(latency < expectedMaxLatency, 
                 $"Latency for {size} elements should be within acceptable bounds");
         }
 
@@ -137,10 +137,10 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         foreach (var (size, bandwidthResult) in bandwidthResults)
         {
             var expectedMinBandwidth = CalculateExpectedMinBandwidth(size);
-            bandwidthResult.BandwidthMBps.Should().BeGreaterThan(expectedMinBandwidth,
+            bandwidthResult.Assert.True(BandwidthMBps > expectedMinBandwidth,
                 $"Memory bandwidth for {size} elements should meet minimum threshold");
             
-            bandwidthResult.MemoryEfficiency.Should().BeLessThan(90,
+            bandwidthResult.Assert.True(MemoryEfficiency < 90,
                 "Memory usage efficiency should be reasonable");
         }
 
@@ -185,7 +185,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         
         // Higher complexity should show increased resource utilization
         var maxComplexity = computeResults[complexityLevels.Max()];
-        maxComplexity.ResourceUtilization.CpuUsagePercent.Should().BeGreaterThan(20,
+        maxComplexity.ResourceUtilization.Assert.True(CpuUsagePercent > 20,
             "High complexity workloads should utilize CPU resources");
     }
 
@@ -272,15 +272,15 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             algorithmType, dataSize, avgThroughput, avgLatency, minLatency, maxLatency);
 
         var expectedBaseline = GetAlgorithmBaseline(algorithmType, dataSize);
-        avgThroughput.Should().BeGreaterThan(expectedBaseline.MinThroughput,
+        Assert.True(avgThroughput > expectedBaseline.MinThroughput,
             $"{algorithmType} should meet minimum throughput baseline");
         
-        avgLatency.Should().BeLessThan(expectedBaseline.MaxLatency,
+        Assert.True(avgLatency < expectedBaseline.MaxLatency,
             $"{algorithmType} should meet maximum latency baseline");
         
         // Verify consistency (low variance)
         var latencyVariance = maxLatency - minLatency;
-        latencyVariance.Should().BeLessThan(avgLatency * 0.5,
+        Assert.True(latencyVariance < avgLatency * 0.5,
             "Algorithm performance should be consistent across iterations");
     }
 
@@ -424,7 +424,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             // Larger workloads should generally have better or similar throughput
             if (largeSize >= smallSize * 4) // Only compare significantly larger workloads
             {
-                largeThroughput.Should().BeGreaterOrEqualTo(smallThroughput * 0.8,
+                Assert.True(largeThroughput >= smallThroughput * 0.8,
                     $"Throughput should scale reasonably from {smallSize} to {largeSize} elements");
             }
         }
@@ -444,7 +444,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             
             // Latency should scale sublinearly with data size
             var expectedMaxLatency = smallLatency * Math.Pow(largeSize / (double)smallSize, 0.7);
-            largeLatency.Should().BeLessThan(expectedMaxLatency,
+            Assert.True(largeLatency < expectedMaxLatency,
                 $"Latency should scale sublinearly from {smallSize} to {largeSize} elements");
         }
     }
@@ -456,7 +456,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         
         // Bandwidth variance should be reasonable
         var bandwidthVariance = (maxBandwidth - minBandwidth) / maxBandwidth;
-        bandwidthVariance.Should().BeLessThan(0.8, "Memory bandwidth should be relatively consistent");
+        Assert.True(bandwidthVariance < 0.8, "Memory bandwidth should be relatively consistent");
     }
 
     private void ValidateComputeIntensityScaling(Dictionary<int, ComputeIntensityResult> computeResults)
@@ -477,7 +477,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             
             timeRatio.Should().BeGreaterThan(0.8, 
                 $"Higher complexity ({highComplexity}) should take more time than lower complexity ({lowComplexity})");
-            timeRatio.Should().BeLessThan(complexityRatio * 1.5,
+            Assert.True(timeRatio < complexityRatio * 1.5,
                 "Execution time should scale reasonably with computational complexity");
         }
     }
@@ -489,12 +489,12 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         foreach (var (concurrency, result) in concurrencyResults.Skip(1))
         {
             // Scaling efficiency should be reasonable
-            result.ScalingEfficiency.Should().BeGreaterThan(0.3,
+            result.Assert.True(ScalingEfficiency > 0.3,
                 $"Concurrency level {concurrency} should show reasonable scaling efficiency");
             
             // Success rate should remain high
             var successRate = (double)result.SuccessfulWorkflows / concurrency;
-            successRate.Should().BeGreaterOrEqualTo(0.8,
+            Assert.True(successRate >= 0.8,
                 $"Success rate should remain high at concurrency level {concurrency}");
         }
     }
@@ -530,18 +530,18 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
     private void ValidatePipelinePerformance(PipelinePerformanceMetrics metrics)
     {
         // Overall pipeline should be reasonably efficient
-        metrics.TotalThroughput.Should().BeGreaterThan(10, "Pipeline should maintain good throughput");
+        metrics.TotalThroughput > 10, "Pipeline should maintain good throughput".Should().BeTrue();
         
         // No single stage should dominate the pipeline
         var maxStageLatency = metrics.StageLatencies.Max();
         var avgStageLatency = metrics.StageLatencies.Average();
         
-        maxStageLatency.Should().BeLessThan(avgStageLatency * 3,
+        Assert.True(maxStageLatency < avgStageLatency * 3,
             "No single stage should be a significant bottleneck");
         
         // Resource utilization should be reasonable
-        metrics.ResourceUtilization.CpuUsagePercent.Should().BeGreaterThan(10);
-        metrics.ResourceUtilization.MemoryUsagePercent.Should().BeLessThan(90);
+        metrics.ResourceUtilization.CpuUsagePercent > 10.Should().BeTrue();
+        metrics.ResourceUtilization.MemoryUsagePercent < 90.Should().BeTrue();
     }
 
     private Dictionary<string, double> LoadPerformanceBaselines()

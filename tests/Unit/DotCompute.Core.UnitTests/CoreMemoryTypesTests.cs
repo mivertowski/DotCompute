@@ -1,6 +1,7 @@
 using DotCompute.Core.Types;
 using DotCompute.Core.Memory;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 

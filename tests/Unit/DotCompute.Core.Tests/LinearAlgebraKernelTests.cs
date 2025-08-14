@@ -11,6 +11,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -284,7 +285,7 @@ public class LinearAlgebraKernelTests : IDisposable
 
         // Assert
         Assert.Equal(expectedCount, result.Length);
-        Assert.All(result, eigenvalue => Assert.True(float.IsFinite(eigenvalue)));
+        Assert.All(result, eigenvalue => Assert.True(float.IsFinite(eigenvalue);
     }
 
     [Theory]
@@ -744,7 +745,7 @@ public class LinearAlgebraKernels : IDisposable
         if (b.Length != aCols * bCols)
             throw new ArgumentException("Matrix B dimensions don't match");
 
-        await Task.Delay(Math.Max(1, Math.Min(50, aRows + aCols + bCols))); // Simulate computation time
+        await Task.Delay(Math.Max(1, Math.Min(50, aRows + aCols + bCols); // Simulate computation time
         
         var result = new float[aRows * bCols];
         
@@ -1047,7 +1048,7 @@ public class LinearAlgebraKernels : IDisposable
         {
             var angle = 2.0 * Math.PI * i / degree;
             var radius = Math.Pow(goldenRatio, i % 4);
-            roots[i] = new Complex((float)(radius * Math.Cos(angle)), (float)(radius * Math.Sin(angle)));
+            roots[i] = new Complex((float)(radius * Math.Cos(angle)), (float)(radius * Math.Sin(angle);
         }
         
         for (int iteration = 0; iteration < maxIterations; iteration++)

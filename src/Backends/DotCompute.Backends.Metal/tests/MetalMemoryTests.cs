@@ -67,7 +67,7 @@ public class MetalMemoryTests : IClassFixture<MetalTestFixture>
         try
         {
             // Copy to device
-            _accelerator.Memory.CopyToDevice(memory, MemoryMarshal.AsBytes(data.AsSpan()));
+            _accelerator.Memory.CopyToDevice(memory, MemoryMarshal.AsBytes(data.AsSpan();
             
             // Copy back from device
             var result = new float[count];
@@ -100,7 +100,7 @@ public class MetalMemoryTests : IClassFixture<MetalTestFixture>
         try
         {
             // Copy data to source buffer
-            _accelerator.Memory.CopyToDevice(source, MemoryMarshal.AsBytes(data.AsSpan()));
+            _accelerator.Memory.CopyToDevice(source, MemoryMarshal.AsBytes(data.AsSpan();
             
             // Copy between device buffers
             _accelerator.Memory.Copy(destination, source);

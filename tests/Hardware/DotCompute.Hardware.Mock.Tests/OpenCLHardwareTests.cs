@@ -7,6 +7,7 @@ using DotCompute.Tests.Shared;
 using DotCompute.Tests.Shared.TestFixtures;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware;
 

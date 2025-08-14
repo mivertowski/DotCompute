@@ -7,10 +7,10 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using DotCompute.Core.Pipelines;
 using DotCompute.Tests.Common.Hardware;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration.Infrastructure;
 
@@ -416,7 +416,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
     /// <summary>
     /// Creates test data generators for different data types and sizes.
     /// </summary>
-    protected static class TestDataGenerators
+    public static class TestDataGenerators
     {
         private static readonly Random Random = new(42); // Fixed seed for reproducibility
 

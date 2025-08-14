@@ -55,12 +55,8 @@ public class EnhancedKernelCompilationBenchmarks
                 }
             }";
         
-        _kernelDefinitions["Simple"] = new KernelDefinition
-        {
-            Name = "simple_kernel",
-            Code = Encoding.UTF8.GetBytes(simpleKernelSource),
-            EntryPoint = "simple_kernel"
-        };
+        var simpleKernelSource_obj = new TextKernelSource(simpleKernelSource, "simple_kernel", KernelLanguage.OpenCL, "simple_kernel");
+        _kernelDefinitions["Simple"] = new KernelDefinition("simple_kernel", simpleKernelSource_obj, new CompilationOptions());
 
         // Complex kernel with multiple operations
         var complexKernelSource = @"
@@ -85,12 +81,8 @@ public class EnhancedKernelCompilationBenchmarks
                 }
             }";
         
-        _kernelDefinitions["Complex"] = new KernelDefinition
-        {
-            Name = "complex_kernel",
-            Code = Encoding.UTF8.GetBytes(complexKernelSource),
-            EntryPoint = "complex_kernel"
-        };
+        var complexKernelSource_obj = new TextKernelSource(complexKernelSource, "complex_kernel", KernelLanguage.OpenCL, "complex_kernel");
+        _kernelDefinitions["Complex"] = new KernelDefinition("complex_kernel", complexKernelSource_obj, new CompilationOptions());
 
         // Vector addition kernel
         var vectorAddSource = @"
@@ -101,12 +93,8 @@ public class EnhancedKernelCompilationBenchmarks
                 }
             }";
         
-        _kernelDefinitions["VectorAdd"] = new KernelDefinition
-        {
-            Name = "vector_add",
-            Code = Encoding.UTF8.GetBytes(vectorAddSource),
-            EntryPoint = "vector_add"
-        };
+        var vectorAddSource_obj = new TextKernelSource(vectorAddSource, "vector_add", KernelLanguage.OpenCL, "vector_add");
+        _kernelDefinitions["VectorAdd"] = new KernelDefinition("vector_add", vectorAddSource_obj, new CompilationOptions());
 
         // Matrix multiplication kernel
         var matrixMultiplySource = @"
@@ -124,12 +112,8 @@ public class EnhancedKernelCompilationBenchmarks
                 }
             }";
         
-        _kernelDefinitions["MatrixMultiply"] = new KernelDefinition
-        {
-            Name = "matrix_multiply",
-            Code = Encoding.UTF8.GetBytes(matrixMultiplySource),
-            EntryPoint = "matrix_multiply"
-        };
+        var matrixMultiplySource_obj = new TextKernelSource(matrixMultiplySource, "matrix_multiply", KernelLanguage.OpenCL, "matrix_multiply");
+        _kernelDefinitions["MatrixMultiply"] = new KernelDefinition("matrix_multiply", matrixMultiplySource_obj, new CompilationOptions());
 
         // Reduction kernel
         var reductionSource = @"
@@ -157,12 +141,8 @@ public class EnhancedKernelCompilationBenchmarks
                 }
             }";
         
-        _kernelDefinitions["Reduction"] = new KernelDefinition
-        {
-            Name = "reduction_sum",
-            Code = Encoding.UTF8.GetBytes(reductionSource),
-            EntryPoint = "reduction_sum"
-        };
+        var reductionSource_obj = new TextKernelSource(reductionSource, "reduction_sum", KernelLanguage.OpenCL, "reduction_sum");
+        _kernelDefinitions["Reduction"] = new KernelDefinition("reduction_sum", reductionSource_obj, new CompilationOptions());
     }
 
     [GlobalCleanup]

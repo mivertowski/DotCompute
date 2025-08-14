@@ -2,8 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Generators.Kernel;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -16,13 +16,13 @@ public class KernelAttributeTests
         var attribute = new KernelAttribute();
 
         // Assert
-        attribute.Backends.Should().Be(KernelBackends.CPU, "Default backend should be CPU");
+        attribute.Backends.Should().Be(KernelBackends.CPU);
         attribute.VectorSize.Should().Be(8, "Default vector size should be 8 (256-bit)");
         attribute.IsParallel.Should().BeTrue("Default should enable parallel execution");
-        attribute.GridDimensions.Should().BeNull("Grid dimensions should be null by default");
-        attribute.BlockDimensions.Should().BeNull("Block dimensions should be null by default");
-        attribute.Optimizations.Should().Be(OptimizationHints.None, "Default should be no optimizations");
-        attribute.MemoryPattern.Should().Be(MemoryAccessPattern.Sequential, "Default should be sequential access");
+        attribute.GridDimensions.BeNull("Grid dimensions should be null by default");
+        attribute.BlockDimensions.BeNull("Block dimensions should be null by default");
+        attribute.Optimizations.Should().Be(OptimizationHints.None);
+        attribute.MemoryPattern.Should().Be(MemoryAccessPattern.Sequential);
     }
 
     [Fact]
@@ -36,8 +36,8 @@ public class KernelAttributeTests
 
         // Assert
         attribute.Backends.Should().Be(KernelBackends.CUDA | KernelBackends.Metal);
-        attribute.Backends.Should().HaveFlag(KernelBackends.CUDA);
-        attribute.Backends.Should().HaveFlag(KernelBackends.Metal);
+        attribute.Backends.HaveFlag(KernelBackends.CUDA);
+        attribute.Backends.HaveFlag(KernelBackends.Metal);
         attribute.Backends.Should().NotHaveFlag(KernelBackends.CPU);
     }
 
@@ -78,7 +78,7 @@ public class KernelAttributeTests
         attribute.GridDimensions = gridDims;
 
         // Assert
-        attribute.GridDimensions.Should().BeEquivalentTo(gridDims);
+        attribute.GridDimensions.BeEquivalentTo(gridDims);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class KernelAttributeTests
         attribute.BlockDimensions = blockDims;
 
         // Assert
-        attribute.BlockDimensions.Should().BeEquivalentTo(blockDims);
+        attribute.BlockDimensions.BeEquivalentTo(blockDims);
     }
 
     [Fact]
@@ -105,8 +105,8 @@ public class KernelAttributeTests
         attribute.Optimizations = OptimizationHints.Vectorize | OptimizationHints.FastMath;
 
         // Assert
-        attribute.Optimizations.Should().HaveFlag(OptimizationHints.Vectorize);
-        attribute.Optimizations.Should().HaveFlag(OptimizationHints.FastMath);
+        attribute.Optimizations.HaveFlag(OptimizationHints.Vectorize);
+        attribute.Optimizations.HaveFlag(OptimizationHints.FastMath);
         attribute.Optimizations.Should().NotHaveFlag(OptimizationHints.LoopUnrolling);
     }
 
@@ -147,10 +147,10 @@ public class KernelAttributeTests
                 ((int)backend).Should().Be(8);
                 break;
             case KernelBackends.All:
-                backend.Should().HaveFlag(KernelBackends.CPU);
-                backend.Should().HaveFlag(KernelBackends.CUDA);
-                backend.Should().HaveFlag(KernelBackends.Metal);
-                backend.Should().HaveFlag(KernelBackends.OpenCL);
+                backend.HaveFlag(KernelBackends.CPU);
+                backend.HaveFlag(KernelBackends.CUDA);
+                backend.HaveFlag(KernelBackends.Metal);
+                backend.HaveFlag(KernelBackends.OpenCL);
                 break;
         }
     }
@@ -175,11 +175,11 @@ public class KernelAttributeTests
         var allHints = OptimizationHints.All;
 
         // Assert
-        allHints.Should().HaveFlag(OptimizationHints.AggressiveInlining);
-        allHints.Should().HaveFlag(OptimizationHints.LoopUnrolling);
-        allHints.Should().HaveFlag(OptimizationHints.Vectorize);
-        allHints.Should().HaveFlag(OptimizationHints.Prefetch);
-        allHints.Should().HaveFlag(OptimizationHints.FastMath);
+        allHints.HaveFlag(OptimizationHints.AggressiveInlining);
+        allHints.HaveFlag(OptimizationHints.LoopUnrolling);
+        allHints.HaveFlag(OptimizationHints.Vectorize);
+        allHints.HaveFlag(OptimizationHints.Prefetch);
+        allHints.HaveFlag(OptimizationHints.FastMath);
     }
 
     [Theory]
@@ -207,8 +207,8 @@ public class KernelAttributeTests
                                         .FirstOrDefault();
 
         // Assert
-        attributeUsage.Should().NotBeNull("KernelAttribute should have AttributeUsage");
-        attributeUsage!.ValidOn.Should().HaveFlag(AttributeTargets.Method);
+        attributeUsage.NotBeNull("KernelAttribute should have AttributeUsage");
+        attributeUsage!.ValidOn.HaveFlag(AttributeTargets.Method);
         attributeUsage.AllowMultiple.Should().BeFalse("KernelAttribute should not allow multiple instances");
     }
 
@@ -222,13 +222,13 @@ public class KernelAttributeTests
         attribute.Backends = KernelBackends.CPU | KernelBackends.CUDA | KernelBackends.Metal;
 
         // Assert
-        attribute.Backends.Should().HaveFlag(KernelBackends.CPU);
-        attribute.Backends.Should().HaveFlag(KernelBackends.CUDA);
-        attribute.Backends.Should().HaveFlag(KernelBackends.Metal);
+        attribute.Backends.HaveFlag(KernelBackends.CPU);
+        attribute.Backends.HaveFlag(KernelBackends.CUDA);
+        attribute.Backends.HaveFlag(KernelBackends.Metal);
         attribute.Backends.Should().NotHaveFlag(KernelBackends.OpenCL);
         
         var backendValue = (int)attribute.Backends;
-        backendValue.Should().Be(1 + 2 + 4); // CPU + CUDA + Metal
+        Assert.Equal(1 + 2 + 4, backendValue); // CPU + CUDA + Metal
     }
 
     [Fact]
@@ -241,13 +241,13 @@ public class KernelAttributeTests
         attribute.Optimizations = OptimizationHints.Vectorize | OptimizationHints.LoopUnrolling | OptimizationHints.FastMath;
 
         // Assert
-        attribute.Optimizations.Should().HaveFlag(OptimizationHints.Vectorize);
-        attribute.Optimizations.Should().HaveFlag(OptimizationHints.LoopUnrolling);
-        attribute.Optimizations.Should().HaveFlag(OptimizationHints.FastMath);
+        attribute.Optimizations.HaveFlag(OptimizationHints.Vectorize);
+        attribute.Optimizations.HaveFlag(OptimizationHints.LoopUnrolling);
+        attribute.Optimizations.HaveFlag(OptimizationHints.FastMath);
         attribute.Optimizations.Should().NotHaveFlag(OptimizationHints.AggressiveInlining);
         attribute.Optimizations.Should().NotHaveFlag(OptimizationHints.Prefetch);
         
         var optimizationValue = (int)attribute.Optimizations;
-        optimizationValue.Should().Be(4 + 2 + 16); // Vectorize + LoopUnrolling + FastMath
+        Assert.Equal(4 + 2 + 16, optimizationValue); // Vectorize + LoopUnrolling + FastMath
     }
 }

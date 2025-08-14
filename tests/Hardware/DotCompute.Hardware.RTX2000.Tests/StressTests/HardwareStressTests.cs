@@ -5,9 +5,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.StressTests;
 
@@ -114,8 +114,8 @@ public class HardwareStressTests : IDisposable
             _output.WriteLine($"  Allocation rate: {allocationRate:F2} allocations/sec");
             _output.WriteLine($"  Total time: {sw.ElapsedMilliseconds} ms");
 
-            successfulAllocations.Should().BeGreaterThan(50, "Should be able to perform substantial allocations");
-            totalAllocatedGB.Should().BeGreaterThan(4.0, "Should allocate several GB before exhaustion");
+            Assert.True(successfulAllocations > 50, "Should be able to perform substantial allocations");
+            Assert.True(totalAllocatedGB > 4.0, "Should allocate several GB before exhaustion");
 
             // Phase 2: Random deallocation and reallocation
             _output.WriteLine("Starting random deallocation/reallocation phase...");
@@ -168,8 +168,8 @@ public class HardwareStressTests : IDisposable
             _output.WriteLine($"  Final allocation count: {allocations.Count}");
             _output.WriteLine($"  Phase duration: {sw.ElapsedMilliseconds} ms");
 
-            deallocationsCount.Should().BeGreaterThan(0, "Should successfully deallocate memory");
-            reallocationsCount.Should().BeGreaterThan(0, "Should successfully reallocate memory after fragmentation");
+            Assert.True(deallocationsCount > 0, "Should successfully deallocate memory");
+            Assert.True(reallocationsCount > 0, "Should successfully reallocate memory after fragmentation");
         }
         finally
         {
@@ -223,11 +223,11 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
         {
             // Compile stress kernel
             var result = NvrtcCreateProgram(ref program, stressKernel, "stress.cu", 0, null, null);
-            result.Should().Be(0, "Stress kernel compilation should succeed");
+            Assert.Equal(0, result); // Stress kernel compilation should succeed;
 
             var options = new[] { "--gpu-architecture=compute_89", "--use_fast_math" };
             result = NvrtcCompileProgram(program, options.Length, options);
-            result.Should().Be(0, "Kernel compilation should succeed");
+            Assert.Equal(0, result); // Kernel compilation should succeed;
 
             long ptxSize = 0;
             NvrtcGetPTXSize(program, ref ptxSize);
@@ -235,17 +235,17 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             NvrtcGetPTX(program, ptx);
 
             result = CuModuleLoadData(ref module, ptx);
-            result.Should().Be(0, "Module loading should succeed");
+            Assert.Equal(0, result); // Module loading should succeed;
 
             var kernelName = System.Text.Encoding.ASCII.GetBytes("thermalStress");
             result = CuModuleGetFunction(ref kernel, module, kernelName);
-            result.Should().Be(0, "Kernel function retrieval should succeed");
+            Assert.Equal(0, result); // Kernel function retrieval should succeed;
 
             // Prepare concurrent workloads
             for (int i = 0; i < concurrentKernels; i++)
             {
                 result = CudaMalloc(ref deviceBuffers[i], dataSize * sizeof(float));
-                result.Should().Be(0, $"Memory allocation for buffer {i} should succeed");
+                Assert.Equal(0, $"Memory allocation for buffer {i} should succeed", result);
 
                 hostBuffers[i] = new float[dataSize];
                 var random = new Random(42 + i);
@@ -258,7 +258,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                 try
                 {
                     result = CudaMemcpyHtoD(deviceBuffers[i], hostHandle.AddrOfPinnedObject(), dataSize * sizeof(float));
-                    result.Should().Be(0, $"Data copy to device buffer {i} should succeed");
+                    Assert.Equal(0, $"Data copy to device buffer {i} should succeed", result);
                 }
                 finally
                 {
@@ -366,8 +366,8 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
             // Validate thermal stability
             var failureRate = (kernelFailures * 100.0) / (iterationCount * concurrentKernels);
-            failureRate.Should().BeLessThan(5.0, "Failure rate should be low even under thermal stress");
-            iterationCount.Should().BeGreaterThan(10, "Should complete multiple stress iterations");
+            Assert.True(failureRate < 5.0, "Failure rate should be low even under thermal stress");
+            Assert.True(iterationCount > 10, "Should complete multiple stress iterations");
 
             _output.WriteLine("✓ System maintained stability under thermal stress");
         }
@@ -405,7 +405,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             for (int i = 0; i < streamCount; i++)
             {
                 var result = CudaStreamCreate(ref streams[i]);
-                result.Should().Be(0, $"Stream {i} creation should succeed");
+                Assert.Equal(0, $"Stream {i} creation should succeed", result);
                 deviceBuffers[i] = new List<IntPtr>();
             }
 
@@ -499,7 +499,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             for (int i = 0; i < streamCount; i++)
             {
                 var result = CudaStreamSynchronize(streams[i]);
-                result.Should().Be(0, $"Stream {i} synchronization should succeed");
+                Assert.Equal(0, $"Stream {i} synchronization should succeed", result);
             }
 
             var totalOperations = completedOperations.Sum();
@@ -520,9 +520,9 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             }
 
             // Validate performance
-            totalOperations.Should().BeGreaterThan(streamCount * operationsPerStream * 0.8, 
+            Assert.True(totalOperations > streamCount * operationsPerStream * 0.8, 
                 "Should complete most operations even under stress");
-            averageOperationsPerStream.Should().BeGreaterThan(operationsPerStream * 0.8,
+            Assert.True(averageOperationsPerStream > operationsPerStream * 0.8,
                 "Each stream should maintain reasonable performance");
 
             _output.WriteLine("✓ Concurrent streams maintained performance under stress");
@@ -689,9 +689,9 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
         _output.WriteLine($"  Kernel recoveries: {kernelRecoveries}/20");
         _output.WriteLine($"  Memory exhaustion recoveries: {exhaustionRecoveries}");
 
-        recoveryCount.Should().BeGreaterThan(40, "Should recover from most invalid memory operations");
-        kernelRecoveries.Should().BeGreaterThan(15, "Should recover from most invalid kernel launches");
-        exhaustionRecoveries.Should().BeGreaterThan(0, "Should recover from memory exhaustion");
+        Assert.True(recoveryCount > 40, "Should recover from most invalid memory operations");
+        Assert.True(kernelRecoveries > 15, "Should recover from most invalid kernel launches");
+        Assert.True(exhaustionRecoveries > 0, "Should recover from memory exhaustion");
 
         _output.WriteLine("✓ System demonstrated robust error recovery capabilities");
     }

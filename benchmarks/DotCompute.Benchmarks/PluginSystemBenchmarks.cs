@@ -1,6 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace DotCompute.Benchmarks;
@@ -31,7 +32,7 @@ public class PluginSystemBenchmarks
     public void Setup()
     {
         _services = new ServiceCollection();
-        _services.AddLogging(builder => builder.AddNullLogger());
+        _services.AddSingleton<ILoggerFactory, NullLoggerFactory>();
         _serviceProvider = _services.BuildServiceProvider();
     }
 
@@ -43,7 +44,7 @@ public class PluginSystemBenchmarks
             disposable.Dispose();
         }
         _disposables.Clear();
-        _serviceProvider?.Dispose();
+        (_serviceProvider as IDisposable)?.Dispose();
     }
 
     [IterationCleanup]

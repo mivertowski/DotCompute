@@ -6,6 +6,7 @@ using DotCompute.Abstractions;
 using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Common.Hardware;
 
@@ -72,7 +73,11 @@ public sealed class MockHardwareProvider : IHardwareProvider
         }
 
         _logger.LogDebug("Creating mock accelerator for device {DeviceId}", device.Id);
-        return new MockAccelerator(mockDevice.Id, mockDevice.Type, _logger);
+        return new MockAccelerator(
+            name: mockDevice.Name ?? mockDevice.Id, 
+            type: mockDevice.Type, 
+            totalMemory: 8L * 1024 * 1024 * 1024, // 8GB default
+            logger: _logger);
     }
 
     /// <inheritdoc/>

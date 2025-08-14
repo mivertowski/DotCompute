@@ -5,9 +5,9 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Abstractions.Tests;
 
@@ -27,6 +27,14 @@ public class IBufferTests
         _mockAccelerator = new Mock<IAccelerator>();
     }
 
+    private static MappedMemory<T> CreateMappedMemory<T>(IBuffer<T> buffer, Memory<T> memory, MapMode mode) where T : unmanaged
+    {
+        // Use reflection to create MappedMemory since constructor is internal
+        var constructor = typeof(MappedMemory<T>).GetConstructors(
+            System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)[0];
+        return (MappedMemory<T>)constructor.Invoke(new object[] { buffer, memory, mode });
+    }
+
     #region Property Tests
 
     [Fact]
@@ -40,7 +48,7 @@ public class IBufferTests
         var length = _mockFloatBuffer.Object.Length;
 
         // Assert
-        length.Should().Be(expectedLength);
+        Assert.Equal(expectedLength, length);
     }
 
     [Theory]
@@ -58,7 +66,7 @@ public class IBufferTests
         var actualLength = _mockFloatBuffer.Object.Length;
 
         // Assert
-        actualLength.Should().Be(length);
+        Assert.Equal(length, actualLength);
     }
 
     [Fact]
@@ -74,8 +82,8 @@ public class IBufferTests
         var length = _mockFloatBuffer.Object.Length;
 
         // Assert
-        elementCount.Should().Be(expectedCount);
-        elementCount.Should().Be(length);
+        Assert.Equal(expectedCount, elementCount);
+        Assert.Equal(length, elementCount);
     }
 
     [Fact]
@@ -88,8 +96,8 @@ public class IBufferTests
         var accelerator = _mockFloatBuffer.Object.Accelerator;
 
         // Assert
-        accelerator.Should().NotBeNull();
-        accelerator.Should().Be(_mockAccelerator.Object);
+        Assert.NotNull(accelerator);
+        Assert.Equal(_mockAccelerator.Object, accelerator);
     }
 
     [Fact]
@@ -107,8 +115,8 @@ public class IBufferTests
         var calculatedSize = _mockFloatBuffer.Object.Length * sizeof(float);
 
         // Assert
-        sizeInBytes.Should().Be(expectedSizeInBytes);
-        sizeInBytes.Should().Be(calculatedSize);
+        Assert.Equal(expectedSizeInBytes, sizeInBytes);
+        Assert.Equal(calculatedSize, sizeInBytes);
     }
 
     #endregion
@@ -131,7 +139,7 @@ public class IBufferTests
         var slice = _mockFloatBuffer.Object.Slice(offset, length);
 
         // Assert
-        slice.Should().NotBeNull();
+        Assert.NotNull(slice);
         slice.Length.Should().Be(length);
         _mockFloatBuffer.Verify(b => b.Slice(offset, length), Times.Once);
     }
@@ -152,7 +160,7 @@ public class IBufferTests
         var slice = _mockFloatBuffer.Object.Slice(offset, length);
 
         // Assert
-        slice.Should().NotBeNull();
+        Assert.NotNull(slice);
         slice.Length.Should().Be(length);
     }
 
@@ -236,8 +244,8 @@ public class IBufferTests
         var intBuffer = _mockFloatBuffer.Object.AsType<int>();
 
         // Assert
-        intBuffer.Should().NotBeNull();
-        intBuffer.Should().Be(mockIntBuffer.Object);
+        Assert.NotNull(intBuffer);
+        Assert.Equal(mockIntBuffer.Object, intBuffer);
         _mockFloatBuffer.Verify(b => b.AsType<int>(), Times.Once);
     }
 
@@ -253,8 +261,8 @@ public class IBufferTests
         var floatBuffer = _mockFloatBuffer.Object.AsType<float>();
 
         // Assert
-        floatBuffer.Should().NotBeNull();
-        floatBuffer.Should().Be(mockFloatBuffer2.Object);
+        Assert.NotNull(floatBuffer);
+        Assert.Equal(mockFloatBuffer2.Object, floatBuffer);
     }
 
     [Fact]
@@ -288,7 +296,7 @@ public class IBufferTests
             _mockFloatBuffer.Setup(b => b.AsType<int>()).Returns(mockIntBuffer.Object);
             
             var result = _mockFloatBuffer.Object.AsType<int>();
-            result.Should().NotBeNull();
+            Assert.NotNull(result);
         }
         // Similar patterns for other types...
     }
@@ -522,8 +530,7 @@ public class IBufferTests
     {
         // Arrange
         var mockMemory = new Memory<float>(new float[100]);
-        var expectedMapping = new MappedMemory<float>(
-            _mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
+        var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
         
         _mockFloatBuffer.Setup(b => b.Map(MapMode.ReadWrite))
                        .Returns(expectedMapping);
@@ -546,8 +553,7 @@ public class IBufferTests
     {
         // Arrange
         var mockMemory = new Memory<float>(new float[100]);
-        var expectedMapping = new MappedMemory<float>(
-            _mockFloatBuffer.Object, mockMemory, mode);
+        var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, mode);
         
         _mockFloatBuffer.Setup(b => b.Map(mode))
                        .Returns(expectedMapping);
@@ -566,10 +572,9 @@ public class IBufferTests
         // Arrange
         const int offset = 10;
         const int length = 50;
-        const MapMode mode = MapMode.ReadOnly;
+        const MapMode mode = MapMode.Read;
         var mockMemory = new Memory<float>(new float[length]);
-        var expectedMapping = new MappedMemory<float>(
-            _mockFloatBuffer.Object, mockMemory, mode);
+        var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, mode);
         
         _mockFloatBuffer.Setup(b => b.MapRange(offset, length, mode))
                        .Returns(expectedMapping);
@@ -616,8 +621,7 @@ public class IBufferTests
     {
         // Arrange
         var mockMemory = new Memory<float>(new float[100]);
-        var expectedMapping = new MappedMemory<float>(
-            _mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
+        var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
         
         _mockFloatBuffer.Setup(b => b.MapAsync(MapMode.ReadWrite, CancellationToken.None))
                        .ReturnsAsync(expectedMapping);
@@ -656,7 +660,7 @@ public class IBufferTests
         var type = typeof(IBuffer<float>);
 
         // Assert
-        type.Should().BeAssignableTo<IMemoryBuffer>();
+        Assert.IsAssignableFrom<IMemoryBuffer>(type);
     }
 
     [Fact]
@@ -666,7 +670,7 @@ public class IBufferTests
         var type = typeof(IBuffer<float>);
 
         // Assert
-        type.Should().BeAssignableTo<IAsyncDisposable>();
+        Assert.IsAssignableFrom<IAsyncDisposable>(type);
     }
 
     [Fact]
@@ -676,7 +680,7 @@ public class IBufferTests
         var type = typeof(IBuffer<float>);
 
         // Assert
-        type.Should().BeAssignableTo<IDisposable>();
+        Assert.IsAssignableFrom<IDisposable>(type);
     }
 
     #endregion
@@ -694,8 +698,7 @@ public class IBufferTests
         var mockSlice = new Mock<IBuffer<float>>();
         var mockDestination = new Mock<IBuffer<float>>();
         var mockMemory = new Memory<float>(new float[bufferLength]);
-        var expectedMapping = new MappedMemory<float>(
-            _mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
+        var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
 
         // Setup all operations
         _mockFloatBuffer.SetupGet(b => b.Length).Returns(bufferLength);
@@ -727,12 +730,12 @@ public class IBufferTests
         await buffer.DisposeAsync();
 
         // Assert
-        length.Should().Be(bufferLength);
-        elementCount.Should().Be(bufferLength);
-        size.Should().Be(bufferSize);
-        accelerator.Should().Be(_mockAccelerator.Object);
-        slice.Should().Be(mockSlice.Object);
-        intBuffer.Should().Be(_mockIntBuffer.Object);
+        Assert.Equal(bufferLength, length);
+        Assert.Equal(bufferLength, elementCount);
+        Assert.Equal(bufferSize, size);
+        Assert.Equal(_mockAccelerator.Object, accelerator);
+        Assert.Equal(mockSlice.Object, slice);
+        Assert.Equal(_mockIntBuffer.Object, intBuffer);
         mapping.Mode.Should().Be(MapMode.ReadWrite);
 
         // Verify all methods were called
@@ -778,10 +781,10 @@ public class IBufferTests
     {
         // Arrange
         _mockFloatBuffer.SetupGet(b => b.IsDisposed).Returns(true);
-        _mockFloatBuffer.Setup(b => b.Slice(It.IsAny<int>(), It.IsAny<int>()))
-                       .Throws(new ObjectDisposedException(nameof(IBuffer<float>)));
+        _mockFloatBuffer.Setup(b => b.Slice(It.IsAny<int>(), It.IsAny<int>()
+                       .Throws(new ObjectDisposedException(nameof(IBuffer<float>);))
         _mockFloatBuffer.Setup(b => b.AsType<int>())
-                       .Throws(new ObjectDisposedException(nameof(IBuffer<float>)));
+                       .Throws(new ObjectDisposedException(nameof(IBuffer<float>);
 
         // Act & Assert
         var sliceException = Assert.Throws<ObjectDisposedException>(

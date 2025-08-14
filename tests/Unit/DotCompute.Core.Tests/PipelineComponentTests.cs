@@ -5,8 +5,8 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 using Microsoft.Extensions.Logging;
 using Moq;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Core.Tests.Pipelines;
 
@@ -37,11 +37,11 @@ public class PipelineComponentTests : IDisposable
         var interfaceType = typeof(IKernelPipeline);
 
         // Assert
-        interfaceType.Should().NotBeNull();
-        interfaceType.GetMethod("AddStage").Should().NotBeNull();
-        interfaceType.GetMethod("ExecuteAsync").Should().NotBeNull();
-        interfaceType.GetProperty("Stages").Should().NotBeNull();
-        interfaceType.GetProperty("IsOptimized").Should().NotBeNull();
+        Assert.NotNull(interfaceType);
+        interfaceType.GetMethod("AddStage").NotBeNull();
+        interfaceType.GetMethod("ExecuteAsync").NotBeNull();
+        interfaceType.GetProperty("Stages").NotBeNull();
+        interfaceType.GetProperty("IsOptimized").NotBeNull();
     }
 
     [Fact]
@@ -51,12 +51,12 @@ public class PipelineComponentTests : IDisposable
         var interfaceType = typeof(IPipelineStage);
 
         // Assert
-        interfaceType.Should().NotBeNull();
-        interfaceType.GetProperty("Name").Should().NotBeNull();
-        interfaceType.GetProperty("ExecutionOrder").Should().NotBeNull();
-        interfaceType.GetProperty("Dependencies").Should().NotBeNull();
-        interfaceType.GetMethod("ExecuteAsync").Should().NotBeNull();
-        interfaceType.GetMethod("CanExecute").Should().NotBeNull();
+        Assert.NotNull(interfaceType);
+        interfaceType.GetProperty("Name").NotBeNull();
+        interfaceType.GetProperty("ExecutionOrder").NotBeNull();
+        interfaceType.GetProperty("Dependencies").NotBeNull();
+        interfaceType.GetMethod("ExecuteAsync").NotBeNull();
+        interfaceType.GetMethod("CanExecute").NotBeNull();
     }
 
     [Fact]
@@ -66,10 +66,10 @@ public class PipelineComponentTests : IDisposable
         var interfaceType = typeof(IPipelineMemoryManager);
 
         // Assert
-        interfaceType.Should().NotBeNull();
-        interfaceType.GetMethod("AllocateIntermediateBuffer").Should().NotBeNull();
-        interfaceType.GetMethod("ReleaseBuffer").Should().NotBeNull();
-        interfaceType.GetProperty("TotalAllocatedMemory").Should().NotBeNull();
+        Assert.NotNull(interfaceType);
+        interfaceType.GetMethod("AllocateIntermediateBuffer").NotBeNull();
+        interfaceType.GetMethod("ReleaseBuffer").NotBeNull();
+        interfaceType.GetProperty("TotalAllocatedMemory").NotBeNull();
     }
 
     [Fact]
@@ -79,11 +79,11 @@ public class PipelineComponentTests : IDisposable
         var interfaceType = typeof(IPipelineMetrics);
 
         // Assert
-        interfaceType.Should().NotBeNull();
-        interfaceType.GetProperty("TotalExecutionTime").Should().NotBeNull();
-        interfaceType.GetProperty("StageExecutionTimes").Should().NotBeNull();
-        interfaceType.GetProperty("MemoryUsage").Should().NotBeNull();
-        interfaceType.GetProperty("ThroughputMBps").Should().NotBeNull();
+        Assert.NotNull(interfaceType);
+        interfaceType.GetProperty("TotalExecutionTime").NotBeNull();
+        interfaceType.GetProperty("StageExecutionTimes").NotBeNull();
+        interfaceType.GetProperty("MemoryUsage").NotBeNull();
+        interfaceType.GetProperty("ThroughputMBps").NotBeNull();
     }
 
     #endregion
@@ -97,9 +97,9 @@ public class PipelineComponentTests : IDisposable
         var pipeline = new KernelPipeline(_mockAccelerator.Object, _mockLogger.Object);
 
         // Assert
-        pipeline.Should().NotBeNull();
+        Assert.NotNull(pipeline);
         pipeline.Stages.Should().NotBeNull();
-        pipeline.Stages.Should().BeEmpty();
+        pipeline.Assert.Empty(Stages);
         pipeline.IsOptimized.Should().BeFalse();
     }
 
@@ -108,7 +108,7 @@ public class PipelineComponentTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new KernelPipeline(null!, _mockLogger.Object);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("accelerator");
+        act.Throw<ArgumentNullException>().WithParameterName("accelerator");
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public class PipelineComponentTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new KernelPipeline(_mockAccelerator.Object, null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        act.Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class PipelineComponentTests : IDisposable
         pipeline.AddStage(mockStage.Object);
 
         // Assert
-        pipeline.Stages.Should().HaveCount(1);
+        pipeline.Stages.Count.Should().Be(1));
         pipeline.Stages.First().Should().Be(mockStage.Object);
     }
 
@@ -142,7 +142,7 @@ public class PipelineComponentTests : IDisposable
 
         // Act & Assert
         pipeline.Invoking(p => p.AddStage(null!))
-            .Should().Throw<ArgumentNullException>().WithParameterName("stage");
+            .Throw<ArgumentNullException>().WithParameterName("stage");
     }
 
     [Fact]
@@ -160,7 +160,7 @@ public class PipelineComponentTests : IDisposable
         pipeline.AddStage(stage2.Object);
 
         // Assert
-        pipeline.Stages.Should().HaveCount(3);
+        pipeline.Stages.Count.Should().Be(3));
         pipeline.Stages.ElementAt(0).Name.Should().Be("Stage1");
         pipeline.Stages.ElementAt(1).Name.Should().Be("Stage2");
         pipeline.Stages.ElementAt(2).Name.Should().Be("Stage3");
@@ -179,8 +179,8 @@ public class PipelineComponentTests : IDisposable
         for (int i = 1; i <= stageCount; i++)
         {
             var stage = CreateMockPipelineStage($"Stage{i}", i);
-            stage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>())).Returns(true);
-            stage.Setup(s => s.ExecuteAsync(It.IsAny<PipelineContext>(), It.IsAny<CancellationToken>()))
+            stage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>().Returns(true);
+            stage.Setup(s => s.ExecuteAsync(It.IsAny<PipelineContext>(), It.IsAny<CancellationToken>()
                 .Returns(ValueTask.CompletedTask);
             stages.Add(stage);
             pipeline.AddStage(stage.Object);
@@ -205,8 +205,7 @@ public class PipelineComponentTests : IDisposable
         var pipeline = new KernelPipeline(_mockAccelerator.Object, _mockLogger.Object);
 
         // Act & Assert
-        await pipeline.Invoking(p => p.ExecuteAsync(null!))
-            .Should().ThrowAsync<ArgumentNullException>().WithParameterName("context");
+        await Assert.ThrowsAsync<ArgumentNullException>(() => pipeline.MethodCall().AsTask()).WithParameterName("context");
     }
 
     [Fact]
@@ -217,11 +216,11 @@ public class PipelineComponentTests : IDisposable
         var canExecuteStage = CreateMockPipelineStage("CanExecute", 1);
         var cannotExecuteStage = CreateMockPipelineStage("CannotExecute", 2);
 
-        canExecuteStage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>())).Returns(true);
-        canExecuteStage.Setup(s => s.ExecuteAsync(It.IsAny<PipelineContext>(), It.IsAny<CancellationToken>()))
+        canExecuteStage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>().Returns(true);
+        canExecuteStage.Setup(s => s.ExecuteAsync(It.IsAny<PipelineContext>(), It.IsAny<CancellationToken>()
             .Returns(ValueTask.CompletedTask);
 
-        cannotExecuteStage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>())).Returns(false);
+        cannotExecuteStage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>().Returns(false);
 
         pipeline.AddStage(canExecuteStage.Object);
         pipeline.AddStage(cannotExecuteStage.Object);
@@ -242,8 +241,8 @@ public class PipelineComponentTests : IDisposable
         // Arrange
         var pipeline = new KernelPipeline(_mockAccelerator.Object, _mockLogger.Object);
         var stage = CreateMockPipelineStage("TestStage", 1);
-        stage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>())).Returns(true);
-        stage.Setup(s => s.ExecuteAsync(It.IsAny<PipelineContext>(), It.IsAny<CancellationToken>()))
+        stage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>().Returns(true);
+        stage.Setup(s => s.ExecuteAsync(It.IsAny<PipelineContext>(), It.IsAny<CancellationToken>()
             .ThrowsAsync(new OperationCanceledException());
 
         pipeline.AddStage(stage.Object);
@@ -252,8 +251,7 @@ public class PipelineComponentTests : IDisposable
         cts.Cancel();
 
         // Act & Assert
-        await pipeline.Invoking(p => p.ExecuteAsync(context.Object, cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => pipeline.MethodCall().AsTask());
     }
 
     #endregion
@@ -267,7 +265,7 @@ public class PipelineComponentTests : IDisposable
         var builder = new KernelPipelineBuilder(_mockAccelerator.Object);
 
         // Assert
-        builder.Should().NotBeNull();
+        Assert.NotNull(builder);
     }
 
     [Fact]
@@ -275,7 +273,7 @@ public class PipelineComponentTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new KernelPipelineBuilder(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("accelerator");
+        act.Throw<ArgumentNullException>().WithParameterName("accelerator");
     }
 
     [Fact]
@@ -289,7 +287,7 @@ public class PipelineComponentTests : IDisposable
         var result = builder.AddStage(mockStage.Object);
 
         // Assert
-        result.Should().Be(builder);
+        Assert.Equal(builder, result);
     }
 
     [Fact]
@@ -300,7 +298,7 @@ public class PipelineComponentTests : IDisposable
 
         // Act & Assert
         builder.Invoking(b => b.AddStage(null!))
-            .Should().Throw<ArgumentNullException>().WithParameterName("stage");
+            .Throw<ArgumentNullException>().WithParameterName("stage");
     }
 
     [Fact]
@@ -317,10 +315,10 @@ public class PipelineComponentTests : IDisposable
         var pipeline = builder.Build();
 
         // Assert
-        pipeline.Should().NotBeNull();
-        pipeline.Stages.Should().HaveCount(2);
-        pipeline.Stages.Should().Contain(stage1.Object);
-        pipeline.Stages.Should().Contain(stage2.Object);
+        Assert.NotNull(pipeline);
+        pipeline.Stages.Count.Should().Be(2));
+        pipeline.Assert.Contains(stage1.Object, Stages);
+        pipeline.Assert.Contains(stage2.Object, Stages);
     }
 
     [Fact]
@@ -337,7 +335,7 @@ public class PipelineComponentTests : IDisposable
 
         // Assert
         pipeline1.Should().NotBeSameAs(pipeline2);
-        pipeline1.Stages.Should().BeEquivalentTo(pipeline2.Stages);
+        pipeline1.Stages.BeEquivalentTo(pipeline2.Stages);
     }
 
     #endregion
@@ -356,7 +354,7 @@ public class PipelineComponentTests : IDisposable
         var memoryManager = new PipelineMemoryManager(mockAccelerator.Object);
 
         // Assert
-        memoryManager.Should().NotBeNull();
+        Assert.NotNull(memoryManager);
         memoryManager.TotalAllocatedMemory.Should().Be(0);
     }
 
@@ -365,7 +363,7 @@ public class PipelineComponentTests : IDisposable
     {
         // Arrange & Act & Assert
         Action act = () => new PipelineMemoryManager(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("accelerator");
+        act.Throw<ArgumentNullException>().WithParameterName("accelerator");
     }
 
     [Fact]
@@ -381,7 +379,7 @@ public class PipelineComponentTests : IDisposable
                 It.IsAny<int>(), 
                 It.IsAny<MemoryLocation>(), 
                 It.IsAny<MemoryAccess>(), 
-                It.IsAny<CancellationToken>()))
+                It.IsAny<CancellationToken>()
             .ReturnsAsync(mockBuffer.Object);
 
         var memoryManager = new PipelineMemoryManager(mockAccelerator.Object);
@@ -390,8 +388,8 @@ public class PipelineComponentTests : IDisposable
         var buffer = await memoryManager.AllocateIntermediateBuffer<float>(1024, MemoryLocation.Device);
 
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.Should().Be(mockBuffer.Object);
+        Assert.NotNull(buffer);
+        Assert.Equal(mockBuffer.Object, buffer);
     }
 
     [Theory]
@@ -408,8 +406,7 @@ public class PipelineComponentTests : IDisposable
         var memoryManager = new PipelineMemoryManager(mockAccelerator.Object);
 
         // Act & Assert
-        await memoryManager.Invoking(m => m.AllocateIntermediateBuffer<float>(size, MemoryLocation.Device))
-            .Should().ThrowAsync<ArgumentException>().WithMessage("*must be positive*");
+        await Assert.ThrowsAsync<ArgumentException>(() => memoryManager.MethodCall().AsTask()).WithMessage("*must be positive*");
     }
 
     [Fact]
@@ -433,7 +430,7 @@ public class PipelineComponentTests : IDisposable
     }
 
     [Fact]
-    public async Task ReleaseBuffer_WithNullBuffer_ShouldNotThrow()
+    public async Task ReleaseBuffer_WithNullBuffer_ShouldShould().NotThrow()
     {
         // Arrange
         var mockAccelerator = new Mock<IAccelerator>();
@@ -444,7 +441,7 @@ public class PipelineComponentTests : IDisposable
 
         // Act & Assert
         await memoryManager.Invoking(m => m.ReleaseBuffer<float>(null!))
-            .Should().NotThrowAsync();
+            .NotThrowAsync();
     }
 
     #endregion
@@ -458,10 +455,10 @@ public class PipelineComponentTests : IDisposable
         var metrics = new PipelineMetrics();
 
         // Assert
-        metrics.Should().NotBeNull();
+        Assert.NotNull(metrics);
         metrics.TotalExecutionTime.Should().Be(TimeSpan.Zero);
         metrics.StageExecutionTimes.Should().NotBeNull();
-        metrics.StageExecutionTimes.Should().BeEmpty();
+        metrics.Assert.Empty(StageExecutionTimes);
         metrics.MemoryUsage.Should().Be(0);
         metrics.ThroughputMBps.Should().Be(0);
     }
@@ -496,7 +493,7 @@ public class PipelineComponentTests : IDisposable
         metrics.RecordStageExecution("Stage2", stage2Time);
 
         // Assert
-        metrics.StageExecutionTimes.Should().HaveCount(2);
+        metrics.StageExecutionTimes.Count.Should().Be(2));
         metrics.TotalExecutionTime.Should().Be(stage1Time + stage2Time);
     }
 
@@ -528,8 +525,8 @@ public class PipelineComponentTests : IDisposable
         var throughput = metrics.CalculateThroughput(dataProcessed);
 
         // Assert
-        throughput.Should().BeApproximately(100.0, 0.1); // 100 MB/s
-        metrics.ThroughputMBps.Should().BeApproximately(100.0, 0.1);
+        Assert.Equal(100.0, throughput, 0.1); // 100 MB/s
+        metrics.ThroughputMBps, 0.1.Should().Be(100.0);
     }
 
     [Fact]
@@ -543,7 +540,7 @@ public class PipelineComponentTests : IDisposable
         var throughput = metrics.CalculateThroughput(dataProcessed);
 
         // Assert
-        throughput.Should().Be(0);
+        Assert.Equal(0, throughput);
         metrics.ThroughputMBps.Should().Be(0);
     }
 
@@ -559,16 +556,15 @@ public class PipelineComponentTests : IDisposable
         var stage = CreateMockPipelineStage("FailingStage", 1);
         var expectedException = new InvalidOperationException("Stage failed");
 
-        stage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>())).Returns(true);
-        stage.Setup(s => s.ExecuteAsync(It.IsAny<PipelineContext>(), It.IsAny<CancellationToken>()))
+        stage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>().Returns(true);
+        stage.Setup(s => s.ExecuteAsync(It.IsAny<PipelineContext>(), It.IsAny<CancellationToken>()
             .ThrowsAsync(expectedException);
 
         pipeline.AddStage(stage.Object);
         var context = CreateMockPipelineContext();
 
         // Act & Assert
-        await pipeline.Invoking(p => p.ExecuteAsync(context.Object))
-            .Should().ThrowAsync<InvalidOperationException>()
+        await Assert.ThrowsAsync<InvalidOperationException>(() => pipeline.MethodCall().AsTask())
             .WithMessage("Stage failed");
     }
 
@@ -579,8 +575,8 @@ public class PipelineComponentTests : IDisposable
         var pipeline = new KernelPipeline(_mockAccelerator.Object, _mockLogger.Object);
         var stage = CreateMockPipelineStage("SlowStage", 1);
 
-        stage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>())).Returns(true);
-        stage.Setup(s => s.ExecuteAsync(It.IsAny<PipelineContext>(), It.IsAny<CancellationToken>()))
+        stage.Setup(s => s.CanExecute(It.IsAny<PipelineContext>().Returns(true);
+        stage.Setup(s => s.ExecuteAsync(It.IsAny<PipelineContext>(), It.IsAny<CancellationToken>()
             .Returns(async (PipelineContext ctx, CancellationToken ct) =>
             {
                 await Task.Delay(TimeSpan.FromSeconds(10), ct); // Long delay
@@ -592,8 +588,7 @@ public class PipelineComponentTests : IDisposable
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         // Act & Assert
-        await pipeline.Invoking(p => p.ExecuteAsync(context.Object, cts.Token))
-            .Should().ThrowAsync<OperationCanceledException>();
+        await Assert.ThrowsAsync<OperationCanceledException>(() => pipeline.MethodCall().AsTask());
     }
 
     #endregion
@@ -650,7 +645,7 @@ public class PipelineOptimizationTests
         var optimizer = new PipelineOptimizer(_mockLogger.Object);
 
         // Assert
-        optimizer.Should().NotBeNull();
+        Assert.NotNull(optimizer);
     }
 
     [Fact]
@@ -658,7 +653,7 @@ public class PipelineOptimizationTests
     {
         // Arrange & Act & Assert
         Action act = () => new PipelineOptimizer(null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        act.Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -675,7 +670,7 @@ public class PipelineOptimizationTests
         var optimizedPipeline = optimizer.OptimizePipeline(mockPipeline.Object);
 
         // Assert
-        optimizedPipeline.Should().NotBeNull();
+        Assert.NotNull(optimizedPipeline);
         // Additional assertions would depend on the actual optimization implementation
     }
 
@@ -687,7 +682,7 @@ public class PipelineOptimizationTests
 
         // Act & Assert
         optimizer.Invoking(o => o.OptimizePipeline(null!))
-            .Should().Throw<ArgumentNullException>().WithParameterName("pipeline");
+            .Throw<ArgumentNullException>().WithParameterName("pipeline");
     }
 
     [Fact]
@@ -702,7 +697,7 @@ public class PipelineOptimizationTests
         var result = optimizer.OptimizePipeline(mockPipeline.Object);
 
         // Assert
-        result.Should().Be(mockPipeline.Object);
+        Assert.Equal(mockPipeline.Object, result);
     }
 
     [Theory]
@@ -728,8 +723,8 @@ public class PipelineOptimizationTests
         var dependencies = optimizer.AnalyzeDependencies(stages);
 
         // Assert
-        dependencies.Should().NotBeNull();
-        dependencies.Should().HaveCount(stageCount);
+        Assert.NotNull(dependencies);
+        Assert.Equal(stageCount, dependencies.Count());
     }
 
     [Fact]
@@ -750,7 +745,7 @@ public class PipelineOptimizationTests
 
         // Act & Assert
         optimizer.Invoking(o => o.AnalyzeDependencies(stages))
-            .Should().Throw<InvalidOperationException>()
+            .Throw<InvalidOperationException>()
             .WithMessage("*circular dependency*");
     }
 }

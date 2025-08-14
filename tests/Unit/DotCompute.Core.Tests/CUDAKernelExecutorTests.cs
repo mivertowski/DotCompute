@@ -13,6 +13,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
+using FluentAssertions;
 using CompiledKernel = DotCompute.Tests.Common.CompiledKernel;
 using KernelArgument = DotCompute.Tests.Common.KernelArgument;
 using KernelConfiguration = DotCompute.Tests.Common.KernelConfiguration;
@@ -244,7 +245,7 @@ public class CUDAKernelExecutorTests : IDisposable
         Assert.True(config.GlobalWorkSize![0] >= size);
         
         // Should use reasonable block sizes for CUDA (typically 128, 256 or 512)
-        Assert.Contains(config.LocalWorkSize![0], new[] { 128, 256, 512 });
+        Assert.Contains(config.LocalWorkSize![0], 512 }); // new[] { 128;
     }
 
     [Fact]
@@ -425,7 +426,7 @@ public class CUDAKernelExecutorTests : IDisposable
             MaxThreadsPerBlock = 1024
         });
 
-        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()))
+        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()
             .Returns(ValueTask.CompletedTask);
 
         return mock;

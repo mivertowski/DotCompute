@@ -9,6 +9,7 @@ using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware;
 
@@ -402,7 +403,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
         try
         {
             var executionException = await Assert.ThrowsAsync<ArgumentException>(
-                async () => await validKernel.ExecuteAsync(new KernelArguments()));
+                async () => await validKernel.ExecuteAsync(new KernelArguments();
 
             Assert.NotNull(executionException);
             _logger.LogInformation("Execution error handled correctly: {Message}", executionException.Message);

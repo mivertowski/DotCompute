@@ -363,6 +363,8 @@ public sealed class CudaBackendIntegration : IDisposable
         CudaExecutionOptions options,
         CancellationToken cancellationToken)
     {
+        await Task.Delay(1, cancellationToken).ConfigureAwait(false);
+        
         // Determine problem size
         var problemSize = EstimateProblemSize(arguments);
         

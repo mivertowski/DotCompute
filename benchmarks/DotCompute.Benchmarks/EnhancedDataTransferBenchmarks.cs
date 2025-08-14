@@ -137,7 +137,7 @@ public class EnhancedDataTransferBenchmarks
             int currentChunkSize = Math.Min(chunkSize, DataSize - offset);
             var chunk = _hostData.AsMemory(offset, currentChunkSize);
             
-            tasks.Add(buffer.CopyFromHostAsync<byte>(chunk, offset));
+            tasks.Add(buffer.CopyFromHostAsync<byte>(chunk, offset).AsTask());
         }
         
         await Task.WhenAll(tasks);

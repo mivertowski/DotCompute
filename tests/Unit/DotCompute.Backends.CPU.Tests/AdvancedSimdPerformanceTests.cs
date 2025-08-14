@@ -11,6 +11,7 @@ using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Kernels;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 #pragma warning disable CA1515 // Make types internal
 namespace DotCompute.Backends.CPU;

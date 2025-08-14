@@ -5,10 +5,10 @@ using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Tests.Shared;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using FluentAssertions;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Hardware.Mock;
@@ -58,9 +58,9 @@ public class CudaMockDeviceTests
         var mockInfo = CreateAcceleratorInfoFromMockProperties(mockProperties);
 
         // Act & Assert
-        mockInfo.Type.Should().Be(AcceleratorType.CUDA);
+        mockInfo.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
         mockInfo.Name.Should().Be("Mock RTX 2070");
-        mockInfo.MemorySize.Should().Be(8L * 1024 * 1024 * 1024); // 8GB
+        mockInfo.TotalMemory.Should().Be(8L * 1024 * 1024 * 1024); // 8GB
         mockInfo.ComputeUnits.Should().Be(36);
         mockInfo.ComputeCapability.Should().Be(new Version(7, 5));
         
@@ -144,10 +144,10 @@ public class CudaMockDeviceTests
         // Act & Assert
         mockStats.TotalMemory.Should().Be(8L * 1024 * 1024 * 1024);
         mockStats.FreeMemory.Should().Be(totalMemory - usedMemory);
-        mockStats.UsedMemory.Should().BeGreaterThan(0);
-        mockStats.AllocatedMemory.Should().BeLessOrEqualTo(mockStats.UsedMemory);
-        mockStats.AllocationCount.Should().BeGreaterThan(0);
-        mockStats.PeakMemory.Should().BeGreaterOrEqualTo(mockStats.UsedMemory);
+((mockStats.UsedMemory > 0).Should().BeTrue();
+        (mockStats.AllocatedMemory <= mockStats.UsedMemory).Should().BeTrue();
+((mockStats.AllocationCount > 0).Should().BeTrue();
+        (mockStats.PeakMemory >= mockStats.UsedMemory).Should().BeTrue();
         
         var utilizationPercent = (mockStats.UsedMemory * 100.0) / mockStats.TotalMemory;
         _output.WriteLine($"Mock Memory Usage: {utilizationPercent:F1}% ({mockStats.UsedMemory / (1024*1024*1024)}GB / {mockStats.TotalMemory / (1024*1024*1024)}GB)");
@@ -173,7 +173,7 @@ public class CudaMockDeviceTests
         {
             var errorString = GetMockErrorString(error);
             errorString.Should().NotBeNullOrEmpty($"Error {error} should have a descriptive string");
-            errorString.Should().Contain(error.ToString().ToLowerInvariant());
+            errorString.Contain(error.ToString().ToLowerInvariant());
             
             _output.WriteLine($"Mock Error: {error} -> {errorString}");
         }
@@ -195,7 +195,7 @@ public class CudaMockDeviceTests
         var allocationResult = SimulateAllocation(mockMemoryManager, sizeInBytes);
 
         // Assert
-        allocationResult.Should().NotBeNull();
+        Assert.NotNull(allocationResult);
         allocationResult.Success.Should().BeTrue();
         allocationResult.AllocatedSize.Should().Be(sizeInBytes);
         allocationResult.AllocationTime.Should().BeLessThan(TimeSpan.FromSeconds(1));
@@ -227,8 +227,8 @@ __global__ void mock_kernel(float* input, float* output, int n)
         
         // Simulate PTX output
         var ptxString = System.Text.Encoding.UTF8.GetString(mockCompilationResult.CompiledCode);
-        ptxString.Should().Contain(".version", "Mock PTX should contain version directive");
-        ptxString.Should().Contain(".entry", "Mock PTX should contain entry directive");
+        Assert.Contains(".version", ptxString); // "Mock PTX should contain version directive";
+        Assert.Contains(".entry", ptxString); // "Mock PTX should contain entry directive";
         
         _output.WriteLine($"Mock compilation completed in {mockCompilationResult.CompilationTime.TotalMilliseconds:F2}ms");
         _output.WriteLine($"PTX size: {mockCompilationResult.CompiledCode.Length} bytes");
@@ -247,7 +247,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
         mockCompilationResult.Success.Should().BeFalse();
         mockCompilationResult.CompiledCode.Should().BeEmpty();
         mockCompilationResult.ErrorMessage.Should().NotBeNullOrEmpty();
-        mockCompilationResult.CompilerLog.Should().Contain("error", "Compiler log should contain error information");
+        mockCompilationResult.CompilerLog.Should().Contain("error"); // "Compiler log should contain error information";
         
         _output.WriteLine($"Mock compilation failed as expected: {mockCompilationResult.ErrorMessage}");
     }
@@ -270,12 +270,12 @@ __global__ void mock_kernel(float* input, float* output, int n)
         
         // Compilation time should vary with optimization level
         var actualCompileTime = mockCompilationResult.CompilationTime.TotalMilliseconds;
-        actualCompileTime.Should().BeLessOrEqualTo(expectedCompileTimeMs + 1000, 
+        Assert.True(actualCompileTime <= expectedCompileTimeMs + 1000, 
             $"Compilation with {level} should complete within expected time");
 
         // Simulated execution performance should improve with higher optimization
         var mockExecutionTime = SimulateKernelExecution(mockCompilationResult, level);
-        mockExecutionTime.TotalMicroseconds.Should().BeLessOrEqualTo(expectedExecutionTimeUs + 500,
+        mockExecutionTime.Assert.True(TotalMicroseconds <= expectedExecutionTimeUs + 500,
             $"Execution with {level} optimization should meet performance targets");
         
         _output.WriteLine($"Optimization {level}: Compile={actualCompileTime:F0}ms, Execute={mockExecutionTime.TotalMicroseconds:F0}μs");
@@ -299,12 +299,12 @@ __global__ void mock_kernel(float* input, float* output, int n)
         stopwatch.Stop();
 
         // Assert
-        results.Should().HaveCount(concurrentOperations);
+        Assert.Equal(concurrentOperations, results.Count());
         results.Should().AllSatisfy(result => result.Result.Should().BeTrue());
         
         // Concurrent execution should be faster than sequential
         var estimatedSequentialTime = concurrentOperations * 100; // 100ms per operation
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(estimatedSequentialTime * 0.8, 
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan((long)(estimatedSequentialTime * 0.8), 
             "Concurrent operations should be faster than sequential execution");
         
         _output.WriteLine($"Completed {concurrentOperations} concurrent operations in {stopwatch.ElapsedMilliseconds}ms");

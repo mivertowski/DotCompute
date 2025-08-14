@@ -6,6 +6,7 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -61,7 +62,7 @@ public sealed class ComputeEngineTests : IDisposable
         var compiledKernel = Mock.Of<ICompiledKernel>();
         
         _computeEngineMock
-            .Setup(e => e.CompileKernelAsync(kernelSource, null, null, It.IsAny<CancellationToken>()))
+            .Setup(e => e.CompileKernelAsync(kernelSource, null, null, It.IsAny<CancellationToken>()
             .ReturnsAsync(compiledKernel);
 
         // Act
@@ -77,7 +78,7 @@ public sealed class ComputeEngineTests : IDisposable
     {
         // Arrange
         _computeEngineMock
-            .Setup(e => e.CompileKernelAsync(null!, null, null, It.IsAny<CancellationToken>()))
+            .Setup(e => e.CompileKernelAsync(null!, null, null, It.IsAny<CancellationToken>()
             .ThrowsAsync(new ArgumentNullException());
 
         // Act & Assert
@@ -94,7 +95,7 @@ public sealed class ComputeEngineTests : IDisposable
         var backendType = ComputeBackendType.CPU;
         
         _computeEngineMock
-            .Setup(e => e.ExecuteAsync(kernel, arguments, backendType, null, It.IsAny<CancellationToken>()))
+            .Setup(e => e.ExecuteAsync(kernel, arguments, backendType, null, It.IsAny<CancellationToken>()
             .Returns(ValueTask.CompletedTask);
 
         // Act & Assert (should not throw)
@@ -111,7 +112,7 @@ public sealed class ComputeEngineTests : IDisposable
         var backendType = ComputeBackendType.CPU;
         
         _computeEngineMock
-            .Setup(e => e.ExecuteAsync(null!, arguments, backendType, null, It.IsAny<CancellationToken>()))
+            .Setup(e => e.ExecuteAsync(null!, arguments, backendType, null, It.IsAny<CancellationToken>()
             .ThrowsAsync(new ArgumentNullException());
 
         // Act & Assert
@@ -205,7 +206,7 @@ public sealed class ComputeEngineTests : IDisposable
         var compiledKernel = Mock.Of<ICompiledKernel>();
         
         _computeEngineMock
-            .Setup(e => e.CompileKernelAsync(kernelSource, entryPoint, options, It.IsAny<CancellationToken>()))
+            .Setup(e => e.CompileKernelAsync(kernelSource, entryPoint, options, It.IsAny<CancellationToken>()
             .ReturnsAsync(compiledKernel);
 
         // Act
@@ -226,7 +227,7 @@ public sealed class ComputeEngineTests : IDisposable
         var options = new ExecutionOptions { Priority = ExecutionPriority.High };
         
         _computeEngineMock
-            .Setup(e => e.ExecuteAsync(kernel, arguments, backendType, options, It.IsAny<CancellationToken>()))
+            .Setup(e => e.ExecuteAsync(kernel, arguments, backendType, options, It.IsAny<CancellationToken>()
             .Returns(ValueTask.CompletedTask);
 
         // Act

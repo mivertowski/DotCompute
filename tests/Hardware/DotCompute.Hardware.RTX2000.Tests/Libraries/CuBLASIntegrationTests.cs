@@ -2,9 +2,9 @@ using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.Libraries;
 
@@ -77,11 +77,11 @@ public class CuBLASIntegrationTests : IDisposable
     {
         Skip.IfNot(_cublasInitialized, "cuBLAS not available");
 
-        _cublasHandle.Should().NotBe(IntPtr.Zero, "cuBLAS handle should be valid");
+        _cublasHandle.Should().Not.Be(IntPtr.Zero, "cuBLAS handle should be valid");
         
         // Test basic cuBLAS functionality
         var result = CublasSetPointerMode(_cublasHandle, CublasPointerMode.CUBLAS_POINTER_MODE_HOST);
-        result.Should().Be(CublasStatus.CUBLAS_STATUS_SUCCESS, "Setting pointer mode should succeed");
+        Assert.Equal(CublasStatus.CUBLAS_STATUS_SUCCESS, "Setting pointer mode should succeed", result);
 
         _output.WriteLine("✓ cuBLAS initialization and basic operations validated");
         await Task.CompletedTask;
@@ -101,10 +101,10 @@ public class CuBLASIntegrationTests : IDisposable
         {
             // Allocate device memory
             var result = CudaMalloc(ref d_x, vectorSize * sizeof(float));
-            result.Should().Be(0, "Memory allocation for vector x should succeed");
+            Assert.Equal(0, result); // Memory allocation for vector x should succeed;
             
             result = CudaMalloc(ref d_y, vectorSize * sizeof(float));
-            result.Should().Be(0, "Memory allocation for vector y should succeed");
+            Assert.Equal(0, result); // Memory allocation for vector y should succeed;
 
             // Prepare test vectors
             var h_x = new float[vectorSize];
@@ -123,10 +123,10 @@ public class CuBLASIntegrationTests : IDisposable
             try
             {
                 result = CudaMemcpyHtoD(d_x, h_x_handle.AddrOfPinnedObject(), vectorSize * sizeof(float));
-                result.Should().Be(0, "Copy vector x to device should succeed");
+                Assert.Equal(0, result); // Copy vector x to device should succeed;
                 
                 result = CudaMemcpyHtoD(d_y, h_y_handle.AddrOfPinnedObject(), vectorSize * sizeof(float));
-                result.Should().Be(0, "Copy vector y to device should succeed");
+                Assert.Equal(0, result); // Copy vector y to device should succeed;
             }
             finally
             {
@@ -141,20 +141,20 @@ public class CuBLASIntegrationTests : IDisposable
             var cublasResult = CublasSdot(_cublasHandle, vectorSize, d_x, 1, d_y, 1, ref dotResult);
             
             sw.Stop();
-            cublasResult.Should().Be(CublasStatus.CUBLAS_STATUS_SUCCESS, "cuBLAS dot product should succeed");
+            Assert.Equal(CublasStatus.CUBLAS_STATUS_SUCCESS, "cuBLAS dot product should succeed", cublasResult);
 
-            _output.WriteLine($"Dot product computed in {sw.ElapsedMicroseconds} μs");
+            _output.WriteLine($"Dot product computed in {sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency:F1} μs");
             _output.WriteLine($"Result: {dotResult:E6}, Expected: {expectedDot:E6}");
 
             // Validate result (allow for floating-point precision)
-            var relativeError = Math.Abs((dotResult - expectedDot) / expectedDot);
-            relativeError.Should().BeLessThan(1e-5, "Dot product should be accurate within floating-point precision");
+            var relativeError = (float)Math.Abs((dotResult - expectedDot) / expectedDot);
+            Assert.True(relativeError < 1e-5, "Dot product should be accurate within floating-point precision");
 
             // Performance validation - should be much faster than CPU
-            var elementsPerSecond = vectorSize / (sw.ElapsedMicroseconds / 1e6);
+            var elementsPerSecond = vectorSize / ((sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency) / 1e6);
             _output.WriteLine($"Performance: {elementsPerSecond:E2} elements/second");
             
-            elementsPerSecond.Should().BeGreaterThan(1e8, "cuBLAS should achieve high throughput");
+            Assert.True(elementsPerSecond > 1e8, "cuBLAS should achieve high throughput");
 
             _output.WriteLine("✓ Vector dot product accuracy and performance validated");
         }
@@ -183,13 +183,13 @@ public class CuBLASIntegrationTests : IDisposable
         {
             // Allocate device memory
             var result = CudaMalloc(ref d_A, matrixRows * matrixCols * sizeof(float));
-            result.Should().Be(0, "Matrix A allocation should succeed");
+            Assert.Equal(0, result); // Matrix A allocation should succeed;
             
             result = CudaMalloc(ref d_x, matrixCols * sizeof(float));
-            result.Should().Be(0, "Vector x allocation should succeed");
+            Assert.Equal(0, result); // Vector x allocation should succeed;
             
             result = CudaMalloc(ref d_y, matrixRows * sizeof(float));
-            result.Should().Be(0, "Vector y allocation should succeed");
+            Assert.Equal(0, result); // Vector y allocation should succeed;
 
             // Initialize matrix and vector
             var h_A = new float[matrixRows * matrixCols];
@@ -213,10 +213,10 @@ public class CuBLASIntegrationTests : IDisposable
             try
             {
                 result = CudaMemcpyHtoD(d_A, h_A_handle.AddrOfPinnedObject(), matrixRows * matrixCols * sizeof(float));
-                result.Should().Be(0, "Matrix A copy should succeed");
+                Assert.Equal(0, result); // Matrix A copy should succeed;
                 
                 result = CudaMemcpyHtoD(d_x, h_x_handle.AddrOfPinnedObject(), matrixCols * sizeof(float));
-                result.Should().Be(0, "Vector x copy should succeed");
+                Assert.Equal(0, result); // Vector x copy should succeed;
             }
             finally
             {
@@ -238,7 +238,7 @@ public class CuBLASIntegrationTests : IDisposable
                 d_y, 1);
             
             sw.Stop();
-            cublasResult.Should().Be(CublasStatus.CUBLAS_STATUS_SUCCESS, "Matrix-vector multiplication should succeed");
+            Assert.Equal(CublasStatus.CUBLAS_STATUS_SUCCESS, "Matrix-vector multiplication should succeed", cublasResult);
 
             _output.WriteLine($"Matrix-vector multiplication ({matrixRows}x{matrixCols}) completed in {sw.ElapsedMilliseconds} ms");
 
@@ -249,7 +249,7 @@ public class CuBLASIntegrationTests : IDisposable
             _output.WriteLine($"Performance: {gflops:F2} GFLOPS");
 
             // Validate performance - RTX 2000 Ada Gen should achieve substantial GFLOPS
-            gflops.Should().BeGreaterThan(100.0, "Matrix-vector multiplication should achieve high GFLOPS");
+            Assert.True(gflops > 100.0, "Matrix-vector multiplication should achieve high GFLOPS");
 
             // Verify result by copying back and spot-checking
             var h_y = new float[matrixRows];
@@ -258,7 +258,7 @@ public class CuBLASIntegrationTests : IDisposable
             try
             {
                 result = CudaMemcpyDtoH(h_y_handle.AddrOfPinnedObject(), d_y, matrixRows * sizeof(float));
-                result.Should().Be(0, "Result vector copy should succeed");
+                Assert.Equal(0, result); // Result vector copy should succeed;
 
                 // Spot-check a few results manually
                 for (int row = 0; row < Math.Min(5, matrixRows); row++)
@@ -269,8 +269,8 @@ public class CuBLASIntegrationTests : IDisposable
                         expectedValue += h_A[row + col * matrixRows] * h_x[col]; // Column-major indexing
                     }
 
-                    var error = Math.Abs(h_y[row] - expectedValue) / Math.Max(Math.Abs(expectedValue), 1e-6f);
-                    error.Should().BeLessThan(1e-4, $"Result at row {row} should be accurate");
+                    var error = (float)(Math.Abs(h_y[row] - expectedValue) / Math.Max(Math.Abs(expectedValue), 1e-6f));
+                    Assert.True(error < 1e-4, $"Result at row {row} should be accurate");
                 }
             }
             finally
@@ -308,13 +308,13 @@ public class CuBLASIntegrationTests : IDisposable
 
             // Allocate device memory
             var result = CudaMalloc(ref d_A, matrixSizeBytes);
-            result.Should().Be(0, "Matrix A allocation should succeed");
+            Assert.Equal(0, result); // Matrix A allocation should succeed;
             
             result = CudaMalloc(ref d_B, matrixSizeBytes);
-            result.Should().Be(0, "Matrix B allocation should succeed");
+            Assert.Equal(0, result); // Matrix B allocation should succeed;
             
             result = CudaMalloc(ref d_C, matrixSizeBytes);
-            result.Should().Be(0, "Matrix C allocation should succeed");
+            Assert.Equal(0, result); // Matrix C allocation should succeed;
 
             // Initialize matrices with random data
             var h_A = new float[matrixElements];
@@ -334,10 +334,10 @@ public class CuBLASIntegrationTests : IDisposable
             try
             {
                 result = CudaMemcpyHtoD(d_A, h_A_handle.AddrOfPinnedObject(), matrixSizeBytes);
-                result.Should().Be(0, "Matrix A copy should succeed");
+                Assert.Equal(0, result); // Matrix A copy should succeed;
                 
                 result = CudaMemcpyHtoD(d_B, h_B_handle.AddrOfPinnedObject(), matrixSizeBytes);
-                result.Should().Be(0, "Matrix B copy should succeed");
+                Assert.Equal(0, result); // Matrix B copy should succeed;
             }
             finally
             {
@@ -375,7 +375,7 @@ public class CuBLASIntegrationTests : IDisposable
             CudaCtxSynchronize();
             sw.Stop();
 
-            cublasResult.Should().Be(CublasStatus.CUBLAS_STATUS_SUCCESS, "Matrix multiplication should succeed");
+            Assert.Equal(CublasStatus.CUBLAS_STATUS_SUCCESS, "Matrix multiplication should succeed", cublasResult);
 
             // Calculate performance metrics
             var totalOps = (long)matrixSize * matrixSize * matrixSize * 2; // FMA operations
@@ -390,8 +390,8 @@ public class CuBLASIntegrationTests : IDisposable
             _output.WriteLine($"  Matrix size: {matrixSize}x{matrixSize}");
 
             // Performance validation for RTX 2000 Ada Gen
-            gflops.Should().BeGreaterThan(1000.0, "Matrix multiplication should achieve >1 TFLOPS on RTX 2000 Ada Gen");
-            bandwidth.Should().BeGreaterThan(100.0, "Should achieve substantial memory bandwidth");
+            Assert.True(gflops > 1000.0, "Matrix multiplication should achieve >1 TFLOPS on RTX 2000 Ada Gen");
+            Assert.True(bandwidth > 100.0, "Should achieve substantial memory bandwidth");
 
             // Validate a portion of the result
             var h_C = new float[matrixElements];
@@ -400,7 +400,7 @@ public class CuBLASIntegrationTests : IDisposable
             try
             {
                 result = CudaMemcpyDtoH(h_C_handle.AddrOfPinnedObject(), d_C, matrixSizeBytes);
-                result.Should().Be(0, "Result matrix copy should succeed");
+                Assert.Equal(0, result); // Result matrix copy should succeed;
 
                 // Verify a few random elements using CPU computation
                 for (int verification = 0; verification < 10; verification++)
@@ -457,13 +457,13 @@ public class CuBLASIntegrationTests : IDisposable
         {
             // Allocate device memory for batched matrices
             var result = CudaMalloc(ref d_A, totalSizeBytes);
-            result.Should().Be(0, "Batched matrix A allocation should succeed");
+            Assert.Equal(0, result); // Batched matrix A allocation should succeed;
             
             result = CudaMalloc(ref d_B, totalSizeBytes);
-            result.Should().Be(0, "Batched matrix B allocation should succeed");
+            Assert.Equal(0, result); // Batched matrix B allocation should succeed;
             
             result = CudaMalloc(ref d_C, totalSizeBytes);
-            result.Should().Be(0, "Batched matrix C allocation should succeed");
+            Assert.Equal(0, result); // Batched matrix C allocation should succeed;
 
             // Initialize batched matrices
             var h_A = new float[matrixElements * batchSize];
@@ -483,10 +483,10 @@ public class CuBLASIntegrationTests : IDisposable
             try
             {
                 result = CudaMemcpyHtoD(d_A, h_A_handle.AddrOfPinnedObject(), totalSizeBytes);
-                result.Should().Be(0, "Batched matrix A copy should succeed");
+                Assert.Equal(0, result); // Batched matrix A copy should succeed;
                 
                 result = CudaMemcpyHtoD(d_B, h_B_handle.AddrOfPinnedObject(), totalSizeBytes);
-                result.Should().Be(0, "Batched matrix B copy should succeed");
+                Assert.Equal(0, result); // Batched matrix B copy should succeed;
             }
             finally
             {
@@ -512,13 +512,13 @@ public class CuBLASIntegrationTests : IDisposable
             IntPtr d_A_array = IntPtr.Zero, d_B_array = IntPtr.Zero, d_C_array = IntPtr.Zero;
             
             result = CudaMalloc(ref d_A_array, batchSize * IntPtr.Size);
-            result.Should().Be(0, "Device pointer array A allocation should succeed");
+            Assert.Equal(0, result); // Device pointer array A allocation should succeed;
             
             result = CudaMalloc(ref d_B_array, batchSize * IntPtr.Size);
-            result.Should().Be(0, "Device pointer array B allocation should succeed");
+            Assert.Equal(0, result); // Device pointer array B allocation should succeed;
             
             result = CudaMalloc(ref d_C_array, batchSize * IntPtr.Size);
-            result.Should().Be(0, "Device pointer array C allocation should succeed");
+            Assert.Equal(0, result); // Device pointer array C allocation should succeed;
 
             var h_A_array_handle = GCHandle.Alloc(h_A_array, GCHandleType.Pinned);
             var h_B_array_handle = GCHandle.Alloc(h_B_array, GCHandleType.Pinned);
@@ -527,13 +527,13 @@ public class CuBLASIntegrationTests : IDisposable
             try
             {
                 result = CudaMemcpyHtoD(d_A_array, h_A_array_handle.AddrOfPinnedObject(), batchSize * IntPtr.Size);
-                result.Should().Be(0, "Device pointer array A copy should succeed");
+                Assert.Equal(0, result); // Device pointer array A copy should succeed;
                 
                 result = CudaMemcpyHtoD(d_B_array, h_B_array_handle.AddrOfPinnedObject(), batchSize * IntPtr.Size);
-                result.Should().Be(0, "Device pointer array B copy should succeed");
+                Assert.Equal(0, result); // Device pointer array B copy should succeed;
                 
                 result = CudaMemcpyHtoD(d_C_array, h_C_array_handle.AddrOfPinnedObject(), batchSize * IntPtr.Size);
-                result.Should().Be(0, "Device pointer array C copy should succeed");
+                Assert.Equal(0, result); // Device pointer array C copy should succeed;
 
                 // Perform batched matrix multiplication
                 var sw = Stopwatch.StartNew();
@@ -552,7 +552,7 @@ public class CuBLASIntegrationTests : IDisposable
                 CudaCtxSynchronize();
                 sw.Stop();
 
-                cublasResult.Should().Be(CublasStatus.CUBLAS_STATUS_SUCCESS, "Batched matrix multiplication should succeed");
+                Assert.Equal(CublasStatus.CUBLAS_STATUS_SUCCESS, "Batched matrix multiplication should succeed", cublasResult);
 
                 // Calculate performance metrics
                 var totalOps = (long)batchSize * matrixSize * matrixSize * matrixSize * 2;
@@ -566,8 +566,8 @@ public class CuBLASIntegrationTests : IDisposable
                 _output.WriteLine($"  Batch size: {batchSize}");
 
                 // Performance validation
-                gflops.Should().BeGreaterThan(500.0, "Batched operations should achieve high throughput");
-                avgTimePerMatrix.Should().BeLessThan(50.0, "Individual matrices should be processed quickly");
+                Assert.True(gflops > 500.0, "Batched operations should achieve high throughput");
+                Assert.True(avgTimePerMatrix < 50.0, "Individual matrices should be processed quickly");
 
                 _output.WriteLine("✓ Batched matrix operations performance validated");
             }

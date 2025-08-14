@@ -7,6 +7,7 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.TestFixtures;
 

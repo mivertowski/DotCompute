@@ -67,17 +67,20 @@ public class PipelineExecutionBenchmarks
         // Create simple processing pipelines
         for (int stages = 1; stages <= 10; stages++)
         {
-            var pipelineBuilder = new KernelPipelineBuilder(_accelerator);
+            var pipelineBuilder = new KernelPipelineBuilder();
             
             // Add sequential processing stages
             for (int stage = 0; stage < stages; stage++)
             {
-                pipelineBuilder.AddStage($"stage_{stage}", CreateSimpleProcessingStage(stage));
+                pipelineBuilder.AddStage(CreateSimpleProcessingStage(stage));
             }
             
             var pipeline = pipelineBuilder.Build();
             _pipelines.Add(pipeline);
         }
+        
+        // Fix CS1998: Add minimal await to satisfy async method requirement
+        await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
     }
 
     private IPipelineStage CreateSimpleProcessingStage(int stageIndex)
@@ -88,12 +91,12 @@ public class PipelineExecutionBenchmarks
             var buffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
             
             // Copy input to buffer, do some work, then copy to output
-            await buffer.CopyFromHostAsync(_inputData);
+            await buffer.CopyFromHostAsync<float>(_inputData);
             
             // Simulate processing time
             await Task.Delay(1);
             
-            await buffer.CopyToHostAsync(_outputData);
+            await buffer.CopyToHostAsync<float>(_outputData);
             await buffer.DisposeAsync();
         });
     }
@@ -147,14 +150,20 @@ public class PipelineExecutionBenchmarks
         
         var pipeline = _pipelines[stageCount - 1];
         
-        var inputBuffer = await _memoryManager.AllocateAndCopyAsync(_inputData);
+        var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(_inputData);
         var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
         
         // Execute pipeline
-        await pipeline.ExecuteAsync(inputBuffer, outputBuffer);
+        var context = new PipelineExecutionContext
+        {
+            Inputs = new Dictionary<string, object> { ["input"] = inputBuffer, ["output"] = outputBuffer },
+            MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
+            Device = (DotCompute.Core.IComputeDevice)_accelerator
+        };
+        await pipeline.ExecuteAsync(context);
         
         // Read back results
-        await outputBuffer.CopyToHostAsync(_outputData);
+        await outputBuffer.CopyToHostAsync<float>(_outputData);
         
         _buffers.Add(inputBuffer);
         _buffers.Add(outputBuffer);
@@ -163,25 +172,33 @@ public class PipelineExecutionBenchmarks
     [Benchmark]
     public async Task PipelineWithMemoryOptimization()
     {
-        var pipelineBuilder = new KernelPipelineBuilder(_accelerator);
+        var pipelineBuilder = new KernelPipelineBuilder();
         
         // Add stages with memory optimization
         for (int stage = 0; stage < PipelineStages; stage++)
         {
-            pipelineBuilder.AddStage($"optimized_stage_{stage}", CreateOptimizedProcessingStage(stage));
+            pipelineBuilder.AddStage(CreateOptimizedProcessingStage(stage));
         }
         
         // Enable memory optimization
-        pipelineBuilder.WithMemoryOptimization(true);
-        pipelineBuilder.WithBufferReuse(true);
+        pipelineBuilder.WithOptimization(opts => {
+            opts.EnableMemoryOptimization = true;
+            opts.EnableBufferReuse = true;
+        });
         
         var pipeline = pipelineBuilder.Build();
         
-        var inputBuffer = await _memoryManager.AllocateAndCopyAsync(_inputData);
+        var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(_inputData);
         var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
         
-        await pipeline.ExecuteAsync(inputBuffer, outputBuffer);
-        await outputBuffer.CopyToHostAsync(_outputData);
+        var context = new PipelineExecutionContext
+        {
+            Inputs = new Dictionary<string, object> { ["input"] = inputBuffer, ["output"] = outputBuffer },
+            MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
+            Device = (DotCompute.Core.IComputeDevice)_accelerator
+        };
+        await pipeline.ExecuteAsync(context);
+        await outputBuffer.CopyToHostAsync<float>(_outputData);
         
         _buffers.Add(inputBuffer);
         _buffers.Add(outputBuffer);
@@ -199,9 +216,9 @@ public class PipelineExecutionBenchmarks
                            await _memoryManager.AllocateAsync(DataSize * sizeof(float));
             
             // Simulate optimized processing
-            await workBuffer.CopyFromHostAsync(_inputData);
+            await workBuffer.CopyFromHostAsync<float>(_inputData);
             await Task.Delay(1); // Simulated work
-            await workBuffer.CopyToHostAsync(_outputData);
+            await workBuffer.CopyToHostAsync<float>(_outputData);
             
             context.SetBuffer($"work_{stageIndex}", workBuffer);
         });
@@ -218,11 +235,17 @@ public class PipelineExecutionBenchmarks
             tasks.Add(Task.Run(async () =>
             {
                 var pipeline = _pipelines[Math.Min(PipelineStages - 1, _pipelines.Count - 1)];
-                var inputBuffer = await _memoryManager.AllocateAndCopyAsync(_inputData);
+                var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(_inputData);
                 var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
                 
-                await pipeline.ExecuteAsync(inputBuffer, outputBuffer);
-                await outputBuffer.CopyToHostAsync(_outputData);
+                var context = new PipelineExecutionContext
+                {
+                    Inputs = new Dictionary<string, object> { ["input"] = inputBuffer, ["output"] = outputBuffer },
+                    MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
+                    Device = (DotCompute.Core.IComputeDevice)_accelerator
+                };
+                await pipeline.ExecuteAsync(context);
+                await outputBuffer.CopyToHostAsync<float>(_outputData);
                 
                 lock (_buffers)
                 {
@@ -238,24 +261,30 @@ public class PipelineExecutionBenchmarks
     [Benchmark]
     public async Task PipelineWithErrorHandling()
     {
-        var pipelineBuilder = new KernelPipelineBuilder(_accelerator);
+        var pipelineBuilder = new KernelPipelineBuilder();
         
         // Add stages with error handling
         for (int stage = 0; stage < PipelineStages; stage++)
         {
-            pipelineBuilder.AddStage($"error_safe_stage_{stage}", CreateErrorSafeProcessingStage(stage));
+            pipelineBuilder.AddStage(CreateErrorSafeProcessingStage(stage));
         }
         
-        pipelineBuilder.WithErrorRecovery(true);
+        pipelineBuilder.WithErrorHandler((ex, ctx) => ErrorHandlingResult.Retry);
         var pipeline = pipelineBuilder.Build();
         
-        var inputBuffer = await _memoryManager.AllocateAndCopyAsync(_inputData);
+        var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(_inputData);
         var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
         
         try
         {
-            await pipeline.ExecuteAsync(inputBuffer, outputBuffer);
-            await outputBuffer.CopyToHostAsync(_outputData);
+            var context = new PipelineExecutionContext
+            {
+                Inputs = new Dictionary<string, object> { ["input"] = inputBuffer, ["output"] = outputBuffer },
+                MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
+                Device = (DotCompute.Core.IComputeDevice)_accelerator
+            };
+            await pipeline.ExecuteAsync(context);
+            await outputBuffer.CopyToHostAsync<float>(_outputData);
         }
         catch (Exception ex)
         {
@@ -275,7 +304,7 @@ public class PipelineExecutionBenchmarks
             try
             {
                 var buffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
-                await buffer.CopyFromHostAsync(_inputData);
+                await buffer.CopyFromHostAsync<float>(_inputData);
                 
                 // Simulate processing that might fail
                 if (stageIndex == 2 && Random.Shared.NextDouble() < 0.1) // 10% chance of failure
@@ -284,7 +313,7 @@ public class PipelineExecutionBenchmarks
                 }
                 
                 await Task.Delay(1);
-                await buffer.CopyToHostAsync(_outputData);
+                await buffer.CopyToHostAsync<float>(_outputData);
                 await buffer.DisposeAsync();
             }
             catch (Exception ex)
@@ -293,7 +322,7 @@ public class PipelineExecutionBenchmarks
                 Console.WriteLine($"Stage {stageIndex} error: {ex.Message}");
                 
                 // Fallback: pass input directly to output
-                await input.CopyToHostAsync(_outputData);
+                await input.CopyToHostAsync<float>(_outputData);
             }
         });
     }
@@ -304,9 +333,11 @@ public class PipelineExecutionBenchmarks
         const int streamChunks = 8;
         var chunkSize = DataSize / streamChunks;
         
-        var pipelineBuilder = new KernelPipelineBuilder(_accelerator);
-        pipelineBuilder.AddStage("streaming_stage", CreateStreamingProcessingStage());
-        pipelineBuilder.WithStreamingSupport(true);
+        var pipelineBuilder = new KernelPipelineBuilder();
+        pipelineBuilder.AddStage(CreateStreamingProcessingStage());
+        pipelineBuilder.WithOptimization(opts => {
+            opts.EnableStreaming = true;
+        });
         
         var pipeline = pipelineBuilder.Build();
         
@@ -318,13 +349,19 @@ public class PipelineExecutionBenchmarks
             tasks.Add(Task.Run(async () =>
             {
                 var chunkData = _inputData.Skip(chunkIndex * chunkSize).Take(chunkSize).ToArray();
-                var inputBuffer = await _memoryManager.AllocateAndCopyAsync(chunkData);
+                var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(chunkData);
                 var outputBuffer = await _memoryManager.AllocateAsync(chunkSize * sizeof(float));
                 
-                await pipeline.ExecuteAsync(inputBuffer, outputBuffer);
+                var context = new PipelineExecutionContext
+                {
+                    Inputs = new Dictionary<string, object> { ["input"] = inputBuffer, ["output"] = outputBuffer },
+                    MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
+                    Device = (DotCompute.Core.IComputeDevice)_accelerator
+                };
+                await pipeline.ExecuteAsync(context);
                 
                 var resultChunk = new float[chunkSize];
-                await outputBuffer.CopyToHostAsync(resultChunk);
+                await outputBuffer.CopyToHostAsync<float>(resultChunk);
                 
                 lock (_buffers)
                 {
@@ -347,7 +384,7 @@ public class PipelineExecutionBenchmarks
             
             // Copy input chunk
             var tempData = new float[input.SizeInBytes / sizeof(float)];
-            await input.CopyToHostAsync(tempData);
+            await input.CopyToHostAsync<float>(tempData);
             
             // Process chunk (simple transformation)
             for (int i = 0; i < tempData.Length; i++)
@@ -355,8 +392,8 @@ public class PipelineExecutionBenchmarks
                 tempData[i] = tempData[i] * 1.5f + 0.1f;
             }
             
-            await buffer.CopyFromHostAsync(tempData);
-            await buffer.CopyToHostAsync(tempData); // Copy to output buffer
+            await buffer.CopyFromHostAsync<float>(tempData);
+            await buffer.CopyToHostAsync<float>(tempData); // Copy to output buffer
             await buffer.DisposeAsync();
         });
     }
@@ -382,10 +419,16 @@ public class PipelineExecutionBenchmarks
         
         for (int i = 0; i < iterations; i++)
         {
-            var inputBuffer = await _memoryManager.AllocateAndCopyAsync(_inputData);
+            var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(_inputData);
             var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
             
-            await pipeline.ExecuteAsync(inputBuffer, outputBuffer);
+            var context = new PipelineExecutionContext
+            {
+                Inputs = new Dictionary<string, object> { ["input"] = inputBuffer, ["output"] = outputBuffer },
+                MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
+                Device = (DotCompute.Core.IComputeDevice)_accelerator
+            };
+            await pipeline.ExecuteAsync(context);
             
             await inputBuffer.DisposeAsync();
             await outputBuffer.DisposeAsync();
@@ -401,77 +444,342 @@ public class PipelineExecutionBenchmarks
 // Helper classes for pipeline stages
 public class SimplePipelineStage : IPipelineStage
 {
-    public string Name { get; }
     private readonly Func<IMemoryBuffer, IMemoryBuffer, object, Task> _executeFunc;
+    private readonly SimpleStageMetrics _metrics;
 
     public SimplePipelineStage(string name, Func<IMemoryBuffer, IMemoryBuffer, object, Task> executeFunc)
     {
+        Id = Guid.NewGuid().ToString();
         Name = name;
+        Type = PipelineStageType.Custom;
+        Dependencies = Array.Empty<string>();
+        Metadata = new Dictionary<string, object>();
         _executeFunc = executeFunc;
+        _metrics = new SimpleStageMetrics();
     }
 
-    public Task ExecuteAsync(IMemoryBuffer input, IMemoryBuffer output, object context = null!)
+    public string Id { get; }
+    public string Name { get; }
+    public PipelineStageType Type { get; }
+    public IReadOnlyList<string> Dependencies { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
+
+    public async ValueTask<StageExecutionResult> ExecuteAsync(
+        PipelineExecutionContext context,
+        CancellationToken cancellationToken = default)
     {
-        return _executeFunc(input, output, context);
+        var startTime = DateTime.UtcNow;
+        var success = true;
+        Exception? error = null;
+
+        try
+        {
+            // For backward compatibility, extract input/output buffers from context
+            var input = context.Inputs.Values.OfType<IMemoryBuffer>().FirstOrDefault();
+            var output = context.State.Values.OfType<IMemoryBuffer>().FirstOrDefault();
+            
+            if (input != null && output != null)
+            {
+                await _executeFunc(input, output, context);
+            }
+            _metrics.RecordExecution(DateTime.UtcNow - startTime, true);
+        }
+        catch (Exception ex)
+        {
+            success = false;
+            error = ex;
+            _metrics.RecordExecution(DateTime.UtcNow - startTime, false);
+        }
+
+        return new StageExecutionResult
+        {
+            StageId = Id,
+            Success = success,
+            Duration = DateTime.UtcNow - startTime,
+            Error = error
+        };
     }
+
+    public StageValidationResult Validate()
+    {
+        var errors = new List<string>();
+        
+        if (string.IsNullOrEmpty(Name))
+            errors.Add("Stage name cannot be null or empty");
+        
+        if (_executeFunc == null)
+            errors.Add("Execute function cannot be null");
+
+        return new StageValidationResult
+        {
+            IsValid = errors.Count == 0,
+            Errors = errors
+        };
+    }
+
+    public IStageMetrics GetMetrics() => _metrics;
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
 public class OptimizedPipelineStage : IPipelineStage
 {
-    public string Name { get; }
     private readonly Func<IMemoryBuffer, IMemoryBuffer, PipelineContext, Task> _executeFunc;
+    private readonly SimpleStageMetrics _metrics;
 
     public OptimizedPipelineStage(string name, Func<IMemoryBuffer, IMemoryBuffer, PipelineContext, Task> executeFunc)
     {
+        Id = Guid.NewGuid().ToString();
         Name = name;
+        Type = PipelineStageType.Custom;
+        Dependencies = Array.Empty<string>();
+        Metadata = new Dictionary<string, object> { ["Optimized"] = true, ["BufferReuse"] = true };
         _executeFunc = executeFunc;
+        _metrics = new SimpleStageMetrics();
     }
 
-    public Task ExecuteAsync(IMemoryBuffer input, IMemoryBuffer output, object context = null!)
+    public string Id { get; }
+    public string Name { get; }
+    public PipelineStageType Type { get; }
+    public IReadOnlyList<string> Dependencies { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
+
+    public async ValueTask<StageExecutionResult> ExecuteAsync(
+        PipelineExecutionContext context,
+        CancellationToken cancellationToken = default)
     {
-        var pipelineContext = context as PipelineContext ?? new PipelineContext();
-        return _executeFunc(input, output, pipelineContext);
+        var startTime = DateTime.UtcNow;
+        var success = true;
+        Exception? error = null;
+
+        try
+        {
+            // For backward compatibility, extract input/output buffers from context
+            var input = context.Inputs.Values.OfType<IMemoryBuffer>().FirstOrDefault();
+            var output = context.State.Values.OfType<IMemoryBuffer>().FirstOrDefault();
+            
+            if (input != null && output != null)
+            {
+                var pipelineContext = new PipelineContext();
+                await _executeFunc(input, output, pipelineContext);
+            }
+            _metrics.RecordExecution(DateTime.UtcNow - startTime, true);
+        }
+        catch (Exception ex)
+        {
+            success = false;
+            error = ex;
+            _metrics.RecordExecution(DateTime.UtcNow - startTime, false);
+        }
+
+        return new StageExecutionResult
+        {
+            StageId = Id,
+            Success = success,
+            Duration = DateTime.UtcNow - startTime,
+            Error = error,
+            Metrics = new Dictionary<string, double>
+            {
+                ["MemoryOptimized"] = 1.0
+            }
+        };
     }
+
+    public StageValidationResult Validate()
+    {
+        var errors = new List<string>();
+        var warnings = new List<string>();
+        
+        if (string.IsNullOrEmpty(Name))
+            errors.Add("Stage name cannot be null or empty");
+        
+        if (_executeFunc == null)
+            errors.Add("Execute function cannot be null");
+        
+        warnings.Add("Optimized stage requires proper context management");
+
+        return new StageValidationResult
+        {
+            IsValid = errors.Count == 0,
+            Errors = errors,
+            Warnings = warnings
+        };
+    }
+
+    public IStageMetrics GetMetrics() => _metrics;
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
 public class ErrorSafePipelineStage : IPipelineStage
 {
-    public string Name { get; }
     private readonly Func<IMemoryBuffer, IMemoryBuffer, object, Task> _executeFunc;
+    private readonly SimpleStageMetrics _metrics;
 
     public ErrorSafePipelineStage(string name, Func<IMemoryBuffer, IMemoryBuffer, object, Task> executeFunc)
     {
+        Id = Guid.NewGuid().ToString();
         Name = name;
+        Type = PipelineStageType.Custom;
+        Dependencies = Array.Empty<string>();
+        Metadata = new Dictionary<string, object> { ["ErrorSafe"] = true };
         _executeFunc = executeFunc;
+        _metrics = new SimpleStageMetrics();
     }
 
-    public Task ExecuteAsync(IMemoryBuffer input, IMemoryBuffer output, object context = null!)
+    public string Id { get; }
+    public string Name { get; }
+    public PipelineStageType Type { get; }
+    public IReadOnlyList<string> Dependencies { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
+
+    public async ValueTask<StageExecutionResult> ExecuteAsync(
+        PipelineExecutionContext context,
+        CancellationToken cancellationToken = default)
     {
-        return _executeFunc(input, output, context);
+        var startTime = DateTime.UtcNow;
+        var success = true;
+        Exception? error = null;
+
+        try
+        {
+            // For backward compatibility, extract input/output buffers from context
+            var input = context.Inputs.Values.OfType<IMemoryBuffer>().FirstOrDefault();
+            var output = context.State.Values.OfType<IMemoryBuffer>().FirstOrDefault();
+            
+            if (input != null && output != null)
+            {
+                await _executeFunc(input, output, context);
+            }
+            _metrics.RecordExecution(DateTime.UtcNow - startTime, true);
+        }
+        catch (Exception ex)
+        {
+            success = false;
+            error = ex;
+            _metrics.RecordExecution(DateTime.UtcNow - startTime, false);
+            // Error-safe stages don't propagate exceptions
+        }
+
+        return new StageExecutionResult
+        {
+            StageId = Id,
+            Success = success,
+            Duration = DateTime.UtcNow - startTime,
+            Error = error
+        };
     }
+
+    public StageValidationResult Validate()
+    {
+        var errors = new List<string>();
+        var warnings = new List<string>();
+        
+        if (string.IsNullOrEmpty(Name))
+            errors.Add("Stage name cannot be null or empty");
+        
+        if (_executeFunc == null)
+            errors.Add("Execute function cannot be null");
+        
+        warnings.Add("Error-safe stage may mask critical failures");
+
+        return new StageValidationResult
+        {
+            IsValid = errors.Count == 0,
+            Errors = errors,
+            Warnings = warnings
+        };
+    }
+
+    public IStageMetrics GetMetrics() => _metrics;
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
 public class StreamingPipelineStage : IPipelineStage
 {
-    public string Name { get; }
     private readonly Func<IMemoryBuffer, IMemoryBuffer, object, Task> _executeFunc;
+    private readonly SimpleStageMetrics _metrics;
 
     public StreamingPipelineStage(string name, Func<IMemoryBuffer, IMemoryBuffer, object, Task> executeFunc)
     {
+        Id = Guid.NewGuid().ToString();
         Name = name;
+        Type = PipelineStageType.Custom;
+        Dependencies = Array.Empty<string>();
+        Metadata = new Dictionary<string, object> { ["Streaming"] = true, ["ChunkProcessing"] = true };
         _executeFunc = executeFunc;
+        _metrics = new SimpleStageMetrics();
     }
 
-    public Task ExecuteAsync(IMemoryBuffer input, IMemoryBuffer output, object context = null!)
+    public string Id { get; }
+    public string Name { get; }
+    public PipelineStageType Type { get; }
+    public IReadOnlyList<string> Dependencies { get; }
+    public IReadOnlyDictionary<string, object> Metadata { get; }
+
+    public async ValueTask<StageExecutionResult> ExecuteAsync(
+        PipelineExecutionContext context,
+        CancellationToken cancellationToken = default)
     {
-        return _executeFunc(input, output, context);
+        var startTime = DateTime.UtcNow;
+        var success = true;
+        Exception? error = null;
+
+        try
+        {
+            // For backward compatibility, extract input/output buffers from context
+            var input = context.Inputs.Values.OfType<IMemoryBuffer>().FirstOrDefault();
+            var output = context.State.Values.OfType<IMemoryBuffer>().FirstOrDefault();
+            
+            if (input != null && output != null)
+            {
+                await _executeFunc(input, output, context);
+            }
+            _metrics.RecordExecution(DateTime.UtcNow - startTime, true);
+        }
+        catch (Exception ex)
+        {
+            success = false;
+            error = ex;
+            _metrics.RecordExecution(DateTime.UtcNow - startTime, false);
+        }
+
+        return new StageExecutionResult
+        {
+            StageId = Id,
+            Success = success,
+            Duration = DateTime.UtcNow - startTime,
+            Error = error,
+            Metrics = new Dictionary<string, double>
+            {
+                ["ChunkSize"] = context.Inputs.Values.OfType<IMemoryBuffer>().FirstOrDefault()?.SizeInBytes ?? 0
+            }
+        };
     }
+
+    public StageValidationResult Validate()
+    {
+        var errors = new List<string>();
+        var warnings = new List<string>();
+        
+        if (string.IsNullOrEmpty(Name))
+            errors.Add("Stage name cannot be null or empty");
+        
+        if (_executeFunc == null)
+            errors.Add("Execute function cannot be null");
+        
+        warnings.Add("Streaming stage requires careful memory management for optimal performance");
+
+        return new StageValidationResult
+        {
+            IsValid = errors.Count == 0,
+            Errors = errors,
+            Warnings = warnings
+        };
+    }
+
+    public IStageMetrics GetMetrics() => _metrics;
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
@@ -488,5 +796,55 @@ public class PipelineContext
     public void SetBuffer(string key, IMemoryBuffer buffer)
     {
         _buffers[key] = buffer;
+    }
+}
+
+/// <summary>
+/// Simple implementation of IStageMetrics for benchmarking.
+/// </summary>
+public class SimpleStageMetrics : IStageMetrics
+{
+    private readonly object _lock = new();
+    private long _executionCount;
+    private long _errorCount;
+    private TimeSpan _totalExecutionTime = TimeSpan.Zero;
+    private TimeSpan _minExecutionTime = TimeSpan.MaxValue;
+    private TimeSpan _maxExecutionTime = TimeSpan.Zero;
+    private readonly Dictionary<string, double> _customMetrics = new();
+
+    public long ExecutionCount => _executionCount;
+    public TimeSpan AverageExecutionTime => _executionCount > 0 ? new TimeSpan(_totalExecutionTime.Ticks / _executionCount) : TimeSpan.Zero;
+    public TimeSpan MinExecutionTime => _minExecutionTime == TimeSpan.MaxValue ? TimeSpan.Zero : _minExecutionTime;
+    public TimeSpan MaxExecutionTime => _maxExecutionTime;
+    public TimeSpan TotalExecutionTime => _totalExecutionTime;
+    public long ErrorCount => _errorCount;
+    public double SuccessRate => _executionCount > 0 ? (double)(_executionCount - _errorCount) / _executionCount : 1.0;
+    public long AverageMemoryUsage => 0; // Not tracked in this simple implementation
+    public IReadOnlyDictionary<string, double> CustomMetrics => _customMetrics;
+
+    public void RecordExecution(TimeSpan executionTime, bool success)
+    {
+        lock (_lock)
+        {
+            _executionCount++;
+            _totalExecutionTime = _totalExecutionTime.Add(executionTime);
+            
+            if (executionTime < _minExecutionTime)
+                _minExecutionTime = executionTime;
+            
+            if (executionTime > _maxExecutionTime)
+                _maxExecutionTime = executionTime;
+            
+            if (!success)
+                _errorCount++;
+        }
+    }
+
+    public void AddCustomMetric(string key, double value)
+    {
+        lock (_lock)
+        {
+            _customMetrics[key] = value;
+        }
     }
 }

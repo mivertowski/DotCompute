@@ -3,6 +3,7 @@
 
 
 using System.Runtime.InteropServices;
+using FluentAssertions;
 
 namespace DotCompute.Backends.CPU;
 

@@ -5,11 +5,11 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Common.Hardware;
 using DotCompute.Tests.Integration.Infrastructure;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -82,12 +82,12 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         {
             // Should fail with memory-related error
             result.Error.Should().NotBeNull();
-            result.Error!.Message.ToLower().Should().ContainAny("memory", "allocation", "exhausted");
+            result.Error!.Message.ToLower().ContainAny("memory", "allocation", "exhausted");
         }
         else
         {
             // If successful, should have used memory management strategies
-            result.Metrics?.ResourceUtilization.MemoryUsagePercent.Should().BeLessThan(100);
+            result.Metrics?.ResourceUtilization.MemoryUsagePercent < 100.Should().BeTrue();
         }
         
         Logger.LogInformation("Memory exhaustion scenario handled: Success={Success}, Error={Error}",
@@ -130,7 +130,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         
         if (caughtException != null)
         {
-            caughtException.Should().BeAssignableTo<OperationCanceledException>();
+            Assert.IsAssignableFrom<OperationCanceledException>(caughtException);
             Logger.LogInformation("Operation cancelled gracefully after {Duration}ms", stopwatch.ElapsedMilliseconds);
         }
         else if (result != null && !result.Success)
@@ -259,7 +259,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("RuntimeErrorRecovery", workflow);
 
         // Assert
-        result.ExecutionResults.Should().HaveCount(3);
+        result.ExecutionResults.Count.Should().Be(3));
         
         // Safe stage should succeed
         result.ExecutionResults["safe_stage"].Success.Should().BeTrue();
@@ -367,9 +367,9 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         sanitizedOutput.Should().NotContain(float.NegativeInfinity);
         
         // Verify corrupted values were replaced with safe defaults
-        sanitizedOutput[10].Should().NotBe(float.NaN);
-        sanitizedOutput[20].Should().NotBe(float.PositiveInfinity);
-        sanitizedOutput[30].Should().NotBe(float.NegativeInfinity);
+        sanitizedOutput[10].Should().Not.Should().Be(float.NaN);
+        sanitizedOutput[20].Should().Not.Should().Be(float.PositiveInfinity);
+        sanitizedOutput[30].Should().Not.Should().Be(float.NegativeInfinity);
         
         Logger.LogInformation("Data corruption successfully detected and sanitized");
     }
@@ -398,7 +398,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             successCount, failureCount, results.Length);
         
         // At least 50% should succeed even under resource pressure
-        successCount.Should().BeGreaterOrEqualTo(concurrentWorkflows / 2,
+        Assert.True(successCount >= concurrentWorkflows / 2,
             "System should handle resource exhaustion gracefully");
         
         // Failed workflows should have meaningful error messages
@@ -455,7 +455,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("CascadingFailureRecovery", workflow);
 
         // Assert
-        result.ExecutionResults.Should().HaveCount(5);
+        result.ExecutionResults.Count.Should().Be(5));
         
         var successfulStages = result.ExecutionResults.Values.Count(r => r.Success);
         var failedStages = result.ExecutionResults.Values.Count(r => !r.Success);
@@ -464,13 +464,13 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             successfulStages, failedStages);
         
         // Should have contained the failure and recovered
-        successfulStages.Should().BeGreaterOrEqualTo(3, "Most stages should complete successfully");
+        Assert.True(successfulStages >= 3, "Most stages should complete successfully");
         
         if (failedStages > 0)
         {
             // Recovery mechanisms should have activated
             result.ExecutionResults.Values.Where(r => !r.Success).Should().AllSatisfy(r =>
-                r.Error.Should().NotBeNull());
+                r.Error.NotBeNull());
         }
     }
 
@@ -740,14 +740,14 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             case ErrorType.OutOfMemory:
                 if (!result.Success)
                 {
-                    result.Error!.Message.ToLower().Should().ContainAny("memory", "allocation");
+                    result.Error!.Message.ToLower().ContainAny("memory", "allocation");
                 }
                 break;
                 
             case ErrorType.DeviceReset:
                 if (!result.Success)
                 {
-                    result.Error!.Message.ToLower().Should().ContainAny("device", "hardware", "failure");
+                    result.Error!.Message.ToLower().ContainAny("device", "hardware", "failure");
                 }
                 break;
                 

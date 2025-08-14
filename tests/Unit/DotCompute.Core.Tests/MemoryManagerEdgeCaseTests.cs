@@ -3,10 +3,10 @@
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using FluentAssertions;
 using CoreMemory = DotCompute.Core.Memory;
 using AbstractionsMemory = DotCompute.Abstractions;
 
@@ -40,7 +40,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
     {
         // Arrange
         _memoryManagerMock
-            .Setup(m => m.CreateBufferAsync<byte>(int.MaxValue, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
+            .Setup(m => m.CreateBufferAsync<byte>(int.MaxValue, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()
             .ThrowsAsync(new ArgumentException("Buffer size too large"));
 
         // Act & Assert
@@ -53,7 +53,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
     {
         // Arrange
         _memoryManagerMock
-            .Setup(m => m.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
+            .Setup(m => m.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()
             .ThrowsAsync(new ArgumentException("Element count must be positive"));
 
         // Act & Assert
@@ -76,7 +76,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
         mockBuffer.Setup(b => b.SizeInBytes).Returns(elementCount);
         
         _memoryManagerMock
-            .Setup(m => m.CreateBufferAsync<byte>(elementCount, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
+            .Setup(m => m.CreateBufferAsync<byte>(elementCount, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()
             .ReturnsAsync(mockBuffer.Object);
 
         // Act
@@ -114,7 +114,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
         mockBuffer.Setup(b => b.Access).Returns(CoreMemory.MemoryAccess.ReadWrite);
         
         _memoryManagerMock
-            .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
+            .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()
             .ReturnsAsync(mockBuffer.Object);
 
         // Act
@@ -134,7 +134,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
         var destBuffer = Mock.Of<CoreMemory.IBuffer<float>>();
         
         _memoryManagerMock
-            .Setup(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>()))
+            .Setup(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>()
             .Returns(ValueTask.CompletedTask);
 
         // Act & Assert (should not throw)

@@ -5,11 +5,11 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
-using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -67,17 +67,17 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Act
         var factoryResults = new List<BackendFactoryResult>();
         
-        foreach (var factoryResult in loadedPlugins.Select(plugin => TestBackendFactory(plugin)))
+        foreach (var factoryResult in loadedPlugins.Select(plugin => TestBackendFactory(plugin)
         {
             factoryResults.Add(await factoryResult);
         }
 
         // Assert
-        factoryResults.Should().NotBeEmpty();
+        Assert.NotEmpty(factoryResults);
         factoryResults.Should().AllSatisfy(result =>
         {
             result.FactoryCreated.Should().BeTrue();
-            result.AcceleratorsCreated.Should().BeGreaterThanOrEqualTo(0);
+            result.AcceleratorsCreated.BeGreaterThanOrEqualTo(0);
         });
     }
 
@@ -95,13 +95,13 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var executionResults = new List<PluginExecutionResult>();
         
         foreach (var executionTask in availableBackends.Select(backend => 
-            ExecuteKernelThroughBackend(computeEngine, backend, testData)))
+            ExecuteKernelThroughBackend(computeEngine, backend, testData)
         {
             executionResults.Add(await executionTask);
         }
 
         // Assert
-        executionResults.Should().NotBeEmpty();
+        Assert.NotEmpty(executionResults);
         executionResults.Should().AllSatisfy(result =>
         {
             result.Success.Should().BeTrue();
@@ -143,7 +143,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var memoryResults = new List<MemoryManagementResult>();
         
         foreach (var memoryTask in accelerators.Take(2).Select(accelerator => // Test first 2 accelerators
-            TestPluginMemoryManagement(accelerator, bufferCount, bufferSize)))
+            TestPluginMemoryManagement(accelerator, bufferCount, bufferSize)
         {
             memoryResults.Add(await memoryTask);
         }
@@ -168,7 +168,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var errorResults = await TestPluginErrorScenarios(pluginSystem);
 
         // Assert
-        errorResults.Should().NotBeEmpty();
+        Assert.NotEmpty(errorResults);
         errorResults.Should().AllSatisfy(result =>
         {
             result.ErrorHandled.Should().BeTrue();
@@ -209,11 +209,11 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var results = await Task.WhenAll(concurrentTasks);
 
         // Assert
-        results.Should().HaveCount(clientCount);
+        Assert.Equal(clientCount, results.Count());
         results.Should().AllSatisfy(result =>
         {
             result.AllOperationsSuccessful.Should().BeTrue();
-            result.Operations.Should().HaveCount(operationsPerClient);
+            result.Operations.Count.Should().Be(operationsPerClient));
         });
     }
 
@@ -227,7 +227,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var lifecycleResult = await TestPluginLifecycle(pluginSystem);
 
         // Assert
-        lifecycleResult.Should().NotBeNull();
+        Assert.NotNull(lifecycleResult);
         lifecycleResult.LoadPhaseSuccess.Should().BeTrue();
         lifecycleResult.InitializePhaseSuccess.Should().BeTrue();
         lifecycleResult.ExecutionPhaseSuccess.Should().BeTrue();
@@ -269,10 +269,10 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var results = await Task.WhenAll(scalabilityTasks);
 
         // Assert
-        results.Should().HaveCount(concurrencyLevel);
+        Assert.Equal(concurrencyLevel, results.Count());
         results.Should().AllSatisfy(result =>
         {
-            result.OperationTimes.Should().HaveCount(workItemsPerThread);
+            result.OperationTimes.Count.Should().Be(workItemsPerThread));
             result.AverageTime.Should().BePositive();
         });
         
@@ -307,7 +307,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var cleanupResults = new List<ResourceCleanupResult>();
         
         foreach (var cleanupTask in accelerators.Take(2).Select(accelerator => 
-            TestResourceCleanup(accelerator)))
+            TestResourceCleanup(accelerator)
         {
             cleanupResults.Add(await cleanupTask);
         }
@@ -315,7 +315,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Assert
         cleanupResults.Should().AllSatisfy(result =>
         {
-            result.ResourcesAllocated.Should().BeGreaterThan(0);
+(result.ResourcesAllocated > 0).Should().BeTrue();
             result.ResourcesReleased.Should().Be(result.ResourcesAllocated);
             result.MemoryLeaksDetected.Should().BeFalse();
             result.CleanupSuccess.Should().BeTrue();

@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DotCompute.Abstractions;
 using DotCompute.Core.Types;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared;
 

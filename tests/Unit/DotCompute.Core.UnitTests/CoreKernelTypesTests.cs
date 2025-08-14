@@ -3,6 +3,7 @@ using DotCompute.Core.Kernels;
 using DotCompute.Abstractions;
 using Xunit;
 using NSubstitute;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 

@@ -291,7 +291,7 @@ internal class HighPerformanceMemoryManager(IAccelerator accelerator, ILogger lo
     {
         var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
         var buffer = _memoryPool.Rent(sizeInBytes, options);
-        await buffer.CopyFromHostAsync(source, cancellationToken: cancellationToken).ConfigureAwait(false);
+        await buffer.CopyFromHostAsync(source, cancellationToken: cancellationToken).ConfigureAwait(false);;
         _allocatedBuffers.Add(buffer);
         Interlocked.Add(ref _totalAllocated, sizeInBytes);
         return buffer;

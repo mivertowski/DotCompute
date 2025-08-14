@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.TestInfrastructure;
 

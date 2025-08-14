@@ -42,15 +42,12 @@ public class MultiAcceleratorBenchmarks
         // Create multiple CPU accelerator providers to simulate multiple devices
         for (int i = 0; i < Math.Max(AcceleratorCount, 8); i++)
         {
-            var cpuProvider = new CpuAcceleratorProvider(
-                new NullLogger<CpuAcceleratorProvider>(),
-                $"CPU_Device_{i}"
-            );
+            var cpuProvider = new CpuAcceleratorProvider(new NullLogger<CpuAcceleratorProvider>());
             _acceleratorManager.RegisterProvider(cpuProvider);
         }
         
         await _acceleratorManager.InitializeAsync();
-        _accelerators = _acceleratorManager.GetAccelerators().Take(AcceleratorCount).ToList();
+        _accelerators = (await _acceleratorManager.GetAcceleratorsAsync()).Take(AcceleratorCount).ToList();
         
         SetupTestData();
     }
@@ -108,7 +105,7 @@ public class MultiAcceleratorBenchmarks
     public async Task SingleAcceleratorExecution()
     {
         var accelerator = _accelerators[0];
-        var buffer = await accelerator.Memory.AllocateAndCopyAsync(_inputData);
+        var buffer = await accelerator.Memory.AllocateAndCopyAsync<float>(_inputData);
         
         // Simulate processing work
         await SimulateProcessingWork(accelerator, buffer);
@@ -129,7 +126,7 @@ public class MultiAcceleratorBenchmarks
                 var accelerator = _accelerators[acceleratorIndex];
                 var partitionData = _partitionedData[acceleratorIndex];
                 
-                var buffer = await accelerator.Memory.AllocateAndCopyAsync(partitionData);
+                var buffer = await accelerator.Memory.AllocateAndCopyAsync<float>(partitionData);
                 await SimulateProcessingWork(accelerator, buffer);
                 
                 lock (_buffers)
@@ -183,7 +180,7 @@ public class MultiAcceleratorBenchmarks
         var accelerator = _accelerators[acceleratorIndex];
         var partitionData = _partitionedData[acceleratorIndex];
         
-        var inputBuffer = await accelerator.Memory.AllocateAndCopyAsync(partitionData);
+        var inputBuffer = await accelerator.Memory.AllocateAndCopyAsync<float>(partitionData);
         var outputBuffer = await accelerator.Memory.AllocateAsync(partitionData.Length * sizeof(float));
         
         // Simulate independent processing
@@ -191,8 +188,8 @@ public class MultiAcceleratorBenchmarks
         
         // Copy result back
         var result = new float[partitionData.Length];
-        await inputBuffer.CopyToHostAsync(result);
-        await outputBuffer.CopyFromHostAsync(result);
+        await inputBuffer.CopyToHostAsync<float>(result);
+        await outputBuffer.CopyFromHostAsync<float>(result);
         
         lock (_buffers)
         {
@@ -227,7 +224,7 @@ public class MultiAcceleratorBenchmarks
         {
             // Copy intermediate result to coordinator
             var tempData = new float[buffer.SizeInBytes / sizeof(float)];
-            await buffer.CopyToHostAsync(tempData);
+            await buffer.CopyToHostAsync<float>(tempData);
         }
         
         _buffers.AddRange(intermediateBuffers);
@@ -239,7 +236,7 @@ public class MultiAcceleratorBenchmarks
         var accelerator = _accelerators[acceleratorIndex];
         var partitionData = _partitionedData[acceleratorIndex];
         
-        var buffer = await accelerator.Memory.AllocateAndCopyAsync(partitionData);
+        var buffer = await accelerator.Memory.AllocateAndCopyAsync<float>(partitionData);
         await SimulateProcessingWork(accelerator, buffer);
         
         return buffer;
@@ -278,14 +275,14 @@ public class MultiAcceleratorBenchmarks
     private async Task<float[]> ProcessPipelineStage(int acceleratorIndex, int stage, float[] stageInput)
     {
         var accelerator = _accelerators[acceleratorIndex];
-        var buffer = await accelerator.Memory.AllocateAndCopyAsync(stageInput);
+        var buffer = await accelerator.Memory.AllocateAndCopyAsync<float>(stageInput);
         
         // Simulate stage-specific processing
         await Task.Delay(stage + 1); // Different processing time per stage
         await SimulateProcessingWork(accelerator, buffer);
         
         var result = new float[stageInput.Length];
-        await buffer.CopyToHostAsync(result);
+        await buffer.CopyToHostAsync<float>(result);
         
         lock (_buffers)
         {
@@ -334,13 +331,13 @@ public class MultiAcceleratorBenchmarks
         var targetAccelerator = _accelerators[1];
         
         // Allocate on source
-        var sourceBuffer = await sourceAccelerator.Memory.AllocateAndCopyAsync(_inputData);
+        var sourceBuffer = await sourceAccelerator.Memory.AllocateAndCopyAsync<float>(_inputData);
         
         // Transfer to target (via host memory)
         var tempData = new float[DataSize];
-        await sourceBuffer.CopyToHostAsync(tempData);
+        await sourceBuffer.CopyToHostAsync<float>(tempData);
         
-        var targetBuffer = await targetAccelerator.Memory.AllocateAndCopyAsync(tempData);
+        var targetBuffer = await targetAccelerator.Memory.AllocateAndCopyAsync<float>(tempData);
         
         _buffers.Add(sourceBuffer);
         _buffers.Add(targetBuffer);
@@ -358,7 +355,7 @@ public class MultiAcceleratorBenchmarks
             syncTasks.Add(Task.Run(async () =>
             {
                 var accelerator = _accelerators[acceleratorIndex];
-                var buffer = await accelerator.Memory.AllocateAndCopyAsync(_partitionedData[acceleratorIndex]);
+                var buffer = await accelerator.Memory.AllocateAndCopyAsync<float>(_partitionedData[acceleratorIndex]);
                 
                 await SimulateProcessingWork(accelerator, buffer);
                 
@@ -414,7 +411,7 @@ public class MultiAcceleratorBenchmarks
             tasks.Add(Task.Run(async () =>
             {
                 var accelerator = _accelerators[acceleratorIndex];
-                var buffer = await accelerator.Memory.AllocateAndCopyAsync(_partitionedData[acceleratorIndex]);
+                var buffer = await accelerator.Memory.AllocateAndCopyAsync<float>(_partitionedData[acceleratorIndex]);
                 
                 // Simulate variable workload
                 await Task.Delay(workloads[acceleratorIndex]);
@@ -436,7 +433,7 @@ public class MultiAcceleratorBenchmarks
         
         // Simulate memory access patterns
         var tempData = new float[Math.Min(1024, (int)(buffer.SizeInBytes / sizeof(float)))];
-        await buffer.CopyToHostAsync(tempData);
+        await buffer.CopyToHostAsync<float>(tempData);
         
         // Simulate computation
         for (int i = 0; i < tempData.Length; i++)
@@ -444,6 +441,6 @@ public class MultiAcceleratorBenchmarks
             tempData[i] = tempData[i] * 2.0f + 1.0f;
         }
         
-        await buffer.CopyFromHostAsync(tempData.AsMemory(0, Math.Min(tempData.Length, (int)(buffer.SizeInBytes / sizeof(float)))));
+        await buffer.CopyFromHostAsync<float>(tempData.AsMemory(0, Math.Min(tempData.Length, (int)(buffer.SizeInBytes / sizeof(float)))));
     }
 }

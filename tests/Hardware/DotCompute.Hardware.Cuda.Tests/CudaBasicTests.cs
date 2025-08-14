@@ -8,6 +8,7 @@ using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware;
 
@@ -124,7 +125,7 @@ public class CudaBasicTests : IDisposable
 
         Assert.NotNull(_accelerator);
 
-        var kernelSource = @"
+        var kernelSourceCode = @"
 extern ""C"" __global__ void addOne(float* data, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -133,9 +134,9 @@ extern ""C"" __global__ void addOne(float* data, int n)
     }
 }";
 
-        var kernelSource = new TextKernelSource(kernelSource, "addOne", KernelLanguage.Cuda, "addOne");
-        var definition = new KernelDefinition("addOne", kernelSource, options);
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
+        var kernelSource = new TextKernelSource(kernelSourceCode, "addOne", KernelLanguage.Cuda, "addOne");
+        var definition = new KernelDefinition("addOne", kernelSource, options);
 
         var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
         Assert.NotNull(compiledKernel);
@@ -175,8 +176,8 @@ extern ""C"" __global__ void multiply(float* data, float factor, int n)
     }
 }";
 
-            var kernelSource = new TextKernelSource(kernelSource, "multiply", KernelLanguage.Cuda, "multiply");
-        var definition = new KernelDefinition("multiply", kernelSource, options);
+            var kernelSourceObj = new TextKernelSource(kernelSource, "multiply", KernelLanguage.Cuda, "multiply");
+        var definition = new KernelDefinition("multiply", kernelSourceObj, options);
             var compiledKernel = await _accelerator.CompileKernelAsync(definition);
 
             const float FACTOR = 2.5f;
@@ -212,7 +213,7 @@ extern ""C"" __global__ void multiply(float* data, float factor, int n)
 
         Assert.NotNull(_accelerator);
 
-        var kernelSource = @"
+        var kernelSourceCode = @"
 extern ""C"" __global__ void testConfig(int* data, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -221,7 +222,7 @@ extern ""C"" __global__ void testConfig(int* data, int n)
     }
 }";
 
-        var kernelSource = new TextKernelSource(kernelSource, "testConfig", KernelLanguage.Cuda, "testConfig");
+        var kernelSource = new TextKernelSource(kernelSourceCode, "testConfig", KernelLanguage.Cuda, "testConfig");
         var definition = new KernelDefinition("testConfig", kernelSource, options);
         var compiledKernel = await _accelerator.CompileKernelAsync(definition) as CudaCompiledKernel;
         Assert.NotNull(compiledKernel);

@@ -3,8 +3,8 @@
 
 using System;
 using DotCompute.Abstractions;
-using FluentAssertions;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Abstractions.Tests;
 
@@ -93,7 +93,7 @@ public class AcceleratorContextTests
         var actualHandle = context.Handle;
 
         // Assert
-        actualHandle.Should().Be(expectedHandle);
+        Assert.Equal(expectedHandle, actualHandle);
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class AcceleratorContextTests
         var actualDeviceId = context.DeviceId;
 
         // Assert
-        actualDeviceId.Should().Be(expectedDeviceId);
+        Assert.Equal(expectedDeviceId, actualDeviceId);
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class AcceleratorContextTests
         var isValid = context.IsValid;
 
         // Assert
-        isValid.Should().BeTrue();
+        Assert.True(isValid);
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class AcceleratorContextTests
         var isValid = context.IsValid;
 
         // Assert
-        isValid.Should().BeFalse();
+        Assert.False(isValid);
     }
 
     [Theory]
@@ -150,7 +150,7 @@ public class AcceleratorContextTests
         var isValid = context.IsValid;
 
         // Assert
-        isValid.Should().BeTrue();
+        Assert.True(isValid);
     }
 
     #endregion
@@ -177,7 +177,7 @@ public class AcceleratorContextTests
         var invalid2 = AcceleratorContext.Invalid;
 
         // Assert
-        invalid1.Should().Be(invalid2);
+        Assert.Equal(invalid2, invalid1);
         invalid1.Equals(invalid2).Should().BeTrue();
     }
 
@@ -300,7 +300,7 @@ public class AcceleratorContextTests
         var hashCode2 = context.GetHashCode();
 
         // Assert
-        hashCode1.Should().Be(hashCode2);
+        Assert.Equal(hashCode2, hashCode1);
     }
 
     [Fact]
@@ -317,7 +317,7 @@ public class AcceleratorContextTests
         var hashCode2 = context2.GetHashCode();
 
         // Assert
-        hashCode1.Should().Be(hashCode2);
+        Assert.Equal(hashCode2, hashCode1);
     }
 
     [Fact]
@@ -335,7 +335,7 @@ public class AcceleratorContextTests
         var hashCode2 = context2.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        hashCode1.Should().Not.Be(hashCode2);
     }
 
     [Fact]
@@ -350,7 +350,7 @@ public class AcceleratorContextTests
         var hashCode2 = context2.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        hashCode1.Should().Not.Be(hashCode2);
     }
 
     [Fact]
@@ -366,7 +366,7 @@ public class AcceleratorContextTests
         var hashCode2 = context2.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        hashCode1.Should().Not.Be(hashCode2);
     }
 
     #endregion
@@ -443,7 +443,7 @@ public class AcceleratorContextTests
         var result = context.ToString();
 
         // Assert
-        result.Should().Be(expected);
+        Assert.Equal(expected, result);
     }
 
     #endregion
@@ -512,7 +512,7 @@ public class AcceleratorContextTests
                 }
                 else
                 {
-                    contexts[i].Should().NotBe(contexts[j]);
+                    contexts[i].Should().Not.Be(contexts[j]);
                 }
             }
         }
@@ -561,8 +561,8 @@ public class AcceleratorContextTests
                 var hashCode = context.GetHashCode();
 
                 handle.Should().Be(new IntPtr(0x12345678));
-                deviceId.Should().Be(42);
-                isValid.Should().BeTrue();
+                Assert.Equal(42, deviceId);
+                Assert.True(isValid);
                 toString.Should().Be("AcceleratorContext(Device=42, Handle=12345678)");
                 hashCode.Should().Be(context.GetHashCode());
             }));

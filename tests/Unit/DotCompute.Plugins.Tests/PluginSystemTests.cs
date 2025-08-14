@@ -6,7 +6,6 @@ using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Exceptions;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Configuration;
-using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -14,6 +13,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using System.Reflection;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -45,7 +45,7 @@ public class PluginSystemTests : IDisposable
     {
         // Act & Assert
         Action act = () => new PluginSystem((ILogger<PluginSystem>)null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        act.Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -58,7 +58,7 @@ public class PluginSystemTests : IDisposable
         var pluginSystem = new PluginSystem(options);
 
         // Assert
-        pluginSystem.Should().NotBeNull();
+        Assert.NotNull(pluginSystem);
         pluginSystem.IsInitialized.Should().BeFalse();
     }
 
@@ -92,17 +92,16 @@ public class PluginSystemTests : IDisposable
         var result = await _pluginSystem.LoadPluginAsync(_testPlugin);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Should().BeSameAs(_testPlugin);
-        _pluginSystem.GetPlugin(_testPlugin.Id).Should().BeSameAs(_testPlugin);
+        Assert.NotNull(result);
+        result.BeSameAs(_testPlugin);
+        _pluginSystem.GetPlugin(_testPlugin.Id).BeSameAs(_testPlugin);
     }
 
     [Fact]
     public async Task LoadPluginAsync_WithNullPlugin_ThrowsArgumentNullException()
     {
         // Act & Assert
-        await FluentActions.Invoking(() => _pluginSystem.LoadPluginAsync((IBackendPlugin)null!))
-            .Should().ThrowAsync<ArgumentNullException>();
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FluentActions.MethodCall().AsTask());
     }
 
     [Fact]
@@ -112,8 +111,7 @@ public class PluginSystemTests : IDisposable
         var invalidPlugin = new InvalidTestPlugin();
 
         // Act & Assert
-        await FluentActions.Invoking(() => _pluginSystem.LoadPluginAsync(invalidPlugin))
-            .Should().ThrowAsync<PluginLoadException>()
+        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask())
             .WithMessage("Plugin validation failed*");
     }
 
@@ -124,8 +122,7 @@ public class PluginSystemTests : IDisposable
         _pluginSystem.Dispose();
 
         // Act & Assert
-        await FluentActions.Invoking(() => _pluginSystem.LoadPluginAsync(_testPlugin))
-            .Should().ThrowAsync<ObjectDisposedException>();
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => FluentActions.MethodCall().AsTask());
     }
 
     [Fact]
@@ -138,8 +135,8 @@ public class PluginSystemTests : IDisposable
         var result = await _pluginSystem.UnloadPluginAsync(_testPlugin.Id);
 
         // Assert
-        result.Should().BeTrue();
-        _pluginSystem.GetPlugin(_testPlugin.Id).Should().BeNull();
+        Assert.True(result);
+        _pluginSystem.GetPlugin(_testPlugin.Id).BeNull();
     }
 
     [Fact]
@@ -149,7 +146,7 @@ public class PluginSystemTests : IDisposable
         var result = await _pluginSystem.UnloadPluginAsync("non-existent");
 
         // Assert
-        result.Should().BeFalse();
+        Assert.False(result);
     }
 
     [Fact]
@@ -159,8 +156,7 @@ public class PluginSystemTests : IDisposable
         _pluginSystem.Dispose();
 
         // Act & Assert
-        await FluentActions.Invoking(() => _pluginSystem.UnloadPluginAsync("test"))
-            .Should().ThrowAsync<ObjectDisposedException>();
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => FluentActions.MethodCall().AsTask());
     }
 
     [Fact]
@@ -173,7 +169,7 @@ public class PluginSystemTests : IDisposable
         var result = _pluginSystem.GetPlugin(_testPlugin.Id);
 
         // Assert
-        result.Should().BeSameAs(_testPlugin);
+        result.BeSameAs(_testPlugin);
     }
 
     [Fact]
@@ -183,7 +179,7 @@ public class PluginSystemTests : IDisposable
         var result = _pluginSystem.GetPlugin("non-existent");
 
         // Assert
-        result.Should().BeNull();
+        Assert.Null(result);
     }
 
     [Fact]
@@ -196,8 +192,8 @@ public class PluginSystemTests : IDisposable
         var result = _pluginSystem.GetLoadedPlugins();
 
         // Assert
-        result.Should().HaveCount(1);
-        result.Should().Contain(_testPlugin);
+        Assert.Equal(1, result.Count());
+        Assert.Contains(_testPlugin, result);
     }
 
     [Fact]
@@ -207,7 +203,7 @@ public class PluginSystemTests : IDisposable
         var result = _pluginSystem.GetLoadedPlugins();
 
         // Assert
-        result.Should().BeEmpty();
+        Assert.Empty(result);
     }
 
     [Theory]
@@ -221,7 +217,7 @@ public class PluginSystemTests : IDisposable
 
         // Assert
         // Should return null since we don't have a real assembly at the path
-        result.Should().BeNull();
+        Assert.Null(result);
     }
 
     [Fact]
@@ -234,8 +230,8 @@ public class PluginSystemTests : IDisposable
         var result = PluginSystem.DiscoverPluginTypes(assembly);
 
         // Assert
-        result.Should().NotBeEmpty();
-        result.Should().Contain(typeof(TestPlugin));
+        Assert.NotEmpty(result);
+        result.Contain(typeof(TestPlugin));
     }
 
     [Fact]
@@ -249,8 +245,8 @@ public class PluginSystemTests : IDisposable
         var results = await Task.WhenAll(loadTasks);
 
         // Assert
-        results.Should().HaveCount(10);
-        results.Should().OnlyContain(r => r != null);
+        Assert.Equal(10, results.Count());
+        results.OnlyContain(r => r != null);
         _pluginSystem.GetLoadedPlugins().Should().HaveCount(10);
     }
 
@@ -263,8 +259,7 @@ public class PluginSystemTests : IDisposable
         plugin.Validate().Returns(callInfo => throw new InvalidOperationException("Validation failed"));
 
         // Act & Assert
-        await FluentActions.Invoking(() => _pluginSystem.LoadPluginAsync(plugin))
-            .Should().ThrowAsync<PluginLoadException>()
+        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask())
             .WithInnerException(typeof(InvalidOperationException));
     }
 
@@ -286,7 +281,7 @@ public class PluginSystemTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_CalledMultipleTimes_DoesNotThrow()
+    public void Dispose_CalledMultipleTimes_DoesShould().NotThrow()
     {
         // Act & Assert
         Action act = () =>
@@ -294,7 +289,7 @@ public class PluginSystemTests : IDisposable
             _pluginSystem.Dispose();
             _pluginSystem.Dispose(); // Second call should not throw
         };
-        act.Should().NotThrow();
+        act(); // Should not throw
     }
 
     public void Dispose()

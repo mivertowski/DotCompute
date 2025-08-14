@@ -5,6 +5,7 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Core;
+using FluentAssertions;
 
 namespace DotCompute.Backends.CPU;
 
@@ -23,7 +24,7 @@ public class CpuAcceleratorTests
     public void Constructor_ShouldInitializeSuccessfully()
     {
         // Assert
-        _accelerator.Should().NotBeNull();
+        Assert.NotNull(_accelerator);
         _accelerator.IsInitialized.Should().BeTrue();
         _accelerator.Name.Should().NotBeNullOrEmpty();
         _accelerator.DeviceType.Should().Be(ComputeDeviceType.CPU);
@@ -36,12 +37,12 @@ public class CpuAcceleratorTests
         var deviceInfo = _accelerator.DeviceInfo;
 
         // Assert
-        deviceInfo.Should().NotBeNull();
+        Assert.NotNull(deviceInfo);
         deviceInfo.Name.Should().NotBeNullOrEmpty();
         deviceInfo.DeviceType.Should().Be(ComputeDeviceType.CPU);
-        deviceInfo.MemorySize.Should().BeGreaterThan(0);
-        deviceInfo.MaxComputeUnits.Should().BeGreaterThan(0);
-        deviceInfo.MaxWorkGroupSize.Should().BeGreaterThan(0);
+((deviceInfo.MemorySize > 0).Should().BeTrue();
+((deviceInfo.MaxComputeUnits > 0).Should().BeTrue();
+((deviceInfo.MaxWorkGroupSize > 0).Should().BeTrue();
     }
 
     [Fact]
@@ -51,8 +52,8 @@ public class CpuAcceleratorTests
         using var memoryManager = _accelerator.CreateMemoryManager();
 
         // Assert
-        memoryManager.Should().NotBeNull();
-        memoryManager.Should().BeOfType<CpuMemoryManager>();
+        Assert.NotNull(memoryManager);
+        Assert.IsType<CpuMemoryManager>(memoryManager);
     }
 
     [Fact]
@@ -62,8 +63,8 @@ public class CpuAcceleratorTests
         using var compiler = _accelerator.CreateKernelCompiler();
 
         // Assert
-        compiler.Should().NotBeNull();
-        compiler.Should().BeOfType<CpuKernelCompiler>();
+        Assert.NotNull(compiler);
+        Assert.IsType<CpuKernelCompiler>(compiler);
     }
 
     [Fact]
@@ -73,12 +74,12 @@ public class CpuAcceleratorTests
         var capabilities = _accelerator.GetCapabilities();
 
         // Assert
-        capabilities.Should().NotBeNull();
-        capabilities.Should().BeOfType<SimdCapabilities>();
+        Assert.NotNull(capabilities);
+        Assert.IsType<SimdCapabilities>(capabilities);
         
         var simdCaps = (SimdCapabilities)capabilities;
         simdCaps.IsHardwareAccelerated.Should().Be(System.Numerics.Vector.IsHardwareAccelerated);
-        simdCaps.PreferredVectorWidth.Should().BeGreaterThan(0);
+((simdCaps.PreferredVectorWidth > 0).Should().BeTrue();
         simdCaps.SupportedInstructionSets.Should().NotBeNull();
     }
 
@@ -100,8 +101,8 @@ public class CpuAcceleratorTests
         var compiledKernel = await _accelerator.CompileKernelAsync(definition);
 
         // Assert
-        compiledKernel.Should().NotBeNull();
-        compiledKernel.Should().BeOfType<CpuCompiledKernel>();
+        Assert.NotNull(compiledKernel);
+        Assert.IsType<CpuCompiledKernel>(compiledKernel);
         compiledKernel.Name.Should().Be("TestKernel");
         compiledKernel.IsValid.Should().BeTrue();
     }
@@ -110,8 +111,7 @@ public class CpuAcceleratorTests
     public async Task CompileKernelAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        await _accelerator.Invoking(a => a.CompileKernelAsync(null!))
-            .Should().ThrowAsync<ArgumentNullException>();
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _accelerator.MethodCall().AsTask());
     }
 
     [Fact]
@@ -121,8 +121,8 @@ public class CpuAcceleratorTests
         var workGroupSize = _accelerator.GetOptimalWorkGroupSize();
 
         // Assert
-        workGroupSize.Should().BeGreaterThan(0);
-        workGroupSize.Should().BeLessOrEqualTo(1024); // Reasonable upper bound
+        Assert.True(workGroupSize > 0);
+        Assert.True(workGroupSize <= 1024); // Reasonable upper bound
     }
 
     [Fact]
@@ -147,7 +147,7 @@ public class CpuAcceleratorTests
     public void WarmUp_ShouldCompleteSuccessfully()
     {
         // Act & Assert
-        _accelerator.Invoking(a => a.WarmUp()).Should().NotThrow();
+        _accelerator.Invoking(a => a.WarmUp()).NotThrow();
     }
 
     [Fact]
@@ -158,7 +158,7 @@ public class CpuAcceleratorTests
 
         // Act & Assert
         await accelerator.Invoking(a => a.DisposeAsync().AsTask())
-            .Should().NotThrowAsync();
+            .NotThrowAsync();
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public class CpuAcceleratorTests
         var workGroupSize = _accelerator.GetOptimalWorkGroupSize();
 
         // Assert
-        workGroupSize.Should().BeGreaterThan(0);
+        Assert.True(workGroupSize > 0);
         // The optimal size might not match the requested size, but should be reasonable
     }
 
@@ -198,8 +198,8 @@ public class CpuAcceleratorTests
         // Assert
         deviceInfo.Name.Should().Be(_accelerator.Name);
         deviceInfo.DeviceType.Should().Be(_accelerator.DeviceType);
-        deviceInfo.MaxComputeUnits.Should().BeGreaterOrEqualTo(1);
-        deviceInfo.MaxComputeUnits.Should().BeLessOrEqualTo(Environment.ProcessorCount);
+        deviceInfo.MaxComputeUnits >= 1.Should().BeTrue();
+        deviceInfo.MaxComputeUnits <= Environment.ProcessorCount.Should().BeTrue();
     }
 
     [Fact]
@@ -211,7 +211,7 @@ public class CpuAcceleratorTests
         // Assert
         _logger.Collector.GetSnapshot().Should().NotBeEmpty();
         _logger.Collector.GetSnapshot()
-            .Should().Contain(log => log.Message != null && log.Message.Contains("CPU accelerator initialized"));
+            .Contain(log => log.Message != null && log.Message.Contains("CPU accelerator initialized"));
     }
 }
 
@@ -230,9 +230,9 @@ public class CpuMemoryManagerTests
     public void Constructor_ShouldInitializeSuccessfully()
     {
         // Assert
-        _memoryManager.Should().NotBeNull();
-        _memoryManager.TotalMemory.Should().BeGreaterThan(0);
-        _memoryManager.AvailableMemory.Should().BeGreaterThan(0);
+        Assert.NotNull(_memoryManager);
+((_memoryManager.TotalMemory > 0).Should().BeTrue();
+((_memoryManager.AvailableMemory > 0).Should().BeTrue();
     }
 
     [Theory]
@@ -245,8 +245,8 @@ public class CpuMemoryManagerTests
         using var buffer = _memoryManager.AllocateBuffer(size);
 
         // Assert
-        buffer.Should().NotBeNull();
-        buffer.Should().BeOfType<CpuMemoryBuffer>();
+        Assert.NotNull(buffer);
+        Assert.IsType<CpuMemoryBuffer>(buffer);
         buffer.SizeInBytes.Should().Be(size);
     }
 
@@ -255,7 +255,7 @@ public class CpuMemoryManagerTests
     {
         // Act & Assert
         _memoryManager.Invoking(m => m.AllocateBuffer(0))
-            .Should().Throw<ArgumentException>();
+            .Throw<ArgumentException>();
     }
 
     [Fact]
@@ -263,7 +263,7 @@ public class CpuMemoryManagerTests
     {
         // Act & Assert
         _memoryManager.Invoking(m => m.AllocateBuffer(-1))
-            .Should().Throw<ArgumentException>();
+            .Throw<ArgumentException>();
     }
 
     [Fact]
@@ -277,8 +277,8 @@ public class CpuMemoryManagerTests
         using var buffer2 = _memoryManager.AllocateBuffer(2048);
 
         // Assert
-        _memoryManager.AllocatedMemory.Should().BeGreaterOrEqualTo(3072);
-        _memoryManager.AvailableMemory.Should().BeLessOrEqualTo(initialAvailable);
+        _memoryManager.AllocatedMemory >= 3072.Should().BeTrue();
+        _memoryManager.AvailableMemory <= initialAvailable.Should().BeTrue();
     }
 
     [Fact]
@@ -303,8 +303,8 @@ public class CpuMemoryManagerTests
         var totalMemory = _memoryManager.TotalMemory;
 
         // Assert
-        totalMemory.Should().BeGreaterThan(1024 * 1024); // At least 1MB
-        totalMemory.Should().BeLessOrEqualTo(long.MaxValue);
+        Assert.True(totalMemory > 1024 * 1024); // At least 1MB
+        Assert.True(totalMemory <= long.MaxValue);
     }
 
     [Fact]
@@ -314,8 +314,8 @@ public class CpuMemoryManagerTests
         var fragmentation = _memoryManager.FragmentationRatio;
 
         // Assert
-        fragmentation.Should().BeGreaterOrEqualTo(0.0);
-        fragmentation.Should().BeLessOrEqualTo(1.0);
+        Assert.True(fragmentation >= 0.0);
+        Assert.True(fragmentation <= 1.0);
     }
 
     protected virtual void Dispose(bool disposing)
@@ -354,7 +354,7 @@ public class CpuMemoryBufferTests
     {
         // Act & Assert
         Action action = () => new CpuMemoryBuffer(0);
-        action.Should().Throw<ArgumentException>();
+        Assert.Throws<ArgumentException>(() => action());
     }
 
     [Fact]
@@ -401,7 +401,7 @@ public class CpuMemoryBufferTests
         buffer.ReadData(readData, 0);
 
         // Assert
-        readData.Should().BeEquivalentTo(testData);
+        readData.BeEquivalentTo(testData);
     }
 
     [Fact]
@@ -426,6 +426,6 @@ public class CpuMemoryBufferTests
 
         // Act & Assert
         buffer.Invoking(b => b.GetMemory())
-            .Should().Throw<ObjectDisposedException>();
+            .Throw<ObjectDisposedException>();
     }
 }

@@ -7,10 +7,12 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
+using Abstractions = DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
+using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -56,7 +58,7 @@ public class CUDAKernelCompilerTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _compiler.CompileAsync(null!, options).AsTask());
+            () => _compiler.CompileAsync((Abstractions.KernelDefinition)null!, (Abstractions.CompilationOptions)options).AsTask());
     }
 
     [Fact]
@@ -67,7 +69,7 @@ public class CUDAKernelCompilerTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _compiler.CompileAsync(kernel, null!).AsTask());
+            () => _compiler.CompileAsync(ConvertToKernelDefinition(kernel), null!).AsTask());
     }
 
     [Fact]
@@ -85,7 +87,7 @@ public class CUDAKernelCompilerTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _compiler.CompileAsync(kernel, options).AsTask());
+            () => _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options).AsTask());
         Assert.Contains("Expected CUDA kernel but received OpenCL", exception.Message);
     }
 
@@ -97,7 +99,7 @@ public class CUDAKernelCompilerTests : IDisposable
         var options = CreateValidCompilationOptions();
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options);
 
         // Assert
         Assert.NotNull(result);
@@ -119,7 +121,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.TargetArchitecture = computeCapability;
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options);
 
         // Assert
         Assert.NotNull(result);
@@ -138,7 +140,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.OptimizationLevel = DotCompute.Core.Kernels.OptimizationLevel.O3;
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options);
 
         // Assert
         Assert.NotNull(result);
@@ -156,7 +158,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.Defines["TILE_SIZE"] = "16";
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options);
 
         // Assert
         Assert.NotNull(result);
@@ -176,7 +178,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.OptimizationLevel = DotCompute.Core.Kernels.OptimizationLevel.O3;
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options);
 
         // Assert
         Assert.NotNull(result);
@@ -218,7 +220,7 @@ public class CUDAKernelCompilerTests : IDisposable
         var options = CreateValidCompilationOptions();
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options);
 
         // Assert
         // The compiler should handle the error gracefully (since we're using mocked NVRTC)
@@ -240,7 +242,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.OptimizationLevel = level;
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options);
 
         // Assert
         Assert.NotNull(result);
@@ -257,7 +259,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.IncludeDirectories.Add("./headers");
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options);
 
         // Assert
         Assert.NotNull(result);
@@ -275,7 +277,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.OptimizationLevel = DotCompute.Core.Kernels.OptimizationLevel.O1;
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options);
 
         // Assert
         Assert.NotNull(result);
@@ -291,7 +293,7 @@ public class CUDAKernelCompilerTests : IDisposable
         var options = CreateValidCompilationOptions();
 
         // Act
-        var result = await _compiler.CompileAsync(kernel, options);
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), (Abstractions.CompilationOptions)options);
 
         // Assert
         Assert.NotNull(result);

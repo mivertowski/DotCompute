@@ -122,4 +122,398 @@ public class RealWorldAlgorithmsBenchmarks
         await ExecuteSpecificAlgorithm(Algorithm);
     }
 
-    private async Task ExecuteSpecificAlgorithm(string algorithm)\n    {\n        switch (algorithm)\n        {\n            case \"FFT\":\n                await ExecuteFFT();\n                break;\n            case \"Convolution\":\n                await ExecuteConvolution();\n                break;\n            case \"QuickSort\":\n                await ExecuteQuickSort();\n                break;\n            case \"ImageBlur\":\n                await ExecuteImageBlur();\n                break;\n            case \"MatrixDecomposition\":\n                await ExecuteMatrixDecomposition();\n                break;\n        }\n    }\n\n    private async Task ExecuteFFT()\n    {\n        // Implement Cooley-Tukey FFT algorithm\n        var inputBuffer = await _memoryManager.AllocateAndCopyAsync(\n            _complexInputData.Select(c => new float[] { (float)c.Real, (float)c.Imaginary }).SelectMany(f => f).ToArray());\n        var outputBuffer = await _memoryManager.AllocateAsync(DataSize * 2 * sizeof(float));\n        \n        // Simulate FFT computation on accelerator\n        await SimulateFFTKernel(inputBuffer, outputBuffer);\n        \n        // Copy results back\n        var result = new float[DataSize * 2];\n        await outputBuffer.CopyToHostAsync(result);\n        \n        _buffers.AddRange(new[] { inputBuffer, outputBuffer });\n    }\n\n    private async Task SimulateFFTKernel(IMemoryBuffer input, IMemoryBuffer output)\n    {\n        // Simulate FFT computation time: O(n log n)\n        var complexity = DataSize * Math.Log2(DataSize);\n        var executionTime = (int)(complexity / 100000); // Scaled for demonstration\n        await Task.Delay(Math.Max(1, executionTime));\n        \n        // In real implementation, this would execute actual FFT kernel\n        // For benchmark purposes, we simulate the memory operations\n        var tempData = new float[DataSize * 2];\n        await input.CopyToHostAsync(tempData);\n        \n        // Simulate FFT butterfly operations\n        for (int stage = 0; stage < Math.Log2(DataSize); stage++)\n        {\n            var stride = 1 << (stage + 1);\n            for (int i = 0; i < DataSize; i += stride)\n            {\n                // Simulate butterfly computation\n                for (int j = 0; j < stride / 2; j++)\n                {\n                    var evenIdx = i + j;\n                    var oddIdx = i + j + stride / 2;\n                    \n                    if (evenIdx < DataSize && oddIdx < DataSize)\n                    {\n                        // Complex multiplication and addition (simplified)\n                        var temp = tempData[oddIdx * 2];\n                        tempData[oddIdx * 2] = tempData[evenIdx * 2] - temp;\n                        tempData[evenIdx * 2] = tempData[evenIdx * 2] + temp;\n                    }\n                }\n            }\n        }\n        \n        await output.CopyFromHostAsync(tempData);\n    }\n\n    private async Task ExecuteConvolution()\n    {\n        // 2D Convolution with separable filters\n        var kernelSize = 5;\n        var kernel = new float[kernelSize, kernelSize];\n        \n        // Gaussian blur kernel\n        for (int y = 0; y < kernelSize; y++)\n        {\n            for (int x = 0; x < kernelSize; x++)\n            {\n                var dx = x - kernelSize / 2;\n                var dy = y - kernelSize / 2;\n                kernel[y, x] = (float)Math.Exp(-(dx * dx + dy * dy) / (2.0 * 1.5 * 1.5));\n            }\n        }\n        \n        // Normalize kernel\n        var sum = 0.0f;\n        for (int y = 0; y < kernelSize; y++)\n            for (int x = 0; x < kernelSize; x++)\n                sum += kernel[y, x];\n        \n        for (int y = 0; y < kernelSize; y++)\n            for (int x = 0; x < kernelSize; x++)\n                kernel[y, x] /= sum;\n        \n        var inputBuffer = await _memoryManager.AllocateAndCopyAsync(_inputData);\n        var kernelBuffer = await _memoryManager.AllocateAndCopyAsync(\n            kernel.Cast<float>().ToArray());\n        var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));\n        \n        // Simulate 2D convolution\n        await SimulateConvolutionKernel(inputBuffer, kernelBuffer, outputBuffer, kernelSize);\n        \n        await outputBuffer.CopyToHostAsync(_outputData);\n        \n        _buffers.AddRange(new[] { inputBuffer, kernelBuffer, outputBuffer });\n    }\n\n    private async Task SimulateConvolutionKernel(IMemoryBuffer input, IMemoryBuffer kernel, \n                                                 IMemoryBuffer output, int kernelSize)\n    {\n        // Simulate convolution computation time: O(n * k^2) where k is kernel size\n        var complexity = DataSize * kernelSize * kernelSize;\n        var executionTime = (int)(complexity / 500000); // Scaled for demonstration\n        await Task.Delay(Math.Max(1, executionTime));\n        \n        // Simulate actual convolution operation\n        var inputData = new float[DataSize];\n        var kernelData = new float[kernelSize * kernelSize];\n        var outputData = new float[DataSize];\n        \n        await input.CopyToHostAsync(inputData);\n        await kernel.CopyToHostAsync(kernelData);\n        \n        var imageSize = (int)Math.Sqrt(DataSize);\n        \n        // Perform convolution (simplified for 1D representation of 2D data)\n        for (int i = kernelSize / 2; i < imageSize - kernelSize / 2; i++)\n        {\n            for (int j = kernelSize / 2; j < imageSize - kernelSize / 2; j++)\n            {\n                float sum = 0;\n                for (int ky = 0; ky < kernelSize; ky++)\n                {\n                    for (int kx = 0; kx < kernelSize; kx++)\n                    {\n                        var imgY = i + ky - kernelSize / 2;\n                        var imgX = j + kx - kernelSize / 2;\n                        var imgIdx = imgY * imageSize + imgX;\n                        var kernelIdx = ky * kernelSize + kx;\n                        \n                        if (imgIdx >= 0 && imgIdx < DataSize)\n                        {\n                            sum += inputData[imgIdx] * kernelData[kernelIdx];\n                        }\n                    }\n                }\n                outputData[i * imageSize + j] = sum;\n            }\n        }\n        \n        await output.CopyFromHostAsync(outputData);\n    }\n\n    private async Task ExecuteQuickSort()\n    {\n        // GPU-accelerated sorting algorithm\n        var inputBuffer = await _memoryManager.AllocateAndCopyAsync(_integerData.Select(i => (float)i).ToArray());\n        var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));\n        \n        await SimulateQuickSortKernel(inputBuffer, outputBuffer);\n        \n        var result = new float[DataSize];\n        await outputBuffer.CopyToHostAsync(result);\n        \n        _buffers.AddRange(new[] { inputBuffer, outputBuffer });\n    }\n\n    private async Task SimulateQuickSortKernel(IMemoryBuffer input, IMemoryBuffer output)\n    {\n        // Simulate parallel quicksort: O(n log n) average case\n        var complexity = DataSize * Math.Log2(DataSize);\n        var executionTime = (int)(complexity / 200000);\n        await Task.Delay(Math.Max(1, executionTime));\n        \n        // Simulate the actual sorting operation\n        var data = new float[DataSize];\n        await input.CopyToHostAsync(data);\n        \n        // Use built-in sort for simulation (in real GPU implementation, \n        // this would be a parallel sorting network or bitonic sort)\n        Array.Sort(data);\n        \n        await output.CopyFromHostAsync(data);\n    }\n\n    private async Task ExecuteImageBlur()\n    {\n        // Gaussian blur implementation\n        var imageSize = (int)Math.Sqrt(DataSize);\n        var flatImageData = new float[imageSize * imageSize];\n        \n        // Flatten 2D image data\n        for (int y = 0; y < imageSize; y++)\n        {\n            for (int x = 0; x < imageSize; x++)\n            {\n                flatImageData[y * imageSize + x] = _imageData[y, x];\n            }\n        }\n        \n        var inputBuffer = await _memoryManager.AllocateAndCopyAsync(flatImageData);\n        var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));\n        \n        await SimulateImageBlurKernel(inputBuffer, outputBuffer, imageSize);\n        \n        var result = new float[DataSize];\n        await outputBuffer.CopyToHostAsync(result);\n        \n        _buffers.AddRange(new[] { inputBuffer, outputBuffer });\n    }\n\n    private async Task SimulateImageBlurKernel(IMemoryBuffer input, IMemoryBuffer output, int imageSize)\n    {\n        // Simulate separable Gaussian blur: O(n) with two passes\n        var complexity = DataSize * 2; // Two separable passes\n        var executionTime = (int)(complexity / 1000000);\n        await Task.Delay(Math.Max(1, executionTime));\n        \n        var inputData = new float[DataSize];\n        var tempData = new float[DataSize];\n        var outputData = new float[DataSize];\n        \n        await input.CopyToHostAsync(inputData);\n        \n        // Horizontal blur pass\n        var kernel = new float[] { 0.06136f, 0.24477f, 0.38774f, 0.24477f, 0.06136f };\n        var radius = kernel.Length / 2;\n        \n        for (int y = 0; y < imageSize; y++)\n        {\n            for (int x = 0; x < imageSize; x++)\n            {\n                float sum = 0;\n                for (int i = 0; i < kernel.Length; i++)\n                {\n                    var sampleX = Math.Max(0, Math.Min(imageSize - 1, x + i - radius));\n                    sum += inputData[y * imageSize + sampleX] * kernel[i];\n                }\n                tempData[y * imageSize + x] = sum;\n            }\n        }\n        \n        // Vertical blur pass\n        for (int y = 0; y < imageSize; y++)\n        {\n            for (int x = 0; x < imageSize; x++)\n            {\n                float sum = 0;\n                for (int i = 0; i < kernel.Length; i++)\n                {\n                    var sampleY = Math.Max(0, Math.Min(imageSize - 1, y + i - radius));\n                    sum += tempData[sampleY * imageSize + x] * kernel[i];\n                }\n                outputData[y * imageSize + x] = sum;\n            }\n        }\n        \n        await output.CopyFromHostAsync(outputData);\n    }\n\n    private async Task ExecuteMatrixDecomposition()\n    {\n        // LU decomposition simulation\n        var matrixSize = (int)Math.Sqrt(DataSize);\n        var actualSize = matrixSize * matrixSize;\n        \n        var matrix = _inputData.Take(actualSize).ToArray();\n        var inputBuffer = await _memoryManager.AllocateAndCopyAsync(matrix);\n        var outputBuffer = await _memoryManager.AllocateAsync(actualSize * sizeof(float));\n        \n        await SimulateMatrixDecompositionKernel(inputBuffer, outputBuffer, matrixSize);\n        \n        var result = new float[actualSize];\n        await outputBuffer.CopyToHostAsync(result);\n        \n        _buffers.AddRange(new[] { inputBuffer, outputBuffer });\n    }\n\n    private async Task SimulateMatrixDecompositionKernel(IMemoryBuffer input, IMemoryBuffer output, int matrixSize)\n    {\n        // Simulate LU decomposition: O(n^3) complexity\n        var complexity = Math.Pow(matrixSize, 3);\n        var executionTime = (int)(complexity / 50000);\n        await Task.Delay(Math.Max(1, executionTime));\n        \n        var matrix = new float[matrixSize * matrixSize];\n        await input.CopyToHostAsync(matrix);\n        \n        // Simulate LU decomposition (simplified)\n        for (int k = 0; k < matrixSize; k++)\n        {\n            for (int i = k + 1; i < matrixSize; i++)\n            {\n                var factor = matrix[i * matrixSize + k] / matrix[k * matrixSize + k];\n                for (int j = k; j < matrixSize; j++)\n                {\n                    matrix[i * matrixSize + j] -= factor * matrix[k * matrixSize + j];\n                }\n            }\n        }\n        \n        await output.CopyFromHostAsync(matrix);\n    }\n\n    [Benchmark]\n    public async Task MultipleAlgorithmsPipeline()\n    {\n        // Execute multiple algorithms in sequence to simulate real-world pipeline\n        await ExecuteFFT();\n        \n        // Clear intermediate buffers\n        foreach (var buffer in _buffers.ToArray())\n        {\n            if (!buffer.IsDisposed)\n                await buffer.DisposeAsync();\n        }\n        _buffers.Clear();\n        \n        await ExecuteConvolution();\n        \n        // Clear intermediate buffers\n        foreach (var buffer in _buffers.ToArray())\n        {\n            if (!buffer.IsDisposed)\n                await buffer.DisposeAsync();\n        }\n        _buffers.Clear();\n        \n        await ExecuteImageBlur();\n    }\n\n    [Benchmark]\n    public double AlgorithmicComplexityMeasurement()\n    {\n        // Measure actual vs theoretical complexity\n        return Algorithm switch\n        {\n            \"FFT\" => DataSize * Math.Log2(DataSize), // O(n log n)\n            \"Convolution\" => DataSize * 25, // O(n * k^2) with k=5\n            \"QuickSort\" => DataSize * Math.Log2(DataSize), // O(n log n) average\n            \"ImageBlur\" => DataSize * 2, // O(n) with separable kernel\n            \"MatrixDecomposition\" => Math.Pow(Math.Sqrt(DataSize), 3), // O(n^3)\n            _ => DataSize\n        };\n    }\n\n    [Benchmark]\n    public async Task MemoryIntensiveAlgorithm()\n    {\n        // Test memory-intensive algorithm (matrix transpose)\n        var matrixSize = (int)Math.Sqrt(DataSize);\n        var inputBuffer = await _memoryManager.AllocateAndCopyAsync(_inputData.Take(matrixSize * matrixSize).ToArray());\n        var outputBuffer = await _memoryManager.AllocateAsync(matrixSize * matrixSize * sizeof(float));\n        \n        // Simulate matrix transpose (memory access pattern intensive)\n        var complexity = matrixSize * matrixSize;\n        var executionTime = (int)(complexity / 100000);\n        await Task.Delay(Math.Max(1, executionTime));\n        \n        _buffers.AddRange(new[] { inputBuffer, outputBuffer });\n    }\n\n    [Benchmark]\n    public async Task ComputeIntensiveAlgorithm()\n    {\n        // Test compute-intensive algorithm (Monte Carlo simulation)\n        const int iterations = 1000000;\n        \n        var randomData = new float[iterations];\n        var random = new Random(42);\n        for (int i = 0; i < iterations; i++)\n        {\n            randomData[i] = (float)random.NextDouble();\n        }\n        \n        var inputBuffer = await _memoryManager.AllocateAndCopyAsync(randomData);\n        var outputBuffer = await _memoryManager.AllocateAsync(sizeof(float));\n        \n        // Simulate Monte Carlo pi estimation\n        var executionTime = iterations / 100000;\n        await Task.Delay(Math.Max(1, executionTime));\n        \n        _buffers.AddRange(new[] { inputBuffer, outputBuffer });\n    }\n}
+    private async Task ExecuteSpecificAlgorithm(string algorithm)
+    {
+        switch (algorithm)
+        {
+            case "FFT":
+                await ExecuteFFT();
+                break;
+            case "Convolution":
+                await ExecuteConvolution();
+                break;
+            case "QuickSort":
+                await ExecuteQuickSort();
+                break;
+            case "ImageBlur":
+                await ExecuteImageBlur();
+                break;
+            case "MatrixDecomposition":
+                await ExecuteMatrixDecomposition();
+                break;
+        }
+    }
+
+    private async Task ExecuteFFT()
+    {
+        // Implement Cooley-Tukey FFT algorithm
+        var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(
+            _complexInputData.Select(c => new float[] { (float)c.Real, (float)c.Imaginary }).SelectMany(f => f).ToArray());
+        var outputBuffer = await _memoryManager.AllocateAsync(DataSize * 2 * sizeof(float));
+        
+        // Simulate FFT computation on accelerator
+        await SimulateFFTKernel(inputBuffer, outputBuffer);
+        
+        // Copy results back
+        var result = new float[DataSize * 2];
+        await outputBuffer.CopyToHostAsync<float>(result);
+        
+        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+    }
+
+    private async Task SimulateFFTKernel(IMemoryBuffer input, IMemoryBuffer output)
+    {
+        // Simulate FFT computation time: O(n log n)
+        var complexity = DataSize * Math.Log2(DataSize);
+        var executionTime = (int)(complexity / 100000); // Scaled for demonstration
+        await Task.Delay(Math.Max(1, executionTime));
+        
+        // In real implementation, this would execute actual FFT kernel
+        // For benchmark purposes, we simulate the memory operations
+        var tempData = new float[DataSize * 2];
+        await input.CopyToHostAsync<float>(tempData);
+        
+        // Simulate FFT butterfly operations
+        for (int stage = 0; stage < Math.Log2(DataSize); stage++)
+        {
+            var stride = 1 << (stage + 1);
+            for (int i = 0; i < DataSize; i += stride)
+            {
+                // Simulate butterfly computation
+                for (int j = 0; j < stride / 2; j++)
+                {
+                    var evenIdx = i + j;
+                    var oddIdx = i + j + stride / 2;
+                    
+                    if (evenIdx < DataSize && oddIdx < DataSize)
+                    {
+                        // Complex multiplication and addition (simplified)
+                        var temp = tempData[oddIdx * 2];
+                        tempData[oddIdx * 2] = tempData[evenIdx * 2] - temp;
+                        tempData[evenIdx * 2] = tempData[evenIdx * 2] + temp;
+                    }
+                }
+            }
+        }
+        
+        await output.CopyFromHostAsync<float>(tempData);
+    }
+
+    private async Task ExecuteConvolution()
+    {
+        // 2D Convolution with separable filters
+        var kernelSize = 5;
+        var kernel = new float[kernelSize, kernelSize];
+        
+        // Gaussian blur kernel
+        for (int y = 0; y < kernelSize; y++)
+        {
+            for (int x = 0; x < kernelSize; x++)
+            {
+                var dx = x - kernelSize / 2;
+                var dy = y - kernelSize / 2;
+                kernel[y, x] = (float)Math.Exp(-(dx * dx + dy * dy) / (2.0 * 1.5 * 1.5));
+            }
+        }
+        
+        // Normalize kernel
+        var sum = 0.0f;
+        for (int y = 0; y < kernelSize; y++)
+            for (int x = 0; x < kernelSize; x++)
+                sum += kernel[y, x];
+        
+        for (int y = 0; y < kernelSize; y++)
+            for (int x = 0; x < kernelSize; x++)
+                kernel[y, x] /= sum;
+        
+        var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(_inputData);
+        var kernelBuffer = await _memoryManager.AllocateAndCopyAsync<float>(
+            kernel.Cast<float>().ToArray());
+        var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
+        
+        // Simulate 2D convolution
+        await SimulateConvolutionKernel(inputBuffer, kernelBuffer, outputBuffer, kernelSize);
+        
+        await outputBuffer.CopyToHostAsync<float>(_outputData);
+        
+        _buffers.AddRange(new[] { inputBuffer, kernelBuffer, outputBuffer });
+    }
+
+    private async Task SimulateConvolutionKernel(IMemoryBuffer input, IMemoryBuffer kernel, 
+                                                 IMemoryBuffer output, int kernelSize)
+    {
+        // Simulate convolution computation time: O(n * k^2) where k is kernel size
+        var complexity = DataSize * kernelSize * kernelSize;
+        var executionTime = (int)(complexity / 500000); // Scaled for demonstration
+        await Task.Delay(Math.Max(1, executionTime));
+        
+        // Simulate actual convolution operation
+        var inputData = new float[DataSize];
+        var kernelData = new float[kernelSize * kernelSize];
+        var outputData = new float[DataSize];
+        
+        await input.CopyToHostAsync<float>(inputData);
+        await kernel.CopyToHostAsync<float>(kernelData);
+        
+        var imageSize = (int)Math.Sqrt(DataSize);
+        
+        // Perform convolution (simplified for 1D representation of 2D data)
+        for (int i = kernelSize / 2; i < imageSize - kernelSize / 2; i++)
+        {
+            for (int j = kernelSize / 2; j < imageSize - kernelSize / 2; j++)
+            {
+                float sum = 0;
+                for (int ky = 0; ky < kernelSize; ky++)
+                {
+                    for (int kx = 0; kx < kernelSize; kx++)
+                    {
+                        var imgY = i + ky - kernelSize / 2;
+                        var imgX = j + kx - kernelSize / 2;
+                        var imgIdx = imgY * imageSize + imgX;
+                        var kernelIdx = ky * kernelSize + kx;
+                        
+                        if (imgIdx >= 0 && imgIdx < DataSize)
+                        {
+                            sum += inputData[imgIdx] * kernelData[kernelIdx];
+                        }
+                    }
+                }
+                outputData[i * imageSize + j] = sum;
+            }
+        }
+        
+        await output.CopyFromHostAsync<float>(outputData);
+    }
+
+    private async Task ExecuteQuickSort()
+    {
+        // GPU-accelerated sorting algorithm
+        var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(_integerData.Select(i => (float)i).ToArray());
+        var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
+        
+        await SimulateQuickSortKernel(inputBuffer, outputBuffer);
+        
+        var result = new float[DataSize];
+        await outputBuffer.CopyToHostAsync<float>(result);
+        
+        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+    }
+
+    private async Task SimulateQuickSortKernel(IMemoryBuffer input, IMemoryBuffer output)
+    {
+        // Simulate parallel quicksort: O(n log n) average case
+        var complexity = DataSize * Math.Log2(DataSize);
+        var executionTime = (int)(complexity / 200000);
+        await Task.Delay(Math.Max(1, executionTime));
+        
+        // Simulate the actual sorting operation
+        var data = new float[DataSize];
+        await input.CopyToHostAsync<float>(data);
+        
+        // Use built-in sort for simulation (in real GPU implementation, 
+        // this would be a parallel sorting network or bitonic sort)
+        Array.Sort(data);
+        
+        await output.CopyFromHostAsync<float>(data);
+    }
+
+    private async Task ExecuteImageBlur()
+    {
+        // Gaussian blur implementation
+        var imageSize = (int)Math.Sqrt(DataSize);
+        var flatImageData = new float[imageSize * imageSize];
+        
+        // Flatten 2D image data
+        for (int y = 0; y < imageSize; y++)
+        {
+            for (int x = 0; x < imageSize; x++)
+            {
+                flatImageData[y * imageSize + x] = _imageData[y, x];
+            }
+        }
+        
+        var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(flatImageData);
+        var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
+        
+        await SimulateImageBlurKernel(inputBuffer, outputBuffer, imageSize);
+        
+        var result = new float[DataSize];
+        await outputBuffer.CopyToHostAsync<float>(result);
+        
+        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+    }
+
+    private async Task SimulateImageBlurKernel(IMemoryBuffer input, IMemoryBuffer output, int imageSize)
+    {
+        // Simulate separable Gaussian blur: O(n) with two passes
+        var complexity = DataSize * 2; // Two separable passes
+        var executionTime = (int)(complexity / 1000000);
+        await Task.Delay(Math.Max(1, executionTime));
+        
+        var inputData = new float[DataSize];
+        var tempData = new float[DataSize];
+        var outputData = new float[DataSize];
+        
+        await input.CopyToHostAsync<float>(inputData);
+        
+        // Horizontal blur pass
+        var kernel = new float[] { 0.06136f, 0.24477f, 0.38774f, 0.24477f, 0.06136f };
+        var radius = kernel.Length / 2;
+        
+        for (int y = 0; y < imageSize; y++)
+        {
+            for (int x = 0; x < imageSize; x++)
+            {
+                float sum = 0;
+                for (int i = 0; i < kernel.Length; i++)
+                {
+                    var sampleX = Math.Max(0, Math.Min(imageSize - 1, x + i - radius));
+                    sum += inputData[y * imageSize + sampleX] * kernel[i];
+                }
+                tempData[y * imageSize + x] = sum;
+            }
+        }
+        
+        // Vertical blur pass
+        for (int y = 0; y < imageSize; y++)
+        {
+            for (int x = 0; x < imageSize; x++)
+            {
+                float sum = 0;
+                for (int i = 0; i < kernel.Length; i++)
+                {
+                    var sampleY = Math.Max(0, Math.Min(imageSize - 1, y + i - radius));
+                    sum += tempData[sampleY * imageSize + x] * kernel[i];
+                }
+                outputData[y * imageSize + x] = sum;
+            }
+        }
+        
+        await output.CopyFromHostAsync<float>(outputData);
+    }
+
+    private async Task ExecuteMatrixDecomposition()
+    {
+        // LU decomposition simulation
+        var matrixSize = (int)Math.Sqrt(DataSize);
+        var actualSize = matrixSize * matrixSize;
+        
+        var matrix = _inputData.Take(actualSize).ToArray();
+        var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(matrix);
+        var outputBuffer = await _memoryManager.AllocateAsync(actualSize * sizeof(float));
+        
+        await SimulateMatrixDecompositionKernel(inputBuffer, outputBuffer, matrixSize);
+        
+        var result = new float[actualSize];
+        await outputBuffer.CopyToHostAsync<float>(result);
+        
+        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+    }
+
+    private async Task SimulateMatrixDecompositionKernel(IMemoryBuffer input, IMemoryBuffer output, int matrixSize)
+    {
+        // Simulate LU decomposition: O(n^3) complexity
+        var complexity = Math.Pow(matrixSize, 3);
+        var executionTime = (int)(complexity / 50000);
+        await Task.Delay(Math.Max(1, executionTime));
+        
+        var matrix = new float[matrixSize * matrixSize];
+        await input.CopyToHostAsync<float>(matrix);
+        
+        // Simulate LU decomposition (simplified)
+        for (int k = 0; k < matrixSize; k++)
+        {
+            for (int i = k + 1; i < matrixSize; i++)
+            {
+                var factor = matrix[i * matrixSize + k] / matrix[k * matrixSize + k];
+                for (int j = k; j < matrixSize; j++)
+                {
+                    matrix[i * matrixSize + j] -= factor * matrix[k * matrixSize + j];
+                }
+            }
+        }
+        
+        await output.CopyFromHostAsync<float>(matrix);
+    }
+
+    [Benchmark]
+    public async Task MultipleAlgorithmsPipeline()
+    {
+        // Execute multiple algorithms in sequence to simulate real-world pipeline
+        await ExecuteFFT();
+        
+        // Clear intermediate buffers
+        foreach (var buffer in _buffers.ToArray())
+        {
+            if (!buffer.IsDisposed)
+                await buffer.DisposeAsync();
+        }
+        _buffers.Clear();
+        
+        await ExecuteConvolution();
+        
+        // Clear intermediate buffers
+        foreach (var buffer in _buffers.ToArray())
+        {
+            if (!buffer.IsDisposed)
+                await buffer.DisposeAsync();
+        }
+        _buffers.Clear();
+        
+        await ExecuteImageBlur();
+    }
+
+    [Benchmark]
+    public double AlgorithmicComplexityMeasurement()
+    {
+        // Measure actual vs theoretical complexity
+        return Algorithm switch
+        {
+            "FFT" => DataSize * Math.Log2(DataSize), // O(n log n)
+            "Convolution" => DataSize * 25, // O(n * k^2) with k=5
+            "QuickSort" => DataSize * Math.Log2(DataSize), // O(n log n) average
+            "ImageBlur" => DataSize * 2, // O(n) with separable kernel
+            "MatrixDecomposition" => Math.Pow(Math.Sqrt(DataSize), 3), // O(n^3)
+            _ => DataSize
+        };
+    }
+
+    [Benchmark]
+    public async Task MemoryIntensiveAlgorithm()
+    {
+        // Test memory-intensive algorithm (matrix transpose)
+        var matrixSize = (int)Math.Sqrt(DataSize);
+        var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(_inputData.Take(matrixSize * matrixSize).ToArray());
+        var outputBuffer = await _memoryManager.AllocateAsync(matrixSize * matrixSize * sizeof(float));
+        
+        // Simulate matrix transpose (memory access pattern intensive)
+        var complexity = matrixSize * matrixSize;
+        var executionTime = (int)(complexity / 100000);
+        await Task.Delay(Math.Max(1, executionTime));
+        
+        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+    }
+
+    [Benchmark]
+    public async Task ComputeIntensiveAlgorithm()
+    {
+        // Test compute-intensive algorithm (Monte Carlo simulation)
+        const int iterations = 1000000;
+        
+        var randomData = new float[iterations];
+        var random = new Random(42);
+        for (int i = 0; i < iterations; i++)
+        {
+            randomData[i] = (float)random.NextDouble();
+        }
+        
+        var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(randomData);
+        var outputBuffer = await _memoryManager.AllocateAsync(sizeof(float));
+        
+        // Simulate Monte Carlo pi estimation
+        var executionTime = iterations / 100000;
+        await Task.Delay(Math.Max(1, executionTime));
+        
+        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+    }
+}
