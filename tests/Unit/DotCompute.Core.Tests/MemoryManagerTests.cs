@@ -56,7 +56,7 @@ public sealed class MemoryManagerTests : IDisposable
         
         _coreMemoryManagerMock
             .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockBuffer.Object);
+            .ReturnsAsync(mockBuffer.Object)));
 
         // Act
         var buffer = await _coreMemoryManagerMock.Object.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device);
@@ -73,7 +73,7 @@ public sealed class MemoryManagerTests : IDisposable
         // Arrange
         _coreMemoryManagerMock
             .Setup(m => m.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()
-            .ThrowsAsync(new ArgumentException("Element count must be positive"));
+            .ThrowsAsync(new ArgumentException("Element count must be positive"))));
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(async () => 
@@ -89,7 +89,7 @@ public sealed class MemoryManagerTests : IDisposable
         
         _coreMemoryManagerMock
             .Setup(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>()
-            .Returns(ValueTask.CompletedTask);
+            .Returns(ValueTask.CompletedTask)));
 
         // Act & Assert (should not throw)
         await _coreMemoryManagerMock.Object.CopyAsync(sourceBuffer, destBuffer);
@@ -122,7 +122,7 @@ public sealed class MemoryManagerTests : IDisposable
         
         _abstractionsMemoryManagerMock
             .Setup(m => m.AllocateAsync(1024, AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockBuffer.Object);
+            .ReturnsAsync(mockBuffer.Object)));
 
         // Act
         var buffer = await _abstractionsMemoryManagerMock.Object.AllocateAsync(1024);
@@ -138,7 +138,7 @@ public sealed class MemoryManagerTests : IDisposable
         // Arrange
         _abstractionsMemoryManagerMock
             .Setup(m => m.AllocateAsync(0, It.IsAny<AbstractionsMemory.MemoryOptions>(), It.IsAny<CancellationToken>()
-            .ThrowsAsync(new ArgumentException("Size must be positive"));
+            .ThrowsAsync(new ArgumentException("Size must be positive"))));
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(async () => 
@@ -155,7 +155,7 @@ public sealed class MemoryManagerTests : IDisposable
         
         _abstractionsMemoryManagerMock
             .Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockBuffer.Object);
+            .ReturnsAsync(mockBuffer.Object)));
 
         // Act
         var buffer = await _abstractionsMemoryManagerMock.Object.AllocateAndCopyAsync<int>(sourceData);

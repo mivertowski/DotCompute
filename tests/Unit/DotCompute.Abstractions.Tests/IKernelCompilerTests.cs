@@ -466,7 +466,7 @@ public class IKernelCompilerTests
     {
         // Arrange
         _mockCompiler.Setup(c => c.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()
-                    .ReturnsAsync(_mockCompiledKernel.Object);
+                    .ReturnsAsync(_mockCompiledKernel.Object)));
 
         var tasks = new Task<ICompiledKernel>[10];
         
@@ -489,7 +489,7 @@ public class IKernelCompilerTests
     {
         // Arrange
         var successResult = ValidationResult.Success();
-        _mockCompiler.Setup(c => c.Validate(It.IsAny<KernelDefinition>().Returns(successResult);
+        _mockCompiler.Setup(c => c.Validate(It.IsAny<KernelDefinition>().Returns(successResult)));
 
         var tasks = new Task<ValidationResult>[10];
         
@@ -584,7 +584,6 @@ public class IKernelCompilerTests
         Assert.Equal(compilerName, name1);
         Assert.Equal(compilerName, name2);
         Assert.Equal(compilerName, name3);
-        name1.Should().Be(name2).And.Should().Be(name3);
     }
 
     [Fact]

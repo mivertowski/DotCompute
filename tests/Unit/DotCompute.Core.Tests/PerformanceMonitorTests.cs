@@ -38,7 +38,7 @@ public sealed class PerformanceMonitorTests : IDisposable
     }
 
     [Fact]
-    public void RecordExecution_WithValidResult_ShouldShould().NotThrow()
+    public void RecordExecution_WithValidResult_ShouldNotThrow()
     {
         // Arrange
         var result = CreateMockParallelExecutionResult();
@@ -53,7 +53,7 @@ public sealed class PerformanceMonitorTests : IDisposable
     }
 
     [Fact]
-    public void RecordKernelExecution_WithValidParameters_ShouldShould().NotThrow()
+    public void RecordKernelExecution_WithValidParameters_ShouldNotThrow()
     {
         // Act & Assert (should not throw)
         _performanceMonitor.RecordKernelExecution("TestKernel", "Device1", 100.5, 15.2);

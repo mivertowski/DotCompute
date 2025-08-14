@@ -321,8 +321,8 @@ public class PluginIntegrationTests : IDisposable
         var metrics2 = plugin2.GetMetrics();
 
         // Assert
-((metrics1.RequestCount > 0).Should().BeTrue();
-((metrics2.RequestCount > 0).Should().BeTrue();
+        (metrics1.RequestCount > 0).Should().BeTrue();
+        (metrics2.RequestCount > 0).Should().BeTrue();
         metrics1.CustomMetrics.Should().ContainKey("WorkCount");
         metrics2.CustomMetrics.Should().ContainKey("WorkCount");
     }

@@ -206,7 +206,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Count.Should().Be(2));
+        result.ExecutionResults.Count.Should().Be(2);
         result.ExecutionResults.Values.Should().AllSatisfy(r => r.Success.Should().BeTrue());
         
         var finalResult = (float[])result.Results["result"];

@@ -198,7 +198,7 @@ public class IMemoryBufferTests
         var sourceMemory = new ReadOnlyMemory<float>(sourceData);
 
         _mockBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()
-                  .ThrowsAsync(new ObjectDisposedException("Buffer has been disposed"));
+                  .ThrowsAsync(new ObjectDisposedException("Buffer has been disposed"))));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ObjectDisposedException>(
@@ -335,7 +335,7 @@ public class IMemoryBufferTests
         var destinationMemory = new Memory<float>(destinationData);
 
         _mockBuffer.Setup(b => b.CopyToHostAsync(It.IsAny<Memory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()
-                  .ThrowsAsync(new ObjectDisposedException("Buffer has been disposed"));
+                  .ThrowsAsync(new ObjectDisposedException("Buffer has been disposed"))));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ObjectDisposedException>(
@@ -592,9 +592,9 @@ public class IMemoryBufferTests
 
         _mockBuffer.SetupGet(b => b.IsDisposed).Returns(true);
         _mockBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()
-                  .ThrowsAsync(new ObjectDisposedException(nameof(IMemoryBuffer);
+                  .ThrowsAsync(new ObjectDisposedException(nameof(IMemoryBuffer)))));
         _mockBuffer.Setup(b => b.CopyToHostAsync(It.IsAny<Memory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()
-                  .ThrowsAsync(new ObjectDisposedException(nameof(IMemoryBuffer);
+                  .ThrowsAsync(new ObjectDisposedException(nameof(IMemoryBuffer)))));
 
         // Act & Assert
         var exception1 = await Assert.ThrowsAsync<ObjectDisposedException>(

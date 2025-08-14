@@ -164,7 +164,7 @@ public class PluginOptionsTests
         options.PluginDirectories.Add("/path/to/plugins2");
 
         // Assert
-        options.PluginDirectories.Count.Should().Be(2));
+        options.PluginDirectories.Count.Should().Be(2);
         options.Assert.Contains("/path/to/plugins1", PluginDirectories);
         options.Assert.Contains("/path/to/plugins2", PluginDirectories);
     }
@@ -272,7 +272,7 @@ public class PluginConfigTests
         config.Settings["DoubleSetting"] = 3.14;
 
         // Assert
-        config.Settings.Count.Should().Be(4));
+        config.Settings.Count.Should().Be(4);
         config.Settings["StringSetting"].Should().Be("test value");
         config.Settings["IntSetting"].Should().Be(42);
         config.Settings["BoolSetting"].Should().Be(true);
@@ -376,7 +376,7 @@ public class PluginConfigTests
         config.AssemblyPath.Should().Be("/path/to/MyPlugin.dll");
         config.TypeName.Should().Be("MyCompany.MyPlugin.Backend");
         config.Enabled.Should().BeTrue();
-        config.Settings.Count.Should().Be(4));
+        config.Settings.Count.Should().Be(4);
         config.Settings["MaxThreads"].Should().Be(8);
         config.Settings["CacheSizeBytes"].Should().Be(1024 * 1024);
         config.Settings["EnableLogging"].Should().Be(true);
@@ -445,10 +445,10 @@ public class PluginConfigurationIntegrationTests
         options.MaxConcurrentLoads = 2;
 
         // Assert
-        options.Plugins.Count.Should().Be(2));
+        options.Plugins.Count.Should().Be(2);
         options.Plugins["cpu-backend"].BeSameAs(cpuConfig);
         options.Plugins["cuda-backend"].BeSameAs(cudaConfig);
-        options.PluginDirectories.Count.Should().Be(2));
+        options.PluginDirectories.Count.Should().Be(2);
         options.EnableHotReload.Should().BeTrue();
         options.MaxConcurrentLoads.Should().Be(2);
 
@@ -486,7 +486,7 @@ public class PluginConfigurationIntegrationTests
         options.SharedAssemblies.Remove("Microsoft.Extensions.Configuration.Abstractions");
 
         // Assert
-        options.SharedAssemblies.Count.Should().Be(originalCount)); // +1 -1 = same count
+        options.SharedAssemblies.Count.Should().Be(originalCount); // +1 -1 = same count
         options.Assert.Contains("Custom.Shared.Assembly", SharedAssemblies);
         options.SharedAssemblies.Should().NotContain("Microsoft.Extensions.Configuration.Abstractions");
     }

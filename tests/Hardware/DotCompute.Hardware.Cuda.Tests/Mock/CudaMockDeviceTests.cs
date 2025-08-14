@@ -144,9 +144,9 @@ public class CudaMockDeviceTests
         // Act & Assert
         mockStats.TotalMemory.Should().Be(8L * 1024 * 1024 * 1024);
         mockStats.FreeMemory.Should().Be(totalMemory - usedMemory);
-((mockStats.UsedMemory > 0).Should().BeTrue();
+        (mockStats.UsedMemory > 0).Should().BeTrue();
         (mockStats.AllocatedMemory <= mockStats.UsedMemory).Should().BeTrue();
-((mockStats.AllocationCount > 0).Should().BeTrue();
+        (mockStats.AllocationCount > 0).Should().BeTrue();
         (mockStats.PeakMemory >= mockStats.UsedMemory).Should().BeTrue();
         
         var utilizationPercent = (mockStats.UsedMemory * 100.0) / mockStats.TotalMemory;

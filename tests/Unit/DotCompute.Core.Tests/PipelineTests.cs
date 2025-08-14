@@ -143,7 +143,7 @@ public sealed class PipelineTests
                 StageId = "stage1",
                 Success = true,
                 Duration = TimeSpan.FromMilliseconds(10)
-            });
+            })));
         stage1.Setup(s => s.Validate()).Returns(new StageValidationResult { IsValid = true });
         stage1.Setup(s => s.GetMetrics()).Returns(Mock.Of<IStageMetrics>());
 
@@ -160,7 +160,7 @@ public sealed class PipelineTests
                 StageId = "stage2",
                 Success = true,
                 Duration = TimeSpan.FromMilliseconds(10)
-            });
+            })));
         stage2.Setup(s => s.Validate()).Returns(new StageValidationResult { IsValid = true });
         stage2.Setup(s => s.GetMetrics()).Returns(Mock.Of<IStageMetrics>());
 
@@ -208,7 +208,7 @@ public sealed class PipelineTests
                 StageId = "stage1",
                 Success = true,
                 Duration = TimeSpan.FromMilliseconds(10)
-            });
+            })));
         stage1.Setup(s => s.Validate()).Returns(new StageValidationResult { IsValid = true });
         stage1.Setup(s => s.GetMetrics()).Returns(Mock.Of<IStageMetrics>());
 
@@ -225,7 +225,7 @@ public sealed class PipelineTests
                 StageId = "stage2",
                 Success = true,
                 Duration = TimeSpan.FromMilliseconds(10)
-            });
+            })));
         stage2.Setup(s => s.Validate()).Returns(new StageValidationResult { IsValid = true });
         stage2.Setup(s => s.GetMetrics()).Returns(Mock.Of<IStageMetrics>());
 
@@ -263,7 +263,7 @@ public sealed class PipelineTests
         stage1.Setup(s => s.Dependencies).Returns(new List<string>());
         stage1.Setup(s => s.Metadata).Returns(new Dictionary<string, object>());
         stage1.Setup(s => s.ExecuteAsync(It.IsAny<PipelineExecutionContext>(), It.IsAny<CancellationToken>()
-            .ThrowsAsync(expectedException);
+            .ThrowsAsync(expectedException)));
         stage1.Setup(s => s.Validate()).Returns(new StageValidationResult { IsValid = true });
         stage1.Setup(s => s.GetMetrics()).Returns(Mock.Of<IStageMetrics>());
 

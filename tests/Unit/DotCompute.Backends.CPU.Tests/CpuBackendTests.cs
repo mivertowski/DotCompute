@@ -15,6 +15,7 @@ using DotCompute.Tests.Shared;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Core.Compute;
 
 namespace DotCompute.Tests;
 
@@ -279,7 +280,7 @@ public class CpuBackendTests
         result.Length.Should().Be(size);
         
         // CPU should complete within reasonable time
-        stopwatch.ElapsedMilliseconds < 1000.Should().BeTrue();
+        (stopwatch.ElapsedMilliseconds < 1000).Should().BeTrue();
         
         _output.WriteLine($"CPU vector addition ({size} elements): {stopwatch.ElapsedMicroseconds} μs");
     }
@@ -413,8 +414,8 @@ public class CpuBackendTests
 
         try
         {
-            accelerator.Memory.CopyToDevice(bufferA, MemoryMarshal.AsBytes(a.AsSpan();
-            accelerator.Memory.CopyToDevice(bufferB, MemoryMarshal.AsBytes(b.AsSpan();
+            accelerator.Memory.CopyToDevice(bufferA, MemoryMarshal.AsBytes(a.AsSpan()));
+            accelerator.Memory.CopyToDevice(bufferB, MemoryMarshal.AsBytes(b.AsSpan()));
 
             var kernel = await accelerator.CompileKernelAsync(TestKernels.VectorizedAdd);
             await kernel.ExecuteAsync(new KernelArguments(bufferA, bufferB, bufferResult, size));

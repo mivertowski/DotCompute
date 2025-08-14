@@ -301,7 +301,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() => 
-            CreateInputBuffer<float>(memoryManager, Array.Empty<float>();
+            CreateInputBuffer<float>(memoryManager, Array.Empty<float>()));
 
         TestOutput.WriteLine("Invalid input error handling validated");
     }

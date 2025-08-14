@@ -134,7 +134,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Count.Should().Be(3));
+        result.ExecutionResults.Count.Should().Be(3);
         
         var featureMaps = (float[])result.Results["feature_maps"];
         featureMaps.Should().NotContain(float.NaN);
@@ -347,7 +347,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Count.Should().Be(4));
+        result.ExecutionResults.Count.Should().Be(4);
         
         var enhancedImage = (float[])result.Results["enhanced_image"];
         
@@ -677,8 +677,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         var d1 = (Math.Log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.Sqrt(T));
         var d2 = d1 - sigma * Math.Sqrt(T);
         
-        var N_d1 = 0.5 * (1 + Erf(d1 / Math.Sqrt(2);
-        var N_d2 = 0.5 * (1 + Erf(d2 / Math.Sqrt(2);
+        var N_d1 = 0.5 * (1 + Erf(d1 / Math.Sqrt(2)));
+        var N_d2 = 0.5 * (1 + Erf(d2 / Math.Sqrt(2)));
         
         return (float)(S * N_d1 - K * Math.Exp(-r * T) * N_d2);
     }
@@ -697,7 +697,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         x = Math.Abs(x);
 
         var t = 1.0 / (1.0 + p * x);
-        var y = 1.0 - (((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.Exp(-x * x);
+        var y = 1.0 - (((a5 * t + a4) * t) + a3) * t + a2 * t + a1 * t * Math.Exp(-x * x);
 
         return sign * y;
     }

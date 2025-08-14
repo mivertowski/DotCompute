@@ -38,10 +38,10 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         // Arrange
         const int length = 256; // 1024 bytes / 4 bytes per int
         var mockDeviceBuffer = Mock.Of<IMemoryBuffer>(b => b.SizeInBytes == length * sizeof(int));
-        
+
         _baseMemoryManagerMock
             .Setup(m => m.AllocateAsync(length * sizeof(int), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockDeviceBuffer);)
+            .ReturnsAsync(mockDeviceBuffer)));
 
         // Act
         var buffer = await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(length);
@@ -60,10 +60,10 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         const int length = 256;
         var options = DotCompute.Memory.MemoryOptions.HostVisible | DotCompute.Memory.MemoryOptions.Cached;
         var mockDeviceBuffer = Mock.Of<IMemoryBuffer>();
-        
+
         _baseMemoryManagerMock
             .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockDeviceBuffer);)
+            .ReturnsAsync(mockDeviceBuffer)));
 
         // Act
         await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(length, options);
@@ -133,8 +133,8 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         var mockDeviceBuffer = new Mock<IMemoryBuffer>();
         mockDeviceBuffer.Setup(b => b.SizeInBytes).Returns(length * sizeof(float));
         mockDeviceBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()
-            .Returns(ValueTask.CompletedTask);)
-        
+            .Returns(ValueTask.CompletedTask)));
+
         // Use a callback to verify the mock is being called and return the buffer
         _baseMemoryManagerMock
             .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()
@@ -143,7 +143,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
                 // This helps debug if the mock is being called
                 // In a real test we wouldn't use Console.WriteLine
             })
-            .ReturnsAsync(mockDeviceBuffer.Object);)
+            .ReturnsAsync(mockDeviceBuffer.Object)));
         
         // Act
         var unifiedBuffer = await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(length);

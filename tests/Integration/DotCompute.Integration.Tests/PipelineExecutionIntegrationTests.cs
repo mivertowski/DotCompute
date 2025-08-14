@@ -35,7 +35,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Count.Should().Be(4));
+        result.ExecutionResults.Count.Should().Be(4);
         
         // Verify stages executed in correct order
         var executionTimes = result.ExecutionResults
@@ -45,7 +45,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Each stage should have had time to complete before the next started
         Logger.LogInformation("Stage execution times: {Times}", 
-            string.Join(", ", executionTimes.Select(t => $"{t:F1}ms");
+            string.Join(", ", executionTimes.Select(t => $"{t:F1}ms")));
         
         executionTimes.Should().AllSatisfy(t => t.Should().BeGreaterThan(0));
         
@@ -63,7 +63,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Count.Should().Be(5)); // 1 setup + 3 parallel + 1 merge
+        result.ExecutionResults.Count.Should().Be(5); // 1 setup + 3 parallel + 1 merge
         
         // Verify parallel stages
         var parallelStages = result.ExecutionResults
@@ -98,7 +98,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Count.Should().Be(7));
+        result.ExecutionResults.Count.Should().Be(7);
         
         // Verify dependency execution order
         ValidateDAGExecutionOrder(result.ExecutionResults);
@@ -280,7 +280,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Count.Should().Be(stages));
+        result.ExecutionResults.Count.Should().Be(stages);
         
         // Verify performance scaling
         if (result.Metrics != null)

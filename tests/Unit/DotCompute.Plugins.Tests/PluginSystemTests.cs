@@ -281,7 +281,7 @@ public class PluginSystemTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_CalledMultipleTimes_DoesShould().NotThrow()
+    public void Dispose_CalledMultipleTimes_ShouldNotThrow()
     {
         // Act & Assert
         Action act = () =>

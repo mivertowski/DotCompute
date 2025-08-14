@@ -156,7 +156,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         // Assert
         Assert.NotNull(result);
         result.Success.Should().BeTrue();
-        result.StageResults.Count.Should().Be(3)); // Three stages: load, transform, store
+        result.StageResults.Count.Should().Be(3); // Three stages: load, transform, store
         
         foreach (var stageResult in result.StageResults)
         {

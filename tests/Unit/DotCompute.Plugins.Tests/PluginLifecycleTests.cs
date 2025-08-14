@@ -193,8 +193,8 @@ public class PluginLifecycleTests : IDisposable
 
         // Assert
         Assert.NotNull(metrics);
-        metrics.Uptime > TimeSpan.Zero.Should().BeTrue();
-((metrics.RequestCount > 0).Should().BeTrue();
+        (metrics.Uptime > TimeSpan.Zero).Should().BeTrue();
+        (metrics.RequestCount > 0).Should().BeTrue();
         metrics.CustomMetrics.Should().ContainKey("ActivityCount");
     }
 
@@ -209,8 +209,8 @@ public class PluginLifecycleTests : IDisposable
         var tasks = new List<Task>();
         for (int i = 0; i < 10; i++)
         {
-            tasks.Add(Task.Run(() => plugin.GetMetrics();
-            tasks.Add(Task.Run(() => plugin.SimulateActivity();
+            tasks.Add(Task.Run(() => plugin.GetMetrics()));
+            tasks.Add(Task.Run(() => plugin.SimulateActivity()));
         }
 
         // Assert

@@ -56,7 +56,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         Assert.NotNull(trainingResult);
         trainingResult.Success.Should().BeTrue();
         trainingResult.EpochsCompleted.Should().Be(epochs);
-        trainingResult.FinalLoss < trainingResult.InitialLoss.Should().BeTrue();
+        (trainingResult.FinalLoss < trainingResult.InitialLoss).Should().BeTrue();
         trainingResult.TrainingTime.Should().BeLessThan(TimeSpan.FromMinutes(5));
         
         LoggerMessages.NeuralNetworkTrainingCompleted(Logger, trainingResult.TrainingTime.TotalSeconds);
@@ -86,7 +86,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         // Assert
         Assert.NotNull(processingResult);
         processingResult.Success.Should().BeTrue();
-((processingResult.ProcessingSteps > 0).Should().BeTrue();
+        (processingResult.ProcessingSteps > 0).Should().BeTrue();
         processingResult.ProcessingTime.Should().BeLessThan(TimeSpan.FromSeconds(10));
         
         var megapixelsPerSecond = (imageWidth * imageHeight) / processingResult.ProcessingTime.TotalSeconds / 1_000_000.0;
@@ -163,8 +163,8 @@ public class RealWorldScenarioTests : IntegrationTestBase
         Assert.NotNull(simulationResult);
         simulationResult.Success.Should().BeTrue();
         simulationResult.SimulationsCompleted.Should().Be(numSimulations);
-((simulationResult.OptionPrice > 0).Should().BeTrue();
-        simulationResult.OptionPrice < spotPrice.Should().BeTrue();
+        (simulationResult.OptionPrice > 0).Should().BeTrue();
+        (simulationResult.OptionPrice < spotPrice).Should().BeTrue();
         
         var simulationsPerSecond = numSimulations / simulationResult.ExecutionTime.TotalSeconds;
         LoggerMessages.MonteCarlo(Logger, simulationsPerSecond, simulationResult.OptionPrice);
@@ -609,7 +609,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 // Approximate normal CDF using error function approximation
                 double approxNormalCDF(double x)
                 {
-                    return 0.5 * (1.0 + Math.Sign(x) * Math.Sqrt(1.0 - Math.Exp(-2.0 * x * x / Math.PI);
+                    return 0.5 * (1.0 + Math.Sign(x) * Math.Sqrt(1.0 - Math.Exp(-2.0 * x * x / Math.PI)));
                 }
                 
                 var callPrice = spotPrice * approxNormalCDF(d1) - strikePrice * Math.Exp(-riskFreeRate) * approxNormalCDF(d2);

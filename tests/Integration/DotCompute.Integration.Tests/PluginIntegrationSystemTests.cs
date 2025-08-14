@@ -67,7 +67,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Act
         var factoryResults = new List<BackendFactoryResult>();
         
-        foreach (var factoryResult in loadedPlugins.Select(plugin => TestBackendFactory(plugin)
+        foreach (var factoryResult in loadedPlugins.Select(plugin => TestBackendFactory(plugin)))
         {
             factoryResults.Add(await factoryResult);
         }
@@ -95,7 +95,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var executionResults = new List<PluginExecutionResult>();
         
         foreach (var executionTask in availableBackends.Select(backend => 
-            ExecuteKernelThroughBackend(computeEngine, backend, testData)
+            ExecuteKernelThroughBackend(computeEngine, backend, testData)))
         {
             executionResults.Add(await executionTask);
         }
@@ -143,7 +143,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var memoryResults = new List<MemoryManagementResult>();
         
         foreach (var memoryTask in accelerators.Take(2).Select(accelerator => // Test first 2 accelerators
-            TestPluginMemoryManagement(accelerator, bufferCount, bufferSize)
+            TestPluginMemoryManagement(accelerator, bufferCount, bufferSize)))
         {
             memoryResults.Add(await memoryTask);
         }
@@ -213,7 +213,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         results.Should().AllSatisfy(result =>
         {
             result.AllOperationsSuccessful.Should().BeTrue();
-            result.Operations.Count.Should().Be(operationsPerClient));
+            result.Operations.Count.Should().Be(operationsPerClient);
         });
     }
 
@@ -272,7 +272,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         Assert.Equal(concurrencyLevel, results.Count());
         results.Should().AllSatisfy(result =>
         {
-            result.OperationTimes.Count.Should().Be(workItemsPerThread));
+            result.OperationTimes.Count.Should().Be(workItemsPerThread);
             result.AverageTime.Should().BePositive();
         });
         
@@ -307,7 +307,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var cleanupResults = new List<ResourceCleanupResult>();
         
         foreach (var cleanupTask in accelerators.Take(2).Select(accelerator => 
-            TestResourceCleanup(accelerator)
+            TestResourceCleanup(accelerator)))
         {
             cleanupResults.Add(await cleanupTask);
         }

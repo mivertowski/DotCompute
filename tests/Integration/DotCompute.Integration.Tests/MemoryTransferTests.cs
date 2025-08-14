@@ -163,7 +163,7 @@ public class MemoryTransferTests : IntegrationTestBase
         const int transferCount = 4;
         var testDataSets = Enumerable.Range(0, transferCount)
             .Select(_ => GenerateTestData(dataSize / sizeof(float)
-            .ToArray();
+            .ToArray()));
         
         var accelerator = accelerators.First();
 

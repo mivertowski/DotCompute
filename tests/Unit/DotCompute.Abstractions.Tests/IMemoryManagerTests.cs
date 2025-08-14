@@ -119,7 +119,7 @@ public class IMemoryManagerTests
     {
         // Arrange
         _mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()
-                         .ThrowsAsync(new MemoryException("Out of memory"));
+                         .ThrowsAsync(new MemoryException("Out of memory"))));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<MemoryException>(
@@ -180,11 +180,11 @@ public class IMemoryManagerTests
         var byteBuffer = new Mock<IMemoryBuffer>();
 
         _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()
-                         .ReturnsAsync(intBuffer.Object);
+                         .ReturnsAsync(intBuffer.Object)));
         _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<double>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()
-                         .ReturnsAsync(doubleBuffer.Object);
+                         .ReturnsAsync(doubleBuffer.Object)));
         _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()
-                         .ReturnsAsync(byteBuffer.Object);
+                         .ReturnsAsync(byteBuffer.Object)));
 
         // Act
         var intResult = await _mockMemoryManager.Object.AllocateAndCopyAsync<int>(intData);
@@ -472,7 +472,7 @@ public class IMemoryManagerTests
         
         // Setup the workflow
         _mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()
-                         .ReturnsAsync(_mockBuffer.Object);
+                         .ReturnsAsync(_mockBuffer.Object)));
         _mockMemoryManager.Setup(m => m.Free(_mockBuffer.Object));
 
         // Act
@@ -495,7 +495,7 @@ public class IMemoryManagerTests
         var destinationData = new int[5];
 
         _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()
-                         .ReturnsAsync(_mockBuffer.Object);
+                         .ReturnsAsync(_mockBuffer.Object)));
         _mockMemoryManager.Setup(m => m.Free(_mockBuffer.Object));
 
         // Act
@@ -520,7 +520,7 @@ public class IMemoryManagerTests
         const long largeSize = 1024L * 1024 * 1024; // 1 GB
         _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(largeSize);
         _mockMemoryManager.Setup(m => m.AllocateAsync(largeSize, It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()
-                         .ReturnsAsync(_mockBuffer.Object);
+                         .ReturnsAsync(_mockBuffer.Object)));
 
         // Act
         var buffer = await _mockMemoryManager.Object.AllocateAsync(largeSize);

@@ -106,12 +106,12 @@ public class PluginInterfaceTests
         result.Metadata["Key2"] = 42;
 
         // Assert
-        result.Errors.Count.Should().Be(2));
+        result.Errors.Count.Should().Be(2);
         result.Assert.Contains("Error 1", Errors);
         result.Assert.Contains("Error 2", Errors);
-        result.Warnings.Count.Should().Be(1));
+        result.Warnings.Count.Should().Be(1);
         result.Assert.Contains("Warning 1", Warnings);
-        result.Metadata.Count.Should().Be(2));
+        result.Metadata.Count.Should().Be(2);
         result.Metadata["Key1"].Should().Be("Value1");
         result.Metadata["Key2"].Should().Be(42);
     }
@@ -161,7 +161,7 @@ public class PluginInterfaceTests
         metrics.AverageResponseTime.Should().Be(250.5);
         metrics.MemoryUsage.Should().Be(1024 * 1024);
         metrics.CpuUsage.Should().Be(75.8);
-        metrics.CustomMetrics.Count.Should().Be(2));
+        metrics.CustomMetrics.Count.Should().Be(2);
         metrics.CustomMetrics["ThreadCount"].Should().Be(8);
         metrics.CustomMetrics["QueueSize"].Should().Be(25);
     }
@@ -339,13 +339,13 @@ public class PluginInterfaceTests
         configureServices(); // Should not throw
 
         Func<Task> initialize = () => plugin.InitializeAsync(serviceProvider);
-        await initialize(); // Should not throw
+        initialize(); // Should not throw
 
         Func<Task> start = () => plugin.StartAsync();
-        await start(); // Should not throw
+        start(); // Should not throw
 
         Func<Task> stop = () => plugin.StopAsync();
-        await stop(); // Should not throw
+        stop(); // Should not throw
 
         var validationResult = plugin.Validate();
         Assert.NotNull(validationResult);
@@ -355,7 +355,7 @@ public class PluginInterfaceTests
         Assert.Equal("{}", schema);
 
         Func<Task> configChanged = () => plugin.OnConfigurationChangedAsync(configuration);
-        await configChanged(); // Should not throw
+        configChanged(); // Should not throw
 
         var metrics = plugin.GetMetrics();
         Assert.NotNull(metrics);
@@ -437,7 +437,7 @@ public class PluginInterfaceTests
         metrics.CustomMetrics["Null"] = null!;
 
         // Assert
-        metrics.CustomMetrics.Count.Should().Be(8));
+        metrics.CustomMetrics.Count.Should().Be(8);
         metrics.CustomMetrics["String"].Should().Be("test");
         metrics.CustomMetrics["Int"].Should().Be(42);
         metrics.CustomMetrics["Double"].Should().Be(3.14);

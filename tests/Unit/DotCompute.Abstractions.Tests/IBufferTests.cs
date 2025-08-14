@@ -782,9 +782,9 @@ public class IBufferTests
         // Arrange
         _mockFloatBuffer.SetupGet(b => b.IsDisposed).Returns(true);
         _mockFloatBuffer.Setup(b => b.Slice(It.IsAny<int>(), It.IsAny<int>()
-                       .Throws(new ObjectDisposedException(nameof(IBuffer<float>);))
+                       .Throws(new ObjectDisposedException(nameof(IBuffer<float>)))));
         _mockFloatBuffer.Setup(b => b.AsType<int>())
-                       .Throws(new ObjectDisposedException(nameof(IBuffer<float>);
+                       .Throws(new ObjectDisposedException(nameof(IBuffer<float>)));
 
         // Act & Assert
         var sliceException = Assert.Throws<ObjectDisposedException>(

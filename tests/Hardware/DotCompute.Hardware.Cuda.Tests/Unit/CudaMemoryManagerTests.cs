@@ -90,8 +90,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert
         Action allocateZero = () => syncMemoryManager!.Allocate(0);
-        allocateZero.Throw<ArgumentException>()
-            .WithMessage("*Size must be greater than zero*");
+        allocateZero.Throw<ArgumentException>().WithMessage("*Size must be greater than zero*");
     }
 
     [Fact]
@@ -107,8 +106,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert
         Action allocateNegative = () => syncMemoryManager!.Allocate(-1024);
-        allocateNegative.Throw<ArgumentException>()
-            .WithMessage("*Size must be greater than zero*");
+        allocateNegative.Throw<ArgumentException>().WithMessage("*Size must be greater than zero*");
     }
 
     [Theory]
@@ -147,8 +145,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert
         Action allocateInvalidAlignment = () => syncMemoryManager!.AllocateAligned(1024, 100); // Not a power of 2
-        allocateInvalidAlignment.Throw<ArgumentException>()
-            .WithMessage("*Alignment must be a power of 2*");
+        allocateInvalidAlignment.Throw<ArgumentException>().WithMessage("*Alignment must be a power of 2*");
     }
 
     [Fact]
@@ -239,8 +236,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Act & Assert - Copy more than buffer size
         Action copyTooMuch = () => syncMemoryManager.Copy(sourceBuffer, destBuffer, 2048);
-        copyTooMuch.Throw<ArgumentException>()
-            .WithMessage("*would exceed buffer bounds*");
+        copyTooMuch.Throws<ArgumentException>().WithMessage("*would exceed buffer bounds*");
     }
 
     [Theory]
@@ -298,7 +294,7 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Assert
         Assert.NotNull(stats);
-((stats.TotalMemory > 0).Should().BeTrue();
+        (stats.TotalMemory > 0).Should().BeTrue();
         (stats.FreeMemory >= 0).Should().BeTrue();
         (stats.UsedMemory >= 0).Should().BeTrue();
         (stats.AllocationCount >= 0).Should().BeTrue();
@@ -326,8 +322,8 @@ public class CudaMemoryManagerTests : IDisposable
         var afterAllocStats = syncMemoryManager.GetStatistics();
 
         // Assert
-        afterAllocStats.AllocationCount >= initialStats.AllocationCount + 2.Should().BeTrue();
-        afterAllocStats.AllocatedMemory >= initialStats.AllocatedMemory + 3072.Should().BeTrue();
+        (afterAllocStats.AllocationCount >= initialStats.AllocationCount + 2).Should().BeTrue();
+        (afterAllocStats.AllocatedMemory >= initialStats.AllocatedMemory + 3072).Should().BeTrue();
     }
 
     [Fact]
@@ -399,7 +395,7 @@ public class CudaMemoryManagerTests : IDisposable
         }
 
         var finalStats = syncMemoryManager!.GetStatistics();
-        finalStats.AllocationCount >= iterationCount / 2.Should().BeTrue();
+        (finalStats.AllocationCount >= iterationCount / 2).Should().BeTrue();
     }
 
     [Theory]
@@ -445,7 +441,8 @@ public class CudaMemoryManagerTests : IDisposable
 
         // Assert
         Assert.NotNull(buffer);
-        stopwatch.ElapsedMilliseconds < 5000, "Large allocation should complete within 5 seconds".Should().BeTrue();
+        //Large allocation should complete within 5 seconds
+        (stopwatch.ElapsedMilliseconds < 5000).Should().BeTrue();
         
         _output.WriteLine($"100MB allocation took {stopwatch.ElapsedMilliseconds}ms");
     }

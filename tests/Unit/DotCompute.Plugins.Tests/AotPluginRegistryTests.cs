@@ -66,7 +66,7 @@ public class AotPluginRegistryTests : IDisposable
     public void CreatePlugin_WithCudaBackend_CreatesOrThrowsPlatformNotSupported()
     {
         // Act & Assert
-        if (Environment.Is64BitOperatingSystem && (OperatingSystem.IsWindows() || OperatingSystem.IsLinux()
+        if (Environment.Is64BitOperatingSystem && (OperatingSystem.IsWindows() || OperatingSystem.IsLinux()))
         {
             // On supported platforms, should either create or throw based on CUDA availability
             Action act = () => _registry.CreatePlugin("DotCompute.Backends.CUDA");
@@ -283,7 +283,7 @@ public class AotPluginRegistryTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_CalledMultipleTimes_DoesShould().NotThrow()
+    public void Dispose_CalledMultipleTimes_ShouldNotThrow()
     {
         // Act & Assert
         Action act = () =>

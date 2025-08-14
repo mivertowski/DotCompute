@@ -224,7 +224,7 @@ public class RTX2000HardwareValidationTests : IDisposable
             _output.WriteLine($"Allocated {totalAllocatedMB} MB in {allocations.Count} buffers in {stopwatch.ElapsedMilliseconds} ms");
 
             // Should be able to allocate at least several GB
-            allocations.Count > 50, "Should be able to allocate multiple large buffers".Should().BeTrue();
+            (allocations.Count > 50).Should().BeTrue();
         }
         finally
         {
@@ -464,12 +464,12 @@ public class RTX2000HardwareValidationTests : IDisposable
         // Test 1: Invalid memory allocation (too large)
         IntPtr devicePtr = IntPtr.Zero;
         var result = CudaMalloc(ref devicePtr, long.MaxValue);
-        result.Should().Not.Be(0, "Excessive memory allocation should fail");
+        result.Should().Not().Be(0, "Excessive memory allocation should fail");
         _output.WriteLine($"Large allocation failed as expected with error code: {result}");
 
         // Test 2: Invalid memory operations
         result = CudaFree(IntPtr.Zero);
-        result.Should().Not.Be(0, "Freeing null pointer should fail");
+        result.Should().Not().Be(0, "Freeing null pointer should fail");
         _output.WriteLine($"Null pointer free failed as expected with error code: {result}");
 
         // Test 3: Memory access validation
@@ -726,7 +726,6 @@ public class RTX2000HardwareValidationTests : IDisposable
         // Device attributes from CUDA driver API
         const int CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR = 75;
         const int CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR = 76;
-        const int CU_DEVICE_ATTRIBUTE_TOTAL_GLOBAL_MEMORY = 3; // Note: This might need different handling
         const int CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK = 8;
         const int CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK = 1;
         const int CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT = 16;

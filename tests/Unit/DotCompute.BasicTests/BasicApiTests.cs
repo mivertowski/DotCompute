@@ -113,7 +113,7 @@ public class BasicApiTests
         // Assert
         Assert.Contains(OptimizationLevel.None, values);
         Assert.Contains(OptimizationLevel.Default, values);
-        values.Length > 1.Should().BeTrue();
+        (values.Length > 1).Should().BeTrue();
     }
 
     [Fact]

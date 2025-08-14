@@ -411,7 +411,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
             });
 
             mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()
-                .Returns(ValueTask.CompletedTask);
+                .Returns(ValueTask.CompletedTask)));
 
             // Setup Memory property to return a mock IMemoryManager
             var mockMemoryManager = new Mock<IMemoryManager>();
@@ -421,7 +421,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                     var mockBuffer = new Mock<IMemoryBuffer>();
                     mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
                     return mockBuffer.Object;
-                });
+                })));
             mock.Setup(a => a.Memory).Returns(mockMemoryManager.Object);
 
             accelerators.Add(mock);
@@ -444,7 +444,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
             Id = "cpu_0"
         });
         cpuMock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()
-            .Returns(ValueTask.CompletedTask);
+            .Returns(ValueTask.CompletedTask)));
         
         // Setup Memory property for CPU accelerator
         var cpuMemoryManager = new Mock<IMemoryManager>();
@@ -454,7 +454,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                 var mockBuffer = new Mock<IMemoryBuffer>();
                 mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
                 return mockBuffer.Object;
-            });
+            })));
         cpuMock.Setup(a => a.Memory).Returns(cpuMemoryManager.Object);
         
         accelerators.Add(cpuMock);
@@ -471,7 +471,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
         _mockAcceleratorManager.Setup(m => m.Default).Returns(allAccelerators.First());
         
         _mockAcceleratorManager.Setup(m => m.GetAcceleratorById(It.IsAny<string>()
-            .Returns<string>(id => allAccelerators.FirstOrDefault(a => a.Info.Id == id));
+            .Returns<string>(id => allAccelerators.FirstOrDefault(a => a.Info.Id == id))));
     }
 
     private void SetupMockKernelManager()
@@ -514,7 +514,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                     RequiredWorkGroupSize = new[] { 256, 1, 1 },
                     SharedMemorySize = 1024
                 };
-            });
+            })));
 
         // Setup ExecuteKernelAsync to return successful results
         _mockKernelManager.Setup(m => m.ExecuteKernelAsync(
@@ -538,7 +538,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                     TotalTimeMs = 13.0,
                     EffectiveComputeThroughputGFLOPS = 100.0
                 }
-            });
+            })));
     }
 
     private DotCompute.Abstractions.IBuffer<T>[] CreateMockBuffers<T>(int elementCount, int bufferCount) where T : unmanaged

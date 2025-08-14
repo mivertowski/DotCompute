@@ -87,7 +87,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         else
         {
             // If successful, should have used memory management strategies
-            result.Metrics?.ResourceUtilization.MemoryUsagePercent < 100.Should().BeTrue();
+            (result.Metrics?.ResourceUtilization.MemoryUsagePercent < 100).Should().BeTrue();
         }
         
         Logger.LogInformation("Memory exhaustion scenario handled: Success={Success}, Error={Error}",
@@ -259,7 +259,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("RuntimeErrorRecovery", workflow);
 
         // Assert
-        result.ExecutionResults.Count.Should().Be(3));
+        result.ExecutionResults.Count.Should().Be(3);
         
         // Safe stage should succeed
         result.ExecutionResults["safe_stage"].Success.Should().BeTrue();
@@ -455,7 +455,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("CascadingFailureRecovery", workflow);
 
         // Assert
-        result.ExecutionResults.Count.Should().Be(5));
+        result.ExecutionResults.Count.Should().Be(5);
         
         var successfulStages = result.ExecutionResults.Values.Count(r => r.Success);
         var failedStages = result.ExecutionResults.Values.Count(r => !r.Success);

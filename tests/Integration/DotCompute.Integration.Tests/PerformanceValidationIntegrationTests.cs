@@ -530,7 +530,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
     private void ValidatePipelinePerformance(PipelinePerformanceMetrics metrics)
     {
         // Overall pipeline should be reasonably efficient
-        metrics.TotalThroughput > 10, "Pipeline should maintain good throughput".Should().BeTrue();
+        (metrics.TotalThroughput > 10).Should().BeTrue();
         
         // No single stage should dominate the pipeline
         var maxStageLatency = metrics.StageLatencies.Max();
@@ -540,8 +540,8 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             "No single stage should be a significant bottleneck");
         
         // Resource utilization should be reasonable
-        metrics.ResourceUtilization.CpuUsagePercent > 10.Should().BeTrue();
-        metrics.ResourceUtilization.MemoryUsagePercent < 90.Should().BeTrue();
+        (metrics.ResourceUtilization.CpuUsagePercent > 10).Should().BeTrue();
+        (metrics.ResourceUtilization.MemoryUsagePercent < 90).Should().BeTrue();
     }
 
     private Dictionary<string, double> LoadPerformanceBaselines()

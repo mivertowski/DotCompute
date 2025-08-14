@@ -292,7 +292,7 @@ public class CudaPerformanceTests : IDisposable
             .Select(kernel => accelerator.CompileKernelAsync(kernel))
             .ToArray();
 
-        var compiledKernels = await Task.WhenAll(compileTasks.Select(t => t.AsTask();
+        var compiledKernels = await Task.WhenAll(compileTasks.Select(t => t.AsTask()));
         stopwatch.Stop();
 
         // Assert

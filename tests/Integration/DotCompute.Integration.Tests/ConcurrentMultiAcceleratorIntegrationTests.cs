@@ -69,7 +69,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         Assert.NotEmpty(backendUsage);
         Logger.LogInformation("Backend usage: {Usage}", 
-            string.Join(", ", backendUsage.Select(kvp => $"{kvp.Key}: {kvp.Value}");
+            string.Join(", ", backendUsage.Select(kvp => $"{kvp.Key}: {kvp.Value}")));
 
         Assert.True(parallelThroughput > 50, "Parallel execution should achieve good throughput");
     }
@@ -310,7 +310,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Assert
         result.Success.Should().BeTrue();
-        result.ExecutionResults.Count.Should().Be(pipelineDepth));
+        result.ExecutionResults.Count.Should().Be(pipelineDepth);
 
         // All stages should complete successfully
         result.ExecutionResults.Values.Should().AllSatisfy(stage => 
@@ -361,13 +361,13 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         Assert.True(successRate >= 0.75, "Most workflows should complete successfully");
 
         // Calculate effective throughput
-        var totalDataMB = workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length * sizeof(float) / 1024.0 / 1024.0;
+        var totalDataMB = workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length * sizeof(float) / 1024.0 / 1024.0));
         var effectiveThroughput = totalDataMB / concurrencyStopwatch.Elapsed.TotalSeconds;
 
         Assert.True(effectiveThroughput > 10, "Concurrent execution should maintain good throughput");
 
         LogPerformanceMetrics($"ConcurrencyScaling_{acceleratorCount}", 
-            concurrencyStopwatch.Elapsed, workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length);
+            concurrencyStopwatch.Elapsed, workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length)));
     }
 
     // Helper methods and classes

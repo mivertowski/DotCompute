@@ -140,7 +140,7 @@ public class BackendPluginBaseTests : IDisposable
     }
 
     [Fact]
-    public async Task StopAsync_WhenNotRunning_DoesShould().NotThrow()
+    public async Task StopAsync_WhenNotRunning_ShouldNotThrow()
     {
         // Act & Assert
         await FluentActions.Invoking(() => _plugin.StopAsync())
@@ -419,7 +419,7 @@ public class BackendPluginBaseTests : IDisposable
     }
 
     [Fact]
-    public void Dispose_CalledMultipleTimes_DoesShould().NotThrow()
+    public void Dispose_CalledMultipleTimes_ShouldNotThrow()
     {
         // Act & Assert
         Action act = () =>
