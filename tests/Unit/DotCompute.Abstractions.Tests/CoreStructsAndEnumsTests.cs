@@ -1,11 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using DotCompute.Abstractions;
-using Moq;
 using Xunit;
 using FluentAssertions;
 
@@ -239,7 +234,7 @@ public class CoreStructsAndEnumsTests
         {
             OptimizationLevel = OptimizationLevel.Maximum,
             EnableDebugInfo = true,
-            AdditionalFlags = new[] { "-O3", "-ffast-math" },
+            AdditionalFlags = ["-O3", "-ffast-math"],
             Defines = new Dictionary<string, string> { ["DEBUG"] = "1" },
             FastMath = true,
             UnrollLoops = true,
@@ -255,7 +250,7 @@ public class CoreStructsAndEnumsTests
         // Assert
         options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
         options.EnableDebugInfo.Should().BeTrue();
-        options.AdditionalFlags.Should().BeEquivalentTo(new[] { "-O3", "-ffast-math" });
+        options.AdditionalFlags.Should().BeEquivalentTo(["-O3", "-ffast-math"]);
         options.Defines.Should().ContainKey("DEBUG");
         options.FastMath.Should().BeTrue();
         options.UnrollLoops.Should().BeTrue();
@@ -383,10 +378,8 @@ public class CoreStructsAndEnumsTests
     [InlineData(AcceleratorType.TPU, 10)]
     [InlineData(AcceleratorType.Custom, 100)]
     public void AcceleratorType_ShouldHaveCorrectIntegerValues(AcceleratorType type, int expectedValue)
-    {
         // Act & Assert
-        ((int)type).Should().Be(expectedValue);
-    }
+        => ((int)type).Should().Be(expectedValue);
 
     [Fact]
     public void MemoryOptions_ShouldBeFlagsEnum()
@@ -560,7 +553,7 @@ public class CoreStructsAndEnumsTests
     public void BytecodeKernelSource_Constructor_WithEmptyBytecode_ShouldThrowArgumentException()
     {
         // Act & Assert
-        var action = () => new BytecodeKernelSource(new byte[0]);
+        var action = () => new BytecodeKernelSource([]);
         action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("bytecode");
     }
 
@@ -650,7 +643,7 @@ public class CoreStructsAndEnumsTests
         // Act & Assert
         result1.Equals(result2).Should().BeTrue();
         (result1 == result2).Should().BeTrue();
-       (result1 != result2).Should().BeFalse();
+        (result1 != result2).Should().BeFalse();
     }
 
     [Fact]
@@ -694,13 +687,13 @@ public class CoreStructsAndEnumsTests
     {
         // Arrange
         var time = TimeSpan.FromSeconds(1);
-        var metadata1 = new CompilationMetadata(time, 1024, 16, 512, new[] { "note1" });
-        var metadata2 = new CompilationMetadata(time, 1024, 16, 512, new[] { "note1" });
+        var metadata1 = new CompilationMetadata(time, 1024, 16, 512, ["note1"]);
+        var metadata2 = new CompilationMetadata(time, 1024, 16, 512, ["note1"]);
 
         // Act & Assert
         metadata1.Equals(metadata2).Should().BeTrue();
         (metadata1 == metadata2).Should().BeTrue();
-       (metadata1 != metadata2).Should().BeFalse();
+        (metadata1 != metadata2).Should().BeFalse();
     }
 
     [Fact]
@@ -747,11 +740,11 @@ public class CoreStructsAndEnumsTests
             var prop = kernelDefType.GetProperty(propName);
             Assert.NotNull(prop);
             prop.CanRead.Should().BeTrue();
-            if(prop.CanWrite)
+            if (prop.CanWrite)
             {
                 // Check if it's an init-only property by looking for init accessor
                 var setMethod = prop.SetMethod;
-                if(setMethod != null)
+                if (setMethod != null)
                 {
                     // For init-only properties, the set method has special attributes
                     var isInitOnly = setMethod.ReturnParameter.GetRequiredCustomModifiers()
@@ -766,11 +759,11 @@ public class CoreStructsAndEnumsTests
             var prop = acceleratorInfoType.GetProperty(propName);
             Assert.NotNull(prop);
             prop.CanRead.Should().BeTrue();
-            if(prop.CanWrite)
+            if (prop.CanWrite)
             {
                 // Check if it's an init-only property by looking for init accessor
                 var setMethod = prop.SetMethod;
-                if(setMethod != null)
+                if (setMethod != null)
                 {
                     // For init-only properties, the set method has special attributes
                     var isInitOnly = setMethod.ReturnParameter.GetRequiredCustomModifiers()
@@ -795,10 +788,10 @@ public class CoreStructsAndEnumsTests
         kernelLanguages.Should().HaveCountGreaterThan(5);
 
         // Test specific critical values
-       ((int)AcceleratorType.CPU).Should().Be(1);
-       ((int)AcceleratorType.CUDA).Should().Be(2);
-       ((int)MemoryOptions.None).Should().Be(0);
-       ((int)MemoryOptions.ReadOnly).Should().Be(1);
+        ((int)AcceleratorType.CPU).Should().Be(1);
+        ((int)AcceleratorType.CUDA).Should().Be(2);
+        ((int)MemoryOptions.None).Should().Be(0);
+        ((int)MemoryOptions.ReadOnly).Should().Be(1);
     }
 
     #endregion

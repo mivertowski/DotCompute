@@ -1,13 +1,9 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
-using DotCompute.Core.Aot;
-using DotCompute.Memory;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -35,7 +31,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         const int epochs = 5;
 
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
-        
+
         // Generate training data
         var trainingImages = GenerateTestData<float>(batchSize * inputSize);
         var weights1 = GenerateTestData<float>(inputSize * hiddenSize);
@@ -58,7 +54,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         trainingResult.EpochsCompleted.Should().Be(epochs);
         (trainingResult.FinalLoss < trainingResult.InitialLoss).Should().BeTrue();
         trainingResult.TrainingTime.Should().BeLessThan(TimeSpan.FromMinutes(5));
-        
+
         LoggerMessages.NeuralNetworkTrainingCompleted(Logger, trainingResult.TrainingTime.TotalSeconds);
         LoggerMessages.LossReduction(Logger, trainingResult.InitialLoss, trainingResult.FinalLoss);
     }
@@ -70,9 +66,9 @@ public class RealWorldScenarioTests : IntegrationTestBase
         const int imageWidth = 1920;
         const int imageHeight = 1080;
         const int channels = 3; // RGB
-        
+
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
-        
+
         var rawImageData = GenerateTestData<float>(imageWidth * imageHeight * channels);
 
         // Act - Execute complete image processing pipeline
@@ -88,10 +84,10 @@ public class RealWorldScenarioTests : IntegrationTestBase
         processingResult.Success.Should().BeTrue();
         (processingResult.ProcessingSteps > 0).Should().BeTrue();
         processingResult.ProcessingTime.Should().BeLessThan(TimeSpan.FromSeconds(10));
-        
-        var megapixelsPerSecond =(imageWidth * imageHeight) / processingResult.ProcessingTime.TotalSeconds / 1_000_000.0;
+
+        var megapixelsPerSecond = (imageWidth * imageHeight) / processingResult.ProcessingTime.TotalSeconds / 1_000_000.0;
         LoggerMessages.ImageProcessing(Logger, megapixelsPerSecond);
-        
+
         Assert.True(megapixelsPerSecond > 1); // Should process at least 1 MP/s on CPU
     }
 
@@ -103,9 +99,9 @@ public class RealWorldScenarioTests : IntegrationTestBase
         const int gridHeight = 256;
         const int timeSteps = 100;
         const float dt = 0.01f;
-        
+
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
-        
+
         var velocityX = GenerateTestData<float>(gridWidth * gridHeight);
         var velocityY = GenerateTestData<float>(gridWidth * gridHeight);
         var pressure = GenerateTestData<float>(gridWidth * gridHeight);
@@ -126,10 +122,10 @@ public class RealWorldScenarioTests : IntegrationTestBase
         simulationResult.Success.Should().BeTrue();
         simulationResult.TimeStepsCompleted.Should().Be(timeSteps);
         simulationResult.SimulationTime.Should().BeLessThan(TimeSpan.FromMinutes(2));
-        
-        var cellUpdatesPerSecond =(long)gridWidth * gridHeight * timeSteps / simulationResult.SimulationTime.TotalSeconds;
+
+        var cellUpdatesPerSecond = (long)gridWidth * gridHeight * timeSteps / simulationResult.SimulationTime.TotalSeconds;
         LoggerMessages.CFDSimulation(Logger, cellUpdatesPerSecond);
-        
+
         Assert.True(cellUpdatesPerSecond > 1_000_000); // At least 1M cell updates/sec
     }
 
@@ -143,9 +139,9 @@ public class RealWorldScenarioTests : IntegrationTestBase
         const float volatility = 0.2f;
         const float spotPrice = 100.0f;
         const float strikePrice = 105.0f;
-        
+
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
-        
+
         var randomNumbers = GenerateTestData<float>(numSimulations * timeSteps);
 
         // Act - Execute Monte Carlo simulation
@@ -165,10 +161,10 @@ public class RealWorldScenarioTests : IntegrationTestBase
         simulationResult.SimulationsCompleted.Should().Be(numSimulations);
         (simulationResult.OptionPrice > 0).Should().BeTrue();
         (simulationResult.OptionPrice < spotPrice).Should().BeTrue();
-        
+
         var simulationsPerSecond = numSimulations / simulationResult.ExecutionTime.TotalSeconds;
         LoggerMessages.MonteCarlo(Logger, simulationsPerSecond, simulationResult.OptionPrice);
-        
+
         Assert.True(simulationsPerSecond > 1_000); // At least 1K simulations/sec on CPU
     }
 
@@ -178,7 +174,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         // Arrange - Cryptographic hash computation(simplified)
         const int numHashes = 100_000;
         const int dataSize = 1024; // 1KB per hash
-        
+
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         var inputData = GenerateTestData<float>(numHashes * dataSize);
 
@@ -194,10 +190,10 @@ public class RealWorldScenarioTests : IntegrationTestBase
         hashResult.Success.Should().BeTrue();
         hashResult.HashesComputed.Should().Be(numHashes);
         hashResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromMinutes(1));
-        
+
         var hashesPerSecond = numHashes / hashResult.ExecutionTime.TotalSeconds;
         LoggerMessages.HashComputation(Logger, hashesPerSecond);
-        
+
         Assert.True(hashesPerSecond > 10_000); // At least 10K hashes/sec
     }
 
@@ -208,9 +204,9 @@ public class RealWorldScenarioTests : IntegrationTestBase
         const int numParticles = 1_000;
         const int simulationSteps = 10; // Reduced for CPU testing
         const float deltaTime = 1.0f / 60.0f;
-        
+
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
-        
+
         var particlePositions = GenerateTestData<float>(numParticles * 3); // x, y, z
         var particleVelocities = GenerateTestData<float>(numParticles * 3);
         var particleMasses = GenerateTestData<float>(numParticles);
@@ -230,10 +226,10 @@ public class RealWorldScenarioTests : IntegrationTestBase
         physicsResult.Success.Should().BeTrue();
         physicsResult.SimulationSteps.Should().Be(simulationSteps);
         physicsResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(10)); // Reasonable CPU performance
-        
-        var particleUpdatesPerSecond =(long)numParticles * simulationSteps / physicsResult.ExecutionTime.TotalSeconds;
+
+        var particleUpdatesPerSecond = (long)numParticles * simulationSteps / physicsResult.ExecutionTime.TotalSeconds;
         LoggerMessages.PhysicsSimulation(Logger, particleUpdatesPerSecond);
-        
+
         // Should complete physics simulation within reasonable time
         Assert.True(particleUpdatesPerSecond > 100_000); // At least 100K particle updates/sec
     }
@@ -245,11 +241,11 @@ public class RealWorldScenarioTests : IntegrationTestBase
         const int sampleRate = 48000;
         const int bufferSize = 1024;
         const int numBuffers = 100;
-        
+
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         var audioBuffers = new List<float[]>();
-        
-        for(int i = 0; i < numBuffers; i++)
+
+        for (var i = 0; i < numBuffers; i++)
         {
             audioBuffers.Add(GenerateTestData<float>(bufferSize));
         }
@@ -265,14 +261,14 @@ public class RealWorldScenarioTests : IntegrationTestBase
         Assert.NotNull(audioResult);
         audioResult.Success.Should().BeTrue();
         audioResult.BuffersProcessed.Should().BeGreaterThan(0).And.BeLessThanOrEqualTo(numBuffers);
-        
+
         var totalSamples = audioResult.BuffersProcessed * bufferSize;
-        var realTimeSeconds =(double)totalSamples / sampleRate;
+        var realTimeSeconds = (double)totalSamples / sampleRate;
         var processingTimeSeconds = audioResult.ExecutionTime.TotalSeconds;
         var realTimeRatio = processingTimeSeconds / realTimeSeconds;
-        
+
         LoggerMessages.AudioProcessing(Logger, realTimeRatio);
-        
+
         // Should process reasonably close to real-time(CPU backend may be slower)
         Assert.True(realTimeRatio < 100.0); // Processing shouldn't be 100x slower than real-time
     }
@@ -283,7 +279,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         // Arrange - Big data analytics scenario
         const int recordCount = 1_000_000;
         const int fieldsPerRecord = 20;
-        
+
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         var dataset = GenerateTestData<float>(recordCount * fieldsPerRecord);
 
@@ -299,10 +295,10 @@ public class RealWorldScenarioTests : IntegrationTestBase
         analyticsResult.Success.Should().BeTrue();
         analyticsResult.RecordsProcessed.Should().Be(recordCount);
         analyticsResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
-        
+
         var recordsPerSecond = recordCount / analyticsResult.ExecutionTime.TotalSeconds;
         LoggerMessages.DataAnalytics(Logger, recordsPerSecond);
-        
+
         Assert.True(recordsPerSecond > 100_000); // At least 100K records/sec
     }
 
@@ -333,9 +329,9 @@ public class RealWorldScenarioTests : IntegrationTestBase
             }";
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        float initialLoss = 1.0f;
-        float finalLoss = 0.1f; // Simulated improvement
-        
+        var initialLoss = 1.0f;
+        var finalLoss = 0.1f; // Simulated improvement
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -343,7 +339,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 "forward_pass",
                 new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum });
 
-            for(int epoch = 0; epoch < epochs; epoch++)
+            for (var epoch = 0; epoch < epochs; epoch++)
             {
                 // Simulate training epoch
                 var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
@@ -372,11 +368,11 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 FinalLoss = finalLoss
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.NeuralNetworkTrainingFailed(Logger, ex);
-            
+
             return new NeuralNetworkTrainingResult
             {
                 Success = false,
@@ -421,7 +417,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             }";
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -449,11 +445,11 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 OutputData = await ReadBufferAsync<float>(outputBuffer)
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.ImageProcessingPipelineFailed(Logger, ex);
-            
+
             return new ImageProcessingResult
             {
                 Success = false,
@@ -500,7 +496,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             }";
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -513,7 +509,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             var vyBuffer = await CreateInputBuffer(memoryManager, velocityY);
             var pBuffer = await CreateInputBuffer(memoryManager, pressure);
 
-            for(int step = 0; step < timeSteps; step++)
+            for (var step = 0; step < timeSteps; step++)
             {
                 await computeEngine.ExecuteAsync(
                     compiledKernel,
@@ -533,11 +529,11 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 FinalVelocityY = await ReadBufferAsync<float>(vyBuffer)
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.CFDSimulationFailed(Logger, ex);
-            
+
             return new CFDSimulationResult
             {
                 Success = false,
@@ -578,7 +574,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             }";
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -598,25 +594,25 @@ public class RealWorldScenarioTests : IntegrationTestBase
 
             var payoffs = await ReadBufferAsync<float>(payoffsBuffer);
             var averagePayoff = payoffs.Average();
-            
+
             // If kernel didn't produce results, use a simplified Black-Scholes approximation
-            if(averagePayoff <= 0)
+            if (averagePayoff <= 0)
             {
                 // Simple Black-Scholes approximation for call option
-                var d1 =(Math.Log(spotPrice / strikePrice) +(riskFreeRate + 0.5 * volatility * volatility) * 1.0) /(volatility * Math.Sqrt(1.0));
+                var d1 = (Math.Log(spotPrice / strikePrice) + (riskFreeRate + 0.5 * volatility * volatility) * 1.0) / (volatility * Math.Sqrt(1.0));
                 var d2 = d1 - volatility * Math.Sqrt(1.0);
-                
+
                 // Approximate normal CDF using error function approximation
                 double approxNormalCDF(double x)
                 {
-                    return 0.5 *(1.0 + Math.Sign(x) * Math.Sqrt(1.0 - Math.Exp(-2.0 * x * x / Math.PI)));
+                    return 0.5 * (1.0 + Math.Sign(x) * Math.Sqrt(1.0 - Math.Exp(-2.0 * x * x / Math.PI)));
                 }
-                
+
                 var callPrice = spotPrice * approxNormalCDF(d1) - strikePrice * Math.Exp(-riskFreeRate) * approxNormalCDF(d2);
-                averagePayoff =(float)Math.Max(callPrice, 0);
+                averagePayoff = (float)Math.Max(callPrice, 0);
             }
-            
-            var optionPrice = averagePayoff *(float)Math.Exp(-riskFreeRate); // Discount to present value
+
+            var optionPrice = averagePayoff * (float)Math.Exp(-riskFreeRate); // Discount to present value
 
             stopwatch.Stop();
 
@@ -626,14 +622,14 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 SimulationsCompleted = numSimulations,
                 ExecutionTime = stopwatch.Elapsed,
                 OptionPrice = optionPrice,
-                StandardError =(float)(Math.Sqrt(payoffs.Select(p => Math.Pow(p - averagePayoff, 2)).Average()) / Math.Sqrt(numSimulations))
+                StandardError = (float)(Math.Sqrt(payoffs.Select(p => Math.Pow(p - averagePayoff, 2)).Average()) / Math.Sqrt(numSimulations))
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.MonteCarloSimulationFailed(Logger, ex);
-            
+
             return new MonteCarloResult
             {
                 Success = false,
@@ -646,16 +642,16 @@ public class RealWorldScenarioTests : IntegrationTestBase
     // Additional helper methods for other scenarios would be implemented similarly...
     // Due to length constraints, showing abbreviated versions:
 
-    private async Task<HashComputationResult> ExecuteParallelHashComputation(
+    private static async Task<HashComputationResult> ExecuteParallelHashComputation(
         IComputeEngine computeEngine, float[] inputData, int numHashes, int dataSize)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         // Simplified hash computation simulation
         await Task.Delay(100); // Simulate computation time
-        
+
         stopwatch.Stop();
-        
+
         return new HashComputationResult
         {
             Success = true,
@@ -664,17 +660,17 @@ public class RealWorldScenarioTests : IntegrationTestBase
         };
     }
 
-    private async Task<PhysicsSimulationResult> ExecutePhysicsSimulation(
-        IComputeEngine computeEngine, float[] positions, float[] velocities, 
+    private static async Task<PhysicsSimulationResult> ExecutePhysicsSimulation(
+        IComputeEngine computeEngine, float[] positions, float[] velocities,
         float[] masses, int numParticles, int steps, float deltaTime)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         // Simplified physics simulation
         await Task.Delay(50); // Simulate computation time
-        
+
         stopwatch.Stop();
-        
+
         return new PhysicsSimulationResult
         {
             Success = true,
@@ -703,7 +699,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             }";
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -712,7 +708,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum });
 
             var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
-            int processedBuffers = 0;
+            var processedBuffers = 0;
 
             // Process each audio buffer with minimal overhead
             foreach (var buffer in audioBuffers.Take(10)) // Limit to first 10 buffers for performance
@@ -738,11 +734,11 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 ExecutionTime = stopwatch.Elapsed
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.AudioProcessingFailed(Logger, ex);
-            
+
             return new AudioProcessingResult
             {
                 Success = false,
@@ -752,16 +748,16 @@ public class RealWorldScenarioTests : IntegrationTestBase
         }
     }
 
-    private async Task<DataAnalyticsResult> ExecuteDataAnalyticsPipeline(
+    private static async Task<DataAnalyticsResult> ExecuteDataAnalyticsPipeline(
         IComputeEngine computeEngine, float[] dataset, int recordCount, int fieldsPerRecord)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         // Simplified data analytics
         await Task.Delay(200); // Simulate processing time
-        
+
         stopwatch.Stop();
-        
+
         return new DataAnalyticsResult
         {
             Success = true,

@@ -1,4 +1,4 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -6,13 +6,8 @@ using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Moq;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
 using Xunit;
-using FluentAssertions;
 
 namespace DotCompute.Plugins.Tests;
 
@@ -26,26 +21,17 @@ public class BaseBackendPluginTests
     /// </summary>
     private class TestAccelerator : IAccelerator
     {
-        public string Name => "TestAccelerator";
+        public static string Name => "TestAccelerator";
         public AcceleratorType Type => AcceleratorType.CPU;
         public AcceleratorInfo Info => Mock.Of<AcceleratorInfo>();
         public IMemoryManager Memory => Mock.Of<IMemoryManager>();
         public AcceleratorContext Context => default;
 
-        public ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = default, CancellationToken cancellationToken = default)
-        {
-            return ValueTask.FromResult(Mock.Of<ICompiledKernel>());
-        }
+        public ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = default, CancellationToken cancellationToken = default) => ValueTask.FromResult(Mock.Of<ICompiledKernel>());
 
-        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-        {
-            return ValueTask.CompletedTask;
-        }
+        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
-        public ValueTask DisposeAsync()
-        {
-            return ValueTask.CompletedTask;
-        }
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
     }
 
     /// <summary>
@@ -64,10 +50,8 @@ public class BaseBackendPluginTests
         protected override string ConfigurationSectionName => "TestBackend";
 
         protected override void RegisterAccelerator(IServiceCollection services, IConfiguration configuration)
-        {
             // Register a test accelerator for testing
-            services.AddSingleton<TestAccelerator>();
-        }
+            => services.AddSingleton<TestAccelerator>();
     }
 
     /// <summary>
@@ -107,16 +91,16 @@ public class BaseBackendPluginTests
 
         // Assert
         var serviceProvider = services.BuildServiceProvider();
-        
+
         // Verify the test accelerator is registered
         var testAccelerator = serviceProvider.GetService<TestAccelerator>();
         Assert.NotNull(testAccelerator);
-        
+
         // Verify the named wrapper is registered
         var namedAccelerator = serviceProvider.GetService<IAccelerator>();
         Assert.NotNull(namedAccelerator);
         Assert.IsType<NamedAcceleratorWrapper>(namedAccelerator);
-        var wrapper =(NamedAcceleratorWrapper)namedAccelerator;
+        var wrapper = (NamedAcceleratorWrapper)namedAccelerator;
         Assert.Equal("test", wrapper.Name);
     }
 
@@ -154,7 +138,7 @@ public class BaseBackendPluginTests
         var services = new ServiceCollection();
         services.AddLogging();
         var configuration = new ConfigurationBuilder().Build();
-        
+
         plugin.ConfigureServices(services, configuration);
         var serviceProvider = services.BuildServiceProvider();
 
@@ -174,10 +158,10 @@ public class BaseBackendPluginTests
         var services = new ServiceCollection();
         services.AddLogging();
         var configuration = new ConfigurationBuilder().Build();
-        
+
         plugin.ConfigureServices(services, configuration);
         var serviceProvider = services.BuildServiceProvider();
-        
+
         await plugin.InitializeAsync(serviceProvider);
 
         // Act
@@ -195,10 +179,10 @@ public class BaseBackendPluginTests
         var services = new ServiceCollection();
         services.AddLogging();
         var configuration = new ConfigurationBuilder().Build();
-        
+
         plugin.ConfigureServices(services, configuration);
         var serviceProvider = services.BuildServiceProvider();
-        
+
         await plugin.InitializeAsync(serviceProvider);
         await plugin.StartAsync();
 
@@ -258,10 +242,8 @@ public class NamedAcceleratorWrapperTests
 
     [Fact]
     public void Constructor_ShouldThrowOnNullAccelerator()
-    {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new NamedAcceleratorWrapper("test", null!));
-    }
+        => Assert.Throws<ArgumentNullException>(() => new NamedAcceleratorWrapper("test", null!));
 
     [Fact]
     public async Task CompileKernelAsync_ShouldDelegateToUnderlyingAccelerator()
@@ -270,10 +252,10 @@ public class NamedAcceleratorWrapperTests
         var mockAccelerator = new Mock<IAccelerator>();
         var mockCompiledKernel = Mock.Of<ICompiledKernel>();
         var kernelDefinition = Mock.Of<KernelDefinition>();
-        
+
         mockAccelerator
-            .Setup(x => x.CompileKernelAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mockCompiledKernel);
+            .Setup(x => x.CompileKernelAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()
+            .ReturnsAsync(mockCompiledKernel)));
 
         var wrapper = new NamedAcceleratorWrapper("test", mockAccelerator.Object);
 

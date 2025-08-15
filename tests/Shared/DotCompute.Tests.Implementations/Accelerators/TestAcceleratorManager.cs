@@ -1,9 +1,4 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Shared.Memory;
 using FluentAssertions;
@@ -24,28 +19,28 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public TestAcceleratorManager()
     {
-        _accelerators = new List<IAccelerator>();
-        _providers = new List<IAcceleratorProvider>();
-        _contexts = new Dictionary<IAccelerator, AcceleratorContext>();
-        
+        _accelerators = [];
+        _providers = [];
+        _contexts = [];
+
         // Register default CPU provider
         RegisterProvider(new TestCpuAcceleratorProvider());
     }
 
-    public IAccelerator Default 
-    { 
-        get 
+    public IAccelerator Default
+    {
+        get
         {
-            if(!_initialized)
+            if (!_initialized)
             {
                 throw new InvalidOperationException("Accelerator manager not initialized. Call InitializeAsync first.");
             }
-            
-            if(_defaultAccelerator == null)
+
+            if (_defaultAccelerator == null)
             {
                 throw new InvalidOperationException("No default accelerator available.");
             }
-            
+
             return _defaultAccelerator;
         }
     }
@@ -56,7 +51,7 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public async ValueTask InitializeAsync(CancellationToken cancellationToken = default)
     {
-        if(_initialized)
+        if (_initialized)
         {
             return;
         }
@@ -69,7 +64,7 @@ public class TestAcceleratorManager : IAcceleratorManager
         }
 
         // If no accelerators found, create a default CPU accelerator
-        if(_accelerators.Count == 0)
+        if (_accelerators.Count == 0)
         {
             var cpuAccelerator = new TestCpuAccelerator("Default CPU Accelerator");
             _accelerators.Add(cpuAccelerator);
@@ -82,12 +77,12 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public IAccelerator GetAccelerator(int index)
     {
-        if(!_initialized)
+        if (!_initialized)
         {
             throw new InvalidOperationException("Accelerator manager not initialized.");
         }
 
-        if(index < 0 || index >= _accelerators.Count)
+        if (index < 0 || index >= _accelerators.Count)
         {
             throw new ArgumentOutOfRangeException(nameof(index));
         }
@@ -97,7 +92,7 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public IAccelerator? GetAcceleratorById(string id)
     {
-        if(!_initialized)
+        if (!_initialized)
         {
             throw new InvalidOperationException("Accelerator manager not initialized.");
         }
@@ -107,7 +102,7 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public IEnumerable<IAccelerator> GetAcceleratorsByType(AcceleratorType type)
     {
-        if(!_initialized)
+        if (!_initialized)
         {
             throw new InvalidOperationException("Accelerator manager not initialized.");
         }
@@ -117,7 +112,7 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public IAccelerator? SelectBest(AcceleratorSelectionCriteria criteria)
     {
-        if(!_initialized)
+        if (!_initialized)
         {
             throw new InvalidOperationException("Accelerator manager not initialized.");
         }
@@ -125,28 +120,28 @@ public class TestAcceleratorManager : IAcceleratorManager
         var candidates = _accelerators.AsEnumerable();
 
         // Filter by minimum memory
-        if(criteria.MinimumMemory.HasValue)
+        if (criteria.MinimumMemory.HasValue)
         {
             candidates = candidates.Where(a => a.Info.TotalMemory >= criteria.MinimumMemory.Value);
         }
 
         // Filter by preferred type
-        if(criteria.PreferredType.HasValue)
+        if (criteria.PreferredType.HasValue)
         {
             var preferredTypeStr = criteria.PreferredType.Value.ToString();
             candidates = candidates.Where(a => a.Info.DeviceType == preferredTypeStr);
         }
 
         // Filter by compute capability
-        if(criteria.MinimumComputeCapability != null)
+        if (criteria.MinimumComputeCapability != null)
         {
-            candidates = candidates.Where(a => 
-                a.Info.ComputeCapability != null && 
+            candidates = candidates.Where(a =>
+                a.Info.ComputeCapability != null &&
                 a.Info.ComputeCapability >= criteria.MinimumComputeCapability);
         }
 
         // Apply custom scorer if provided
-        if(criteria.CustomScorer != null)
+        if (criteria.CustomScorer != null)
         {
             return candidates.OrderByDescending(criteria.CustomScorer).FirstOrDefault();
         }
@@ -160,17 +155,17 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public AcceleratorContext CreateContext(IAccelerator accelerator)
     {
-        if(!_initialized)
+        if (!_initialized)
         {
             throw new InvalidOperationException("Accelerator manager not initialized.");
         }
 
-        if(!_accelerators.Contains(accelerator))
+        if (!_accelerators.Contains(accelerator))
         {
             throw new ArgumentException("Accelerator not managed by this manager.", nameof(accelerator));
         }
 
-        if(!_contexts.TryGetValue(accelerator, out var context))
+        if (!_contexts.TryGetValue(accelerator, out var context))
         {
             // Create a context with a fake handle and device ID
             context = new AcceleratorContext(new IntPtr(accelerator.GetHashCode()), 0);
@@ -182,12 +177,12 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public void RegisterProvider(IAcceleratorProvider provider)
     {
-        if(provider == null)
+        if (provider == null)
         {
             throw new ArgumentNullException(nameof(provider));
         }
 
-        if(_initialized)
+        if (_initialized)
         {
             throw new InvalidOperationException("Cannot register providers after initialization.");
         }
@@ -200,11 +195,7 @@ public class TestAcceleratorManager : IAcceleratorManager
         // Clear existing accelerators
         foreach (var accelerator in _accelerators)
         {
-            if(_contexts.ContainsKey(accelerator))
-            {
-                // AcceleratorContext is a struct, no disposal needed
-                _contexts.Remove(accelerator);
-            }
+            _contexts.Remove(accelerator);
             await accelerator.DisposeAsync();
         }
         _accelerators.Clear();
@@ -217,7 +208,7 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
     {
-        if(!_initialized)
+        if (!_initialized)
         {
             throw new InvalidOperationException("Accelerator manager not initialized. Call InitializeAsync first.");
         }
@@ -226,7 +217,7 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
     {
-        if(!_initialized)
+        if (!_initialized)
         {
             throw new InvalidOperationException("Accelerator manager not initialized. Call InitializeAsync first.");
         }
@@ -236,26 +227,26 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? preferredType = null, CancellationToken cancellationToken = default)
     {
-        if(!_initialized)
+        if (!_initialized)
         {
             throw new InvalidOperationException("Accelerator manager not initialized. Call InitializeAsync first.");
         }
-        
+
         IAccelerator? best = null;
-        if(preferredType.HasValue)
+        if (preferredType.HasValue)
         {
             best = _accelerators.FirstOrDefault(a => a.Type == preferredType.Value);
         }
-        
+
         // Fallback to any accelerator if no preferred type match or no preferred type specified
         best ??= _accelerators.FirstOrDefault();
-        
+
         return Task.FromResult(best);
     }
 
     public async ValueTask DisposeAsync()
     {
-        if(_disposed)
+        if (_disposed)
         {
             return;
         }
@@ -285,19 +276,19 @@ public class TestCpuAcceleratorProvider : IAcceleratorProvider
 {
     public string Name => "Test CPU Provider";
 
-    public AcceleratorType[] SupportedTypes => new[] { AcceleratorType.CPU };
+    public AcceleratorType[] SupportedTypes => [AcceleratorType.CPU];
 
     public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
     {
         var accelerators = new List<IAccelerator>();
-        
+
         // Create CPU accelerators based on processor count
         var processorCount = Environment.ProcessorCount;
-        
+
         // Create one accelerator per physical processor(simplified)
         var acceleratorCount = Math.Max(1, processorCount / 4);
-        
-        for(int i = 0; i < acceleratorCount; i++)
+
+        for (var i = 0; i < acceleratorCount; i++)
         {
             var accelerator = new TestCpuAccelerator($"CPU Accelerator {i}");
             accelerators.Add(accelerator);
@@ -327,13 +318,13 @@ public class TestGpuAcceleratorProvider : IAcceleratorProvider
 
     public string Name => "Test GPU Provider";
 
-    public AcceleratorType[] SupportedTypes => new[] { AcceleratorType.CUDA, AcceleratorType.OpenCL };
+    public AcceleratorType[] SupportedTypes => [AcceleratorType.CUDA, AcceleratorType.OpenCL];
 
     public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
     {
         var accelerators = new List<IAccelerator>();
-        
-        for(int i = 0; i < _deviceCount; i++)
+
+        for (var i = 0; i < _deviceCount; i++)
         {
             // Create simulated GPU accelerator
             var accelerator = new TestGpuAccelerator($"GPU {i}", i);
@@ -365,7 +356,7 @@ public class TestGpuAccelerator : IAccelerator
     {
         _memoryManager = new TestMemoryManager();
         _compiledKernels = new ConcurrentDictionary<string, TestCompiledKernel>();
-        
+
         // Set GPU-specific details
         Info = new AcceleratorInfo
         {
@@ -399,34 +390,31 @@ public class TestGpuAccelerator : IAccelerator
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if(definition == null)
+        if (definition == null)
         {
             throw new ArgumentNullException(nameof(definition));
         }
 
         await Task.Delay(5, cancellationToken); // Simulate faster GPU compilation
-        
+
         var kernel = new TestCompiledKernel(
             definition.Name,
             definition.Code,
             options ?? new CompilationOptions());
-        
+
         _compiledKernels[definition.Name] = kernel;
         return kernel;
     }
 
-    public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        await Task.Yield(); // Simulate GPU synchronization
-    }
+    public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await Task.Yield(); // Simulate GPU synchronization
 
     public async ValueTask DisposeAsync()
     {
-        if(!_disposed)
+        if (!_disposed)
         {
             _disposed = true;
             await SynchronizeAsync();
-            if(_memoryManager is IDisposable disposable)
+            if (_memoryManager is IDisposable disposable)
             {
                 disposable.Dispose();
             }

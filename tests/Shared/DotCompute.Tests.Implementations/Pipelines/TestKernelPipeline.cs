@@ -1,11 +1,4 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
-using DotCompute.Core.Aot;
 using DotCompute.Core.Pipelines;
 using FluentAssertions;
 
@@ -27,8 +20,8 @@ public class TestKernelPipeline : IKernelPipeline
     {
         Id = $"pipeline_{name}_{Guid.NewGuid():N}";
         Name = name;
-        _stages = new List<IPipelineStage>();
-        _metadata = new Dictionary<string, object>();
+        _stages = [];
+        _metadata = [];
         _metrics = new TestPipelineMetrics(Id);
         OptimizationSettings = new PipelineOptimizationSettings();
     }
@@ -43,7 +36,7 @@ public class TestKernelPipeline : IKernelPipeline
         PipelineExecutionContext context,
         CancellationToken cancellationToken = default)
     {
-        if(_disposed)
+        if (_disposed)
         {
             throw new ObjectDisposedException(nameof(TestKernelPipeline));
         }
@@ -52,11 +45,11 @@ public class TestKernelPipeline : IKernelPipeline
         var errors = new List<Core.Pipelines.PipelineError>();
         var stageResults = new List<StageExecutionResult>();
         var outputs = new Dictionary<string, object>();
-        
+
         try
         {
             _metrics.RecordExecutionStart();
-            
+
             // Fire pipeline started event
             FireEvent(new PipelineEvent
             {
@@ -64,26 +57,26 @@ public class TestKernelPipeline : IKernelPipeline
                 Timestamp = DateTime.UtcNow,
                 Message = $"Pipeline '{Name}' started"
             });
-            
+
             // Execute stages in order(respecting dependencies)
             var executedStages = new HashSet<string>();
-            
-            while(executedStages.Count < _stages.Count)
+
+            while (executedStages.Count < _stages.Count)
             {
                 var stagesToExecute = _stages
-                    .Where(s => !executedStages.Contains(s.Id) && 
+                    .Where(s => !executedStages.Contains(s.Id) &&
                                s.Dependencies.All(d => executedStages.Contains(d)))
                     .ToList();
-                
-                if(stagesToExecute.Count == 0)
+
+                if (stagesToExecute.Count == 0)
                 {
                     // No stages can be executed - circular dependency or invalid configuration
                     throw new InvalidOperationException("Pipeline has circular dependencies or invalid stage configuration");
                 }
-                
+
                 // Execute stages that are ready
                 var tasks = new List<Task<StageExecutionResult>>();
-                
+
                 foreach (var stage in stagesToExecute)
                 {
                     FireEvent(new PipelineEvent
@@ -93,18 +86,18 @@ public class TestKernelPipeline : IKernelPipeline
                         StageId = stage.Id,
                         Message = $"Stage '{stage.Name}' started"
                     });
-                    
+
                     tasks.Add(ExecuteStageAsync(stage, context, cancellationToken));
                 }
-                
+
                 var results = await Task.WhenAll(tasks);
-                
+
                 foreach (var (stage, result) in stagesToExecute.Zip(results))
                 {
                     executedStages.Add(stage.Id);
                     stageResults.Add(result);
-                    
-                    if(result.Success)
+
+                    if (result.Success)
                     {
                         FireEvent(new PipelineEvent
                         {
@@ -113,9 +106,9 @@ public class TestKernelPipeline : IKernelPipeline
                             StageId = stage.Id,
                             Message = $"Stage '{stage.Name}' completed successfully"
                         });
-                        
+
                         // Merge outputs
-                        if(result.Outputs != null)
+                        if (result.Outputs != null)
                         {
                             foreach (var (key, value) in result.Outputs)
                             {
@@ -134,9 +127,9 @@ public class TestKernelPipeline : IKernelPipeline
                             Exception = result.Error,
                             Timestamp = DateTime.UtcNow
                         };
-                        
+
                         errors.Add(error);
-                        
+
                         FireEvent(new PipelineEvent
                         {
                             Type = PipelineEventType.Error,
@@ -144,32 +137,32 @@ public class TestKernelPipeline : IKernelPipeline
                             StageId = stage.Id,
                             Message = error.Message
                         });
-                        
-                        if(!context.Options.ContinueOnError)
+
+                        if (!context.Options.ContinueOnError)
                         {
                             break;
                         }
                     }
                 }
-                
-                if(errors.Count > 0 && !context.Options.ContinueOnError)
+
+                if (errors.Count > 0 && !context.Options.ContinueOnError)
                 {
                     break;
                 }
             }
-            
+
             stopwatch.Stop();
-            
+
             var success = errors.Count == 0;
             _metrics.RecordExecutionComplete(stopwatch.Elapsed, success);
-            
+
             FireEvent(new PipelineEvent
             {
                 Type = PipelineEventType.Completed,
                 Timestamp = DateTime.UtcNow,
                 Message = $"Pipeline '{Name}' completed {(success ? "successfully" : "with errors")}"
             });
-            
+
             return new PipelineExecutionResult
             {
                 Success = success,
@@ -198,11 +191,11 @@ public class TestKernelPipeline : IKernelPipeline
                 StageResults = stageResults
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             _metrics.RecordExecutionComplete(stopwatch.Elapsed, false);
-            
+
             var error = new Core.Pipelines.PipelineError
             {
                 Code = "PIPELINE_EXECUTION_FAILED",
@@ -211,16 +204,16 @@ public class TestKernelPipeline : IKernelPipeline
                 Exception = ex,
                 Timestamp = DateTime.UtcNow
             };
-            
+
             errors.Add(error);
-            
+
             FireEvent(new PipelineEvent
             {
                 Type = PipelineEventType.Error,
                 Timestamp = DateTime.UtcNow,
                 Message = $"Pipeline '{Name}' failed: {ex.Message}"
             });
-            
+
             return new PipelineExecutionResult
             {
                 Success = false,
@@ -259,18 +252,18 @@ public class TestKernelPipeline : IKernelPipeline
             var result = await stage.ExecuteAsync(context, cancellationToken);
             return result;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-            if(_errorHandler != null)
+            if (_errorHandler != null)
             {
                 var handlingResult = _errorHandler(ex, context);
-                
-                switch(handlingResult)
+
+                switch (handlingResult)
                 {
                     case ErrorHandlingResult.Retry:
                         // Retry once
                         return await stage.ExecuteAsync(context, cancellationToken);
-                        
+
                     case ErrorHandlingResult.Skip:
                         // Return success to skip
                         return new StageExecutionResult
@@ -280,10 +273,10 @@ public class TestKernelPipeline : IKernelPipeline
                             Duration = TimeSpan.Zero,
                             Outputs = new Dictionary<string, object>()
                         };
-                        
+
                     case ErrorHandlingResult.Abort:
                         throw;
-                        
+
                     case ErrorHandlingResult.Continue:
                     default:
                         // Return failure but continue
@@ -296,44 +289,41 @@ public class TestKernelPipeline : IKernelPipeline
                         };
                 }
             }
-            
+
             throw;
         }
     }
 
-    private long CalculateTotalMemoryUsage(IReadOnlyList<StageExecutionResult> stageResults)
+    private static long CalculateTotalMemoryUsage(IReadOnlyList<StageExecutionResult> stageResults)
     {
         return stageResults
             .Where(r => r.MemoryUsage != null)
             .Sum(r => r.MemoryUsage!.AllocatedBytes);
     }
 
-    private double CalculateThroughput(IReadOnlyList<StageExecutionResult> stageResults, TimeSpan totalDuration)
+    private static double CalculateThroughput(IReadOnlyList<StageExecutionResult> stageResults, TimeSpan totalDuration)
     {
-        if(totalDuration.TotalSeconds == 0)
+        if (totalDuration.TotalSeconds == 0)
             return 0;
-        
+
         var totalBytes = CalculateTotalMemoryUsage(stageResults);
-        var totalMB = totalBytes /(1024.0 * 1024.0);
-        
+        var totalMB = totalBytes / (1024.0 * 1024.0);
+
         return totalMB / totalDuration.TotalSeconds;
     }
 
-    private void FireEvent(PipelineEvent evt)
-    {
-        _eventHandler?.Invoke(evt);
-    }
+    private void FireEvent(PipelineEvent evt) => _eventHandler?.Invoke(evt);
 
     public PipelineValidationResult Validate()
     {
         var errors = new List<Core.Pipelines.ValidationError>();
         var warnings = new List<Core.Pipelines.ValidationWarning>();
-        
+
         // Validate stages
         foreach (var stage in _stages)
         {
             var validation = stage.Validate();
-            if(!validation.IsValid && validation.Errors != null)
+            if (!validation.IsValid && validation.Errors != null)
             {
                 errors.AddRange(validation.Errors.Select(e => new Core.Pipelines.ValidationError
                 {
@@ -342,8 +332,8 @@ public class TestKernelPipeline : IKernelPipeline
                     Path = $"stage.{stage.Id}"
                 }));
             }
-            
-            if(validation.Warnings != null)
+
+            if (validation.Warnings != null)
             {
                 warnings.AddRange(validation.Warnings.Select(w => new Core.Pipelines.ValidationWarning
                 {
@@ -353,9 +343,9 @@ public class TestKernelPipeline : IKernelPipeline
                 }));
             }
         }
-        
+
         // Check for circular dependencies
-        if(HasCircularDependencies())
+        if (HasCircularDependencies())
         {
             errors.Add(new Core.Pipelines.ValidationError
             {
@@ -364,14 +354,14 @@ public class TestKernelPipeline : IKernelPipeline
                 Path = "pipeline.dependencies"
             });
         }
-        
+
         // Check for orphaned dependencies
         var stageIds = new HashSet<string>(_stages.Select(s => s.Id));
         foreach (var stage in _stages)
         {
             foreach (var dep in stage.Dependencies)
             {
-                if(!stageIds.Contains(dep))
+                if (!stageIds.Contains(dep))
                 {
                     errors.Add(new Core.Pipelines.ValidationError
                     {
@@ -382,7 +372,7 @@ public class TestKernelPipeline : IKernelPipeline
                 }
             }
         }
-        
+
         return new PipelineValidationResult
         {
             IsValid = errors.Count == 0,
@@ -395,15 +385,15 @@ public class TestKernelPipeline : IKernelPipeline
     {
         var visited = new HashSet<string>();
         var recursionStack = new HashSet<string>();
-        
+
         foreach (var stage in _stages)
         {
-            if(HasCircularDependencyDFS(stage.Id, visited, recursionStack))
+            if (HasCircularDependencyDFS(stage.Id, visited, recursionStack))
             {
                 return true;
             }
         }
-        
+
         return false;
     }
 
@@ -411,26 +401,26 @@ public class TestKernelPipeline : IKernelPipeline
     {
         visited.Add(stageId);
         recursionStack.Add(stageId);
-        
+
         var stage = _stages.FirstOrDefault(s => s.Id == stageId);
-        if(stage != null)
+        if (stage != null)
         {
             foreach (var dep in stage.Dependencies)
             {
-                if(!visited.Contains(dep))
+                if (!visited.Contains(dep))
                 {
-                    if(HasCircularDependencyDFS(dep, visited, recursionStack))
+                    if (HasCircularDependencyDFS(dep, visited, recursionStack))
                     {
                         return true;
                     }
                 }
-                else if(recursionStack.Contains(dep))
+                else if (recursionStack.Contains(dep))
                 {
                     return true;
                 }
             }
         }
-        
+
         recursionStack.Remove(stageId);
         return false;
     }
@@ -443,46 +433,34 @@ public class TestKernelPipeline : IKernelPipeline
         return optimized.Pipeline;
     }
 
-    internal void AddStage(IPipelineStage stage)
-    {
-        _stages.Add(stage);
-    }
+    internal void AddStage(IPipelineStage stage) => _stages.Add(stage);
 
-    internal void AddMetadata(string key, object value)
-    {
-        _metadata[key] = value;
-    }
+    internal void AddMetadata(string key, object value) => _metadata[key] = value;
 
-    internal void SetErrorHandler(Func<Exception, PipelineExecutionContext, ErrorHandlingResult> handler)
-    {
-        _errorHandler = handler;
-    }
+    internal void SetErrorHandler(Func<Exception, PipelineExecutionContext, ErrorHandlingResult> handler) => _errorHandler = handler;
 
-    internal void SetEventHandler(Action<PipelineEvent> handler)
-    {
-        _eventHandler = handler;
-    }
+    internal void SetEventHandler(Action<PipelineEvent> handler) => _eventHandler = handler;
 
     public async ValueTask DisposeAsync()
     {
-        if(_disposed)
+        if (_disposed)
             return;
-        
+
         _disposed = true;
-        
+
         // Dispose any disposable stages
         foreach (var stage in _stages)
         {
-            if(stage is IAsyncDisposable asyncDisposable)
+            if (stage is IAsyncDisposable asyncDisposable)
             {
                 await asyncDisposable.DisposeAsync();
             }
-            else if(stage is IDisposable disposable)
+            else if (stage is IDisposable disposable)
             {
                 disposable.Dispose();
             }
         }
-        
+
         _stages.Clear();
     }
 }

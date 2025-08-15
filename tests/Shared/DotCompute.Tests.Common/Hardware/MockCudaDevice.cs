@@ -1,11 +1,9 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Common.Hardware;
 
@@ -63,7 +61,7 @@ public sealed class MockCudaDevice : MockHardwareDevice
         int baseClock,
         int boostClock,
         ILogger? logger = null)
-        : base(id, name, AcceleratorType.CUDA, "NVIDIA", "12.3", totalMemory, 
+        : base(id, name, AcceleratorType.CUDA, "NVIDIA", "12.3", totalMemory,
                Math.Min(1024, cudaCores / streamingMultiprocessors), streamingMultiprocessors, logger)
     {
         ComputeCapability = computeCapability;
@@ -196,7 +194,7 @@ public sealed class MockCudaDevice : MockHardwareDevice
             108, // SMs
             6912, // CUDA cores
             1555.0, // GB/s
-            5120, // bit bus(HBM2e)
+            5120, // bit bus (HBM2e)
             765, // Base MHz
             1410, // Boost MHz
             logger);
@@ -215,7 +213,7 @@ public sealed class MockCudaDevice : MockHardwareDevice
             80, // SMs
             5120, // CUDA cores
             900.0, // GB/s
-            4096, // bit bus(HBM2)
+            4096, // bit bus (HBM2)
             1245, // Base MHz
             1530, // Boost MHz
             logger);
@@ -234,7 +232,7 @@ public sealed class MockCudaDevice : MockHardwareDevice
             132, // SMs
             16896, // CUDA cores
             3350.0, // GB/s
-            5120, // bit bus(HBM3)
+            5120, // bit bus (HBM3)
             1095, // Base MHz
             1980, // Boost MHz
             logger);
@@ -263,7 +261,7 @@ public sealed class MockCudaDevice : MockHardwareDevice
     public override Dictionary<string, object> GetProperties()
     {
         var properties = base.GetProperties();
-        
+
         // Add CUDA-specific properties
         properties["CUDA_ComputeCapability"] = ComputeCapability.ToString();
         properties["CUDA_StreamingMultiprocessors"] = StreamingMultiprocessors;
@@ -282,18 +280,18 @@ public sealed class MockCudaDevice : MockHardwareDevice
     /// <inheritdoc/>
     public override bool HealthCheck()
     {
-        if(!base.HealthCheck())
+        if (!base.HealthCheck())
             return false;
 
         // CUDA-specific health checks
-        if(ComputeCapability.Major < 3)
+        if (ComputeCapability.Major < 3)
         {
-            Logger?.LogWarning("CUDA device {DeviceId} has unsupported compute capability {ComputeCapability}", 
+            Logger?.LogWarning("CUDA device {DeviceId} has unsupported compute capability {ComputeCapability}",
                 Id, ComputeCapability);
             return false;
         }
 
-        if(StreamingMultiprocessors == 0 || CudaCores == 0)
+        if (StreamingMultiprocessors == 0 || CudaCores == 0)
         {
             Logger?.LogWarning("CUDA device {DeviceId} has invalid core configuration", Id);
             return false;
@@ -310,7 +308,7 @@ public sealed class MockCudaDevice : MockHardwareDevice
             5 => "Maxwell",
             6 => "Pascal",
             7 => computeCapability.Minor == 0 ? "Volta" : "Turing",
-            8 => computeCapability.Minor == 0 ? "Ampere" : 
+            8 => computeCapability.Minor == 0 ? "Ampere" :
                  computeCapability.Minor == 6 ? "Ampere" : "Ada Lovelace",
             9 => "Hopper",
             _ => "Unknown"

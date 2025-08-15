@@ -1,13 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Core.Aot;
 using DotCompute.Core.Pipelines;
-using DotCompute.Tests.Shared.Kernels;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.Pipelines;
 
@@ -30,10 +23,10 @@ public class TestKernelStage : IPipelineStage
         Id = $"kernel_{name}_{Guid.NewGuid():N}";
         Name = name;
         _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
-        _metadata = new Dictionary<string, object>();
-        _inputMappings = new Dictionary<string, string>();
-        _outputMappings = new Dictionary<string, string>();
-        _constantParameters = new Dictionary<string, object>();
+        _metadata = [];
+        _inputMappings = [];
+        _outputMappings = [];
+        _constantParameters = [];
         _metrics = new TestStageMetrics(Name);
         Dependencies = Array.Empty<string>();
         Type = PipelineStageType.Kernel;
@@ -57,23 +50,23 @@ public class TestKernelStage : IPipelineStage
     {
         var stopwatch = Stopwatch.StartNew();
         var startMemory = GC.GetTotalMemory(false);
-        
+
         try
         {
             _metrics.RecordExecutionStart();
-            
+
             // Prepare kernel arguments from context
             var arguments = PrepareArguments(context);
-            
+
             // Execute kernel
             await _kernel.ExecuteAsync(arguments, cancellationToken);
-            
+
             // Store outputs back to context
             var outputs = StoreOutputs(context);
-            
+
             stopwatch.Stop();
             var endMemory = GC.GetTotalMemory(false);
-            
+
             var memoryUsage = new MemoryUsageStats
             {
                 AllocatedBytes = Math.Max(0, endMemory - startMemory),
@@ -81,9 +74,9 @@ public class TestKernelStage : IPipelineStage
                 AllocationCount = 1,
                 DeallocationCount = 0
             };
-            
+
             _metrics.RecordExecutionSuccess(stopwatch.Elapsed, endMemory - startMemory);
-            
+
             return new StageExecutionResult
             {
                 StageId = Id,
@@ -99,11 +92,11 @@ public class TestKernelStage : IPipelineStage
                 }
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             _metrics.RecordExecutionError(stopwatch.Elapsed);
-            
+
             return new StageExecutionResult
             {
                 StageId = Id,
@@ -117,11 +110,11 @@ public class TestKernelStage : IPipelineStage
     private KernelArguments PrepareArguments(PipelineExecutionContext context)
     {
         var args = new List<object>();
-        
+
         // Add mapped inputs
         foreach (var (paramName, contextKey) in _inputMappings)
         {
-            if(context.State.TryGetValue(contextKey, out var value) ||
+            if (context.State.TryGetValue(contextKey, out var value) ||
                 context.Inputs.TryGetValue(contextKey, out value))
             {
                 args.Add(value);
@@ -131,20 +124,20 @@ public class TestKernelStage : IPipelineStage
                 throw new InvalidOperationException($"Input '{contextKey}' not found in context for parameter '{paramName}'");
             }
         }
-        
+
         // Add constant parameters
         foreach (var (_, value) in _constantParameters)
         {
             args.Add(value);
         }
-        
+
         return new KernelArguments(args.ToArray());
     }
 
     private Dictionary<string, object> StoreOutputs(PipelineExecutionContext context)
     {
         var outputs = new Dictionary<string, object>();
-        
+
         // Store outputs to context state
         foreach (var (paramName, contextKey) in _outputMappings)
         {
@@ -153,7 +146,7 @@ public class TestKernelStage : IPipelineStage
             context.State[contextKey] = outputValue;
             outputs[contextKey] = outputValue;
         }
-        
+
         return outputs;
     }
 
@@ -161,27 +154,27 @@ public class TestKernelStage : IPipelineStage
     {
         var errors = new List<string>();
         var warnings = new List<string>();
-        
-        if(_kernel == null)
+
+        if (_kernel == null)
         {
             errors.Add("Kernel is not set");
         }
-        
-        if(string.IsNullOrEmpty(Name))
+
+        if (string.IsNullOrEmpty(Name))
         {
             errors.Add("Stage name is required");
         }
-        
-        if(_inputMappings.Count == 0 && _constantParameters.Count == 0)
+
+        if (_inputMappings.Count == 0 && _constantParameters.Count == 0)
         {
             warnings.Add("No input parameters configured");
         }
-        
-        if(_outputMappings.Count == 0)
+
+        if (_outputMappings.Count == 0)
         {
             warnings.Add("No output mappings configured");
         }
-        
+
         return new StageValidationResult
         {
             IsValid = errors.Count == 0,
@@ -192,40 +185,19 @@ public class TestKernelStage : IPipelineStage
 
     public IStageMetrics GetMetrics() => _metrics;
 
-    internal void SetDependencies(string[] dependencies)
-    {
-        Dependencies = dependencies;
-    }
+    internal void SetDependencies(string[] dependencies) => Dependencies = dependencies;
 
-    internal void SetConfiguration(KernelConfiguration configuration)
-    {
-        _configuration = configuration;
-    }
+    internal void SetConfiguration(KernelConfiguration configuration) => _configuration = configuration;
 
-    internal void AddInputMapping(string parameterName, string contextKey)
-    {
-        _inputMappings[parameterName] = contextKey;
-    }
+    internal void AddInputMapping(string parameterName, string contextKey) => _inputMappings[parameterName] = contextKey;
 
-    internal void AddOutputMapping(string parameterName, string contextKey)
-    {
-        _outputMappings[parameterName] = contextKey;
-    }
+    internal void AddOutputMapping(string parameterName, string contextKey) => _outputMappings[parameterName] = contextKey;
 
-    internal void SetParameter<T>(string parameterName, T value)
-    {
-        _constantParameters[parameterName] = value!;
-    }
+    internal void SetParameter<T>(string parameterName, T value) => _constantParameters[parameterName] = value!;
 
-    internal void AddMetadata(string key, object value)
-    {
-        _metadata[key] = value;
-    }
+    internal void AddMetadata(string key, object value) => _metadata[key] = value;
 
-    internal void SetPriority(int priority)
-    {
-        _priority = priority;
-    }
+    internal void SetPriority(int priority) => _priority = priority;
 }
 
 /// <summary>
@@ -241,14 +213,12 @@ public class TestKernelStageBuilder : IKernelStageBuilder
     public TestKernelStageBuilder(TestKernelStage stage)
     {
         _stage = stage;
-        _dependencies = new List<string>();
+        _dependencies = [];
     }
 
     public IKernelStageBuilder WithName(string name)
-    {
         // Name is set in constructor
-        return this;
-    }
+        => this;
 
     public IKernelStageBuilder WithWorkSize(params long[] globalWorkSize)
     {
@@ -309,18 +279,18 @@ public class TestKernelStageBuilder : IKernelStageBuilder
 
     private void UpdateConfiguration()
     {
-        if(_globalWorkSize != null)
+        if (_globalWorkSize != null)
         {
             var gridDim = new Dim3(
-                _globalWorkSize.Length > 0 ?(int)_globalWorkSize[0] : 1,
-                _globalWorkSize.Length > 1 ?(int)_globalWorkSize[1] : 1,
-                _globalWorkSize.Length > 2 ?(int)_globalWorkSize[2] : 1);
-            
+                _globalWorkSize.Length > 0 ? (int)_globalWorkSize[0] : 1,
+                _globalWorkSize.Length > 1 ? (int)_globalWorkSize[1] : 1,
+                _globalWorkSize.Length > 2 ? (int)_globalWorkSize[2] : 1);
+
             var blockDim = new Dim3(
-                _localWorkSize?.Length > 0 ?(int)_localWorkSize[0] : 1,
-                _localWorkSize?.Length > 1 ?(int)_localWorkSize[1] : 1,
-                _localWorkSize?.Length > 2 ?(int)_localWorkSize[2] : 1);
-            
+                _localWorkSize?.Length > 0 ? (int)_localWorkSize[0] : 1,
+                _localWorkSize?.Length > 1 ? (int)_localWorkSize[1] : 1,
+                _localWorkSize?.Length > 2 ? (int)_localWorkSize[2] : 1);
+
             _stage.SetConfiguration(new KernelConfiguration(gridDim, blockDim));
         }
     }
@@ -332,7 +302,7 @@ public class TestKernelStageBuilder : IKernelStageBuilder
 public class TestStageMetrics : IStageMetrics
 {
     private readonly string _stageName;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private long _executionCount;
     private long _errorCount;
     private TimeSpan _totalExecutionTime;
@@ -344,34 +314,34 @@ public class TestStageMetrics : IStageMetrics
     public TestStageMetrics(string stageName)
     {
         _stageName = stageName;
-        _customMetrics = new Dictionary<string, double>();
+        _customMetrics = [];
     }
 
     public long ExecutionCount => _executionCount;
-    
-    public TimeSpan AverageExecutionTime => 
-        _executionCount > 0 ? TimeSpan.FromMilliseconds(_totalExecutionTime.TotalMilliseconds / _executionCount) : TimeSpan.Zero;
-    
-    public TimeSpan MinExecutionTime => 
-        _minExecutionTime == TimeSpan.MaxValue ? TimeSpan.Zero : _minExecutionTime;
-    
+
+    public TimeSpan AverageExecutionTime
+        => _executionCount > 0 ? TimeSpan.FromMilliseconds(_totalExecutionTime.TotalMilliseconds / _executionCount) : TimeSpan.Zero;
+
+    public TimeSpan MinExecutionTime
+        => _minExecutionTime == TimeSpan.MaxValue ? TimeSpan.Zero : _minExecutionTime;
+
     public TimeSpan MaxExecutionTime => _maxExecutionTime;
-    
+
     public TimeSpan TotalExecutionTime => _totalExecutionTime;
-    
+
     public long ErrorCount => _errorCount;
-    
-    public double SuccessRate => 
-        _executionCount > 0 ?(double)(_executionCount - _errorCount) / _executionCount * 100 : 0;
-    
-    public long AverageMemoryUsage => 
-        _executionCount > 0 ? _totalMemoryUsage / _executionCount : 0;
-    
+
+    public double SuccessRate
+        => _executionCount > 0 ? (double)(_executionCount - _errorCount) / _executionCount * 100 : 0;
+
+    public long AverageMemoryUsage
+        => _executionCount > 0 ? _totalMemoryUsage / _executionCount : 0;
+
     public IReadOnlyDictionary<string, double> CustomMetrics => _customMetrics;
 
     public void RecordExecutionStart()
     {
-        lock(_lock)
+        lock (_lock)
         {
             _executionCount++;
         }
@@ -379,22 +349,22 @@ public class TestStageMetrics : IStageMetrics
 
     public void RecordExecutionSuccess(TimeSpan duration, long memoryUsed)
     {
-        lock(_lock)
+        lock (_lock)
         {
             _totalExecutionTime = _totalExecutionTime.Add(duration);
             _totalMemoryUsage += memoryUsed;
-            
-            if(duration < _minExecutionTime)
+
+            if (duration < _minExecutionTime)
                 _minExecutionTime = duration;
-            
-            if(duration > _maxExecutionTime)
+
+            if (duration > _maxExecutionTime)
                 _maxExecutionTime = duration;
         }
     }
 
     public void RecordExecutionError(TimeSpan duration)
     {
-        lock(_lock)
+        lock (_lock)
         {
             _errorCount++;
             _totalExecutionTime = _totalExecutionTime.Add(duration);
@@ -403,7 +373,7 @@ public class TestStageMetrics : IStageMetrics
 
     public void RecordCustomMetric(string name, double value)
     {
-        lock(_lock)
+        lock (_lock)
         {
             _customMetrics[name] = value;
         }

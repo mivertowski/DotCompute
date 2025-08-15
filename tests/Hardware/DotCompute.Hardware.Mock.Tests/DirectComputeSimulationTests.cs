@@ -1,10 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
@@ -34,7 +30,7 @@ public class DirectComputeSimulationTests
         const int S_OK = 0;
         const int DXGI_ERROR_NOT_FOUND = unchecked((int)0x887A0002);
         const int D3D11_SDK_VERSION = 7;
-        
+
         Assert.Equal(0, S_OK);
         Assert.NotEqual(0, DXGI_ERROR_NOT_FOUND);
         Assert.Equal(7, D3D11_SDK_VERSION);
@@ -59,10 +55,10 @@ public class DirectComputeSimulationTests
         foreach (var level in featureLevels)
         {
             var capabilities = SimulateFeatureLevelCapabilities(level.Level);
-            
+
             Assert.Equal(level.SupportsCompute, capabilities.ComputeShaders);
-            
-            if(level.Level >= 0xB000)
+
+            if (level.Level >= 0xB000)
             {
                 capabilities.UnorderedAccessViews.Should().BeTrue();
                 capabilities.StructuredBuffers.Should().BeTrue();
@@ -72,14 +68,14 @@ public class DirectComputeSimulationTests
         }
     }
 
-    private static(bool ComputeShaders, bool UnorderedAccessViews, bool StructuredBuffers) 
+    private static (bool ComputeShaders, bool UnorderedAccessViews, bool StructuredBuffers)
         SimulateFeatureLevelCapabilities(int featureLevel)
     {
         var computeShaders = featureLevel >= 0xB000; // D3D_FEATURE_LEVEL_11_0
         var uav = featureLevel >= 0xB000;
         var structuredBuffers = featureLevel >= 0xB000;
-        
-        return(computeShaders, uav, structuredBuffers);
+
+        return (computeShaders, uav, structuredBuffers);
     }
 
     [Fact]
@@ -89,24 +85,24 @@ public class DirectComputeSimulationTests
         // Simulate common DirectX adapters
         var expectedAdapters = new[]
         {
-            new 
-            { 
+            new
+            {
                 Description = "NVIDIA GeForce RTX 2000 Ada Generation",
                 VendorId = 0x10DE, // NVIDIA
                 DeviceId = 0x2786,
                 DedicatedVideoMemory = 8UL * 1024 * 1024 * 1024, // 8GB
                 SupportsDirectCompute = true
             },
-            new 
-            { 
+            new
+            {
                 Description = "AMD Radeon RX 7900 XTX",
                 VendorId = 0x1002, // AMD
                 DeviceId = 0x744C,
                 DedicatedVideoMemory = 24UL * 1024 * 1024 * 1024, // 24GB
                 SupportsDirectCompute = true
             },
-            new 
-            { 
+            new
+            {
                 Description = "Intel(R) UHD Graphics 770",
                 VendorId = 0x8086, // Intel
                 DeviceId = 0x4680,
@@ -118,24 +114,24 @@ public class DirectComputeSimulationTests
         foreach (var adapter in expectedAdapters)
         {
             var capabilities = SimulateAdapterCapabilities((uint)adapter.VendorId, adapter.DedicatedVideoMemory);
-            
-            Assert.Equal(adapter.SupportsDirectCompute, capabilities.DirectCompute);
-            capabilities.MaxThreadGroupSize .Should().BeGreaterThanOrEqualTo(1024, "Should support reasonable thread group sizes");
-            capabilities.MaxThreadGroupsPerDimension .Should().BeGreaterThanOrEqualTo(65535, "Should support large grid sizes");
 
-            var memoryGB = adapter.DedicatedVideoMemory /(1024.0 * 1024.0 * 1024.0);
+            Assert.Equal(adapter.SupportsDirectCompute, capabilities.DirectCompute);
+            capabilities.MaxThreadGroupSize.Should().BeGreaterThanOrEqualTo(1024, "Should support reasonable thread group sizes");
+            capabilities.MaxThreadGroupsPerDimension.Should().BeGreaterThanOrEqualTo(65535, "Should support large grid sizes");
+
+            var memoryGB = adapter.DedicatedVideoMemory / (1024.0 * 1024.0 * 1024.0);
             _output.WriteLine($"Adapter: {adapter.Description}");
             _output.WriteLine($"  Memory: {memoryGB:F1} GB, Compute: {capabilities.DirectCompute}");
             _output.WriteLine($"  Max Thread Group: {capabilities.MaxThreadGroupSize}, Max Groups: {capabilities.MaxThreadGroupsPerDimension}");
         }
     }
 
-    private static(bool DirectCompute, int MaxThreadGroupSize, int MaxThreadGroupsPerDimension, int MaxUAVSlots) 
+    private static (bool DirectCompute, int MaxThreadGroupSize, int MaxThreadGroupsPerDimension, int MaxUAVSlots)
         SimulateAdapterCapabilities(uint vendorId, ulong videoMemory)
     {
         // All modern adapters support DirectCompute
         var directCompute = true;
-        
+
         // Standard D3D11 limits
         var maxThreadGroupSize = 1024;
         var maxThreadGroupsPerDimension = 65535;
@@ -147,7 +143,7 @@ public class DirectComputeSimulationTests
             _ => 8
         };
 
-        return(directCompute, maxThreadGroupSize, maxThreadGroupsPerDimension, maxUAVSlots);
+        return (directCompute, maxThreadGroupSize, maxThreadGroupsPerDimension, maxUAVSlots);
     }
 
     [Fact]
@@ -157,7 +153,7 @@ public class DirectComputeSimulationTests
         // Simulate HLSL compute shader compilation
         var shaderSources = new[]
         {
-            new 
+            new
             {
                 Name = "VectorAdd",
                 Source = @"
@@ -172,7 +168,7 @@ public class DirectComputeSimulationTests
                     }",
                 IsValid = true
             },
-            new 
+            new
             {
                 Name = "MatrixMultiply",
                 Source = @"
@@ -193,7 +189,7 @@ public class DirectComputeSimulationTests
                     }",
                 IsValid = true
             },
-            new 
+            new
             {
                 Name = "InvalidSyntax",
                 Source = @"
@@ -210,10 +206,10 @@ public class DirectComputeSimulationTests
         foreach (var shader in shaderSources)
         {
             var compilationResult = await SimulateShaderCompilation(shader.Source);
-            
+
             Assert.Equal(shader.IsValid, compilationResult.Success);
-            
-            if(compilationResult.Success)
+
+            if (compilationResult.Success)
             {
                 compilationResult.BytecodeSize.Should().BeGreaterThan(0, "Valid shader should produce bytecode");
                 _output.WriteLine($"Shader '{shader.Name}' compiled successfully - Bytecode: {compilationResult.BytecodeSize} bytes");
@@ -235,20 +231,23 @@ public class DirectComputeSimulationTests
         var hasMainFunction = hlslSource.Contains("void CSMain") || hlslSource.Contains("void main");
         var hasValidSyntax = !hlslSource.Contains("invalidFunction");
 
-        if(hasNumThreads && hasMainFunction && hasValidSyntax)
+        if (hasNumThreads && hasMainFunction && hasValidSyntax)
         {
             // Simulate successful compilation
             var bytecodeSize = hlslSource.Length / 2; // Rough estimate
-            return(true, string.Empty, bytecodeSize);
+            return (true, string.Empty, bytecodeSize);
         }
         else
         {
             var error = "Compilation error: ";
-            if(!hasNumThreads) error += "Missing [numthreads] attribute. ";
-            if(!hasMainFunction) error += "Missing main function. ";
-            if(!hasValidSyntax) error += "Invalid function call. ";
-            
-            return(false, error.Trim(), 0);
+            if (!hasNumThreads)
+                error += "Missing [numthreads] attribute. ";
+            if (!hasMainFunction)
+                error += "Missing main function. ";
+            if (!hasValidSyntax)
+                error += "Invalid function call. ";
+
+            return (false, error.Trim(), 0);
         }
     }
 
@@ -272,9 +271,9 @@ public class DirectComputeSimulationTests
             var totalThreads = config.GroupsX * config.GroupsY * config.GroupsZ * threadsPerGroup;
 
             (totalThreads >= scenario.Elements).Should().BeTrue();
-            config.GroupsX .Should().BeLessThanOrEqualTo(65535, "Group count should be within D3D11 limits");
-            config.GroupsY .Should().BeLessThanOrEqualTo(65535, "Group count should be within D3D11 limits");
-            config.GroupsZ .Should().BeLessThanOrEqualTo(65535, "Group count should be within D3D11 limits");
+            config.GroupsX.Should().BeLessThanOrEqualTo(65535, "Group count should be within D3D11 limits");
+            config.GroupsY.Should().BeLessThanOrEqualTo(65535, "Group count should be within D3D11 limits");
+            config.GroupsZ.Should().BeLessThanOrEqualTo(65535, "Group count should be within D3D11 limits");
 
             _output.WriteLine($"{scenario.Name}{scenario.Elements} elements):");
             _output.WriteLine($"  Dispatch:{config.GroupsX}, {config.GroupsY}, {config.GroupsZ})");
@@ -282,29 +281,29 @@ public class DirectComputeSimulationTests
         }
     }
 
-    private static(int GroupsX, int GroupsY, int GroupsZ) SimulateOptimalDispatch(int elements, int threadsPerGroup)
+    private static (int GroupsX, int GroupsY, int GroupsZ) SimulateOptimalDispatch(int elements, int threadsPerGroup)
     {
-        var totalGroups =(elements + threadsPerGroup - 1) / threadsPerGroup;
+        var totalGroups = (elements + threadsPerGroup - 1) / threadsPerGroup;
 
         // Try to distribute groups efficiently
-        if(totalGroups <= 65535)
+        if (totalGroups <= 65535)
         {
-            return(totalGroups, 1, 1);
+            return (totalGroups, 1, 1);
         }
-        else if((long)totalGroups <= 65535L * 65535L)
+        else if ((long)totalGroups <= 65535L * 65535L)
         {
-            var groupsY =(totalGroups + 65534) / 65535;
-            var groupsX =(totalGroups + groupsY - 1) / groupsY;
-            return(groupsX, groupsY, 1);
+            var groupsY = (totalGroups + 65534) / 65535;
+            var groupsX = (totalGroups + groupsY - 1) / groupsY;
+            return (groupsX, groupsY, 1);
         }
         else
         {
             // Need 3D dispatch
             var groupsZ = (int)((totalGroups + 65535L * 65535L - 1) / (65535L * 65535L));
-            var remaining =(totalGroups + groupsZ - 1) / groupsZ;
-            var groupsY =(remaining + 65534) / 65535;
-            var groupsX =(remaining + groupsY - 1) / groupsY;
-            return(groupsX, groupsY, groupsZ);
+            var remaining = (totalGroups + groupsZ - 1) / groupsZ;
+            var groupsY = (remaining + 65534) / 65535;
+            var groupsX = (remaining + groupsY - 1) / groupsY;
+            return (groupsX, groupsY, groupsZ);
         }
     }
 
@@ -326,10 +325,10 @@ public class DirectComputeSimulationTests
         foreach (var binding in resourceBindings)
         {
             var validation = SimulateResourceValidation(binding.Type, binding.Slot, binding.Access);
-            
+
             Assert.Equal(binding.IsValid, validation.IsValid);
-            
-            if(validation.IsValid)
+
+            if (validation.IsValid)
             {
                 Assert.NotEmpty(validation.RegisterType);
                 _output.WriteLine($"{binding.Type} at slot {binding.Slot} -> {validation.RegisterType}{binding.Slot}{binding.Access})");
@@ -342,22 +341,22 @@ public class DirectComputeSimulationTests
         }
     }
 
-    private static(bool IsValid, string RegisterType, string ErrorMessage) 
+    private static (bool IsValid, string RegisterType, string ErrorMessage)
         SimulateResourceValidation(string resourceType, int slot, string access)
     {
         const int MAX_UAV_SLOTS = 8;
         const int MAX_SRV_SLOTS = 128;
 
         var isUAV = resourceType.StartsWith("RW");
-        
-        if(isUAV && slot >= MAX_UAV_SLOTS)
+
+        if (isUAV && slot >= MAX_UAV_SLOTS)
         {
-            return(false, string.Empty, $"UAV slot {slot} exceeds maximum of {MAX_UAV_SLOTS - 1}");
+            return (false, string.Empty, $"UAV slot {slot} exceeds maximum of {MAX_UAV_SLOTS - 1}");
         }
-        
-        if(!isUAV && slot >= MAX_SRV_SLOTS)
+
+        if (!isUAV && slot >= MAX_SRV_SLOTS)
         {
-            return(false, string.Empty, $"SRV slot {slot} exceeds maximum of {MAX_SRV_SLOTS - 1}");
+            return (false, string.Empty, $"SRV slot {slot} exceeds maximum of {MAX_SRV_SLOTS - 1}");
         }
 
         var registerType = resourceType switch
@@ -371,7 +370,7 @@ public class DirectComputeSimulationTests
             _ => "t"
         };
 
-        return(true, registerType, string.Empty);
+        return (true, registerType, string.Empty);
     }
 
     [Fact]
@@ -392,10 +391,10 @@ public class DirectComputeSimulationTests
         foreach (var platform in platforms)
         {
             var compatibility = SimulatePlatformCheck(platform.OS, platform.DirectXVersion);
-            
+
             Assert.Equal(platform.IsCompatible, compatibility.IsCompatible);
-            
-            if(compatibility.IsCompatible)
+
+            if (compatibility.IsCompatible)
             {
                 Assert.NotEmpty(compatibility.SupportedFeatures);
                 _output.WriteLine($"{platform.OS}DirectX {platform.DirectXVersion}): Compatible");
@@ -409,32 +408,32 @@ public class DirectComputeSimulationTests
         }
     }
 
-    private static(bool IsCompatible, string[] SupportedFeatures, string Reason) 
+    private static (bool IsCompatible, string[] SupportedFeatures, string Reason)
         SimulatePlatformCheck(string os, string directXVersion)
     {
-        if(!os.StartsWith("Windows"))
+        if (!os.StartsWith("Windows"))
         {
-            return(false, Array.Empty<string>(), "DirectCompute requires Windows operating system");
+            return (false, Array.Empty<string>(), "DirectCompute requires Windows operating system");
         }
 
-        if(directXVersion == "N/A")
+        if (directXVersion == "N/A")
         {
-            return(false, Array.Empty<string>(), "DirectX runtime not available");
+            return (false, Array.Empty<string>(), "DirectX runtime not available");
         }
 
         var features = new List<string> { "Compute Shaders", "Structured Buffers" };
-        
-        if(directXVersion.CompareTo("11.1") >= 0)
+
+        if (directXVersion.CompareTo("11.1") >= 0)
         {
             features.Add("Tiled Resources");
         }
-        
-        if(directXVersion.CompareTo("12.0") >= 0)
+
+        if (directXVersion.CompareTo("12.0") >= 0)
         {
             features.Add("Resource Binding Tier 2");
             features.Add("Conservative Rasterization");
         }
 
-        return(true, features.ToArray(), string.Empty);
+        return (true, features.ToArray(), string.Empty);
     }
 }

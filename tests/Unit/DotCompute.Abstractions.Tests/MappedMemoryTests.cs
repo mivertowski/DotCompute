@@ -1,8 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using DotCompute.Abstractions;
 using Moq;
 using Xunit;
 using FluentAssertions;
@@ -26,7 +24,7 @@ public class MappedMemoryTests
         // Use reflection to create MappedMemory since constructor is internal
         var constructor = typeof(MappedMemory<T>).GetConstructors(
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)[0];
-        return(MappedMemory<T>)constructor.Invoke(new object[] { buffer, memory, mode });
+        return (MappedMemory<T>)constructor.Invoke([buffer, memory, mode]);
     }
 
     #region Property Tests
@@ -235,7 +233,7 @@ public class MappedMemoryTests
         // Act & Assert
         mappedMemory.Equals(mappedMemory).Should().BeTrue();
         mappedMemory.Equals(mappedMemory).Should().BeTrue();
-       (!mappedMemory.Equals(null)).Should().BeTrue();
+        (!mappedMemory.Equals(null)).Should().BeTrue();
     }
 
     [Fact]
@@ -269,8 +267,8 @@ public class MappedMemoryTests
 
         // Act & Assert
         mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
-       (mappedMemory1 == mappedMemory2).Should().BeFalse();
-       (mappedMemory1 != mappedMemory2).Should().BeTrue();
+        (mappedMemory1 == mappedMemory2).Should().BeFalse();
+        (mappedMemory1 != mappedMemory2).Should().BeTrue();
     }
 
     [Fact]
@@ -283,8 +281,8 @@ public class MappedMemoryTests
 
         // Act & Assert
         mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
-       (mappedMemory1 == mappedMemory2).Should().BeFalse();
-       (mappedMemory1 != mappedMemory2).Should().BeTrue();
+        (mappedMemory1 == mappedMemory2).Should().BeFalse();
+        (mappedMemory1 != mappedMemory2).Should().BeTrue();
     }
 
     [Fact]
@@ -300,8 +298,8 @@ public class MappedMemoryTests
 
         // Act & Assert
         mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
-       (mappedMemory1 == mappedMemory2).Should().BeFalse();
-       (mappedMemory1 != mappedMemory2).Should().BeTrue();
+        (mappedMemory1 == mappedMemory2).Should().BeFalse();
+        (mappedMemory1 != mappedMemory2).Should().BeTrue();
     }
 
     [Fact]
@@ -413,9 +411,9 @@ public class MappedMemoryTests
         var doubleBuffer = new Mock<IBuffer<double>>();
         var byteBuffer = new Mock<IBuffer<byte>>();
 
-        var intMemory = new Memory<int>(new int[] { 1, 2, 3 });
-        var doubleMemory = new Memory<double>(new double[] { 1.0, 2.0, 3.0 });
-        var byteMemory = new Memory<byte>(new byte[] { 0x01, 0x02, 0x03 });
+        var intMemory = new Memory<int>([1, 2, 3]);
+        var doubleMemory = new Memory<double>([1.0, 2.0, 3.0]);
+        var byteMemory = new Memory<byte>([0x01, 0x02, 0x03]);
 
         // Act
         var intMappedMemory = CreateMappedMemory(intBuffer.Object, intMemory, MapMode.ReadWrite);
@@ -425,10 +423,10 @@ public class MappedMemoryTests
         // Assert
         intMappedMemory.Memory.Length.Should().Be(3);
         intMappedMemory.Mode.Should().Be(MapMode.ReadWrite);
-        
+
         doubleMappedMemory.Memory.Length.Should().Be(3);
         doubleMappedMemory.Mode.Should().Be(MapMode.Read);
-        
+
         byteMappedMemory.Memory.Length.Should().Be(3);
         byteMappedMemory.Mode.Should().Be(MapMode.Write);
     }
@@ -468,7 +466,7 @@ public class MappedMemoryTests
         var memory = new Memory<float>(new float[10]);
 
         // Act & Assert(should not throw)
-        using(var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite))
+        using (var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite))
         {
             mappedMemory.Memory.Length.Should().Be(10);
             mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
@@ -490,7 +488,7 @@ public class MappedMemoryTests
         mappedMemory.Memory.Length.Should().Be(0);
         mappedMemory.Span.Length.Should().Be(0);
         mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
-        
+
         // Should not throw when disposed
         mappedMemory.Dispose();
     }
@@ -532,9 +530,9 @@ public class MappedMemoryTests
     {
         // Note: In real implementation, null buffer might be handled differently
         // but the struct should still function for memory operations
-        
+
         // Arrange
-        var memory = new Memory<float>(new float[] { 1.0f, 2.0f });
+        var memory = new Memory<float>([1.0f, 2.0f]);
         var mappedMemory = CreateMappedMemory(null!, memory, MapMode.ReadWrite);
 
         // Act & Assert
@@ -558,14 +556,14 @@ public class MappedMemoryTests
         var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
 
         // Act - Multiple threads accessing properties
-        for(int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             tasks.Add(System.Threading.Tasks.Task.Run(() =>
             {
                 var mode = mappedMemory.Mode;
                 var memoryLength = mappedMemory.Memory.Length;
                 var spanLength = mappedMemory.Span.Length;
-                
+
                 Assert.Equal(MapMode.ReadWrite, mode);
                 Assert.Equal(5, memoryLength);
                 Assert.Equal(5, spanLength);

@@ -2,10 +2,8 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
-using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
-using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -31,10 +29,10 @@ public class CudaPerformanceBenchmarks : IDisposable
     {
         var loggerFactory = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(LogLevel.Information));
-        
+
         _logger = loggerFactory.CreateLogger<CudaPerformanceBenchmarks>();
 
-        if(CudaBackend.IsAvailable())
+        if (CudaBackend.IsAvailable())
         {
             _backend = new CudaBackend(loggerFactory.CreateLogger<CudaBackend>());
             _accelerator = _backend.GetDefaultAccelerator();
@@ -54,7 +52,7 @@ public class CudaPerformanceBenchmarks : IDisposable
 
         // Test memory bandwidth with different sizes
         var sizes = new[] { 1, 4, 16, 64, 256, 1024 }; // MB
-        
+
         foreach (var sizeMB in sizes)
         {
             var sizeBytes = sizeMB * 1024 * 1024;
@@ -62,7 +60,7 @@ public class CudaPerformanceBenchmarks : IDisposable
             new Random(42).NextBytes(data);
 
             var buffer = await _accelerator.Memory.AllocateAsync(sizeBytes);
-            
+
             try
             {
                 // Warm up
@@ -71,30 +69,30 @@ public class CudaPerformanceBenchmarks : IDisposable
 
                 // Measure host to device transfer
                 var stopwatch = Stopwatch.StartNew();
-                for(int i = 0; i < 10; i++)
+                for (var i = 0; i < 10; i++)
                 {
                     await buffer.CopyFromHostAsync<byte>(data);
                 }
                 stopwatch.Stop();
-                
-                var h2dBandwidth =(10.0 * sizeBytes / 1024 / 1024 / 1024) /(stopwatch.ElapsedMilliseconds / 1000.0);
+
+                var h2dBandwidth = (10.0 * sizeBytes / 1024 / 1024 / 1024) / (stopwatch.ElapsedMilliseconds / 1000.0);
 
                 // Measure device to host transfer
                 var readData = new byte[sizeBytes];
                 stopwatch.Restart();
-                for(int i = 0; i < 10; i++)
+                for (var i = 0; i < 10; i++)
                 {
                     await buffer.CopyToHostAsync<byte>(readData);
                 }
                 stopwatch.Stop();
-                
-                var d2hBandwidth =(10.0 * sizeBytes / 1024 / 1024 / 1024) /(stopwatch.ElapsedMilliseconds / 1000.0);
+
+                var d2hBandwidth = (10.0 * sizeBytes / 1024 / 1024 / 1024) / (stopwatch.ElapsedMilliseconds / 1000.0);
 
                 _logger.LogInformation("Memory Bandwidth {SizeMB}MB: H2D={H2DBandwidth:F1} GB/s, D2H={D2HBandwidth:F1} GB/s",
                     sizeMB, h2dBandwidth, d2hBandwidth);
 
                 // RTX 2000 Ada Gen should achieve reasonable bandwidth >100 GB/s for large transfers
-                if(sizeMB >= 64)
+                if (sizeMB >= 64)
                 {
                     h2dBandwidth.Should().BeGreaterThan(50.0, $"H2D bandwidth too low: {h2dBandwidth:F1} GB/s");
                     d2hBandwidth.Should().BeGreaterThan(50.0, $"D2H bandwidth too low: {d2hBandwidth:F1} GB/s");
@@ -121,8 +119,8 @@ public class CudaPerformanceBenchmarks : IDisposable
 
         var x = new float[N];
         var y = new float[N];
-        
-        for(int i = 0; i < N; i++)
+
+        for (var i = 0; i < N; i++)
         {
             x[i] = i * 0.001f;
             y[i] = i * 0.002f + 1.0f;
@@ -159,18 +157,18 @@ extern ""C"" __global__ void saxpy(float* x, float* y, float alpha, int n)
             // Benchmark multiple runs
             const int RUNS = 100;
             var stopwatch = Stopwatch.StartNew();
-            
-            for(int run = 0; run < RUNS; run++)
+
+            for (var run = 0; run < RUNS; run++)
             {
                 await compiledKernel.ExecuteAsync(arguments);
             }
-            
+
             stopwatch.Stop();
 
             // Calculate performance metrics
-            var totalOps =(long)RUNS * N * 2; // 2 ops per element(multiply + add)
-            var gflops =(totalOps / 1e9) /(stopwatch.ElapsedMilliseconds / 1000.0);
-            var bandwidth =((long)RUNS * N * 3 * sizeof(float) / 1024.0 / 1024 / 1024) /(stopwatch.ElapsedMilliseconds / 1000.0); // 3 accesses per element
+            var totalOps = (long)RUNS * N * 2; // 2 ops per element(multiply + add)
+            var gflops = (totalOps / 1e9) / (stopwatch.ElapsedMilliseconds / 1000.0);
+            var bandwidth = ((long)RUNS * N * 3 * sizeof(float) / 1024.0 / 1024 / 1024) / (stopwatch.ElapsedMilliseconds / 1000.0); // 3 accesses per element
 
             _logger.LogInformation("SAXPY Performance: {GFLOPS:F1} GFLOPS, {Bandwidth:F1} GB/s effective bandwidth",
                 gflops, bandwidth);
@@ -181,11 +179,11 @@ extern ""C"" __global__ void saxpy(float* x, float* y, float alpha, int n)
             // Verify correctness of final result
             var result = new float[100]; // Check first 100 elements
             await bufferY.CopyToHostAsync<float>(result, 0);
-            
-            for(int i = 0; i < 100; i++)
+
+            for (var i = 0; i < 100; i++)
             {
                 var expected = ALPHA * x[i] + y[i];
-                Assert.True(Math.Abs(result[i] - expected) < 0.001f, 
+                Assert.True(Math.Abs(result[i] - expected) < 0.001f,
                     $"SAXPY result incorrect at {i}: expected {expected}, got {result[i]}");
             }
         }
@@ -228,15 +226,15 @@ extern ""C"" __global__ void emptyKernel()
         const int LAUNCHES = 1000;
         var stopwatch = Stopwatch.StartNew();
 
-        for(int i = 0; i < LAUNCHES; i++)
+        for (var i = 0; i < LAUNCHES; i++)
         {
             await compiledKernel.ExecuteAsync(arguments);
         }
 
         stopwatch.Stop();
 
-        var avgLaunchTime = stopwatch.ElapsedMilliseconds /(double)LAUNCHES;
-        
+        var avgLaunchTime = stopwatch.ElapsedMilliseconds / (double)LAUNCHES;
+
         _logger.LogInformation("Average kernel launch time: {AvgTime:F3} ms", avgLaunchTime);
 
         // Launch overhead should be reasonable < 1ms on modern GPUs
@@ -289,7 +287,7 @@ extern ""C"" __global__ void emptyKernel()
         var kernelNames = new[] { "simple", "complex", "sharedMem" };
         var optimizationLevels = new[] { OptimizationLevel.None, OptimizationLevel.Default, OptimizationLevel.Maximum };
 
-        for(int i = 0; i < kernelSources.Length; i++)
+        for (var i = 0; i < kernelSources.Length; i++)
         {
             var kernelSource = kernelSources[i];
             var kernelName = kernelNames[i];
@@ -308,7 +306,7 @@ extern ""C"" __global__ void emptyKernel()
                     kernelName, optLevel, stopwatch.ElapsedMilliseconds);
 
                 // Compilation should complete in reasonable time < 10 seconds for complex kernels
-                stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000, 
+                stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
                     $"Compilation too slow for {kernelName}: {stopwatch.ElapsedMilliseconds}ms");
 
                 await compiledKernel.DisposeAsync();
@@ -347,7 +345,7 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
         // Test sequential execution
         var sequentialTime = await MeasureExecutionTime(async () =>
         {
-            for(int i = 0; i < KERNEL_COUNT; i++)
+            for (var i = 0; i < KERNEL_COUNT; i++)
             {
                 var buffer = await _accelerator.Memory.AllocateAsync(ELEMENTS_PER_KERNEL * sizeof(float));
                 try
@@ -370,7 +368,7 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
 
             try
             {
-                for(int i = 0; i < KERNEL_COUNT; i++)
+                for (var i = 0; i < KERNEL_COUNT; i++)
                 {
                     var buffer = await _accelerator.Memory.AllocateAsync(ELEMENTS_PER_KERNEL * sizeof(float));
                     buffers.Add(buffer);
@@ -380,7 +378,7 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
                         var arguments = new KernelArguments(buffer, ELEMENTS_PER_KERNEL, 100);
                         await compiledKernel.ExecuteAsync(arguments);
                     });
-                    
+
                     tasks.Add(task);
                 }
 
@@ -397,11 +395,11 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
 
         _logger.LogInformation("Execution times - Sequential: {Sequential}ms, Concurrent: {Concurrent}ms",
             sequentialTime, concurrentTime);
-        
+
         // Concurrent execution should show some speedup(at least 20% faster)
-        var speedup = sequentialTime /(double)concurrentTime;
+        var speedup = sequentialTime / (double)concurrentTime;
         _logger.LogInformation("Speedup from concurrency: {Speedup:F2}x", speedup);
-        
+
         speedup.Should().BeGreaterThan(1.2, $"Insufficient speedup from concurrency: {speedup:F2}x");
 
         await compiledKernel.DisposeAsync();
@@ -417,7 +415,8 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
 
     public void Dispose()
     {
-        if(_disposed) return;
+        if (_disposed)
+            return;
 
         _accelerator?.Dispose();
         _backend?.Dispose();

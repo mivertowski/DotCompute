@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Xunit;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware;
 
@@ -49,12 +48,12 @@ public class CudaTestFixture : IDisposable
             IsCudaAvailable = result == DotCompute.Backends.CUDA.Native.CudaError.Success && deviceCount > 0;
             DeviceCount = deviceCount;
 
-            if(IsCudaAvailable)
+            if (IsCudaAvailable)
             {
                 // Get primary device properties
                 var props = new DotCompute.Backends.CUDA.Native.CudaDeviceProperties();
                 var propResult = DotCompute.Backends.CUDA.Native.CudaRuntime.cudaGetDeviceProperties(ref props, 0);
-                if(propResult == DotCompute.Backends.CUDA.Native.CudaError.Success)
+                if (propResult == DotCompute.Backends.CUDA.Native.CudaError.Success)
                 {
                     PrimaryDeviceName = props.Name;
                     ComputeCapability = new Version(props.Major, props.Minor);
@@ -76,7 +75,7 @@ public class CudaTestFixture : IDisposable
             Console.WriteLine($"  Compute Capability: {ComputeCapability}");
             Console.WriteLine($"  NVRTC Available: {IsNvrtcAvailable}");
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Console.WriteLine($"Failed to initialize CUDA test environment: {ex.Message}");
             IsCudaAvailable = false;
@@ -121,7 +120,7 @@ public class CudaTestFixture : IDisposable
         try
         {
             // Reset any CUDA context if needed
-            if(IsCudaAvailable)
+            if (IsCudaAvailable)
             {
                 // Note: In a real implementation, we might want to reset the device
                 // but we'll be conservative here to avoid affecting other processes
@@ -129,7 +128,7 @@ public class CudaTestFixture : IDisposable
 
             Console.WriteLine("CUDA test environment cleaned up");
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Console.WriteLine($"Warning: Error during CUDA test cleanup: {ex.Message}");
         }

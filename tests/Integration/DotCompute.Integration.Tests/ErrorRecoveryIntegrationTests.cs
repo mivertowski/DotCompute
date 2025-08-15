@@ -5,7 +5,6 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Common.Hardware;
 using DotCompute.Tests.Integration.Infrastructure;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -29,7 +28,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
     {
         // Arrange
         var workflow = CreateTestWorkflow("HardwareFailureTest", 1024);
-        
+
         // Act - Simulate device failure mid-execution
         var executionTask = Task.Run(async () =>
         {
@@ -37,16 +36,16 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             var result = await ExecuteComputeWorkflowAsync("HardwareFailureRecovery", workflow);
             return result;
         });
-        
+
         // Simulate hardware failure after a short delay
         await Task.Delay(50);
         HardwareSimulator.SimulateRandomFailures(0.8, AcceleratorType.CUDA);
-        
+
         var result = await executionTask;
 
         // Assert
         // System should either complete successfully or fail gracefully with proper error handling
-        if(!result.Success)
+        if (!result.Success)
         {
             result.Error.Should().NotBeNull();
             result.Error!.Message.Should().NotBeEmpty();
@@ -56,11 +55,11 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         {
             Logger.LogInformation("System recovered from hardware failure and completed successfully");
         }
-        
+
         // System should still be operational
         var systemStats = HardwareSimulator.GetStatistics();
         systemStats["IsRunning"].Should().Be(true);
-        
+
         // Reset hardware state
         HardwareSimulator.ResetAllConditions();
     }
@@ -70,15 +69,15 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
     {
         // Arrange
         var workflow = CreateLargeMemoryWorkflow(8192); // Large memory requirement
-        
+
         // Simulate memory pressure
         HardwareSimulator.SimulateMemoryPressure(AcceleratorType.CUDA, 0.95); // 95% memory used
-        
+
         // Act
         var result = await ExecuteComputeWorkflowAsync("MemoryExhaustionRecovery", workflow);
 
         // Assert
-        if(!result.Success)
+        if (!result.Success)
         {
             // Should fail with memory-related error
             result.Error.Should().NotBeNull();
@@ -90,10 +89,10 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             // If successful, should have used memory management strategies
             (result.Metrics?.ResourceUtilization.MemoryUsagePercent < 100).Should().BeTrue();
         }
-        
+
         Logger.LogInformation("Memory exhaustion scenario handled: Success={Success}, Error={Error}",
             result.Success, result.Error?.Message ?? "None");
-        
+
         // Reset memory pressure
         HardwareSimulator.ResetAllConditions();
     }
@@ -104,37 +103,37 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         // Arrange
         var workflow = CreateLongRunningWorkflow();
         using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(2)); // 2 second timeout
-        
+
         var stopwatch = Stopwatch.StartNew();
 
         // Act
         Exception? caughtException = null;
         WorkflowExecutionResult? result = null;
-        
+
         try
         {
             result = await ExecuteComputeWorkflowAsync("TimeoutRecovery", workflow, cts.Token);
         }
-        catch(OperationCanceledException ex)
+        catch (OperationCanceledException ex)
         {
             caughtException = ex;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             caughtException = ex;
         }
-        
+
         stopwatch.Stop();
 
         // Assert
         stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5), "Should timeout quickly");
-        
-        if(caughtException != null)
+
+        if (caughtException != null)
         {
             Assert.IsAssignableFrom<OperationCanceledException>(caughtException);
             Logger.LogInformation("Operation cancelled gracefully after {Duration}ms", stopwatch.ElapsedMilliseconds);
         }
-        else if(result != null && !result.Success)
+        else if (result != null && !result.Success)
         {
             Logger.LogInformation("Operation failed gracefully: {Error}", result.Error?.Message);
         }
@@ -152,8 +151,8 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var workflow = new ComputeWorkflowDefinition
         {
             Name = "CompilationFailureRecovery",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "invalid_kernel",
@@ -166,25 +165,25 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
                     SourceCode = KernelSources.SimpleVectorOperation,
                     CompilationOptions = new CompilationOptions { OptimizationLevel = OptimizationLevel.None }
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(256) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = 256 }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "primary_stage",
                     Order = 1,
                     KernelName = "invalid_kernel",
-                    ArgumentNames = new[] { "input", "output" }
+                    ArgumentNames = ["input", "output"]
                 }
-            },
+            ],
             ContinueOnError = true
         };
 
@@ -195,11 +194,11 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         result.CompilationResults.Should().ContainKey("invalid_kernel");
         result.CompilationResults["invalid_kernel"].Success.Should().BeFalse();
         result.CompilationResults["invalid_kernel"].Error.Should().NotBeNull();
-        
+
         // System should have detected the compilation failure
         var compilationError = result.CompilationResults["invalid_kernel"].Error!;
         compilationError.Message.Should().NotBeEmpty();
-        
+
         Logger.LogInformation("Kernel compilation failure handled: {Error}", compilationError.Message);
     }
 
@@ -210,49 +209,49 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var workflow = new ComputeWorkflowDefinition
         {
             Name = "RuntimeErrorRecovery",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel { Name = "safe_kernel", SourceCode = KernelSources.SafeKernel },
                 new WorkflowKernel { Name = "error_kernel", SourceCode = KernelSources.ErrorProneKernel },
                 new WorkflowKernel { Name = "recovery_kernel", SourceCode = KernelSources.RecoveryKernel }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(512) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "final_output", Size = 512 }
-            },
-            IntermediateBuffers = new()
-            {
+            ],
+            IntermediateBuffers =
+            [
                 new WorkflowIntermediateBuffer { Name = "safe_result", SizeInBytes = 512 * sizeof(float) },
                 new WorkflowIntermediateBuffer { Name = "error_result", SizeInBytes = 512 * sizeof(float) }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "safe_stage",
                     Order = 1,
                     KernelName = "safe_kernel",
-                    ArgumentNames = new[] { "input", "safe_result" }
+                    ArgumentNames = ["input", "safe_result"]
                 },
                 new WorkflowExecutionStage
                 {
                     Name = "error_stage",
                     Order = 2,
                     KernelName = "error_kernel",
-                    ArgumentNames = new[] { "safe_result", "error_result" }
+                    ArgumentNames = ["safe_result", "error_result"]
                 },
                 new WorkflowExecutionStage
                 {
                     Name = "recovery_stage",
                     Order = 3,
                     KernelName = "recovery_kernel",
-                    ArgumentNames = new[] { "safe_result", "error_result", "final_output" }
+                    ArgumentNames = ["safe_result", "error_result", "final_output"]
                 }
-            },
+            ],
             ContinueOnError = true
         };
 
@@ -261,23 +260,23 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.ExecutionResults.Count.Should().Be(3);
-        
+
         // Safe stage should succeed
         result.ExecutionResults["safe_stage"].Success.Should().BeTrue();
-        
+
         // Error stage may fail, but recovery stage should handle it
         var errorStageSuccess = result.ExecutionResults["error_stage"].Success;
         var recoveryStageSuccess = result.ExecutionResults["recovery_stage"].Success;
-        
-        if(!errorStageSuccess)
+
+        if (!errorStageSuccess)
         {
             recoveryStageSuccess.Should().BeTrue();
             Logger.LogInformation("Runtime error recovered successfully");
         }
-        
+
         // Should have final output
         result.Results.Should().ContainKey("final_output");
-        var finalOutput =(float[])result.Results["final_output"];
+        var finalOutput = (float[])result.Results["final_output"];
         finalOutput.Should().NotContain(float.NaN);
     }
 
@@ -286,15 +285,15 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
     {
         // Arrange - Simulate distributed compute scenario
         var workflow = CreateDistributedWorkflow();
-        
+
         // Simulate network issues
         HardwareSimulator.SimulateRandomFailures(0.5, AcceleratorType.CUDA); // Simulate remote GPU failures
-        
+
         // Act
         var result = await ExecuteComputeWorkflowAsync("NetworkFailureRecovery", workflow);
 
         // Assert
-        if(result.Success)
+        if (result.Success)
         {
             Logger.LogInformation("Distributed compute fell back to local execution successfully");
         }
@@ -303,12 +302,12 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             result.Error.Should().NotBeNull();
             Logger.LogInformation("Network failure handled: {Error}", result.Error!.Message);
         }
-        
+
         // Verify system can still perform local computation
         var localWorkflow = CreateTestWorkflow("LocalFallback", 256);
         var localResult = await ExecuteComputeWorkflowAsync("LocalFallbackTest", localWorkflow);
         localResult.Success.Should().BeTrue();
-        
+
         HardwareSimulator.ResetAllConditions();
     }
 
@@ -317,43 +316,43 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
     {
         // Arrange
         var corruptedData = TestDataGenerators.GenerateFloatArray(1024);
-        
+
         // Inject various types of corruption
         corruptedData[10] = float.NaN;
         corruptedData[20] = float.PositiveInfinity;
         corruptedData[30] = float.NegativeInfinity;
         corruptedData[40] = -0.0f; // Negative zero
-        
+
         var workflow = new ComputeWorkflowDefinition
         {
             Name = "DataCorruptionRecovery",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "data_sanitizer",
                     SourceCode = KernelSources.DataSanitizer,
                     CompilationOptions = new CompilationOptions { FastMath = false } // Preserve NaN handling
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "corrupted_input", Data = corruptedData }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "sanitized_output", Size = 1024 }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "sanitize_stage",
                     Order = 1,
                     KernelName = "data_sanitizer",
-                    ArgumentNames = new[] { "corrupted_input", "sanitized_output" }
+                    ArgumentNames = ["corrupted_input", "sanitized_output"]
                 }
-            }
+            ]
         };
 
         // Act
@@ -361,17 +360,17 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        
-        var sanitizedOutput =(float[])result.Results["sanitized_output"];
+
+        var sanitizedOutput = (float[])result.Results["sanitized_output"];
         sanitizedOutput.Should().NotContain(float.NaN);
         sanitizedOutput.Should().NotContain(float.PositiveInfinity);
         sanitizedOutput.Should().NotContain(float.NegativeInfinity);
-        
+
         // Verify corrupted values were replaced with safe defaults
         sanitizedOutput[10].Should().NotBe(float.NaN);
         sanitizedOutput[20].Should().NotBe(float.PositiveInfinity);
         sanitizedOutput[30].Should().NotBe(float.NegativeInfinity);
-        
+
         Logger.LogInformation("Data corruption successfully detected and sanitized");
     }
 
@@ -383,9 +382,9 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var workflows = Enumerable.Range(0, concurrentWorkflows)
             .Select(i => CreateTestWorkflow($"ConcurrentWorkflow_{i}", 256))
             .ToArray();
-        
+
         // Act - Submit all workflows concurrently
-        var tasks = workflows.Select((workflow, index) => 
+        var tasks = workflows.Select((workflow, index) =>
             ExecuteComputeWorkflowAsync($"ResourceExhaustion_{index}", workflow))
             .ToArray();
 
@@ -394,14 +393,14 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         // Assert
         var successCount = results.Count(r => r.Success);
         var failureCount = results.Length - successCount;
-        
+
         Logger.LogInformation("Resource exhaustion test: {Success} successes, {Failures} failures out of {Total}",
             successCount, failureCount, results.Length);
-        
+
         // At least 50% should succeed even under resource pressure
         (successCount >= concurrentWorkflows / 2).Should().BeTrue(
             "System should handle resource exhaustion gracefully");
-        
+
         // Failed workflows should have meaningful error messages
         var failedResults = results.Where(r => !r.Success).ToArray();
         foreach (var failedResult in failedResults.Take(3)) // Check first 3 failures
@@ -418,37 +417,37 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var workflow = new ComputeWorkflowDefinition
         {
             Name = "CascadingFailureRecovery",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel { Name = "stage1", SourceCode = KernelSources.ReliableKernel },
                 new WorkflowKernel { Name = "stage2", SourceCode = KernelSources.UnstableKernel },
                 new WorkflowKernel { Name = "stage3", SourceCode = KernelSources.FailsafeKernel },
                 new WorkflowKernel { Name = "stage4", SourceCode = KernelSources.RecoveryKernel },
                 new WorkflowKernel { Name = "stage5", SourceCode = KernelSources.ReliableKernel }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(256) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "final_output", Size = 256 }
-            },
+            ],
             IntermediateBuffers = Enumerable.Range(1, 4)
-                .Select(i => new WorkflowIntermediateBuffer 
-                { 
-                    Name = $"buffer_{i}", 
-                    SizeInBytes = 256 * sizeof(float) 
+                .Select(i => new WorkflowIntermediateBuffer
+                {
+                    Name = $"buffer_{i}",
+                    SizeInBytes = 256 * sizeof(float)
                 })
                 .ToList(),
-            ExecutionStages = new()
-            {
-                new WorkflowExecutionStage { Name = "exec_stage1", Order = 1, KernelName = "stage1", ArgumentNames = new[] { "input", "buffer_1" } },
-                new WorkflowExecutionStage { Name = "exec_stage2", Order = 2, KernelName = "stage2", ArgumentNames = new[] { "buffer_1", "buffer_2" } },
-                new WorkflowExecutionStage { Name = "exec_stage3", Order = 3, KernelName = "stage3", ArgumentNames = new[] { "buffer_2", "buffer_3" } },
-                new WorkflowExecutionStage { Name = "exec_stage4", Order = 4, KernelName = "stage4", ArgumentNames = new[] { "buffer_3", "buffer_4" } },
-                new WorkflowExecutionStage { Name = "exec_stage5", Order = 5, KernelName = "stage5", ArgumentNames = new[] { "buffer_4", "final_output" } }
-            },
+            ExecutionStages =
+            [
+                new WorkflowExecutionStage { Name = "exec_stage1", Order = 1, KernelName = "stage1", ArgumentNames = ["input", "buffer_1"] },
+                new WorkflowExecutionStage { Name = "exec_stage2", Order = 2, KernelName = "stage2", ArgumentNames = ["buffer_1", "buffer_2"] },
+                new WorkflowExecutionStage { Name = "exec_stage3", Order = 3, KernelName = "stage3", ArgumentNames = ["buffer_2", "buffer_3"] },
+                new WorkflowExecutionStage { Name = "exec_stage4", Order = 4, KernelName = "stage4", ArgumentNames = ["buffer_3", "buffer_4"] },
+                new WorkflowExecutionStage { Name = "exec_stage5", Order = 5, KernelName = "stage5", ArgumentNames = ["buffer_4", "final_output"] }
+            ],
             ContinueOnError = true
         };
 
@@ -457,17 +456,17 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.ExecutionResults.Count.Should().Be(5);
-        
+
         var successfulStages = result.ExecutionResults.Values.Count(r => r.Success);
         var failedStages = result.ExecutionResults.Values.Count(r => !r.Success);
-        
+
         Logger.LogInformation("Cascading failure test: {Successful} successful, {Failed} failed stages",
             successfulStages, failedStages);
-        
+
         // Should have contained the failure and recovered
         successfulStages.Should().BeGreaterThanOrEqualTo(3, "Most stages should complete successfully");
-        
-        if(failedStages > 0)
+
+        if (failedStages > 0)
         {
             // Recovery mechanisms should have activated
             result.ExecutionResults.Values.Where(r => !r.Success).Should().AllSatisfy(r =>
@@ -484,162 +483,162 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
     {
         // Arrange
         var workflow = CreateErrorTypeSpecificWorkflow(errorType);
-        
+
         // Simulate the specific error condition
         SimulateErrorCondition(errorType);
-        
+
         var stopwatch = Stopwatch.StartNew();
 
         // Act
         var result = await ExecuteComputeWorkflowAsync($"SpecificErrorRecovery_{errorType}", workflow);
-        
+
         stopwatch.Stop();
 
         // Assert
         var recoveryTime = stopwatch.Elapsed;
-        
-        if(result.Success)
+
+        if (result.Success)
         {
-            Logger.LogInformation("Successfully recovered from {ErrorType} in {Duration}ms", 
+            Logger.LogInformation("Successfully recovered from {ErrorType} in {Duration}ms",
                 errorType, recoveryTime.TotalMilliseconds);
         }
         else
         {
             result.Error.Should().NotBeNull();
-            Logger.LogInformation("Error {ErrorType} handled gracefully: {Error}", 
+            Logger.LogInformation("Error {ErrorType} handled gracefully: {Error}",
                 errorType, result.Error?.Message ?? "Unknown error");
         }
-        
+
         // Recovery should be reasonably fast
-        recoveryTime.Should().BeLessThan(TimeSpan.FromSeconds(30), 
+        recoveryTime.Should().BeLessThan(TimeSpan.FromSeconds(30),
             "Error recovery should not take too long");
-        
+
         // Validate error type specific behavior
         ValidateErrorTypeRecovery(errorType, result, recoveryTime);
-        
+
         // Reset conditions
         HardwareSimulator.ResetAllConditions();
     }
 
     // Helper methods
 
-    private ComputeWorkflowDefinition CreateTestWorkflow(string name, int dataSize)
+    private static ComputeWorkflowDefinition CreateTestWorkflow(string name, int dataSize)
     {
         return new ComputeWorkflowDefinition
         {
             Name = name,
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "test_kernel",
                     SourceCode = KernelSources.SimpleVectorOperation
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(dataSize) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = dataSize }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "test_stage",
                     Order = 1,
                     KernelName = "test_kernel",
-                    ArgumentNames = new[] { "input", "output" }
+                    ArgumentNames = ["input", "output"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateLargeMemoryWorkflow(int dataSize)
+    private static ComputeWorkflowDefinition CreateLargeMemoryWorkflow(int dataSize)
     {
         return new ComputeWorkflowDefinition
         {
             Name = "LargeMemoryWorkflow",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "memory_intensive",
                     SourceCode = KernelSources.MemoryIntensiveKernel
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "large_input", Data = TestDataGenerators.GenerateFloatArray(dataSize) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "large_output", Size = dataSize }
-            },
-            IntermediateBuffers = new()
-            {
-                new WorkflowIntermediateBuffer 
-                { 
-                    Name = "large_temp", 
+            ],
+            IntermediateBuffers =
+            [
+                new WorkflowIntermediateBuffer
+                {
+                    Name = "large_temp",
                     SizeInBytes = dataSize * sizeof(float) * 4 // 4x the input size
                 }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "memory_stage",
                     Order = 1,
                     KernelName = "memory_intensive",
-                    ArgumentNames = new[] { "large_input", "large_temp", "large_output" }
+                    ArgumentNames = ["large_input", "large_temp", "large_output"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateLongRunningWorkflow()
+    private static ComputeWorkflowDefinition CreateLongRunningWorkflow()
     {
         return new ComputeWorkflowDefinition
         {
             Name = "LongRunningWorkflow",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "long_running",
                     SourceCode = KernelSources.LongRunningKernel
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(1024) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = 1024 }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "long_stage",
                     Order = 1,
                     KernelName = "long_running",
-                    ArgumentNames = new[] { "input", "output" }
+                    ArgumentNames = ["input", "output"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateDistributedWorkflow()
+    private static ComputeWorkflowDefinition CreateDistributedWorkflow()
     {
         return new ComputeWorkflowDefinition
         {
             Name = "DistributedWorkflow",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "distributed_compute",
@@ -649,30 +648,30 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
                         OptimizationLevel = OptimizationLevel.Maximum
                     }
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "distributed_input", Data = TestDataGenerators.GenerateFloatArray(2048) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "distributed_output", Size = 2048 }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "distributed_stage",
                     Order = 1,
                     KernelName = "distributed_compute",
                     BackendType = ComputeBackendType.CUDA, // Prefer remote/GPU execution
-                    ArgumentNames = new[] { "distributed_input", "distributed_output" }
+                    ArgumentNames = ["distributed_input", "distributed_output"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateErrorTypeSpecificWorkflow(ErrorType errorType)
+    private static ComputeWorkflowDefinition CreateErrorTypeSpecificWorkflow(ErrorType errorType)
     {
         var kernelSource = errorType switch
         {
@@ -686,38 +685,38 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         return new ComputeWorkflowDefinition
         {
             Name = $"ErrorRecovery_{errorType}",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "error_specific_kernel",
                     SourceCode = kernelSource
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(512) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = 512 }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "error_stage",
                     Order = 1,
                     KernelName = "error_specific_kernel",
-                    ArgumentNames = new[] { "input", "output" }
+                    ArgumentNames = ["input", "output"]
                 }
-            }
+            ]
         };
     }
 
     private void SimulateErrorCondition(ErrorType errorType)
     {
-        switch(errorType)
+        switch (errorType)
         {
             case ErrorType.OutOfMemory:
                 HardwareSimulator.SimulateMemoryPressure(AcceleratorType.CUDA, 0.98);
@@ -734,33 +733,33 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         }
     }
 
-    private void ValidateErrorTypeRecovery(ErrorType errorType, WorkflowExecutionResult result, TimeSpan recoveryTime)
+    private static void ValidateErrorTypeRecovery(ErrorType errorType, WorkflowExecutionResult result, TimeSpan recoveryTime)
     {
-        switch(errorType)
+        switch (errorType)
         {
             case ErrorType.OutOfMemory:
-                if(!result.Success)
+                if (!result.Success)
                 {
                     var lowerMessage = result.Error!.Message.ToLower();
                     (lowerMessage.Contains("memory") || lowerMessage.Contains("allocation")).Should().BeTrue();
                 }
                 break;
-                
+
             case ErrorType.DeviceReset:
-                if(!result.Success)
+                if (!result.Success)
                 {
                     var lowerMessage = result.Error!.Message.ToLower();
                     (lowerMessage.Contains("device") || lowerMessage.Contains("hardware") || lowerMessage.Contains("failure")).Should().BeTrue();
                 }
                 break;
-                
+
             case ErrorType.KernelTimeout:
-                recoveryTime.Should().BeLessThan(TimeSpan.FromSeconds(15), 
+                recoveryTime.Should().BeLessThan(TimeSpan.FromSeconds(15),
                     "Timeout recovery should be faster than actual timeout");
                 break;
-                
+
             case ErrorType.InvalidOperation:
-                if(!result.Success)
+                if (!result.Success)
                 {
                     result.Error!.Message.Should().NotBeEmpty();
                 }

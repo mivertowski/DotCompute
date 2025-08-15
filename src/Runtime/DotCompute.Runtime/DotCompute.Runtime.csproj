@@ -24,8 +24,6 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
   </PropertyGroup>
 
   <ItemGroup>

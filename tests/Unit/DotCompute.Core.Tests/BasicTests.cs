@@ -1,7 +1,4 @@
-using System;
 using Xunit;
-using FluentAssertions;
-using DotCompute.Core;
 using DotCompute.Abstractions;
 
 namespace DotCompute.Core.Tests

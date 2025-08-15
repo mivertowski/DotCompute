@@ -35,7 +35,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
     public void Allocate_WithMaxIntLength_ShouldThrowOutOfMemoryException()
     {
         // Act & Assert - Should fail gracefully with memory exhaustion
-        var act =() => _allocator.Allocate<byte>(int.MaxValue);
+        var act = () => _allocator.Allocate<byte>(int.MaxValue);
         act.Should().Throw<Exception>()
            .Where(ex => ex is OutOfMemoryException || ex is ArgumentOutOfRangeException || ex is OverflowException);
     }
@@ -45,7 +45,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
     {
         // Try allocating a reasonably large but not excessive amount
         const int reasonableMaxSize = 1024 * 1024; // 1MB
-        
+
         // Act & Assert
         using var memory = _allocator.Allocate<byte>(reasonableMaxSize);
         Assert.NotNull(memory);
@@ -64,7 +64,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
     {
         // Act
         using var memory = _allocator.Allocate<byte>(size);
-        
+
         // Assert
         Assert.NotNull(memory);
         memory.Memory.Length.Should().Be(size);
@@ -78,10 +78,10 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
     [InlineData(7)]
     public void AllocateAligned_WithInvalidAlignment_ShouldThrowArgumentException(int alignment)
     {
-        if((alignment & (alignment - 1)) != 0) // Not power of 2
+        if ((alignment & (alignment - 1)) != 0) // Not power of 2
         {
             // Act & Assert
-            var act =() => _allocator.AllocateAligned<int>(256, alignment);
+            var act = () => _allocator.AllocateAligned<int>(256, alignment);
             act.Should().Throw<ArgumentException>()
                .WithMessage("*power of 2*");
         }
@@ -97,7 +97,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
     public void AllocateAligned_WithZeroAlignment_ShouldThrowArgumentException()
     {
         // Act & Assert
-        var act =() => _allocator.AllocateAligned<int>(256, 0);
+        var act = () => _allocator.AllocateAligned<int>(256, 0);
         act.Should().Throw<ArgumentException>()
            .WithMessage("*power of 2*");
     }
@@ -106,7 +106,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
     public void AllocateAligned_WithNegativeAlignment_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert
-        var act =() => _allocator.AllocateAligned<int>(256, -1);
+        var act = () => _allocator.AllocateAligned<int>(256, -1);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
@@ -126,19 +126,19 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
         var exceptions = new ConcurrentBag<Exception>();
 
         // Act - Multiple threads allocating concurrently
-        for(int i = 0; i < threadCount; i++)
+        for (var i = 0; i < threadCount; i++)
         {
             tasks[i] = Task.Run(() =>
             {
                 try
                 {
-                    for(int j = 0; j < allocationsPerThread; j++)
+                    for (var j = 0; j < allocationsPerThread; j++)
                     {
                         var memory = _allocator.Allocate<byte>(allocationSize);
                         allocations.Add(memory);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -166,7 +166,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
         var allocations = new List<IMemoryOwner<byte>>();
 
         // Pre-allocate memory
-        for(int i = 0; i < allocationCount; i++)
+        for (var i = 0; i < allocationCount; i++)
         {
             allocations.Add(_allocator.Allocate<byte>(256));
         }
@@ -174,7 +174,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
         var tasks = new Task[allocationCount];
 
         // Act - Dispose all allocations concurrently
-        for(int i = 0; i < allocationCount; i++)
+        for (var i = 0; i < allocationCount; i++)
         {
             var allocation = allocations[i];
             tasks[i] = Task.Run(() => allocation.Dispose());
@@ -197,13 +197,13 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
         {
             try
             {
-                if(i % 3 == 0)
+                if (i % 3 == 0)
                 {
                     // Allocate
                     var memory = _allocator.Allocate<byte>(512 + i % 1024);
                     allocations.Add(memory);
                 }
-                else if(i % 3 == 1)
+                else if (i % 3 == 1)
                 {
                     // Allocate aligned
                     var memory = _allocator.AllocateAligned<int>(128, 32);
@@ -216,7 +216,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
                     allocations.Add(memory);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 exceptions.Add(ex);
             }
@@ -246,21 +246,21 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
         try
         {
             // Act - Allocate until we hit a limit
-            for(int i = 0; i < maxAllocations; i++)
+            for (var i = 0; i < maxAllocations; i++)
             {
                 var memory = _allocator.Allocate<byte>(allocationSize);
                 allocations.Add(memory);
             }
         }
-        catch(OutOfMemoryException)
+        catch (OutOfMemoryException)
         {
             // Expected when running out of memory
         }
-        catch(Exception ex) when(ex is not OutOfMemoryException)
+        catch (Exception ex) when (ex is not OutOfMemoryException)
         {
             // Other exceptions should be specific
-           (ex.GetType() == typeof(ArgumentOutOfRangeException) || 
-             ex.GetType() == typeof(InvalidOperationException)).Should().BeTrue();
+            (ex.GetType() == typeof(ArgumentOutOfRangeException) ||
+              ex.GetType() == typeof(InvalidOperationException)).Should().BeTrue();
         }
 
         // Assert - Should have made some allocations
@@ -281,7 +281,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
         const int allocationSize = 4096;
 
         // Act - Allocate and deallocate many times
-        for(int i = 0; i < cycleCount; i++)
+        for (var i = 0; i < cycleCount; i++)
         {
             using var memory = _allocator.Allocate<byte>(allocationSize);
             Assert.NotNull(memory);
@@ -305,7 +305,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
 
         // Act & Assert
         allocator.Dispose();
-        var act =() => allocator.Dispose();
+        var act = () => allocator.Dispose();
         act(); // Should not throw
     }
 
@@ -317,7 +317,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
 
         // Act & Assert
         memory.Dispose();
-        var act =() => memory.Dispose();
+        var act = () => memory.Dispose();
         act(); // Should not throw
     }
 
@@ -329,7 +329,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
         allocator.Dispose();
 
         // Act & Assert
-        var act =() => allocator.Allocate<int>(256);
+        var act = () => allocator.Allocate<int>(256);
         Assert.Throws<ObjectDisposedException>(() => act());
     }
 
@@ -341,7 +341,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
         allocator.Dispose();
 
         // Act & Assert
-        var act =() => allocator.GetStatistics();
+        var act = () => allocator.GetStatistics();
         Assert.Throws<ObjectDisposedException>(() => act());
     }
 
@@ -399,14 +399,14 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
 
         // Assert - Memory should be safe to use(though not necessarily zeroed)
         var span = memory.Memory.Span;
-        
+
         // Write and read back to ensure memory is valid
-        for(int i = 0; i < span.Length; i++)
+        for (var i = 0; i < span.Length; i++)
         {
-            span[i] =(byte)(i % 256);
+            span[i] = (byte)(i % 256);
         }
-        
-        for(int i = 0; i < span.Length; i++)
+
+        for (var i = 0; i < span.Length; i++)
         {
             span[i].Should().Be((byte)(i % 256));
         }
@@ -439,14 +439,14 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
 
         // Assert
         memory.Memory.Length.Should().Be(10);
-        
+
         var span = memory.Memory.Span;
-        for(int i = 0; i < span.Length; i++)
+        for (var i = 0; i < span.Length; i++)
         {
             span[i] = new TestStruct { IntValue = i, LongValue = i * 2L };
         }
 
-        for(int i = 0; i < span.Length; i++)
+        for (var i = 0; i < span.Length; i++)
         {
             span[i].IntValue.Should().Be(i);
             span[i].LongValue.Should().Be(i * 2L);
@@ -464,21 +464,21 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
         const int allocationSize = 64;
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         // Act
-        for(int i = 0; i < allocationCount; i++)
+        for (var i = 0; i < allocationCount; i++)
         {
             using var memory = _allocator.Allocate<byte>(allocationSize);
             // Use the memory briefly
-            memory.Memory.Span[0] =(byte)i;
+            memory.Memory.Span[0] = (byte)i;
         }
-        
+
         stopwatch.Stop();
 
         // Assert - Should complete in reasonable time(less than 1 second)
-        stopwatch.ElapsedMilliseconds .Should().BeLessThan(1000, 
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000,
             "Frequent small allocations should be performant");
-        
+
         _allocator.TotalAllocations.Should().Be(allocationCount);
         _allocator.TotalDeallocations.Should().Be(allocationCount);
     }

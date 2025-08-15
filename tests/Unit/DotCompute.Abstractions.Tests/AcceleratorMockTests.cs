@@ -249,7 +249,7 @@ public class AcceleratorProviderMockTests
         accelerator2.Info.Returns(info2);
 
         provider.Name.Returns("TestProvider");
-        provider.SupportedTypes.Returns(new[] { AcceleratorType.CUDA, AcceleratorType.CPU });
+        provider.SupportedTypes.Returns([AcceleratorType.CUDA, AcceleratorType.CPU]);
         provider.DiscoverAsync(default).Returns(ValueTask.FromResult<IEnumerable<IAccelerator>>(
             new[] { accelerator1, accelerator2 }));
         provider.CreateAsync(info1, default).Returns(ValueTask.FromResult(accelerator1));
@@ -325,7 +325,7 @@ public class MemoryManagerMockTests
 
 public class MemoryBufferMockTests
 {
-    private static readonly int[] array = new int[] { 1, 2, 3 };
+    private static readonly int[] array = [1, 2, 3];
 
     [Fact]
     public async Task IMemoryBuffer_CopyFromHostAsync_ShouldBeCallable()

@@ -1,12 +1,7 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using DotCompute.Abstractions;
 using DotCompute.Core.Types;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared;
 
@@ -53,7 +48,7 @@ public class CompiledKernel
     /// <summary>
     /// Gets or sets the kernel metadata.
     /// </summary>
-    public Dictionary<string, string> Metadata { get; set; } = new();
+    public Dictionary<string, string> Metadata { get; set; } = [];
 
     /// <summary>
     /// Gets or sets the kernel configuration.
@@ -78,11 +73,11 @@ public class CompiledKernel
         // Create kernel configuration
         var config = new DotCompute.Abstractions.KernelConfiguration(
             new DotCompute.Abstractions.Dim3(1), // Default grid dimensions
-            Configuration?.BlockDimensions != null ? 
+            Configuration?.BlockDimensions != null ?
                 new DotCompute.Abstractions.Dim3(Configuration.BlockDimensions.X, Configuration.BlockDimensions.Y, Configuration.BlockDimensions.Z) :
                 new DotCompute.Abstractions.Dim3(256) // Default block size
         );
-        
+
         return new DotCompute.Abstractions.CompiledKernel(
             Id,
             NativeHandle,
@@ -186,7 +181,8 @@ public class KernelArgument
     /// </summary>
     private long EstimateSizeFromValue(object? value)
     {
-        if(value == null) return 0;
+        if (value == null)
+            return 0;
 
         return value switch
         {
@@ -208,10 +204,7 @@ public class KernelArgument
     /// <summary>
     /// Converts an array to Core.Kernels.KernelArgument array
     /// </summary>
-    public static DotCompute.Core.Kernels.KernelArgument[] ToCoreKernelArguments(KernelArgument[] testArgs)
-    {
-        return testArgs.Select(arg => arg.ToCoreKernelArgument()).ToArray();
-    }
+    public static DotCompute.Core.Kernels.KernelArgument[] ToCoreKernelArguments(KernelArgument[] testArgs) => testArgs.Select(arg => arg.ToCoreKernelArgument()).ToArray();
 
     /// <summary>
     /// Implicit conversion operator to DotCompute.Core.Kernels.KernelArgument.
@@ -409,15 +402,15 @@ public static class TestKernelFactory
     /// </summary>
     public static KernelArgument[] CreateStandardKernelArguments(int arraySize = 1024)
     {
-        return new[]
-        {
-            CreateKernelArgument("input", new float[arraySize], typeof(float[]), 
+        return
+        [
+            CreateKernelArgument("input", new float[arraySize], typeof(float[]),
                 isInput: true, isDeviceMemory: true, argumentType: KernelArgumentType.Buffer),
-            CreateKernelArgument("output", new float[arraySize], typeof(float[]), 
+            CreateKernelArgument("output", new float[arraySize], typeof(float[]),
                 isInput: false, isOutput: true, isDeviceMemory: true, argumentType: KernelArgumentType.Buffer),
-            CreateKernelArgument("size", arraySize, typeof(int), 
+            CreateKernelArgument("size", arraySize, typeof(int),
                 argumentType: KernelArgumentType.Scalar)
-        };
+        ];
     }
 
     /// <summary>
@@ -425,7 +418,8 @@ public static class TestKernelFactory
     /// </summary>
     private static long EstimateSizeInBytes(object? value)
     {
-        if(value == null) return 0;
+        if (value == null)
+            return 0;
 
         return value switch
         {
@@ -453,18 +447,12 @@ public static class TestTypeConversions
     /// <summary>
     /// Converts an array of test KernelArguments to production KernelArguments.
     /// </summary>
-    public static DotCompute.Core.Kernels.KernelArgument[] ToCoreKernelArguments(this KernelArgument[] testArgs)
-    {
-        return testArgs.Select(arg => (DotCompute.Core.Kernels.KernelArgument)arg).ToArray();
-    }
+    public static DotCompute.Core.Kernels.KernelArgument[] ToCoreKernelArguments(this KernelArgument[] testArgs) => testArgs.Select(arg => (DotCompute.Core.Kernels.KernelArgument)arg).ToArray();
 
     /// <summary>
     /// Converts test CompiledKernel to production CompiledKernel.
     /// </summary>
-    public static DotCompute.Abstractions.CompiledKernel ToAbstractionsCompiledKernel(this CompiledKernel testKernel)
-    {
-        return(DotCompute.Abstractions.CompiledKernel)testKernel;
-    }
+    public static DotCompute.Abstractions.CompiledKernel ToAbstractionsCompiledKernel(this CompiledKernel testKernel) => (DotCompute.Abstractions.CompiledKernel)testKernel;
 
     /// <summary>
     /// Converts test KernelLanguage to production KernelLanguage.

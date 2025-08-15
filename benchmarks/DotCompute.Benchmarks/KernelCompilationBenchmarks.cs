@@ -9,17 +9,17 @@ namespace DotCompute.Benchmarks;
 [MemoryDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
-public class KernelCompilationBenchmarks
+internal class KernelCompilationBenchmarks
 {
     private IComputeEngine _computeEngine = null!;
     private IAcceleratorManager _acceleratorManager = null!;
-    
+
     private const string SimpleKernel = @"
         __kernel void simple_add(__global float* a, __global float* b, __global float* c) {
             int i = get_global_id(0);
             c[i] = a[i] + b[i];
         }";
-    
+
     private const string ComplexKernel = @"
         __kernel void matrix_multiply(__global float* A, __global float* B, __global float* C, int N) {
             int row = get_global_id(0);
@@ -31,7 +31,7 @@ public class KernelCompilationBenchmarks
             }
             C[row * N + col] = sum;
         }";
-    
+
     private const string VeryComplexKernel = @"
         __kernel void complex_computation(
             __global float* input1, __global float* input2, 
@@ -72,11 +72,11 @@ public class KernelCompilationBenchmarks
     {
         var logger = new NullLogger<DefaultAcceleratorManager>();
         _acceleratorManager = new DefaultAcceleratorManager(logger);
-        
+
         var cpuProvider = new CpuAcceleratorProvider(new NullLogger<CpuAcceleratorProvider>());
         _acceleratorManager.RegisterProvider(cpuProvider);
         await _acceleratorManager.InitializeAsync();
-        
+
         _computeEngine = new DefaultComputeEngine(_acceleratorManager, new NullLogger<DefaultComputeEngine>());
     }
 
@@ -93,7 +93,7 @@ public class KernelCompilationBenchmarks
         var kernel = await _computeEngine.CompileKernelAsync(
             GetKernelSource(),
             "kernel_" + KernelComplexity.ToLower());
-        
+
         await kernel.DisposeAsync();
         return kernel;
     }
@@ -106,12 +106,12 @@ public class KernelCompilationBenchmarks
             OptimizationLevel = OptimizationLevel.Maximum,
             FastMath = true
         };
-        
+
         var kernel = await _computeEngine.CompileKernelAsync(
             GetKernelSource(),
             "kernel_optimized_" + KernelComplexity.ToLower(),
             options);
-        
+
         await kernel.DisposeAsync();
         return kernel;
     }
@@ -121,14 +121,14 @@ public class KernelCompilationBenchmarks
     {
         const int kernelCount = 5;
         var kernels = new ICompiledKernel[kernelCount];
-        
-        for (int i = 0; i < kernelCount; i++)
+
+        for (var i = 0; i < kernelCount; i++)
         {
             kernels[i] = await _computeEngine.CompileKernelAsync(
                 GetKernelSource(),
                 $"kernel_{i}");
         }
-        
+
         foreach (var kernel in kernels)
         {
             await kernel.DisposeAsync();

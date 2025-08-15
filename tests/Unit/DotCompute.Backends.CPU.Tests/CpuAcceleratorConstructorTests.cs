@@ -5,9 +5,6 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CPU.Tests.Helpers;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using FluentAssertions;
 
 namespace DotCompute.Backends.CPU.Tests.Constructor;
 
@@ -53,7 +50,7 @@ public class CpuAcceleratorConstructorTests : IDisposable
     public void Constructor_WithNullOptions_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Action act =() => new CpuAccelerator(null!, _threadPoolOptions, _logger);
+        Action act = () => new CpuAccelerator(null!, _threadPoolOptions, _logger);
         act.Should().Throw<Exception>(); // May throw NullReferenceException or ArgumentNullException
     }
 
@@ -61,7 +58,7 @@ public class CpuAcceleratorConstructorTests : IDisposable
     public void Constructor_WithNullThreadPoolOptions_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Action act =() => new CpuAccelerator(_options, null!, _logger);
+        Action act = () => new CpuAccelerator(_options, null!, _logger);
         act.Should().Throw<Exception>(); // May throw NullReferenceException or ArgumentNullException
     }
 
@@ -69,7 +66,7 @@ public class CpuAcceleratorConstructorTests : IDisposable
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Action act =() => new CpuAccelerator(_options, _threadPoolOptions, null!);
+        Action act = () => new CpuAccelerator(_options, _threadPoolOptions, null!);
         act.Should().Throw<Exception>(); // May throw NullReferenceException or ArgumentNullException
     }
 
@@ -98,7 +95,7 @@ public class CpuAcceleratorConstructorTests : IDisposable
 
     public void Dispose()
     {
-        if(!_disposed)
+        if (!_disposed)
         {
             _disposed = true;
         }

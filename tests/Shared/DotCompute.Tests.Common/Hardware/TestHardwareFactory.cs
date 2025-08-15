@@ -1,11 +1,9 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Common.Hardware;
 
@@ -109,12 +107,12 @@ public static class TestHardwareFactory
     public static MockHardwareProvider CreateCustom(IEnumerable<MockHardwareDevice> devices, ILogger? logger = null)
     {
         var provider = new MockHardwareProvider(logger as ILogger<MockHardwareProvider>);
-        
+
         foreach (var device in devices)
         {
             provider.AddDevice(device);
         }
-        
+
         return provider;
     }
 
@@ -300,7 +298,7 @@ public static class TestHardwareFactory
     /// </summary>
     private sealed class MockGenericDevice : MockHardwareDevice
     {
-        public MockGenericDevice(string id, string name, AcceleratorType type, string vendor, 
+        public MockGenericDevice(string id, string name, AcceleratorType type, string vendor,
                                 long totalMemory, ILogger? logger)
             : base(id, name, type, vendor, "1.0", totalMemory, 1024, 16, logger)
         {
@@ -332,7 +330,7 @@ public sealed class TestDeviceConfiguration
     /// <summary>
     /// Gets or sets custom capabilities to add to the device.
     /// </summary>
-    public Dictionary<string, object> CustomCapabilities { get; set; } = new();
+    public Dictionary<string, object> CustomCapabilities { get; set; } = [];
 
     /// <summary>
     /// Gets the default configuration.

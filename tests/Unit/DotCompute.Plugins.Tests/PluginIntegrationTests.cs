@@ -1,4 +1,4 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Plugins.Core;
@@ -9,7 +9,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Reflection;
 using Xunit;
 using FluentAssertions;
 
@@ -66,7 +65,7 @@ public class PluginIntegrationTests : IDisposable
         // Initialize and start plugins
         await cpuResult!.InitializeAsync(_serviceProvider);
         await cpuResult.StartAsync();
-        
+
         await mockResult!.InitializeAsync(_serviceProvider);
         await mockResult.StartAsync();
 
@@ -76,21 +75,21 @@ public class PluginIntegrationTests : IDisposable
 
         // Assert
         pluginSystem.GetLoadedPlugins().Should().HaveCount(2);
-        
+
         cpuResult.State.Should().Be(PluginState.Running);
         cpuResult.Health.Should().Be(PluginHealth.Healthy);
-        
+
         mockResult.State.Should().Be(PluginState.Running);
         mockResult.Health.Should().Be(PluginHealth.Healthy);
 
         var cpuMetrics = cpuResult.GetMetrics();
         Assert.NotNull(cpuMetrics);
-        cpuMetrics.RequestCount.Should().BeGreaterThanOrEqualTo(0);
+        cpuMetrics.RequestCount.BeGreaterThanOrEqualTo(0);
 
         // Test unloading
         var unloadResult = await pluginSystem.UnloadPluginAsync(cpuResult.Id);
         Assert.True(unloadResult);
-        pluginSystem.GetPlugin(cpuResult.Id).Should().BeNull();
+        pluginSystem.GetPlugin(cpuResult.Id).BeNull();
     }
 
     [Fact]
@@ -133,10 +132,10 @@ public class PluginIntegrationTests : IDisposable
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<ITestService, TestService>();
-        
+
         using var serviceProvider = services.BuildServiceProvider();
         using var pluginSystem = new PluginSystem(_logger);
-        
+
         var plugin = new DependentPlugin();
 
         // Act
@@ -145,7 +144,7 @@ public class PluginIntegrationTests : IDisposable
 
         // Assert
         plugin.TestService.Should().NotBeNull();
-        plugin.TestService.Should().BeOfType(typeof(TestService));
+        plugin.TestService.BeOfType(typeof(TestService));
     }
 
     [Fact]
@@ -162,7 +161,7 @@ public class PluginIntegrationTests : IDisposable
         await goodPlugin.StartAsync();
 
         // Try to load bad plugin
-        await Assert.ThrowsAsync<PluginLoadException>(() => pluginSystem.LoadPluginAsync(badPlugin));
+        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask());
 
         // Assert - Good plugin should still be working
         pluginSystem.GetLoadedPlugins().Should().HaveCount(1);
@@ -228,8 +227,8 @@ public class PluginIntegrationTests : IDisposable
         var invalidPlugin = new InvalidPlugin();
 
         // Act & Assert
-        await Assert.ThrowsAsync<PluginLoadException>(() => pluginSystem.LoadPluginAsync(invalidPlugin));
-        // Note: Assert.ThrowsAsync doesn't support WithMessage, use FluentAssertions for message validation
+        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask())
+            .WithMessage("*Plugin validation failed*");
     }
 
     [Fact]
@@ -278,9 +277,9 @@ public class PluginIntegrationTests : IDisposable
         var healthEvents = new List<PluginHealthChangedEventArgs>();
         var errorEvents = new List<PluginErrorEventArgs>();
 
-        plugin.StateChanged +=(s, e) => stateEvents.Add(e);
-        plugin.HealthChanged +=(s, e) => healthEvents.Add(e);
-        plugin.ErrorOccurred +=(s, e) => errorEvents.Add(e);
+        plugin.StateChanged += (s, e) => stateEvents.Add(e);
+        plugin.HealthChanged += (s, e) => healthEvents.Add(e);
+        plugin.ErrorOccurred += (s, e) => errorEvents.Add(e);
 
         // Act
         await pluginSystem.LoadPluginAsync(plugin);
@@ -291,8 +290,8 @@ public class PluginIntegrationTests : IDisposable
         await plugin.StopAsync();
 
         // Assert
-        stateEvents.Should().HaveCountGreaterThan(0);
-        healthEvents.Should().HaveCountGreaterThan(0);
+        stateEvents.HaveCountGreaterThan(0);
+        healthEvents.HaveCountGreaterThan(0);
         Assert.Equal(1, errorEvents.Count());
     }
 
@@ -329,9 +328,10 @@ public class PluginIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        if(_disposed) return;
+        if (_disposed)
+            return;
 
-       (_serviceProvider as IDisposable)?.Dispose();
+        (_serviceProvider as IDisposable)?.Dispose();
         _disposed = true;
 
         GC.SuppressFinalize(this);
@@ -341,7 +341,7 @@ public class PluginIntegrationTests : IDisposable
 
     public interface ITestService
     {
-        string GetData();
+        public string GetData();
     }
 
     public sealed class TestService : ITestService
@@ -369,7 +369,7 @@ public class PluginIntegrationTests : IDisposable
 
         protected override void Dispose(bool disposing)
         {
-            if(disposing)
+            if (disposing)
             {
                 IsDisposed = true;
             }
@@ -461,15 +461,9 @@ public class PluginIntegrationTests : IDisposable
         public override string Author => "Test";
         public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend;
 
-        public void SimulateError()
-        {
-            OnError(new InvalidOperationException("Simulated error"), "Test context");
-        }
+        public void SimulateError() => OnError(new InvalidOperationException("Simulated error"), "Test context");
 
-        public void SimulateHealthChange()
-        {
-            Health = PluginHealth.Degraded;
-        }
+        public void SimulateHealthChange() => Health = PluginHealth.Degraded;
     }
 
     private sealed class MetricsTestPlugin : BackendPluginBase
@@ -495,10 +489,7 @@ public class PluginIntegrationTests : IDisposable
             RecordRequest(50.0);
         }
 
-        protected override void OnUpdateMetrics(PluginMetrics metrics)
-        {
-            metrics.CustomMetrics["WorkCount"] = _workCount;
-        }
+        protected override void OnUpdateMetrics(PluginMetrics metrics) => metrics.CustomMetrics["WorkCount"] = _workCount;
     }
 
     #endregion

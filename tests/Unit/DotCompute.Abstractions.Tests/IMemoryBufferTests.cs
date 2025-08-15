@@ -1,10 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
 using Moq;
 using Xunit;
 using FluentAssertions;
@@ -231,23 +227,23 @@ public class IMemoryBufferTests
     public async Task CopyFromHostAsync_WithDifferentTypes_ShouldWork(Type elementType)
     {
         // Arrange & Act & Assert based on type
-        if(elementType == typeof(int))
+        if (elementType == typeof(int))
         {
             var data = new int[] { 1, 2, 3 };
             var memory = new ReadOnlyMemory<int>(data);
             _mockBuffer.Setup(b => b.CopyFromHostAsync(memory, 0, CancellationToken.None))
                       .Returns(ValueTask.CompletedTask);
-            
+
             await _mockBuffer.Object.CopyFromHostAsync(memory);
             _mockBuffer.Verify(b => b.CopyFromHostAsync(memory, 0, CancellationToken.None), Times.Once);
         }
-        else if(elementType == typeof(float))
+        else if (elementType == typeof(float))
         {
             var data = new float[] { 1.0f, 2.0f, 3.0f };
             var memory = new ReadOnlyMemory<float>(data);
             _mockBuffer.Setup(b => b.CopyFromHostAsync(memory, 0, CancellationToken.None))
                       .Returns(ValueTask.CompletedTask);
-            
+
             await _mockBuffer.Object.CopyFromHostAsync(memory);
             _mockBuffer.Verify(b => b.CopyFromHostAsync(memory, 0, CancellationToken.None), Times.Once);
         }
@@ -611,7 +607,7 @@ public class IMemoryBufferTests
     {
         // Note: Properties typically remain accessible even after disposal
         // They may return cached values or throw exceptions - depends on implementation
-        
+
         // Arrange
         const long size = 1024;
         var options = MemoryOptions.ReadOnly;

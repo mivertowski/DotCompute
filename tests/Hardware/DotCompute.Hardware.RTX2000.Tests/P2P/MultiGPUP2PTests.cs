@@ -1,8 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -28,8 +25,8 @@ public class MultiGPUP2PTests : IDisposable
     public MultiGPUP2PTests(ITestOutputHelper output)
     {
         _output = output;
-        _cudaContexts = new List<IntPtr>();
-        _deviceIds = new List<int>();
+        _cudaContexts = [];
+        _deviceIds = [];
         InitializeMultiGPU();
     }
 
@@ -39,7 +36,7 @@ public class MultiGPUP2PTests : IDisposable
         {
             // Initialize CUDA
             var result = CudaInit(0);
-            if(result != 0)
+            if (result != 0)
             {
                 _output.WriteLine($"CUDA initialization failed with error code: {result}");
                 return;
@@ -47,7 +44,7 @@ public class MultiGPUP2PTests : IDisposable
 
             // Get device count
             result = CudaGetDeviceCount(ref _deviceCount);
-            if(result != 0 || _deviceCount < 2)
+            if (result != 0 || _deviceCount < 2)
             {
                 _output.WriteLine($"Insufficient GPU devices found. Count: {_deviceCount}, Required: 2+");
                 return;
@@ -56,16 +53,16 @@ public class MultiGPUP2PTests : IDisposable
             _output.WriteLine($"Found {_deviceCount} CUDA devices");
 
             // Initialize contexts for each device
-            for(int i = 0; i < Math.Min(_deviceCount, 4); i++) // Limit to 4 devices for testing
+            for (var i = 0; i < Math.Min(_deviceCount, 4); i++) // Limit to 4 devices for testing
             {
-                IntPtr context = IntPtr.Zero;
+                var context = IntPtr.Zero;
                 result = CudaCtxCreate(ref context, 0, i);
-                
-                if(result == 0)
+
+                if (result == 0)
                 {
                     _cudaContexts.Add(context);
                     _deviceIds.Add(i);
-                    
+
                     var deviceName = new byte[256];
                     CudaDeviceGetName(deviceName, 256, i);
                     var name = System.Text.Encoding.ASCII.GetString(deviceName).TrimEnd('\0');
@@ -79,12 +76,12 @@ public class MultiGPUP2PTests : IDisposable
             }
 
             // Check P2P capability between devices
-            if(_deviceIds.Count >= 2)
+            if (_deviceIds.Count >= 2)
             {
                 CheckP2PCapability();
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _output.WriteLine($"Multi-GPU initialization exception: {ex.Message}");
         }
@@ -93,15 +90,15 @@ public class MultiGPUP2PTests : IDisposable
     private void CheckP2PCapability()
     {
         _output.WriteLine("Checking P2P capabilities between devices...");
-        
-        for(int i = 0; i < _deviceIds.Count; i++)
+
+        for (var i = 0; i < _deviceIds.Count; i++)
         {
-            for(int j = i + 1; j < _deviceIds.Count; j++)
+            for (var j = i + 1; j < _deviceIds.Count; j++)
             {
-                int canAccessPeer = 0;
+                var canAccessPeer = 0;
                 var result = CudaDeviceCanAccessPeer(ref canAccessPeer, _deviceIds[i], _deviceIds[j]);
-                
-                if(result == 0 && canAccessPeer == 1)
+
+                if (result == 0 && canAccessPeer == 1)
                 {
                     _output.WriteLine($"P2P access available: Device {_deviceIds[i]} ↔ Device {_deviceIds[j]}");
                     _p2pCapable = true;
@@ -113,7 +110,7 @@ public class MultiGPUP2PTests : IDisposable
             }
         }
 
-        if(_p2pCapable)
+        if (_p2pCapable)
         {
             _output.WriteLine("✓ P2P capabilities detected");
         }
@@ -128,7 +125,7 @@ public class MultiGPUP2PTests : IDisposable
     {
         Skip.IfNot(_deviceCount >= 2, "Multi-GPU configuration not available");
 
-        _deviceCount .Should().BeGreaterThanOrEqualTo(2, "Should detect at least 2 GPU devices");
+        _deviceCount.Should().BeGreaterThanOrEqualTo(2, "Should detect at least 2 GPU devices");
         _cudaContexts.Count.Should().BeGreaterOrEqualTo(2, "Should create contexts for multiple devices");
 
         _output.WriteLine($"Multi-GPU configuration validated:");
@@ -145,22 +142,22 @@ public class MultiGPUP2PTests : IDisposable
         Skip.IfNot(_deviceCount >= 2 && _p2pCapable, "P2P capable multi-GPU not available");
 
         var p2pConnections = 0;
-        
+
         // Set context to first device and enable P2P access to others
         var result = CudaCtxSetCurrent(_cudaContexts[0]);
         Assert.Equal(0, result); // Setting current context should succeed;
 
-        for(int i = 1; i < _deviceIds.Count; i++)
+        for (var i = 1; i < _deviceIds.Count; i++)
         {
             // Enable P2P access from device 0 to device i
             result = CudaCtxEnablePeerAccess(_cudaContexts[i], 0);
-            
-            if(result == 0)
+
+            if (result == 0)
             {
                 p2pConnections++;
                 _output.WriteLine($"✓ P2P enabled: Device {_deviceIds[0]} → Device {_deviceIds[i]}");
             }
-            else if(result == 704) // CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED
+            else if (result == 704) // CUDA_ERROR_PEER_ACCESS_ALREADY_ENABLED
             {
                 p2pConnections++;
                 _output.WriteLine($"✓ P2P already enabled: Device {_deviceIds[0]} → Device {_deviceIds[i]}");
@@ -172,18 +169,18 @@ public class MultiGPUP2PTests : IDisposable
         }
 
         // Enable reverse P2P access
-        for(int i = 1; i < _deviceIds.Count; i++)
+        for (var i = 1; i < _deviceIds.Count; i++)
         {
             result = CudaCtxSetCurrent(_cudaContexts[i]);
             Assert.Equal(0, result); // Setting current context should succeed;
 
             result = CudaCtxEnablePeerAccess(_cudaContexts[0], 0);
-            
-            if(result == 0)
+
+            if (result == 0)
             {
                 _output.WriteLine($"✓ P2P enabled: Device {_deviceIds[i]} → Device {_deviceIds[0]}");
             }
-            else if(result == 704) // Already enabled
+            else if (result == 704) // Already enabled
             {
                 _output.WriteLine($"✓ P2P already enabled: Device {_deviceIds[i]} → Device {_deviceIds[0]}");
             }
@@ -202,22 +199,22 @@ public class MultiGPUP2PTests : IDisposable
 
         const int dataSize = 1024 * 1024; // 1MB
         const int elementCount = dataSize / sizeof(float);
-        
+
         IntPtr device0Buffer = IntPtr.Zero, device1Buffer = IntPtr.Zero;
-        
+
         try
         {
             // Set context to device 0 and allocate memory
             var result = CudaCtxSetCurrent(_cudaContexts[0]);
             Assert.Equal(0, result); // Setting context 0 should succeed;
-            
+
             result = CudaMalloc(ref device0Buffer, dataSize);
             Assert.Equal(0, result); // Allocation on device 0 should succeed;
 
             // Set context to device 1 and allocate memory
             result = CudaCtxSetCurrent(_cudaContexts[1]);
             Assert.Equal(0, result); // Setting context 1 should succeed;
-            
+
             result = CudaMalloc(ref device1Buffer, dataSize);
             Assert.Equal(0, result); // Allocation on device 1 should succeed;
 
@@ -226,7 +223,7 @@ public class MultiGPUP2PTests : IDisposable
             Assert.Equal(0, result); // Setting context 0 should succeed;
 
             var hostData = new float[elementCount];
-            for(int i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 hostData[i] = i + 0.5f;
             }
@@ -243,7 +240,7 @@ public class MultiGPUP2PTests : IDisposable
                 var sw = Stopwatch.StartNew();
                 result = CudaMemcpyPeer(device1Buffer, _cudaContexts[1], device0Buffer, _cudaContexts[0], dataSize);
                 sw.Stop();
-                
+
                 Assert.Equal(0, result); // P2P memory copy should succeed;
                 _output.WriteLine($"P2P transfer completed in {sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency:F1} μs");
 
@@ -263,7 +260,7 @@ public class MultiGPUP2PTests : IDisposable
                     Assert.Equal(0, result); // D2H copy from device 1 should succeed;
 
                     // Verify data integrity
-                    for(int i = 0; i < Math.Min(1000, elementCount); i++)
+                    for (var i = 0; i < Math.Min(1000, elementCount); i++)
                     {
                         resultData[i].Should().Be(hostData[i], $"Data at index {i} should match after P2P transfer");
                     }
@@ -285,12 +282,12 @@ public class MultiGPUP2PTests : IDisposable
         }
         finally
         {
-            if(device0Buffer != IntPtr.Zero) 
+            if (device0Buffer != IntPtr.Zero)
             {
                 CudaCtxSetCurrent(_cudaContexts[0]);
                 CudaFree(device0Buffer);
             }
-            if(device1Buffer != IntPtr.Zero)
+            if (device1Buffer != IntPtr.Zero)
             {
                 CudaCtxSetCurrent(_cudaContexts[1]);
                 CudaFree(device1Buffer);
@@ -306,7 +303,7 @@ public class MultiGPUP2PTests : IDisposable
         Skip.IfNot(_deviceCount >= 2, "Multi-GPU configuration not available");
 
         const int totalWorkSize = 4 * 1024 * 1024; // 4M elements
-        int elementsPerGPU = totalWorkSize / Math.Min(_deviceIds.Count, 4);
+        var elementsPerGPU = totalWorkSize / Math.Min(_deviceIds.Count, 4);
 
         _output.WriteLine($"Distributing workload across {_deviceIds.Count} GPUs");
         _output.WriteLine($"Total work: {totalWorkSize} elements, {elementsPerGPU} per GPU");
@@ -318,7 +315,7 @@ public class MultiGPUP2PTests : IDisposable
         try
         {
             // Prepare data for each GPU
-            for(int gpu = 0; gpu < _deviceIds.Count; gpu++)
+            for (var gpu = 0; gpu < _deviceIds.Count; gpu++)
             {
                 var result = CudaCtxSetCurrent(_cudaContexts[gpu]);
                 Assert.Equal(0, result); // Setting context should succeed
@@ -328,7 +325,7 @@ public class MultiGPUP2PTests : IDisposable
 
                 // Initialize data
                 var gpuData = new float[elementsPerGPU];
-                for(int i = 0; i < elementsPerGPU; i++)
+                for (var i = 0; i < elementsPerGPU; i++)
                 {
                     gpuData[i] = gpu * elementsPerGPU + i;
                 }
@@ -350,23 +347,24 @@ public class MultiGPUP2PTests : IDisposable
             // Launch workload on each GPU simultaneously
             var overallSw = Stopwatch.StartNew();
 
-            for(int gpu = 0; gpu < _deviceIds.Count; gpu++)
+            for (var gpu = 0; gpu < _deviceIds.Count; gpu++)
             {
-                int capturedGpu = gpu; // Capture for closure
-                
+                var capturedGpu = gpu; // Capture for closure
+
                 gpuTasks[gpu] = Task.Run(async () =>
                 {
                     var sw = Stopwatch.StartNew();
-                    
+
                     var result = CudaCtxSetCurrent(_cudaContexts[capturedGpu]);
-                    if(result != 0) return;
+                    if (result != 0)
+                        return;
 
                     // Simulate compute-intensive work
                     await SimulateComputeWorkload(gpuBuffers[capturedGpu], elementsPerGPU, capturedGpu);
-                    
+
                     result = CudaCtxSynchronize();
                     sw.Stop();
-                    
+
                     completionTimes[capturedGpu] = sw.Elapsed.TotalMilliseconds;
                     _output.WriteLine($"GPU {capturedGpu} completed workload in {completionTimes[capturedGpu]:F2} ms");
                 });
@@ -380,7 +378,7 @@ public class MultiGPUP2PTests : IDisposable
             var averageTime = completionTimes.Average();
             var maxTime = completionTimes.Max();
             var minTime = completionTimes.Min();
-            var workloadEfficiency =(averageTime / maxTime) * 100;
+            var workloadEfficiency = (averageTime / maxTime) * 100;
 
             _output.WriteLine($"Multi-GPU workload distribution results:");
             _output.WriteLine($"  Total time: {totalTime:F2} ms");
@@ -398,9 +396,9 @@ public class MultiGPUP2PTests : IDisposable
         finally
         {
             // Cleanup
-            for(int gpu = 0; gpu < _deviceIds.Count; gpu++)
+            for (var gpu = 0; gpu < _deviceIds.Count; gpu++)
             {
-                if(gpuBuffers[gpu] != IntPtr.Zero)
+                if (gpuBuffers[gpu] != IntPtr.Zero)
                 {
                     CudaCtxSetCurrent(_cudaContexts[gpu]);
                     CudaFree(gpuBuffers[gpu]);
@@ -427,7 +425,7 @@ public class MultiGPUP2PTests : IDisposable
         try
         {
             // Prepare buffers for each GPU
-            for(int gpu = 0; gpu < _deviceIds.Count; gpu++)
+            for (var gpu = 0; gpu < _deviceIds.Count; gpu++)
             {
                 var result = CudaCtxSetCurrent(_cudaContexts[gpu]);
                 Assert.Equal(0, result); // Setting context should succeed
@@ -445,36 +443,38 @@ public class MultiGPUP2PTests : IDisposable
             var tasks = new Task[_deviceIds.Count];
             var overallSw = Stopwatch.StartNew();
 
-            for(int gpu = 0; gpu < _deviceIds.Count; gpu++)
+            for (var gpu = 0; gpu < _deviceIds.Count; gpu++)
             {
-                int capturedGpu = gpu;
-                
+                var capturedGpu = gpu;
+
                 tasks[gpu] = Task.Run(() =>
                 {
                     var result = CudaCtxSetCurrent(_cudaContexts[capturedGpu]);
-                    if(result != 0) return;
+                    if (result != 0)
+                        return;
 
                     var hostHandle = GCHandle.Alloc(hostBuffers[capturedGpu], GCHandleType.Pinned);
                     try
                     {
                         // Warm up
-                        for(int i = 0; i < 3; i++)
+                        for (var i = 0; i < 3; i++)
                         {
                             CudaMemcpyHtoD(gpuBuffers[capturedGpu], hostHandle.AddrOfPinnedObject(), transferSize);
                         }
 
                         // Measure H2D bandwidth
                         var sw = Stopwatch.StartNew();
-                        for(int i = 0; i < iterations; i++)
+                        for (var i = 0; i < iterations; i++)
                         {
                             result = CudaMemcpyHtoD(gpuBuffers[capturedGpu], hostHandle.AddrOfPinnedObject(), transferSize);
-                            if(result != 0) break;
+                            if (result != 0)
+                                break;
                         }
                         sw.Stop();
 
-                        var bandwidth =((long)transferSize * iterations /(1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                        var bandwidth = ((long)transferSize * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
                         bandwidthResults[capturedGpu] = bandwidth;
-                        
+
                         _output.WriteLine($"GPU {capturedGpu} bandwidth: {bandwidth:F2} GB/s");
                     }
                     finally
@@ -497,17 +497,17 @@ public class MultiGPUP2PTests : IDisposable
             _output.WriteLine($"  Parallel efficiency: {parallelEfficiency:F1}%");
 
             // Validate aggregated performance
-            totalBandwidth.Should().BeGreaterThan(averageBandwidth * _deviceIds.Count * 0.7, 
+            totalBandwidth.Should().BeGreaterThan(averageBandwidth * _deviceIds.Count * 0.7,
                 "Aggregated bandwidth should benefit from parallelism");
-            
+
             _output.WriteLine("✓ Multi-GPU memory bandwidth aggregation validated");
         }
         finally
         {
             // Cleanup
-            for(int gpu = 0; gpu < _deviceIds.Count; gpu++)
+            for (var gpu = 0; gpu < _deviceIds.Count; gpu++)
             {
-                if(gpuBuffers[gpu] != IntPtr.Zero)
+                if (gpuBuffers[gpu] != IntPtr.Zero)
                 {
                     CudaCtxSetCurrent(_cudaContexts[gpu]);
                     CudaFree(gpuBuffers[gpu]);
@@ -516,11 +516,11 @@ public class MultiGPUP2PTests : IDisposable
         }
     }
 
-    private async Task SimulateComputeWorkload(IntPtr buffer, int elementCount, int gpuId)
+    private static async Task SimulateComputeWorkload(IntPtr buffer, int elementCount, int gpuId)
     {
         // Simulate compute-intensive operations
         const int computeIterations = 1000;
-        
+
         // This would normally launch a CUDA kernel using computeIterations
         await Task.Delay(computeIterations / 100); // Simulate compute time
         // For simulation, we'll just do synchronous operations
@@ -537,13 +537,13 @@ public class MultiGPUP2PTests : IDisposable
         // Disable P2P access
         try
         {
-            for(int i = 0; i < _cudaContexts.Count; i++)
+            for (var i = 0; i < _cudaContexts.Count; i++)
             {
                 CudaCtxSetCurrent(_cudaContexts[i]);
-                
-                for(int j = 0; j < _cudaContexts.Count; j++)
+
+                for (var j = 0; j < _cudaContexts.Count; j++)
                 {
-                    if(i != j)
+                    if (i != j)
                     {
                         CudaCtxDisablePeerAccess(_cudaContexts[j]);
                     }
@@ -558,12 +558,12 @@ public class MultiGPUP2PTests : IDisposable
         // Destroy contexts
         foreach (var context in _cudaContexts)
         {
-            if(context != IntPtr.Zero)
+            if (context != IntPtr.Zero)
             {
                 CudaCtxDestroy(context);
             }
         }
-        
+
         _cudaContexts.Clear();
         _deviceIds.Clear();
     }
@@ -633,7 +633,7 @@ public static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
-        if(!condition)
+        if (!condition)
         {
             throw new SkipException(reason);
         }

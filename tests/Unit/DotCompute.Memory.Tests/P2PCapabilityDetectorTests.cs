@@ -1,15 +1,9 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using FluentAssertions;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
-using DotCompute.Memory;
 using DotCompute.Tests.Shared;
-using AbstractionsMemoryManager = DotCompute.Abstractions.IMemoryManager;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -220,7 +214,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         // Arrange
         var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
         var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
-        
+
         // Enable first
         await _detector.EnableP2PAccessAsync(device1, device2);
 
@@ -309,7 +303,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
 
         // Act - concurrent detection calls
         var tasks = new Task<P2PConnectionCapability>[10];
-        for(var i = 0; i < tasks.Length; i++)
+        for (var i = 0; i < tasks.Length; i++)
         {
             tasks[i] = _detector.DetectP2PCapabilityAsync(device1, device2).AsTask();
         }
@@ -337,7 +331,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => 
+        await Assert.ThrowsAsync<OperationCanceledException>(() =>
             _detector.DetectP2PCapabilityAsync(device1, device2, cts.Token).AsTask());
     }
 
@@ -351,12 +345,9 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
             "CPU" => AcceleratorType.CPU,
             _ => AcceleratorType.GPU
         };
-        
+
         return new MockAccelerator(name: deviceTypeEnum.ToString(), type: deviceTypeEnum);
     }
 
-    public void Dispose()
-    {
-        _detector?.DisposeAsync().AsTask().Wait();
-    }
+    public void Dispose() => _detector?.DisposeAsync().AsTask().Wait();
 }

@@ -1,11 +1,7 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution;
 using DotCompute.Memory;
@@ -71,8 +67,8 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(bufferSize, readData.Count());
-        var timePerElement = stopwatch.ElapsedTicks /(double)bufferSize;
-        timePerElement .Should().BeLessThan(10000, "Time per element should scale reasonably");
+        var timePerElement = stopwatch.ElapsedTicks / (double)bufferSize;
+        timePerElement.Should().BeLessThan(10000, "Time per element should scale reasonably");
 
         TestOutput.WriteLine($"Buffer size {bufferSize}: {stopwatch.ElapsedMilliseconds}ms{timePerElement:F2} ticks/element)");
     }
@@ -90,14 +86,14 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         {
             // Act
             var stopwatch = Stopwatch.StartNew();
-            
-            for(int i = 0; i < bufferCount; i++)
+
+            for (var i = 0; i < bufferCount; i++)
             {
                 var data = GenerateTestFloatArray(bufferSize, i, i + 10);
                 var buffer = await CreateInputBuffer<float>(memoryManager, data);
                 buffers.Add(buffer);
             }
-            
+
             stopwatch.Stop();
 
             // Assert
@@ -127,14 +123,14 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         var baseMemoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
 
         // Act & Assert
-        using(var unifiedManager = new UnifiedMemoryManager(baseMemoryManager))
+        using (var unifiedManager = new UnifiedMemoryManager(baseMemoryManager))
         {
             unifiedManager.Should().NotBeNull();
             unifiedManager.Should().BeAssignableTo<IUnifiedMemoryManager>();
         }
 
         TestOutput.WriteLine("UnifiedMemoryManager creation and disposal validated successfully");
-        
+
         return Task.CompletedTask;
     }
 
@@ -179,7 +175,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         cache.Should().NotBeNull("Cache should be created");
         cache.Count.Should().Be(0);
         cache.IsEmpty.Should().BeTrue();
-        
+
         stats.Should().NotBeNull("Statistics should be available");
         stats.TotalKernels.Should().Be(0);
         stats.TotalAccessCount.Should().Be(0);
@@ -201,7 +197,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         cache1.Should().NotBeNull("First cache should be created");
         cache1.Should().BeSameAs(cache2, "Same kernel name should return same cache");
         cache3.Should().NotBeSameAs(cache1, "Different kernel should get different cache");
-        
+
         stats.TotalCaches.Should().Be(2);
         stats.KernelNames.Should().Contain("test_kernel");
         stats.KernelNames.Should().Contain("other_kernel");
@@ -226,12 +222,12 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
 
         // Act
         var stopwatch = Stopwatch.StartNew();
-        
-        for(int i = 0; i < operationCount; i++)
+
+        for (var i = 0; i < operationCount; i++)
         {
             tasks.Add(ExecuteBufferOperationAsync(semaphore, memoryManager, i));
         }
-        
+
         var results = await Task.WhenAll(tasks);
         stopwatch.Stop();
 
@@ -255,7 +251,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         try
         {
             // Act - Stress test with bounded resource usage
-            for(int i = 0; i < maxAttempts; i++)
+            for (var i = 0; i < maxAttempts; i++)
             {
                 try
                 {
@@ -264,11 +260,11 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
                     allocatedBuffers.Add(buffer);
                     successCount++;
                 }
-                catch(OutOfMemoryException)
+                catch (OutOfMemoryException)
                 {
                     break; // Expected under pressure
                 }
-                catch(InvalidOperationException)
+                catch (InvalidOperationException)
                 {
                     break; // Also acceptable
                 }
@@ -284,7 +280,11 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
             // Cleanup
             foreach (var buffer in allocatedBuffers)
             {
-                try { await buffer.DisposeAsync(); } catch { /* Ignore cleanup errors */ }
+                try
+                {
+                    await buffer.DisposeAsync();
+                }
+                catch { /* Ignore cleanup errors */ }
             }
         }
     }
@@ -300,7 +300,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             CreateInputBuffer<float>(memoryManager, Array.Empty<float>()));
 
         TestOutput.WriteLine("Invalid input error handling validated");
@@ -384,7 +384,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         var stopwatch = Stopwatch.StartNew();
         var processedElements = 0;
 
-        for(int batch = 0; batch < batchSize; batch++)
+        for (var batch = 0; batch < batchSize; batch++)
         {
             var data = GenerateTestFloatArray(elementCount, batch, batch + 1);
             var buffer = await CreateInputBuffer<float>(memoryManager, data);
@@ -427,7 +427,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
             await buffer.DisposeAsync();
             return readData.Length == data.Length && Math.Abs(readData[0] - operationId) < 0.1f;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             TestOutput.WriteLine($"Operation {operationId} failed: {ex.Message}");
             return false;

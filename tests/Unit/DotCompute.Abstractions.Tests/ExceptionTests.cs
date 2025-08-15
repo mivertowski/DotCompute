@@ -1,10 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
-using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
@@ -312,7 +308,7 @@ public class ExceptionTests
         {
             throw new AcceleratorException(expectedMessage);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             caughtException = ex;
         }
@@ -335,7 +331,7 @@ public class ExceptionTests
         {
             throw new MemoryException(expectedMessage);
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             caughtException = ex;
         }
@@ -358,7 +354,7 @@ public class ExceptionTests
         {
             throw new AcceleratorException(expectedMessage);
         }
-        catch(AcceleratorException ex)
+        catch (AcceleratorException ex)
         {
             caughtException = ex;
         }
@@ -380,7 +376,7 @@ public class ExceptionTests
         {
             throw new MemoryException(expectedMessage);
         }
-        catch(MemoryException ex)
+        catch (MemoryException ex)
         {
             caughtException = ex;
         }
@@ -405,12 +401,12 @@ public class ExceptionTests
             {
                 throw new MemoryException("Memory error");
             }
-            catch(AcceleratorException ex)
+            catch (AcceleratorException ex)
             {
                 caughtAcceleratorException = ex;
             }
         }
-        catch(MemoryException ex)
+        catch (MemoryException ex)
         {
             caughtMemoryException = ex;
             memoryExceptionThrown = true;
@@ -597,8 +593,8 @@ public class ExceptionTests
         }
 
         // Act & Assert
-        var acceleratorAction =() => SimulateAcceleratorOperation();
-        var memoryAction =() => SimulateMemoryOperation();
+        var acceleratorAction = () => SimulateAcceleratorOperation();
+        var memoryAction = () => SimulateMemoryOperation();
 
         acceleratorAction.Should().Throw<AcceleratorException>()
                         .WithMessage("Simulated accelerator failure");

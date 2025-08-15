@@ -1,8 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
@@ -212,7 +210,7 @@ public class IKernelTests
     public void IKernel_StaticAbstractMembers_ShouldBeConsistent()
     {
         // Test that accessing static members multiple times returns same values
-        
+
         // Act
         var name1 = TestKernel.Name;
         var name2 = TestKernel.Name;
@@ -264,18 +262,18 @@ public class IKernelTests
     {
         // Test that accessing static members is efficient(no boxing/allocation)
         // This is a performance characteristic test
-        
+
         var startTime = DateTime.UtcNow;
-        
+
         // Act - Access properties many times
-        for(int i = 0; i < 10000; i++)
+        for (var i = 0; i < 10000; i++)
         {
             var _ = TestKernel.Name;
             var __ = TestKernel.Source;
             var ___ = TestKernel.EntryPoint;
             var ____ = TestKernel.RequiredSharedMemory;
         }
-        
+
         var endTime = DateTime.UtcNow;
         var duration = endTime - startTime;
 
@@ -287,7 +285,7 @@ public class IKernelTests
     public void IKernel_KernelStructs_ShouldBeValueTypes()
     {
         // Structs should be value types for better performance and AOT compatibility
-        
+
         // Assert
         typeof(TestKernel).IsValueType.Should().BeTrue();
         typeof(VectorAddKernel).IsValueType.Should().BeTrue();
@@ -303,13 +301,13 @@ public class IKernelTests
     public void IKernel_Properties_ShouldHandleSpecialCharacters()
     {
         // Test kernels should handle various content types
-        
+
         // Assert - Properties should contain expected content
         VectorAddKernel.Source.Should().Contain("*"); // Pointer syntax
         VectorAddKernel.Source.Should().Contain("+"); // Arithmetic operator
         VectorAddKernel.Source.Should().Contain("["); // Array access
         VectorAddKernel.Source.Should().Contain("]"); // Array access
-        
+
         SharedMemoryKernel.Source.Should().Contain("__shared__"); // CUDA shared memory keyword
     }
 
@@ -317,7 +315,7 @@ public class IKernelTests
     public void IKernel_Names_ShouldBeValidIdentifiers()
     {
         // Kernel names should be valid programming identifiers
-        
+
         // Assert
         TestKernel.Name.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
         VectorAddKernel.Name.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
@@ -329,7 +327,7 @@ public class IKernelTests
     public void IKernel_EntryPoints_ShouldBeValidMethodNames()
     {
         // Entry points should be valid method names
-        
+
         // Assert
         TestKernel.EntryPoint.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
         VectorAddKernel.EntryPoint.Should().MatchRegex(@"^[a-zA-Z_][a-zA-Z0-9_]*$");
@@ -346,14 +344,14 @@ public class IKernelTests
     {
         // Test that the interface can work with generic constraints
         // This verifies the interface design is flexible
-        
+
         // Arrange & Act
         var kernelType = typeof(IKernel);
-        
+
         // Assert
         kernelType.IsGenericType.Should().BeFalse(); // Interface itself is not generic
         kernelType.IsGenericTypeDefinition.Should().BeFalse();
-        
+
         // But implementations can be generic or constrained
         typeof(TestKernel).IsValueType.Should().BeTrue();
     }
@@ -366,12 +364,12 @@ public class IKernelTests
     public void IKernel_Properties_ShouldProvideCompilationContext()
     {
         // Test that kernel properties provide enough context for compilation
-        
+
         // Act & Assert
         TestKernel.Name.Should().NotBeNullOrEmpty("Name is required for kernel identification");
         TestKernel.Source.Should().NotBeNullOrEmpty("Source code is required for compilation");
         TestKernel.EntryPoint.Should().NotBeNullOrEmpty("Entry point is required for execution");
-        
+
         // Shared memory can be zero(valid case)
         (TestKernel.RequiredSharedMemory >= 0).Should().BeTrue();
     }
@@ -380,11 +378,11 @@ public class IKernelTests
     public void IKernel_Properties_ShouldBeCompilationReady()
     {
         // Test that properties contain compilation-ready information
-        
+
         // Assert
         VectorAddKernel.Source.Should().Contain("void"); // Should contain function declaration
         VectorAddKernel.EntryPoint.Should().Be("vectorAdd"); // Should match function name
-        
+
         SharedMemoryKernel.RequiredSharedMemory.Should().BePositive("Kernel declares shared memory usage");
         SharedMemoryKernel.Source.Should().Contain("__shared__"); // Should match memory requirement
     }
@@ -397,12 +395,12 @@ public class IKernelTests
     public void IKernel_StaticMembers_ShouldBeThreadSafe()
     {
         // Test concurrent access to static abstract members
-        
+
         var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
         var results = new System.Collections.Concurrent.ConcurrentBag<string>();
-        
+
         // Act - Multiple threads accessing static members
-        for(int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             tasks.Add(System.Threading.Tasks.Task.Run(() =>
             {
@@ -410,17 +408,17 @@ public class IKernelTests
                 var source = TestKernel.Source;
                 var entryPoint = TestKernel.EntryPoint;
                 var sharedMemory = TestKernel.RequiredSharedMemory;
-                
+
                 results.Add($"{name}:{source}:{entryPoint}:{sharedMemory}");
             }));
         }
-        
+
         System.Threading.Tasks.Task.WaitAll(tasks.ToArray());
-        
+
         // Assert - All results should be identical
         Assert.Equal(10, results.Count());
         results.Distinct().Should().HaveCount(1); // All results should be the same
-        
+
         var expectedResult = $"{TestKernel.Name}:{TestKernel.Source}:{TestKernel.EntryPoint}:{TestKernel.RequiredSharedMemory}";
         results.Should().AllBe(expectedResult);
     }

@@ -1,10 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
 using Moq;
 using Xunit;
 using FluentAssertions;
@@ -33,7 +29,7 @@ public class IMemoryManagerTests
         // Arrange
         const long size = 1024;
         var options = MemoryOptions.None;
-        
+
         _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(size);
         _mockBuffer.SetupGet(b => b.Options).Returns(options);
         _mockMemoryManager.Setup(m => m.AllocateAsync(size, options, CancellationToken.None))
@@ -138,7 +134,7 @@ public class IMemoryManagerTests
         var sourceData = new float[] { 1.0f, 2.0f, 3.0f, 4.0f };
         var sourceMemory = new ReadOnlyMemory<float>(sourceData);
         var options = MemoryOptions.None;
-        
+
         _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(sourceData.Length * sizeof(float));
         _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(sourceMemory, options, CancellationToken.None))
                          .ReturnsAsync(_mockBuffer.Object);
@@ -157,7 +153,7 @@ public class IMemoryManagerTests
     {
         // Arrange
         var emptyData = ReadOnlyMemory<int>.Empty;
-        
+
         _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(emptyData, MemoryOptions.None, CancellationToken.None))
                          .ThrowsAsync(new ArgumentException("Source data cannot be empty", "source"));
 
@@ -209,7 +205,7 @@ public class IMemoryManagerTests
         const long length = 500;
         var parentBuffer = _mockBuffer.Object;
         var viewBuffer = new Mock<IMemoryBuffer>();
-        
+
         viewBuffer.SetupGet(b => b.SizeInBytes).Returns(length);
         _mockMemoryManager.Setup(m => m.CreateView(parentBuffer, offset, length))
                          .Returns(viewBuffer.Object);
@@ -272,7 +268,7 @@ public class IMemoryManagerTests
         // Arrange
         const int count = 1000;
         const long expectedSize = count * sizeof(float);
-        
+
         _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSize);
         _mockMemoryManager.Setup(m => m.Allocate<float>(count))
                          .ReturnsAsync(_mockBuffer.Object);
@@ -307,11 +303,11 @@ public class IMemoryManagerTests
     {
         // Arrange
         const int count = 100;
-        
+
         var intBuffer = new Mock<IMemoryBuffer>();
         var longBuffer = new Mock<IMemoryBuffer>();
         var doubleBuffer = new Mock<IMemoryBuffer>();
-        
+
         intBuffer.SetupGet(b => b.SizeInBytes).Returns(count * sizeof(int));
         longBuffer.SetupGet(b => b.SizeInBytes).Returns(count * sizeof(long));
         doubleBuffer.SetupGet(b => b.SizeInBytes).Returns(count * sizeof(double));
@@ -341,10 +337,10 @@ public class IMemoryManagerTests
         // Arrange
         var data = new float[] { 1.0f, 2.0f, 3.0f };
         var span = new ReadOnlySpan<float>(data);
-        
+
         // For span parameters, we can't use It.IsAny due to ref struct limitations
         // So we just verify the method can be called without exceptions
-        
+
         // Act & Assert(should not throw)
         _mockMemoryManager.Object.CopyToDevice(_mockBuffer.Object, span);
     }
@@ -355,7 +351,7 @@ public class IMemoryManagerTests
         // Arrange
         var data = new float[] { 1.0f };
         ReadOnlySpan<float> span = data;
-        
+
         // This test cannot use mocking due to ref struct limitations
         // In a real implementation, this would throw ArgumentNullException
 
@@ -369,7 +365,7 @@ public class IMemoryManagerTests
         {
             exception = ex;
         }
-        
+
         Assert.NotNull(exception);
         exception.ParamName.Should().Be("buffer");
     }
@@ -380,10 +376,10 @@ public class IMemoryManagerTests
         // Arrange
         var data = new float[3];
         var span = new Span<float>(data);
-        
+
         // For span parameters, we can't use mocking due to ref struct limitations
         // So we just verify the method can be called without exceptions
-        
+
         // Act & Assert(should not throw)
         _mockMemoryManager.Object.CopyFromDevice(span, _mockBuffer.Object);
     }
@@ -394,7 +390,7 @@ public class IMemoryManagerTests
         // Arrange
         var data = new float[3];
         Span<float> span = data;
-        
+
         // This test cannot use mocking due to ref struct limitations
         // In a real implementation, this would throw ArgumentNullException
 
@@ -408,7 +404,7 @@ public class IMemoryManagerTests
         {
             exception = ex;
         }
-        
+
         Assert.NotNull(exception);
         exception.ParamName.Should().Be("buffer");
     }
@@ -487,7 +483,7 @@ public class IMemoryManagerTests
         // Arrange
         var sourceData = new float[] { 1.0f, 2.0f, 3.0f, 4.0f };
         var destinationData = new float[4];
-        
+
         // Setup the workflow
         _mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(_mockBuffer.Object);
@@ -553,8 +549,8 @@ public class IMemoryManagerTests
     {
         // Arrange
         const int maxCount = int.MaxValue / sizeof(int); // Maximum possible count for int array
-        const long expectedSize =(long)maxCount * sizeof(int);
-        
+        const long expectedSize = (long)maxCount * sizeof(int);
+
         _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSize);
         _mockMemoryManager.Setup(m => m.Allocate<int>(maxCount))
                          .ReturnsAsync(_mockBuffer.Object);

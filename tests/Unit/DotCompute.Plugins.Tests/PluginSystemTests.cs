@@ -11,7 +11,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
-using System.Reflection;
 using Xunit;
 using FluentAssertions;
 
@@ -30,12 +29,12 @@ public class PluginSystemTests : IDisposable
     public PluginSystemTests()
     {
         _logger = NullLogger<PluginSystem>.Instance;
-        
+
         // Create a minimal service provider for plugin initialization
         var services = new ServiceCollection();
         services.AddSingleton(_logger);
         var serviceProvider = services.BuildServiceProvider();
-        
+
         _pluginSystem = new PluginSystem(_logger, serviceProvider);
         _testPlugin = new TestPlugin();
     }
@@ -44,7 +43,7 @@ public class PluginSystemTests : IDisposable
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Action act =() => new PluginSystem((ILogger<PluginSystem>)null!);
+        Action act = () => new PluginSystem((ILogger<PluginSystem>)null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
@@ -99,10 +98,8 @@ public class PluginSystemTests : IDisposable
 
     [Fact]
     public async Task LoadPluginAsync_WithNullPlugin_ThrowsArgumentNullException()
-    {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _pluginSystem.LoadPluginAsync((string)null!));
-    }
+        => await Assert.ThrowsAsync<ArgumentNullException>(() => _pluginSystem.LoadPluginAsync((string)null!));
 
     [Fact]
     public async Task LoadPluginAsync_WithInvalidPlugin_ThrowsPluginLoadException()
@@ -283,7 +280,7 @@ public class PluginSystemTests : IDisposable
     public void Dispose_CalledMultipleTimes_ShouldNotThrow()
     {
         // Act & Assert
-        Action act =() =>
+        Action act = () =>
         {
             _pluginSystem.Dispose();
             _pluginSystem.Dispose(); // Second call should not throw
@@ -293,7 +290,8 @@ public class PluginSystemTests : IDisposable
 
     public void Dispose()
     {
-        if(_disposed) return;
+        if (_disposed)
+            return;
 
         _pluginSystem?.Dispose();
         _testPlugin?.Dispose();
@@ -360,10 +358,7 @@ public class PluginSystemTests : IDisposable
 
         public PluginMetrics GetMetrics() => new();
 
-        public void Dispose()
-        {
-            IsDisposed = true;
-        }
+        public void Dispose() => IsDisposed = true;
     }
 
     /// <summary>

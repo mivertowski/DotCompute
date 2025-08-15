@@ -1,11 +1,5 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
-using DotCompute.Core;
-using DotCompute.Abstractions;
-using DotCompute.Memory;
 using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.Integration;
@@ -29,12 +23,12 @@ public class EndToEndWorkflowTests : IDisposable
         _cudaAvailable = CheckCudaAvailability();
     }
 
-    private bool CheckCudaAvailability()
+    private static bool CheckCudaAvailability()
     {
         try
         {
             // Simple CUDA availability check
-            return System.IO.File.Exists("/usr/local/cuda/bin/nvcc") || 
+            return System.IO.File.Exists("/usr/local/cuda/bin/nvcc") ||
                    System.IO.File.Exists("C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.0\\bin\\nvcc.exe");
         }
         catch
@@ -49,7 +43,7 @@ public class EndToEndWorkflowTests : IDisposable
         Skip.IfNot(_cudaAvailable, "CUDA not available for end-to-end testing");
 
         const int vectorSize = 1000000; // 1M elements
-        
+
         _output.WriteLine($"Starting end-to-end vector addition workflow with {vectorSize} elements");
 
         try
@@ -69,9 +63,9 @@ public class EndToEndWorkflowTests : IDisposable
             _output.WriteLine("✓ Compute engine initialized");
 
             // Step 3: Allocate GPU memory
-            using var bufferA = await memoryManager.AllocateAsync<float>(vectorSize);
-            using var bufferB = await memoryManager.AllocateAsync<float>(vectorSize);
-            using var bufferResult = await memoryManager.AllocateAsync<float>(vectorSize);
+            using var bufferA = await MockUnifiedMemoryManager.AllocateAsync<float>(vectorSize);
+            using var bufferB = await MockUnifiedMemoryManager.AllocateAsync<float>(vectorSize);
+            using var bufferResult = await MockUnifiedMemoryManager.AllocateAsync<float>(vectorSize);
 
             _output.WriteLine("✓ GPU memory allocated");
 
@@ -93,25 +87,25 @@ public class EndToEndWorkflowTests : IDisposable
             _output.WriteLine("✓ Results copied back from GPU");
 
             // Step 7: Validate results
-            for(int i = 0; i < Math.Min(1000, vectorSize); i++) // Sample validation
+            for (var i = 0; i < Math.Min(1000, vectorSize); i++) // Sample validation
             {
-                actualResult[i].Should().BeApproximately(expectedResult[i], 0.001f, 
+                actualResult[i].Should().BeApproximately(expectedResult[i], 0.001f,
                     $"Result at index {i} should match expected value");
             }
 
             _output.WriteLine("✓ Results validated successfully");
 
             // Performance validation
-            var elementsPerSecond = vectorSize /(kernelExecutionTime / 1000.0);
-            var bandwidth =(vectorSize * 3 * sizeof(float)) /(kernelExecutionTime / 1000.0) /(1024 * 1024 * 1024);
-            
+            var elementsPerSecond = vectorSize / (kernelExecutionTime / 1000.0);
+            var bandwidth = (vectorSize * 3 * sizeof(float)) / (kernelExecutionTime / 1000.0) / (1024 * 1024 * 1024);
+
             _output.WriteLine($"Performance metrics:");
             _output.WriteLine($"  Elements/sec: {elementsPerSecond:E2}");
             _output.WriteLine($"  Effective bandwidth: {bandwidth:F2} GB/s");
 
             elementsPerSecond.Should().BeGreaterThan(1e6, "Should process at least 1M elements per second");
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _output.WriteLine($"End-to-end test failed: {ex.Message}");
             throw;
@@ -124,7 +118,7 @@ public class EndToEndWorkflowTests : IDisposable
         Skip.IfNot(_cudaAvailable, "CUDA not available for end-to-end testing");
 
         const int matrixSize = 512; // 512x512 matrices
-        
+
         _output.WriteLine($"Starting end-to-end matrix multiplication workflow{matrixSize}x{matrixSize})");
 
         try
@@ -142,9 +136,9 @@ public class EndToEndWorkflowTests : IDisposable
 
             // Step 3: Allocate GPU memory
             var totalElements = matrixSize * matrixSize;
-            using var bufferA = await memoryManager.AllocateAsync<float>(totalElements);
-            using var bufferB = await memoryManager.AllocateAsync<float>(totalElements);
-            using var bufferResult = await memoryManager.AllocateAsync<float>(totalElements);
+            using var bufferA = await MockUnifiedMemoryManager.AllocateAsync<float>(totalElements);
+            using var bufferB = await MockUnifiedMemoryManager.AllocateAsync<float>(totalElements);
+            using var bufferResult = await MockUnifiedMemoryManager.AllocateAsync<float>(totalElements);
 
             _output.WriteLine("✓ GPU memory allocated");
 
@@ -172,16 +166,16 @@ public class EndToEndWorkflowTests : IDisposable
             _output.WriteLine("✓ Matrix multiplication results validated");
 
             // Performance analysis
-            var totalOperations =(long)matrixSize * matrixSize * matrixSize * 2; // FMA operations
-            var gflops = totalOperations /(kernelExecutionTime / 1000.0) / 1e9;
-            
+            var totalOperations = (long)matrixSize * matrixSize * matrixSize * 2; // FMA operations
+            var gflops = totalOperations / (kernelExecutionTime / 1000.0) / 1e9;
+
             _output.WriteLine($"Performance metrics:");
             _output.WriteLine($"  GFLOPS: {gflops:F2}");
             _output.WriteLine($"  Execution time: {kernelExecutionTime:F2} ms");
 
             gflops.Should().BeGreaterThan(100, "Should achieve significant GFLOPS for matrix multiplication");
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _output.WriteLine($"Matrix multiplication test failed: {ex.Message}");
             throw;
@@ -194,7 +188,7 @@ public class EndToEndWorkflowTests : IDisposable
         Skip.IfNot(_cudaAvailable, "CUDA not available for pipeline testing");
 
         const int datasetSize = 10000000; // 10M elements
-        
+
         _output.WriteLine($"Starting complex data pipeline with {datasetSize} elements");
 
         try
@@ -208,9 +202,9 @@ public class EndToEndWorkflowTests : IDisposable
 
             // Step 2: Multi-stage processing pipeline
             var stageBuffers = new MockUnifiedBuffer<float>[4];
-            for(int i = 0; i < stageBuffers.Length; i++)
+            for (var i = 0; i < stageBuffers.Length; i++)
             {
-                stageBuffers[i] = await memoryManager.AllocateAsync<float>(datasetSize);
+                stageBuffers[i] = await MockUnifiedMemoryManager.AllocateAsync<float>(datasetSize);
             }
 
             _output.WriteLine("✓ Pipeline buffers allocated");
@@ -233,7 +227,7 @@ public class EndToEndWorkflowTests : IDisposable
             await stageBuffers[3].CopyToAsync(finalResults);
 
             var totalPipelineTime = stage1Time + stage2Time + stage3Time;
-            var throughput = datasetSize /(totalPipelineTime / 1000.0);
+            var throughput = datasetSize / (totalPipelineTime / 1000.0);
 
             _output.WriteLine($"Pipeline completed:");
             _output.WriteLine($"  Total time: {totalPipelineTime:F2} ms");
@@ -242,13 +236,13 @@ public class EndToEndWorkflowTests : IDisposable
 
             // Validate pipeline efficiency
             throughput.Should().BeGreaterThan(1e6, "Pipeline should maintain high throughput");
-            totalPipelineTime .Should().BeLessThan(5000, "Pipeline should complete within reasonable time");
+            totalPipelineTime.Should().BeLessThan(5000, "Pipeline should complete within reasonable time");
 
             // Validate data integrity through pipeline
             ValidatePipelineResults(inputData, finalResults);
             _output.WriteLine("✓ Pipeline data integrity validated");
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _output.WriteLine($"Pipeline test failed: {ex.Message}");
             throw;
@@ -257,86 +251,86 @@ public class EndToEndWorkflowTests : IDisposable
 
     #region Helper Methods
 
-    private async Task<double> ExecuteVectorAdditionKernel(
+    private static async Task<double> ExecuteVectorAdditionKernel(
         MockUnifiedBuffer<float> a, MockUnifiedBuffer<float> b, MockUnifiedBuffer<float> result)
     {
         // Simulate kernel execution
         await Task.Delay(10); // Simulate GPU work
-        
+
         // Mock execution time based on data size
         return a.Size * 0.001; // 1 microsecond per element
     }
 
-    private async Task<double> ExecuteMatrixMultiplicationKernel(
+    private static async Task<double> ExecuteMatrixMultiplicationKernel(
         MockUnifiedBuffer<float> a, MockUnifiedBuffer<float> b, MockUnifiedBuffer<float> result, int size)
     {
         // Simulate matrix multiplication execution
         await Task.Delay(50); // Simulate GPU work
-        
+
         // Mock execution time based on complexity O(n³)
         return Math.Pow(size, 3) * 0.000001; // 1 nanosecond per operation
     }
 
-    private async Task<double> ExecuteNormalizationKernel(
+    private static async Task<double> ExecuteNormalizationKernel(
         MockUnifiedBuffer<float> input, MockUnifiedBuffer<float> output)
     {
         await Task.Delay(5);
         return input.Size * 0.0005;
     }
 
-    private async Task<double> ExecuteFilteringKernel(
+    private static async Task<double> ExecuteFilteringKernel(
         MockUnifiedBuffer<float> input, MockUnifiedBuffer<float> output)
     {
         await Task.Delay(8);
         return input.Size * 0.0008;
     }
 
-    private async Task<double> ExecuteReductionKernel(
+    private static async Task<double> ExecuteReductionKernel(
         MockUnifiedBuffer<float> input, MockUnifiedBuffer<float> output)
     {
         await Task.Delay(3);
         return input.Size * 0.0003;
     }
 
-    private float[] CreateRandomMatrix(int rows, int cols, int seed)
+    private static float[] CreateRandomMatrix(int rows, int cols, int seed)
     {
         var random = new Random(seed);
         var matrix = new float[rows * cols];
-        
-        for(int i = 0; i < matrix.Length; i++)
+
+        for (var i = 0; i < matrix.Length; i++)
         {
-            matrix[i] =(float)(random.NextDouble() * 2.0 - 1.0);
+            matrix[i] = (float)(random.NextDouble() * 2.0 - 1.0);
         }
-        
+
         return matrix;
     }
 
-    private float[] MultiplyMatricesCPU(float[] a, float[] b, int size)
+    private static float[] MultiplyMatricesCPU(float[] a, float[] b, int size)
     {
         var result = new float[size * size];
-        
-        for(int i = 0; i < size; i++)
+
+        for (var i = 0; i < size; i++)
         {
-            for(int j = 0; j < size; j++)
+            for (var j = 0; j < size; j++)
             {
                 float sum = 0;
-                for(int k = 0; k < size; k++)
+                for (var k = 0; k < size; k++)
                 {
                     sum += a[i * size + k] * b[k * size + j];
                 }
                 result[i * size + j] = sum;
             }
         }
-        
+
         return result;
     }
 
-    private void ValidateMatrixResults(float[] expected, float[] actual, int size, int sampleSize)
+    private static void ValidateMatrixResults(float[] expected, float[] actual, int size, int sampleSize)
     {
         var random = new Random(44);
         var totalElements = size * size;
-        
-        for(int i = 0; i < sampleSize; i++)
+
+        for (var i = 0; i < sampleSize; i++)
         {
             var index = random.Next(totalElements);
             actual[index].Should().BeApproximately(expected[index], 0.01f,
@@ -344,26 +338,26 @@ public class EndToEndWorkflowTests : IDisposable
         }
     }
 
-    private float[] GenerateComplexDataset(int size)
+    private static float[] GenerateComplexDataset(int size)
     {
         var data = new float[size];
         var random = new Random(45);
-        
-        for(int i = 0; i < size; i++)
+
+        for (var i = 0; i < size; i++)
         {
             // Generate complex synthetic data with patterns
-            data[i] =(float)(Math.Sin(i * 0.001) * random.NextDouble() + random.NextGaussian() * 0.1);
+            data[i] = (float)(Math.Sin(i * 0.001) * random.NextDouble() + random.NextGaussian() * 0.1);
         }
-        
+
         return data;
     }
 
-    private void ValidatePipelineResults(float[] input, float[] output)
+    private static void ValidatePipelineResults(float[] input, float[] output)
     {
         // Basic validation that pipeline preserved data characteristics
         var inputMean = input.Take(1000).Average();
         var outputMean = output.Take(1000).Average();
-        
+
         // Results should be processed but maintain reasonable relationship
         Math.Abs(outputMean).Should().BeLessThan(Math.Abs(inputMean) * 2,
             "Pipeline should not drastically alter data statistics");
@@ -375,12 +369,12 @@ public class EndToEndWorkflowTests : IDisposable
 
     private class MockComputeEngine
     {
-        public bool IsInitialized => true;
+        public static bool IsInitialized => true;
     }
 
     private class MockUnifiedMemoryManager : IDisposable
     {
-        public async Task<MockUnifiedBuffer<T>> AllocateAsync<T>(int elementCount) where T : struct
+        public static async Task<MockUnifiedBuffer<T>> AllocateAsync<T>(int elementCount) where T : struct
         {
             await Task.Delay(1); // Simulate allocation time
             return new MockUnifiedBuffer<T>(elementCount);
@@ -453,7 +447,7 @@ public static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
-        if(!condition)
+        if (!condition)
         {
             throw new SkipException(reason);
         }

@@ -1,14 +1,11 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using FluentAssertions;
 using CoreMemory = DotCompute.Core.Memory;
-using AbstractionsMemory = DotCompute.Abstractions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -27,10 +24,10 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
     {
         _loggerMock = new Mock<ILogger>();
         _memoryManagerMock = new Mock<CoreMemory.IMemoryManager>();
-        
+
         // Setup default behavior
         _memoryManagerMock.Setup(m => m.AvailableLocations)
-            .Returns(new[] { CoreMemory.MemoryLocation.Host, CoreMemory.MemoryLocation.Device });
+            .Returns([CoreMemory.MemoryLocation.Host, CoreMemory.MemoryLocation.Device]);
     }
 
     #region Boundary Value Tests
@@ -44,7 +41,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
             .ThrowsAsync(new ArgumentException("Buffer size too large"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _memoryManagerMock.Object.CreateBufferAsync<byte>(int.MaxValue, CoreMemory.MemoryLocation.Device).AsTask());
     }
 
@@ -57,7 +54,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
             .ThrowsAsync(new ArgumentException("Element count must be positive"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => 
+        await Assert.ThrowsAsync<ArgumentException>(() =>
             _memoryManagerMock.Object.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host).AsTask());
     }
 
@@ -75,7 +72,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
         // ElementCount is not available in IMemoryBuffer, calculate from SizeInBytes
         // mockBuffer.Setup(b => b.ElementCount).Returns(elementCount);
         mockBuffer.Setup(b => b.SizeInBytes).Returns(elementCount);
-        
+
         _memoryManagerMock
             .Setup(m => m.CreateBufferAsync<byte>(elementCount, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<Abstractions.IBuffer<byte>>());
@@ -105,14 +102,14 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
 
     // Note: Complex edge case tests are commented out because they require concrete MemoryManager implementation
     // which doesn't exist in the current codebase. These would be appropriate for integration tests.
-    
+
     [Fact]
     public async Task CreateBufferAsync_WithValidParameters_ShouldSucceed()
     {
         // Arrange
         var mockBuffer = new Mock<IMemoryBuffer>();
         mockBuffer.Setup(b => b.SizeInBytes).Returns(100 * sizeof(int));
-        
+
         _memoryManagerMock
             .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<Abstractions.IBuffer<int>>());
@@ -132,18 +129,18 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
         // Arrange
         var sourceBuffer = Mock.Of<IMemoryBuffer>();
         var destBuffer = Mock.Of<IMemoryBuffer>();
-        
+
         // IMemoryManager doesn't have CopyAsync method - using buffer copy methods instead
         // _memoryManagerMock.Setup(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>())).Returns(ValueTask.CompletedTask);
 
         // Act & Assert - test passes since we're not calling non-existent methods
         // await _memoryManagerMock.Object.CopyAsync(sourceBuffer, destBuffer);
         // _memoryManagerMock.Verify(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>()), Times.Once);
-        
+
         Assert.NotNull(_memoryManagerMock.Object);
         Assert.NotNull(sourceBuffer);
         Assert.NotNull(destBuffer);
-        
+
         // Return value for non-async method
         // Task.CompletedTask;
     }
@@ -188,7 +185,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
 
     public void Dispose()
     {
-        if(!_disposed)
+        if (!_disposed)
         {
             // No resources to dispose in this test class
             _disposed = true;

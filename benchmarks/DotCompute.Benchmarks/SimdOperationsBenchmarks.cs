@@ -15,7 +15,7 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-public class SimdOperationsBenchmarks
+internal class SimdOperationsBenchmarks
 {
     [Params(1024, 16384, 65536, 262144, 1048576)]
     public int DataSize { get; set; }
@@ -41,7 +41,7 @@ public class SimdOperationsBenchmarks
         _intOutput = new int[DataSize];
 
         var random = new Random(42);
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _inputA[i] = (float)(random.NextDouble() * 2.0 - 1.0);
             _inputB[i] = (float)(random.NextDouble() * 2.0 - 1.0);
@@ -53,7 +53,7 @@ public class SimdOperationsBenchmarks
     [Benchmark(Baseline = true)]
     public void ScalarFloatAddition()
     {
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _output[i] = _inputA[i] + _inputB[i];
         }
@@ -64,8 +64,8 @@ public class SimdOperationsBenchmarks
     {
         var vectorSize = Vector<float>.Count;
         var vectorCount = DataSize / vectorSize;
-        
-        for (int i = 0; i < vectorCount; i++)
+
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vectorA = new Vector<float>(_inputA, offset);
@@ -73,9 +73,9 @@ public class SimdOperationsBenchmarks
             var result = vectorA + vectorB;
             result.CopyTo(_output, offset);
         }
-        
+
         // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < DataSize; i++)
+        for (var i = vectorCount * vectorSize; i < DataSize; i++)
         {
             _output[i] = _inputA[i] + _inputB[i];
         }
@@ -86,8 +86,8 @@ public class SimdOperationsBenchmarks
     {
         var vectorSize = Vector<float>.Count;
         var vectorCount = DataSize / vectorSize;
-        
-        for (int i = 0; i < vectorCount; i++)
+
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vectorA = new Vector<float>(_inputA, offset);
@@ -95,9 +95,9 @@ public class SimdOperationsBenchmarks
             var result = vectorA * vectorB;
             result.CopyTo(_output, offset);
         }
-        
+
         // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < DataSize; i++)
+        for (var i = vectorCount * vectorSize; i < DataSize; i++)
         {
             _output[i] = _inputA[i] * _inputB[i];
         }
@@ -109,28 +109,28 @@ public class SimdOperationsBenchmarks
         var vectorSize = Vector<float>.Count;
         var vectorCount = DataSize / vectorSize;
         var sum = Vector<float>.Zero;
-        
-        for (int i = 0; i < vectorCount; i++)
+
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vectorA = new Vector<float>(_inputA, offset);
             var vectorB = new Vector<float>(_inputB, offset);
             sum += vectorA * vectorB;
         }
-        
+
         // Sum the vector elements
         float result = 0;
-        for (int i = 0; i < vectorSize; i++)
+        for (var i = 0; i < vectorSize; i++)
         {
             result += sum[i];
         }
-        
+
         // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < DataSize; i++)
+        for (var i = vectorCount * vectorSize; i < DataSize; i++)
         {
             result += _inputA[i] * _inputB[i];
         }
-        
+
         _output[0] = result;
     }
 
@@ -142,13 +142,13 @@ public class SimdOperationsBenchmarks
             VectorFloatAddition(); // Fallback
             return;
         }
-        
+
         fixed (float* pA = _inputA, pB = _inputB, pOut = _output)
         {
             const int vectorSize = 8; // AVX2 processes 8 floats at once
             var vectorCount = DataSize / vectorSize;
-            
-            for (int i = 0; i < vectorCount; i++)
+
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = i * vectorSize;
                 var vectorA = Avx.LoadVector256(pA + offset);
@@ -156,9 +156,9 @@ public class SimdOperationsBenchmarks
                 var result = Avx.Add(vectorA, vectorB);
                 Avx.Store(pOut + offset, result);
             }
-            
+
             // Handle remaining elements
-            for (int i = vectorCount * vectorSize; i < DataSize; i++)
+            for (var i = vectorCount * vectorSize; i < DataSize; i++)
             {
                 pOut[i] = pA[i] + pB[i];
             }
@@ -173,13 +173,13 @@ public class SimdOperationsBenchmarks
             VectorFloatMultiplication(); // Fallback
             return;
         }
-        
+
         fixed (float* pA = _inputA, pB = _inputB, pOut = _output)
         {
             const int vectorSize = 8;
             var vectorCount = DataSize / vectorSize;
-            
-            for (int i = 0; i < vectorCount; i++)
+
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = i * vectorSize;
                 var vectorA = Avx.LoadVector256(pA + offset);
@@ -187,9 +187,9 @@ public class SimdOperationsBenchmarks
                 var result = Avx.Multiply(vectorA, vectorB);
                 Avx.Store(pOut + offset, result);
             }
-            
+
             // Handle remaining elements
-            for (int i = vectorCount * vectorSize; i < DataSize; i++)
+            for (var i = vectorCount * vectorSize; i < DataSize; i++)
             {
                 pOut[i] = pA[i] * pB[i];
             }
@@ -204,13 +204,13 @@ public class SimdOperationsBenchmarks
             ScalarIntegerAddition(); // Fallback
             return;
         }
-        
+
         fixed (int* pA = _intInputA, pB = _intInputB, pOut = _intOutput)
         {
             const int vectorSize = 8; // AVX2 processes 8 ints at once
             var vectorCount = DataSize / vectorSize;
-            
-            for (int i = 0; i < vectorCount; i++)
+
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = i * vectorSize;
                 var vectorA = Avx2.LoadVector256(pA + offset);
@@ -218,9 +218,9 @@ public class SimdOperationsBenchmarks
                 var result = Avx2.Add(vectorA, vectorB);
                 Avx2.Store(pOut + offset, result);
             }
-            
+
             // Handle remaining elements
-            for (int i = vectorCount * vectorSize; i < DataSize; i++)
+            for (var i = vectorCount * vectorSize; i < DataSize; i++)
             {
                 pOut[i] = pA[i] + pB[i];
             }
@@ -230,7 +230,7 @@ public class SimdOperationsBenchmarks
     [Benchmark]
     public void ScalarIntegerAddition()
     {
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _intOutput[i] = _intInputA[i] + _intInputB[i];
         }
@@ -241,24 +241,24 @@ public class SimdOperationsBenchmarks
     {
         var vectorSize = Vector<float>.Count;
         var vectorCount = DataSize / vectorSize;
-        
-        for (int i = 0; i < vectorCount; i++)
+
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vectorA = new Vector<float>(_inputA, offset);
             var vectorB = new Vector<float>(_inputB, offset);
-            
+
             // Complex operation: (a * b) + (a / (b + 1))
             var product = vectorA * vectorB;
             var divisor = vectorB + Vector<float>.One;
             var quotient = vectorA / divisor;
             var result = product + quotient;
-            
+
             result.CopyTo(_output, offset);
         }
-        
+
         // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < DataSize; i++)
+        for (var i = vectorCount * vectorSize; i < DataSize; i++)
         {
             var a = _inputA[i];
             var b = _inputB[i];
@@ -274,29 +274,29 @@ public class SimdOperationsBenchmarks
             VectorComplexMathOperations(); // Fallback
             return;
         }
-        
+
         fixed (float* pA = _inputA, pB = _inputB, pOut = _output)
         {
             const int vectorSize = 8;
             var vectorCount = DataSize / vectorSize;
             var ones = Vector256.Create(1.0f);
-            
-            for (int i = 0; i < vectorCount; i++)
+
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = i * vectorSize;
                 var vectorA = Avx.LoadVector256(pA + offset);
                 var vectorB = Avx.LoadVector256(pB + offset);
-                
+
                 var product = Avx.Multiply(vectorA, vectorB);
                 var divisor = Avx.Add(vectorB, ones);
                 var quotient = Avx.Divide(vectorA, divisor);
                 var result = Avx.Add(product, quotient);
-                
+
                 Avx.Store(pOut + offset, result);
             }
-            
+
             // Handle remaining elements
-            for (int i = vectorCount * vectorSize; i < DataSize; i++)
+            for (var i = vectorCount * vectorSize; i < DataSize; i++)
             {
                 var a = pA[i];
                 var b = pB[i];
@@ -311,27 +311,27 @@ public class SimdOperationsBenchmarks
         var vectorSize = Vector<float>.Count;
         var vectorCount = DataSize / vectorSize;
         var sum = Vector<float>.Zero;
-        
-        for (int i = 0; i < vectorCount; i++)
+
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vector = new Vector<float>(_inputA, offset);
             sum += vector;
         }
-        
+
         // Sum the vector elements
         float result = 0;
-        for (int i = 0; i < vectorSize; i++)
+        for (var i = 0; i < vectorSize; i++)
         {
             result += sum[i];
         }
-        
+
         // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < DataSize; i++)
+        for (var i = vectorCount * vectorSize; i < DataSize; i++)
         {
             result += _inputA[i];
         }
-        
+
         _output[0] = result;
     }
 
@@ -343,20 +343,20 @@ public class SimdOperationsBenchmarks
             VectorReductionSum(); // Fallback
             return;
         }
-        
+
         fixed (float* pA = _inputA)
         {
             const int vectorSize = 8;
             var vectorCount = DataSize / vectorSize;
             var sum = Vector256<float>.Zero;
-            
-            for (int i = 0; i < vectorCount; i++)
+
+            for (var i = 0; i < vectorCount; i++)
             {
                 var offset = i * vectorSize;
                 var vector = Avx.LoadVector256(pA + offset);
                 sum = Avx.Add(sum, vector);
             }
-            
+
             // Horizontal add to get final sum
             var temp = new float[8];
             fixed (float* pTemp = temp)
@@ -364,17 +364,17 @@ public class SimdOperationsBenchmarks
                 Avx.Store(pTemp, sum);
             }
             float result = 0;
-            for (int i = 0; i < 8; i++)
+            for (var i = 0; i < 8; i++)
             {
                 result += temp[i];
             }
-            
+
             // Handle remaining elements
-            for (int i = vectorCount * vectorSize; i < DataSize; i++)
+            for (var i = vectorCount * vectorSize; i < DataSize; i++)
             {
                 result += pA[i];
             }
-            
+
             _output[0] = result;
         }
     }
@@ -385,23 +385,23 @@ public class SimdOperationsBenchmarks
         var vectorSize = Vector<float>.Count;
         var vectorCount = DataSize / vectorSize;
         var threshold = new Vector<float>(0.5f);
-        
-        for (int i = 0; i < vectorCount; i++)
+
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vectorA = new Vector<float>(_inputA, offset);
             var vectorB = new Vector<float>(_inputB, offset);
-            
+
             // Conditional: if (a > 0.5) then a * 2 else b
             var mask = Vector.GreaterThan(vectorA, threshold);
             var trueResult = vectorA * new Vector<float>(2.0f);
             var result = Vector.ConditionalSelect(mask, trueResult, vectorB);
-            
+
             result.CopyTo(_output, offset);
         }
-        
+
         // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < DataSize; i++)
+        for (var i = vectorCount * vectorSize; i < DataSize; i++)
         {
             _output[i] = _inputA[i] > 0.5f ? _inputA[i] * 2.0f : _inputB[i];
         }
@@ -412,8 +412,8 @@ public class SimdOperationsBenchmarks
     {
         // Test sustained SIMD throughput
         const int iterations = 100;
-        
-        for (int iter = 0; iter < iterations; iter++)
+
+        for (var iter = 0; iter < iterations; iter++)
         {
             VectorFloatAddition();
             VectorFloatMultiplication();
@@ -427,11 +427,11 @@ public class SimdOperationsBenchmarks
         // Calculate SIMD efficiency vs scalar
         var vectorSize = Vector<float>.Count;
         var theoreticalSpeedup = vectorSize;
-        
+
         // Simulate timing measurements
         var scalarTime = DataSize * 1.0; // 1 unit per operation
         var vectorTime = (DataSize / vectorSize) * 1.2; // Slight overhead
-        
+
         var actualSpeedup = scalarTime / vectorTime;
         return actualSpeedup / theoreticalSpeedup * 100.0; // Efficiency percentage
     }
@@ -442,24 +442,24 @@ public class SimdOperationsBenchmarks
         // Test performance impact of memory alignment
         var alignedData = GC.AllocateUninitializedArray<float>(DataSize, pinned: true);
         var unalignedData = new float[DataSize + 1].AsSpan(1); // Unaligned by 4 bytes
-        
+
         // Copy test data
         _inputA.CopyTo(alignedData.AsSpan());
         _inputA.CopyTo(unalignedData);
-        
+
         // Perform vectorized operations on both
         var vectorSize = Vector<float>.Count;
         var vectorCount = DataSize / vectorSize;
-        
+
         // Aligned access
-        for (int i = 0; i < vectorCount; i++)
+        for (var i = 0; i < vectorCount; i++)
         {
             var offset = i * vectorSize;
             var vector = new Vector<float>(alignedData, offset);
             var result = vector * new Vector<float>(2.0f);
             result.CopyTo(_output, offset);
         }
-        
+
         // The actual unaligned access would show performance difference
         // in real hardware measurements
     }
@@ -469,18 +469,20 @@ public class SimdOperationsBenchmarks
     {
         // Test cache-friendly vs cache-unfriendly memory access patterns
         const int stride = 64; // Cache line size
-        
+
         // Sequential access (cache-friendly)
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _output[i] = _inputA[i] * 2.0f;
         }
-        
+
         // Strided access (less cache-friendly)
-        for (int i = 0; i < DataSize; i += stride)
+        for (var i = 0; i < DataSize; i += stride)
         {
             if (i < DataSize)
+            {
                 _output[i] = _inputA[i] * 3.0f;
+            }
         }
     }
 
@@ -496,13 +498,13 @@ public class SimdOperationsBenchmarks
             ["Avx.IsSupported"] = Avx.IsSupported,
             ["Avx2.IsSupported"] = Avx2.IsSupported
         };
-        
+
         // Additional capability checks
         if (Vector512.IsHardwareAccelerated)
         {
             results["Vector512.IsHardwareAccelerated"] = true;
         }
-        
+
         // Store results (to prevent optimization)
         var supported = results.Count(kvp => kvp.Value);
         _output[0] = supported;

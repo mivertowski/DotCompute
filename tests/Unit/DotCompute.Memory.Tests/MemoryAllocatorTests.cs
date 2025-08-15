@@ -35,7 +35,7 @@ public sealed class MemoryAllocatorTests : IDisposable
     public void Allocate_WithZeroSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert
-        var act =() => _allocator.Allocate<int>(0);
+        var act = () => _allocator.Allocate<int>(0);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
@@ -85,7 +85,7 @@ public sealed class MemoryAllocatorTests : IDisposable
         var memory = _allocator.Allocate<int>(1024);
 
         // Act & Assert
-        var act =() => memory.Dispose();
+        var act = () => memory.Dispose();
         act(); // Should not throw
     }
 
@@ -126,7 +126,7 @@ public sealed class MemoryAllocatorTests : IDisposable
         var memories = new List<IMemoryOwner<int>>();
 
         // Act - Allocate multiple blocks
-        for(var i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             memories.Add(_allocator.Allocate<int>(256 * i + 1));
         }
@@ -165,7 +165,7 @@ public sealed class MemoryAllocatorTests : IDisposable
         allocator.Dispose();
 
         // Act & Assert
-        var act =() => allocator.Allocate<int>(256);
+        var act = () => allocator.Allocate<int>(256);
         Assert.Throws<ObjectDisposedException>(() => act());
     }
 }

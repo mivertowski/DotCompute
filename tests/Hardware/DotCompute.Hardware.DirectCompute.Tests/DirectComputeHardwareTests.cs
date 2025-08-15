@@ -1,8 +1,6 @@
-using System;
 using System.Runtime.InteropServices;
 using Xunit;
 using Xunit.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware;
 
@@ -40,9 +38,9 @@ public class DirectComputeHardwareTests
             null,
             0,
             D3D11_SDK_VERSION,
-            out IntPtr device,
-            out int featureLevel,
-            out IntPtr context);
+            out var device,
+            out var featureLevel,
+            out var context);
 
         _output.WriteLine($"D3D11 device creation result: 0x{result:X8}");
         _output.WriteLine($"Feature level: 0x{featureLevel:X4}");
@@ -52,9 +50,9 @@ public class DirectComputeHardwareTests
         Assert.NotEqual(IntPtr.Zero, context);
 
         // Cleanup
-        if(context != IntPtr.Zero)
+        if (context != IntPtr.Zero)
             Marshal.Release(context);
-        if(device != IntPtr.Zero)
+        if (device != IntPtr.Zero)
             Marshal.Release(device);
     }
 
@@ -66,38 +64,38 @@ public class DirectComputeHardwareTests
         Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "DirectCompute requires Windows");
         Skip.IfNot(IsDirectComputeAvailable(), "DirectCompute/DirectX 11 not available");
 
-        IntPtr factory = IntPtr.Zero;
+        var factory = IntPtr.Zero;
         var result = CreateDXGIFactory(typeof(IDXGIFactory).GUID, out factory);
-        
+
         // If regular factory fails, try Factory1
-        if(result != 0 || factory == IntPtr.Zero)
+        if (result != 0 || factory == IntPtr.Zero)
         {
             result = CreateDXGIFactory1(typeof(IDXGIFactory1).GUID, out factory);
         }
-        
-        if(result == 0 && factory != IntPtr.Zero)
+
+        if (result == 0 && factory != IntPtr.Zero)
         {
             uint adapterIndex = 0;
-            int adapterCount = 0;
-            
+            var adapterCount = 0;
+
             try
             {
-                while(true)
+                while (true)
                 {
-                    result = EnumAdapters(factory, adapterIndex, out IntPtr adapter);
-                    if(result != 0) // DXGI_ERROR_NOT_FOUND(0x887A0002)
+                    result = EnumAdapters(factory, adapterIndex, out var adapter);
+                    if (result != 0) // DXGI_ERROR_NOT_FOUND(0x887A0002)
                         break;
-                        
+
                     adapterCount++;
                     _output.WriteLine($"Found adapter {adapterIndex}");
-                    
-                    if(adapter != IntPtr.Zero)
+
+                    if (adapter != IntPtr.Zero)
                         Marshal.Release(adapter);
-                        
+
                     adapterIndex++;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _output.WriteLine($"Error enumerating adapters: {ex.Message}");
                 // Don't fail the test if enumeration has issues, as long as factory was created
@@ -106,7 +104,7 @@ public class DirectComputeHardwareTests
             {
                 Marshal.Release(factory);
             }
-            
+
             _output.WriteLine($"Total adapters found: {adapterCount}");
             // It's okay if no adapters are found on CI/build servers
             _output.WriteLine(adapterCount > 0 ? "DirectX adapters enumerated successfully" : "No DirectX adapters foundthis is okay on CI servers)");
@@ -128,11 +126,11 @@ public class DirectComputeHardwareTests
 
         // Simple compute shader bytecode(compiled from HLSL)
         // This is a minimal compute shader that does nothing
-        byte[] shaderBytecode = new byte[]
-        {
+        byte[] shaderBytecode =
+        [
             0x44, 0x58, 0x42, 0x43, // DXBC header
             // ...(actual shader bytecode would go here)
-        };
+        ];
 
         var result = D3D11CreateDevice(
             IntPtr.Zero,
@@ -142,11 +140,11 @@ public class DirectComputeHardwareTests
             null,
             0,
             D3D11_SDK_VERSION,
-            out IntPtr device,
-            out int featureLevel,
-            out IntPtr context);
+            out var device,
+            out var featureLevel,
+            out var context);
 
-        if(result == 0 && device != IntPtr.Zero)
+        if (result == 0 && device != IntPtr.Zero)
         {
             // In a real test, we would create a compute shader here
             _output.WriteLine("DirectCompute device created successfully");
@@ -161,7 +159,7 @@ public class DirectComputeHardwareTests
 
     private static bool IsDirectComputeAvailable()
     {
-        if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return false;
 
         try
@@ -175,11 +173,11 @@ public class DirectComputeHardwareTests
                 null,
                 0,
                 D3D11_SDK_VERSION,
-                out IntPtr device,
+                out var device,
                 out _,
-                out IntPtr context);
+                out var context);
 
-            if(result == 0 && device != IntPtr.Zero)
+            if (result == 0 && device != IntPtr.Zero)
             {
                 Marshal.Release(context);
                 Marshal.Release(device);
@@ -219,7 +217,7 @@ public class DirectComputeHardwareTests
     private static extern int CreateDXGIFactory1(
         [In] in Guid riid,
         out IntPtr ppFactory);
-        
+
     // DXGI uses COM interfaces, so we need to use the proper COM method calling
     // The factory interface has EnumAdapters as its first method after IUnknown methods
     private static int EnumAdapters(IntPtr factory, uint index, out IntPtr adapter)
@@ -228,14 +226,14 @@ public class DirectComputeHardwareTests
         var vtablePtr = Marshal.ReadIntPtr(factory);
         // EnumAdapters is at index 7 in IDXGIFactory vtable(after 3 IUnknown + 4 other methods)
         var enumAdaptersPtr = Marshal.ReadIntPtr(vtablePtr, IntPtr.Size * 7);
-        
+
         // Create delegate for the function
         var enumAdaptersDelegate = Marshal.GetDelegateForFunctionPointer<EnumAdaptersDelegate>(enumAdaptersPtr);
-        
+
         // Call the function
         return enumAdaptersDelegate(factory, index, out adapter);
     }
-    
+
     [UnmanagedFunctionPointer(CallingConvention.StdCall)]
     private delegate int EnumAdaptersDelegate(IntPtr factory, uint index, out IntPtr adapter);
 
@@ -252,7 +250,7 @@ public class DirectComputeHardwareTests
     [ComImport]
     [Guid("7b7166ec-21c7-44ae-b21a-c9ae321ae369")]
     private interface IDXGIFactory { }
-    
+
     [ComImport]
     [Guid("770aae78-f26f-4dba-a829-253c83d1b387")]
     private interface IDXGIFactory1 { }

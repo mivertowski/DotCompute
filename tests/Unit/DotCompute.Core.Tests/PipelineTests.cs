@@ -1,14 +1,10 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
 using DotCompute.Core;
-using DotCompute.Core.Aot;
 using DotCompute.Core.Pipelines;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -129,7 +125,7 @@ public sealed class PipelineTests
     {
         // Arrange
         var executedStages = new List<string>();
-        
+
         var stage1 = new Mock<IPipelineStage>();
         stage1.Setup(s => s.Id).Returns("stage1");
         stage1.Setup(s => s.Name).Returns("Stage1");
@@ -190,7 +186,7 @@ public sealed class PipelineTests
         // Arrange
         var cts = new CancellationTokenSource();
         var executedStages = new List<string>();
-        
+
         var stage1 = new Mock<IPipelineStage>();
         stage1.Setup(s => s.Id).Returns("stage1");
         stage1.Setup(s => s.Name).Returns("Stage1");
@@ -243,7 +239,7 @@ public sealed class PipelineTests
 
         // Act
         var result = await pipeline.ExecuteAsync(context, cts.Token);
-        
+
         // Assert
         Assert.False(result.Success);
         Assert.Single(result.Errors!);
@@ -255,7 +251,7 @@ public sealed class PipelineTests
     {
         // Arrange
         var expectedException = new InvalidOperationException("Stage failed");
-        
+
         var stage1 = new Mock<IPipelineStage>();
         stage1.Setup(s => s.Id).Returns("stage1");
         stage1.Setup(s => s.Name).Returns("Stage1");
@@ -279,9 +275,9 @@ public sealed class PipelineTests
         };
 
         // Act & Assert
-        var exception = await Assert.ThrowsAsync<PipelineExecutionException>(() => 
+        var exception = await Assert.ThrowsAsync<PipelineExecutionException>(() =>
             pipeline.ExecuteAsync(context).AsTask());
-        
+
         Assert.Contains("Stage failed", exception.Message);
         Assert.Same(expectedException, exception.InnerException);
     }
@@ -307,7 +303,7 @@ public sealed class PipelineTests
     public void KernelPipeline_Validate_WithValidStages_ReturnsValid()
     {
         // Arrange
-        var stage = Mock.Of<IPipelineStage>(s => 
+        var stage = Mock.Of<IPipelineStage>(s =>
             s.Id == "stage1" &&
             s.Name == "Stage1" &&
             s.Type == PipelineStageType.Custom &&
@@ -315,7 +311,7 @@ public sealed class PipelineTests
             s.Metadata == new Dictionary<string, object>() &&
             s.Validate() == new StageValidationResult { IsValid = true } &&
             s.GetMetrics() == Mock.Of<IStageMetrics>());
-        
+
         var pipeline = KernelPipelineBuilder.Create()
             .AddStage(stage)
             .Build();
@@ -449,7 +445,7 @@ public sealed class PipelineTests
     {
         // Arrange
         var device = Mock.Of<IComputeDevice>();
-        
+
         // Act
         var context = new PipelineExecutionContext
         {

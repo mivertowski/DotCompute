@@ -11,7 +11,7 @@ namespace DotCompute.Benchmarks;
 [ThreadingDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
-public class DataTransferBenchmarks
+internal class DataTransferBenchmarks
 {
     private IAcceleratorManager _acceleratorManager = null!;
     private IAccelerator _accelerator = null!;
@@ -28,24 +28,24 @@ public class DataTransferBenchmarks
     {
         var logger = new NullLogger<DefaultAcceleratorManager>();
         _acceleratorManager = new DefaultAcceleratorManager(logger);
-        
+
         var cpuProvider = new CpuAcceleratorProvider(new NullLogger<CpuAcceleratorProvider>());
         _acceleratorManager.RegisterProvider(cpuProvider);
         await _acceleratorManager.InitializeAsync();
-        
+
         _accelerator = _acceleratorManager.Default;
         _memoryManager = _accelerator.Memory;
-        
+
         // Prepare test data
         _hostData = new byte[DataSize];
         Random.Shared.NextBytes(_hostData);
-        
+
         _floatData = new float[DataSize / sizeof(float)];
-        for (int i = 0; i < _floatData.Length; i++)
+        for (var i = 0; i < _floatData.Length; i++)
         {
             _floatData[i] = Random.Shared.NextSingle() * 100;
         }
-        
+
         _deviceBuffer = await _memoryManager.AllocateAsync(DataSize);
     }
 
@@ -57,10 +57,7 @@ public class DataTransferBenchmarks
     }
 
     [Benchmark(Baseline = true)]
-    public async Task HostToDevice_Bytes()
-    {
-        await _deviceBuffer.CopyFromHostAsync<byte>(_hostData);
-    }
+    public async Task HostToDevice_Bytes() => await _deviceBuffer.CopyFromHostAsync<byte>(_hostData);
 
     [Benchmark]
     public async Task DeviceToHost_Bytes()
@@ -91,10 +88,10 @@ public class DataTransferBenchmarks
     {
         // Host to Device
         await _deviceBuffer.CopyFromHostAsync<byte>(_hostData);
-        
+
         // Process (simulated)
         await Task.Yield();
-        
+
         // Device to Host
         var result = new byte[DataSize];
         await _deviceBuffer.CopyToHostAsync<byte>(result);
@@ -104,9 +101,9 @@ public class DataTransferBenchmarks
     public async Task MultipleSmallTransfers()
     {
         const int transferCount = 100;
-        int chunkSize = DataSize / transferCount;
-        
-        for (int i = 0; i < transferCount; i++)
+        var chunkSize = DataSize / transferCount;
+
+        for (var i = 0; i < transferCount; i++)
         {
             var chunk = _hostData.AsMemory(i * chunkSize, Math.Min(chunkSize, _hostData.Length - i * chunkSize));
             await _deviceBuffer.CopyFromHostAsync<byte>(chunk, i * chunkSize);

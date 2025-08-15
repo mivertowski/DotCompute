@@ -1,8 +1,6 @@
-using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Threading.Tasks;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -35,7 +33,7 @@ public class NVRTCKernelCompilationTests : IDisposable
         {
             // Initialize CUDA
             var result = CudaInit(0);
-            if(result != 0)
+            if (result != 0)
             {
                 _output.WriteLine($"CUDA initialization failed with error code: {result}");
                 return;
@@ -43,7 +41,7 @@ public class NVRTCKernelCompilationTests : IDisposable
 
             // Create CUDA context
             result = CudaCtxCreate(ref _cudaContext, 0, 0);
-            if(result == 0)
+            if (result == 0)
             {
                 _cudaInitialized = true;
                 _output.WriteLine("CUDA context created successfully");
@@ -54,7 +52,7 @@ public class NVRTCKernelCompilationTests : IDisposable
             {
                 int major = 0, minor = 0;
                 result = NvrtcVersion(ref major, ref minor);
-                if(result == 0)
+                if (result == 0)
                 {
                     _nvrtcAvailable = true;
                     _output.WriteLine($"NVRTC available - Version {major}.{minor}");
@@ -64,12 +62,12 @@ public class NVRTCKernelCompilationTests : IDisposable
                     _output.WriteLine($"NVRTC version query failed with error: {result}");
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _output.WriteLine($"NVRTC not available: {ex.Message}");
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _output.WriteLine($"Initialization exception: {ex.Message}");
         }
@@ -89,8 +87,8 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
     }
 }";
 
-        IntPtr program = IntPtr.Zero;
-        
+        var program = IntPtr.Zero;
+
         try
         {
             // Create NVRTC program
@@ -109,21 +107,21 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 
             // Compile the program
             result = NvrtcCompileProgram(program, options.Length, options);
-            
+
             // Check compilation result
-            if(result != 0)
+            if (result != 0)
             {
                 // Get compilation log
                 long logSize = 0;
                 NvrtcGetProgramLogSize(program, ref logSize);
-                if(logSize > 0)
+                if (logSize > 0)
                 {
                     var log = new byte[logSize];
                     NvrtcGetProgramLog(program, log);
                     var logString = Encoding.ASCII.GetString(log).TrimEnd('\0');
                     _output.WriteLine($"Compilation log:\n{logString}");
                 }
-                
+
                 Assert.Equal(0, result); // Kernel compilation should succeed;
             }
 
@@ -148,7 +146,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         }
         finally
         {
-            if(program != IntPtr.Zero)
+            if (program != IntPtr.Zero)
             {
                 NvrtcDestroyProgram(ref program);
             }
@@ -174,9 +172,9 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         const int N = 1024;
         const int size = N * sizeof(float);
 
-        IntPtr program = IntPtr.Zero;
-        IntPtr module = IntPtr.Zero;
-        IntPtr kernel = IntPtr.Zero;
+        var program = IntPtr.Zero;
+        var module = IntPtr.Zero;
+        var kernel = IntPtr.Zero;
         IntPtr d_a = IntPtr.Zero, d_b = IntPtr.Zero, d_c = IntPtr.Zero;
 
         try
@@ -217,8 +215,8 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             var h_a = new float[N];
             var h_b = new float[N];
             var h_c = new float[N];
-            
-            for(int i = 0; i < N; i++)
+
+            for (var i = 0; i < N; i++)
             {
                 h_a[i] = i;
                 h_b[i] = i * 2;
@@ -263,8 +261,8 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 
                     // Launch kernel
                     const int blockSize = 256;
-                    int gridSize =(N + blockSize - 1) / blockSize;
-                    
+                    var gridSize = (N + blockSize - 1) / blockSize;
+
                     var sw = Stopwatch.StartNew();
                     result = CuLaunchKernel(
                         kernel,
@@ -297,14 +295,14 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                     }
 
                     // Verify results
-                    for(int i = 0; i < Math.Min(10, N); i++)
+                    for (var i = 0; i < Math.Min(10, N); i++)
                     {
                         var expected = h_a[i] + h_b[i];
                         h_c[i].Should().Be(expected, $"Result at index {i} should be correct");
                     }
 
                     _output.WriteLine($"Vector addition completed successfully. Sample results:");
-                    for(int i = 0; i < Math.Min(5, N); i++)
+                    for (var i = 0; i < Math.Min(5, N); i++)
                     {
                         _output.WriteLine($"  {h_a[i]} + {h_b[i]} = {h_c[i]}");
                     }
@@ -325,11 +323,16 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         finally
         {
             // Cleanup
-            if(d_a != IntPtr.Zero) CudaFree(d_a);
-            if(d_b != IntPtr.Zero) CudaFree(d_b);
-            if(d_c != IntPtr.Zero) CudaFree(d_c);
-            if(module != IntPtr.Zero) CuModuleUnload(module);
-            if(program != IntPtr.Zero) NvrtcDestroyProgram(ref program);
+            if (d_a != IntPtr.Zero)
+                CudaFree(d_a);
+            if (d_b != IntPtr.Zero)
+                CudaFree(d_b);
+            if (d_c != IntPtr.Zero)
+                CudaFree(d_c);
+            if (module != IntPtr.Zero)
+                CuModuleUnload(module);
+            if (program != IntPtr.Zero)
+                NvrtcDestroyProgram(ref program);
         }
 
         await Task.CompletedTask;
@@ -411,8 +414,8 @@ extern ""C"" __global__ void fastMatrixMul(
     }
 }";
 
-        IntPtr program = IntPtr.Zero;
-        
+        var program = IntPtr.Zero;
+
         try
         {
             var result = NvrtcCreateProgram(ref program, complexKernelSource, "matrixMul.cu", 0, default!, default!);
@@ -435,11 +438,11 @@ extern ""C"" __global__ void fastMatrixMul(
             result = NvrtcCompileProgram(program, options.Length, options);
             sw.Stop();
 
-            if(result != 0)
+            if (result != 0)
             {
                 long logSize = 0;
                 NvrtcGetProgramLogSize(program, ref logSize);
-                if(logSize > 0)
+                if (logSize > 0)
                 {
                     var log = new byte[logSize];
                     NvrtcGetProgramLog(program, log);
@@ -467,7 +470,7 @@ extern ""C"" __global__ void fastMatrixMul(
         }
         finally
         {
-            if(program != IntPtr.Zero)
+            if (program != IntPtr.Zero)
             {
                 NvrtcDestroyProgram(ref program);
             }
@@ -493,10 +496,10 @@ extern ""C"" __global__ void benchmark(float* data, int n)
     }
 }";
 
-        for(int run = 0; run < compilationRuns; run++)
+        for (var run = 0; run < compilationRuns; run++)
         {
-            IntPtr program = IntPtr.Zero;
-            
+            var program = IntPtr.Zero;
+
             try
             {
                 var result = NvrtcCreateProgram(ref program, kernelSource, $"benchmark_{run}.cu", 0, default!, default!);
@@ -513,7 +516,7 @@ extern ""C"" __global__ void benchmark(float* data, int n)
             }
             finally
             {
-                if(program != IntPtr.Zero)
+                if (program != IntPtr.Zero)
                 {
                     NvrtcDestroyProgram(ref program);
                 }
@@ -530,15 +533,15 @@ extern ""C"" __global__ void benchmark(float* data, int n)
         _output.WriteLine($"  Max: {maxTime} ms");
 
         // NVRTC should compile simple kernels reasonably quickly
-        averageTime .Should().BeLessThan(1000, "Average compilation time should be under 1 second");
-        maxTime .Should().BeLessThan(2000, "Maximum compilation time should be under 2 seconds");
+        averageTime.Should().BeLessThan(1000, "Average compilation time should be under 1 second");
+        maxTime.Should().BeLessThan(2000, "Maximum compilation time should be under 2 seconds");
 
         await Task.CompletedTask;
     }
 
     public void Dispose()
     {
-        if(_cudaContext != IntPtr.Zero)
+        if (_cudaContext != IntPtr.Zero)
         {
             CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
@@ -641,7 +644,7 @@ public static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
-        if(!condition)
+        if (!condition)
         {
             throw new SkipException(reason);
         }

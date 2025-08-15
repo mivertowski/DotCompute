@@ -4,7 +4,6 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using Xunit;
 using Xunit.Abstractions;
@@ -46,21 +45,21 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         benchmarkResult.ElementsProcessed.Should().Be(vectorSize);
-        
+
         // Performance assertions
         var elementsPerSecond = vectorSize / benchmarkResult.ExecutionTime.TotalSeconds;
         benchmarkResult.ThroughputElementsPerSecond = elementsPerSecond;
-        
+
         LoggerMessages.VectorPerformance(Logger, vectorSize, elementsPerSecond);
-        
+
         // Should process at least 1M elements per second(very conservative)
         Assert.True(elementsPerSecond > 1_000_000);
-        
+
         // Memory bandwidth utilization
-        var bytesPerSecond =(vectorSize * sizeof(float) * 3) / benchmarkResult.ExecutionTime.TotalSeconds; // 3 arrays: A, B, Result
-        var mbPerSecond = bytesPerSecond /(1024 * 1024);
+        var bytesPerSecond = (vectorSize * sizeof(float) * 3) / benchmarkResult.ExecutionTime.TotalSeconds; // 3 arrays: A, B, Result
+        var mbPerSecond = bytesPerSecond / (1024 * 1024);
         benchmarkResult.MemoryBandwidthMBs = mbPerSecond;
-        
+
         LoggerMessages.MemoryBandwidth(Logger, mbPerSecond);
         Assert.True(mbPerSecond > 100); // At least 100 MB/s
     }
@@ -86,18 +85,18 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         // Assert
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
-        
-        var totalOperations =(long)matrixSize * matrixSize * matrixSize2 * 2; // Multiply-add operations
+
+        var totalOperations = (long)matrixSize * matrixSize * matrixSize2 * 2; // Multiply-add operations
         var operationsPerSecond = totalOperations / benchmarkResult.ExecutionTime.TotalSeconds;
         var gflops = operationsPerSecond / 1_000_000_000.0;
-        
+
         benchmarkResult.GigaFlopsPerSecond = gflops;
-        
+
         LoggerMessages.MatrixPerformance(Logger, matrixSize, matrixSize2, gflops);
-        
+
         // Should achieve at least some reasonable performance
         Assert.True(gflops > 0.1); // Conservative threshold
-        
+
         // Execution time should be reasonable
         benchmarkResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
     }
@@ -123,15 +122,15 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         benchmarkResult.ResultAccurate.Should().BeTrue();
-        
+
         var elementsPerSecond = dataSize / benchmarkResult.ExecutionTime.TotalSeconds;
         benchmarkResult.ThroughputElementsPerSecond = elementsPerSecond;
-        
+
         LoggerMessages.ReductionPerformance(Logger, dataSize, elementsPerSecond);
-        
+
         // Reduction should still achieve good throughput
         Assert.True(elementsPerSecond > 10_000_000);
-        
+
         // Time complexity should be reasonable(better than O(n) on CPU)
         var expectedLinearTime = dataSize / 500_000_000.0; // More realistic: assume 500 MHz effective rate
         (benchmarkResult.ExecutionTime.TotalSeconds < expectedLinearTime * 4).Should().BeTrue(); // Allow more variance
@@ -153,13 +152,13 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         // Assert
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
-        
+
         var bytesTransferred = dataSize * sizeof(float) * 4; // Multiple reads/writes per element
-        var mbPerSecond = bytesTransferred / benchmarkResult.ExecutionTime.TotalSeconds /(1024 * 1024);
+        var mbPerSecond = bytesTransferred / benchmarkResult.ExecutionTime.TotalSeconds / (1024 * 1024);
         benchmarkResult.MemoryBandwidthMBs = mbPerSecond;
-        
+
         LoggerMessages.MemoryIntensiveWorkload(Logger, mbPerSecond);
-        
+
         // Should achieve reasonable memory bandwidth
         Assert.True(mbPerSecond > 1000); // At least 1 GB/s
     }
@@ -182,15 +181,15 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         // Assert
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
-        
-        var totalOperations =(long)dataSize * iterations * 10; // ~10 ops per element per iteration
+
+        var totalOperations = (long)dataSize * iterations * 10; // ~10 ops per element per iteration
         var operationsPerSecond = totalOperations / benchmarkResult.ExecutionTime.TotalSeconds;
         var gops = operationsPerSecond / 1_000_000_000.0;
-        
+
         benchmarkResult.GigaOperationsPerSecond = gops;
-        
+
         LoggerMessages.ComputeIntensiveWorkload(Logger, gops);
-        
+
         // Should achieve reasonable compute throughput
         Assert.True(gops > 0.5); // At least 0.5 GOPS
     }
@@ -204,7 +203,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
     {
         // Arrange
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
-        
+
         // Act
         var benchmarkResult = await BenchmarkParallelWorkload(
             computeEngine,
@@ -215,20 +214,20 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         benchmarkResult.ThreadResults.Count.Should().Be(threadCount);
-        
+
         var totalThroughput = benchmarkResult.ThreadResults.Sum(r => r.ElementsPerSecond);
         var averageLatency = benchmarkResult.ThreadResults.Average(r => r.AverageLatency.TotalMilliseconds);
-        
+
         LoggerMessages.ParallelPerformance(Logger, threadCount, totalThroughput, averageLatency);
-        
+
         // Parallel efficiency
-        if(threadCount > 1)
+        if (threadCount > 1)
         {
-            var efficiency = totalThroughput /(benchmarkResult.SingleThreadThroughput * threadCount);
+            var efficiency = totalThroughput / (benchmarkResult.SingleThreadThroughput * threadCount);
             benchmarkResult.ParallelEfficiency = efficiency;
-            
+
             LoggerMessages.ParallelEfficiency(Logger, efficiency);
-            
+
             // Should achieve at least 50% efficiency with multiple threads
             Assert.True(efficiency > 0.5);
         }
@@ -253,15 +252,15 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         // Assert
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
-        
-        var pixelsPerSecond =(imageWidth * imageHeight) / benchmarkResult.ExecutionTime.TotalSeconds;
+
+        var pixelsPerSecond = (imageWidth * imageHeight) / benchmarkResult.ExecutionTime.TotalSeconds;
         var megapixelsPerSecond = pixelsPerSecond / 1_000_000.0;
-        
+
         LoggerMessages.ImageProcessingPerformance(Logger, megapixelsPerSecond);
-        
+
         // Should process at least 100 MP/s for basic operations
         Assert.True(megapixelsPerSecond > 100);
-        
+
         // Processing time should be acceptable for real-time scenarios
         benchmarkResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(500)); // More generous for test stability
     }
@@ -273,7 +272,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         const int sampleRate = 48000; // 48kHz
         const double durationSeconds = 1.0;
-        const int sampleCount =(int)(sampleRate * durationSeconds);
+        const int sampleCount = (int)(sampleRate * durationSeconds);
         var audioSamples = GenerateAudioSignal(sampleCount, sampleRate);
 
         // Act
@@ -285,12 +284,12 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         // Assert
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
-        
+
         var samplesPerSecond = sampleCount / benchmarkResult.ExecutionTime.TotalSeconds;
         var realTimeRatio = samplesPerSecond / sampleRate;
-        
+
         LoggerMessages.SignalProcessingPerformance(Logger, samplesPerSecond, realTimeRatio);
-        
+
         // Should process faster than real-time for audio applications
         Assert.True(realTimeRatio > 10); // At least 10x real-time
     }
@@ -316,14 +315,14 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         benchmarkResult.OptimizationLevel.Should().Be(optimizationLevel);
-        
+
         var elementsPerSecond = dataSize / benchmarkResult.ExecutionTime.TotalSeconds;
-        
+
         LoggerMessages.OptimizationLevelPerformance(Logger, optimizationLevel.ToString(), elementsPerSecond);
-        
+
         // All optimization levels should work
         Assert.True(elementsPerSecond > 100_000);
-        
+
         // Store results for comparison if needed
         benchmarkResult.ThroughputElementsPerSecond = elementsPerSecond;
     }
@@ -337,7 +336,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         float[] dataB)
     {
         var stopwatch = Stopwatch.StartNew();
-        
+
         try
         {
             var compilationOptions = new CompilationOptions
@@ -367,9 +366,10 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 compiledKernel,
                 [bufferA, bufferB, resultBuffer],
                 ComputeBackendType.CPU,
-                new ExecutionOptions { 
+                new ExecutionOptions
+                {
                     GlobalWorkSize = [dataA.Length],
-                    EnableProfiling = true 
+                    EnableProfiling = true
                 });
             stopwatch.Stop();
 
@@ -383,11 +383,11 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.VectorOperationBenchmarkFailed(Logger, ex);
-            
+
             return new BenchmarkResult
             {
                 Success = false,
@@ -404,7 +404,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         int size)
     {
         var stopwatch = Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -422,9 +422,10 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 compiledKernel,
                 [bufferA, bufferB, resultBuffer, size],
                 ComputeBackendType.CPU,
-                new ExecutionOptions { 
+                new ExecutionOptions
+                {
                     GlobalWorkSize = [size, size],
-                    EnableProfiling = true 
+                    EnableProfiling = true
                 });
             stopwatch.Stop();
 
@@ -438,11 +439,11 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.MatrixMultiplicationBenchmarkFailed(Logger, ex);
-            
+
             return new BenchmarkResult
             {
                 Success = false,
@@ -458,7 +459,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         float expectedSum)
     {
         var stopwatch = Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -475,10 +476,11 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 compiledKernel,
                 [inputBuffer, resultBuffer],
                 ComputeBackendType.CPU,
-                new ExecutionOptions { 
+                new ExecutionOptions
+                {
                     GlobalWorkSize = [data.Length],
                     LocalWorkSize = [64],
-                    EnableProfiling = true 
+                    EnableProfiling = true
                 });
             stopwatch.Stop();
 
@@ -495,11 +497,11 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.ReductionOperationBenchmarkFailed(Logger, ex);
-            
+
             return new BenchmarkResult
             {
                 Success = false,
@@ -528,7 +530,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             }";
 
         var stopwatch = Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -558,11 +560,11 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.MemoryIntensiveWorkloadBenchmarkFailed(Logger, ex);
-            
+
             return new BenchmarkResult
             {
                 Success = false,
@@ -595,7 +597,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             }";
 
         var stopwatch = Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -625,11 +627,11 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.ComputeIntensiveWorkloadBenchmarkFailed(Logger, ex);
-            
+
             return new BenchmarkResult
             {
                 Success = false,
@@ -652,7 +654,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             "vector_add",
             singleThreadData,
             singleThreadData);
-        
+
         var singleThreadThroughput = workPerThread / singleThreadResult.ExecutionTime.TotalSeconds;
 
         // Then run parallel workload
@@ -660,14 +662,14 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         {
             var threadData = GenerateTestVector(workPerThread, seed: threadId + 1);
             var stopwatch = Stopwatch.StartNew();
-            
+
             var result = await BenchmarkVectorOperation(
                 computeEngine,
                 VectorAddKernelSource,
                 "vector_add",
                 threadData,
                 threadData);
-                
+
             stopwatch.Stop();
 
             return new ThreadBenchmarkResult
@@ -725,7 +727,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             }";
 
         var stopwatch = Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -755,11 +757,11 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.ImageProcessingBenchmarkFailed(Logger, ex);
-            
+
             return new BenchmarkResult
             {
                 Success = false,
@@ -790,7 +792,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             }";
 
         var stopwatch = Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -822,11 +824,11 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.SignalProcessingBenchmarkFailed(Logger, ex);
-            
+
             return new BenchmarkResult
             {
                 Success = false,
@@ -888,19 +890,19 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         // Generate a mix of sine waves
         var signal = new float[sampleCount];
         var random = new Random(seed);
-        
-        for(int i = 0; i < sampleCount; i++)
+
+        for (var i = 0; i < sampleCount; i++)
         {
-            var t =(double)i / sampleRate;
-            
+            var t = (double)i / sampleRate;
+
             // Mix of frequencies
-            signal[i] =(float)(
+            signal[i] = (float)(
                 0.5 * Math.Sin(2 * Math.PI * 440 * t) +    // A4 note
                 0.3 * Math.Sin(2 * Math.PI * 880 * t) +    // A5 note
                 0.2 * random.NextDouble() - 0.1           // Noise
             );
         }
-        
+
         return signal;
     }
 
@@ -973,7 +975,7 @@ public class ThreadBenchmarkResult
 public class ParallelBenchmarkResult
 {
     public bool Success { get; set; }
-    public List<ThreadBenchmarkResult> ThreadResults { get; set; } = new();
+    public List<ThreadBenchmarkResult> ThreadResults { get; set; } = [];
     public double SingleThreadThroughput { get; set; }
     public double ParallelEfficiency { get; set; }
 }

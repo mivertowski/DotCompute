@@ -1,18 +1,10 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
-using DotCompute.Core.Execution;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -33,10 +25,8 @@ public class SecurityValidationSystemTests : IDisposable
 
     [Fact]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
-    {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new SecurityValidator(null!));
-    }
+        => Assert.Throws<ArgumentNullException>(() => new SecurityValidator(null!));
 
     [Theory]
     [InlineData("__global__ void kernel() { system(\"rm -rf /\"); }")]
@@ -50,7 +40,7 @@ public class SecurityValidationSystemTests : IDisposable
         var options = CreateDefaultValidationOptions();
 
         // Act
-        var result = await _securityValidator.ValidateKernelSecurityAsync(kernel, options);
+        var result = await SecurityValidator.ValidateKernelSecurityAsync(kernel, options);
 
         // Assert
         Assert.False(result.IsSecure);
@@ -69,7 +59,7 @@ public class SecurityValidationSystemTests : IDisposable
         var options = CreateDefaultValidationOptions();
 
         // Act
-        var result = await _securityValidator.ValidateKernelSecurityAsync(kernel, options);
+        var result = await SecurityValidator.ValidateKernelSecurityAsync(kernel, options);
 
         // Assert
         Assert.True(result.IsSecure);
@@ -95,11 +85,11 @@ __global__ void buffer_overflow_kernel(float* data, int size) {
         var options = CreateDefaultValidationOptions();
 
         // Act
-        var result = await _securityValidator.ValidateKernelSecurityAsync(kernel, options);
+        var result = await SecurityValidator.ValidateKernelSecurityAsync(kernel, options);
 
         // Assert
         Assert.False(result.IsSecure);
-        Assert.Contains(result.SecurityViolations, 
+        Assert.Contains(result.SecurityViolations,
             v => v.Type == SecurityViolationType.BufferOverflow);
     }
 
@@ -121,11 +111,11 @@ __global__ void infinite_loop_kernel(float* data, int size) {
         var options = CreateDefaultValidationOptions();
 
         // Act
-        var result = await _securityValidator.ValidateKernelSecurityAsync(kernel, options);
+        var result = await SecurityValidator.ValidateKernelSecurityAsync(kernel, options);
 
         // Assert
         Assert.False(result.IsSecure);
-        Assert.Contains(result.SecurityViolations, 
+        Assert.Contains(result.SecurityViolations,
             v => v.Type == SecurityViolationType.DenialOfService);
     }
 
@@ -150,11 +140,11 @@ __global__ void memory_bomb_kernel(float* data, int size) {
         var options = CreateDefaultValidationOptions();
 
         // Act
-        var result = await _securityValidator.ValidateKernelSecurityAsync(kernel, options);
+        var result = await SecurityValidator.ValidateKernelSecurityAsync(kernel, options);
 
         // Assert
         Assert.False(result.IsSecure);
-        Assert.Contains(result.SecurityViolations, 
+        Assert.Contains(result.SecurityViolations,
             v => v.Type == SecurityViolationType.ExcessiveResourceUsage);
     }
 
@@ -188,7 +178,7 @@ __global__ void memory_bomb_kernel(float* data, int size) {
         };
 
         // Act
-        var result = await _securityValidator.ValidateMemoryAccessPatternsAsync(memoryAccesses, bufferSizes);
+        var result = await SecurityValidator.ValidateMemoryAccessPatternsAsync(memoryAccesses, bufferSizes);
 
         // Assert
         Assert.True(result.IsValid);
@@ -216,7 +206,7 @@ __global__ void memory_bomb_kernel(float* data, int size) {
         };
 
         // Act
-        var result = await _securityValidator.ValidateMemoryAccessPatternsAsync(memoryAccesses, bufferSizes);
+        var result = await SecurityValidator.ValidateMemoryAccessPatternsAsync(memoryAccesses, bufferSizes);
 
         // Assert
         Assert.False(result.IsValid);
@@ -232,7 +222,7 @@ __global__ void memory_bomb_kernel(float* data, int size) {
         var privilegeLevel = KernelPrivilegeLevel.Restricted;
 
         // Act
-        var result = await _securityValidator.ValidateKernelPrivilegesAsync(kernel, privilegeLevel);
+        var result = await SecurityValidator.ValidateKernelPrivilegesAsync(kernel, privilegeLevel);
 
         // Assert
         Assert.False(result.HasSufficientPrivileges);
@@ -248,7 +238,7 @@ __global__ void memory_bomb_kernel(float* data, int size) {
         var privilegeLevel = KernelPrivilegeLevel.Elevated;
 
         // Act
-        var result = await _securityValidator.ValidateKernelPrivilegesAsync(kernel, privilegeLevel);
+        var result = await SecurityValidator.ValidateKernelPrivilegesAsync(kernel, privilegeLevel);
 
         // Assert
         Assert.True(result.HasSufficientPrivileges);
@@ -267,11 +257,11 @@ __global__ void kernel(char* query, char* user_input) {
         var kernel = CreateKernelWithCode(maliciousCode);
 
         // Act
-        var result = await _securityValidator.ValidateCodeInjectionAsync(kernel);
+        var result = await SecurityValidator.ValidateCodeInjectionAsync(kernel);
 
         // Assert
         Assert.False(result.IsSafe);
-        Assert.Contains(result.InjectionVectors, 
+        Assert.Contains(result.InjectionVectors,
             v => v.Type == InjectionType.SQL && v.Severity >= SecurityThreatLevel.High);
     }
 
@@ -287,11 +277,11 @@ __global__ void kernel(char* command, char* user_input) {
         var kernel = CreateKernelWithCode(maliciousCode);
 
         // Act
-        var result = await _securityValidator.ValidateCodeInjectionAsync(kernel);
+        var result = await SecurityValidator.ValidateCodeInjectionAsync(kernel);
 
         // Assert
         Assert.False(result.IsSafe);
-        Assert.Contains(result.InjectionVectors, 
+        Assert.Contains(result.InjectionVectors,
             v => v.Type == InjectionType.Command && v.Severity >= SecurityThreatLevel.Critical);
     }
 
@@ -313,13 +303,13 @@ __global__ void weak_crypto_kernel(int* data, int size) {
         var kernel = CreateKernelWithCode(weakCryptoCode);
 
         // Act
-        var result = await _securityValidator.ValidateCryptographicOperationsAsync(kernel);
+        var result = await SecurityValidator.ValidateCryptographicOperationsAsync(kernel);
 
         // Assert
         Assert.False(result.IsSecure);
-        Assert.Contains(result.CryptographicIssues, 
+        Assert.Contains(result.CryptographicIssues,
             issue => issue.Type == CryptographicIssueType.WeakRandomNumberGeneration);
-        Assert.Contains(result.CryptographicIssues, 
+        Assert.Contains(result.CryptographicIssues,
             issue => issue.Type == CryptographicIssueType.WeakEncryption);
     }
 
@@ -338,13 +328,13 @@ __global__ void leaky_kernel(char* password, char* output) {
         var kernel = CreateKernelWithCode(leakyCode);
 
         // Act
-        var result = await _securityValidator.ValidateDataLeakageAsync(kernel);
+        var result = await SecurityValidator.ValidateDataLeakageAsync(kernel);
 
         // Assert
         Assert.False(result.IsSecure);
-        Assert.Contains(result.DataLeakageRisks, 
+        Assert.Contains(result.DataLeakageRisks,
             risk => risk.Type == DataLeakageType.SensitiveDataExposure);
-        Assert.Contains(result.DataLeakageRisks, 
+        Assert.Contains(result.DataLeakageRisks,
             risk => risk.Type == DataLeakageType.LoggingSensitiveData);
     }
 
@@ -368,7 +358,7 @@ __global__ void leaky_kernel(char* password, char* output) {
         };
 
         // Act
-        var result = await _securityValidator.ValidateKernelSecurityAsync(complexKernel, options);
+        var result = await SecurityValidator.ValidateKernelSecurityAsync(complexKernel, options);
 
         // Assert
         Assert.NotNull(result);
@@ -393,11 +383,11 @@ __global__ void leaky_kernel(char* password, char* output) {
         });
 
         // Act
-        var result = await _securityValidator.ValidateKernelSecurityAsync(kernel, options);
+        var result = await SecurityValidator.ValidateKernelSecurityAsync(kernel, options);
 
         // Assert
         Assert.False(result.IsSecure);
-        Assert.Contains(result.SecurityViolations, 
+        Assert.Contains(result.SecurityViolations,
             v => v.Type == SecurityViolationType.ForbiddenOperation);
     }
 
@@ -411,9 +401,9 @@ __global__ void leaky_kernel(char* password, char* output) {
         var options = CreateDefaultValidationOptions();
 
         // Act - Validate multiple kernels concurrently
-        var task1 = _securityValidator.ValidateKernelSecurityAsync(kernel1, options);
-        var task2 = _securityValidator.ValidateKernelSecurityAsync(kernel2, options);
-        var task3 = _securityValidator.ValidateKernelSecurityAsync(kernel3, options);
+        var task1 = SecurityValidator.ValidateKernelSecurityAsync(kernel1, options);
+        var task2 = SecurityValidator.ValidateKernelSecurityAsync(kernel2, options);
+        var task3 = SecurityValidator.ValidateKernelSecurityAsync(kernel3, options);
 
         var results = await Task.WhenAll(task1, task2, task3);
 
@@ -425,7 +415,7 @@ __global__ void leaky_kernel(char* password, char* output) {
 
     #region Helper Methods
 
-    private GeneratedKernel CreateKernelWithCode(string sourceCode, DotCompute.Abstractions.KernelLanguage language = DotCompute.Abstractions.KernelLanguage.Cuda)
+    private static GeneratedKernel CreateKernelWithCode(string sourceCode, DotCompute.Abstractions.KernelLanguage language = DotCompute.Abstractions.KernelLanguage.Cuda)
     {
         return new GeneratedKernel
         {
@@ -448,7 +438,7 @@ __global__ void leaky_kernel(char* password, char* output) {
         };
     }
 
-    private SecurityValidationOptions CreateDefaultValidationOptions()
+    private static SecurityValidationOptions CreateDefaultValidationOptions()
     {
         return new SecurityValidationOptions
         {
@@ -462,11 +452,11 @@ __global__ void leaky_kernel(char* password, char* output) {
             MaxRegistersPerThread = 32,
             MaxExecutionTimeMs = 10000,
             RequiredPrivilegeLevel = KernelPrivilegeLevel.Standard,
-            CustomSecurityRules = new List<SecurityRule>()
+            CustomSecurityRules = []
         };
     }
 
-    private GeneratedKernel CreateComplexSecurityTestKernel()
+    private static GeneratedKernel CreateComplexSecurityTestKernel()
     {
         var complexCode = @"
 __global__ void complex_security_test_kernel(float* input, float* output, 
@@ -504,10 +494,8 @@ __global__ void complex_security_test_kernel(float* input, float* output,
     #endregion
 
     public void Dispose()
-    {
         // Clean up any resources if needed
-        GC.SuppressFinalize(this);
-    }
+        => GC.SuppressFinalize(this);
 }
 
 #region Mock Security Classes
@@ -524,7 +512,7 @@ public class SecurityValidator
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<SecurityValidationResult> ValidateKernelSecurityAsync(
+    public static async Task<SecurityValidationResult> ValidateKernelSecurityAsync(
         GeneratedKernel kernel, SecurityValidationOptions options)
     {
         await Task.Delay(10); // Simulate async work
@@ -532,7 +520,7 @@ public class SecurityValidator
         var violations = new List<SecurityViolation>();
 
         // Simulate security checks
-        if(kernel.SourceCode.Contains("system(") || kernel.SourceCode.Contains("exec(") || 
+        if (kernel.SourceCode.Contains("system(") || kernel.SourceCode.Contains("exec(") ||
             kernel.SourceCode.Contains("fopen(") || kernel.SourceCode.Contains("DeleteFile("))
         {
             violations.Add(new SecurityViolation
@@ -544,7 +532,7 @@ public class SecurityValidator
             });
         }
 
-        if(kernel.SourceCode.Contains("while(true)") || kernel.SourceCode.Contains("for(;;)"))
+        if (kernel.SourceCode.Contains("while(true)") || kernel.SourceCode.Contains("for(;;)"))
         {
             violations.Add(new SecurityViolation
             {
@@ -555,7 +543,7 @@ public class SecurityValidator
             });
         }
 
-        if(kernel.SourceCode.Contains("999999") || kernel.SourceCode.Contains("+ 1000000"))
+        if (kernel.SourceCode.Contains("999999") || kernel.SourceCode.Contains("+ 1000000"))
         {
             violations.Add(new SecurityViolation
             {
@@ -566,7 +554,7 @@ public class SecurityValidator
             });
         }
 
-        if(kernel.SourceCode.Contains("huge_array[65536]"))
+        if (kernel.SourceCode.Contains("huge_array[65536]"))
         {
             violations.Add(new SecurityViolation
             {
@@ -580,7 +568,7 @@ public class SecurityValidator
         // Check custom rules
         foreach (var rule in options.CustomSecurityRules)
         {
-            if(System.Text.RegularExpressions.Regex.IsMatch(kernel.SourceCode, rule.Pattern))
+            if (System.Text.RegularExpressions.Regex.IsMatch(kernel.SourceCode, rule.Pattern))
             {
                 violations.Add(new SecurityViolation
                 {
@@ -606,7 +594,7 @@ public class SecurityValidator
         };
     }
 
-    public async Task<MemoryValidationResult> ValidateMemoryAccessPatternsAsync(
+    public static async Task<MemoryValidationResult> ValidateMemoryAccessPatternsAsync(
         List<MemoryAccessPattern> memoryAccesses, Dictionary<string, long> bufferSizes)
     {
         await Task.Delay(5);
@@ -615,7 +603,7 @@ public class SecurityValidator
 
         foreach (var access in memoryAccesses)
         {
-            if(!access.IsWithinBounds)
+            if (!access.IsWithinBounds)
             {
                 violations.Add(new SecurityViolation
                 {
@@ -634,7 +622,7 @@ public class SecurityValidator
         };
     }
 
-    public async Task<PrivilegeValidationResult> ValidateKernelPrivilegesAsync(
+    public static async Task<PrivilegeValidationResult> ValidateKernelPrivilegesAsync(
         GeneratedKernel kernel, KernelPrivilegeLevel privilegeLevel)
     {
         await Task.Delay(5);
@@ -642,10 +630,10 @@ public class SecurityValidator
         var requiredPrivileges = new List<KernelPrivilege>();
         var violatedRestrictions = new List<string>();
 
-        if(kernel.SourceCode.Contains("__threadfence_system()"))
+        if (kernel.SourceCode.Contains("__threadfence_system()"))
         {
             requiredPrivileges.Add(KernelPrivilege.SystemBarrier);
-            if(privilegeLevel < KernelPrivilegeLevel.Elevated)
+            if (privilegeLevel < KernelPrivilegeLevel.Elevated)
             {
                 violatedRestrictions.Add("System-wide synchronization not allowed");
             }
@@ -659,13 +647,13 @@ public class SecurityValidator
         };
     }
 
-    public async Task<CodeInjectionValidationResult> ValidateCodeInjectionAsync(GeneratedKernel kernel)
+    public static async Task<CodeInjectionValidationResult> ValidateCodeInjectionAsync(GeneratedKernel kernel)
     {
         await Task.Delay(5);
 
         var injectionVectors = new List<InjectionVector>();
 
-        if(kernel.SourceCode.Contains("sprintf") && kernel.SourceCode.Contains("SELECT"))
+        if (kernel.SourceCode.Contains("sprintf") && kernel.SourceCode.Contains("SELECT"))
         {
             injectionVectors.Add(new InjectionVector
             {
@@ -676,7 +664,7 @@ public class SecurityValidator
             });
         }
 
-        if(kernel.SourceCode.Contains("system(") && kernel.SourceCode.Contains("strcat"))
+        if (kernel.SourceCode.Contains("system(") && kernel.SourceCode.Contains("strcat"))
         {
             injectionVectors.Add(new InjectionVector
             {
@@ -694,13 +682,13 @@ public class SecurityValidator
         };
     }
 
-    public async Task<CryptographicValidationResult> ValidateCryptographicOperationsAsync(GeneratedKernel kernel)
+    public static async Task<CryptographicValidationResult> ValidateCryptographicOperationsAsync(GeneratedKernel kernel)
     {
         await Task.Delay(5);
 
         var issues = new List<CryptographicIssue>();
 
-        if(kernel.SourceCode.Contains("rand()"))
+        if (kernel.SourceCode.Contains("rand()"))
         {
             issues.Add(new CryptographicIssue
             {
@@ -711,7 +699,7 @@ public class SecurityValidator
             });
         }
 
-        if(kernel.SourceCode.Contains("^= 0x42"))
+        if (kernel.SourceCode.Contains("^= 0x42"))
         {
             issues.Add(new CryptographicIssue
             {
@@ -729,13 +717,13 @@ public class SecurityValidator
         };
     }
 
-    public async Task<DataLeakageValidationResult> ValidateDataLeakageAsync(GeneratedKernel kernel)
+    public static async Task<DataLeakageValidationResult> ValidateDataLeakageAsync(GeneratedKernel kernel)
     {
         await Task.Delay(5);
 
         var risks = new List<DataLeakageRisk>();
 
-        if(kernel.SourceCode.Contains("strcpy") && kernel.SourceCode.Contains("password"))
+        if (kernel.SourceCode.Contains("strcpy") && kernel.SourceCode.Contains("password"))
         {
             risks.Add(new DataLeakageRisk
             {
@@ -746,7 +734,7 @@ public class SecurityValidator
             });
         }
 
-        if(kernel.SourceCode.Contains("printf") && kernel.SourceCode.Contains("password"))
+        if (kernel.SourceCode.Contains("printf") && kernel.SourceCode.Contains("password"))
         {
             risks.Add(new DataLeakageRisk
             {
@@ -781,13 +769,13 @@ public class SecurityValidationOptions
     public int MaxRegistersPerThread { get; set; } = 32;
     public int MaxExecutionTimeMs { get; set; } = 10000;
     public KernelPrivilegeLevel RequiredPrivilegeLevel { get; set; } = KernelPrivilegeLevel.Standard;
-    public List<SecurityRule> CustomSecurityRules { get; set; } = new();
+    public List<SecurityRule> CustomSecurityRules { get; set; } = [];
 }
 
 public class SecurityValidationResult
 {
     public bool IsSecure { get; set; }
-    public List<SecurityViolation> SecurityViolations { get; set; } = new();
+    public List<SecurityViolation> SecurityViolations { get; set; } = [];
     public SecurityValidationSummary ValidationSummary { get; set; } = new();
 }
 
@@ -871,20 +859,20 @@ public enum MemoryAccessType { Read, Write, ReadWrite }
 public class MemoryValidationResult
 {
     public bool IsValid { get; set; }
-    public List<SecurityViolation> Violations { get; set; } = new();
+    public List<SecurityViolation> Violations { get; set; } = [];
 }
 
 public class PrivilegeValidationResult
 {
     public bool HasSufficientPrivileges { get; set; }
-    public List<KernelPrivilege> RequiredPrivileges { get; set; } = new();
-    public List<string> ViolatedRestrictions { get; set; } = new();
+    public List<KernelPrivilege> RequiredPrivileges { get; set; } = [];
+    public List<string> ViolatedRestrictions { get; set; } = [];
 }
 
 public class CodeInjectionValidationResult
 {
     public bool IsSafe { get; set; }
-    public List<InjectionVector> InjectionVectors { get; set; } = new();
+    public List<InjectionVector> InjectionVectors { get; set; } = [];
 }
 
 public class InjectionVector
@@ -900,7 +888,7 @@ public enum InjectionType { SQL, Command, Script, Path }
 public class CryptographicValidationResult
 {
     public bool IsSecure { get; set; }
-    public List<CryptographicIssue> CryptographicIssues { get; set; } = new();
+    public List<CryptographicIssue> CryptographicIssues { get; set; } = [];
 }
 
 public class CryptographicIssue
@@ -916,7 +904,7 @@ public enum CryptographicIssueType { WeakRandomNumberGeneration, WeakEncryption,
 public class DataLeakageValidationResult
 {
     public bool IsSecure { get; set; }
-    public List<DataLeakageRisk> DataLeakageRisks { get; set; } = new();
+    public List<DataLeakageRisk> DataLeakageRisks { get; set; } = [];
 }
 
 public class DataLeakageRisk

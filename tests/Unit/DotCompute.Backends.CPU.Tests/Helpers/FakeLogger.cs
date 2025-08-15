@@ -2,7 +2,6 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
-using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CPU.Tests.Helpers;
 
@@ -29,13 +28,13 @@ public class FakeLogger<T> : ILogger<T>
             Exception = exception,
             Timestamp = DateTimeOffset.UtcNow
         };
-        
+
         _logs.Enqueue(entry);
         Collector.Add(entry);
     }
 
     public IEnumerable<LogEntry> GetLogs() => _logs.ToArray();
-    
+
     public void Clear() => _logs.Clear();
 }
 
@@ -56,11 +55,11 @@ public record LogEntry
 /// </summary>
 public class LogEntryCollector
 {
-    private readonly List<LogEntry> _entries = new();
+    private readonly List<LogEntry> _entries = [];
 
     public void Add(LogEntry entry)
     {
-        lock(_entries)
+        lock (_entries)
         {
             _entries.Add(entry);
         }
@@ -68,7 +67,7 @@ public class LogEntryCollector
 
     public IReadOnlyList<LogEntry> GetSnapshot()
     {
-        lock(_entries)
+        lock (_entries)
         {
             return _entries.ToList();
         }
@@ -76,7 +75,7 @@ public class LogEntryCollector
 
     public void Clear()
     {
-        lock(_entries)
+        lock (_entries)
         {
             _entries.Clear();
         }

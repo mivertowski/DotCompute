@@ -1,11 +1,10 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using FluentAssertions;
 
@@ -61,7 +60,8 @@ public class BackendPluginBaseTests : IDisposable
     public async Task InitializeAsync_WithNullServiceProvider_ThrowsArgumentNullException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _plugin.InitializeAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FluentActions.MethodCall().AsTask())
+            .WithParameterName("serviceProvider");
     }
 
     [Fact]
@@ -71,7 +71,8 @@ public class BackendPluginBaseTests : IDisposable
         await _plugin.InitializeAsync(_serviceProvider);
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.InitializeAsync(_serviceProvider));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask())
+            .WithMessage("*Cannot initialize plugin in state*");
     }
 
     [Fact]
@@ -81,7 +82,7 @@ public class BackendPluginBaseTests : IDisposable
         _plugin.ThrowOnInitialize = true;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.InitializeAsync(_serviceProvider));
+        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask());
 
         _plugin.State.Should().Be(PluginState.Failed);
         _plugin.Health.Should().Be(PluginHealth.Critical);
@@ -105,7 +106,8 @@ public class BackendPluginBaseTests : IDisposable
     public async Task StartAsync_FromInvalidState_ThrowsInvalidOperationException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.StartAsync());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask())
+            .WithMessage("*Cannot start plugin in state*");
     }
 
     [Fact]
@@ -116,7 +118,7 @@ public class BackendPluginBaseTests : IDisposable
         _plugin.ThrowOnStart = true;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.StartAsync());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask());
 
         _plugin.State.Should().Be(PluginState.Failed);
         _plugin.Health.Should().Be(PluginHealth.Critical);
@@ -141,7 +143,7 @@ public class BackendPluginBaseTests : IDisposable
     {
         // Act & Assert
         await FluentActions.Invoking(() => _plugin.StopAsync())
-            .Should().NotThrowAsync();
+            .NotThrowAsync();
     }
 
     [Fact]
@@ -153,7 +155,7 @@ public class BackendPluginBaseTests : IDisposable
         _plugin.ThrowOnStop = true;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.StopAsync());
+        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask());
 
         _plugin.State.Should().Be(PluginState.Failed);
     }
@@ -167,7 +169,7 @@ public class BackendPluginBaseTests : IDisposable
         // Assert
         Assert.NotNull(result);
         result.IsValid.Should().BeTrue();
-        result.Errors.Should().BeEmpty();
+        result.Assert.Empty(Errors);
     }
 
     [Fact]
@@ -181,7 +183,7 @@ public class BackendPluginBaseTests : IDisposable
 
         // Assert
         result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain("Plugin ID is required");
+        result.Assert.Contains("Plugin ID is required", Errors);
     }
 
     [Fact]
@@ -194,14 +196,15 @@ public class BackendPluginBaseTests : IDisposable
         await _plugin.OnConfigurationChangedAsync(_configuration);
 
         // Assert
-        _plugin.LastConfiguration.Should().BeSameAs(_configuration);
+        _plugin.LastConfiguration.BeSameAs(_configuration);
     }
 
     [Fact]
     public async Task OnConfigurationChangedAsync_WithNullConfiguration_ThrowsArgumentNullException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _plugin.OnConfigurationChangedAsync(null!));
+        await Assert.ThrowsAsync<ArgumentNullException>(() => FluentActions.MethodCall().AsTask())
+            .WithParameterName("configuration");
     }
 
     [Fact]
@@ -222,7 +225,7 @@ public class BackendPluginBaseTests : IDisposable
 
         // Assert
         Assert.NotNull(metrics);
-        metrics.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        metrics.Timestamp.BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(5));
         metrics.Uptime.Should().Be(TimeSpan.Zero); // Not running
     }
 
@@ -238,7 +241,7 @@ public class BackendPluginBaseTests : IDisposable
         var metrics = _plugin.GetMetrics();
 
         // Assert
-        (metrics.Uptime > TimeSpan.Zero).Should().BeTrue();
+        metrics.Uptime > TimeSpan.Zero.Should().BeTrue();
     }
 
     [Fact]
@@ -338,7 +341,7 @@ public class BackendPluginBaseTests : IDisposable
         // Arrange
         var eventRaised = false;
         PluginStateChangedEventArgs? eventArgs = null;
-        _plugin.StateChanged +=(sender, args) =>
+        _plugin.StateChanged += (sender, args) =>
         {
             eventRaised = true;
             eventArgs = args;
@@ -360,7 +363,7 @@ public class BackendPluginBaseTests : IDisposable
         // Arrange
         var eventRaised = false;
         PluginErrorEventArgs? eventArgs = null;
-        _plugin.ErrorOccurred +=(sender, args) =>
+        _plugin.ErrorOccurred += (sender, args) =>
         {
             eventRaised = true;
             eventArgs = args;
@@ -374,7 +377,7 @@ public class BackendPluginBaseTests : IDisposable
         // Assert
         Assert.True(eventRaised);
         Assert.NotNull(eventArgs);
-        eventArgs!.Exception.Should().BeSameAs(exception);
+        eventArgs!.Exception.BeSameAs(exception);
         eventArgs.Context.Should().Be("Test context");
     }
 
@@ -384,7 +387,7 @@ public class BackendPluginBaseTests : IDisposable
         // Arrange
         var eventRaised = false;
         PluginHealthChangedEventArgs? eventArgs = null;
-        _plugin.HealthChanged +=(sender, args) =>
+        _plugin.HealthChanged += (sender, args) =>
         {
             eventRaised = true;
             eventArgs = args;
@@ -418,7 +421,7 @@ public class BackendPluginBaseTests : IDisposable
     public void Dispose_CalledMultipleTimes_ShouldNotThrow()
     {
         // Act & Assert
-        Action act =() =>
+        Action act = () =>
         {
             _plugin.Dispose();
             _plugin.Dispose(); // Should not throw
@@ -433,13 +436,13 @@ public class BackendPluginBaseTests : IDisposable
         _plugin.Dispose();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.InitializeAsync(_serviceProvider));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => FluentActions.MethodCall().AsTask());
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.StartAsync());
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => FluentActions.MethodCall().AsTask());
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.StopAsync());
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => FluentActions.MethodCall().AsTask());
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.OnConfigurationChangedAsync(_configuration));
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => FluentActions.MethodCall().AsTask());
     }
 
     public void Dispose()
@@ -450,12 +453,13 @@ public class BackendPluginBaseTests : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if(_disposed) return;
+        if (_disposed)
+            return;
 
-        if(disposing)
+        if (disposing)
         {
             _plugin?.Dispose();
-           (_serviceProvider as IDisposable)?.Dispose();
+            (_serviceProvider as IDisposable)?.Dispose();
         }
         _disposed = true;
     }
@@ -486,7 +490,7 @@ public class BackendPluginBaseTests : IDisposable
 
         protected override Task OnInitializeAsync(CancellationToken cancellationToken)
         {
-            if(ThrowOnInitialize)
+            if (ThrowOnInitialize)
             {
                 throw new InvalidOperationException("Initialization failed");
             }
@@ -495,7 +499,7 @@ public class BackendPluginBaseTests : IDisposable
 
         protected override Task OnStartAsync(CancellationToken cancellationToken)
         {
-            if(ThrowOnStart)
+            if (ThrowOnStart)
             {
                 throw new InvalidOperationException("Start failed");
             }
@@ -504,7 +508,7 @@ public class BackendPluginBaseTests : IDisposable
 
         protected override Task OnStopAsync(CancellationToken cancellationToken)
         {
-            if(ThrowOnStop)
+            if (ThrowOnStop)
             {
                 throw new InvalidOperationException("Stop failed");
             }

@@ -43,7 +43,7 @@ public class KernelArgumentsTests
         var args = KernelArguments.Create(2);
 
         // Act & Assert
-        var act =() => args.Get(5);
+        var act = () => args.Get(5);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
@@ -54,7 +54,7 @@ public class KernelArgumentsTests
         var args = new KernelArguments();
 
         // Act & Assert
-        var act =() => args.Get(0);
+        var act = () => args.Get(0);
         Assert.Throws<InvalidOperationException>(() => act());
     }
 

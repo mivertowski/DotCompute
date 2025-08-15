@@ -1,14 +1,11 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution;
-using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using FluentAssertions;
 using ExecutionParallelExecutionResult = DotCompute.Core.Execution.ParallelExecutionResult;
 using ExecutionDeviceExecutionResult = DotCompute.Core.Execution.DeviceExecutionResult;
 using ExecutionExecutionStrategyType = DotCompute.Core.Execution.ExecutionStrategyType;
@@ -32,10 +29,8 @@ public sealed class PerformanceMonitorTests : IDisposable
 
     [Fact]
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
-    {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new PerformanceMonitor(null!));
-    }
+        => Assert.Throws<ArgumentNullException>(() => new PerformanceMonitor(null!));
 
     [Fact]
     public void RecordExecution_WithValidResult_ShouldNotThrow()
@@ -45,7 +40,7 @@ public sealed class PerformanceMonitorTests : IDisposable
 
         // Act & Assert(should not throw)
         _performanceMonitor.RecordExecution(result);
-        
+
         // Verify metrics are updated
         var metrics = _performanceMonitor.GetCurrentMetrics();
         Assert.NotNull(metrics);
@@ -57,7 +52,7 @@ public sealed class PerformanceMonitorTests : IDisposable
     {
         // Act & Assert(should not throw)
         _performanceMonitor.RecordKernelExecution("TestKernel", "Device1", 100.5, 15.2);
-        
+
         // Multiple executions should be handled
         _performanceMonitor.RecordKernelExecution("TestKernel", "Device1", 95.3, 16.1);
         _performanceMonitor.RecordKernelExecution("TestKernel", "Device2", 120.1, 18.5);
@@ -185,7 +180,7 @@ public sealed class PerformanceMonitorTests : IDisposable
         var tasks = new List<Task>();
 
         // Act
-        for(int i = 0; i < operationCount; i++)
+        for (var i = 0; i < operationCount; i++)
         {
             var index = i;
             tasks.Add(Task.Run(() =>
@@ -211,7 +206,7 @@ public sealed class PerformanceMonitorTests : IDisposable
         var result2 = CreateMockParallelExecutionResult();
         result2.TotalExecutionTimeMs = 200.0;
         result2.EfficiencyPercentage = 85.0;
-        
+
         _performanceMonitor.RecordExecution(result1);
         _performanceMonitor.RecordExecution(result2);
 
@@ -222,7 +217,7 @@ public sealed class PerformanceMonitorTests : IDisposable
         Assert.True(metrics.AverageEfficiencyPercentage > 0);
     }
 
-    private ExecutionParallelExecutionResult CreateMockParallelExecutionResult()
+    private static ExecutionParallelExecutionResult CreateMockParallelExecutionResult()
     {
         return new ExecutionParallelExecutionResult
         {
@@ -232,8 +227,8 @@ public sealed class PerformanceMonitorTests : IDisposable
             ThroughputGFLOPS = 12.5,
             MemoryBandwidthGBps = 85.3,
             EfficiencyPercentage = 78.2,
-            DeviceResults = new[]
-            {
+            DeviceResults =
+            [
                 new ExecutionDeviceExecutionResult
                 {
                     DeviceId = "GPU_0",
@@ -242,14 +237,14 @@ public sealed class PerformanceMonitorTests : IDisposable
                     ThroughputGFLOPS = 12.8,
                     MemoryBandwidthGBps = 87.1
                 }
-            },
+            ],
             ErrorMessage = null
         };
     }
 
     public void Dispose()
     {
-        if(!_disposed)
+        if (!_disposed)
         {
             _performanceMonitor?.Dispose();
             _disposed = true;

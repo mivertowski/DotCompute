@@ -1,12 +1,9 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
@@ -36,7 +33,7 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_Constructor_ShouldInitializeWithValidDevice()
     {
         // Arrange & Act
-        Action createAccelerator =() =>
+        Action createAccelerator = () =>
         {
             var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
             var accelerator = new CudaAccelerator(0, acceleratorLogger);
@@ -44,7 +41,7 @@ public class CudaDeviceTests : IDisposable
         };
 
         // Assert
-        if(IsCudaAvailable())
+        if (IsCudaAvailable())
         {
             createAccelerator(); // Should not throw
             Assert.Equal(1, _accelerators.Count());
@@ -63,7 +60,8 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_Info_ShouldContainValidDeviceProperties()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
@@ -81,7 +79,7 @@ public class CudaDeviceTests : IDisposable
         info.MaxClockFrequency.Should().BeGreaterThan(0);
         info.ComputeCapability.Should().NotBeNull();
         info.MaxSharedMemoryPerBlock.Should().BeGreaterThan(0);
-        
+
         // Validate CUDA-specific capabilities
         info.Capabilities.Should().NotBeEmpty();
         info.Capabilities.Should().ContainKeys(
@@ -102,14 +100,14 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_Constructor_WithDifferentDeviceIds_ShouldHandleCorrectly(int deviceId)
     {
         // Arrange & Act
-        Action createAccelerator =() =>
+        Action createAccelerator = () =>
         {
             var accelerator = new CudaAccelerator(deviceId, logger: null);
             _accelerators.Add(accelerator);
         };
 
         // Assert
-        if(IsCudaAvailable() && IsDeviceAvailable(deviceId))
+        if (IsCudaAvailable() && IsDeviceAvailable(deviceId))
         {
             createAccelerator(); // Should not throw
             _accelerators.Last().Info.Should().NotBeNull();
@@ -126,7 +124,8 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_ComputeCapability_ShouldBeValid()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
@@ -152,7 +151,8 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_MemoryProperties_ShouldBeRealistic()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
@@ -164,7 +164,7 @@ public class CudaDeviceTests : IDisposable
         // Assert
         info.MemorySize.Should().BeInRange(1_000_000_000L, 100_000_000_000L); // 1GB to 100GB reasonable range
         info.MaxSharedMemoryPerBlock.Should().BeInRange(16_384L, 163_840L); // 16KB to 160KB typical range
-        
+
         // Validate memory bandwidth calculation
         var capabilities = info.Capabilities;
         capabilities.Should().ContainKey("MemoryBandwidth");
@@ -178,7 +178,8 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_WarpSize_ShouldBeStandard()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
@@ -197,7 +198,8 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_MultiprocessorCount_ShouldBeRealistic()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
@@ -222,7 +224,8 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_Capabilities_ShouldHaveValidRanges(string capabilityName, int minValue, int maxValue)
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
@@ -234,7 +237,7 @@ public class CudaDeviceTests : IDisposable
         // Assert
         capabilities.Should().ContainKey(capabilityName);
         var value = Convert.ToInt32(capabilities![capabilityName]);
-        value.Should().BeInRange(minValue, maxValue, 
+        value.Should().BeInRange(minValue, maxValue,
             $"{capabilityName} should be within reasonable bounds");
     }
 
@@ -244,7 +247,8 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_BooleanCapabilities_ShouldBeValid()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
@@ -257,7 +261,7 @@ public class CudaDeviceTests : IDisposable
         var booleanCapabilities = new[]
         {
             "UnifiedAddressing",
-            "ManagedMemory", 
+            "ManagedMemory",
             "ConcurrentKernels",
             "ECCEnabled"
         };
@@ -276,7 +280,8 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_Constructor_PerformanceTest()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
@@ -287,9 +292,9 @@ public class CudaDeviceTests : IDisposable
         stopwatch.Stop();
 
         // Assert - Constructor should be relatively fast
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); 
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000);
         // CUDA accelerator initialization should complete within 5 seconds
-        
+
         _output.WriteLine($"CUDA Accelerator initialization took {stopwatch.ElapsedMilliseconds}ms");
     }
 
@@ -299,14 +304,15 @@ public class CudaDeviceTests : IDisposable
     public void CudaAccelerator_Reset_ShouldSucceedWithoutErrors()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
         // Act & Assert
-        Action resetAction =() => accelerator.Reset();
+        Action resetAction = () => accelerator.Reset();
         resetAction(); // Should not throw
     }
 
@@ -316,14 +322,15 @@ public class CudaDeviceTests : IDisposable
     public async Task CudaAccelerator_Synchronize_ShouldCompleteSuccessfully()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
         // Act & Assert
-        var syncAction = async() => await accelerator.SynchronizeAsync();
+        var syncAction = async () => await accelerator.SynchronizeAsync();
         await syncAction(); // Should not throw
     }
 
@@ -362,7 +369,7 @@ public class CudaDeviceTests : IDisposable
             {
                 accelerator?.Dispose();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing CUDA accelerator");
             }

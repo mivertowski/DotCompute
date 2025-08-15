@@ -1,8 +1,4 @@
 using Xunit;
-using FluentAssertions;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Shared.Kernels;
 using Xunit.Abstractions;
@@ -46,7 +42,7 @@ public class RealImplementationTests : IAsyncLifetime
         // Arrange
         const int elementCount = 1024;
         var sourceData = new float[elementCount];
-        for(int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             sourceData[i] = MathF.Sin(i * 0.01f);
         }
@@ -64,7 +60,7 @@ public class RealImplementationTests : IAsyncLifetime
         await buffer.CopyToHostAsync<float>(readbackData.AsMemory());
 
         // Assert - Verify data integrity
-        for(int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             Assert.Equal(sourceData[i], readbackData[i], 5);
         }
@@ -79,7 +75,7 @@ public class RealImplementationTests : IAsyncLifetime
         const long bufferSize = 1024 * sizeof(float);
         const long viewOffset = 256 * sizeof(float);
         const long viewSize = 512 * sizeof(float);
-        
+
         var buffer = await _memoryManager.AllocateAsync(bufferSize);
 
         // Act
@@ -88,7 +84,7 @@ public class RealImplementationTests : IAsyncLifetime
         // Assert
         Assert.NotNull(view);
         Assert.Equal(viewSize, view.SizeInBytes);
-        
+
         _output.WriteLine($"Created view of {viewSize} bytes at offset {viewOffset}");
     }
 
@@ -124,8 +120,8 @@ public class RealImplementationTests : IAsyncLifetime
         const int dataSize = 256;
         var inputData = new float[dataSize];
         var outputData = new float[dataSize];
-        
-        for(int i = 0; i < dataSize; i++)
+
+        for (var i = 0; i < dataSize; i++)
         {
             inputData[i] = i * 0.5f;
         }
@@ -146,7 +142,7 @@ public class RealImplementationTests : IAsyncLifetime
             Language = KernelLanguage.OpenCL
         };
         var kernelDef = new KernelDefinition("DataProcessing", kernelSource, new CompilationOptions());
-        
+
         var kernel = await _accelerator.CompileKernelAsync(kernelDef);
         var args = new KernelArguments(inputBuffer, outputBuffer, dataSize);
         await kernel.ExecuteAsync(args);
@@ -166,11 +162,11 @@ public class RealImplementationTests : IAsyncLifetime
         var tasks = new Task<IMemoryBuffer>[concurrentCount];
 
         // Act - Allocate multiple buffers concurrently
-        for(int i = 0; i < concurrentCount; i++)
+        for (var i = 0; i < concurrentCount; i++)
         {
             tasks[i] = _memoryManager.AllocateAsync(bufferSize).AsTask();
         }
-        
+
         var buffers = await Task.WhenAll(tasks);
 
         // Assert
@@ -184,7 +180,7 @@ public class RealImplementationTests : IAsyncLifetime
         // Check memory statistics
         Assert.Equal(concurrentCount, _memoryManager.AllocationCount);
         Assert.Equal(concurrentCount * bufferSize, _memoryManager.TotalAllocated);
-        
+
         _output.WriteLine($"Successfully allocated {concurrentCount} buffers concurrently");
         _output.WriteLine($"Total allocated: {_memoryManager.TotalAllocated} bytes");
         _output.WriteLine($"Peak allocated: {_memoryManager.PeakAllocated} bytes");
@@ -224,7 +220,7 @@ public class RealImplementationTests : IAsyncLifetime
         await kernel2.ExecuteAsync(args);
         await kernel3.ExecuteAsync(args);
 
-        if(kernel3 is TestCompiledKernel testKernel)
+        if (kernel3 is TestCompiledKernel testKernel)
         {
             _output.WriteLine($"Kernel {testKernel.Name} executed {testKernel.ExecutionCount} times");
             _output.WriteLine($"Average execution time: {testKernel.AverageExecutionTimeMs:F2}ms");
@@ -238,16 +234,16 @@ public class RealImplementationTests : IAsyncLifetime
     public async Task MemoryOperations_DifferentSizes_ShouldWork(long size)
     {
         // Arrange
-        var elementCount =(int)(size / sizeof(double));
+        var elementCount = (int)(size / sizeof(double));
         var testData = new double[elementCount];
-        for(int i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             testData[i] = Math.Sin(i * 0.001);
         }
 
         // Act - Allocate and copy
         var buffer = await _memoryManager.AllocateAndCopyAsync<double>(testData.AsMemory());
-        
+
         // Assert
         Assert.NotNull(buffer);
         Assert.Equal(size, buffer.SizeInBytes);
@@ -257,13 +253,13 @@ public class RealImplementationTests : IAsyncLifetime
         await buffer.CopyToHostAsync<double>(readback.AsMemory());
 
         // Assert - Verify data
-        for(int i = 0; i < Math.Min(10, elementCount); i++)
+        for (var i = 0; i < Math.Min(10, elementCount); i++)
         {
             Assert.Equal(testData[i], readback[i], 10);
         }
 
         _output.WriteLine($"Successfully tested memory operations with {size} bytes");
-        
+
         // Cleanup
         await buffer.DisposeAsync();
     }
@@ -279,8 +275,8 @@ public class RealImplementationTests : IAsyncLifetime
         var inputA = new float[dataSize];
         var inputB = new float[dataSize];
         var expected = new float[dataSize];
-        
-        for(int i = 0; i < dataSize; i++)
+
+        for (var i = 0; i < dataSize; i++)
         {
             inputA[i] = i * 0.1f;
             inputB[i] = i * 0.2f;
@@ -333,12 +329,12 @@ public class RealImplementationTests : IAsyncLifetime
 
         // Step 8: Verify results(approximate since we're simulating)
         _output.WriteLine("Verifying results...");
-        int correctCount = 0;
-        for(int i = 0; i < dataSize; i++)
+        var correctCount = 0;
+        for (var i = 0; i < dataSize; i++)
         {
             // In a real implementation, this would match exactly
             // For our test implementation, we just check if data was transferred
-            if(!float.IsNaN(results[i]) && !float.IsInfinity(results[i]))
+            if (!float.IsNaN(results[i]) && !float.IsInfinity(results[i]))
             {
                 correctCount++;
             }

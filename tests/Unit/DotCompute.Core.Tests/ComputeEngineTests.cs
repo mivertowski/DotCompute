@@ -6,7 +6,6 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
@@ -24,10 +23,10 @@ public sealed class ComputeEngineTests : IDisposable
     {
         _loggerMock = new Mock<ILogger>();
         _computeEngineMock = new Mock<IComputeEngine>();
-        
+
         // Setup default behavior for the compute engine
         _computeEngineMock.Setup(e => e.AvailableBackends)
-            .Returns(new[] { ComputeBackendType.CPU, ComputeBackendType.CUDA });
+            .Returns([ComputeBackendType.CPU, ComputeBackendType.CUDA]);
         _computeEngineMock.Setup(e => e.DefaultBackend)
             .Returns(ComputeBackendType.CPU);
     }
@@ -60,7 +59,7 @@ public sealed class ComputeEngineTests : IDisposable
         // Arrange
         var kernelSource = "__global__ void testKernel() { }";
         var compiledKernel = Mock.Of<ICompiledKernel>();
-        
+
         _computeEngineMock
             .Setup(e => e.CompileKernelAsync(kernelSource, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(compiledKernel);
@@ -82,7 +81,7 @@ public sealed class ComputeEngineTests : IDisposable
             .ThrowsAsync(new ArgumentNullException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => 
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await _computeEngineMock.Object.CompileKernelAsync(null!));
     }
 
@@ -93,14 +92,14 @@ public sealed class ComputeEngineTests : IDisposable
         var kernel = Mock.Of<ICompiledKernel>();
         var arguments = new object[] { 1, 2, 3 };
         var backendType = ComputeBackendType.CPU;
-        
+
         _computeEngineMock
             .Setup(e => e.ExecuteAsync(kernel, arguments, backendType, null, It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
         // Act & Assert(should not throw)
         await _computeEngineMock.Object.ExecuteAsync(kernel, arguments, backendType);
-        
+
         _computeEngineMock.Verify(e => e.ExecuteAsync(kernel, arguments, backendType, null, It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -110,13 +109,13 @@ public sealed class ComputeEngineTests : IDisposable
         // Arrange
         var arguments = new object[] { 1, 2, 3 };
         var backendType = ComputeBackendType.CPU;
-        
+
         _computeEngineMock
             .Setup(e => e.ExecuteAsync(null!, arguments, backendType, null, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentNullException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => 
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await _computeEngineMock.Object.ExecuteAsync(null!, arguments, backendType));
     }
 
@@ -142,16 +141,16 @@ public sealed class ComputeEngineTests : IDisposable
             Priority = ExecutionPriority.High,
             EnableProfiling = true,
             Timeout = TimeSpan.FromSeconds(30),
-            GlobalWorkSize = new long[] { 1024, 1024 },
-            LocalWorkSize = new long[] { 16, 16 }
+            GlobalWorkSize = [1024, 1024],
+            LocalWorkSize = [16, 16]
         };
 
         // Assert
         Assert.Equal(ExecutionPriority.High, options.Priority);
         Assert.True(options.EnableProfiling);
         Assert.Equal(TimeSpan.FromSeconds(30), options.Timeout);
-        Assert.Equal(new long[] { 1024, 1024 }, options.GlobalWorkSize);
-        Assert.Equal(new long[] { 16, 16 }, options.LocalWorkSize);
+        Assert.Equal([1024, 1024], options.GlobalWorkSize);
+        Assert.Equal([16, 16], options.LocalWorkSize);
     }
 
     [Fact]
@@ -192,7 +191,7 @@ public sealed class ComputeEngineTests : IDisposable
 
         // Act & Assert(should not throw)
         await _computeEngineMock.Object.DisposeAsync();
-        
+
         _computeEngineMock.Verify(e => e.DisposeAsync(), Times.Once);
     }
 
@@ -204,7 +203,7 @@ public sealed class ComputeEngineTests : IDisposable
         var entryPoint = "main";
         var options = new CompilationOptions();
         var compiledKernel = Mock.Of<ICompiledKernel>();
-        
+
         _computeEngineMock
             .Setup(e => e.CompileKernelAsync(kernelSource, entryPoint, options, It.IsAny<CancellationToken>()))
             .ReturnsAsync(compiledKernel);
@@ -225,7 +224,7 @@ public sealed class ComputeEngineTests : IDisposable
         var arguments = new object[] { 1, 2 };
         var backendType = ComputeBackendType.CUDA;
         var options = new ExecutionOptions { Priority = ExecutionPriority.High };
-        
+
         _computeEngineMock
             .Setup(e => e.ExecuteAsync(kernel, arguments, backendType, options, It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
@@ -239,7 +238,7 @@ public sealed class ComputeEngineTests : IDisposable
 
     public void Dispose()
     {
-        if(!_disposed)
+        if (!_disposed)
         {
             // No resources to dispose in this test class
             _disposed = true;

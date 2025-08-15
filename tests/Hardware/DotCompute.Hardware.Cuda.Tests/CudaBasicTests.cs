@@ -1,7 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Compilation;
@@ -30,10 +29,10 @@ public class CudaBasicTests : IDisposable
     {
         var loggerFactory = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(LogLevel.Information));
-        
+
         _logger = loggerFactory.CreateLogger<CudaBasicTests>();
 
-        if(CudaBackend.IsAvailable())
+        if (CudaBackend.IsAvailable())
         {
             _backend = new CudaBackend(loggerFactory.CreateLogger<CudaBackend>());
             _accelerator = _backend.GetDefaultAccelerator();
@@ -49,10 +48,10 @@ public class CudaBasicTests : IDisposable
     public void CudaRuntime_ShouldBeAvailable()
     {
         Assert.True(CudaBackend.IsAvailable(), "CUDA runtime should be available");
-        
+
         Assert.NotNull(_backend);
         Assert.NotNull(_accelerator);
-        
+
         _logger.LogInformation("CUDA backend and accelerator initialized successfully");
     }
 
@@ -87,24 +86,24 @@ public class CudaBasicTests : IDisposable
 
         const int SIZE = 1000;
         var testData = new float[SIZE];
-        for(int i = 0; i < SIZE; i++)
+        for (var i = 0; i < SIZE; i++)
         {
             testData[i] = i * 0.5f;
         }
 
         var buffer = await _accelerator.Memory.AllocateAsync(SIZE * sizeof(float));
-        
+
         try
         {
             // Copy to GPU
             await buffer.CopyFromHostAsync<float>(testData);
-            
+
             // Copy back from GPU
             var result = new float[SIZE];
             await buffer.CopyToHostAsync<float>(result);
 
             // Verify data
-            for(int i = 0; i < SIZE; i++)
+            for (var i = 0; i < SIZE; i++)
             {
                 Assert.Equal(testData[i], result[i]);
             }
@@ -142,7 +141,7 @@ extern ""C"" __global__ void addOne(float* data, int n)
         Assert.NotNull(compiledKernel);
 
         _logger.LogInformation("Kernel compilation successful");
-        
+
         await compiledKernel.DisposeAsync();
     }
 
@@ -156,7 +155,7 @@ extern ""C"" __global__ void addOne(float* data, int n)
 
         const int N = 1000;
         var data = new float[N];
-        for(int i = 0; i < N; i++)
+        for (var i = 0; i < N; i++)
         {
             data[i] = i;
         }
@@ -189,7 +188,7 @@ extern ""C"" __global__ void multiply(float* data, float factor, int n)
             await buffer.CopyToHostAsync<float>(result);
 
             // Verify results
-            for(int i = 0; i < N; i++)
+            for (var i = 0; i < N; i++)
             {
                 var expected = data[i] * FACTOR;
                 Assert.True(Math.Abs(result[i] - expected) < 0.001f,
@@ -255,10 +254,10 @@ extern ""C"" __global__ void testConfig(int* data, int n)
                 await buffer.CopyToHostAsync<int>(data);
 
                 // Verify some results(block IDs should be reasonable)
-                data[0] .Should().BeGreaterThanOrEqualTo(0, "Block ID should be non-negative");
-                if(N > 100)
+                data[0].Should().BeGreaterThanOrEqualTo(0, "Block ID should be non-negative");
+                if (N > 100)
                 {
-                    data[N - 1] .Should().BeGreaterThanOrEqualTo(0, "Last element should have valid block ID");
+                    data[N - 1].Should().BeGreaterThanOrEqualTo(0, "Last element should have valid block ID");
                 }
 
                 _logger.LogInformation("Launch configuration test passed");
@@ -276,7 +275,8 @@ extern ""C"" __global__ void testConfig(int* data, int n)
 
     public void Dispose()
     {
-        if(_disposed) return;
+        if (_disposed)
+            return;
 
         _accelerator?.Dispose();
         _backend?.Dispose();

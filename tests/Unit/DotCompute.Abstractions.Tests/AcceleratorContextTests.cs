@@ -1,8 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
@@ -194,7 +192,7 @@ public class AcceleratorContextTests
         // Act & Assert
         context.Equals(context).Should().BeTrue();
         context.Equals(context).Should().BeTrue();
-       (!context.Equals(null)).Should().BeTrue();
+        (!context.Equals(null)).Should().BeTrue();
     }
 
     [Fact]
@@ -221,8 +219,8 @@ public class AcceleratorContextTests
 
         // Act & Assert
         context1.Equals(context2).Should().BeFalse();
-       (context1 == context2).Should().BeFalse();
-       (context1 != context2).Should().BeTrue();
+        (context1 == context2).Should().BeFalse();
+        (context1 != context2).Should().BeTrue();
     }
 
     [Fact]
@@ -235,8 +233,8 @@ public class AcceleratorContextTests
 
         // Act & Assert
         context1.Equals(context2).Should().BeFalse();
-       (context1 == context2).Should().BeFalse();
-       (context1 != context2).Should().BeTrue();
+        (context1 == context2).Should().BeFalse();
+        (context1 != context2).Should().BeTrue();
     }
 
     [Fact]
@@ -248,8 +246,8 @@ public class AcceleratorContextTests
 
         // Act & Assert
         context1.Equals(context2).Should().BeFalse();
-       (context1 == context2).Should().BeFalse();
-       (context1 != context2).Should().BeTrue();
+        (context1 == context2).Should().BeFalse();
+        (context1 != context2).Should().BeTrue();
     }
 
     [Fact]
@@ -325,7 +323,7 @@ public class AcceleratorContextTests
     {
         // Note: Hash codes aren't guaranteed to be different, but they should be different 
         // most of the time for good distribution
-        
+
         // Arrange
         var context1 = new AcceleratorContext(new IntPtr(0x1000), 5);
         var context2 = new AcceleratorContext(new IntPtr(0x2000), 10);
@@ -502,11 +500,11 @@ public class AcceleratorContextTests
         };
 
         // Act & Assert - Each context should only equal itself
-        for(int i = 0; i < contexts.Length; i++)
+        for (var i = 0; i < contexts.Length; i++)
         {
-            for(int j = 0; j < contexts.Length; j++)
+            for (var j = 0; j < contexts.Length; j++)
             {
-                if(i == j)
+                if (i == j)
                 {
                     contexts[i].Should().Be(contexts[j]);
                 }
@@ -550,7 +548,7 @@ public class AcceleratorContextTests
         var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
 
         // Act - Multiple threads accessing properties
-        for(int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             tasks.Add(System.Threading.Tasks.Task.Run(() =>
             {

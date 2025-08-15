@@ -4,8 +4,6 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
-using DotCompute.Core.Aot;
-using DotCompute.Memory;
 using DotCompute.Plugins.Core;
 using DotCompute.Tests.Shared;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +13,6 @@ using Xunit;
 using Xunit.Abstractions;
 using MemoryOptions = DotCompute.Abstractions.MemoryOptions;
 using DotCompute.Core.Pipelines;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -40,13 +37,13 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         _host = CreateHost();
         await _host.StartAsync();
         ServiceProvider = _host.Services;
-        
+
         // Register accelerator providers and initialize the accelerator manager
         var acceleratorManager = ServiceProvider.GetRequiredService<IAcceleratorManager>();
         var cpuProvider = ServiceProvider.GetRequiredService<IAcceleratorProvider>();
         acceleratorManager.RegisterProvider(cpuProvider);
         await acceleratorManager.InitializeAsync();
-        
+
         // Initialize the plugin system
         var pluginSystem = ServiceProvider.GetRequiredService<PluginSystem>();
         await pluginSystem.InitializeAsync();
@@ -54,7 +51,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 
     public virtual async Task DisposeAsync()
     {
-        if(_host != null)
+        if (_host != null)
         {
             await _host.StopAsync();
             _host.Dispose();
@@ -78,10 +75,10 @@ public abstract class IntegrationTestBase : IAsyncLifetime
                 services.AddSingleton<IAcceleratorManager, DefaultAcceleratorManager>();
                 services.AddSingleton<PluginSystem>();
                 services.AddSingleton<IComputeEngine, DefaultComputeEngine>();
-                
+
                 // Skip pipeline integration for now - these are complex to mock
                 // TODO: Add proper pipeline integration when interfaces are stabilized
-                
+
                 // Add a simple memory manager factory
                 services.AddSingleton<IMemoryManager>(sp =>
                 {
@@ -108,7 +105,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     }
 
     // Helper methods for integration tests
-    
+
     /// <summary>
     /// Creates an input buffer from data array.
     /// </summary>
@@ -118,27 +115,27 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         {
             var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
             var sizeInBytes = data.Length * elementSize;
-            
+
             Logger.LogInformation($"CreateInputBuffer: Allocating {sizeInBytes} bytes for {data.Length} elements of type {typeof(T).Name}");
-            
-            if(sizeInBytes <= 0 || data.Length <= 0)
+
+            if (sizeInBytes <= 0 || data.Length <= 0)
             {
                 throw new ArgumentException($"Invalid data size: {data.Length} elements, {sizeInBytes} bytes");
             }
-            
+
             var buffer = await memoryManager.AllocateAsync(sizeInBytes);
             Logger.LogInformation("Buffer allocated successfully");
-            
+
             // Convert to bytes more safely
             var byteData = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(data).ToArray();
             Logger.LogInformation($"Data converted to {byteData.Length} bytes");
-            
+
             await buffer.CopyFromHostAsync<byte>(byteData.AsMemory());
             Logger.LogInformation("Data copied to buffer successfully");
-            
+
             return buffer;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Logger.LogError(ex, $"Failed to create input buffer for {data?.Length ?? 0} elements of type {typeof(T).Name}");
             throw;
@@ -148,7 +145,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     /// <summary>
     /// Creates an output buffer of specified size.
     /// </summary>
-    protected async Task<IMemoryBuffer> CreateOutputBuffer<T>(IMemoryManager memoryManager, int size) where T : unmanaged
+    protected static async Task<IMemoryBuffer> CreateOutputBuffer<T>(IMemoryManager memoryManager, int size) where T : unmanaged
     {
         var sizeInBytes = size * System.Runtime.InteropServices.Marshal.SizeOf<T>();
         return await memoryManager.AllocateAsync(sizeInBytes);
@@ -157,56 +154,56 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     /// <summary>
     /// Reads data from a buffer.
     /// </summary>
-    protected async Task<T[]> ReadBufferAsync<T>(IMemoryBuffer buffer) where T : unmanaged
+    protected static async Task<T[]> ReadBufferAsync<T>(IMemoryBuffer buffer) where T : unmanaged
     {
         var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
-        var elementCount =(int)(buffer.SizeInBytes / elementSize);
-        
+        var elementCount = (int)(buffer.SizeInBytes / elementSize);
+
         // Validate that the buffer size is reasonable and aligned
-        if(buffer.SizeInBytes <= 0 || buffer.SizeInBytes > int.MaxValue)
+        if (buffer.SizeInBytes <= 0 || buffer.SizeInBytes > int.MaxValue)
         {
             throw new ArgumentException($"Invalid buffer size: {buffer.SizeInBytes}");
         }
-        
-        if(buffer.SizeInBytes % elementSize != 0)
+
+        if (buffer.SizeInBytes % elementSize != 0)
         {
             throw new ArgumentException($"Buffer size {buffer.SizeInBytes} is not aligned to element size {elementSize}");
         }
-        
+
         // For very large buffers, use chunked reading to avoid large memory allocations
         const int MaxChunkSize = 16 * 1024 * 1024; // 16MB chunks
-        if(buffer.SizeInBytes > MaxChunkSize)
+        if (buffer.SizeInBytes > MaxChunkSize)
         {
             return await ReadLargeBufferInChunksAsync<T>(buffer, elementCount, elementSize);
         }
-        
+
         var byteData = new byte[buffer.SizeInBytes];
         await buffer.CopyToHostAsync(byteData.AsMemory());
         return System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(byteData).ToArray();
     }
-    
+
     /// <summary>
     /// Reads a large buffer in chunks to avoid excessive memory allocation.
     /// </summary>
-    private async Task<T[]> ReadLargeBufferInChunksAsync<T>(IMemoryBuffer buffer, int elementCount, int elementSize) where T : unmanaged
+    private static async Task<T[]> ReadLargeBufferInChunksAsync<T>(IMemoryBuffer buffer, int elementCount, int elementSize) where T : unmanaged
     {
         var result = new T[elementCount];
         const int MaxChunkSize = 16 * 1024 * 1024; // 16MB chunks
         var elementsPerChunk = MaxChunkSize / elementSize;
-        
-        for(int offset = 0; offset < elementCount; offset += elementsPerChunk)
+
+        for (var offset = 0; offset < elementCount; offset += elementsPerChunk)
         {
             var remainingElements = Math.Min(elementsPerChunk, elementCount - offset);
             var chunkSizeInBytes = remainingElements * elementSize;
             var byteOffset = offset * elementSize;
-            
+
             var chunkBytes = new byte[chunkSizeInBytes];
             await buffer.CopyToHostAsync(chunkBytes.AsMemory(), byteOffset);
-            
+
             var chunkData = System.Runtime.InteropServices.MemoryMarshal.Cast<byte, T>(chunkBytes);
             chunkData.CopyTo(result.AsSpan(offset, remainingElements));
         }
-        
+
         return result;
     }
 
@@ -215,58 +212,53 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     /// we can use the same implementation but need an overload for type safety.
     /// </summary>
     protected async Task<T[]> ReadBufferAsync<T>(IBuffer<T> typedBuffer) where T : unmanaged
-    {
         // Since IBuffer<T> inherits from IMemoryBuffer, we can safely cast and use the base implementation
-        return await ReadBufferAsync<T>((IMemoryBuffer)typedBuffer);
-    }
+        => await ReadBufferAsync<T>((IMemoryBuffer)typedBuffer);
 
     /// <summary>
     /// Creates a mock pipeline stage for testing.
     /// </summary>
-    protected IPipelineStage CreateMockPipelineStage(string id, string name, TimeSpan? executionTime = null)
-    {
-        return new MockPipelineStage(id, name, executionTime ?? TimeSpan.FromMilliseconds(50));
-    }
+    protected static IPipelineStage CreateMockPipelineStage(string id, string name, TimeSpan? executionTime = null) => new MockPipelineStage(id, name, executionTime ?? TimeSpan.FromMilliseconds(50));
 
     /// <summary>
     /// Waits for a condition to be true with timeout.
     /// </summary>
-    protected async Task<bool> WaitForConditionAsync(
+    protected static async Task<bool> WaitForConditionAsync(
         Func<bool> condition,
         TimeSpan timeout,
         TimeSpan pollInterval = default)
     {
-        if(pollInterval == default)
+        if (pollInterval == default)
             pollInterval = TimeSpan.FromMilliseconds(100);
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
-        while(stopwatch.Elapsed < timeout)
+
+        while (stopwatch.Elapsed < timeout)
         {
-            if(condition())
+            if (condition())
                 return true;
-                
+
             await Task.Delay(pollInterval);
         }
-        
+
         return false;
     }
 
     /// <summary>
     /// Measures the execution time of an async operation.
     /// </summary>
-    protected async Task<(T Result, TimeSpan Duration)> MeasureAsync<T>(Func<Task<T>> operation)
+    protected static async Task<(T Result, TimeSpan Duration)> MeasureAsync<T>(Func<Task<T>> operation)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var result = await operation();
         stopwatch.Stop();
-        return(result, stopwatch.Elapsed);
+        return (result, stopwatch.Elapsed);
     }
 
     /// <summary>
     /// Measures the execution time of an async operation without return value.
     /// </summary>
-    protected async Task<TimeSpan> MeasureAsync(Func<Task> operation)
+    protected static async Task<TimeSpan> MeasureAsync(Func<Task> operation)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         await operation();
@@ -277,49 +269,49 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     /// <summary>
     /// Retries an operation with exponential backoff.
     /// </summary>
-    protected async Task<T> RetryAsync<T>(
+    protected static async Task<T> RetryAsync<T>(
         Func<Task<T>> operation,
         int maxAttempts = 3,
         TimeSpan initialDelay = default)
     {
-        if(initialDelay == default)
+        if (initialDelay == default)
             initialDelay = TimeSpan.FromMilliseconds(100);
 
         Exception? lastException = null;
-        
-        for(int attempt = 0; attempt < maxAttempts; attempt++)
+
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
         {
             try
             {
                 return await operation();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 lastException = ex;
-                
-                if(attempt == maxAttempts - 1)
+
+                if (attempt == maxAttempts - 1)
                     throw;
-                    
+
                 var delay = TimeSpan.FromMilliseconds(initialDelay.TotalMilliseconds * Math.Pow(2, attempt));
                 await Task.Delay(delay);
             }
         }
-        
+
         throw lastException!;
     }
 
     /// <summary>
     /// Asserts that an operation completes within a specified timeout.
     /// </summary>
-    protected async Task AssertCompletesWithinAsync(Func<Task> operation, TimeSpan timeout, string? message = null)
+    protected static async Task AssertCompletesWithinAsync(Func<Task> operation, TimeSpan timeout, string? message = null)
     {
         using var cts = new CancellationTokenSource(timeout);
-        
+
         try
         {
             await operation();
         }
-        catch(OperationCanceledException) when(cts.Token.IsCancellationRequested)
+        catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
         {
             throw new TimeoutException(message ?? $"Operation did not complete within {timeout}");
         }
@@ -328,7 +320,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     /// <summary>
     /// Asserts that an operation throws a specific exception type.
     /// </summary>
-    protected async Task AssertThrowsAsync<TException>(Func<Task> operation, string? message = null) 
+    protected static async Task AssertThrowsAsync<TException>(Func<Task> operation, string? message = null)
         where TException : Exception
     {
         try
@@ -336,11 +328,11 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             await operation();
             throw new InvalidOperationException(message ?? $"Expected {typeof(TException).Name} but no exception was thrown");
         }
-        catch(TException)
+        catch (TException)
         {
             // Expected exception - test passes
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             throw new InvalidOperationException(
                 message ?? $"Expected {typeof(TException).Name} but got {ex.GetType().Name}: {ex.Message}",
@@ -365,7 +357,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     /// <summary>
     /// Gets memory statistics for monitoring memory usage during tests.
     /// </summary>
-    protected Task<MemoryStatistics> GetMemoryStatisticsAsync()
+    protected static Task<MemoryStatistics> GetMemoryStatisticsAsync()
     {
         // Return mock statistics for now
         return Task.FromResult(new MemoryStatistics
@@ -385,9 +377,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected void LogPerformanceMetrics(string operation, TimeSpan duration, int itemsProcessed = 0)
     {
         var throughput = itemsProcessed > 0 ? itemsProcessed / duration.TotalSeconds : 0;
-        
+
         Logger.LogInformation(
-            "Performance: {Operation} took {Duration:F2}ms" + 
+            "Performance: {Operation} took {Duration:F2}ms" +
            (itemsProcessed > 0 ? ", Throughput: {Throughput:N0} items/sec" : ""),
             operation,
             duration.TotalMilliseconds,
@@ -401,9 +393,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     {
         return new PipelineExecutionContext
         {
-            Inputs = inputs ?? new Dictionary<string, object>(),
-            Device =(DotCompute.Core.IComputeDevice)ServiceProvider.GetRequiredService<IAcceleratorManager>().Default,
-            MemoryManager =(DotCompute.Core.Pipelines.IPipelineMemoryManager)ServiceProvider.GetRequiredService<IMemoryManager>(),
+            Inputs = inputs ?? [],
+            Device = (DotCompute.Core.IComputeDevice)ServiceProvider.GetRequiredService<IAcceleratorManager>().Default,
+            MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)ServiceProvider.GetRequiredService<IMemoryManager>(),
             Options = new PipelineExecutionOptions
             {
                 ContinueOnError = false,
@@ -417,15 +409,15 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     /// </summary>
     protected static bool ValidateResults(float[] expected, float[] actual, float tolerance = 0.001f)
     {
-        if(expected.Length != actual.Length)
+        if (expected.Length != actual.Length)
             return false;
-            
-        for(int i = 0; i < expected.Length; i++)
+
+        for (var i = 0; i < expected.Length; i++)
         {
-            if(Math.Abs(expected[i] - actual[i]) > tolerance)
+            if (Math.Abs(expected[i] - actual[i]) > tolerance)
                 return false;
         }
-        
+
         return true;
     }
 
@@ -435,13 +427,13 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     protected async Task ValidateSystemStateAsync()
     {
         var memoryStats = await GetMemoryStatisticsAsync();
-        
+
         // Log memory statistics for monitoring
         Logger.LogInformation("Memory Statistics - Allocated: {Allocated}, Peak: {Peak}, Used: {Used}",
             memoryStats.AllocatedMemory,
             memoryStats.PeakMemory,
             memoryStats.UsedMemory);
-        
+
         // In a real implementation, we would validate for memory leaks
         // For now, we just log the statistics
     }
@@ -480,16 +472,16 @@ public class MockPipelineStage : IPipelineStage
         CancellationToken cancellationToken = default)
     {
         var startTime = DateTime.UtcNow;
-        
+
         // Simulate work
         await Task.Delay(_executionTime, cancellationToken);
-        
+
         // Update metrics
         _metrics.RecordExecution(_executionTime);
-        
+
         // Mock processing - just pass through inputs as outputs
         var outputs = new Dictionary<string, object>(context.Inputs);
-        
+
         return new StageExecutionResult
         {
             StageId = Id,
@@ -506,15 +498,9 @@ public class MockPipelineStage : IPipelineStage
         };
     }
 
-    public StageValidationResult Validate()
-    {
-        return new StageValidationResult { IsValid = true };
-    }
+    public StageValidationResult Validate() => new StageValidationResult { IsValid = true };
 
-    public IStageMetrics GetMetrics()
-    {
-        return _metrics;
-    }
+    public IStageMetrics GetMetrics() => _metrics;
 }
 
 /// <summary>
@@ -543,22 +529,22 @@ public class MockStageMetrics : IStageMetrics
     }
 
     public long ExecutionCount => _executionCount;
-    
-    public TimeSpan AverageExecutionTime => 
-        _executionCount > 0 ? 
-        TimeSpan.FromTicks(_totalExecutionTime.Ticks / _executionCount) : 
+
+    public TimeSpan AverageExecutionTime
+        => _executionCount > 0 ?
+        TimeSpan.FromTicks(_totalExecutionTime.Ticks / _executionCount) :
         _defaultExecutionTime;
-    
+
     public TimeSpan MinExecutionTime => _minExecutionTime;
     public TimeSpan MaxExecutionTime => _maxExecutionTime;
     public TimeSpan TotalExecutionTime => _totalExecutionTime;
     public long ErrorCount => _errorCount;
-    
-    public double SuccessRate => 
-        _executionCount > 0 ? 
-       (double)(_executionCount - _errorCount) / _executionCount : 
+
+    public double SuccessRate
+        => _executionCount > 0 ?
+       (double)(_executionCount - _errorCount) / _executionCount :
         1.0;
-    
+
     public long AverageMemoryUsage => 1024; // Mock value
     public IReadOnlyDictionary<string, double> CustomMetrics { get; }
 
@@ -566,13 +552,13 @@ public class MockStageMetrics : IStageMetrics
     {
         _executionCount++;
         _totalExecutionTime = _totalExecutionTime.Add(executionTime);
-        
-        if(executionTime < _minExecutionTime)
+
+        if (executionTime < _minExecutionTime)
             _minExecutionTime = executionTime;
-        if(executionTime > _maxExecutionTime)
+        if (executionTime > _maxExecutionTime)
             _maxExecutionTime = executionTime;
-            
-        if(!success)
+
+        if (!success)
             _errorCount++;
     }
 }
@@ -589,29 +575,23 @@ public class TestOutputLogger : ILogger
         _output = output;
     }
 
-    public IDisposable? BeginScope<TState>(TState state) where TState : notnull
-    {
-        return null;
-    }
+    public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
-    public bool IsEnabled(LogLevel logLevel)
-    {
-        return logLevel >= LogLevel.Information;
-    }
+    public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
 
     public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception, Func<TState, Exception?, string> formatter)
     {
-        if(!IsEnabled(logLevel))
+        if (!IsEnabled(logLevel))
             return;
-            
+
         var message = formatter(state, exception);
         var logEntry = $"[{DateTime.Now:HH:mm:ss.fff}] [{logLevel}] {message}";
-        
-        if(exception != null)
+
+        if (exception != null)
         {
             logEntry += Environment.NewLine + exception;
         }
-        
+
         try
         {
             _output.WriteLine(logEntry);
@@ -635,10 +615,7 @@ public class TestOutputLoggerProvider : ILoggerProvider
         _output = output;
     }
 
-    public ILogger CreateLogger(string categoryName)
-    {
-        return new TestOutputLogger(_output);
-    }
+    public ILogger CreateLogger(string categoryName) => new TestOutputLogger(_output);
 
     public void Dispose()
     {
@@ -652,7 +629,7 @@ public class TestOutputLoggerProvider : ILoggerProvider
 internal class SimpleMemoryManager : IMemoryManager
 {
     private readonly ILogger<IMemoryManager> _logger;
-    private readonly ConcurrentBag<WeakReference<SimpleMemoryBuffer>> _allocatedBuffers = new();
+    private readonly ConcurrentBag<WeakReference<SimpleMemoryBuffer>> _allocatedBuffers = [];
     private long _totalAllocated;
 
     public SimpleMemoryManager(ILogger<IMemoryManager> logger)
@@ -700,7 +677,7 @@ internal class SimpleMemoryManager : IMemoryManager
             var count = 0;
             foreach (var weakRef in _allocatedBuffers)
             {
-                if(weakRef.TryGetTarget(out _))
+                if (weakRef.TryGetTarget(out _))
                     count++;
             }
             return count;
@@ -709,9 +686,9 @@ internal class SimpleMemoryManager : IMemoryManager
 
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
-        if(buffer is SimpleMemoryBuffer simpleBuffer)
+        if (buffer is SimpleMemoryBuffer simpleBuffer)
         {
-            return new SimpleMemoryBuffer(simpleBuffer._data.AsMemory().Slice((int)offset,(int)length), buffer.Options);
+            return new SimpleMemoryBuffer(simpleBuffer._data.AsMemory().Slice((int)offset, (int)length), buffer.Options);
         }
         throw new NotSupportedException("View creation only supported for SimpleMemoryBuffer");
     }
@@ -725,7 +702,7 @@ internal class SimpleMemoryManager : IMemoryManager
 
     public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
     {
-        if(buffer is SimpleMemoryBuffer simpleBuffer)
+        if (buffer is SimpleMemoryBuffer simpleBuffer)
         {
             var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(data);
             sourceBytes.CopyTo(simpleBuffer._data.AsSpan());
@@ -738,7 +715,7 @@ internal class SimpleMemoryManager : IMemoryManager
 
     public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
     {
-        if(buffer is SimpleMemoryBuffer simpleBuffer)
+        if (buffer is SimpleMemoryBuffer simpleBuffer)
         {
             var bufferBytes = simpleBuffer._data.AsSpan();
             var destBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(data);
@@ -753,7 +730,7 @@ internal class SimpleMemoryManager : IMemoryManager
 
     public void Free(IMemoryBuffer buffer)
     {
-        if(buffer is SimpleMemoryBuffer simpleBuffer)
+        if (buffer is SimpleMemoryBuffer simpleBuffer)
         {
             Interlocked.Add(ref _totalAllocated, -simpleBuffer.SizeInBytes);
             simpleBuffer.Dispose();
@@ -769,7 +746,7 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
 {
     internal readonly byte[] _data;
     private volatile bool _disposed;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     public SimpleMemoryBuffer(long sizeInBytes, MemoryOptions options)
     {
@@ -787,17 +764,14 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
     public MemoryOptions Options { get; }
     public bool IsDisposed => _disposed;
 
-    public void Dispose()
-    {
-        _disposed = true;
-    }
+    public void Dispose() => _disposed = true;
 
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        lock(_lock)
+        lock (_lock)
         {
             ThrowIfDisposed();
             var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(source.Span);
@@ -811,7 +785,7 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        lock(_lock)
+        lock (_lock)
         {
             ThrowIfDisposed();
             var dataSpan = _data.AsSpan((int)offset);
@@ -824,13 +798,13 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
 
     private void ThrowIfDisposed()
     {
-        if(_disposed)
+        if (_disposed)
             throw new ObjectDisposedException(nameof(SimpleMemoryBuffer));
     }
 
     public ValueTask DisposeAsync()
     {
-        lock(_lock)
+        lock (_lock)
         {
             _disposed = true;
             return ValueTask.CompletedTask;

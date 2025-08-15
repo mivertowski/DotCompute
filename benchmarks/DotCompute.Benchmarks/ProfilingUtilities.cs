@@ -1,10 +1,9 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace DotCompute.Benchmarks;
 
-public static class ProfilingUtilities
+internal static class ProfilingUtilities
 {
     /// <summary>
     /// Measures the execution time of an action with high precision.
@@ -13,16 +12,16 @@ public static class ProfilingUtilities
     {
         // Warm up
         action();
-        
+
         // Force GC before measurement
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-        
+
         var sw = Stopwatch.StartNew();
         action();
         sw.Stop();
-        
+
         return sw.Elapsed;
     }
 
@@ -33,16 +32,16 @@ public static class ProfilingUtilities
     {
         // Warm up
         await action();
-        
+
         // Force GC before measurement
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-        
+
         var sw = Stopwatch.StartNew();
         await action();
         sw.Stop();
-        
+
         return sw.Elapsed;
     }
 
@@ -55,19 +54,19 @@ public static class ProfilingUtilities
         GC.Collect();
         GC.WaitForPendingFinalizers();
         GC.Collect();
-        
+
         var startMemory = GC.GetTotalMemory(false);
         var startGen0 = GC.CollectionCount(0);
         var startGen1 = GC.CollectionCount(1);
         var startGen2 = GC.CollectionCount(2);
-        
+
         action();
-        
+
         var endMemory = GC.GetTotalMemory(false);
         var endGen0 = GC.CollectionCount(0);
         var endGen1 = GC.CollectionCount(1);
         var endGen2 = GC.CollectionCount(2);
-        
+
         return new MemoryProfile
         {
             BytesAllocated = endMemory - startMemory,
@@ -83,22 +82,22 @@ public static class ProfilingUtilities
     public static PerformanceStatistics RunMultiple(Action action, int iterations = 100)
     {
         var times = new List<double>(iterations);
-        
+
         // Warm up
-        for (int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             action();
         }
-        
+
         // Actual measurements
-        for (int i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             var time = MeasureTime(action);
             times.Add(time.TotalMilliseconds);
         }
-        
+
         times.Sort();
-        
+
         return new PerformanceStatistics
         {
             Min = times[0],
@@ -151,20 +150,17 @@ public static class ProfilingUtilities
     }
 }
 
-public struct MemoryProfile
+internal struct MemoryProfile
 {
     public long BytesAllocated { get; set; }
     public int Gen0Collections { get; set; }
     public int Gen1Collections { get; set; }
     public int Gen2Collections { get; set; }
-    
-    public override string ToString()
-    {
-        return $"Allocated: {BytesAllocated:N0} bytes, GC: Gen0={Gen0Collections}, Gen1={Gen1Collections}, Gen2={Gen2Collections}";
-    }
+
+    public override string ToString() => $"Allocated: {BytesAllocated:N0} bytes, GC: Gen0={Gen0Collections}, Gen1={Gen1Collections}, Gen2={Gen2Collections}";
 }
 
-public struct PerformanceStatistics
+internal struct PerformanceStatistics
 {
     public double Min { get; set; }
     public double Max { get; set; }
@@ -173,14 +169,11 @@ public struct PerformanceStatistics
     public double StdDev { get; set; }
     public double P95 { get; set; }
     public double P99 { get; set; }
-    
-    public override string ToString()
-    {
-        return $"Min={Min:F2}ms, Max={Max:F2}ms, Mean={Mean:F2}ms, Median={Median:F2}ms, StdDev={StdDev:F2}ms, P95={P95:F2}ms, P99={P99:F2}ms";
-    }
+
+    public override string ToString() => $"Min={Min:F2}ms, Max={Max:F2}ms, Mean={Mean:F2}ms, Median={Median:F2}ms, StdDev={StdDev:F2}ms, P95={P95:F2}ms, P99={P99:F2}ms";
 }
 
-public struct ProcessMemoryInfo
+internal struct ProcessMemoryInfo
 {
     public long WorkingSet { get; set; }
     public long PrivateMemory { get; set; }
@@ -191,7 +184,7 @@ public struct ProcessMemoryInfo
     public int Gen0Size { get; set; }
     public int ThreadCount { get; set; }
     public int HandleCount { get; set; }
-    
+
     public override string ToString()
     {
         return $@"

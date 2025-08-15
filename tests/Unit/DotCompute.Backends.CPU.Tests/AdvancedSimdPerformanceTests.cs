@@ -11,7 +11,6 @@ using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Kernels;
 using Xunit.Abstractions;
-using FluentAssertions;
 
 #pragma warning disable CA1515 // Make types internal
 namespace DotCompute.Backends.CPU;
@@ -38,18 +37,18 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
         // Initialize with random data
         var random = new Random(42);
-        for(var i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
-            a[i] =(float)random.NextDouble() * 10.0f;
-            b[i] =(float)random.NextDouble() * 10.0f;
-            c[i] =(float)random.NextDouble() * 10.0f;
+            a[i] = (float)random.NextDouble() * 10.0f;
+            b[i] = (float)random.NextDouble() * 10.0f;
+            c[i] = (float)random.NextDouble() * 10.0f;
         }
 
         // Warm-up
         FmaScalarFloat32(a, b, c, scalarResult);
         unsafe
         {
-            fixed(float* pA = a, pB = b, pC = c, pResult = result)
+            fixed (float* pA = a, pB = b, pC = c, pResult = result)
             {
                 AdvancedSimdKernels.VectorFmaFloat32(pA, pB, pC, pResult, elementCount);
             }
@@ -64,7 +63,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         {
             unsafe
             {
-                fixed(float* pA = a, pB = b, pC = c, pResult = result)
+                fixed (float* pA = a, pB = b, pC = c, pResult = result)
                 {
                     AdvancedSimdKernels.VectorFmaFloat32(pA, pB, pC, pResult, elementCount);
                 }
@@ -80,7 +79,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         ValidateResultsFloat32(scalarResult, result, elementCount, 1e-5f);
 
         // Assert critical performance gain - FMA should show significant speedup
-        if(Fma.IsSupported)
+        if (Fma.IsSupported)
         {
             PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 3.0, "FMA SIMD with hardware");
         }
@@ -102,7 +101,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
         // Initialize with random data
         var random = new Random(42);
-        for(var i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             a[i] = random.NextDouble() * 10.0;
             b[i] = random.NextDouble() * 10.0;
@@ -115,7 +114,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         {
             unsafe
             {
-                fixed(double* pA = a, pB = b, pC = c, pResult = result)
+                fixed (double* pA = a, pB = b, pC = c, pResult = result)
                 {
                     AdvancedSimdKernels.VectorFmaFloat64(pA, pB, pC, pResult, elementCount);
                 }
@@ -146,7 +145,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
         // Initialize with random data
         var random = new Random(42);
-        for(var i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             a[i] = random.Next(-1000, 1000);
             b[i] = random.Next(-1000, 1000);
@@ -155,7 +154,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         // Measure scalar integer addition
         var scalarTime = MeasureTime(() =>
         {
-            for(var i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 scalarResult[i] = a[i] + b[i];
             }
@@ -166,7 +165,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         {
             unsafe
             {
-                fixed(int* pA = a, pB = b, pResult = result)
+                fixed (int* pA = a, pB = b, pResult = result)
                 {
                     AdvancedSimdKernels.VectorAddInt32(pA, pB, pResult, elementCount);
                 }
@@ -177,13 +176,13 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         _output.WriteLine($"Integer SIMD speedup: {speedup:F2}x");
 
         // Validate correctness
-        for(var i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
             Assert.Equal(scalarResult[i], result[i]);
         }
 
         // Critical: Integer SIMD should unlock significant performance
-        if(Avx2.IsSupported)
+        if (Avx2.IsSupported)
         {
             PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 4.0, "integer SIMD with AVX2");
         }
@@ -203,10 +202,10 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
         // Initialize with typical image data
         var random = new Random(42);
-        for(var i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
-            a[i] =(short)random.Next(0, 256);
-            b[i] =(short)random.Next(0, 256);
+            a[i] = (short)random.Next(0, 256);
+            b[i] = (short)random.Next(0, 256);
         }
 
         // Measure SIMD performance
@@ -214,7 +213,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         {
             unsafe
             {
-                fixed(short* pA = a, pB = b, pResult = result)
+                fixed (short* pA = a, pB = b, pResult = result)
                 {
                     AdvancedSimdKernels.VectorAddInt16(pA, pB, pResult, elementCount);
                 }
@@ -224,7 +223,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         _output.WriteLine($"Int16 SIMD time for {elementCount} elements: {simdTime:F2}ms");
 
         // Should process 4M 16-bit values very quickly
-        simdTime .Should().BeLessThan(10.0, $"Expected Int16 SIMD to process 4M elements in < 10ms, but took {simdTime:F2}ms");
+        simdTime.Should().BeLessThan(10.0, $"Expected Int16 SIMD to process 4M elements in < 10ms, but took {simdTime:F2}ms");
     }
 
     #endregion
@@ -242,14 +241,14 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
         // Initialize data
         var random = new Random(42);
-        for(var i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
-            a[i] =(float)random.NextDouble();
-            b[i] =(float)random.NextDouble();
-            c[i] =(float)random.NextDouble();
+            a[i] = (float)random.NextDouble();
+            b[i] = (float)random.NextDouble();
+            c[i] = (float)random.NextDouble();
         }
 
-        if(AdvSimd.IsSupported)
+        if (AdvSimd.IsSupported)
         {
             // Test various NEON operations
             var operations = new[]
@@ -267,7 +266,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
                 {
                     unsafe
                     {
-                        fixed(float* pA = a, pB = b, pC = c, pResult = result)
+                        fixed (float* pA = a, pB = b, pC = c, pResult = result)
                         {
                             AdvancedSimdKernels.VectorAdvancedNeonFloat32(pA, pB, pC, pResult, elementCount, operation);
                         }
@@ -277,7 +276,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
                 _output.WriteLine($"ARM NEON {operation} time: {time:F2}ms");
 
                 // Validate ARM NEON performance
-                time .Should().BeLessThan(5.0, $"ARM NEON {operation} should complete in < 5ms, but took {time:F2}ms");
+                time.Should().BeLessThan(5.0, $"ARM NEON {operation} should complete in < 5ms, but took {time:F2}ms");
             }
         }
         else
@@ -301,22 +300,22 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
         // Initialize data
         var random = new Random(42);
-        for(var i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
-            data[i] =(float)random.NextDouble();
+            data[i] = (float)random.NextDouble();
             indices[i] = random.Next(0, elementCount); // Random indices for gather
-            values[i] =(float)random.NextDouble();
+            values[i] = (float)random.NextDouble();
         }
 
-        if(Avx2.IsSupported)
+        if (Avx2.IsSupported)
         {
             // Test gather operation
             var gatherTime = MeasureTime(() =>
             {
                 unsafe
                 {
-                    fixed(float* pData = data, pGathered = gathered)
-                    fixed(int* pIndices = indices)
+                    fixed (float* pData = data, pGathered = gathered)
+                    fixed (int* pIndices = indices)
                     {
                         AdvancedSimdKernels.VectorGatherFloat32(pData, pIndices, pGathered, elementCount);
                     }
@@ -326,14 +325,14 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
             _output.WriteLine($"SIMD Gather time: {gatherTime:F2}ms");
 
             // Test scatter operation(AVX-512 only)
-            if(Avx512F.IsSupported)
+            if (Avx512F.IsSupported)
             {
                 var scatterTime = MeasureTime(() =>
                 {
                     unsafe
                     {
-                        fixed(float* pData = data, pValues = values)
-                        fixed(int* pIndices = indices)
+                        fixed (float* pData = data, pValues = values)
+                        fixed (int* pIndices = indices)
                         {
                             AdvancedSimdKernels.VectorScatterFloat32(pValues, pIndices, pData + elementCount, elementCount);
                         }
@@ -341,10 +340,10 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
                 }, 20);
 
                 _output.WriteLine($"SIMD Scatter time: {scatterTime:F2}ms");
-                scatterTime .Should().BeLessThan(5.0, $"AVX-512 scatter should complete quickly, but took {scatterTime:F2}ms");
+                scatterTime.Should().BeLessThan(5.0, $"AVX-512 scatter should complete quickly, but took {scatterTime:F2}ms");
             }
 
-            gatherTime .Should().BeLessThan(10.0, $"AVX2 gather should complete quickly, but took {gatherTime:F2}ms");
+            gatherTime.Should().BeLessThan(10.0, $"AVX2 gather should complete quickly, but took {gatherTime:F2}ms");
         }
         else
         {
@@ -366,17 +365,17 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
         // Initialize data
         var random = new Random(42);
-        for(var i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
-            condition[i] =(float)random.NextDouble();
-            a[i] =(float)random.NextDouble() * 10.0f;
-            b[i] =(float)random.NextDouble() * 20.0f;
+            condition[i] = (float)random.NextDouble();
+            a[i] = (float)random.NextDouble() * 10.0f;
+            b[i] = (float)random.NextDouble() * 20.0f;
         }
 
         // Measure scalar conditional selection
         var scalarTime = MeasureTime(() =>
         {
-            for(var i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 scalarResult[i] = condition[i] > threshold ? a[i] : b[i];
             }
@@ -387,7 +386,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         {
             unsafe
             {
-                fixed(float* pCond = condition, pA = a, pB = b, pResult = result)
+                fixed (float* pCond = condition, pA = a, pB = b, pResult = result)
                 {
                     AdvancedSimdKernels.VectorConditionalSelect(pCond, pA, pB, pResult, elementCount, threshold);
                 }
@@ -412,16 +411,16 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
         // Initialize with random data
         var random = new Random(42);
-        for(var i = 0; i < elementCount; i++)
+        for (var i = 0; i < elementCount; i++)
         {
-            data[i] =(float)random.NextDouble();
+            data[i] = (float)random.NextDouble();
         }
 
         // Measure scalar sum
         var scalarTime = MeasureTime(() =>
         {
             var sum = 0.0f;
-            for(var i = 0; i < elementCount; i++)
+            for (var i = 0; i < elementCount; i++)
             {
                 sum += data[i];
             }
@@ -434,7 +433,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         {
             unsafe
             {
-                fixed(float* pData = data)
+                fixed (float* pData = data)
                 {
                     simdSum = AdvancedSimdKernels.VectorHorizontalSum(pData, elementCount);
                 }
@@ -464,10 +463,10 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
         // Initialize matrices
         var random = new Random(42);
-        for(var i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
-            a[i] =(float)random.NextDouble();
-            b[i] =(float)random.NextDouble();
+            a[i] = (float)random.NextDouble();
+            b[i] = (float)random.NextDouble();
         }
 
         // Measure scalar matrix multiplication
@@ -481,7 +480,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         {
             unsafe
             {
-                fixed(float* pA = a, pB = b, pResult = result)
+                fixed (float* pA = a, pB = b, pResult = result)
                 {
                     AdvancedSimdKernels.OptimizedMatrixMultiplyFloat32(pA, pB, pResult, size, size, size);
                 }
@@ -492,7 +491,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         _output.WriteLine($"Optimized matrix multiply speedup: {speedup:F2}x");
 
         // Matrix multiplication should show excellent speedup with FMA
-        if(Fma.IsSupported)
+        if (Fma.IsSupported)
         {
             PerformanceTestHelpers.AssertSpeedupWithinExpectedRange(speedup, 5.0, "optimized matrix multiply with FMA");
         }
@@ -530,9 +529,9 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         _output.WriteLine($"✓ Cross-platform Compatibility: {crossPlatformScore}");
 
         // Assert roadmap completion
-        fmaSpeedup .Should().BeGreaterThanOrEqualTo(2.0, "FMA implementation must achieve at least 2x speedup");
-        intSpeedup .Should().BeGreaterThanOrEqualTo(2.0, "Integer SIMD must achieve at least 2x speedup");
-        crossPlatformScore .Should().BeGreaterThanOrEqualTo(80, "Cross-platform compatibility must be >= 80%");
+        fmaSpeedup.Should().BeGreaterThanOrEqualTo(2.0, "FMA implementation must achieve at least 2x speedup");
+        intSpeedup.Should().BeGreaterThanOrEqualTo(2.0, "Integer SIMD must achieve at least 2x speedup");
+        crossPlatformScore.Should().BeGreaterThanOrEqualTo(80, "Cross-platform compatibility must be >= 80%");
 
         _output.WriteLine("=== SIMD Roadmap Completion: SUCCESS ===");
     }
@@ -544,7 +543,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
     private static double MeasureTime(Func<float> action, int iterations)
     {
         var sw = Stopwatch.StartNew();
-        for(var i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             action();
         }
@@ -555,7 +554,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
     private static double MeasureTime(Action action, int iterations)
     {
         var sw = Stopwatch.StartNew();
-        for(var i = 0; i < iterations; i++)
+        for (var i = 0; i < iterations; i++)
         {
             action();
         }
@@ -565,7 +564,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
     private static void FmaScalarFloat32(float[] a, float[] b, float[] c, float[] result)
     {
-        for(var i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             result[i] = MathF.FusedMultiplyAdd(a[i], b[i], c[i]);
         }
@@ -573,7 +572,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
     private static void FmaScalarFloat64(double[] a, double[] b, double[] c, double[] result)
     {
-        for(var i = 0; i < a.Length; i++)
+        for (var i = 0; i < a.Length; i++)
         {
             result[i] = Math.FusedMultiplyAdd(a[i], b[i], c[i]);
         }
@@ -582,11 +581,11 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
     private static void MatrixMultiplyScalar(float[] a, float[] b, float[] result, int size)
     {
         Array.Clear(result, 0, result.Length);
-        for(var i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
-            for(var j = 0; j < size; j++)
+            for (var j = 0; j < size; j++)
             {
-                for(var k = 0; k < size; k++)
+                for (var k = 0; k < size; k++)
                 {
                     result[i * size + j] += a[i * size + k] * b[k * size + j];
                 }
@@ -596,7 +595,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
     private static void ValidateResultsFloat32(float[] expected, float[] actual, int count, float tolerance)
     {
-        for(var i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var diff = Math.Abs(expected[i] - actual[i]);
             diff.Should().BeLessThanOrEqualTo(tolerance,
@@ -606,7 +605,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
     private static void ValidateResultsFloat64(double[] expected, double[] actual, int count, double tolerance)
     {
-        for(var i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var diff = Math.Abs(expected[i] - actual[i]);
             diff.Should().BeLessThanOrEqualTo(tolerance,
@@ -619,7 +618,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         _output.WriteLine($"Vector<T>.IsHardwareAccelerated: {Vector.IsHardwareAccelerated}");
         _output.WriteLine($"Vector<float>.Count: {Vector<float>.Count}");
 
-        if(RuntimeInformation.ProcessArchitecture is Architecture.X64 or
+        if (RuntimeInformation.ProcessArchitecture is Architecture.X64 or
             Architecture.X86)
         {
             _output.WriteLine($"SSE: {Sse.IsSupported}");
@@ -629,7 +628,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
             _output.WriteLine($"FMA: {Fma.IsSupported}");
             _output.WriteLine($"AVX-512F: {Avx512F.IsSupported}");
         }
-        else if(RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
         {
             _output.WriteLine($"AdvSimd: {AdvSimd.IsSupported}");
             _output.WriteLine($"AdvSimd.Arm64: {AdvSimd.Arm64.IsSupported}");
@@ -645,11 +644,11 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         var scalarResult = new float[testSize];
 
         var random = new Random(42);
-        for(var i = 0; i < testSize; i++)
+        for (var i = 0; i < testSize; i++)
         {
-            a[i] =(float)random.NextDouble();
-            b[i] =(float)random.NextDouble();
-            c[i] =(float)random.NextDouble();
+            a[i] = (float)random.NextDouble();
+            b[i] = (float)random.NextDouble();
+            c[i] = (float)random.NextDouble();
         }
 
         var scalarTime = MeasureTime(() => FmaScalarFloat32(a, b, c, scalarResult), 50);
@@ -657,7 +656,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         {
             unsafe
             {
-                fixed(float* pA = a, pB = b, pC = c, pResult = result)
+                fixed (float* pA = a, pB = b, pC = c, pResult = result)
                 {
                     AdvancedSimdKernels.VectorFmaFloat32(pA, pB, pC, pResult, testSize);
                 }
@@ -675,7 +674,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         var scalarResult = new int[testSize];
 
         var random = new Random(42);
-        for(var i = 0; i < testSize; i++)
+        for (var i = 0; i < testSize; i++)
         {
             a[i] = random.Next(-1000, 1000);
             b[i] = random.Next(-1000, 1000);
@@ -683,7 +682,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
 
         var scalarTime = MeasureTime(() =>
         {
-            for(var i = 0; i < testSize; i++)
+            for (var i = 0; i < testSize; i++)
             {
                 scalarResult[i] = a[i] + b[i];
             }
@@ -693,7 +692,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         {
             unsafe
             {
-                fixed(int* pA = a, pB = b, pResult = result)
+                fixed (int* pA = a, pB = b, pResult = result)
                 {
                     AdvancedSimdKernels.VectorAddInt32(pA, pB, pResult, testSize);
                 }
@@ -709,41 +708,41 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         var totalTests = 5;
 
         // Test 1: Basic vector support
-        if(Vector.IsHardwareAccelerated)
+        if (Vector.IsHardwareAccelerated)
         {
             score++;
         }
 
         // Test 2: Platform-specific SIMD
-        if(RuntimeInformation.ProcessArchitecture == Architecture.X64 && Sse2.IsSupported)
+        if (RuntimeInformation.ProcessArchitecture == Architecture.X64 && Sse2.IsSupported)
         {
             score++;
         }
 
-        if(RuntimeInformation.ProcessArchitecture == Architecture.Arm64 && AdvSimd.IsSupported)
+        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64 && AdvSimd.IsSupported)
         {
             score++;
         }
 
         // Test 3: Advanced features
-        if(Avx2.IsSupported || AdvSimd.IsSupported)
+        if (Avx2.IsSupported || AdvSimd.IsSupported)
         {
             score++;
         }
 
         // Test 4: FMA support
-        if(Fma.IsSupported || AdvSimd.IsSupported)
+        if (Fma.IsSupported || AdvSimd.IsSupported)
         {
             score++;
         }
 
         // Test 5: Wide vectors
-        if(Avx512F.IsSupported || Vector<float>.Count >= 4)
+        if (Avx512F.IsSupported || Vector<float>.Count >= 4)
         {
             score++;
         }
 
-        return(score * 100) / totalTests;
+        return (score * 100) / totalTests;
     }
 
     #endregion

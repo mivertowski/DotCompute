@@ -12,27 +12,27 @@ using Microsoft.Extensions.Logging;
 /// Example demonstrating dynamic kernel generation from LINQ expression trees.
 /// This shows how expressions are analyzed, optimized, fused, and compiled into GPU kernels.
 /// </summary>
-class Program
+internal class Program
 {
-    static async Task Main(string[] args)
+    private static async Task Main(string[] args)
     {
         // Setup logging
         using var loggerFactory = LoggerFactory.Create(builder =>
             builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
 
         var logger = loggerFactory.CreateLogger<Program>();
-        
+
         Console.WriteLine("=== DotCompute Dynamic Kernel Generation Demo ===\n");
 
         // Create a mock accelerator for demonstration
         var accelerator = new MockAccelerator();
-        
+
         // Demonstrate different aspects of the dynamic kernel system
         await DemonstrateExpressionFusion(accelerator, loggerFactory, logger);
         await DemonstrateTypeInference(accelerator, loggerFactory, logger);
         await DemonstrateResourceEstimation(accelerator, loggerFactory, logger);
         await DemonstrateDynamicCompilation(accelerator, loggerFactory, logger);
-        
+
         Console.WriteLine("\n=== Demo Complete ===");
     }
 
@@ -40,7 +40,7 @@ class Program
     {
         // Add minimal async operation to satisfy compiler
         await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
-        
+
         Console.WriteLine("1. Expression Fusion Demonstration");
         Console.WriteLine("===================================");
 
@@ -63,11 +63,11 @@ class Program
                 .Select(x => x + 1);         // Another map
 
             Console.WriteLine($"Original query: numbers.Where(x => x > 2).Select(x => x * 2).Where(x => x < 20).Select(x => x + 1)");
-            
+
             // Get optimization suggestions
             var suggestions = result.GetOptimizationSuggestions();
             Console.WriteLine($"Optimization suggestions: {suggestions.Count()}");
-            
+
             foreach (var suggestion in suggestions)
             {
                 Console.WriteLine($"  - {suggestion.Type}: {suggestion.Description}");
@@ -90,7 +90,7 @@ class Program
     {
         // Add minimal async operation to satisfy compiler
         await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
-        
+
         Console.WriteLine("2. Type Inference and Validation");
         Console.WriteLine("=================================");
 
@@ -118,7 +118,7 @@ class Program
             var doubleTypeResult = typeEngine.InferTypes(doubleExpression);
 
             Console.WriteLine("Type Analysis Results:");
-            
+
             PrintTypeAnalysis("Integer operations", intTypeResult);
             PrintTypeAnalysis("Float operations", floatTypeResult);
             PrintTypeAnalysis("Double operations", doubleTypeResult);
@@ -149,7 +149,7 @@ class Program
     {
         // Add minimal async operation to satisfy compiler
         await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
-        
+
         Console.WriteLine("3. Resource Estimation");
         Console.WriteLine("======================");
 
@@ -157,7 +157,7 @@ class Program
         {
             var factory = new DefaultKernelFactory(loggerFactory.CreateLogger<DefaultKernelFactory>());
             var optimizer = new ExpressionOptimizer(loggerFactory.CreateLogger<ExpressionOptimizer>());
-            var compiler = new ExpressionToKernelCompiler(factory, optimizer, 
+            var compiler = new ExpressionToKernelCompiler(factory, optimizer,
                 loggerFactory.CreateLogger<ExpressionToKernelCompiler>());
 
             // Create queries of different complexity
@@ -179,7 +179,7 @@ class Program
 
             Console.WriteLine("Resource Estimation Results:");
             Console.WriteLine("-----------------------------");
-            
+
             PrintResourceEstimate("Simple Query (x => x * 2)", simpleEstimate);
             PrintResourceEstimate("Complex Query (5 operations)", complexEstimate);
 
@@ -201,7 +201,7 @@ class Program
     {
         // Add minimal async operation to satisfy compiler
         await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
-        
+
         Console.WriteLine("4. Dynamic Kernel Compilation");
         Console.WriteLine("=============================");
 
@@ -212,7 +212,7 @@ class Program
 
             // Create sample data and queries
             var numbers = Enumerable.Range(1, 100).ToArray();
-            var queryable = new GPUQueryable<int>(gpuProvider, 
+            var queryable = new GPUQueryable<int>(gpuProvider,
                 System.Linq.Expressions.Expression.Constant(numbers.AsQueryable()));
 
             // Test different types of operations
@@ -266,7 +266,7 @@ class Program
             Console.WriteLine($"    - {type.Name}: {result.InferredTypes[type].UsageContexts.Count} usages");
         }
 
-        if (result.ValidationErrors.Any())
+        if (result.ValidationErrors.Count != 0)
         {
             Console.WriteLine($"  Errors:");
             foreach (var error in result.ValidationErrors.Take(2))
@@ -294,7 +294,7 @@ class Program
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             var result = await operation();
             stopwatch.Stop();
-            
+
             Console.WriteLine($"  Status: Success");
             Console.WriteLine($"  Time: {stopwatch.ElapsedMilliseconds} ms");
             Console.WriteLine($"  Result Type: {result?.GetType().Name ?? "null"}");
@@ -309,7 +309,7 @@ class Program
 /// <summary>
 /// Mock accelerator for demonstration purposes.
 /// </summary>
-public class MockAccelerator : IAccelerator
+internal class MockAccelerator : IAccelerator
 {
     public AcceleratorInfo Info { get; } = new AcceleratorInfo(AcceleratorType.CUDA, "Demo GPU Accelerator", "1.0.0", 8L * 1024 * 1024 * 1024);
 
@@ -319,9 +319,9 @@ public class MockAccelerator : IAccelerator
 
     public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
 
-    public bool IsDisposed => false;
+    public static bool IsDisposed => false;
 
-    public async ValueTask<TResult> ExecuteAsync<TResult>(Func<ValueTask<TResult>> operation, CancellationToken cancellationToken = default)
+    public static async ValueTask<TResult> ExecuteAsync<TResult>(Func<ValueTask<TResult>> operation, CancellationToken cancellationToken = default)
     {
         // Simulate some GPU operation delay
         await Task.Delay(10, cancellationToken);
@@ -339,19 +339,17 @@ public class MockAccelerator : IAccelerator
     }
 
     public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
         // Simulate synchronization delay
-        await Task.Delay(5, cancellationToken);
-    }
+        => await Task.Delay(5, cancellationToken);
 
-    public void Dispose() { }
+    public static void Dispose() { }
     public ValueTask DisposeAsync() => default;
 }
 
 /// <summary>
 /// Mock memory manager for demonstration.
 /// </summary>
-public class MockMemoryManager : IMemoryManager
+internal class MockMemoryManager : IMemoryManager
 {
     public async ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
     {
@@ -373,8 +371,10 @@ public class MockMemoryManager : IMemoryManager
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
         if (buffer is not MockMemoryBuffer mockBuffer)
+        {
             throw new ArgumentException("Buffer must be a MockMemoryBuffer", nameof(buffer));
-        
+        }
+
         return new MockMemoryBufferView(mockBuffer, offset, length);
     }
 
@@ -388,39 +388,45 @@ public class MockMemoryManager : IMemoryManager
     {
         // Synchronous copy - for mock implementation, just simulate
         if (buffer is not MockMemoryBuffer mockBuffer)
+        {
             throw new ArgumentException("Buffer must be a MockMemoryBuffer", nameof(buffer));
-        
+        }
+
         // In a real implementation, this would copy data to the device
         // For mock, we just validate the operation
         var dataSize = data.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
         if (dataSize > mockBuffer.SizeInBytes)
+        {
             throw new ArgumentException("Data size exceeds buffer size");
+        }
     }
 
     public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
     {
         // Synchronous copy - for mock implementation, just simulate
         if (buffer is not MockMemoryBuffer mockBuffer)
+        {
             throw new ArgumentException("Buffer must be a MockMemoryBuffer", nameof(buffer));
-        
+        }
+
         // In a real implementation, this would copy data from the device
         // For mock, we just validate the operation
         var dataSize = data.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
         if (dataSize > mockBuffer.SizeInBytes)
+        {
             throw new ArgumentException("Data size exceeds buffer size");
+        }
     }
 
     public void Free(IMemoryBuffer buffer)
-    {
         // Synchronously free the buffer
-        buffer?.Dispose();
-    }
+        => buffer?.Dispose();
 }
 
 /// <summary>
 /// Mock memory buffer for demonstration.
 /// </summary>
-public class MockMemoryBuffer : IMemoryBuffer
+internal class MockMemoryBuffer : IMemoryBuffer
 {
     public MockMemoryBuffer(long size, MemoryOptions options = MemoryOptions.None)
     {
@@ -436,17 +442,13 @@ public class MockMemoryBuffer : IMemoryBuffer
         ReadOnlyMemory<T> source,
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
-    {
         // Simulate copy from host operation
-        return default;
-    }
+        => default;
 
 
     public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-    {
         // Simulate copy to host
-        return default;
-    }
+        => default;
 
     public void Dispose() { }
     public ValueTask DisposeAsync() => default;
@@ -455,7 +457,7 @@ public class MockMemoryBuffer : IMemoryBuffer
 /// <summary>
 /// Mock memory buffer view for demonstration.
 /// </summary>
-public class MockMemoryBufferView : IMemoryBuffer
+internal class MockMemoryBufferView : IMemoryBuffer
 {
     private readonly MockMemoryBuffer _parentBuffer;
     private readonly long _offset;
@@ -475,18 +477,12 @@ public class MockMemoryBufferView : IMemoryBuffer
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parentBuffer.CopyFromHostAsync(source, _offset + offset, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) where T : unmanaged => _parentBuffer.CopyFromHostAsync(source, _offset + offset, cancellationToken);
 
     public ValueTask CopyToHostAsync<T>(
         Memory<T> destination,
         long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) where T : unmanaged => _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
 
     public void Dispose() { }
     public ValueTask DisposeAsync() => default;
@@ -495,7 +491,7 @@ public class MockMemoryBufferView : IMemoryBuffer
 /// <summary>
 /// Mock compiled kernel for demonstration.
 /// </summary>
-public class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
+internal class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
 {
     public MockCompiledKernel(string name)
     {
@@ -507,10 +503,8 @@ public class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
     public async ValueTask ExecuteAsync(
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
-    {
         // Simulate kernel execution
-        await Task.Delay(20, cancellationToken);
-    }
+        => await Task.Delay(20, cancellationToken);
 
     public ValueTask DisposeAsync() => default;
 }

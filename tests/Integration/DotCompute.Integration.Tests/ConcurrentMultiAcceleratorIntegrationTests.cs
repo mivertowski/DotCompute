@@ -56,7 +56,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Calculate performance metrics
         var totalDataProcessed = workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length));
-        var parallelThroughput =(totalDataProcessed * sizeof(float)) / 1024.0 / 1024.0 / 
+        var parallelThroughput = (totalDataProcessed * sizeof(float)) / 1024.0 / 1024.0 /
                                 executionStopwatch.Elapsed.TotalSeconds;
 
         Logger.LogInformation("Parallel multi-accelerator execution: {Count} workflows, " +
@@ -68,7 +68,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
                                 .ToDictionary(g => g.Key, g => g.Count());
 
         Assert.NotEmpty(backendUsage);
-        Logger.LogInformation("Backend usage: {Usage}", 
+        Logger.LogInformation("Backend usage: {Usage}",
             string.Join(", ", backendUsage.Select(kvp => $"{kvp.Key}: {kvp.Value}")));
 
         parallelThroughput.Should().BeGreaterThan(50, "Parallel execution should achieve good throughput");
@@ -107,7 +107,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Well-balanced execution should have relatively low variance
         var normalizedVariance = executionTimeVariance / maxExecutionTime;
-        normalizedVariance .Should().BeLessThan(0.5, "Load balancing should minimize execution time variance");
+        normalizedVariance.Should().BeLessThan(0.5, "Load balancing should minimize execution time variance");
     }
 
     [Fact]
@@ -127,10 +127,10 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         var tasks = workflows.Select(async (workflow, index) =>
         {
             var result = await ExecuteComputeWorkflowAsync($"SynchronizedExecution_{index}", workflow);
-            
-            if(result.Success && result.Results.ContainsKey("output"))
+
+            if (result.Success && result.Results.ContainsKey("output"))
             {
-                results[workflow.Name] =(float[])result.Results["output"];
+                results[workflow.Name] = (float[])result.Results["output"];
             }
 
             // Signal completion
@@ -149,14 +149,14 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         var referenceResult = results.Values.First();
         foreach (var result in results.Values.Skip(1))
         {
-            for(int i = 0; i < Math.Min(100, referenceResult.Length); i++)
+            for (var i = 0; i < Math.Min(100, referenceResult.Length); i++)
             {
                 result[i].Should().BeApproximately(referenceResult[i], 0.01f,
                     $"Synchronized execution should produce consistent results at index {i}");
             }
         }
 
-        Logger.LogInformation("Synchronized execution completed successfully across {Count} accelerators", 
+        Logger.LogInformation("Synchronized execution completed successfully across {Count} accelerators",
             workflows.Length);
     }
 
@@ -165,7 +165,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
     {
         // Arrange
         var resourceCoordinator = new MultiAcceleratorResourceCoordinator(Logger);
-        
+
         var memoryIntensiveWorkflows = Enumerable.Range(0, 3).Select(i =>
             CreateMemoryIntensiveWorkflow($"MemoryIntensive_{i}", 4096))
             .ToArray();
@@ -186,9 +186,9 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         var peakMemoryUsage = results.Max(r => r.Metrics?.ResourceUtilization.MemoryUsagePercent ?? 0);
 
         Logger.LogInformation("Resource coordination: Total memory used: {Total}MB, Peak usage: {Peak:F1}%",
-            totalMemoryUsed /(1024 * 1024), peakMemoryUsage);
+            totalMemoryUsed / (1024 * 1024), peakMemoryUsage);
 
-        peakMemoryUsage .Should().BeLessThan(90, "Resource coordination should prevent memory exhaustion");
+        peakMemoryUsage.Should().BeLessThan(90, "Resource coordination should prevent memory exhaustion");
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
             "Fault tolerance should allow majority of work to complete");
 
         // Failed results should have meaningful error information
-        failedResults.Should().AllSatisfy(r => 
+        failedResults.Should().AllSatisfy(r =>
         {
             r.Error.Should().NotBeNull();
             r.Error!.Message.Should().NotBeEmpty();
@@ -251,13 +251,13 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         foreach (var phase in phases)
         {
             Logger.LogInformation("Starting load phase: {PhaseName}", phase.Name);
-            
+
             var phaseWorkflows = Enumerable.Range(0, phase.WorkflowCount)
                 .Select(i => CreateScalableWorkflow($"{phase.Name}_Workflow_{i}", phase.DataSize))
                 .ToArray();
 
             var phaseStopwatch = Stopwatch.StartNew();
-            
+
             var phaseTasks = phaseWorkflows.Select((workflow, index) =>
                 ExecuteComputeWorkflowAsync($"{phase.Name}_{index}", workflow))
                 .ToArray();
@@ -278,10 +278,10 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
             };
 
             scalingResults.Add(phaseResult);
-            
+
             Logger.LogInformation("Phase {Phase} completed: {Successful}/{Total} successful, " +
                                  "Avg throughput: {Throughput:F2} MB/s",
-                phase.Name, phaseResult.SuccessfulWorkflows, phase.WorkflowCount, 
+                phase.Name, phaseResult.SuccessfulWorkflows, phase.WorkflowCount,
                 phaseResult.AverageThroughput);
 
             // Brief cooldown between phases
@@ -289,7 +289,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         }
 
         // Assert
-        scalingResults.Should().AllSatisfy(r => 
+        scalingResults.Should().AllSatisfy(r =>
             r.SuccessfulWorkflows.Should().BeGreaterThanOrEqualTo(r.WorkflowCount / 2));
 
         // Verify scaling behavior
@@ -302,7 +302,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         // Arrange - Create pipeline that spans multiple accelerators
         const int pipelineDepth = 4;
         const int dataSize = 1024;
-        
+
         var pipelineWorkflow = CreateCrossAcceleratorPipeline(pipelineDepth, dataSize);
 
         // Act
@@ -313,7 +313,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         result.ExecutionResults.Count.Should().Be(pipelineDepth);
 
         // All stages should complete successfully
-        result.ExecutionResults.Values.Should().AllSatisfy(stage => 
+        result.ExecutionResults.Values.Should().AllSatisfy(stage =>
             stage.Success.Should().BeTrue());
 
         // Pipeline should show good utilization
@@ -352,13 +352,13 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Assert
         var successfulResults = results.Where(r => r.Success).ToArray();
-        var successRate =(double)successfulResults.Length / workflows.Length;
+        var successRate = (double)successfulResults.Length / workflows.Length;
 
         Logger.LogInformation("Concurrency scaling test: {AcceleratorCount} accelerators, " +
                              "{Workflows} workflows, {SuccessRate:P1} success rate, {Duration:F1}ms",
             acceleratorCount, workflows.Length, successRate, concurrencyStopwatch.ElapsedMilliseconds);
 
-        successRate .Should().BeGreaterThanOrEqualTo(0.75, "Most workflows should complete successfully");
+        successRate.Should().BeGreaterThanOrEqualTo(0.75, "Most workflows should complete successfully");
 
         // Calculate effective throughput
         var totalDataMB = workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length * sizeof(float) / 1024.0 / 1024.0));
@@ -366,251 +366,251 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         effectiveThroughput.Should().BeGreaterThan(10, "Concurrent execution should maintain good throughput");
 
-        LogPerformanceMetrics($"ConcurrencyScaling_{acceleratorCount}", 
+        LogPerformanceMetrics($"ConcurrencyScaling_{acceleratorCount}",
             concurrencyStopwatch.Elapsed, workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length)));
     }
 
     // Helper methods and classes
 
-    private ComputeWorkflowDefinition CreateAcceleratorSpecificWorkflow(string name, ComputeBackendType backend, int dataSize)
+    private static ComputeWorkflowDefinition CreateAcceleratorSpecificWorkflow(string name, ComputeBackendType backend, int dataSize)
     {
         return new ComputeWorkflowDefinition
         {
             Name = name,
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "backend_specific",
                     SourceCode = GetBackendSpecificKernel(backend),
                     CompilationOptions = GetBackendOptimizedOptions(backend)
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(dataSize) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = dataSize }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "execute_stage",
                     Order = 1,
                     KernelName = "backend_specific",
                     BackendType = backend,
-                    ArgumentNames = new[] { "input", "output" }
+                    ArgumentNames = ["input", "output"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateLoadBalancingWorkflow(string name, int dataSize)
+    private static ComputeWorkflowDefinition CreateLoadBalancingWorkflow(string name, int dataSize)
     {
         return new ComputeWorkflowDefinition
         {
             Name = name,
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "balanced_compute",
                     SourceCode = KernelSources.BalancedCompute,
                     CompilationOptions = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum }
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(dataSize) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = dataSize }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "compute_stage",
                     Order = 1,
                     KernelName = "balanced_compute",
-                    ArgumentNames = new[] { "input", "output" }
+                    ArgumentNames = ["input", "output"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateSynchronizedWorkflow(string name, float[] sharedData, int workerId)
+    private static ComputeWorkflowDefinition CreateSynchronizedWorkflow(string name, float[] sharedData, int workerId)
     {
         return new ComputeWorkflowDefinition
         {
             Name = name,
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "synchronized_process",
                     SourceCode = KernelSources.SynchronizedProcess
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "shared_data", Data = sharedData }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = sharedData.Length }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "sync_stage",
                     Order = 1,
                     KernelName = "synchronized_process",
-                    ArgumentNames = new[] { "shared_data", "output" },
+                    ArgumentNames = ["shared_data", "output"],
                     Parameters = new Dictionary<string, object> { ["worker_id"] = workerId }
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateMemoryIntensiveWorkflow(string name, int dataSize)
+    private static ComputeWorkflowDefinition CreateMemoryIntensiveWorkflow(string name, int dataSize)
     {
         return new ComputeWorkflowDefinition
         {
             Name = name,
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "memory_intensive",
                     SourceCode = KernelSources.MemoryIntensive
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(dataSize) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = dataSize }
-            },
-            IntermediateBuffers = new()
-            {
-                new WorkflowIntermediateBuffer 
-                { 
-                    Name = "temp_buffer", 
-                    SizeInBytes = dataSize * sizeof(float) * 2 
+            ],
+            IntermediateBuffers =
+            [
+                new WorkflowIntermediateBuffer
+                {
+                    Name = "temp_buffer",
+                    SizeInBytes = dataSize * sizeof(float) * 2
                 }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "intensive_stage",
                     Order = 1,
                     KernelName = "memory_intensive",
-                    ArgumentNames = new[] { "input", "temp_buffer", "output" }
+                    ArgumentNames = ["input", "temp_buffer", "output"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateFaultTolerantWorkflow(string name, int dataSize)
+    private static ComputeWorkflowDefinition CreateFaultTolerantWorkflow(string name, int dataSize)
     {
         return new ComputeWorkflowDefinition
         {
             Name = name,
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "fault_tolerant",
                     SourceCode = KernelSources.FaultTolerantCompute
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(dataSize) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = dataSize }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "tolerant_stage",
                     Order = 1,
                     KernelName = "fault_tolerant",
-                    ArgumentNames = new[] { "input", "output" }
+                    ArgumentNames = ["input", "output"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateScalableWorkflow(string name, int dataSize)
+    private static ComputeWorkflowDefinition CreateScalableWorkflow(string name, int dataSize)
     {
         return new ComputeWorkflowDefinition
         {
             Name = name,
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "scalable_compute",
                     SourceCode = KernelSources.ScalableCompute
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(dataSize) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = dataSize }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "scalable_stage",
                     Order = 1,
                     KernelName = "scalable_compute",
-                    ArgumentNames = new[] { "input", "output" }
+                    ArgumentNames = ["input", "output"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateCrossAcceleratorPipeline(int stageCount, int dataSize)
+    private static ComputeWorkflowDefinition CreateCrossAcceleratorPipeline(int stageCount, int dataSize)
     {
         var workflow = new ComputeWorkflowDefinition
         {
             Name = "CrossAcceleratorPipeline",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel { Name = "pipeline_stage", SourceCode = KernelSources.PipelineStage }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(dataSize) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = dataSize }
-            },
-            IntermediateBuffers = new(),
-            ExecutionStages = new()
+            ],
+            IntermediateBuffers = [],
+            ExecutionStages = []
         };
 
         // Create intermediate buffers
-        for(int i = 0; i < stageCount - 1; i++)
+        for (var i = 0; i < stageCount - 1; i++)
         {
             workflow.IntermediateBuffers.Add(new WorkflowIntermediateBuffer
             {
@@ -621,19 +621,19 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Create pipeline stages with different backend preferences
         var backends = new[] { ComputeBackendType.CPU, ComputeBackendType.CUDA, ComputeBackendType.Metal, ComputeBackendType.CPU };
-        
-        for(int stage = 0; stage < stageCount; stage++)
+
+        for (var stage = 0; stage < stageCount; stage++)
         {
             var inputName = stage == 0 ? "input" : $"stage_{stage - 1}_output";
             var outputName = stage == stageCount - 1 ? "output" : $"stage_{stage}_output";
-            
+
             workflow.ExecutionStages.Add(new WorkflowExecutionStage
             {
                 Name = $"pipeline_stage_{stage}",
                 Order = stage + 1,
                 KernelName = "pipeline_stage",
                 BackendType = backends[stage % backends.Length],
-                ArgumentNames = new[] { inputName, outputName },
+                ArgumentNames = [inputName, outputName],
                 Parameters = new Dictionary<string, object> { ["stage_id"] = stage }
             });
         }
@@ -641,46 +641,48 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         return workflow;
     }
 
-    private ComputeWorkflowDefinition CreateConcurrencyTestWorkflow(string name, int dataSize)
+    private static ComputeWorkflowDefinition CreateConcurrencyTestWorkflow(string name, int dataSize)
     {
         return new ComputeWorkflowDefinition
         {
             Name = name,
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "concurrent_compute",
                     SourceCode = KernelSources.ConcurrentCompute
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(dataSize) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "output", Size = dataSize }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "concurrent_stage",
                     Order = 1,
                     KernelName = "concurrent_compute",
-                    ArgumentNames = new[] { "input", "output" }
+                    ArgumentNames = ["input", "output"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeBackendType DetectBackendFromResult(WorkflowExecutionResult result)
+    private static ComputeBackendType DetectBackendFromResult(WorkflowExecutionResult result)
     {
         // In a real implementation, this would analyze execution characteristics
         // For testing, use performance hints or default assignment
-        if(result.Metrics?.ThroughputMBps > 100) return ComputeBackendType.CUDA;
-        if(result.Metrics?.ThroughputMBps > 50) return ComputeBackendType.Metal;
+        if (result.Metrics?.ThroughputMBps > 100)
+            return ComputeBackendType.CUDA;
+        if (result.Metrics?.ThroughputMBps > 50)
+            return ComputeBackendType.Metal;
         return ComputeBackendType.CPU;
     }
 
@@ -732,12 +734,12 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
             peakLoad.SuccessfulWorkflows, peakLoad.WorkflowCount);
 
         // Success rate should remain reasonable even at peak load
-        var peakSuccessRate =(double)peakLoad.SuccessfulWorkflows / peakLoad.WorkflowCount;
-        peakSuccessRate .Should().BeGreaterThanOrEqualTo(0.6, "System should handle peak load gracefully");
+        var peakSuccessRate = (double)peakLoad.SuccessfulWorkflows / peakLoad.WorkflowCount;
+        peakSuccessRate.Should().BeGreaterThanOrEqualTo(0.6, "System should handle peak load gracefully");
 
         // Memory usage should scale reasonably
         var maxMemoryUsage = scalingResults.Max(r => r.PeakMemoryUsage);
-        maxMemoryUsage .Should().BeLessThan(95, "System should not exhaust memory during scaling");
+        maxMemoryUsage.Should().BeLessThan(95, "System should not exhaust memory during scaling");
     }
 }
 
@@ -783,11 +785,11 @@ public class WorkloadLoadBalancer
     public Task<WorkloadAssignment[]> CreateDistributionPlanAsync(ComputeWorkflowDefinition[] workflows)
     {
         var assignments = new List<WorkloadAssignment>();
-        
+
         // Simple round-robin assignment for testing
         var backends = new[] { ComputeBackendType.CPU, ComputeBackendType.CUDA, ComputeBackendType.Metal };
-        
-        for(int i = 0; i < workflows.Length; i++)
+
+        for (var i = 0; i < workflows.Length; i++)
         {
             assignments.Add(new WorkloadAssignment
             {
@@ -828,9 +830,9 @@ public class MultiAcceleratorResourceCoordinator
         var memoryBudgetPerWorkflow = totalMemoryRequired / workflows.Length;
 
         _logger.LogInformation("Coordinating resources: {Total}MB total memory, {Budget}MB per workflow",
-            totalMemoryRequired /(1024 * 1024), memoryBudgetPerWorkflow /(1024 * 1024));
+            totalMemoryRequired / (1024 * 1024), memoryBudgetPerWorkflow / (1024 * 1024));
 
-        for(int i = 0; i < workflows.Length; i++)
+        for (var i = 0; i < workflows.Length; i++)
         {
             assignments.Add(new WorkloadAssignment
             {
@@ -847,10 +849,12 @@ public class MultiAcceleratorResourceCoordinator
     private static ComputeBackendType SelectOptimalBackend(ComputeWorkflowDefinition workflow)
     {
         var inputSize = workflow.Inputs.Sum(i => i.Data.Length);
-        
+
         // Simple heuristic: larger workloads prefer GPU
-        if(inputSize > 2048) return ComputeBackendType.CUDA;
-        if(inputSize > 1024) return ComputeBackendType.Metal;
+        if (inputSize > 2048)
+            return ComputeBackendType.CUDA;
+        if (inputSize > 1024)
+            return ComputeBackendType.Metal;
         return ComputeBackendType.CPU;
     }
 }

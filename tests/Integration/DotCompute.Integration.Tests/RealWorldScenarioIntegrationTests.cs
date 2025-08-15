@@ -1,8 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Collections.Concurrent;
-using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Integration.Infrastructure;
 using Microsoft.Extensions.Logging;
@@ -43,8 +41,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         var mlWorkflow = new ComputeWorkflowDefinition
         {
             Name = "MLTrainingWorkflow",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "conv_forward",
@@ -66,42 +64,42 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "activation",
                     SourceCode = RealWorldKernels.ReLUActivation
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input_batch", Data = trainingBatch },
                 new WorkflowInput { Name = "conv_weights", Data = weights },
                 new WorkflowInput { Name = "conv_biases", Data = biases }
-            },
-            Outputs = new()
-            {
-                new WorkflowOutput 
-                { 
-                    Name = "feature_maps", 
-                    Size = batchSize * outputChannels *(inputHeight - kernelSize + 1) *(inputWidth - kernelSize + 1) 
+            ],
+            Outputs =
+            [
+                new WorkflowOutput
+                {
+                    Name = "feature_maps",
+                    Size = batchSize * outputChannels *(inputHeight - kernelSize + 1) *(inputWidth - kernelSize + 1)
                 }
-            },
-            IntermediateBuffers = new()
-            {
-                new WorkflowIntermediateBuffer 
-                { 
-                    Name = "conv_output", 
-                    SizeInBytes = batchSize * outputChannels *(inputHeight - kernelSize + 1) *(inputWidth - kernelSize + 1) * sizeof(float) 
+            ],
+            IntermediateBuffers =
+            [
+                new WorkflowIntermediateBuffer
+                {
+                    Name = "conv_output",
+                    SizeInBytes = batchSize * outputChannels *(inputHeight - kernelSize + 1) *(inputWidth - kernelSize + 1) * sizeof(float)
                 },
-                new WorkflowIntermediateBuffer 
-                { 
-                    Name = "normalized_output", 
-                    SizeInBytes = batchSize * outputChannels *(inputHeight - kernelSize + 1) *(inputWidth - kernelSize + 1) * sizeof(float) 
+                new WorkflowIntermediateBuffer
+                {
+                    Name = "normalized_output",
+                    SizeInBytes = batchSize * outputChannels *(inputHeight - kernelSize + 1) *(inputWidth - kernelSize + 1) * sizeof(float)
                 }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "convolution",
                     Order = 1,
                     KernelName = "conv_forward",
-                    ArgumentNames = new[] { "input_batch", "conv_weights", "conv_biases", "conv_output" },
+                    ArgumentNames = ["input_batch", "conv_weights", "conv_biases", "conv_output"],
                     Parameters = new Dictionary<string, object>
                     {
                         ["batch_size"] = batchSize,
@@ -117,16 +115,16 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "batch_normalization",
                     Order = 2,
                     KernelName = "batch_norm",
-                    ArgumentNames = new[] { "conv_output", "normalized_output" }
+                    ArgumentNames = ["conv_output", "normalized_output"]
                 },
                 new WorkflowExecutionStage
                 {
                     Name = "relu_activation",
                     Order = 3,
                     KernelName = "activation",
-                    ArgumentNames = new[] { "normalized_output", "feature_maps" }
+                    ArgumentNames = ["normalized_output", "feature_maps"]
                 }
-            }
+            ]
         };
 
         // Act
@@ -135,22 +133,22 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         // Assert
         result.Success.Should().BeTrue();
         result.ExecutionResults.Count.Should().Be(3);
-        
-        var featureMaps =(float[])result.Results["feature_maps"];
+
+        var featureMaps = (float[])result.Results["feature_maps"];
         featureMaps.Should().NotContain(float.NaN);
         featureMaps.Should().NotContain(float.PositiveInfinity);
         featureMaps.Should().NotContain(float.NegativeInfinity);
-        
+
         // Verify activation outputs are reasonable(ReLU should produce non-negative values)
         featureMaps.Should().AllSatisfy(value => value.Should().BeGreaterOrEqualTo(0f));
-        
+
         // Performance validation
-        var totalDataMB =(trainingBatch.Length + weights.Length) * sizeof(float) / 1024.0 / 1024.0;
+        var totalDataMB = (trainingBatch.Length + weights.Length) * sizeof(float) / 1024.0 / 1024.0;
         var throughputMBps = totalDataMB / result.Duration.TotalSeconds;
-        
+
         Logger.LogInformation("ML Training performance: {Throughput:F2} MB/s, {Duration:F1}ms for batch size {BatchSize}",
             throughputMBps, result.Duration.TotalMilliseconds, batchSize);
-        
+
         throughputMBps.Should().BeGreaterThan(10, "ML workload should maintain good throughput");
     }
 
@@ -162,7 +160,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         const float timeStep = 0.001f;
         const int simulationSteps = 100; // Commenting out to prevent unused variable warning
         _ = simulationSteps;
-        
+
         var positions = TestDataGenerators.GenerateFloatArray(particleCount * 3, -10f, 10f); // x,y,z coordinates
         var velocities = TestDataGenerators.GenerateFloatArray(particleCount * 3, -1f, 1f);
         var masses = TestDataGenerators.GenerateFloatArray(particleCount, 1f, 10f);
@@ -170,8 +168,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         var mdWorkflow = new ComputeWorkflowDefinition
         {
             Name = "MolecularDynamicsSimulation",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "compute_forces",
@@ -187,32 +185,32 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "integrate_motion",
                     SourceCode = RealWorldKernels.IntegrateMotion
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "positions", Data = positions },
                 new WorkflowInput { Name = "velocities", Data = velocities },
                 new WorkflowInput { Name = "masses", Data = masses }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "final_positions", Size = particleCount * 3 },
                 new WorkflowOutput { Name = "final_velocities", Size = particleCount * 3 }
-            },
-            IntermediateBuffers = new()
-            {
+            ],
+            IntermediateBuffers =
+            [
                 new WorkflowIntermediateBuffer { Name = "forces", SizeInBytes = particleCount * 3 * sizeof(float) },
                 new WorkflowIntermediateBuffer { Name = "temp_positions", SizeInBytes = particleCount * 3 * sizeof(float) },
                 new WorkflowIntermediateBuffer { Name = "temp_velocities", SizeInBytes = particleCount * 3 * sizeof(float) }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "force_computation",
                     Order = 1,
                     KernelName = "compute_forces",
-                    ArgumentNames = new[] { "positions", "masses", "forces" },
+                    ArgumentNames = ["positions", "masses", "forces"],
                     Parameters = new Dictionary<string, object> { ["particle_count"] = particleCount }
                 },
                 new WorkflowExecutionStage
@@ -220,14 +218,14 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "motion_integration",
                     Order = 2,
                     KernelName = "integrate_motion",
-                    ArgumentNames = new[] { "positions", "velocities", "forces", "masses", "final_positions", "final_velocities" },
-                    Parameters = new Dictionary<string, object> 
-                    { 
-                        ["time_step"] = timeStep, 
-                        ["particle_count"] = particleCount 
+                    ArgumentNames = ["positions", "velocities", "forces", "masses", "final_positions", "final_velocities"],
+                    Parameters = new Dictionary<string, object>
+                    {
+                        ["time_step"] = timeStep,
+                        ["particle_count"] = particleCount
                     }
                 }
-            }
+            ]
         };
 
         // Act
@@ -235,24 +233,24 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        
-        var finalPositions =(float[])result.Results["final_positions"];
-        var finalVelocities =(float[])result.Results["final_velocities"];
-        
+
+        var finalPositions = (float[])result.Results["final_positions"];
+        var finalVelocities = (float[])result.Results["final_velocities"];
+
         // Validate simulation results
         finalPositions.Should().NotContain(float.NaN);
         finalVelocities.Should().NotContain(float.NaN);
-        
+
         // Check conservation principles(energy should be roughly conserved)
         ValidatePhysicsConservation(positions, velocities, masses, finalPositions, finalVelocities);
-        
+
         // Performance validation for scientific computing
         var computationalIntensity = particleCount * particleCount; // O(N^2) force calculation
         var performanceScore = computationalIntensity / result.Duration.TotalMilliseconds;
-        
+
         Logger.LogInformation("Scientific computing performance: {Score:E2} operations/ms for {Particles} particles",
             performanceScore, particleCount);
-        
+
         (performanceScore > 1e6).Should().BeTrue();
     }
 
@@ -263,15 +261,15 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         const int imageWidth = 1920;
         const int imageHeight = 1080;
         const int channels = 3; // RGB
-        
+
         var rawImage = TestDataGenerators.GenerateFloatArray(
             imageWidth * imageHeight * channels, 0f, 255f);
 
         var imageWorkflow = new ComputeWorkflowDefinition
         {
             Name = "ImageProcessingPipeline",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "noise_reduction",
@@ -293,29 +291,29 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "tone_mapping",
                     SourceCode = RealWorldKernels.ToneMapping
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "raw_image", Data = rawImage }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "enhanced_image", Size = imageWidth * imageHeight * channels }
-            },
-            IntermediateBuffers = new()
-            {
+            ],
+            IntermediateBuffers =
+            [
                 new WorkflowIntermediateBuffer { Name = "denoised", SizeInBytes = imageWidth * imageHeight * channels * sizeof(float) },
                 new WorkflowIntermediateBuffer { Name = "sharpened", SizeInBytes = imageWidth * imageHeight * channels * sizeof(float) },
                 new WorkflowIntermediateBuffer { Name = "color_corrected", SizeInBytes = imageWidth * imageHeight * channels * sizeof(float) }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "denoise",
                     Order = 1,
                     KernelName = "noise_reduction",
-                    ArgumentNames = new[] { "raw_image", "denoised" },
+                    ArgumentNames = ["raw_image", "denoised"],
                     Parameters = new Dictionary<string, object> { ["width"] = imageWidth, ["height"] = imageHeight, ["channels"] = channels }
                 },
                 new WorkflowExecutionStage
@@ -323,7 +321,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "enhance_edges",
                     Order = 2,
                     KernelName = "edge_enhancement",
-                    ArgumentNames = new[] { "denoised", "sharpened" },
+                    ArgumentNames = ["denoised", "sharpened"],
                     Parameters = new Dictionary<string, object> { ["width"] = imageWidth, ["height"] = imageHeight }
                 },
                 new WorkflowExecutionStage
@@ -331,16 +329,16 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "correct_colors",
                     Order = 3,
                     KernelName = "color_correction",
-                    ArgumentNames = new[] { "sharpened", "color_corrected" }
+                    ArgumentNames = ["sharpened", "color_corrected"]
                 },
                 new WorkflowExecutionStage
                 {
                     Name = "tone_map",
                     Order = 4,
                     KernelName = "tone_mapping",
-                    ArgumentNames = new[] { "color_corrected", "enhanced_image" }
+                    ArgumentNames = ["color_corrected", "enhanced_image"]
                 }
-            }
+            ]
         };
 
         // Act
@@ -349,23 +347,23 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         // Assert
         result.Success.Should().BeTrue();
         result.ExecutionResults.Count.Should().Be(4);
-        
-        var enhancedImage =(float[])result.Results["enhanced_image"];
-        
+
+        var enhancedImage = (float[])result.Results["enhanced_image"];
+
         // Validate image processing results
         enhancedImage.Should().NotContain(float.NaN);
         enhancedImage.Should().AllSatisfy(pixel => pixel.Should().BeInRange(0f, 255f));
-        
+
         // Performance validation for image processing
         var pixelCount = imageWidth * imageHeight;
         var megapixels = pixelCount / 1_000_000.0;
         var processingRate = megapixels / result.Duration.TotalSeconds;
-        
+
         Logger.LogInformation("Image processing performance: {Rate:F2} MP/s{Width}x{Height})",
             processingRate, imageWidth, imageHeight);
-        
+
         processingRate.Should().BeGreaterThan(10, "Image processing should achieve reasonable megapixel/second rate");
-        
+
         // Verify all processing stages completed in reasonable time
         result.ExecutionResults.Values.Should().AllSatisfy(stage =>
             stage.Duration.TotalSeconds.Should().BeLessThan(5));
@@ -388,8 +386,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         var financeWorkflow = new ComputeWorkflowDefinition
         {
             Name = "MonteCarloOptionPricing",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "generate_paths",
@@ -406,29 +404,29 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "discount_and_average",
                     SourceCode = RealWorldKernels.DiscountAndAverage
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "random_numbers", Data = randomSeeds }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "option_prices", Size = 1 }, // Single option price
                 new WorkflowOutput { Name = "confidence_interval", Size = 2 } // Lower and upper bounds
-            },
-            IntermediateBuffers = new()
-            {
+            ],
+            IntermediateBuffers =
+            [
                 new WorkflowIntermediateBuffer { Name = "stock_paths", SizeInBytes = simulationPaths * sizeof(float) },
                 new WorkflowIntermediateBuffer { Name = "payoffs", SizeInBytes = simulationPaths * sizeof(float) }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "path_generation",
                     Order = 1,
                     KernelName = "generate_paths",
-                    ArgumentNames = new[] { "random_numbers", "stock_paths" },
+                    ArgumentNames = ["random_numbers", "stock_paths"],
                     Parameters = new Dictionary<string, object>
                     {
                         ["spot_price"] = spotPrice,
@@ -444,7 +442,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "payoff_calculation",
                     Order = 2,
                     KernelName = "calculate_payoffs",
-                    ArgumentNames = new[] { "stock_paths", "payoffs" },
+                    ArgumentNames = ["stock_paths", "payoffs"],
                     Parameters = new Dictionary<string, object> { ["strike_price"] = strikePrice }
                 },
                 new WorkflowExecutionStage
@@ -452,15 +450,15 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "pricing",
                     Order = 3,
                     KernelName = "discount_and_average",
-                    ArgumentNames = new[] { "payoffs", "option_prices", "confidence_interval" },
-                    Parameters = new Dictionary<string, object> 
-                    { 
-                        ["risk_free_rate"] = riskFreeRate, 
+                    ArgumentNames = ["payoffs", "option_prices", "confidence_interval"],
+                    Parameters = new Dictionary<string, object>
+                    {
+                        ["risk_free_rate"] = riskFreeRate,
                         ["time_to_expiry"] = timeToExpiry,
                         ["num_paths"] = simulationPaths
                     }
                 }
-            }
+            ]
         };
 
         // Act
@@ -468,29 +466,29 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        
-        var optionPrice =((float[])result.Results["option_prices"])[0];
-        var confidenceInterval =(float[])result.Results["confidence_interval"];
-        
+
+        var optionPrice = ((float[])result.Results["option_prices"])[0];
+        var confidenceInterval = (float[])result.Results["confidence_interval"];
+
         // Validate financial model results
         Assert.True(optionPrice > 0f);
         Assert.True(optionPrice < spotPrice); // Option price should be reasonable
         confidenceInterval[0].Should().BeLessThan(optionPrice);
         confidenceInterval[1].Should().BeGreaterThan(optionPrice);
-        
+
         // Calculate theoretical Black-Scholes price for comparison
         var theoreticalPrice = CalculateBlackScholesPrice(spotPrice, strikePrice, riskFreeRate, volatility, timeToExpiry);
         var priceDifference = Math.Abs(optionPrice - theoreticalPrice);
-        
+
         Logger.LogInformation("Monte Carlo option pricing: MC={MC:F4}, BS={BS:F4}, Diff={Diff:F4}, " +
                              "CI=[{Lower:F4}, {Upper:F4}], {Paths} paths",
             optionPrice, theoreticalPrice, priceDifference,
             confidenceInterval[0], confidenceInterval[1], simulationPaths);
-        
+
         // Monte Carlo should be reasonably close to theoretical price
-        (priceDifference < theoreticalPrice * 0.05f).Should().BeTrue( 
+        (priceDifference < theoreticalPrice * 0.05f).Should().BeTrue(
             "Monte Carlo price should be within 5% of theoretical price");
-        
+
         // Performance validation for financial computing
         var pathsPerSecond = simulationPaths / result.Duration.TotalSeconds;
         pathsPerSecond.Should().BeGreaterThan(10000, "Monte Carlo should process paths efficiently");
@@ -502,15 +500,15 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         // Arrange - Simulate big data analytics scenario
         const int recordCount = 1_000_000; // 1 million records
         const int dimensionCount = 10;
-        
+
         var dataset = TestDataGenerators.GenerateFloatArray(recordCount * dimensionCount, -100f, 100f);
         var groupKeys = TestDataGenerators.GenerateFloatArray(recordCount).Select(x => (int)(x * 100) % 100).ToArray();
 
         var analyticsWorkflow = new ComputeWorkflowDefinition
         {
             Name = "BigDataAnalytics",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "filter_data",
@@ -527,34 +525,34 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "aggregate_groups",
                     SourceCode = RealWorldKernels.AggregateGroups
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "raw_data", Data = dataset },
                 new WorkflowInput { Name = "group_keys", Data = groupKeys.Select(k => (float)k).ToArray() }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "aggregated_results", Size = 100 * dimensionCount }, // 100 groups
                 new WorkflowOutput { Name = "summary_stats", Size = dimensionCount * 4 } // Mean, std, min, max per dimension
-            },
-            IntermediateBuffers = new()
-            {
+            ],
+            IntermediateBuffers =
+            [
                 new WorkflowIntermediateBuffer { Name = "filtered_data", SizeInBytes = recordCount * dimensionCount * sizeof(float) },
                 new WorkflowIntermediateBuffer { Name = "statistics", SizeInBytes = dimensionCount * 4 * sizeof(float) }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "data_filtering",
                     Order = 1,
                     KernelName = "filter_data",
-                    ArgumentNames = new[] { "raw_data", "filtered_data" },
-                    Parameters = new Dictionary<string, object> 
-                    { 
-                        ["record_count"] = recordCount, 
-                        ["dimension_count"] = dimensionCount 
+                    ArgumentNames = ["raw_data", "filtered_data"],
+                    Parameters = new Dictionary<string, object>
+                    {
+                        ["record_count"] = recordCount,
+                        ["dimension_count"] = dimensionCount
                     }
                 },
                 new WorkflowExecutionStage
@@ -562,11 +560,11 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "statistics_computation",
                     Order = 2,
                     KernelName = "compute_statistics",
-                    ArgumentNames = new[] { "filtered_data", "statistics" },
-                    Parameters = new Dictionary<string, object> 
-                    { 
-                        ["record_count"] = recordCount, 
-                        ["dimension_count"] = dimensionCount 
+                    ArgumentNames = ["filtered_data", "statistics"],
+                    Parameters = new Dictionary<string, object>
+                    {
+                        ["record_count"] = recordCount,
+                        ["dimension_count"] = dimensionCount
                     }
                 },
                 new WorkflowExecutionStage
@@ -574,7 +572,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                     Name = "group_aggregation",
                     Order = 3,
                     KernelName = "aggregate_groups",
-                    ArgumentNames = new[] { "filtered_data", "group_keys", "aggregated_results" },
+                    ArgumentNames = ["filtered_data", "group_keys", "aggregated_results"],
                     Parameters = new Dictionary<string, object>
                     {
                         ["record_count"] = recordCount,
@@ -582,7 +580,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                         ["group_count"] = 100
                     }
                 }
-            }
+            ]
         };
 
         // Act
@@ -590,22 +588,22 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        
-        var aggregatedResults =(float[])result.Results["aggregated_results"];
-        var summaryStats =(float[])result.Results["summary_stats"];
-        
+
+        var aggregatedResults = (float[])result.Results["aggregated_results"];
+        var summaryStats = (float[])result.Results["summary_stats"];
+
         // Validate data analytics results
         aggregatedResults.Should().NotContain(float.NaN);
         summaryStats.Should().NotContain(float.NaN);
-        
+
         // Performance validation for big data processing
         var recordsPerSecond = recordCount / result.Duration.TotalSeconds;
-        var throughputMBps =(recordCount * dimensionCount * sizeof(float)) / 1024.0 / 1024.0 / result.Duration.TotalSeconds;
-        
+        var throughputMBps = (recordCount * dimensionCount * sizeof(float)) / 1024.0 / 1024.0 / result.Duration.TotalSeconds;
+
         Logger.LogInformation("Big data analytics performance: {RecordsPerSec:E2} records/s, {Throughput:F2} MB/s " +
                              "for {Records:E0} records",
-            recordsPerSecond, throughputMBps,(double)recordCount);
-        
+            recordsPerSecond, throughputMBps, (double)recordCount);
+
         recordsPerSecond.Should().BeGreaterThan(50000, "Big data processing should handle large record volumes efficiently");
         throughputMBps.Should().BeGreaterThan(50, "Data analytics should maintain good memory throughput");
     }
@@ -619,23 +617,23 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
     {
         // Arrange
         var streamingWorkflow = CreateStreamingWorkflow(workloadType, param1, param2, param3);
-        
+
         // Act
         var result = await ExecuteComputeWorkflowAsync($"StreamingWorkload_{workloadType}", streamingWorkflow);
 
         // Assert
         result.Success.Should().BeTrue();
-        
+
         // Validate streaming performance
         var expectedThroughput = CalculateExpectedStreamingThroughput(workloadType, param1, param2, param3);
         var actualThroughput = result.Metrics?.ThroughputMBps ?? 0;
-        
+
         Logger.LogInformation("Streaming workload {Type}: {Actual:F2} MB/sexpected: {Expected:F2} MB/s)",
             workloadType, actualThroughput, expectedThroughput);
-        
+
         (actualThroughput > expectedThroughput * 0.7).Should().BeTrue(
             $"{workloadType} streaming should meet 70% of expected throughput");
-        
+
         // Real-time workloads should complete within reasonable time
         result.Duration.TotalSeconds.Should().BeLessThan(10,
             "Streaming workloads should complete quickly for real-time requirements");
@@ -643,67 +641,67 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
 
     // Helper methods
 
-    private void ValidatePhysicsConservation(float[] initialPositions, float[] initialVelocities, float[] masses,
+    private static void ValidatePhysicsConservation(float[] initialPositions, float[] initialVelocities, float[] masses,
         float[] finalPositions, float[] finalVelocities)
     {
         const int particleCount = 4096;
-        
+
         // Calculate initial and final kinetic energy(simplified)
         double initialKE = 0, finalKE = 0;
-        
-        for(int i = 0; i < particleCount; i++)
+
+        for (var i = 0; i < particleCount; i++)
         {
             var mass = masses[i];
-            
+
             // Initial kinetic energy
             var vx0 = initialVelocities[i * 3];
             var vy0 = initialVelocities[i * 3 + 1];
             var vz0 = initialVelocities[i * 3 + 2];
-            initialKE += 0.5 * mass *(vx0 * vx0 + vy0 * vy0 + vz0 * vz0);
-            
+            initialKE += 0.5 * mass * (vx0 * vx0 + vy0 * vy0 + vz0 * vz0);
+
             // Final kinetic energy
             var vxf = finalVelocities[i * 3];
             var vyf = finalVelocities[i * 3 + 1];
             var vzf = finalVelocities[i * 3 + 2];
-            finalKE += 0.5 * mass *(vxf * vxf + vyf * vyf + vzf * vzf);
+            finalKE += 0.5 * mass * (vxf * vxf + vyf * vyf + vzf * vzf);
         }
-        
+
         // Energy should be roughly conserved(within numerical precision)
         var energyChange = Math.Abs(finalKE - initialKE) / initialKE;
-        energyChange .Should().BeLessThan(0.1, "Energy should be approximately conserved in MD simulation");
+        energyChange.Should().BeLessThan(0.1, "Energy should be approximately conserved in MD simulation");
     }
 
-    private float CalculateBlackScholesPrice(float S, float K, float r, float sigma, float T)
+    private static float CalculateBlackScholesPrice(float S, float K, float r, float sigma, float T)
     {
-        var d1 =(Math.Log(S / K) +(r + 0.5 * sigma * sigma) * T) /(sigma * Math.Sqrt(T));
+        var d1 = (Math.Log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.Sqrt(T));
         var d2 = d1 - sigma * Math.Sqrt(T);
-        
-        var N_d1 = 0.5 *(1 + Erf(d1 / Math.Sqrt(2)));
-        var N_d2 = 0.5 *(1 + Erf(d2 / Math.Sqrt(2)));
-        
-        return(float)(S * N_d1 - K * Math.Exp(-r * T) * N_d2);
+
+        var N_d1 = 0.5 * (1 + Erf(d1 / Math.Sqrt(2)));
+        var N_d2 = 0.5 * (1 + Erf(d2 / Math.Sqrt(2)));
+
+        return (float)(S * N_d1 - K * Math.Exp(-r * T) * N_d2);
     }
 
     private static double Erf(double x)
     {
         // Approximation of error function for Black-Scholes
-        const double a1 =  0.254829592;
+        const double a1 = 0.254829592;
         const double a2 = -0.284496736;
-        const double a3 =  1.421413741;
+        const double a3 = 1.421413741;
         const double a4 = -1.453152027;
-        const double a5 =  1.061405429;
-        const double p  =  0.3275911;
+        const double a5 = 1.061405429;
+        const double p = 0.3275911;
 
         var sign = x < 0 ? -1 : 1;
         x = Math.Abs(x);
 
-        var t = 1.0 /(1.0 + p * x);
-        var y = 1.0 -(((a5 * t + a4) * t) + a3) * t + a2 * t + a1 * t * Math.Exp(-x * x);
+        var t = 1.0 / (1.0 + p * x);
+        var y = 1.0 - (((a5 * t + a4) * t) + a3) * t + a2 * t + a1 * t * Math.Exp(-x * x);
 
         return sign * y;
     }
 
-    private ComputeWorkflowDefinition CreateStreamingWorkflow(string workloadType, int param1, int param2, int param3)
+    private static ComputeWorkflowDefinition CreateStreamingWorkflow(string workloadType, int param1, int param2, int param3)
     {
         return workloadType switch
         {
@@ -714,105 +712,105 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         };
     }
 
-    private ComputeWorkflowDefinition CreateVideoProcessingWorkflow(int width, int height, int fps)
+    private static ComputeWorkflowDefinition CreateVideoProcessingWorkflow(int width, int height, int fps)
     {
         var frameData = TestDataGenerators.GenerateFloatArray(width * height * 3, 0f, 255f);
-        
+
         return new ComputeWorkflowDefinition
         {
             Name = "VideoProcessing",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel { Name = "video_filter", SourceCode = RealWorldKernels.VideoFilter }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "frame", Data = frameData }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "processed_frame", Size = width * height * 3 }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "filter_stage",
                     Order = 1,
                     KernelName = "video_filter",
-                    ArgumentNames = new[] { "frame", "processed_frame" },
+                    ArgumentNames = ["frame", "processed_frame"],
                     Parameters = new Dictionary<string, object> { ["width"] = width, ["height"] = height }
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateAudioProcessingWorkflow(int sampleRate, int channels, int duration)
+    private static ComputeWorkflowDefinition CreateAudioProcessingWorkflow(int sampleRate, int channels, int duration)
     {
         var audioData = TestDataGenerators.GenerateFloatArray(sampleRate * channels * duration, -1f, 1f);
-        
+
         return new ComputeWorkflowDefinition
         {
             Name = "AudioProcessing",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel { Name = "audio_effect", SourceCode = RealWorldKernels.AudioEffect }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "audio", Data = audioData }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "processed_audio", Size = audioData.Length }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "effect_stage",
                     Order = 1,
                     KernelName = "audio_effect",
-                    ArgumentNames = new[] { "audio", "processed_audio" }
+                    ArgumentNames = ["audio", "processed_audio"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateCryptographicWorkflow(int dataSize, int iterations, int unused)
+    private static ComputeWorkflowDefinition CreateCryptographicWorkflow(int dataSize, int iterations, int unused)
     {
         var data = TestDataGenerators.GenerateFloatArray(dataSize, 0f, 255f);
-        
+
         return new ComputeWorkflowDefinition
         {
             Name = "CryptographicHashing",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel { Name = "hash_function", SourceCode = RealWorldKernels.HashFunction }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "data", Data = data }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "hashes", Size = data.Length / 16 } // 16:1 compression ratio
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "hashing_stage",
                     Order = 1,
                     KernelName = "hash_function",
-                    ArgumentNames = new[] { "data", "hashes" },
+                    ArgumentNames = ["data", "hashes"],
                     Parameters = new Dictionary<string, object> { ["iterations"] = iterations }
                 }
-            }
+            ]
         };
     }
 
-    private double CalculateExpectedStreamingThroughput(string workloadType, int param1, int param2, int param3)
+    private static double CalculateExpectedStreamingThroughput(string workloadType, int param1, int param2, int param3)
     {
         return workloadType switch
         {

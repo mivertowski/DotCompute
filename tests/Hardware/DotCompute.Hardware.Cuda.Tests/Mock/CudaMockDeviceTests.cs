@@ -4,9 +4,7 @@
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging;
-using Moq;
 using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
@@ -63,7 +61,7 @@ public class CudaMockDeviceTests
         mockInfo.TotalMemory.Should().Be(8L * 1024 * 1024 * 1024); // 8GB
         mockInfo.ComputeUnits.Should().Be(36);
         mockInfo.ComputeCapability.Should().Be(new Version(7, 5));
-        
+
         mockInfo.Capabilities.Should().ContainKey("ComputeCapabilityMajor");
         mockInfo.Capabilities.Should().ContainKey("ComputeCapabilityMinor");
         mockInfo.Capabilities.Should().ContainKey("MultiprocessorCount");
@@ -89,7 +87,7 @@ public class CudaMockDeviceTests
             Major = computeMajor,
             Minor = computeMinor,
             MultiProcessorCount = smCount,
-            TotalGlobalMem =(ulong)(memoryMB * 1024 * 1024),
+            TotalGlobalMem = (ulong)(memoryMB * 1024 * 1024),
             MaxThreadsPerBlock = 1024,
             WarpSize = 32,
             SharedMemPerBlock = computeMajor >= 8 ? 65536UL : 49152UL, // 64KB for Ampere+, 48KB for earlier
@@ -114,7 +112,7 @@ public class CudaMockDeviceTests
         mockInfo.ComputeCapability!.Minor.Should().Be(computeMinor);
         mockInfo.ComputeUnits.Should().Be(smCount);
         mockInfo.MemorySize.Should().Be(memoryMB * 1024L * 1024L);
-        
+
         _output.WriteLine($"Mock GPU: {deviceName}");
         _output.WriteLine($"  Compute Capability: {computeMajor}.{computeMinor}");
         _output.WriteLine($"  SM Count: {smCount}");
@@ -130,7 +128,7 @@ public class CudaMockDeviceTests
         var totalMemory = 8L * 1024 * 1024 * 1024; // 8GB
         var usedMemory = 1024L * 1024 * 1024; // 1GB used
         var freeMemory = totalMemory - usedMemory;
-        
+
         var mockStats = new MemoryStatistics
         {
             TotalMemory = totalMemory,
@@ -148,9 +146,9 @@ public class CudaMockDeviceTests
         (mockStats.AllocatedMemory <= mockStats.UsedMemory).Should().BeTrue();
         (mockStats.AllocationCount > 0).Should().BeTrue();
         (mockStats.PeakMemory >= mockStats.UsedMemory).Should().BeTrue();
-        
-        var utilizationPercent =(mockStats.UsedMemory * 100.0) / mockStats.TotalMemory;
-        _output.WriteLine($"Mock Memory Usage: {utilizationPercent:F1}%{mockStats.UsedMemory /(1024*1024*1024)}GB / {mockStats.TotalMemory /(1024*1024*1024)}GB)");
+
+        var utilizationPercent = (mockStats.UsedMemory * 100.0) / mockStats.TotalMemory;
+        _output.WriteLine($"Mock Memory Usage: {utilizationPercent:F1}%{mockStats.UsedMemory / (1024 * 1024 * 1024)}GB / {mockStats.TotalMemory / (1024 * 1024 * 1024)}GB)");
     }
 
     [Fact]
@@ -174,7 +172,7 @@ public class CudaMockDeviceTests
             var errorString = GetMockErrorString(error);
             errorString.Should().NotBeNullOrEmpty($"Error {error} should have a descriptive string");
             errorString.Should().Contain(error.ToString().ToLowerInvariant());
-            
+
             _output.WriteLine($"Mock Error: {error} -> {errorString}");
         }
     }
@@ -199,7 +197,7 @@ public class CudaMockDeviceTests
         allocationResult.Success.Should().BeTrue();
         allocationResult.AllocatedSize.Should().Be(sizeInBytes);
         allocationResult.AllocationTime.Should().BeLessThan(TimeSpan.FromSeconds(1));
-        
+
         _output.WriteLine($"Mock allocation of {sizeInBytes / 1024}KB took {allocationResult.AllocationTime.TotalMilliseconds:F2}ms");
     }
 
@@ -224,12 +222,12 @@ __global__ void mock_kernel(float* input, float* output, int n)
         mockCompilationResult.CompiledCode.Should().NotBeEmpty();
         mockCompilationResult.CompilationTime.Should().BeLessThan(TimeSpan.FromSeconds(10));
         mockCompilationResult.CompilerLog.Should().NotBeNull();
-        
+
         // Simulate PTX output
         var ptxString = System.Text.Encoding.UTF8.GetString(mockCompilationResult.CompiledCode);
         Assert.Contains(".version", ptxString); // "Mock PTX should contain version directive";
         Assert.Contains(".entry", ptxString); // "Mock PTX should contain entry directive";
-        
+
         _output.WriteLine($"Mock compilation completed in {mockCompilationResult.CompilationTime.TotalMilliseconds:F2}ms");
         _output.WriteLine($"PTX size: {mockCompilationResult.CompiledCode.Length} bytes");
     }
@@ -248,7 +246,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
         mockCompilationResult.CompiledCode.Should().BeEmpty();
         mockCompilationResult.ErrorMessage.Should().NotBeNullOrEmpty();
         mockCompilationResult.CompilerLog.Should().Contain("error"); // "Compiler log should contain error information";
-        
+
         _output.WriteLine($"Mock compilation failed as expected: {mockCompilationResult.ErrorMessage}");
     }
 
@@ -267,17 +265,17 @@ __global__ void mock_kernel(float* input, float* output, int n)
 
         // Act & Assert
         mockCompilationResult.Success.Should().BeTrue();
-        
+
         // Compilation time should vary with optimization level
         var actualCompileTime = mockCompilationResult.CompilationTime.TotalMilliseconds;
-        (actualCompileTime <= expectedCompileTimeMs + 1000).Should().BeTrue( 
+        (actualCompileTime <= expectedCompileTimeMs + 1000).Should().BeTrue(
             $"Compilation with {level} should complete within expected time");
 
         // Simulated execution performance should improve with higher optimization
         var mockExecutionTime = SimulateKernelExecution(mockCompilationResult, level);
         (mockExecutionTime.TotalMicroseconds <= expectedExecutionTimeUs + 500).Should().BeTrue(
             $"Execution with {level} optimization should meet performance targets");
-        
+
         _output.WriteLine($"Optimization {level}: Compile={actualCompileTime:F0}ms, Execute={mockExecutionTime.TotalMicroseconds:F0}μs");
     }
 
@@ -301,12 +299,12 @@ __global__ void mock_kernel(float* input, float* output, int n)
         // Assert
         Assert.Equal(concurrentOperations, results.Count());
         results.Should().AllSatisfy(result => result.Result.Should().BeTrue());
-        
+
         // Concurrent execution should be faster than sequential
         var estimatedSequentialTime = concurrentOperations * 100; // 100ms per operation
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan((long)(estimatedSequentialTime * 0.8), 
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan((long)(estimatedSequentialTime * 0.8),
             "Concurrent operations should be faster than sequential execution");
-        
+
         _output.WriteLine($"Completed {concurrentOperations} concurrent operations in {stopwatch.ElapsedMilliseconds}ms");
     }
 
@@ -358,18 +356,18 @@ __global__ void mock_kernel(float* input, float* output, int n)
             ["ClockRate"] = props.ClockRate,
             ["MemoryClockRate"] = props.MemoryClockRate,
             ["MemoryBusWidth"] = props.MemoryBusWidth,
-            ["MemoryBandwidth"] = 2.0 * props.MemoryClockRate *(props.MemoryBusWidth / 8) / 1.0e6
+            ["MemoryBandwidth"] = 2.0 * props.MemoryClockRate * (props.MemoryBusWidth / 8) / 1.0e6
         };
 
         return new AcceleratorInfo(
             type: AcceleratorType.CUDA,
             name: props.Name,
             driverVersion: $"{props.Major}.{props.Minor}",
-            memorySize:(long)props.TotalGlobalMem,
+            memorySize: (long)props.TotalGlobalMem,
             computeUnits: props.MultiProcessorCount,
             maxClockFrequency: props.ClockRate / 1000,
             computeCapability: new Version(props.Major, props.Minor),
-            maxSharedMemoryPerBlock:(long)props.SharedMemPerBlock,
+            maxSharedMemoryPerBlock: (long)props.SharedMemPerBlock,
             isUnifiedMemory: false
         )
         {
@@ -416,7 +414,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
         {
             <= 1024 => 0.1, // Very small allocations are fast
             <= 1024 * 1024 => 1.0, // Medium allocations
-            _ => size /(1024.0 * 1024.0 * 1024.0) * 50 // Large allocations scale with size
+            _ => size / (1024.0 * 1024.0 * 1024.0) * 50 // Large allocations scale with size
         };
 
         return new MockAllocationResult
@@ -431,7 +429,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
     private static MockCompilationResult CreateMockCompilationResult(
         string sourceCode, bool success, OptimizationLevel optimization = OptimizationLevel.Default)
     {
-        if(!success)
+        if (!success)
         {
             return new MockCompilationResult
             {
@@ -520,16 +518,16 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
     private static string GenerateMockPTX(string sourceCode, OptimizationLevel optimization)
     {
         var ptxBuilder = new StringBuilder();
-        
+
         ptxBuilder.AppendLine(".version 7.5");
         ptxBuilder.AppendLine(".target sm_75");
         ptxBuilder.AppendLine(".address_size 64");
         ptxBuilder.AppendLine();
-        
+
         ptxBuilder.AppendLine($"// Generated from source code{sourceCode.Length} chars)");
         ptxBuilder.AppendLine($"// Optimization level: {optimization}");
         ptxBuilder.AppendLine();
-        
+
         ptxBuilder.AppendLine(".visible .entry mock_kernel(");
         ptxBuilder.AppendLine("    .param .u64 mock_kernel_param_0,");
         ptxBuilder.AppendLine("    .param .u64 mock_kernel_param_1,");
@@ -562,7 +560,7 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
         ptxBuilder.AppendLine("LBB0_2:");
         ptxBuilder.AppendLine("    ret;");
         ptxBuilder.AppendLine("}");
-        
+
         return ptxBuilder.ToString();
     }
 

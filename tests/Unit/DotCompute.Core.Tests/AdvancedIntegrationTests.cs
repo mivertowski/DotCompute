@@ -1,9 +1,5 @@
 using Xunit;
-using FluentAssertions;
-using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Shared.Kernels;
 using Xunit.Abstractions;
@@ -33,7 +29,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
     {
         _acceleratorManager = new TestAcceleratorManager();
         await _acceleratorManager.InitializeAsync();
-        
+
         _kernelExecutor = new TestKernelExecutor();
         _cudaCompiler = new TestCudaKernelCompiler();
         _openClCompiler = new TestOpenCLKernelCompiler();
@@ -52,15 +48,15 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         // Assert
         Assert.True(_acceleratorManager.Count > 0);
         Assert.NotNull(_acceleratorManager.Default);
-        
+
         _output.WriteLine($"Found {_acceleratorManager.Count} accelerators");
-        
+
         foreach (var accelerator in _acceleratorManager.AvailableAccelerators)
         {
             _output.WriteLine($"  - {accelerator.Info.Name}: {accelerator.Info.DeviceType}, " +
-                            $"Memory: {accelerator.Info.TotalMemory /(1024 * 1024)}MB");
+                            $"Memory: {accelerator.Info.TotalMemory / (1024 * 1024)}MB");
         }
-        
+
         await Task.CompletedTask;
     }
 
@@ -81,11 +77,11 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         // Assert
         Assert.NotNull(bestAccelerator);
         Assert.True(bestAccelerator.Info.TotalMemory >= criteria.MinimumMemory);
-        
+
         _output.WriteLine($"Selected accelerator: {bestAccelerator.Info.Name}");
         _output.WriteLine($"  Type: {bestAccelerator.Info.DeviceType}");
         _output.WriteLine($"  Memory: {bestAccelerator.Info.TotalMemory / (1024 * 1024)}MB");
-        
+
         await Task.CompletedTask;
     }
 
@@ -100,7 +96,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
             Language = KernelLanguage.Cuda,
             EntryPoint = "vector_add"
         };
-        
+
         var options = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Maximum,
@@ -125,7 +121,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         Assert.NotNull(compiledInfo2);
         Assert.Equal(compiledInfo1.Name, compiledInfo2.Name);
         Assert.Contains("PTX", compiledInfo1.Assembly);
-        
+
         _output.WriteLine($"CUDA Compiler Results:");
         _output.WriteLine($"  First compile: {firstCompileTime}ms");
         _output.WriteLine($"  Second compilecached): {secondCompileTime}ms");
@@ -152,7 +148,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         Assert.NotNull(compiledInfo);
         Assert.Contains("SPIR-V", compiledInfo.Assembly);
         Assert.NotEmpty(_openClCompiler.Diagnostics);
-        
+
         _output.WriteLine("OpenCL Compiler Diagnostics:");
         foreach (var diagnostic in _openClCompiler.Diagnostics)
         {
@@ -170,7 +166,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         var config = new KernelConfiguration(new Dim3(32), new Dim3(32));
 
         // Act - Execute multiple times
-        for(int i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             var result = await _kernelExecutor.ExecuteAsync(kernel, args, config);
             Assert.True(result.Success);
@@ -179,7 +175,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         // Assert and display statistics
         var stats = _kernelExecutor.Statistics;
         Assert.NotEmpty(stats);
-        
+
         _output.WriteLine("Kernel Execution Statistics:");
         foreach (var stat in stats.Values)
         {
@@ -195,41 +191,41 @@ public class AdvancedIntegrationTests : IAsyncLifetime
     public async Task FullPipeline_MatrixMultiplication_Simulation()
     {
         _output.WriteLine("=== Full Matrix Multiplication Pipeline ===");
-        
+
         // Step 1: Select best accelerator
         var accelerator = _acceleratorManager.SelectBest(new AcceleratorSelectionCriteria
         {
             MinimumMemory = 1024 * 1024 * 100, // 100MB
             CustomScorer = a => a.Info.ComputeUnits * a.Info.MaxClockFrequency
         });
-        
+
         Assert.NotNull(accelerator);
         _output.WriteLine($"Selected: {accelerator.Info.Name}");
 
         // Step 2: Allocate memory
         const int matrixSize = 512;
         const int matrixBytes = matrixSize * matrixSize * sizeof(float);
-        
+
         var bufferA = await accelerator.Memory.AllocateAsync(matrixBytes);
         var bufferB = await accelerator.Memory.AllocateAsync(matrixBytes);
         var bufferC = await accelerator.Memory.AllocateAsync(matrixBytes);
-        
+
         _output.WriteLine($"Allocated 3x {matrixBytes / 1024}KB buffers");
 
         // Step 3: Initialize matrices
         var hostA = new float[matrixSize * matrixSize];
         var hostB = new float[matrixSize * matrixSize];
-        
+
         var random = new Random(42);
-        for(int i = 0; i < hostA.Length; i++)
+        for (var i = 0; i < hostA.Length; i++)
         {
-            hostA[i] =(float)random.NextDouble();
-            hostB[i] =(float)random.NextDouble();
+            hostA[i] = (float)random.NextDouble();
+            hostB[i] = (float)random.NextDouble();
         }
-        
+
         await bufferA.CopyFromHostAsync<float>(hostA.AsMemory());
         await bufferB.CopyFromHostAsync<float>(hostB.AsMemory());
-        
+
         _output.WriteLine("Copied input matrices to device");
 
         // Step 4: Compile kernel
@@ -253,15 +249,15 @@ public class AdvancedIntegrationTests : IAsyncLifetime
             Language = KernelLanguage.Cuda,
             EntryPoint = "matrix_multiply"
         };
-        
-        var compiledInfo = await _cudaCompiler.CompileAsync(kernelSource, 
+
+        var compiledInfo = await _cudaCompiler.CompileAsync(kernelSource,
             new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum });
-        
+
         var compiledKernel = new TestCompiledKernel(
-            compiledInfo.Name, 
+            compiledInfo.Name,
             System.Text.Encoding.UTF8.GetBytes(compiledInfo.Assembly),
             compiledInfo.Options);
-        
+
         _output.WriteLine($"Compiled kernel: {compiledInfo.Name}");
 
         // Step 5: Execute kernel
@@ -269,11 +265,11 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         var kernelConfig = new KernelConfiguration(
             new Dim3(matrixSize / 16, matrixSize / 16),
             new Dim3(16, 16));
-        
+
         var stopwatch = Stopwatch.StartNew();
         var execResult = await _kernelExecutor.ExecuteAsync(compiledKernel, kernelArgs, kernelConfig);
         stopwatch.Stop();
-        
+
         Assert.True(execResult.Success);
         _output.WriteLine($"Kernel execution: {stopwatch.ElapsedMilliseconds}ms");
         _output.WriteLine($"  Threads: {execResult.ThreadsExecuted:N0}");
@@ -282,12 +278,12 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         // Step 6: Verify results(simplified)
         var hostC = new float[matrixSize * matrixSize];
         await bufferC.CopyToHostAsync<float>(hostC.AsMemory());
-        
+
         // Check that output buffer was written to(simplified check)
         // In test implementation, the buffer remains unchanged but we verify the operation completed
         Assert.NotNull(hostC);
         Assert.Equal(matrixSize * matrixSize, hostC.Length);
-        
+
         _output.WriteLine($"Result validation: Buffer size verified{hostC.Length} elements)");
 
         // Cleanup
@@ -304,11 +300,11 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         var gpuProvider = new TestGpuAcceleratorProvider(2);
         manager.RegisterProvider(gpuProvider);
         await manager.InitializeAsync();
-        
+
         Assert.True(manager.Count >= 3);
-        
+
         _output.WriteLine($"Total accelerators: {manager.Count}");
-        
+
         // Execute kernels on multiple accelerators concurrently
         var tasks = manager.AvailableAccelerators
             .Take(3)
@@ -317,30 +313,30 @@ public class AdvancedIntegrationTests : IAsyncLifetime
                 var kernel = await accelerator.CompileKernelAsync(
                     new KernelDefinition(
                         $"Kernel_{index}",
-                        new TestKernelSource 
-                        { 
+                        new TestKernelSource
+                        {
                             Name = $"Kernel_{index}",
-                            Code = "test", 
-                            Language = KernelLanguage.OpenCL 
+                            Code = "test",
+                            Language = KernelLanguage.OpenCL
                         },
                         new CompilationOptions()));
-                
+
                 var args = new KernelArguments();
                 await kernel.ExecuteAsync(args);
-                
+
                 return accelerator.Info.Name;
             })
             .ToArray();
-        
+
         var results = await Task.WhenAll(tasks);
-        
+
         foreach (var result in results)
         {
             _output.WriteLine($"Executed on: {result}");
         }
-        
+
         Assert.Equal(3, results.Length);
-        
+
         // Cleanup
         await manager.DisposeAsync();
     }
@@ -351,12 +347,12 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         // Arrange
         const int kernelCount = 20;
         var kernels = new TestCompiledKernel[kernelCount];
-        
-        for(int i = 0; i < kernelCount; i++)
+
+        for (var i = 0; i < kernelCount; i++)
         {
             kernels[i] = new TestCompiledKernel(
-                $"Kernel_{i}", 
-                new byte[100], 
+                $"Kernel_{i}",
+                new byte[100],
                 new CompilationOptions());
         }
 
@@ -370,14 +366,14 @@ public class AdvancedIntegrationTests : IAsyncLifetime
 
         // Monitor queue
         _output.WriteLine($"Initial queue size: {_kernelExecutor.QueuedExecutions}");
-        
+
         // Wait for completion
         var results = await Task.WhenAll(executionTasks);
-        
+
         // Assert
         Assert.All(results, r => Assert.True(r.Success));
         Assert.Equal(kernelCount, _kernelExecutor.TotalExecutions);
-        
+
         _output.WriteLine($"Execution Summary:");
         _output.WriteLine($"  Total executions: {_kernelExecutor.TotalExecutions}");
         _output.WriteLine($"  Total time: {_kernelExecutor.TotalExecutionTime.TotalMilliseconds:F2}ms");
@@ -392,42 +388,42 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         const long bufferSize = 1024 * 1024; // 1MB
         const long viewSize = 256 * 1024;    // 256KB
         const long viewOffset = 128 * 1024;  // 128KB offset
-        
+
         var mainBuffer = await accelerator.Memory.AllocateAsync(bufferSize);
-        
+
         // Create multiple views
         var view1 = accelerator.Memory.CreateView(mainBuffer, 0, viewSize);
         var view2 = accelerator.Memory.CreateView(mainBuffer, viewOffset, viewSize);
         var view3 = accelerator.Memory.CreateView(mainBuffer, viewOffset * 2, viewSize);
-        
+
         // Initialize data through views
         var data1 = Enumerable.Range(0, (int)(viewSize / sizeof(int))).ToArray();
         var data2 = Enumerable.Range(1000, (int)(viewSize / sizeof(int))).ToArray();
         var data3 = Enumerable.Range(2000, (int)(viewSize / sizeof(int))).ToArray();
-        
+
         await view1.CopyFromHostAsync<int>(data1.AsMemory());
         await view2.CopyFromHostAsync<int>(data2.AsMemory());
         await view3.CopyFromHostAsync<int>(data3.AsMemory());
-        
+
         // Read back through views
         var readback1 = new int[data1.Length];
         var readback2 = new int[data2.Length];
         var readback3 = new int[data3.Length];
-        
+
         await view1.CopyToHostAsync<int>(readback1.AsMemory());
         await view2.CopyToHostAsync<int>(readback2.AsMemory());
         await view3.CopyToHostAsync<int>(readback3.AsMemory());
-        
+
         // Verify
         Assert.Equal(data1[0], readback1[0]);
         Assert.Equal(data2[0], readback2[0]);
         Assert.Equal(data3[0], readback3[0]);
-        
+
         _output.WriteLine($"Memory view operations successful:");
         _output.WriteLine($"  Main buffer: {bufferSize / 1024}KB");
         _output.WriteLine($"  3 views of {viewSize / 1024}KB each");
         _output.WriteLine($"  Data integrity verified");
-        
+
         // Cleanup
         await mainBuffer.DisposeAsync();
     }
@@ -438,7 +434,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         // Arrange
         var kernelName = "UniversalKernel";
         var baseCode = "kernel implementation";
-        
+
         var cudaSource = new TestKernelSource
         {
             Name = kernelName,
@@ -446,7 +442,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
             Language = KernelLanguage.Cuda,
             EntryPoint = "main"
         };
-        
+
         var openclSource = new TestKernelSource
         {
             Name = kernelName,
@@ -454,7 +450,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
             Language = KernelLanguage.OpenCL,
             EntryPoint = "main"
         };
-        
+
         var hlslSource = new TestKernelSource
         {
             Name = kernelName,
@@ -462,7 +458,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
             Language = KernelLanguage.HLSL,
             EntryPoint = "main"
         };
-        
+
         var options = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Release,
@@ -478,16 +474,16 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         Assert.NotNull(cudaResult);
         Assert.NotNull(openclResult);
         Assert.NotNull(hlslResult);
-        
+
         _output.WriteLine("Compiler Comparison:");
         _output.WriteLine($"  CUDAPTX):");
         _output.WriteLine($"    Assembly size: {cudaResult.Assembly.Length} chars");
         _output.WriteLine($"    Compile time: {_cudaCompiler.AverageCompilationTimeMs:F2}ms");
-        
+
         _output.WriteLine($"  OpenCLSPIR-V):");
         _output.WriteLine($"    Assembly size: {openclResult.Assembly.Length} chars");
         _output.WriteLine($"    Compile time: {_openClCompiler.AverageCompilationTimeMs:F2}ms");
-        
+
         _output.WriteLine($"  DirectComputeDXIL):");
         _output.WriteLine($"    Assembly size: {hlslResult.Assembly.Length} chars");
         _output.WriteLine($"    Compile time: {_directComputeCompiler.AverageCompilationTimeMs:F2}ms");

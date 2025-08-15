@@ -1,11 +1,7 @@
-using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.Memory;
 
@@ -19,34 +15,34 @@ public class TestMemoryManager : IMemoryManager, IDisposable
     private readonly ConcurrentDictionary<IntPtr, TestMemoryBuffer> _allocations = new();
     private long _totalAllocated;
     private long _peakAllocated;
-    
+
     public async ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default)
     {
-        if(sizeInBytes <= 0)
+        if (sizeInBytes <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size must be positive");
         }
 
         await Task.Yield(); // Simulate async operation
-        
+
         var buffer = _pool.Rent((int)sizeInBytes);
         var handle = GCHandle.Alloc(buffer, GCHandleType.Pinned);
         var ptr = handle.AddrOfPinnedObject();
-        
+
         var memBuffer = new TestMemoryBuffer(this, ptr, sizeInBytes, options, handle, buffer);
         _allocations[ptr] = memBuffer;
-        
+
         var newTotal = Interlocked.Add(ref _totalAllocated, sizeInBytes);
         var currentPeak = _peakAllocated;
-        while(newTotal > currentPeak)
+        while (newTotal > currentPeak)
         {
             Interlocked.CompareExchange(ref _peakAllocated, newTotal, currentPeak);
             currentPeak = _peakAllocated;
         }
-        
+
         return memBuffer;
     }
 
@@ -63,21 +59,21 @@ public class TestMemoryManager : IMemoryManager, IDisposable
 
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
-        if(buffer is not TestMemoryBuffer testBuffer)
+        if (buffer is not TestMemoryBuffer testBuffer)
         {
             throw new ArgumentException("Buffer must be a TestMemoryBuffer", nameof(buffer));
         }
-        
-        if(offset < 0 || offset >= buffer.SizeInBytes)
+
+        if (offset < 0 || offset >= buffer.SizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(offset));
         }
-        
-        if(length <= 0 || offset + length > buffer.SizeInBytes)
+
+        if (length <= 0 || offset + length > buffer.SizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(length));
         }
-        
+
         return new TestMemoryView(testBuffer, offset, length);
     }
 
@@ -90,24 +86,24 @@ public class TestMemoryManager : IMemoryManager, IDisposable
 
     public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
     {
-        if(buffer is not TestMemoryBuffer testBuffer)
+        if (buffer is not TestMemoryBuffer testBuffer)
         {
             throw new ArgumentException("Buffer must be a TestMemoryBuffer", nameof(buffer));
         }
-        
+
         var elementSize = Marshal.SizeOf<T>();
         var sizeInBytes = data.Length * elementSize;
-        
-        if(sizeInBytes > buffer.SizeInBytes)
+
+        if (sizeInBytes > buffer.SizeInBytes)
         {
             throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
         }
 
         unsafe
         {
-            fixed(T* dataPtr = data)
+            fixed (T* dataPtr = data)
             {
-                var destPtr =(byte*)testBuffer.Handle.ToPointer();
+                var destPtr = (byte*)testBuffer.Handle.ToPointer();
                 Buffer.MemoryCopy(dataPtr, destPtr, buffer.SizeInBytes, sizeInBytes);
             }
         }
@@ -115,24 +111,24 @@ public class TestMemoryManager : IMemoryManager, IDisposable
 
     public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
     {
-        if(buffer is not TestMemoryBuffer testBuffer)
+        if (buffer is not TestMemoryBuffer testBuffer)
         {
             throw new ArgumentException("Buffer must be a TestMemoryBuffer", nameof(buffer));
         }
-        
+
         var elementSize = Marshal.SizeOf<T>();
         var sizeInBytes = data.Length * elementSize;
-        
-        if(sizeInBytes > buffer.SizeInBytes)
+
+        if (sizeInBytes > buffer.SizeInBytes)
         {
             throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
         }
 
         unsafe
         {
-            fixed(T* dataPtr = data)
+            fixed (T* dataPtr = data)
             {
-                var sourcePtr =(byte*)testBuffer.Handle.ToPointer();
+                var sourcePtr = (byte*)testBuffer.Handle.ToPointer();
                 Buffer.MemoryCopy(sourcePtr, dataPtr, sizeInBytes, sizeInBytes);
             }
         }
@@ -140,7 +136,7 @@ public class TestMemoryManager : IMemoryManager, IDisposable
 
     public void Free(IMemoryBuffer buffer)
     {
-        if(buffer is TestMemoryBuffer testBuffer)
+        if (buffer is TestMemoryBuffer testBuffer)
         {
             testBuffer.Dispose();
         }
@@ -152,7 +148,7 @@ public class TestMemoryManager : IMemoryManager, IDisposable
 
     internal void ReleaseBuffer(TestMemoryBuffer buffer)
     {
-        if(_allocations.TryRemove(buffer.Handle, out _))
+        if (_allocations.TryRemove(buffer.Handle, out _))
         {
             Interlocked.Add(ref _totalAllocated, -buffer.SizeInBytes);
         }
@@ -209,11 +205,11 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
-        
+
         var elementSize = Marshal.SizeOf<T>();
         var bytesToCopy = source.Length * elementSize;
-        
-        if(offset < 0 || offset + bytesToCopy > SizeInBytes)
+
+        if (offset < 0 || offset + bytesToCopy > SizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(offset));
         }
@@ -224,7 +220,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
             unsafe
             {
                 var sourcePtr = sourceHandle.Pointer;
-                var destPtr =(byte*)Handle.ToPointer() + offset;
+                var destPtr = (byte*)Handle.ToPointer() + offset;
                 Buffer.MemoryCopy(sourcePtr, destPtr, SizeInBytes - offset, bytesToCopy);
             }
         }, cancellationToken);
@@ -236,11 +232,11 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         ThrowIfDisposed();
-        
+
         var elementSize = Marshal.SizeOf<T>();
         var bytesToCopy = destination.Length * elementSize;
-        
-        if(offset < 0 || offset + bytesToCopy > SizeInBytes)
+
+        if (offset < 0 || offset + bytesToCopy > SizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(offset));
         }
@@ -250,7 +246,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
             using var destHandle = destination.Pin();
             unsafe
             {
-                var sourcePtr =(byte*)Handle.ToPointer() + offset;
+                var sourcePtr = (byte*)Handle.ToPointer() + offset;
                 var destPtr = destHandle.Pointer;
                 Buffer.MemoryCopy(sourcePtr, destPtr, bytesToCopy, bytesToCopy);
             }
@@ -265,7 +261,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
 
     public void Dispose()
     {
-        if(!_disposed)
+        if (!_disposed)
         {
             _disposed = true;
             _handle.Free();
@@ -276,7 +272,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
 
     private void ThrowIfDisposed()
     {
-        if(_disposed)
+        if (_disposed)
         {
             throw new ObjectDisposedException(nameof(TestMemoryBuffer));
         }
@@ -311,22 +307,14 @@ public class TestMemoryView : IMemoryBuffer
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
 
     public ValueTask CopyToHostAsync<T>(
         Memory<T> destination,
         long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
 
     public ValueTask DisposeAsync()
-    {
         // Views don't own the memory, so nothing to dispose
-        return ValueTask.CompletedTask;
-    }
+        => ValueTask.CompletedTask;
 }

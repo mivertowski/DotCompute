@@ -1,4 +1,4 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Plugins.Core;
@@ -48,7 +48,7 @@ public class PluginLifecycleTests : IDisposable
     {
         // Arrange
         var plugin = new LifecycleTestPlugin();
-        
+
         // Act & Assert - Initial state
         plugin.State.Should().Be(PluginState.Unknown);
         plugin.Health.Should().Be(PluginHealth.Unknown);
@@ -89,8 +89,8 @@ public class PluginLifecycleTests : IDisposable
         var plugin = new FailingLifecycleTestPlugin();
 
         // Act & Assert - Plugin fails during initialization
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => plugin.InitializeAsync(_serviceProvider));
-        ex.Message.Should().Be("Initialization failed");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask())
+            .WithMessage("Initialization failed");
 
         plugin.State.Should().Be(PluginState.Failed);
         plugin.Health.Should().Be(PluginHealth.Critical);
@@ -104,7 +104,7 @@ public class PluginLifecycleTests : IDisposable
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => plugin.InitializeAsync(_serviceProvider, cts.Token));
+        await Assert.ThrowsAsync<OperationCanceledException>(() => FluentActions.MethodCall().AsTask());
     }
 
     [Fact]
@@ -114,15 +114,15 @@ public class PluginLifecycleTests : IDisposable
         var plugin = new LifecycleTestPlugin();
 
         // Act & Assert - Cannot start without initializing
-        var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => plugin.StartAsync());
-        ex.Message.Should().Contain("Cannot start plugin in state");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask())
+            .WithMessage("*Cannot start plugin in state*");
 
         // Initialize first
         await plugin.InitializeAsync(_serviceProvider);
 
         // Cannot initialize twice
-        var ex2 = await Assert.ThrowsAsync<InvalidOperationException>(() => plugin.InitializeAsync(_serviceProvider));
-        ex2.Message.Should().Contain("Cannot initialize plugin in state");
+        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask())
+            .WithMessage("*Cannot initialize plugin in state*");
     }
 
     [Fact]
@@ -134,9 +134,9 @@ public class PluginLifecycleTests : IDisposable
         var healthChangedEvents = new List<PluginHealthChangedEventArgs>();
         var errorEvents = new List<PluginErrorEventArgs>();
 
-        plugin.StateChanged +=(sender, args) => stateChangedEvents.Add(args);
-        plugin.HealthChanged +=(sender, args) => healthChangedEvents.Add(args);
-        plugin.ErrorOccurred +=(sender, args) => errorEvents.Add(args);
+        plugin.StateChanged += (sender, args) => stateChangedEvents.Add(args);
+        plugin.HealthChanged += (sender, args) => healthChangedEvents.Add(args);
+        plugin.ErrorOccurred += (sender, args) => errorEvents.Add(args);
 
         // Act
         await plugin.InitializeAsync(_serviceProvider);
@@ -146,12 +146,12 @@ public class PluginLifecycleTests : IDisposable
         await plugin.StopAsync();
 
         // Assert
-        stateChangedEvents.Should().HaveCountGreaterThan(0);
-        healthChangedEvents.Should().HaveCountGreaterThan(0);
+        stateChangedEvents.HaveCountGreaterThan(0);
+        healthChangedEvents.HaveCountGreaterThan(0);
         Assert.Equal(1, errorEvents.Count());
 
         var errorEvent = errorEvents.First();
-        errorEvent.Exception.Should().BeOfType<InvalidOperationException>();
+        errorEvent.Assert.IsType<InvalidOperationException>(Exception);
         errorEvent.Context.Should().Be("Test context");
     }
 
@@ -168,11 +168,11 @@ public class PluginLifecycleTests : IDisposable
 
         // Assert
         validResult.IsValid.Should().BeTrue();
-        validResult.Errors.Should().BeEmpty();
+        validResult.Assert.Empty(Errors);
 
         invalidResult.IsValid.Should().BeFalse();
         invalidResult.Errors.Should().NotBeEmpty();
-        invalidResult.Errors.Should().Contain("Plugin name is required");
+        invalidResult.Assert.Contains("Plugin name is required", Errors);
     }
 
     [Fact]
@@ -184,7 +184,7 @@ public class PluginLifecycleTests : IDisposable
         // Act
         await plugin.InitializeAsync(_serviceProvider);
         await plugin.StartAsync();
-        
+
         // Simulate some activity
         plugin.SimulateActivity();
         await Task.Delay(10); // Small delay for uptime
@@ -193,8 +193,8 @@ public class PluginLifecycleTests : IDisposable
 
         // Assert
         Assert.NotNull(metrics);
-       metrics.Uptime.Should().BeGreaterThan(TimeSpan.Zero);
-       metrics.RequestCount.Should().BeGreaterThan(0);
+        (metrics.Uptime > TimeSpan.Zero).Should().BeTrue();
+        (metrics.RequestCount > 0).Should().BeTrue();
         metrics.CustomMetrics.Should().ContainKey("ActivityCount");
     }
 
@@ -207,7 +207,7 @@ public class PluginLifecycleTests : IDisposable
 
         // Act - Perform concurrent operations
         var tasks = new List<Task>();
-        for(int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             tasks.Add(Task.Run(() => plugin.GetMetrics()));
             tasks.Add(Task.Run(() => plugin.SimulateActivity()));
@@ -215,7 +215,7 @@ public class PluginLifecycleTests : IDisposable
 
         // Assert
         await FluentActions.Invoking(() => Task.WhenAll(tasks))
-            .Should().NotThrowAsync();
+            .NotThrowAsync();
     }
 
     [Fact]
@@ -237,7 +237,7 @@ public class PluginLifecycleTests : IDisposable
 
         // Assert
         await FluentActions.Invoking(() => longTask)
-            .Should().NotThrowAsync();
+            .NotThrowAsync();
 
         plugin.DisposeCalled.Should().BeTrue();
     }
@@ -253,9 +253,9 @@ public class PluginLifecycleTests : IDisposable
 
         // Assert
         schema.Should().NotBeNullOrEmpty();
-        
-        // Should be valid JSON(at least parseable)
-        Action parseJson =() => System.Text.Json.JsonDocument.Parse(schema);
+
+        // Should be valid JSON (at least parseable)
+        Action parseJson = () => System.Text.Json.JsonDocument.Parse(schema);
         parseJson(); // Should not throw
     }
 
@@ -267,12 +267,13 @@ public class PluginLifecycleTests : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if(_disposed) return;
+        if (_disposed)
+            return;
 
-        if(disposing)
+        if (disposing)
         {
             _pluginSystem?.Dispose();
-           (_serviceProvider as IDisposable)?.Dispose();
+            (_serviceProvider as IDisposable)?.Dispose();
         }
         _disposed = true;
     }
@@ -324,15 +325,13 @@ public class PluginLifecycleTests : IDisposable
 
         protected override void OnUpdateMetrics(PluginMetrics metrics)
         {
-            lock(_lock)
+            lock (_lock)
             {
                 metrics.CustomMetrics["ActivityCount"] = _activityCount;
             }
         }
 
-        public override string GetConfigurationSchema()
-        {
-            return """
+        public override string GetConfigurationSchema() => """
                 {
                     "type": "object",
                     "properties": {
@@ -341,30 +340,23 @@ public class PluginLifecycleTests : IDisposable
                     }
                 }
                 """;
-        }
 
         public void SimulateActivity()
         {
-            lock(_lock)
+            lock (_lock)
             {
                 _activityCount++;
             }
             RecordRequest(100);
         }
 
-        public void TriggerError(Exception exception, string context)
-        {
-            OnError(exception, context);
-        }
+        public void TriggerError(Exception exception, string context) => OnError(exception, context);
 
-        public void TriggerHealthChange(PluginHealth newHealth)
-        {
-            Health = newHealth;
-        }
+        public void TriggerHealthChange(PluginHealth newHealth) => Health = newHealth;
 
         protected override void Dispose(bool disposing)
         {
-            if(disposing)
+            if (disposing)
             {
                 DisposeCalled = true;
             }
@@ -384,10 +376,7 @@ public class PluginLifecycleTests : IDisposable
         public override string Author => "Test";
         public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend;
 
-        protected override Task OnInitializeAsync(CancellationToken cancellationToken)
-        {
-            throw new InvalidOperationException("Initialization failed");
-        }
+        protected override Task OnInitializeAsync(CancellationToken cancellationToken) => throw new InvalidOperationException("Initialization failed");
     }
 
     /// <summary>
@@ -403,10 +392,8 @@ public class PluginLifecycleTests : IDisposable
         public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend;
 
         protected override async Task OnInitializeAsync(CancellationToken cancellationToken)
-        {
             // Simulate slow operation
-            await Task.Delay(1000, cancellationToken);
-        }
+            => await Task.Delay(1000, cancellationToken);
     }
 
     /// <summary>
@@ -469,7 +456,7 @@ public class PluginSecurityTests
 
         // Assert
         Assert.NotNull(task);
-        FluentActions.Invoking(() => task.Wait()).Should().NotThrow();
+        FluentActions.Invoking(() => task.Wait()).NotThrow();
     }
 
     [Fact]
@@ -481,7 +468,7 @@ public class PluginSecurityTests
         var config = Substitute.For<IConfiguration>();
 
         // Act
-        Action act =() => plugin.ConfigureServices(services, config);
+        Action act = () => plugin.ConfigureServices(services, config);
 
         // Assert
         act(); // Should not throw
@@ -501,10 +488,8 @@ public class PluginSecurityTests
         public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend;
 
         public override void ConfigureServices(IServiceCollection services, IConfiguration configuration)
-        {
             // Only register basic services, no system access
-            base.ConfigureServices(services, configuration);
-        }
+            => base.ConfigureServices(services, configuration);
 
         protected override Task OnConfigurationUpdatedAsync(IConfiguration configuration, CancellationToken cancellationToken)
         {

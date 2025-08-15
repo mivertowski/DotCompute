@@ -3,9 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
-using DotCompute.Core.Aot;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using DotCompute.Core.Pipelines;
@@ -42,12 +40,12 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         // Assert
         Assert.NotNull(result);
         result.Success.Should().BeTrue();
-        
+
         var output = result.GetOutput<float[]>("result");
         Assert.NotNull(output);
         output.Length.Should().Be(arraySize);
-        
-        for(int i = 0; i < arraySize; i++)
+
+        for (var i = 0; i < arraySize; i++)
         {
             output[i].Should().BeApproximately(expected[i], 0.001f);
         }
@@ -71,7 +69,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         // Assert
         Assert.NotNull(result);
         result.Success.Should().BeTrue();
-        
+
         var output = result.GetOutput<float[]>("result");
         Assert.NotNull(output);
         output.Length.Should().Be(matrixSize * matrixSize);
@@ -95,7 +93,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         // Assert
         Assert.NotNull(result);
         result.Success.Should().BeTrue();
-        
+
         var output = result.GetOutput<float>("result");
         Assert.Equal(expected, output, 0.1f);
     }
@@ -120,13 +118,13 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         // Assert
         Assert.NotNull(result);
         result.Success.Should().BeTrue();
-        
+
         var output = result.GetOutput<float[]>("result");
         Assert.NotNull(output);
         output.Length.Should().Be(size);
-        
+
         // Verify scaling
-        for(int i = 0; i < size; i++)
+        for (var i = 0; i < size; i++)
         {
             output[i].Should().BeApproximately(input[i] * 2.0f, 0.001f);
         }
@@ -157,7 +155,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         Assert.NotNull(result);
         result.Success.Should().BeTrue();
         result.StageResults.Count.Should().Be(3); // Three stages: load, transform, store
-        
+
         foreach (var stageResult in result.StageResults)
         {
             stageResult.Success.Should().BeTrue();
@@ -253,7 +251,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
 
         foreach (var input in inputs)
         {
-            if(input is float[] arrayInput)
+            if (input is float[] arrayInput)
             {
                 var buffer = await CreateInputBuffer<float>(memoryManager, arrayInput);
                 buffers.Add(buffer);
@@ -265,18 +263,18 @@ public class EndToEndWorkflowTests : IntegrationTestBase
                 arguments.Add(input);
             }
         }
-        
+
         // For kernels that need an output buffer(like vector_add), create it
-        if(kernelName.Contains("add") || kernelName.Contains("mul") || kernelName.Contains("scale") || kernelName.Contains("transform"))
+        if (kernelName.Contains("add") || kernelName.Contains("mul") || kernelName.Contains("scale") || kernelName.Contains("transform"))
         {
             // Matrix multiplication needs a square output buffer
             var outputSize = kernelName.Contains("matrix_mul") ? workSize * workSize : workSize;
             outputBuffer = await CreateOutputBuffer<float>(memoryManager, outputSize);
             buffers.Add(outputBuffer);
             arguments.Add(outputBuffer);
-            
+
             // Matrix multiplication needs the size parameter
-            if(kernelName.Contains("matrix_mul"))
+            if (kernelName.Contains("matrix_mul"))
             {
                 arguments.Add(workSize);
             }
@@ -299,12 +297,12 @@ public class EndToEndWorkflowTests : IntegrationTestBase
 
         // 4. Result Collection
         var results = new Dictionary<string, object>();
-        if(outputBuffer != null)
+        if (outputBuffer != null)
         {
             var resultData = await ReadBufferAsync<float>(outputBuffer);
             results["result"] = resultData;
         }
-        else if(buffers.Count > 0)
+        else if (buffers.Count > 0)
         {
             // For single input/output kernels, use the last buffer
             var resultData = await ReadBufferAsync<float>(buffers.Last());
@@ -326,7 +324,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         int workSize)
     {
         var result = await ExecuteEndToEndWorkflow(kernelName, kernelSource, inputs, workSize);
-        
+
         // Add profiling metrics
         result.Metrics = new PipelineExecutionMetrics
         {
@@ -350,10 +348,10 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         return result;
     }
 
-    private IKernelPipeline CreateMultiStagePipeline()
+    private static IKernelPipeline CreateMultiStagePipeline()
     {
         var builder = new KernelPipelineBuilder();
-        
+
         builder.AddStage(new MockPipelineStage("load", "LoadStage"))
                .AddStage(new MockPipelineStage("transform", "TransformStage"))
                .AddStage(new MockPipelineStage("store", "StoreStage"));
@@ -451,12 +449,9 @@ public class EndToEndWorkflowTests : IntegrationTestBase
 public class WorkflowResult
 {
     public bool Success { get; set; }
-    public Dictionary<string, object> Results { get; set; } = new();
+    public Dictionary<string, object> Results { get; set; } = [];
     public TimeSpan ExecutionTime { get; set; }
     public PipelineExecutionMetrics? Metrics { get; set; }
 
-    public T GetOutput<T>(string key)
-    {
-        return Results.TryGetValue(key, out var value) ?(T)value : default(T)!;
-    }
+    public T GetOutput<T>(string key) => Results.TryGetValue(key, out var value) ? (T)value : default(T)!;
 }

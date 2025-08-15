@@ -1,11 +1,9 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Common.Hardware;
 
@@ -22,7 +20,7 @@ public sealed class MockCpuDevice : MockHardwareDevice
     public int PhysicalCores { get; }
 
     /// <summary>
-    /// Gets the number of logical CPU cores(with hyperthreading).
+    /// Gets the number of logical CPU cores (with hyperthreading).
     /// </summary>
     public int LogicalCores { get; }
 
@@ -69,7 +67,7 @@ public sealed class MockCpuDevice : MockHardwareDevice
         int l3CacheSizeMB,
         SimdCapabilities simdCapabilities,
         ILogger? logger = null)
-        : base(id, name, AcceleratorType.CPU, vendor, "1.0", memorySize, 
+        : base(id, name, AcceleratorType.CPU, vendor, "1.0", memorySize,
                Math.Min(logicalCores, 64), logicalCores, logger)
     {
         Architecture = architecture;
@@ -110,7 +108,7 @@ public sealed class MockCpuDevice : MockHardwareDevice
             5800, // 5.8 GHz boost
             32L * 1024 * 1024 * 1024, // 32GB typical system RAM
             36, // 36MB L3
-            SimdCapabilities.SSE | SimdCapabilities.SSE2 | SimdCapabilities.SSE3 | 
+            SimdCapabilities.SSE | SimdCapabilities.SSE2 | SimdCapabilities.SSE3 |
             SimdCapabilities.SSSE3 | SimdCapabilities.SSE41 | SimdCapabilities.SSE42 |
             SimdCapabilities.AVX | SimdCapabilities.AVX2 | SimdCapabilities.AVX512,
             logger);
@@ -132,7 +130,7 @@ public sealed class MockCpuDevice : MockHardwareDevice
             4800, // 4.8 GHz boost
             16L * 1024 * 1024 * 1024, // 16GB typical laptop RAM
             18, // 18MB L3
-            SimdCapabilities.SSE | SimdCapabilities.SSE2 | SimdCapabilities.SSE3 | 
+            SimdCapabilities.SSE | SimdCapabilities.SSE2 | SimdCapabilities.SSE3 |
             SimdCapabilities.SSSE3 | SimdCapabilities.SSE41 | SimdCapabilities.SSE42 |
             SimdCapabilities.AVX | SimdCapabilities.AVX2,
             logger);
@@ -154,7 +152,7 @@ public sealed class MockCpuDevice : MockHardwareDevice
             5700, // 5.7 GHz boost
             32L * 1024 * 1024 * 1024, // 32GB typical system RAM
             64, // 64MB L3
-            SimdCapabilities.SSE | SimdCapabilities.SSE2 | SimdCapabilities.SSE3 | 
+            SimdCapabilities.SSE | SimdCapabilities.SSE2 | SimdCapabilities.SSE3 |
             SimdCapabilities.SSSE3 | SimdCapabilities.SSE41 | SimdCapabilities.SSE42 |
             SimdCapabilities.AVX | SimdCapabilities.AVX2,
             logger);
@@ -176,7 +174,7 @@ public sealed class MockCpuDevice : MockHardwareDevice
             3675, // 3.675 GHz boost
             128L * 1024 * 1024 * 1024, // 128GB typical server RAM
             256, // 256MB L3
-            SimdCapabilities.SSE | SimdCapabilities.SSE2 | SimdCapabilities.SSE3 | 
+            SimdCapabilities.SSE | SimdCapabilities.SSE2 | SimdCapabilities.SSE3 |
             SimdCapabilities.SSSE3 | SimdCapabilities.SSE41 | SimdCapabilities.SSE42 |
             SimdCapabilities.AVX | SimdCapabilities.AVX2,
             logger);
@@ -198,7 +196,7 @@ public sealed class MockCpuDevice : MockHardwareDevice
             3400, // 3.4 GHz boost
             256L * 1024 * 1024 * 1024, // 256GB typical server RAM
             60, // 60MB L3
-            SimdCapabilities.SSE | SimdCapabilities.SSE2 | SimdCapabilities.SSE3 | 
+            SimdCapabilities.SSE | SimdCapabilities.SSE2 | SimdCapabilities.SSE3 |
             SimdCapabilities.SSSE3 | SimdCapabilities.SSE41 | SimdCapabilities.SSE42 |
             SimdCapabilities.AVX | SimdCapabilities.AVX2 | SimdCapabilities.AVX512,
             logger);
@@ -228,7 +226,7 @@ public sealed class MockCpuDevice : MockHardwareDevice
     public override Dictionary<string, object> GetProperties()
     {
         var properties = base.GetProperties();
-        
+
         // Add CPU-specific properties
         properties["CPU_PhysicalCores"] = PhysicalCores;
         properties["CPU_LogicalCores"] = LogicalCores;
@@ -245,23 +243,23 @@ public sealed class MockCpuDevice : MockHardwareDevice
     /// <inheritdoc/>
     public override bool HealthCheck()
     {
-        if(!base.HealthCheck())
+        if (!base.HealthCheck())
             return false;
 
         // CPU-specific health checks
-        if(PhysicalCores == 0 || LogicalCores == 0)
+        if (PhysicalCores == 0 || LogicalCores == 0)
         {
             Logger?.LogWarning("CPU device {DeviceId} has invalid core configuration", Id);
             return false;
         }
 
-        if(LogicalCores < PhysicalCores)
+        if (LogicalCores < PhysicalCores)
         {
             Logger?.LogWarning("CPU device {DeviceId} has illogical core configuration", Id);
             return false;
         }
 
-        if(BaseClockMHz == 0 || MaxBoostClockMHz < BaseClockMHz)
+        if (BaseClockMHz == 0 || MaxBoostClockMHz < BaseClockMHz)
         {
             Logger?.LogWarning("CPU device {DeviceId} has invalid clock configuration", Id);
             return false;
@@ -308,11 +306,11 @@ public sealed class MockCpuDevice : MockHardwareDevice
             _ => 1
         };
 
-        // Assume 2 FMA units per core(typical for modern CPUs)
+        // Assume 2 FMA units per core (typical for modern CPUs)
         var fmaUnitsPerCore = 2;
         var opsPerCycle = vectorWidth * fmaUnitsPerCore * 2; // FMA = multiply + add
-        
-        return(LogicalCores * opsPerCycle * MaxBoostClockMHz) / 1000.0; // Convert MHz to GHz
+
+        return (LogicalCores * opsPerCycle * MaxBoostClockMHz) / 1000.0; // Convert MHz to GHz
     }
 }
 

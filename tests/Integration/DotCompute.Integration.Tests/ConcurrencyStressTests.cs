@@ -5,7 +5,6 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Core;
-using DotCompute.Memory;
 using MemoryOptions = DotCompute.Abstractions.MemoryOptions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -43,7 +42,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         const int threadCount = 50;
         const int operationsPerThread = 100;
         const int bufferSize = 1024;
-        
+
         var accelerator = await GetDefaultAcceleratorAsync();
         var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
         var exceptions = new ConcurrentBag<Exception>();
@@ -59,12 +58,12 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                 {
                     var localBuffers = new List<IMemoryBuffer>();
 
-                    for(int i = 0; i < operationsPerThread; i++)
+                    for (var i = 0; i < operationsPerThread; i++)
                     {
                         var operationId = threadId * operationsPerThread + i;
 
                         // Mix of operations: allocate, transfer, free
-                        switch(operationId % 4)
+                        switch (operationId % 4)
                         {
                             case 0: // Allocate
                                 var buffer = await memoryManager.AllocateAsync(bufferSize);
@@ -72,9 +71,9 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                                 break;
 
                             case 1: // Transfer between buffers
-                                if(localBuffers.Count >= 2)
+                                if (localBuffers.Count >= 2)
                                 {
-                                        // Transfer by copying data between buffers
+                                    // Transfer by copying data between buffers
                                     var tempData = new byte[localBuffers[^2].SizeInBytes];
                                     await localBuffers[^2].CopyToHostAsync(tempData.AsMemory());
                                     await localBuffers[^1].CopyFromHostAsync<byte>(tempData.AsMemory());
@@ -82,19 +81,19 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                                 break;
 
                             case 2: // Write/Read data
-                                if(localBuffers.Count > 0)
+                                if (localBuffers.Count > 0)
                                 {
                                     var testData = new byte[bufferSize];
                                     new Random(operationId).NextBytes(testData);
                                     await localBuffers[^1].CopyFromHostAsync<byte>(testData.AsMemory());
-                                    
+
                                     var readBack = new byte[bufferSize];
                                     await localBuffers[^1].CopyToHostAsync(readBack.AsMemory());
                                 }
                                 break;
 
                             case 3: // Free some buffers
-                                if(localBuffers.Count > 5)
+                                if (localBuffers.Count > 5)
                                 {
                                     var bufferToFree = localBuffers[0];
                                     localBuffers.RemoveAt(0);
@@ -112,7 +111,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                         await buffer.DisposeAsync();
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _logger?.LogError(ex, "Error in thread {ThreadId}", threadId);
                     exceptions.Add(ex);
@@ -138,7 +137,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         // Arrange
         const int maxConcurrentAllocations = 100;
         const int allocationSize = 1024 * 1024; // 1MB per allocation
-        
+
         var accelerator = await GetDefaultAcceleratorAsync();
         var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
         var allocations = new ConcurrentBag<IMemoryBuffer>();
@@ -158,7 +157,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                     // Hold the allocation for a short time to create pressure
                     await Task.Delay(100);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -168,15 +167,15 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
 
         // Assert
         allocations.Should().NotBeEmpty("Some allocations should succeed");
-        
-        if(exceptions.Any())
+
+        if (exceptions.Any())
         {
             // Under memory pressure, we expect specific exception types
             foreach (var ex in exceptions)
             {
-               (ex is OutOfMemoryException ||
-                 ex is InvalidOperationException ||
-                 ex is ArgumentException).Should().BeTrue($"Expected memory-related exception, got {ex.GetType().Name}");
+                (ex is OutOfMemoryException ||
+                  ex is InvalidOperationException ||
+                  ex is ArgumentException).Should().BeTrue($"Expected memory-related exception, got {ex.GetType().Name}");
             }
         }
 
@@ -187,7 +186,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
             {
                 await buffer.DisposeAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Failed to free buffer during cleanup");
             }
@@ -209,7 +208,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         // Arrange
         const int kernelCount = 20;
         const int dataSize = 1000;
-        
+
         var accelerator = await GetDefaultAcceleratorAsync();
         var exceptions = new ConcurrentBag<Exception>();
         var results = new ConcurrentBag<(int KernelId, bool Success)>();
@@ -233,17 +232,17 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                     var context = new KernelExecutionContext
                     {
                         Name = $"TestKernel_{kernelId}",
-                        Arguments = new object[] { inputData, dataSize },
+                        Arguments = [inputData, dataSize],
                         CancellationToken = CancellationToken.None
                     };
-                    
+
                     // Simulate kernel execution(simplified)
                     await using var inputBuffer = await accelerator.Memory.AllocateAsync(
-                        dataSize * sizeof(float), 
+                        dataSize * sizeof(float),
                         MemoryOptions.None);
-                    
+
                     await using var outputBuffer = await accelerator.Memory.AllocateAsync(
-                        dataSize * sizeof(float), 
+                        dataSize * sizeof(float),
                         MemoryOptions.None);
 
                     // Copy input data
@@ -261,18 +260,18 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                     var actualOutput = MemoryMarshal.Cast<byte, float>(outputBytes).ToArray();
 
                     // Modify in-place to simulate the *2 operation
-                    for(int i = 0; i < actualOutput.Length; i++)
+                    for (var i = 0; i < actualOutput.Length; i++)
                     {
                         actualOutput[i] *= 2.0f;
                     }
 
                     // Verify results
-                    var success = expectedOutput.Zip(actualOutput, (expected, actual) => 
+                    var success = expectedOutput.Zip(actualOutput, (expected, actual) =>
                         Math.Abs(expected - actual) < 0.001f).All(x => x);
 
                     results.Add((kernelId, success));
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _logger?.LogError(ex, "Error in kernel {KernelId}", kernelId);
                     exceptions.Add(ex);
@@ -287,7 +286,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         results.Count.Should().Be(kernelCount);
         results.Should().OnlyContain(r => r.Success, "All kernels should execute correctly");
 
-        _logger?.LogInformation("Successfully executed {Count} concurrent kernels", 
+        _logger?.LogInformation("Successfully executed {Count} concurrent kernels",
             results.Count(r => r.Success));
     }
 
@@ -301,7 +300,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         // Arrange
         const int componentCount = 10;
         const int operationsPerComponent = 50;
-        
+
         var accelerator = await GetDefaultAcceleratorAsync();
         var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
         var exceptions = new ConcurrentBag<Exception>();
@@ -315,12 +314,12 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                 {
                     var componentBuffers = new List<IMemoryBuffer>();
 
-                    for(int i = 0; i < operationsPerComponent; i++)
+                    for (var i = 0; i < operationsPerComponent; i++)
                     {
                         // Randomly choose operation to create contention
                         var operation = Random.Shared.Next(4);
-                        
-                        switch(operation)
+
+                        switch (operation)
                         {
                             case 0: // Memory allocation
                                 var size = Random.Shared.Next(1024, 8192);
@@ -329,11 +328,11 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                                 break;
 
                             case 1: // Memory transfer
-                                if(componentBuffers.Count >= 2)
+                                if (componentBuffers.Count >= 2)
                                 {
                                     var src = componentBuffers[Random.Shared.Next(componentBuffers.Count)];
                                     var dst = componentBuffers[Random.Shared.Next(componentBuffers.Count)];
-                                    if(src != dst && src.SizeInBytes == dst.SizeInBytes)
+                                    if (src != dst && src.SizeInBytes == dst.SizeInBytes)
                                     {
                                         // Transfer by copying data
                                         var tempData = new byte[src.SizeInBytes];
@@ -344,7 +343,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                                 break;
 
                             case 2: // Data operations
-                                if(componentBuffers.Count > 0)
+                                if (componentBuffers.Count > 0)
                                 {
                                     var targetBuffer = componentBuffers[Random.Shared.Next(componentBuffers.Count)];
                                     var data = new byte[targetBuffer.SizeInBytes];
@@ -354,7 +353,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                                 break;
 
                             case 3: // Memory deallocation
-                                if(componentBuffers.Count > 0)
+                                if (componentBuffers.Count > 0)
                                 {
                                     var bufferToFree = componentBuffers[0];
                                     componentBuffers.RemoveAt(0);
@@ -375,7 +374,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
 
                     completedComponents.Add(componentId);
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -403,13 +402,13 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         const int maxAttempts = 1000;
         var accelerator = await GetDefaultAcceleratorAsync();
         var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
-        
+
         var successCount = 0;
         var failureCount = 0;
         var allocatedBuffers = new List<IMemoryBuffer>();
 
         // Act - Keep allocating until we hit system limits
-        for(int i = 0; i < maxAttempts; i++)
+        for (var i = 0; i < maxAttempts; i++)
         {
             try
             {
@@ -417,12 +416,12 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                 allocatedBuffers.Add(buffer);
                 successCount++;
             }
-            catch(OutOfMemoryException)
+            catch (OutOfMemoryException)
             {
                 failureCount++;
                 break; // Expected when hitting limits
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Unexpected exception during allocation {i}", i);
                 failureCount++;
@@ -432,7 +431,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
 
         // Try to recover by freeing some memory
         var halfwayPoint = allocatedBuffers.Count / 2;
-        for(int i = 0; i < halfwayPoint; i++)
+        for (var i = 0; i < halfwayPoint; i++)
         {
             await allocatedBuffers[i].DisposeAsync();
         }
@@ -445,19 +444,19 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
             await recoveryBuffer.DisposeAsync();
             recoverySuccess = true;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _logger?.LogWarning(ex, "Failed to recover after cleanup");
         }
 
         // Final cleanup
-        for(int i = halfwayPoint; i < allocatedBuffers.Count; i++)
+        for (var i = halfwayPoint; i < allocatedBuffers.Count; i++)
         {
             try
             {
                 await allocatedBuffers[i].DisposeAsync();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger?.LogWarning(ex, "Error during final cleanup");
             }
@@ -480,7 +479,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         // Arrange
         const int threadCount = 20;
         const int operationsPerThread = 100;
-        
+
         var accelerator = await GetDefaultAcceleratorAsync();
         var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
         var allAllocations = new ConcurrentBag<IMemoryBuffer>();
@@ -493,7 +492,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
                 var localAllocations = new List<IMemoryBuffer>();
 
                 // Allocation phase
-                for(int i = 0; i < operationsPerThread; i++)
+                for (var i = 0; i < operationsPerThread; i++)
                 {
                     var buffer = await memoryManager.AllocateAsync(1024);
                     localAllocations.Add(buffer);
@@ -514,16 +513,16 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         // Assert - Statistics should be consistent
         var stats = await GetMemoryStatisticsAsync();
         var expectedTotalAllocations = threadCount * operationsPerThread;
-        var expectedTotalDeallocations = threadCount *(operationsPerThread / 2);
+        var expectedTotalDeallocations = threadCount * (operationsPerThread / 2);
         var expectedActiveAllocations = expectedTotalAllocations - expectedTotalDeallocations;
 
         // Note: Using mock memory statistics for now 
         // In a real implementation, these would track actual allocations
-        stats.AllocationCount.Should().BeGreaterThanOrEqualTo(0, 
+        stats.AllocationCount.Should().BeGreaterThanOrEqualTo(0,
             "Allocation count should be non-negative");
-        stats.UsedMemory.Should().BeGreaterThanOrEqualTo(0, 
+        stats.UsedMemory.Should().BeGreaterThanOrEqualTo(0,
             "Used memory should be non-negative");
-        stats.AllocatedMemory.Should().BeGreaterThanOrEqualTo(0, 
+        stats.AllocatedMemory.Should().BeGreaterThanOrEqualTo(0,
             "Allocated memory should be non-negative");
 
         allAllocations.Count.Should().Be(expectedTotalAllocations);

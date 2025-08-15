@@ -47,9 +47,9 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         compilationResult.CompilationSuccess.Should().BeTrue();
         compilationResult.ExecutionSuccess.Should().BeTrue();
         compilationResult.CompilationTime.Should().BePositive();
-        
+
         // Higher optimization levels might take longer to compile
-        if(level == OptimizationLevel.Maximum)
+        if (level == OptimizationLevel.Maximum)
         {
             compilationResult.CompilationTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
         }
@@ -85,10 +85,10 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         // Assert
         Assert.Equal(kernelSources.Length, concurrentResults.Count());
         concurrentResults.Should().AllSatisfy(r => r.CompilationSuccess.Should().BeTrue());
-        
+
         var totalCompilationTime = concurrentResults.Sum(r => r.CompilationTime.TotalMilliseconds);
         var concurrentTime = stopwatch.Elapsed.TotalMilliseconds;
-        
+
         // Concurrent compilation should show some parallelism benefit
         Assert.True(concurrentTime < totalCompilationTime * 0.8);
     }
@@ -215,8 +215,8 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         // Arrange
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         var availableBackends = computeEngine.AvailableBackends;
-        
-        if(!availableBackends.Contains(backendType))
+
+        if (!availableBackends.Contains(backendType))
         {
             Logger.LogInformation($"Skipping backend test - {backendType} not available");
             return;
@@ -248,7 +248,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         // Arrange
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         var largeKernelSource = GenerateLargeKernelSource(100); // 100 similar functions
-        
+
         var compilationOptions = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Default
@@ -293,7 +293,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         // Assert
         firstCompilation.CompilationSuccess.Should().BeTrue();
         secondCompilation.CompilationSuccess.Should().BeTrue();
-        
+
         // Second compilation should be faster due to caching
         //(This is an assumption - actual behavior depends on implementation)
         Logger.LogInformation($"First compilation: {firstCompilation.CompilationTime.TotalMilliseconds}ms");
@@ -391,13 +391,13 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         CompilationOptions compilationOptions)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         try
         {
             // Compile kernel
             var compiledKernel = await computeEngine.CompileKernelAsync(
                 kernelSource, entryPoint, compilationOptions);
-            
+
             var compilationTime = stopwatch.Elapsed;
             stopwatch.Restart();
 
@@ -406,7 +406,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             var testDataA = GenerateTestData(testSize);
             var testDataB = GenerateTestData(testSize);
             var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
-            
+
             var inputBufferA = await CreateInputBuffer(memoryManager, testDataA);
             var inputBufferB = await CreateInputBuffer(memoryManager, testDataB);
             var outputBuffer = await CreateOutputBuffer<float>(memoryManager, testSize);
@@ -428,11 +428,11 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 ExecutionTime = executionTime
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             Logger.LogError(ex, "Kernel compilation/execution failed");
-            
+
             return new CompilationResult
             {
                 CompilationSuccess = false,
@@ -464,13 +464,13 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         int dataSize)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         try
         {
             // Compile kernel
             var compiledKernel = await computeEngine.CompileKernelAsync(
                 kernelSource, entryPoint, compilationOptions);
-            
+
             var compilationTime = stopwatch.Elapsed;
             stopwatch.Restart();
 
@@ -478,7 +478,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             var testDataA = GenerateTestData(dataSize);
             var testDataB = GenerateTestData(dataSize);
             var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
-            
+
             var inputBufferA = await CreateInputBuffer(memoryManager, testDataA);
             var inputBufferB = await CreateInputBuffer(memoryManager, testDataB);
             var outputBuffer = await CreateOutputBuffer<float>(memoryManager, dataSize);
@@ -500,11 +500,11 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 ExecutionTime = executionTime
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             Logger.LogError(ex, "Kernel compilation/execution with options failed");
-            
+
             return new CompilationResult
             {
                 CompilationSuccess = false,
@@ -529,7 +529,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 compilationOptions);
         });
 
-        return(await Task.WhenAll(tasks)).ToList();
+        return (await Task.WhenAll(tasks)).ToList();
     }
 
     private async Task<CompilationResult> CompileKernelWithTiming(
@@ -539,7 +539,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         CompilationOptions compilationOptions)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         try
         {
             var compiledKernel = await computeEngine.CompileKernelAsync(
@@ -553,11 +553,11 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 CompilationTime = stopwatch.Elapsed
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             Logger.LogError(ex, "Kernel compilation failed");
-            
+
             return new CompilationResult
             {
                 CompilationSuccess = false,
@@ -571,9 +571,9 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
     private static string GenerateLargeKernelSource(int functionCount)
     {
         var source = new System.Text.StringBuilder();
-        
+
         // Generate many similar functions
-        for(int i = 0; i < functionCount; i++)
+        for (var i = 0; i < functionCount; i++)
         {
             source.AppendLine($@"
             float function_{i}(float x) {{
@@ -588,7 +588,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 int i = get_global_id(0);
                 float value = input[i];");
 
-        for(int i = 0; i < Math.Min(functionCount, 10); i++) // Use only first 10 to avoid too much computation
+        for (var i = 0; i < Math.Min(functionCount, 10); i++) // Use only first 10 to avoid too much computation
         {
             source.AppendLine($"                value = function_{i}(value);");
         }

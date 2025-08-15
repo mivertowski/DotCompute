@@ -3,7 +3,6 @@ using DotCompute.Tests.Shared.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Integration;
 
@@ -30,7 +29,7 @@ public class BackendIntegrationTests : CoverageTestBase
         // Act
         var executionTime = await cpuAccelerator.ExecuteKernelAsync(
             "kernel void vectorAdd(global const float* a, global const float* b, global float* c) { int i = get_global_id(0); c[i] = a[i] + b[i]; }",
-            new object[] { new float[] { 1, 2, 3 }, new float[] { 4, 5, 6 }, new float[3] },
+            [new float[] { 1, 2, 3 }, new float[] { 4, 5, 6 }, new float[3]],
             CancellationToken);
 
         // Assert
@@ -46,7 +45,7 @@ public class BackendIntegrationTests : CoverageTestBase
     {
         // Arrange
         Skip.IfNot(IsHardwareAvailable(type.ToString()), $"{type} hardware not available");
-        
+
         _hardwareSimulator.AddAccelerator(type, $"Test {type} Device");
         var accelerator = _hardwareSimulator.GetAccelerators(type).First();
 
@@ -113,14 +112,14 @@ public class BackendIntegrationTests : CoverageTestBase
         await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
             _hardwareSimulator.SimulateFailure(AcceleratorType.CPU, "Test failure");
-            await accelerator.ExecuteKernelAsync("invalid kernel", new object[0], CancellationToken);
+            await accelerator.ExecuteKernelAsync("invalid kernel", [], CancellationToken);
         });
 
         // Reset for next test
         _hardwareSimulator.ResetFailures();
 
         // Act & Assert - Out of memory
-        Assert.Throws<OutOfMemoryException>(() => 
+        Assert.Throws<OutOfMemoryException>(() =>
             accelerator.AllocateMemory((int)accelerator.Info.TotalMemory + 1));
     }
 
@@ -137,7 +136,7 @@ public class BackendIntegrationTests : CoverageTestBase
 
         // Assert
         Assert.NotNull(context);
-        
+
         // Context should be disposed automatically
     }
 
@@ -150,7 +149,7 @@ public class BackendIntegrationTests : CoverageTestBase
         // Arrange
         _hardwareSimulator.CreateCpuOnlySetup();
         var accelerator = _hardwareSimulator.GetAccelerators(AcceleratorType.CPU).First();
-        
+
         // Skip if not enough memory
         Skip.If(dataSize > accelerator.AvailableMemory, "Not enough memory for test");
 
@@ -177,7 +176,7 @@ public class BackendIntegrationTests : CoverageTestBase
         var tasks = Enumerable.Range(0, concurrentOps).Select(async i =>
         {
             var kernelSource = $"kernel void test{i}() {{ }}";
-            return await accelerator.ExecuteKernelAsync(kernelSource, new object[0], CancellationToken);
+            return await accelerator.ExecuteKernelAsync(kernelSource, [], CancellationToken);
         });
 
         var results = await Task.WhenAll(tasks);
@@ -187,7 +186,7 @@ public class BackendIntegrationTests : CoverageTestBase
         Assert.All(results, time => Assert.True(time >= TimeSpan.Zero));
     }
 
-    [Fact] 
+    [Fact]
     public Task Backend_ResourceCleanup_ReleasesMemoryProperly()
     {
         // Arrange
@@ -199,7 +198,7 @@ public class BackendIntegrationTests : CoverageTestBase
         // Act
         var handle = accelerator.AllocateMemory(allocationSize);
         var memoryAfterAlloc = accelerator.AvailableMemory;
-        
+
         accelerator.FreeMemory(handle);
         var memoryAfterFree = accelerator.AvailableMemory;
 
@@ -216,13 +215,13 @@ public class BackendIntegrationTests : CoverageTestBase
         // Arrange
         _hardwareSimulator.CreateCpuOnlySetup();
         var accelerator = _hardwareSimulator.GetAccelerators(AcceleratorType.CPU).First();
-        
+
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromMilliseconds(100));
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(async () =>
-            await accelerator.ExecuteKernelAsync("long_running_kernel", new object[0], cts.Token));
+            await accelerator.ExecuteKernelAsync("long_running_kernel", [], cts.Token));
     }
 
     private static string GenerateKernelSource(AcceleratorType type)
@@ -240,11 +239,11 @@ public class BackendIntegrationTests : CoverageTestBase
 
     private static object[] CreateTestParameters()
     {
-        return new object[] 
-        { 
+        return
+        [
             new int[] { 1, 2, 3, 4, 5 },
             new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f }
-        };
+        ];
     }
 }
 

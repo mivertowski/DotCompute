@@ -1,11 +1,10 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Common.Hardware;
 
@@ -18,7 +17,7 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
 {
     private bool _disposed;
     private string? _failureMessage;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     /// <summary>
     /// Gets the logger instance.
@@ -58,15 +57,15 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
     public int MaxClockFrequency { get; protected set; }
 
     /// <inheritdoc/>
-    public bool IsAvailable 
-    { 
-        get 
-        { 
-            lock(_lock) 
-            { 
-                return !_disposed && _failureMessage == null; 
-            } 
-        } 
+    public bool IsAvailable
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return !_disposed && _failureMessage == null;
+            }
+        }
     }
 
     /// <inheritdoc/>
@@ -84,7 +83,7 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
     {
         get
         {
-            lock(_lock)
+            lock (_lock)
             {
                 return _failureMessage;
             }
@@ -138,7 +137,7 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
             ["CreationTime"] = DateTime.UtcNow
         };
 
-        Logger?.LogDebug("Created mock {Type} device: {Name}{Id})", type, name, id);
+        Logger?.LogDebug("Created mock {Type} device: {Name} ({Id})", type, name, id);
     }
 
     /// <inheritdoc/>
@@ -195,30 +194,30 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
     /// <inheritdoc/>
     public virtual bool HealthCheck()
     {
-        if(_disposed)
+        if (_disposed)
         {
             Logger?.LogWarning("Health check failed: Device {DeviceId} is disposed", Id);
             return false;
         }
 
-        lock(_lock)
+        lock (_lock)
         {
-            if(_failureMessage != null)
+            if (_failureMessage != null)
             {
-                Logger?.LogWarning("Health check failed: Device {DeviceId} has failure: {Error}", 
+                Logger?.LogWarning("Health check failed: Device {DeviceId} has failure: {Error}",
                     Id, _failureMessage);
                 return false;
             }
         }
 
         // Basic sanity checks
-        if(TotalMemory <= 0 || AvailableMemory < 0 || AvailableMemory > TotalMemory)
+        if (TotalMemory <= 0 || AvailableMemory < 0 || AvailableMemory > TotalMemory)
         {
             Logger?.LogWarning("Health check failed: Device {DeviceId} has invalid memory configuration", Id);
             return false;
         }
 
-        if(ComputeUnits <= 0 || MaxThreadsPerBlock <= 0)
+        if (ComputeUnits <= 0 || MaxThreadsPerBlock <= 0)
         {
             Logger?.LogWarning("Health check failed: Device {DeviceId} has invalid compute configuration", Id);
             return false;
@@ -237,7 +236,7 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
         ThrowIfDisposed();
         ArgumentException.ThrowIfNullOrEmpty(errorMessage);
 
-        lock(_lock)
+        lock (_lock)
         {
             _failureMessage = errorMessage;
         }
@@ -252,7 +251,7 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
     {
         ThrowIfDisposed();
 
-        lock(_lock)
+        lock (_lock)
         {
             _failureMessage = null;
         }
@@ -263,7 +262,7 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
     /// <summary>
     /// Simulates memory usage changes.
     /// </summary>
-    /// <param name="memoryUsed">The amount of memory to mark as used(can be negative to free memory).</param>
+    /// <param name="memoryUsed">The amount of memory to mark as used (can be negative to free memory).</param>
     public virtual void SimulateMemoryUsage(long memoryUsed)
     {
         ThrowIfDisposed();
@@ -272,12 +271,12 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
         var previousMemory = AvailableMemory;
         AvailableMemory = newAvailableMemory;
 
-        Logger?.LogDebug("Simulated memory usage change on device {DeviceId}: {Previous} -> {Current} bytes", 
+        Logger?.LogDebug("Simulated memory usage change on device {DeviceId}: {Previous} -> {Current} bytes",
             Id, previousMemory, AvailableMemory);
     }
 
     /// <summary>
-    /// Simulates clock frequency changes(e.g., thermal throttling).
+    /// Simulates clock frequency changes (e.g., thermal throttling).
     /// </summary>
     /// <param name="newFrequencyMHz">The new clock frequency in MHz.</param>
     public virtual void SimulateClockChange(int newFrequencyMHz)
@@ -288,7 +287,7 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
         var previousFrequency = MaxClockFrequency;
         MaxClockFrequency = newFrequencyMHz;
 
-        Logger?.LogDebug("Simulated clock frequency change on device {DeviceId}: {Previous} -> {Current} MHz", 
+        Logger?.LogDebug("Simulated clock frequency change on device {DeviceId}: {Previous} -> {Current} MHz",
             Id, previousFrequency, MaxClockFrequency);
     }
 
@@ -306,7 +305,7 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
             ["IsAvailable"] = IsAvailable,
             ["IsDisposed"] = _disposed,
             ["FailureMessage"] = FailureMessage ?? "None",
-            ["MemoryUtilization"] = TotalMemory > 0 ?(TotalMemory - AvailableMemory) /(double)TotalMemory : 0,
+            ["MemoryUtilization"] = TotalMemory > 0 ? (TotalMemory - AvailableMemory) / (double)TotalMemory : 0,
             ["MemoryUtilizationBytes"] = TotalMemory - AvailableMemory,
             ["LastHealthCheck"] = HealthCheck(),
             ["DiagnosticsTimestamp"] = DateTime.UtcNow
@@ -318,18 +317,15 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
     /// <summary>
     /// Throws an ObjectDisposedException if the device has been disposed.
     /// </summary>
-    protected void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <inheritdoc/>
     public virtual void Dispose()
     {
-        if(_disposed)
+        if (_disposed)
             return;
 
-        lock(_lock)
+        lock (_lock)
         {
             _disposed = true;
             _failureMessage = null;

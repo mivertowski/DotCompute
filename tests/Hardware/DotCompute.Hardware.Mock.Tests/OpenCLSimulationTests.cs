@@ -1,9 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading.Tasks;
-using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
@@ -59,14 +56,14 @@ public class OpenCLSimulationTests
         foreach (var platform in expectedPlatforms)
         {
             var deviceTypes = SimulatePlatformDevices(platform.Name);
-            
+
             Assert.NotEmpty(deviceTypes);
-            
-            if(platform.HasGPU)
+
+            if (platform.HasGPU)
             {
                 Assert.Contains("GPU", deviceTypes);
             }
-            
+
             Assert.Contains("CPU", deviceTypes); // Most platforms support CPU
 
             _output.WriteLine($"Platform: {platform.Name} by {platform.Vendor} - Devices: {string.Join(", ", deviceTypes)}");
@@ -77,11 +74,11 @@ public class OpenCLSimulationTests
     {
         return platformName switch
         {
-            "NVIDIA CUDA" => new[] { "GPU" },
-            "AMD Accelerated Parallel Processing" => new[] { "GPU", "CPU" },
-            "Intel(R) OpenCL" => new[] { "CPU", "GPU" },
-            "Portable Computing Language" => new[] { "CPU" },
-            _ => new[] { "CPU" }
+            "NVIDIA CUDA" => ["GPU"],
+            "AMD Accelerated Parallel Processing" => ["GPU", "CPU"],
+            "Intel(R) OpenCL" => ["CPU", "GPU"],
+            "Portable Computing Language" => ["CPU"],
+            _ => ["CPU"]
         };
     }
 
@@ -92,20 +89,20 @@ public class OpenCLSimulationTests
         // Simulate OpenCL kernel compilation without runtime
         var kernelSources = new[]
         {
-            new 
-            { 
+            new
+            {
                 Name = "VectorAdd",
                 Source = "__kernel void vector_add(__global float* a, __global float* b, __global float* c, int n) { int gid = get_global_id(0); if(gid < n) c[gid] = a[gid] + b[gid]; }",
                 IsValid = true
             },
-            new 
-            { 
+            new
+            {
                 Name = "MatrixMultiply",
                 Source = "__kernel void matrix_mul(__global float* a, __global float* b, __global float* c, int n) { int row = get_global_id(0); int col = get_global_id(1); float sum = 0; for(int k = 0; k < n; k++) sum += a[row*n+k] * b[k*n+col]; c[row*n+col] = sum; }",
                 IsValid = true
             },
-            new 
-            { 
+            new
+            {
                 Name = "InvalidSyntax",
                 Source = "__kernel void bad_kernel( { invalid syntax }",
                 IsValid = false
@@ -115,10 +112,10 @@ public class OpenCLSimulationTests
         foreach (var kernel in kernelSources)
         {
             var compilationResult = await SimulateKernelCompilation(kernel.Source);
-            
+
             Assert.Equal(kernel.IsValid, compilationResult.Success);
-            
-            if(compilationResult.Success)
+
+            if (compilationResult.Success)
             {
                 Assert.True(compilationResult.BinarySize > 0);
                 _output.WriteLine($"Kernel '{kernel.Name}' compiled successfully - Binary size: {compilationResult.BinarySize} bytes");
@@ -136,15 +133,15 @@ public class OpenCLSimulationTests
         await Task.Delay(10); // Simulate compilation time
 
         // Simple validation - check for basic kernel syntax
-        if(source.Contains("__kernel") && source.Contains("{") && source.Contains("}"))
+        if (source.Contains("__kernel") && source.Contains("{") && source.Contains("}"))
         {
             // Simulate successful compilation
             var binarySize = source.Length * 2; // Rough binary size estimate
-            return(true, string.Empty, binarySize);
+            return (true, string.Empty, binarySize);
         }
         else
         {
-            return(false, "Syntax error: Invalid kernel definition", 0);
+            return (false, "Syntax error: Invalid kernel definition", 0);
         }
     }
 
@@ -165,12 +162,12 @@ public class OpenCLSimulationTests
         foreach (var device in devices)
         {
             var optimalWorkGroupSize = SimulateOptimalWorkGroupSize(globalSize, device.MaxWorkGroupSize, device.PreferredMultiple);
-            var numWorkGroups =(globalSize + optimalWorkGroupSize - 1) / optimalWorkGroupSize;
+            var numWorkGroups = (globalSize + optimalWorkGroupSize - 1) / optimalWorkGroupSize;
 
             optimalWorkGroupSize.Should().BeLessThanOrEqualTo(device.MaxWorkGroupSize, "Work group size should not exceed maximum");
-           (optimalWorkGroupSize % device.PreferredMultiple == 0 || device.PreferredMultiple == 1).Should().BeTrue(
-                       "Work group size should be multiple of preferred size");
-           (numWorkGroups * optimalWorkGroupSize).Should().BeGreaterThanOrEqualTo(globalSize, "Should cover all work items");
+            (optimalWorkGroupSize % device.PreferredMultiple == 0 || device.PreferredMultiple == 1).Should().BeTrue(
+                        "Work group size should be multiple of preferred size");
+            (numWorkGroups * optimalWorkGroupSize).Should().BeGreaterThanOrEqualTo(globalSize, "Should cover all work items");
 
             _output.WriteLine($"{device.Type}: Optimal work group size = {optimalWorkGroupSize}, Groups = {numWorkGroups}");
         }
@@ -180,14 +177,14 @@ public class OpenCLSimulationTests
     {
         // Find the largest multiple of preferredMultiple that doesn't exceed maxWorkGroupSize
         // and provides good occupancy
-        for(int size = maxWorkGroupSize; size >= preferredMultiple; size -= preferredMultiple)
+        for (var size = maxWorkGroupSize; size >= preferredMultiple; size -= preferredMultiple)
         {
-            if(size % preferredMultiple == 0)
+            if (size % preferredMultiple == 0)
             {
                 return size;
             }
         }
-        
+
         return Math.Min(preferredMultiple, maxWorkGroupSize);
     }
 
@@ -207,17 +204,17 @@ public class OpenCLSimulationTests
         foreach (var device in deviceTypes)
         {
             _output.WriteLine($"\n{device.Name}Bandwidth: {device.BandwidthGBps} GB/s):");
-            
+
             foreach (var size in transferSizes)
             {
                 var transferTime = await SimulateMemoryTransfer(size, device.BandwidthGBps);
-                var sizeStr = size < 1024 * 1024 ? $"{size / 1024}KB" : $"{size /(1024 * 1024)}MB";
-                
+                var sizeStr = size < 1024 * 1024 ? $"{size / 1024}KB" : $"{size / (1024 * 1024)}MB";
+
                 _output.WriteLine($"  {sizeStr}: {transferTime:F2}ms");
-                
+
                 // Validate transfer time makes sense
-                var expectedTimeMs =(size / 1024.0 / 1024.0 / 1024.0) / device.BandwidthGBps * 1000;
-                Assert.True(Math.Abs(transferTime - expectedTimeMs) < 0.1, 
+                var expectedTimeMs = (size / 1024.0 / 1024.0 / 1024.0) / device.BandwidthGBps * 1000;
+                Assert.True(Math.Abs(transferTime - expectedTimeMs) < 0.1,
                            $"Transfer time should be close to expected: {expectedTimeMs:F2}ms vs {transferTime:F2}ms");
             }
         }
@@ -227,11 +224,11 @@ public class OpenCLSimulationTests
     {
         // Simulate transfer delay
         await Task.Delay(1);
-        
+
         // Calculate theoretical transfer time
-        var sizeGB = sizeBytes /(1024.0 * 1024.0 * 1024.0);
+        var sizeGB = sizeBytes / (1024.0 * 1024.0 * 1024.0);
         var transferTimeSeconds = sizeGB / bandwidthGBps;
-        
+
         // Add some overhead(10%)
         return transferTimeSeconds * 1000 * 1.1; // Convert to milliseconds
     }
@@ -243,20 +240,20 @@ public class OpenCLSimulationTests
         // Simulate different OpenCL device capabilities
         var devices = new[]
         {
-            new 
-            { 
-                Name = "NVIDIA RTX 2000", 
-                Type = "GPU", 
+            new
+            {
+                Name = "NVIDIA RTX 2000",
+                Type = "GPU",
                 OpenCLVersion = "1.2",
                 Extensions = new[] { "cl_khr_gl_sharing", "cl_khr_byte_addressable_store", "cl_nv_device_attribute_query" },
                 GlobalMemMB = 8192,
                 LocalMemKB = 48,
                 ComputeUnits = 28
             },
-            new 
-            { 
-                Name = "Intel Core i7", 
-                Type = "CPU", 
+            new
+            {
+                Name = "Intel Core i7",
+                Type = "CPU",
                 OpenCLVersion = "2.1",
                 Extensions = new[] { "cl_khr_icd", "cl_khr_global_int32_base_atomics", "cl_intel_subgroups" },
                 GlobalMemMB = 16384,
@@ -268,12 +265,12 @@ public class OpenCLSimulationTests
         foreach (var device in devices)
         {
             var capabilities = SimulateDeviceQuery(device);
-            
+
             Assert.Equal(device.OpenCLVersion, capabilities.OpenCLVersion);
             Assert.Equal(device.GlobalMemMB, capabilities.GlobalMemoryMB);
             Assert.Equal(device.ComputeUnits, capabilities.ComputeUnits);
             capabilities.Extensions.Length.Should().BeGreaterThan(0, "Should have at least one extension");
-            
+
             _output.WriteLine($"Device: {device.Name}{device.Type})");
             _output.WriteLine($"  OpenCL: {capabilities.OpenCLVersion}");
             _output.WriteLine($"  Memory: {capabilities.GlobalMemoryMB}MB global, {capabilities.LocalMemoryKB}KB local");
@@ -282,11 +279,8 @@ public class OpenCLSimulationTests
         }
     }
 
-    private static(string OpenCLVersion, int GlobalMemoryMB, int LocalMemoryKB, int ComputeUnits, string[] Extensions) 
-        SimulateDeviceQuery(dynamic device)
-    {
-        return(device.OpenCLVersion, device.GlobalMemMB, device.LocalMemKB, device.ComputeUnits, device.Extensions);
-    }
+    private static (string OpenCLVersion, int GlobalMemoryMB, int LocalMemoryKB, int ComputeUnits, string[] Extensions)
+        SimulateDeviceQuery(dynamic device) => (device.OpenCLVersion, device.GlobalMemMB, device.LocalMemKB, device.ComputeUnits, device.Extensions);
 
     [Fact]
     [Trait("Category", "Mock")]
@@ -307,10 +301,10 @@ public class OpenCLSimulationTests
         {
             var errorName = SimulateErrorCodeLookup(error.Code);
             var canRecover = SimulateErrorRecovery(error.Code);
-            
+
             Assert.Equal(error.Name, errorName);
             Assert.Equal(!error.IsCritical, canRecover);
-            
+
             _output.WriteLine($"Error {error.Code}: {errorName} - Recoverable: {canRecover}");
         }
     }

@@ -98,7 +98,7 @@ public sealed class AcceleratorStressTests
     {
         // Act & Assert - Test that enum values are defined and work correctly
         Enum.IsDefined(typeof(MemoryOptions), memoryOptions).Should().BeTrue();
-        
+
         // Test flag combinations
         var combined = MemoryOptions.ReadOnly | MemoryOptions.HostVisible;
         combined.Should().HaveFlag(MemoryOptions.ReadOnly);
@@ -113,13 +113,13 @@ public sealed class AcceleratorStressTests
     public void MemoryOptions_FlagValues_ShouldBePowersOfTwo(MemoryOptions option)
     {
         // Act & Assert - Verify flags are proper powers of 2(except None)
-        if(option == MemoryOptions.None)
+        if (option == MemoryOptions.None)
         {
-           ((int)option).Should().Be(0);
+            ((int)option).Should().Be(0);
         }
         else
         {
-            var value =(int)option;
+            var value = (int)option;
             ((value > 0) && ((value & (value - 1)) == 0)).Should().BeTrue();
         }
     }
@@ -211,9 +211,9 @@ public sealed class AcceleratorStressTests
         // Arrange
         const int maxArgs = 1000;
         var argArray = new object[maxArgs];
-        
+
         // Act - Create arguments with many values
-        for(int i = 0; i < maxArgs; i++)
+        for (var i = 0; i < maxArgs; i++)
         {
             argArray[i] = i;
         }
@@ -221,8 +221,8 @@ public sealed class AcceleratorStressTests
 
         // Assert
         args.Length.Should().Be(maxArgs);
-        
-        for(int i = 0; i < maxArgs; i++)
+
+        for (var i = 0; i < maxArgs; i++)
         {
             args.Get(i).Should().Be(i);
         }
@@ -310,7 +310,7 @@ public sealed class AcceleratorStressTests
         var args = new KernelArguments(specialValues);
 
         // Assert
-        for(int i = 0; i < specialValues.Length; i++)
+        for (var i = 0; i < specialValues.Length; i++)
         {
             args.Get(i).Should().Be(specialValues[i]);
         }
@@ -353,7 +353,7 @@ public sealed class AcceleratorStressTests
 
         // Assert
         memory.Size.Should().Be(size);
-        if(size > 0)
+        if (size > 0)
         {
             memory.IsValid.Should().BeTrue();
         }
@@ -373,11 +373,11 @@ public sealed class AcceleratorStressTests
             var memory = new DeviceMemory(IntPtr.Zero, int.MaxValue);
             memory.Size.Should().Be(int.MaxValue);
         }
-        catch(OutOfMemoryException)
+        catch (OutOfMemoryException)
         {
             // Expected on systems without sufficient memory
         }
-        catch(OverflowException)
+        catch (OverflowException)
         {
             // Expected when calculation overflows
         }
@@ -387,7 +387,7 @@ public sealed class AcceleratorStressTests
     public void DeviceMemory_WithNegativeSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert
-        var act =() => new DeviceMemory(IntPtr.Zero, -1);
+        var act = () => new DeviceMemory(IntPtr.Zero, -1);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
@@ -418,12 +418,12 @@ public sealed class AcceleratorStressTests
     public void DeviceMemory_WithInvalidParameters_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert - Test invalid memory creation
-        var act1 =() => new DeviceMemory(new IntPtr(-1), 10);  // Invalid handle is allowed, negative size is not
-        var act2 =() => new DeviceMemory(IntPtr.Zero, -1);     // Negative size
-        
+        var act1 = () => new DeviceMemory(new IntPtr(-1), 10);  // Invalid handle is allowed, negative size is not
+        var act2 = () => new DeviceMemory(IntPtr.Zero, -1);     // Negative size
+
         // Only negative size should throw
         Assert.Throws<ArgumentOutOfRangeException>(() => act2());
-        
+
         // Invalid handles are allowed(they just result in invalid memory)
         var invalidMemory = new DeviceMemory(IntPtr.Zero, 0);
         invalidMemory.IsValid.Should().BeFalse();
@@ -493,16 +493,16 @@ public sealed class AcceleratorStressTests
             {
                 try
                 {
-                    for(int i = 0; i < operationsPerThread; i++)
+                    for (var i = 0; i < operationsPerThread; i++)
                     {
                         var value = $"thread{threadId}_value{i}";
                         var args = new KernelArguments(value, threadId, i);
-                        
+
                         argumentsList.Add(args);
-                        
+
                         // Verify the values were set correctly
-                        if(!args.Get(0).Equals(value) || 
-                            !args.Get(1).Equals(threadId) || 
+                        if (!args.Get(0).Equals(value) ||
+                            !args.Get(1).Equals(threadId) ||
                             !args.Get(2).Equals(i))
                         {
                             exceptions.Add(new InvalidOperationException(
@@ -510,7 +510,7 @@ public sealed class AcceleratorStressTests
                         }
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -538,23 +538,23 @@ public sealed class AcceleratorStressTests
             {
                 try
                 {
-                    for(int i = 0; i < memoriesPerThread; i++)
+                    for (var i = 0; i < memoriesPerThread; i++)
                     {
                         var handle = new IntPtr(threadId * 1000 + i);
                         var size = threadId * 10 + i * 2;
-                        
+
                         var memory = new DeviceMemory(handle, size);
                         memories.Add(memory);
-                        
+
                         // Verify the memory was created correctly
-                        if(memory.Handle != handle || memory.Size != size)
+                        if (memory.Handle != handle || memory.Size != size)
                         {
                             exceptions.Add(new InvalidOperationException(
                                 $"Memory creation failed for thread {threadId}, iteration {i}"));
                         }
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     exceptions.Add(ex);
                 }

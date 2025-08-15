@@ -28,7 +28,7 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
     {
         // Test memory allocation performance across different sizes
         var sizes = new[] { 1024, 10240, 102400, 1048576 }; // 1KB to 1MB
-        
+
         var result = await BenchmarkMemoryAllocation(
             size => Task.FromResult<IDisposable>(new TestMemoryBuffer(size)),
             sizes,
@@ -74,15 +74,15 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
         foreach (var size in dataSizes)
         {
             var data = CreateTestData(size);
-            
+
             var result = await Benchmark.MeasureAsync(
                () => TransferDataAsync(data),
                 iterations: 50,
                 operationName: $"Data transfer({size} bytes)");
 
             var bandwidthMBps = (size / (1024.0 * 1024.0)) / result.AverageTime.TotalSeconds;
-            
-            Logger.LogInformation("Data transfer benchmark - Size: {Size} bytes, Bandwidth: {Bandwidth:F2} MB/s", 
+
+            Logger.LogInformation("Data transfer benchmark - Size: {Size} bytes, Bandwidth: {Bandwidth:F2} MB/s",
                 size, bandwidthMBps);
 
             // Assert minimum bandwidth requirements
@@ -104,20 +104,20 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
                 iterations: 10,
                 operationName: $"Concurrent operations(x{concurrency})");
 
-            if(concurrency == 1)
+            if (concurrency == 1)
             {
                 baselineTime = result.AverageTime;
             }
 
             var efficiency = baselineTime.TotalMilliseconds / result.AverageTime.TotalMilliseconds * concurrency;
-            
-            Logger.LogInformation("Concurrency {Level}: {Time}ms avg, efficiency: {Efficiency:F2}", 
+
+            Logger.LogInformation("Concurrency {Level}: {Time}ms avg, efficiency: {Efficiency:F2}",
                 concurrency, result.AverageTime.TotalMilliseconds, efficiency);
 
             // Assert reasonable scaling efficiency
-            if(concurrency > 1)
+            if (concurrency > 1)
             {
-                efficiency.Should().BeGreaterThan(0.7 * concurrency, 
+                efficiency.Should().BeGreaterThan(0.7 * concurrency,
                     $"Concurrency efficiency should be > 70% of ideal, got {efficiency / concurrency * 100:F1}%");
             }
         }
@@ -145,7 +145,7 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
         try
         {
             // Allocate memory to create pressure
-            for(int i = 0; i < 100; i++)
+            for (var i = 0; i < 100; i++)
             {
                 allocatedMemory.Add(new byte[allocationSize]);
             }
@@ -156,11 +156,11 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
                 "Memory operations(pressure)");
 
             var performanceImpact = pressureResult.AverageTime.TotalMilliseconds / baselineResult.AverageTime.TotalMilliseconds;
-            
+
             Logger.LogInformation("Memory pressure impact: {Impact:F2}x slowdown", performanceImpact);
 
             // Assert reasonable performance degradation
-            performanceImpact .Should().BeLessThan(3.0, $"Memory pressure impact should be < 3x, got {performanceImpact:F2}x");
+            performanceImpact.Should().BeLessThan(3.0, $"Memory pressure impact should be < 3x, got {performanceImpact:F2}x");
         }
         finally
         {
@@ -179,7 +179,7 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
             .AddLogger(new XunitLogger(Output));
 
         var summary = BenchmarkRunner.Run<SimpleBenchmark>(config);
-        
+
         Assert.NotNull(summary);
         Assert.NotEmpty(summary.Reports);
         Assert.True(summary.Reports.All(r => r.Success), "All benchmark runs should succeed");
@@ -187,21 +187,21 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
 
     // Helper methods for benchmarking
 
-    private async Task<object> CompileKernelAsync(string kernelSource)
+    private static async Task<object> CompileKernelAsync(string kernelSource)
     {
         // Simulate kernel compilation
         await Task.Delay(Random.Shared.Next(10, 100));
         return new { Compiled = true, Source = kernelSource };
     }
 
-    private async Task<int> TransferDataAsync(byte[] data)
+    private static async Task<int> TransferDataAsync(byte[] data)
     {
         // Simulate data transfer
         await Task.Delay(Math.Max(1, data.Length / 100000)); // Simulate bandwidth
         return data.Length;
     }
 
-    private async Task<int> ExecuteConcurrentOperationsAsync(int concurrencyLevel)
+    private static async Task<int> ExecuteConcurrentOperationsAsync(int concurrencyLevel)
     {
         var tasks = Enumerable.Range(0, concurrencyLevel)
             .Select(_ => SimulateWorkAsync())
@@ -211,17 +211,14 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
         return tasks.Length;
     }
 
-    private async Task<int> AllocateAndReleaseMemoryAsync(int size)
+    private static async Task<int> AllocateAndReleaseMemoryAsync(int size)
     {
         var buffer = new byte[size];
         await Task.Yield();
         return buffer.Length;
     }
 
-    private async Task SimulateWorkAsync()
-    {
-        await Task.Delay(Random.Shared.Next(10, 50));
-    }
+    private static async Task SimulateWorkAsync() => await Task.Delay(Random.Shared.Next(10, 50));
 
     private static string GenerateComplexKernel()
     {
@@ -275,10 +272,7 @@ public class SimpleBenchmark
     private readonly byte[] _data = new byte[1024];
 
     [Benchmark]
-    public int SimpleOperation()
-    {
-        return _data.Sum(b => (int)b);
-    }
+    public int SimpleOperation() => _data.Sum(b => (int)b);
 
     [Benchmark]
     public async Task<int> AsyncOperation()
@@ -304,17 +298,11 @@ public class XunitLogger : BdnLogger
     public string Id => "xunit";
     public int Priority => 0;
 
-    public void Write(LogKind logKind, string text)
-    {
-        _output.WriteLine($"[{logKind}] {text}");
-    }
+    public void Write(LogKind logKind, string text) => _output.WriteLine($"[{logKind}] {text}");
 
     public void WriteLine() => _output.WriteLine("");
 
-    public void WriteLine(LogKind logKind, string text)
-    {
-        _output.WriteLine($"[{logKind}] {text}");
-    }
+    public void WriteLine(LogKind logKind, string text) => _output.WriteLine($"[{logKind}] {text}");
 
     public void Flush() { }
 }

@@ -1,7 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Compilation;
@@ -28,10 +27,10 @@ public class CudaSystemDiagnostics : IDisposable
     {
         var loggerFactory = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(LogLevel.Debug));
-        
+
         _logger = loggerFactory.CreateLogger<CudaSystemDiagnostics>();
 
-        if(CudaBackend.IsAvailable())
+        if (CudaBackend.IsAvailable())
         {
             _backend = new CudaBackend(loggerFactory.CreateLogger<CudaBackend>());
             _accelerator = _backend.GetDefaultAccelerator();
@@ -49,17 +48,17 @@ public class CudaSystemDiagnostics : IDisposable
         var runtimeResult = CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion);
         var driverResult = CudaRuntime.cudaDriverGetVersion(out var driverVersion);
 
-        if(runtimeResult == CudaError.Success)
+        if (runtimeResult == CudaError.Success)
         {
             var runtimeMajor = runtimeVersion / 1000;
-            var runtimeMinor =(runtimeVersion % 1000) / 10;
+            var runtimeMinor = (runtimeVersion % 1000) / 10;
             _logger.LogInformation("CUDA Runtime Version: {Major}.{Minor}", runtimeMajor, runtimeMinor);
         }
 
-        if(driverResult == CudaError.Success)
+        if (driverResult == CudaError.Success)
         {
             var driverMajor = driverVersion / 1000;
-            var driverMinor =(driverVersion % 1000) / 10;
+            var driverMinor = (driverVersion % 1000) / 10;
             _logger.LogInformation("CUDA Driver Version: {Major}.{Minor}", driverMajor, driverMinor);
         }
 
@@ -68,17 +67,17 @@ public class CudaSystemDiagnostics : IDisposable
         Assert.Equal(CudaError.Success, deviceCountResult);
         _logger.LogInformation("CUDA Devices Found: {DeviceCount}", deviceCount);
 
-        for(int i = 0; i < deviceCount; i++)
+        for (var i = 0; i < deviceCount; i++)
         {
             var props = new CudaDeviceProperties();
             var propResult = CudaRuntime.cudaGetDeviceProperties(ref props, i);
-            
-            if(propResult == CudaError.Success)
+
+            if (propResult == CudaError.Success)
             {
                 _logger.LogInformation("Device {Id}: {Name}", i, props.Name);
                 _logger.LogInformation("  Compute Capability: {Major}.{Minor}", props.Major, props.Minor);
-                _logger.LogInformation("  Global Memory: {Memory:N0} bytes{MemoryGB:F1} GB)", 
-                    props.TotalGlobalMem, props.TotalGlobalMem /(1024.0 * 1024 * 1024));
+                _logger.LogInformation("  Global Memory: {Memory:N0} bytes{MemoryGB:F1} GB)",
+                    props.TotalGlobalMem, props.TotalGlobalMem / (1024.0 * 1024 * 1024));
                 _logger.LogInformation("  Multiprocessors: {SMs}", props.MultiProcessorCount);
                 _logger.LogInformation("  Max Threads per Block: {MaxThreads}", props.MaxThreadsPerBlock);
                 _logger.LogInformation("  Shared Memory per Block: {SharedMem:N0} bytes", props.SharedMemPerBlock);
@@ -93,9 +92,9 @@ public class CudaSystemDiagnostics : IDisposable
         }
 
         // 3. NVRTC Availability
-        if(CudaKernelCompiler.IsNvrtcAvailable())
+        if (CudaKernelCompiler.IsNvrtcAvailable())
         {
-            var(nvrtcMajor, nvrtcMinor) = CudaKernelCompiler.GetNvrtcVersion();
+            var (nvrtcMajor, nvrtcMinor) = CudaKernelCompiler.GetNvrtcVersion();
             _logger.LogInformation("NVRTC Available: Version {Major}.{Minor}", nvrtcMajor, nvrtcMinor);
         }
         else
@@ -113,7 +112,7 @@ public class CudaSystemDiagnostics : IDisposable
         _logger.LogInformation("=== Accelerator Information ===");
 
         var info = _accelerator.Info;
-        
+
         Assert.NotNull(info);
         Assert.Equal("CUDA", info.Type);
         Assert.False(string.IsNullOrEmpty(info.Name));
@@ -157,11 +156,11 @@ public class CudaSystemDiagnostics : IDisposable
 
         var memory = _accelerator.Memory;
         // Note: GetStatistics() method doesn't exist in new IMemoryManager interface
-        
+
         _logger.LogInformation("Memory Manager Test - Testing various allocation sizes");
 
         // Test various allocation sizes
-        var testSizes = new[] { 1024, 1024*1024, 16*1024*1024, 64*1024*1024 };
+        var testSizes = new[] { 1024, 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024 };
         var buffers = new List<IMemoryBuffer>();
 
         try
@@ -188,7 +187,7 @@ public class CudaSystemDiagnostics : IDisposable
                 _logger.LogInformation("  Fill operation test skippednot available in new API)");
 
                 // Test slicing
-                if(size > 2048)
+                if (size > 2048)
                 {
                     var slice = memory.CreateView(buffer, 1024, 1024);
                     Assert.Equal(1024, slice.SizeInBytes);
@@ -230,17 +229,17 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
 
         // Test different optimization levels
         var optimizationLevels = Enum.GetValues<OptimizationLevel>();
-        
+
         foreach (var optLevel in optimizationLevels)
         {
-            var options = new CompilationOptions 
-            { 
+            var options = new CompilationOptions
+            {
                 OptimizationLevel = optLevel,
                 EnableDebugInfo = optLevel == OptimizationLevel.None
             };
 
             _logger.LogInformation("Compiling with optimization level: {Level}", optLevel);
-            
+
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
             stopwatch.Stop();
@@ -259,14 +258,14 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
             try
             {
                 await inputBuffer.CopyFromHostAsync<float>(input);
-                
+
                 var arguments = new KernelArguments(inputBuffer, outputBuffer, N);
                 await compiledKernel.ExecuteAsync(arguments);
-                
+
                 await outputBuffer.CopyToHostAsync<float>(output);
 
                 // Verify results
-                for(int i = 0; i < N; i++)
+                for (var i = 0; i < N; i++)
                 {
                     var expected = input[i] * 2.0f + 1.0f;
                     Assert.True(Math.Abs(output[i] - expected) < 0.001f,
@@ -310,11 +309,11 @@ extern ""C"" __global__ void configTest(int* data, int n)
         {
             // Test different problem sizes
             var problemSizes = new[] { 1000, 10000, 100000, 1000000 };
-            
+
             foreach (var problemSize in problemSizes)
             {
                 var config = compiledKernel.GetOptimalLaunchConfig(problemSize);
-                
+
                 _logger.LogInformation("Problem Size {Size:N0}:", problemSize);
                 _logger.LogInformation("  Grid:{X}, {Y}, {Z})", config.GridX, config.GridY, config.GridZ);
                 _logger.LogInformation("  Block:{X}, {Y}, {Z})", config.BlockX, config.BlockY, config.BlockZ);
@@ -322,7 +321,7 @@ extern ""C"" __global__ void configTest(int* data, int n)
 
                 // Verify configuration covers the problem
                 var totalThreads = config.GridX * config.BlockX;
-                (totalThreads >= problemSize).Should().BeTrue( 
+                (totalThreads >= problemSize).Should().BeTrue(
                     $"Configuration doesn't cover problem size: {totalThreads} < {problemSize}");
 
                 // Test execution with this configuration
@@ -333,16 +332,16 @@ extern ""C"" __global__ void configTest(int* data, int n)
                 {
                     var arguments = new KernelArguments(buffer, problemSize);
                     await compiledKernel.ExecuteWithConfigAsync(arguments, config);
-                    
+
                     await buffer.CopyToHostAsync<int>(data);
 
                     // Verify some results(first few elements)
-                    for(int i = 0; i < Math.Min(100, problemSize); i++)
+                    for (var i = 0; i < Math.Min(100, problemSize); i++)
                     {
-                        var expectedBlock = i /(int)config.BlockX;
-                        var expectedThread = i %(int)config.BlockX;
+                        var expectedBlock = i / (int)config.BlockX;
+                        var expectedThread = i % (int)config.BlockX;
                         var expected = expectedBlock * 1000 + expectedThread;
-                        
+
                         Assert.Equal(expected, data[i]);
                     }
 
@@ -379,7 +378,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
         var definition = new KernelDefinition("invalidKernel", kernelSourceObj, new CompilationOptions());
 
         var compilationException = await Assert.ThrowsAsync<InvalidOperationException>(
-            async() => await _accelerator.CompileKernelAsync(definition));
+            async () => await _accelerator.CompileKernelAsync(definition));
 
         Assert.NotNull(compilationException);
         Assert.Contains("Failed to compile", compilationException.Message);
@@ -389,7 +388,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
         var oversizeAllocation = long.MaxValue / 2; // Very large allocation
 
         var memoryException = await Assert.ThrowsAsync<OutOfMemoryException>(
-            async() => await _accelerator.Memory.AllocateAsync(oversizeAllocation));
+            async () => await _accelerator.Memory.AllocateAsync(oversizeAllocation));
 
         Assert.NotNull(memoryException);
         _logger.LogInformation("Memory allocation error handled correctly: {Message}", memoryException.Message);
@@ -403,7 +402,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
         try
         {
             var executionException = await Assert.ThrowsAsync<ArgumentException>(
-                async() => await validKernel.ExecuteAsync(new KernelArguments()));
+                async () => await validKernel.ExecuteAsync(new KernelArguments()));
 
             Assert.NotNull(executionException);
             _logger.LogInformation("Execution error handled correctly: {Message}", executionException.Message);
@@ -416,7 +415,8 @@ extern ""C"" __global__ void invalidKernel(float* data)
 
     public void Dispose()
     {
-        if(_disposed) return;
+        if (_disposed)
+            return;
 
         _accelerator?.Dispose();
         _backend?.Dispose();

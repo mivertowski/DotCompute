@@ -1,4 +1,4 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
@@ -29,8 +29,8 @@ public sealed class MockHardwareProvider : IHardwareProvider
     public MockHardwareProvider(ILogger<MockHardwareProvider>? logger = null)
     {
         _logger = logger ?? NullLogger<MockHardwareProvider>.Instance;
-        _devices = new List<IHardwareDevice>();
-        _devicesByType = new Dictionary<AcceleratorType, List<IHardwareDevice>>();
+        _devices = [];
+        _devicesByType = [];
 
         InitializeDefaultDevices();
         _logger.LogInformation("Initialized MockHardwareProvider with {DeviceCount} devices", _devices.Count);
@@ -43,8 +43,8 @@ public sealed class MockHardwareProvider : IHardwareProvider
     public IEnumerable<IHardwareDevice> GetDevices(AcceleratorType type)
     {
         ThrowIfDisposed();
-        return _devicesByType.TryGetValue(type, out var devices) 
-            ? devices.Where(d => d.IsAvailable) 
+        return _devicesByType.TryGetValue(type, out var devices)
+            ? devices.Where(d => d.IsAvailable)
             : Enumerable.Empty<IHardwareDevice>();
     }
 
@@ -56,10 +56,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
     }
 
     /// <inheritdoc/>
-    public IHardwareDevice? GetFirstDevice(AcceleratorType type)
-    {
-        return GetDevices(type).FirstOrDefault();
-    }
+    public IHardwareDevice? GetFirstDevice(AcceleratorType type) => GetDevices(type).FirstOrDefault();
 
     /// <inheritdoc/>
     public IAccelerator CreateAccelerator(IHardwareDevice device)
@@ -67,24 +64,21 @@ public sealed class MockHardwareProvider : IHardwareProvider
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(device);
 
-        if(device is not MockHardwareDevice mockDevice)
+        if (device is not MockHardwareDevice mockDevice)
         {
             throw new ArgumentException("Device must be a MockHardwareDevice", nameof(device));
         }
 
         _logger.LogDebug("Creating mock accelerator for device {DeviceId}", device.Id);
         return new MockAccelerator(
-            name: mockDevice.Name ?? mockDevice.Id, 
-            type: mockDevice.Type, 
+            name: mockDevice.Name ?? mockDevice.Id,
+            type: mockDevice.Type,
             totalMemory: 8L * 1024 * 1024 * 1024, // 8GB default
             logger: _logger);
     }
 
     /// <inheritdoc/>
-    public bool IsSupported(AcceleratorType type)
-    {
-        return _devicesByType.ContainsKey(type) && _devicesByType[type].Any(d => d.IsAvailable);
-    }
+    public bool IsSupported(AcceleratorType type) => _devicesByType.ContainsKey(type) && _devicesByType[type].Any(d => d.IsAvailable);
 
     /// <inheritdoc/>
     public Dictionary<string, object> GetDiagnostics()
@@ -115,14 +109,14 @@ public sealed class MockHardwareProvider : IHardwareProvider
         ArgumentNullException.ThrowIfNull(device);
 
         _devices.Add(device);
-        
-        if(!_devicesByType.ContainsKey(device.Type))
+
+        if (!_devicesByType.ContainsKey(device.Type))
         {
-            _devicesByType[device.Type] = new List<IHardwareDevice>();
+            _devicesByType[device.Type] = [];
         }
         _devicesByType[device.Type].Add(device);
 
-        _logger.LogDebug("Added mock device: {DeviceId}{DeviceType})", device.Id, device.Type);
+        _logger.LogDebug("Added mock device: {DeviceId} ({DeviceType})", device.Id, device.Type);
     }
 
     /// <summary>
@@ -135,7 +129,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
         ThrowIfDisposed();
 
         var device = _devices.FirstOrDefault(d => d.Id == deviceId);
-        if(device == null)
+        if (device == null)
         {
             return false;
         }
@@ -157,7 +151,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
         ThrowIfDisposed();
 
         var device = _devices.FirstOrDefault(d => d.Id == deviceId) as MockHardwareDevice;
-        if(device != null)
+        if (device != null)
         {
             device.SimulateFailure(errorMessage ?? "Simulated device failure");
             _logger.LogWarning("Simulated failure for device {DeviceId}: {Error}", deviceId, errorMessage);
@@ -191,7 +185,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
         _devices.Clear();
         _devicesByType.Clear();
 
-        switch(configuration)
+        switch (configuration)
         {
             case HardwareConfiguration.HighEndGaming:
                 CreateHighEndGamingSetup();
@@ -216,7 +210,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
                 break;
         }
 
-        _logger.LogInformation("Created {Configuration} hardware configuration with {DeviceCount} devices", 
+        _logger.LogInformation("Created {Configuration} hardware configuration with {DeviceCount} devices",
             configuration, _devices.Count);
     }
 
@@ -266,20 +260,14 @@ public sealed class MockHardwareProvider : IHardwareProvider
         AddDevice(MockMetalDevice.CreateM2());
     }
 
-    private void CreateMinimalSetup()
-    {
-        AddDevice(MockCpuDevice.CreateBasic());
-    }
+    private void CreateMinimalSetup() => AddDevice(MockCpuDevice.CreateBasic());
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        if(_disposed)
+        if (_disposed)
             return;
 
         foreach (var device in _devices.OfType<IDisposable>())
@@ -288,7 +276,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
             {
                 device.Dispose();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing device during cleanup");
             }
@@ -308,22 +296,22 @@ public enum HardwareConfiguration
 {
     /// <summary>Default balanced configuration.</summary>
     Default,
-    
+
     /// <summary>High-end gaming setup with latest GPUs.</summary>
     HighEndGaming,
-    
+
     /// <summary>Data center setup with professional cards.</summary>
     DataCenter,
-    
+
     /// <summary>Laptop with integrated/mobile GPUs.</summary>
     LaptopIntegrated,
-    
+
     /// <summary>CPU-only configuration.</summary>
     CpuOnly,
-    
+
     /// <summary>Mixed vendor configuration.</summary>
     Mixed,
-    
+
     /// <summary>Minimal single device configuration.</summary>
     Minimal
 }

@@ -1,8 +1,5 @@
-using System;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -40,37 +37,37 @@ public class RTX2000HardwareValidationTests : IDisposable
         {
             // Initialize CUDA
             var result = CudaInit(0);
-            if(result != 0)
+            if (result != 0)
             {
                 _output.WriteLine($"CUDA initialization failed with error code: {result}");
                 return;
             }
 
             // Get device count
-            int deviceCount = 0;
+            var deviceCount = 0;
             result = CudaGetDeviceCount(ref deviceCount);
-            if(result != 0 || deviceCount == 0)
+            if (result != 0 || deviceCount == 0)
             {
                 _output.WriteLine($"No CUDA devices found. Error code: {result}, Device count: {deviceCount}");
                 return;
             }
 
             // Find RTX 2000 Ada Gen device
-            bool foundRTX2000 = false;
-            for(int i = 0; i < deviceCount; i++)
+            var foundRTX2000 = false;
+            for (var i = 0; i < deviceCount; i++)
             {
                 var deviceName = new byte[256];
                 result = CudaDeviceGetName(deviceName, 256, i);
-                if(result == 0)
+                if (result == 0)
                 {
                     var name = System.Text.Encoding.ASCII.GetString(deviceName).TrimEnd('\0');
                     _output.WriteLine($"Found device {i}: {name}");
-                    
-                    if(name.Contains("RTX 2000 Ada") || name.Contains("Ada Generation"))
+
+                    if (name.Contains("RTX 2000 Ada") || name.Contains("Ada Generation"))
                     {
                         _deviceId = i;
                         foundRTX2000 = true;
-                        
+
                         // Get device properties
                         var tempProps = _deviceProperties;
                         GetDeviceProperties(i, ref tempProps);
@@ -81,7 +78,7 @@ public class RTX2000HardwareValidationTests : IDisposable
                 }
             }
 
-            if(!foundRTX2000)
+            if (!foundRTX2000)
             {
                 _output.WriteLine("RTX 2000 Ada Generation GPU not found. Using first available device for testing.");
                 _deviceId = 0;
@@ -89,7 +86,7 @@ public class RTX2000HardwareValidationTests : IDisposable
 
             // Create context on selected device
             result = CudaCtxCreate(ref _cudaContext, 0, _deviceId);
-            if(result == 0)
+            if (result == 0)
             {
                 _cudaInitialized = true;
                 _output.WriteLine($"CUDA context created successfully on device {_deviceId}");
@@ -99,7 +96,7 @@ public class RTX2000HardwareValidationTests : IDisposable
                 _output.WriteLine($"Failed to create CUDA context. Error code: {result}");
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _output.WriteLine($"CUDA initialization exception: {ex.Message}");
         }
@@ -119,7 +116,7 @@ public class RTX2000HardwareValidationTests : IDisposable
         _output.WriteLine($"  L2 Cache Size: {_deviceProperties.L2CacheSize} bytes");
 
         // RTX 2000 Ada Gen should have compute capability 8.9
-        if(_deviceProperties.Major == 8 && _deviceProperties.Minor == 9)
+        if (_deviceProperties.Major == 8 && _deviceProperties.Minor == 9)
         {
             _output.WriteLine("✓ Confirmed RTX 2000 Ada GenerationCompute Capability 8.9)");
         }
@@ -152,14 +149,14 @@ public class RTX2000HardwareValidationTests : IDisposable
 
         ulong free = 0, total = 0;
         var result = CudaMemGetInfo(ref free, ref total);
-        
+
         Assert.Equal(0, result); // Memory info query should succeed;
         total.Should().BeGreaterThan(4UL * 1024 * 1024 * 1024, "RTX 2000 Ada Gen should have more than 4GB memory");
 
         // RTX 2000 Ada Gen has 8GB GDDR6 memory
-        var totalGB = total /(1024.0 * 1024.0 * 1024.0);
+        var totalGB = total / (1024.0 * 1024.0 * 1024.0);
         _output.WriteLine($"Total GPU Memory: {totalGB:F1} GB");
-        
+
         // Allow some tolerance for system reserved memory
         totalGB.Should().BeInRange(7.0, 8.5, "RTX 2000 Ada Gen should have approximately 8GB memory");
 
@@ -176,8 +173,8 @@ public class RTX2000HardwareValidationTests : IDisposable
         var memoryClockMHz = _deviceProperties.MemoryClockRate / 1000.0;
         var effectiveClockMHz = memoryClockMHz * 2; // DDR
         var busWidthBits = _deviceProperties.MemoryBusWidth;
-        
-        return(effectiveClockMHz * busWidthBits) / 8.0 / 1000.0; // Convert to GB/s
+
+        return (effectiveClockMHz * busWidthBits) / 8.0 / 1000.0; // Convert to GB/s
     }
 
     [SkippableFact]
@@ -191,19 +188,19 @@ public class RTX2000HardwareValidationTests : IDisposable
         const int allocationCount = 100;
         const long allocationSizeMB = 64; // 64 MB per allocation
         const long allocationSize = allocationSizeMB * 1024 * 1024;
-        
+
         var allocations = new List<IntPtr>();
         var stopwatch = Stopwatch.StartNew();
 
         try
         {
             // Allocate multiple buffers
-            for(int i = 0; i < allocationCount; i++)
+            for (var i = 0; i < allocationCount; i++)
             {
-                IntPtr devicePtr = IntPtr.Zero;
+                var devicePtr = IntPtr.Zero;
                 var result = CudaMalloc(ref devicePtr, allocationSize);
-                
-                if(result == 0)
+
+                if (result == 0)
                 {
                     allocations.Add(devicePtr);
                 }
@@ -214,9 +211,9 @@ public class RTX2000HardwareValidationTests : IDisposable
                 }
 
                 // Log progress
-                if((i + 1) % 10 == 0)
+                if ((i + 1) % 10 == 0)
                 {
-                    var allocatedMB =(i + 1) * allocationSizeMB;
+                    var allocatedMB = (i + 1) * allocationSizeMB;
                     _output.WriteLine($"Successfully allocated {allocatedMB} MB in {i + 1} buffers");
                 }
             }
@@ -255,8 +252,8 @@ public class RTX2000HardwareValidationTests : IDisposable
         var hostData = new byte[testSize];
         new Random(42).NextBytes(hostData);
 
-        IntPtr devicePtr = IntPtr.Zero;
-        
+        var devicePtr = IntPtr.Zero;
+
         try
         {
             var result = CudaMalloc(ref devicePtr, testSize);
@@ -266,7 +263,7 @@ public class RTX2000HardwareValidationTests : IDisposable
             try
             {
                 // Warm up
-                for(int i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
                     CudaMemcpyHtoD(devicePtr, hostHandle.AddrOfPinnedObject(), testSize);
                     CudaMemcpyDtoH(hostHandle.AddrOfPinnedObject(), devicePtr, testSize);
@@ -274,44 +271,44 @@ public class RTX2000HardwareValidationTests : IDisposable
 
                 // Measure Host to Device bandwidth
                 var sw = Stopwatch.StartNew();
-                for(int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     result = CudaMemcpyHtoD(devicePtr, hostHandle.AddrOfPinnedObject(), testSize);
                     result.Should().Be(0, $"H2D copy iteration {i} should succeed");
                 }
                 sw.Stop();
 
-                var h2dBandwidth =((long)testSize * iterations /(1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                var h2dBandwidth = ((long)testSize * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
                 _output.WriteLine($"Host to Device bandwidth: {h2dBandwidth:F2} GB/s");
 
                 // Measure Device to Host bandwidth
                 sw.Restart();
-                for(int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     result = CudaMemcpyDtoH(hostHandle.AddrOfPinnedObject(), devicePtr, testSize);
                     result.Should().Be(0, $"D2H copy iteration {i} should succeed");
                 }
                 sw.Stop();
 
-                var d2hBandwidth =((long)testSize * iterations /(1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                var d2hBandwidth = ((long)testSize * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
                 _output.WriteLine($"Device to Host bandwidth: {d2hBandwidth:F2} GB/s");
 
                 // Measure Device to Device bandwidth
-                IntPtr devicePtr2 = IntPtr.Zero;
+                var devicePtr2 = IntPtr.Zero;
                 result = CudaMalloc(ref devicePtr2, testSize);
                 Assert.Equal(0, result); // Second memory allocation should succeed;
 
                 try
                 {
                     sw.Restart();
-                    for(int i = 0; i < iterations; i++)
+                    for (var i = 0; i < iterations; i++)
                     {
                         result = CudaMemcpyDtoD(devicePtr2, devicePtr, testSize);
                         result.Should().Be(0, $"D2D copy iteration {i} should succeed");
                     }
                     sw.Stop();
 
-                    var d2dBandwidth =((long)testSize * iterations /(1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                    var d2dBandwidth = ((long)testSize * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
                     _output.WriteLine($"Device to Device bandwidth: {d2dBandwidth:F2} GB/s");
 
                     // Validate bandwidth expectations
@@ -336,7 +333,7 @@ public class RTX2000HardwareValidationTests : IDisposable
         }
         finally
         {
-            if(devicePtr != IntPtr.Zero)
+            if (devicePtr != IntPtr.Zero)
             {
                 CudaFree(devicePtr);
             }
@@ -369,7 +366,7 @@ public class RTX2000HardwareValidationTests : IDisposable
 
         // RTX 2000 Ada Gen should have sufficient multiprocessors for good parallelism
         smCount.Should().BeGreaterThan(20, "RTX 2000 Ada Gen should have many SMs for parallel execution");
-        maxThreadsPerSM .Should().BeGreaterThanOrEqualTo(1536, "Ada architecture should support many concurrent threads");
+        maxThreadsPerSM.Should().BeGreaterThanOrEqualTo(1536, "Ada architecture should support many concurrent threads");
 
         await Task.CompletedTask;
     }
@@ -393,7 +390,7 @@ public class RTX2000HardwareValidationTests : IDisposable
         try
         {
             // Create streams and allocate memory
-            for(int i = 0; i < streamCount; i++)
+            for (var i = 0; i < streamCount; i++)
             {
                 var result = CudaStreamCreate(ref streams[i]);
                 result.Should().Be(0, $"Stream {i} creation should succeed");
@@ -402,7 +399,7 @@ public class RTX2000HardwareValidationTests : IDisposable
                 result.Should().Be(0, $"Buffer {i} allocation should succeed");
 
                 hostBuffers[i] = new float[elementsPerStream];
-                for(int j = 0; j < elementsPerStream; j++)
+                for (var j = 0; j < elementsPerStream; j++)
                 {
                     hostBuffers[i][j] = i * elementsPerStream + j;
                 }
@@ -412,19 +409,19 @@ public class RTX2000HardwareValidationTests : IDisposable
 
             // Launch concurrent memory transfers
             var handles = new GCHandle[streamCount];
-            for(int i = 0; i < streamCount; i++)
+            for (var i = 0; i < streamCount; i++)
             {
                 handles[i] = GCHandle.Alloc(hostBuffers[i], GCHandleType.Pinned);
                 var result = CudaMemcpyHtoDAsync(
-                    deviceBuffers[i], 
-                    handles[i].AddrOfPinnedObject(), 
-                    elementsPerStream * elementSize, 
+                    deviceBuffers[i],
+                    handles[i].AddrOfPinnedObject(),
+                    elementsPerStream * elementSize,
                     streams[i]);
                 result.Should().Be(0, $"Async H2D copy for stream {i} should succeed");
             }
 
             // Synchronize all streams
-            for(int i = 0; i < streamCount; i++)
+            for (var i = 0; i < streamCount; i++)
             {
                 var result = CudaStreamSynchronize(streams[i]);
                 result.Should().Be(0, $"Stream {i} synchronization should succeed");
@@ -435,8 +432,8 @@ public class RTX2000HardwareValidationTests : IDisposable
             _output.WriteLine($"Concurrent operations completed in {stopwatch.ElapsedMilliseconds} ms");
 
             // Verify that concurrent execution was faster than sequential would be
-            var totalDataMB =(streamCount * elementsPerStream * elementSize) /(1024 * 1024);
-            var throughputMBps = totalDataMB /(stopwatch.ElapsedMilliseconds / 1000.0);
+            var totalDataMB = (streamCount * elementsPerStream * elementSize) / (1024 * 1024);
+            var throughputMBps = totalDataMB / (stopwatch.ElapsedMilliseconds / 1000.0);
             _output.WriteLine($"Total throughput: {throughputMBps:F1} MB/s for {totalDataMB} MB");
 
             throughputMBps.Should().BeGreaterThan(1000, "Concurrent streams should achieve high throughput");
@@ -444,11 +441,11 @@ public class RTX2000HardwareValidationTests : IDisposable
         finally
         {
             // Cleanup
-            for(int i = 0; i < streamCount; i++)
+            for (var i = 0; i < streamCount; i++)
             {
-                if(streams[i] != IntPtr.Zero)
+                if (streams[i] != IntPtr.Zero)
                     CudaStreamDestroy(streams[i]);
-                if(deviceBuffers[i] != IntPtr.Zero)
+                if (deviceBuffers[i] != IntPtr.Zero)
                     CudaFree(deviceBuffers[i]);
             }
         }
@@ -464,7 +461,7 @@ public class RTX2000HardwareValidationTests : IDisposable
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
 
         // Test 1: Invalid memory allocation(too large)
-        IntPtr devicePtr = IntPtr.Zero;
+        var devicePtr = IntPtr.Zero;
         var result = CudaMalloc(ref devicePtr, long.MaxValue);
         result.Should().NotBe(0, "Excessive memory allocation should fail");
         _output.WriteLine($"Large allocation failed as expected with error code: {result}");
@@ -511,7 +508,7 @@ public class RTX2000HardwareValidationTests : IDisposable
 
     public void Dispose()
     {
-        if(_cudaContext != IntPtr.Zero)
+        if (_cudaContext != IntPtr.Zero)
         {
             CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
@@ -643,87 +640,87 @@ public class RTX2000HardwareValidationTests : IDisposable
     }
 
     // Platform-agnostic wrapper methods
-    private static int CudaInit(uint flags) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaInit(flags) :
+    private static int CudaInit(uint flags)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaInit(flags) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaInit(flags) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaGetDeviceCount(ref int count) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaGetDeviceCount(ref count) :
+    private static int CudaGetDeviceCount(ref int count)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaGetDeviceCount(ref count) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaGetDeviceCount(ref count) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaDeviceGetName(byte[] name, int len, int dev) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaDeviceGetName(name, len, dev) :
+    private static int CudaDeviceGetName(byte[] name, int len, int dev)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaDeviceGetName(name, len, dev) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaDeviceGetName(name, len, dev) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaDeviceGetAttribute(ref int value, int attrib, int dev) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaDeviceGetAttribute(ref value, attrib, dev) :
+    private static int CudaDeviceGetAttribute(ref int value, int attrib, int dev)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaDeviceGetAttribute(ref value, attrib, dev) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaDeviceGetAttribute(ref value, attrib, dev) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaCtxCreate(ref ctx, flags, dev) :
+    private static int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaCtxCreate(ref ctx, flags, dev) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaCtxCreate(ref ctx, flags, dev) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaCtxDestroy(IntPtr ctx) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaCtxDestroy(ctx) :
+    private static int CudaCtxDestroy(IntPtr ctx)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaCtxDestroy(ctx) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaCtxDestroy(ctx) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMemGetInfo(ref ulong free, ref ulong total) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemGetInfo(ref free, ref total) :
+    private static int CudaMemGetInfo(ref ulong free, ref ulong total)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemGetInfo(ref free, ref total) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMemGetInfo(ref free, ref total) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMalloc(ref IntPtr dptr, long bytesize) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMalloc(ref dptr, bytesize) :
+    private static int CudaMalloc(ref IntPtr dptr, long bytesize)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMalloc(ref dptr, bytesize) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMalloc(ref dptr, bytesize) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaFree(IntPtr dptr) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaFree(dptr) :
+    private static int CudaFree(IntPtr dptr)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaFree(dptr) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaFree(dptr) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyHtoD(dstDevice, srcHost, byteCount) :
+    private static int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyHtoD(dstDevice, srcHost, byteCount) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMemcpyHtoD(dstDevice, srcHost, byteCount) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyDtoH(dstHost, srcDevice, byteCount) :
+    private static int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyDtoH(dstHost, srcDevice, byteCount) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMemcpyDtoH(dstHost, srcDevice, byteCount) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyDtoD(dstDevice, srcDevice, byteCount) :
+    private static int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyDtoD(dstDevice, srcDevice, byteCount) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMemcpyDtoD(dstDevice, srcDevice, byteCount) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMemcpyHtoDAsync(IntPtr dstDevice, IntPtr srcHost, long byteCount, IntPtr stream) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyHtoDAsync(dstDevice, srcHost, byteCount, stream) :
+    private static int CudaMemcpyHtoDAsync(IntPtr dstDevice, IntPtr srcHost, long byteCount, IntPtr stream)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyHtoDAsync(dstDevice, srcHost, byteCount, stream) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMemcpyHtoDAsync(dstDevice, srcHost, byteCount, stream) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaStreamCreate(ref IntPtr stream) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaStreamCreate(ref stream, 0) :
+    private static int CudaStreamCreate(ref IntPtr stream)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaStreamCreate(ref stream, 0) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaStreamCreate(ref stream, 0) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaStreamDestroy(IntPtr stream) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaStreamDestroy(stream) :
+    private static int CudaStreamDestroy(IntPtr stream)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaStreamDestroy(stream) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaStreamDestroy(stream) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaStreamSynchronize(IntPtr stream) =>
-        RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaStreamSynchronize(stream) :
+    private static int CudaStreamSynchronize(IntPtr stream)
+        => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaStreamSynchronize(stream) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaStreamSynchronize(stream) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private void GetDeviceProperties(int deviceId, ref CudaDeviceProperties props)
+    private static void GetDeviceProperties(int deviceId, ref CudaDeviceProperties props)
     {
         // Device attributes from CUDA driver API
         const int CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR = 75;
@@ -736,38 +733,38 @@ public class RTX2000HardwareValidationTests : IDisposable
         const int CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH = 37;
         const int CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE = 40;
 
-        int value = 0;
-        
-        if(CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, deviceId) == 0)
+        var value = 0;
+
+        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, deviceId) == 0)
             props.Major = value;
-        
-        if(CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, deviceId) == 0)
+
+        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, deviceId) == 0)
             props.Minor = value;
-        
-        if(CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK, deviceId) == 0)
+
+        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK, deviceId) == 0)
             props.SharedMemPerBlock = value;
-        
-        if(CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, deviceId) == 0)
+
+        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, deviceId) == 0)
             props.MaxThreadsPerBlock = value;
-        
-        if(CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, deviceId) == 0)
+
+        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, deviceId) == 0)
             props.MultiProcessorCount = value;
-        
-        if(CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, deviceId) == 0)
+
+        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, deviceId) == 0)
             props.MaxThreadsPerMultiProcessor = value;
-        
-        if(CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, deviceId) == 0)
+
+        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, deviceId) == 0)
             props.MemoryClockRate = value;
-        
-        if(CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH, deviceId) == 0)
+
+        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH, deviceId) == 0)
             props.MemoryBusWidth = value;
-        
-        if(CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE, deviceId) == 0)
+
+        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE, deviceId) == 0)
             props.L2CacheSize = value;
 
         // Get total memory from memory info
         ulong free = 0, total = 0;
-        if(CudaMemGetInfo(ref free, ref total) == 0)
+        if (CudaMemGetInfo(ref free, ref total) == 0)
         {
             props.TotalGlobalMem = total;
         }
@@ -791,7 +788,7 @@ public static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
-        if(!condition)
+        if (!condition)
         {
             throw new SkipException(reason);
         }

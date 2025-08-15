@@ -3,7 +3,6 @@ using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Text;
 
 namespace DotCompute.Benchmarks;
 
@@ -16,12 +15,12 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-public class EnhancedKernelCompilationBenchmarks
+internal class EnhancedKernelCompilationBenchmarks
 {
     private IAcceleratorManager _acceleratorManager = null!;
     private IAccelerator _accelerator = null!;
-    private readonly Dictionary<string, KernelDefinition> _kernelDefinitions = new();
-    private readonly Dictionary<string, ICompiledKernel> _compiledKernels = new();
+    private readonly Dictionary<string, KernelDefinition> _kernelDefinitions = [];
+    private readonly Dictionary<string, ICompiledKernel> _compiledKernels = [];
 
     [Params("Simple", "Complex", "VectorAdd", "MatrixMultiply", "Reduction")]
     public string KernelType { get; set; } = "Simple";
@@ -34,13 +33,13 @@ public class EnhancedKernelCompilationBenchmarks
     {
         var logger = new NullLogger<DefaultAcceleratorManager>();
         _acceleratorManager = new DefaultAcceleratorManager(logger);
-        
+
         var cpuProvider = new CpuAcceleratorProvider(new NullLogger<CpuAcceleratorProvider>());
         _acceleratorManager.RegisterProvider(cpuProvider);
         await _acceleratorManager.InitializeAsync();
-        
+
         _accelerator = _acceleratorManager.Default;
-        
+
         SetupKernelDefinitions();
     }
 
@@ -54,7 +53,7 @@ public class EnhancedKernelCompilationBenchmarks
                     output[id] = input[id] * 2.0f;
                 }
             }";
-        
+
         var simpleKernelSource_obj = new TextKernelSource(simpleKernelSource, "simple_kernel", KernelLanguage.OpenCL, "simple_kernel");
         _kernelDefinitions["Simple"] = new KernelDefinition("simple_kernel", simpleKernelSource_obj, new CompilationOptions());
 
@@ -80,7 +79,7 @@ public class EnhancedKernelCompilationBenchmarks
                     output[id] = value;
                 }
             }";
-        
+
         var complexKernelSource_obj = new TextKernelSource(complexKernelSource, "complex_kernel", KernelLanguage.OpenCL, "complex_kernel");
         _kernelDefinitions["Complex"] = new KernelDefinition("complex_kernel", complexKernelSource_obj, new CompilationOptions());
 
@@ -92,7 +91,7 @@ public class EnhancedKernelCompilationBenchmarks
                     result[id] = a[id] + b[id];
                 }
             }";
-        
+
         var vectorAddSource_obj = new TextKernelSource(vectorAddSource, "vector_add", KernelLanguage.OpenCL, "vector_add");
         _kernelDefinitions["VectorAdd"] = new KernelDefinition("vector_add", vectorAddSource_obj, new CompilationOptions());
 
@@ -111,7 +110,7 @@ public class EnhancedKernelCompilationBenchmarks
                     C[row * N + col] = sum;
                 }
             }";
-        
+
         var matrixMultiplySource_obj = new TextKernelSource(matrixMultiplySource, "matrix_multiply", KernelLanguage.OpenCL, "matrix_multiply");
         _kernelDefinitions["MatrixMultiply"] = new KernelDefinition("matrix_multiply", matrixMultiplySource_obj, new CompilationOptions());
 
@@ -140,7 +139,7 @@ public class EnhancedKernelCompilationBenchmarks
                     output[get_group_id(0)] = scratch[0];
                 }
             }";
-        
+
         var reductionSource_obj = new TextKernelSource(reductionSource, "reduction_sum", KernelLanguage.OpenCL, "reduction_sum");
         _kernelDefinitions["Reduction"] = new KernelDefinition("reduction_sum", reductionSource_obj, new CompilationOptions());
     }
@@ -173,10 +172,10 @@ public class EnhancedKernelCompilationBenchmarks
         {
             OptimizationLevel = OptimizationLevel
         };
-        
+
         var kernel = await _accelerator.CompileKernelAsync(
             _kernelDefinitions[KernelType], options);
-        
+
         _compiledKernels[$"{KernelType}_cold"] = kernel;
     }
 
@@ -188,15 +187,15 @@ public class EnhancedKernelCompilationBenchmarks
         {
             OptimizationLevel = OptimizationLevel
         };
-        
+
         var kernel1 = await _accelerator.CompileKernelAsync(
             _kernelDefinitions[KernelType], options);
         await kernel1.DisposeAsync();
-        
+
         // Second compilation (should hit cache)
         var kernel2 = await _accelerator.CompileKernelAsync(
             _kernelDefinitions[KernelType], options);
-        
+
         _compiledKernels[$"{KernelType}_cached"] = kernel2;
     }
 
@@ -207,18 +206,18 @@ public class EnhancedKernelCompilationBenchmarks
         {
             OptimizationLevel = OptimizationLevel
         };
-        
+
         var tasks = new List<Task<ICompiledKernel>>();
-        
+
         // Compile multiple kernels in parallel
         foreach (var kvp in _kernelDefinitions.Take(3))
         {
             tasks.Add(_accelerator.CompileKernelAsync(kvp.Value, options).AsTask());
         }
-        
+
         var results = await Task.WhenAll(tasks);
-        
-        for (int i = 0; i < results.Length; i++)
+
+        for (var i = 0; i < results.Length; i++)
         {
             _compiledKernels[$"parallel_{i}"] = results[i];
         }
@@ -227,15 +226,15 @@ public class EnhancedKernelCompilationBenchmarks
     [Benchmark]
     public async Task OptimizationLevelComparison()
     {
-        var optimizationLevels = new[] 
-        { 
-            OptimizationLevel.Debug, 
-            OptimizationLevel.Default, 
-            OptimizationLevel.Release 
+        var optimizationLevels = new[]
+        {
+            OptimizationLevel.Debug,
+            OptimizationLevel.Default,
+            OptimizationLevel.Release
         };
-        
+
         var kernels = new List<ICompiledKernel>();
-        
+
         foreach (var level in optimizationLevels)
         {
             var options = new CompilationOptions { OptimizationLevel = level };
@@ -243,8 +242,8 @@ public class EnhancedKernelCompilationBenchmarks
                 _kernelDefinitions[KernelType], options);
             kernels.Add(kernel);
         }
-        
-        for (int i = 0; i < kernels.Count; i++)
+
+        for (var i = 0; i < kernels.Count; i++)
         {
             _compiledKernels[$"opt_{i}"] = kernels[i];
         }
@@ -263,10 +262,10 @@ public class EnhancedKernelCompilationBenchmarks
                 ["PRECISION"] = "float"
             }
         };
-        
+
         var kernel = await _accelerator.CompileKernelAsync(
             _kernelDefinitions[KernelType], options);
-        
+
         _compiledKernels[$"{KernelType}_with_defines"] = kernel;
     }
 
@@ -276,24 +275,24 @@ public class EnhancedKernelCompilationBenchmarks
         var options = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel,
-            AdditionalFlags = new[] { "-cl-fast-relaxed-math", "-cl-mad-enable" },
+            AdditionalFlags = ["-cl-fast-relaxed-math", "-cl-mad-enable"],
             FastMath = true,
             UnrollLoops = true
         };
-        
+
         var kernel = await _accelerator.CompileKernelAsync(
             _kernelDefinitions[KernelType], options);
-        
+
         _compiledKernels[$"{KernelType}_with_flags"] = kernel;
     }
 
     [Benchmark]
-    public double CompilationThroughput()
+    public static double CompilationThroughput()
     {
         // Calculate kernels compiled per second (simulated)
         var compilationTime = 0.5; // Simulated 0.5 seconds
         var kernelsCompiled = 1;
-        
+
         return kernelsCompiled / compilationTime;
     }
 }

@@ -9,7 +9,6 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.Utilities;
 
@@ -37,10 +36,7 @@ public static class CudaTestUtilities
     /// <summary>
     /// Check if NVRTC is available for kernel compilation
     /// </summary>
-    public static bool IsNvrtcAvailable()
-    {
-        return CudaKernelCompiler.IsNvrtcAvailable();
-    }
+    public static bool IsNvrtcAvailable() => CudaKernelCompiler.IsNvrtcAvailable();
 
     /// <summary>
     /// Get the number of available CUDA devices
@@ -72,7 +68,8 @@ public static class CudaTestUtilities
     /// </summary>
     public static CudaDeviceProperties? GetDeviceProperties(int deviceId)
     {
-        if(!IsValidDeviceId(deviceId)) return null;
+        if (!IsValidDeviceId(deviceId))
+            return null;
 
         try
         {
@@ -92,9 +89,10 @@ public static class CudaTestUtilities
     public static bool SupportsComputeCapability(int deviceId, int minMajor, int minMinor = 0)
     {
         var props = GetDeviceProperties(deviceId);
-        if(props == null) return false;
+        if (props == null)
+            return false;
 
-        return props.Value.Major > minMajor || 
+        return props.Value.Major > minMajor ||
               (props.Value.Major == minMajor && props.Value.Minor >= minMinor);
     }
 
@@ -117,24 +115,22 @@ public static class CudaTestUtilities
     /// Check if this is a Tensor Core capable GPU
     /// </summary>
     public static bool SupportsTensorCores(int deviceId)
-    {
         // Tensor Cores are available on compute capability 7.0+(Volta, Turing, Ampere, etc.)
-        return SupportsComputeCapability(deviceId, 7, 0);
-    }
+        => SupportsComputeCapability(deviceId, 7, 0);
 
     /// <summary>
     /// Get memory usage information for a device
     /// </summary>
-    public static(ulong free, ulong total) GetMemoryInfo()
+    public static (ulong free, ulong total) GetMemoryInfo()
     {
         try
         {
             CudaRuntime.cudaMemGetInfo(out var free, out var total);
-            return(free, total);
+            return (free, total);
         }
         catch
         {
-            return(0, 0);
+            return (0, 0);
         }
     }
 
@@ -143,7 +139,7 @@ public static class CudaTestUtilities
     /// </summary>
     public static CudaAccelerator CreateTestAccelerator(int deviceId = 0, ILogger<CudaAccelerator>? logger = null)
     {
-        if(!IsValidDeviceId(deviceId))
+        if (!IsValidDeviceId(deviceId))
         {
             throw new ArgumentException($"Invalid device ID: {deviceId}");
         }
@@ -157,7 +153,7 @@ public static class CudaTestUtilities
     /// </summary>
     public static ILogger<T> CreateTestLogger<T>()
     {
-        var loggerFactory = LoggerFactory.Create(builder => 
+        var loggerFactory = LoggerFactory.Create(builder =>
             builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         return loggerFactory.CreateLogger<T>();
     }
@@ -167,7 +163,7 @@ public static class CudaTestUtilities
     /// </summary>
     public static void RequireCuda()
     {
-        if(!IsCudaAvailable())
+        if (!IsCudaAvailable())
         {
             throw new SkipException("CUDA is not available");
         }
@@ -179,8 +175,8 @@ public static class CudaTestUtilities
     public static void RequireNvrtc()
     {
         RequireCuda();
-        
-        if(!IsNvrtcAvailable())
+
+        if (!IsNvrtcAvailable())
         {
             throw new SkipException("NVRTC is not available");
         }
@@ -192,8 +188,8 @@ public static class CudaTestUtilities
     public static void RequireComputeCapability(int minMajor, int minMinor = 0, int deviceId = 0)
     {
         RequireCuda();
-        
-        if(!SupportsComputeCapability(deviceId, minMajor, minMinor))
+
+        if (!SupportsComputeCapability(deviceId, minMajor, minMinor))
         {
             throw new SkipException($"Compute capability {minMajor}.{minMinor}+ required");
         }
@@ -205,9 +201,9 @@ public static class CudaTestUtilities
     public static void RequireRTX2000Series(int deviceId = 0)
     {
         RequireCuda();
-        
+
         var props = GetDeviceProperties(deviceId);
-        if(props == null || !IsRTX2000Series(props.Value.Name))
+        if (props == null || !IsRTX2000Series(props.Value.Name))
         {
             throw new SkipException("RTX 2000 series GPU required");
         }
@@ -237,31 +233,31 @@ public static class CudaTestUtilities
 
         // Check CUDA availability
         validation.CudaAvailable = IsCudaAvailable();
-        if(validation.CudaAvailable)
+        if (validation.CudaAvailable)
         {
             validation.DeviceCount = GetDeviceCount();
-            
+
             // Get primary device info
             var props = GetDeviceProperties(0);
-            if(props != null)
+            if (props != null)
             {
                 validation.PrimaryDeviceName = props.Value.Name;
                 validation.ComputeCapability = $"{props.Value.Major}.{props.Value.Minor}";
-                validation.DeviceMemoryGB =(double)props.Value.TotalGlobalMem /(1024 * 1024 * 1024);
+                validation.DeviceMemoryGB = (double)props.Value.TotalGlobalMem / (1024 * 1024 * 1024);
             }
         }
 
         // Check NVRTC availability
         validation.NvrtcAvailable = IsNvrtcAvailable();
-        if(validation.NvrtcAvailable)
+        if (validation.NvrtcAvailable)
         {
-            var(major, minor) = CudaKernelCompiler.GetNvrtcVersion();
+            var (major, minor) = CudaKernelCompiler.GetNvrtcVersion();
             validation.NvrtcVersion = $"{major}.{minor}";
         }
 
         // Platform information
         validation.PlatformInfo = GetPlatformInfo();
-        
+
         return validation;
     }
 }
@@ -421,7 +417,7 @@ __global__ void tensor_core_gemm(half* a, half* b, float* c, int n)
         public static float[] LargeFloat(int size = 1024 * 1024) => TestDataGenerator.GenerateFloatArray(size);
 
         public static float[,] Matrix(int rows, int cols) => TestDataGenerator.GenerateFloatMatrix(rows, cols);
-        
+
         public static byte[] RandomBytes(int size)
         {
             var data = new byte[size];
@@ -453,38 +449,38 @@ public class TestEnvironmentValidation
     public string PrimaryDeviceName { get; set; } = string.Empty;
     public string ComputeCapability { get; set; } = string.Empty;
     public double DeviceMemoryGB { get; set; }
-    
+
     public bool NvrtcAvailable { get; set; }
     public string NvrtcVersion { get; set; } = string.Empty;
-    
+
     public PlatformInfo PlatformInfo { get; set; } = new();
-    
+
     public bool IsFullyFunctional => CudaAvailable && NvrtcAvailable && DeviceCount > 0;
-    
+
     public override string ToString()
     {
         var sb = new StringBuilder();
         sb.AppendLine("CUDA Test Environment Validation:");
         sb.AppendLine($"  CUDA Available: {CudaAvailable}");
-        
-        if(CudaAvailable)
+
+        if (CudaAvailable)
         {
             sb.AppendLine($"  Device Count: {DeviceCount}");
             sb.AppendLine($"  Primary Device: {PrimaryDeviceName}");
             sb.AppendLine($"  Compute Capability: {ComputeCapability}");
             sb.AppendLine($"  Device Memory: {DeviceMemoryGB:F1} GB");
         }
-        
+
         sb.AppendLine($"  NVRTC Available: {NvrtcAvailable}");
-        if(NvrtcAvailable)
+        if (NvrtcAvailable)
         {
             sb.AppendLine($"  NVRTC Version: {NvrtcVersion}");
         }
-        
+
         sb.AppendLine($"  Platform: {PlatformInfo.OperatingSystem} {PlatformInfo.Architecture}");
         sb.AppendLine($"  .NET: {PlatformInfo.FrameworkVersion}");
         sb.AppendLine($"  Fully Functional: {IsFullyFunctional}");
-        
+
         return sb.ToString();
     }
 }

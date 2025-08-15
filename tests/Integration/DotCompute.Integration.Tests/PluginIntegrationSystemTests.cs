@@ -38,7 +38,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Assert
         loadedPlugins.Should().NotBeEmpty("At least CPU backend should be available");
         availableAccelerators.Should().NotBeEmpty("Loaded plugins should provide accelerators");
-        
+
         // Verify plugin-accelerator relationship
         foreach (var plugin in loadedPlugins)
         {
@@ -46,7 +46,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
             var pluginAccelerators = availableAccelerators
                 .Where(a => a.Info.DeviceType.Contains(plugin.Name, StringComparison.OrdinalIgnoreCase))
                 .ToList();
-            
+
             Logger.LogInformation($"Plugin {plugin.Name} provides {pluginAccelerators.Count} accelerators");
         }
     }
@@ -57,8 +57,8 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Arrange
         var pluginSystem = ServiceProvider.GetRequiredService<PluginSystem>();
         var loadedPlugins = pluginSystem.GetLoadedPlugins();
-        
-        if(!loadedPlugins.Any())
+
+        if (!loadedPlugins.Any())
         {
             Logger.LogInformation("Skipping backend factory test - no plugins loaded");
             return;
@@ -66,7 +66,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
 
         // Act
         var factoryResults = new List<BackendFactoryResult>();
-        
+
         foreach (var factoryResult in loadedPlugins.Select(plugin => TestBackendFactory(plugin)))
         {
             factoryResults.Add(await factoryResult);
@@ -87,14 +87,14 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Arrange
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         var availableBackends = computeEngine.AvailableBackends;
-        
+
         const int testSize = 256;
         var testData = GenerateTestData(testSize);
 
         // Act
         var executionResults = new List<PluginExecutionResult>();
-        
-        foreach (var executionTask in availableBackends.Select(backend => 
+
+        foreach (var executionTask in availableBackends.Select(backend =>
             ExecuteKernelThroughBackend(computeEngine, backend, testData)))
         {
             executionResults.Add(await executionTask);
@@ -108,9 +108,9 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
             result.ExecutionTime.Should().BePositive();
             result.ResultData.Should().NotBeNull();
         });
-        
+
         // Results should be consistent across backends
-        if(executionResults.Count > 1)
+        if (executionResults.Count > 1)
         {
             var referenceResult = executionResults[0].ResultData as float[];
             foreach (var result in executionResults.Skip(1))
@@ -129,8 +129,8 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var acceleratorManager = ServiceProvider.GetRequiredService<IAcceleratorManager>();
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
-        
-        if(!accelerators.Any())
+
+        if (!accelerators.Any())
         {
             Logger.LogInformation("Skipping memory management test - no accelerators available");
             return;
@@ -141,7 +141,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
 
         // Act
         var memoryResults = new List<MemoryManagementResult>();
-        
+
         foreach (var memoryTask in accelerators.Take(2).Select(accelerator => // Test first 2 accelerators
             TestPluginMemoryManagement(accelerator, bufferCount, bufferSize)))
         {
@@ -163,7 +163,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
     {
         // Arrange
         var pluginSystem = ServiceProvider.GetRequiredService<PluginSystem>();
-        
+
         // Act - Test error scenarios
         var errorResults = await TestPluginErrorScenarios(pluginSystem);
 
@@ -183,13 +183,13 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         const int clientCount = 4;
         const int operationsPerClient = 5;
-        
+
         // Act
         var concurrentTasks = Enumerable.Range(0, clientCount).Select(async clientId =>
         {
             var clientResults = new List<ClientOperationResult>();
-            
-            for(int op = 0; op < operationsPerClient; op++)
+
+            for (var op = 0; op < operationsPerClient; op++)
             {
                 var operationResult = await ExecuteClientOperation(
                     computeEngine,
@@ -197,7 +197,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
                     op);
                 clientResults.Add(operationResult);
             }
-            
+
             return new ConcurrentClientResult
             {
                 ClientId = clientId,
@@ -248,15 +248,15 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var scalabilityTasks = Enumerable.Range(0, concurrencyLevel).Select(async threadId =>
         {
             var threadResults = new List<TimeSpan>();
-            
-            for(int i = 0; i < workItemsPerThread; i++)
+
+            for (var i = 0; i < workItemsPerThread; i++)
             {
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 await ExecuteSimpleKernel(computeEngine, 64);
                 stopwatch.Stop();
                 threadResults.Add(stopwatch.Elapsed);
             }
-            
+
             return new ScalabilityResult
             {
                 ThreadId = threadId,
@@ -275,17 +275,17 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
             result.OperationTimes.Count.Should().Be(workItemsPerThread);
             result.AverageTime.Should().BePositive();
         });
-        
+
         // Performance should not degrade significantly with increased concurrency
-        if(results.Length > 1)
+        if (results.Length > 1)
         {
             var avgTimes = results.Select(r => r.AverageTime.TotalMilliseconds).ToList();
             var minAvg = avgTimes.Min();
             var maxAvg = avgTimes.Max();
-            
+
             Logger.LogInformation($"Performance range: {minAvg:F2}ms - {maxAvg:F2}ms");
-           (maxAvg / minAvg).Should().BeLessThan(5.0, 
-                "Performance should not degrade drastically with concurrency");
+            (maxAvg / minAvg).Should().BeLessThan(5.0,
+                 "Performance should not degrade drastically with concurrency");
         }
     }
 
@@ -296,8 +296,8 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var acceleratorManager = ServiceProvider.GetRequiredService<IAcceleratorManager>();
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
-        
-        if(!accelerators.Any())
+
+        if (!accelerators.Any())
         {
             Logger.LogInformation("Skipping resource cleanup test - no accelerators available");
             return;
@@ -305,8 +305,8 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
 
         // Act
         var cleanupResults = new List<ResourceCleanupResult>();
-        
-        foreach (var cleanupTask in accelerators.Take(2).Select(accelerator => 
+
+        foreach (var cleanupTask in accelerators.Take(2).Select(accelerator =>
             TestResourceCleanup(accelerator)))
         {
             cleanupResults.Add(await cleanupTask);
@@ -315,7 +315,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Assert
         cleanupResults.Should().AllSatisfy(result =>
         {
-result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
+            result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
             result.ResourcesReleased.Should().Be(result.ResourcesAllocated);
             result.MemoryLeaksDetected.Should().BeFalse();
             result.CleanupSuccess.Should().BeTrue();
@@ -329,10 +329,10 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
         {
             // Simulate factory creation and accelerator instantiation
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            
+
             // In a real test, this would use the actual factory interface
             var acceleratorCount = await SimulateAcceleratorCreation(plugin);
-            
+
             stopwatch.Stop();
 
             return new BackendFactoryResult
@@ -343,7 +343,7 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
                 CreationTime = stopwatch.Elapsed
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Logger.LogError(ex, $"Backend factory test failed for plugin {plugin.Name}");
             return new BackendFactoryResult
@@ -361,7 +361,7 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
         float[] testData)
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-        
+
         try
         {
             var compilationOptions = new CompilationOptions
@@ -395,11 +395,11 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
                 ResultData = resultData
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             Logger.LogError(ex, $"Kernel execution failed for backend {backend}");
-            
+
             return new PluginExecutionResult
             {
                 Backend = backend,
@@ -417,29 +417,29 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var allocatedBuffers = new List<IMemoryBuffer>();
-        
+
         try
         {
             // Allocation phase
-            for(int i = 0; i < bufferCount; i++)
+            for (var i = 0; i < bufferCount; i++)
             {
                 var testData = GenerateTestData(bufferSize);
                 var buffer = await CreateInputBuffer(accelerator.Memory, testData);
                 allocatedBuffers.Add(buffer);
             }
-            
+
             var allocationTime = stopwatch.Elapsed;
             stopwatch.Restart();
-            
+
             // Deallocation phase
             foreach (var buffer in allocatedBuffers)
             {
-                if(buffer is IDisposable disposable)
+                if (buffer is IDisposable disposable)
                     disposable.Dispose();
-                else if(buffer is IAsyncDisposable asyncDisposable)
+                else if (buffer is IAsyncDisposable asyncDisposable)
                     await asyncDisposable.DisposeAsync();
             }
-            
+
             stopwatch.Stop();
             var deallocationTime = stopwatch.Elapsed;
 
@@ -454,19 +454,19 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
                 MemoryLeaks = false // Simplified - would need actual leak detection
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             Logger.LogError(ex, $"Memory management test failed for accelerator {accelerator.Info.Id}");
-            
+
             // Cleanup on failure
             foreach (var buffer in allocatedBuffers)
             {
                 try
                 {
-                    if(buffer is IDisposable disposable)
+                    if (buffer is IDisposable disposable)
                         disposable.Dispose();
-                    else if(buffer is IAsyncDisposable asyncDisposable)
+                    else if (buffer is IAsyncDisposable asyncDisposable)
                         await asyncDisposable.DisposeAsync();
                 }
                 catch { /* Ignore cleanup errors */ }
@@ -482,10 +482,10 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
         }
     }
 
-    private async Task<List<ErrorHandlingResult>> TestPluginErrorScenarios(PluginSystem pluginSystem)
+    private static async Task<List<ErrorHandlingResult>> TestPluginErrorScenarios(PluginSystem pluginSystem)
     {
         var results = new List<ErrorHandlingResult>();
-        
+
         // Test scenario 1: Invalid plugin loading
         try
         {
@@ -498,7 +498,7 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
                 Description = "Should have thrown exception for nonexistent plugin"
             });
         }
-        catch(Exception)
+        catch (Exception)
         {
             results.Add(new ErrorHandlingResult
             {
@@ -510,7 +510,7 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
         }
 
         // Additional error scenarios would be tested here...
-        
+
         return results;
     }
 
@@ -522,7 +522,7 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
         try
         {
             await ExecuteSimpleKernel(computeEngine, 128);
-            
+
             return new ClientOperationResult
             {
                 ClientId = clientId,
@@ -530,10 +530,10 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
                 Success = true
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Logger.LogError(ex, $"Client {clientId} operation {operationId} failed");
-            
+
             return new ClientOperationResult
             {
                 ClientId = clientId,
@@ -547,30 +547,30 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
     private async Task<PluginLifecycleResult> TestPluginLifecycle(PluginSystem pluginSystem)
     {
         var result = new PluginLifecycleResult();
-        
+
         try
         {
             // Load phase
             var plugins = pluginSystem.GetLoadedPlugins();
             result.LoadPhaseSuccess = plugins.Any();
-            
+
             // Initialize phase(simulated)
             result.InitializePhaseSuccess = true;
-            
+
             // Execution phase
             var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
             await ExecuteSimpleKernel(computeEngine, 64);
             result.ExecutionPhaseSuccess = true;
-            
+
             // Cleanup phase(would involve proper disposal in real scenario)
             result.CleanupPhaseSuccess = true;
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Logger.LogError(ex, "Plugin lifecycle test failed");
             result.Error = ex.Message;
         }
-        
+
         return result;
     }
 
@@ -579,35 +579,35 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
         const int resourceCount = 20;
         var allocatedResources = 0;
         var releasedResources = 0;
-        
+
         try
         {
             var buffers = new List<IMemoryBuffer>();
-            
+
             // Allocate resources
-            for(int i = 0; i < resourceCount; i++)
+            for (var i = 0; i < resourceCount; i++)
             {
                 var testData = GenerateTestData(256);
                 var buffer = await CreateInputBuffer(accelerator.Memory, testData);
                 buffers.Add(buffer);
                 allocatedResources++;
             }
-            
+
             // Release resources
             foreach (var buffer in buffers)
             {
-                if(buffer is IDisposable disposable)
+                if (buffer is IDisposable disposable)
                 {
                     disposable.Dispose();
                     releasedResources++;
                 }
-                else if(buffer is IAsyncDisposable asyncDisposable)
+                else if (buffer is IAsyncDisposable asyncDisposable)
                 {
                     await asyncDisposable.DisposeAsync();
                     releasedResources++;
                 }
             }
-            
+
             return new ResourceCleanupResult
             {
                 AcceleratorId = accelerator.Info.Id,
@@ -617,10 +617,10 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
                 MemoryLeaksDetected = false
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             Logger.LogError(ex, $"Resource cleanup test failed for {accelerator.Info.Id}");
-            
+
             return new ResourceCleanupResult
             {
                 AcceleratorId = accelerator.Info.Id,
@@ -646,7 +646,7 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
 
         var testData = GenerateTestData(size);
         var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
-        
+
         var inputBuffer = await CreateInputBuffer(memoryManager, testData);
         var outputBuffer = await CreateOutputBuffer<float>(memoryManager, size);
 
@@ -674,13 +674,15 @@ result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
 
     private static bool CompareFloatArrays(float[] array1, float[] array2, float tolerance = 0.001f)
     {
-        if(array1.Length != array2.Length) return false;
-        
-        for(int i = 0; i < array1.Length; i++)
+        if (array1.Length != array2.Length)
+            return false;
+
+        for (var i = 0; i < array1.Length; i++)
         {
-            if(Math.Abs(array1[i] - array2[i]) > tolerance) return false;
+            if (Math.Abs(array1[i] - array2[i]) > tolerance)
+                return false;
         }
-        
+
         return true;
     }
 
@@ -742,14 +744,14 @@ public class ClientOperationResult
 public class ConcurrentClientResult
 {
     public int ClientId { get; set; }
-    public List<ClientOperationResult> Operations { get; set; } = new();
+    public List<ClientOperationResult> Operations { get; set; } = [];
     public bool AllOperationsSuccessful { get; set; }
 }
 
 public class ScalabilityResult
 {
     public int ThreadId { get; set; }
-    public List<TimeSpan> OperationTimes { get; set; } = new();
+    public List<TimeSpan> OperationTimes { get; set; } = [];
     public TimeSpan AverageTime { get; set; }
     public TimeSpan TotalTime { get; set; }
 }

@@ -1,11 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
-using DotCompute.Tests.Common;
 using Moq;
 using Xunit;
 using FluentAssertions;
@@ -102,7 +97,7 @@ public class IAcceleratorTests
         var mockCompiledKernel = new Mock<ICompiledKernel>();
         var kernelSource = new TextKernelSource("__global__ void test() { }", "test", KernelLanguage.Cuda);
         var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
-        
+
         mockCompiledKernel.SetupGet(k => k.Name).Returns("test");
         _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, CancellationToken.None))
                        .ReturnsAsync(mockCompiledKernel.Object);
@@ -123,8 +118,8 @@ public class IAcceleratorTests
         var mockCompiledKernel = new Mock<ICompiledKernel>();
         var kernelSource = new TextKernelSource("__global__ void test() { }", "test", KernelLanguage.Cuda);
         var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
-        var options = new CompilationOptions 
-        { 
+        var options = new CompilationOptions
+        {
             OptimizationLevel = OptimizationLevel.Maximum,
             EnableDebugInfo = true
         };
@@ -176,7 +171,7 @@ public class IAcceleratorTests
         // Arrange
         var kernelSource = new TextKernelSource("invalid code", "test", KernelLanguage.Cuda);
         var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
-        
+
         _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, CancellationToken.None))
                        .ThrowsAsync(new AcceleratorException("Compilation failed"));
 

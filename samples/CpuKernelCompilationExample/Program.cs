@@ -18,15 +18,15 @@ namespace DotCompute.Samples.CpuKernelCompilationExample;
 /// This sample uses mock implementations to showcase the DotCompute.Abstractions API patterns
 /// without requiring the full backend infrastructure.
 /// </summary>
-class Program
+internal class Program
 {
-    static async Task Main(string[] args)
+    private static async Task Main(string[] args)
     {
         // Setup services
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
         services.AddSingleton<IAcceleratorProvider, MockCpuAcceleratorProvider>();
-        
+
         var serviceProvider = services.BuildServiceProvider();
         var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
         var acceleratorProvider = serviceProvider.GetRequiredService<IAcceleratorProvider>();
@@ -38,10 +38,10 @@ class Program
 
         // Example 1: Simple vector addition kernel
         await RunVectorAdditionExample(accelerator, logger);
-        
+
         // Example 2: Matrix multiplication kernel
         await RunMatrixMultiplicationExample(accelerator, logger);
-        
+
         // Example 3: Custom math kernel with optimization levels
         await RunOptimizationLevelComparison(accelerator, logger);
 
@@ -49,10 +49,10 @@ class Program
         await accelerator.DisposeAsync();
     }
 
-    static async Task RunVectorAdditionExample(IAccelerator accelerator, ILogger logger)
+    private static async Task RunVectorAdditionExample(IAccelerator accelerator, ILogger logger)
     {
         logger.LogInformation("\n=== Vector Addition Example ===");
-        
+
         // Define kernel source
         var kernelSource = @"
             // Simple vector addition: C = A + B
@@ -79,7 +79,7 @@ class Program
         var stopwatch = Stopwatch.StartNew();
         var compiledKernel = await accelerator.CompileKernelAsync(kernelDefinition, compilationOptions);
         stopwatch.Stop();
-        
+
         logger.LogInformation("Kernel compiled in {Time}ms", stopwatch.ElapsedMilliseconds);
         logger.LogInformation("Kernel compiled successfully: {Name}", compiledKernel.Name);
         logger.LogInformation("Kernel ready for execution");
@@ -89,10 +89,10 @@ class Program
         var a = new float[vectorSize];
         var b = new float[vectorSize];
         var c = new float[vectorSize];
-        
+
         // Initialize input data
         var random = new Random(42);
-        for (int i = 0; i < vectorSize; i++)
+        for (var i = 0; i < vectorSize; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
@@ -116,27 +116,29 @@ class Program
         stopwatch.Stop();
 
         logger.LogInformation("Kernel executed in {Time}ms", stopwatch.ElapsedMilliseconds);
-        logger.LogInformation("Throughput: {Throughput:F2} GB/s", 
+        logger.LogInformation("Throughput: {Throughput:F2} GB/s",
             (3.0 * vectorSize * sizeof(float)) / (stopwatch.Elapsed.TotalSeconds * 1e9));
 
         // Copy results back
         await bufferC.CopyToHostAsync<float>(c.AsMemory());
 
         // Verify results
-        bool correct = true;
-        for (int i = 0; i < Math.Min(10, vectorSize); i++)
+        var correct = true;
+        for (var i = 0; i < Math.Min(10, vectorSize); i++)
         {
             var expected = a[i] + b[i];
             if (Math.Abs(c[i] - expected) > 1e-6f)
             {
                 correct = false;
-                logger.LogError("Mismatch at index {Index}: expected {Expected}, got {Actual}", 
+                logger.LogError("Mismatch at index {Index}: expected {Expected}, got {Actual}",
                     i, expected, c[i]);
             }
         }
-        
+
         if (correct)
+        {
             logger.LogInformation("✓ Vector addition results verified successfully!");
+        }
 
         // Cleanup
         await bufferA.DisposeAsync();
@@ -145,10 +147,10 @@ class Program
         await compiledKernel.DisposeAsync();
     }
 
-    static async Task RunMatrixMultiplicationExample(IAccelerator accelerator, ILogger logger)
+    private static async Task RunMatrixMultiplicationExample(IAccelerator accelerator, ILogger logger)
     {
         logger.LogInformation("\n=== Matrix Multiplication Example ===");
-        
+
         // Define kernel for matrix multiplication
         var kernelSource = @"
             // Matrix multiplication: C = A * B
@@ -172,15 +174,15 @@ class Program
 
         var compiledKernel = await accelerator.CompileKernelAsync(kernelDefinition);
         logger.LogInformation("Matrix multiplication kernel compiled");
-        
+
         // For brevity, actual execution is omitted
         await compiledKernel.DisposeAsync();
     }
 
-    static async Task RunOptimizationLevelComparison(IAccelerator accelerator, ILogger logger)
+    private static async Task RunOptimizationLevelComparison(IAccelerator accelerator, ILogger logger)
     {
         logger.LogInformation("\n=== Optimization Level Comparison ===");
-        
+
         var textKernelSource = new TextKernelSource(
             code: "c[i] = sqrt(a[i] * a[i] + b[i] * b[i]);",
             name: "complex_math",
@@ -199,23 +201,23 @@ class Program
 
         foreach (var (level, name) in optimizationLevels)
         {
-            var options = new CompilationOptions 
-            { 
+            var options = new CompilationOptions
+            {
                 OptimizationLevel = level,
                 FastMath = level >= OptimizationLevel.Release,
                 EnableDebugInfo = level == OptimizationLevel.Debug
             };
-            
+
             var stopwatch = Stopwatch.StartNew();
             var kernel = await accelerator.CompileKernelAsync(kernelDefinition, options);
             stopwatch.Stop();
-            
-            logger.LogInformation("Optimization {Level}: Compiled in {Time}ms", 
+
+            logger.LogInformation("Optimization {Level}: Compiled in {Time}ms",
                 name, stopwatch.ElapsedMilliseconds);
-            
+
             // Log optimization information
             logger.LogInformation("  Kernel {Name} compiled with {Level} optimization", kernel.Name, name);
-            
+
             await kernel.DisposeAsync();
         }
     }
@@ -235,10 +237,7 @@ internal class MockCpuAcceleratorProvider : IAcceleratorProvider
         return ValueTask.FromResult<IEnumerable<IAccelerator>>([accelerator]);
     }
 
-    public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
-    {
-        return ValueTask.FromResult<IAccelerator>(new MockCpuAccelerator());
-    }
+    public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default) => ValueTask.FromResult<IAccelerator>(new MockCpuAccelerator());
 }
 
 /// <summary>
@@ -284,14 +283,11 @@ internal class MockCpuAccelerator : IAccelerator
     {
         // Simulate compilation time
         await Task.Delay(100, cancellationToken);
-        
+
         return new MockCompiledKernel(definition.Name);
     }
 
-    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
     public ValueTask DisposeAsync()
     {
@@ -427,10 +423,7 @@ internal class MockMemoryBuffer : IMemoryBuffer
         return ValueTask.CompletedTask;
     }
 
-    public void Dispose()
-    {
-        _disposed = true;
-    }
+    public void Dispose() => _disposed = true;
 
     public ValueTask DisposeAsync()
     {
@@ -465,28 +458,19 @@ internal class MockMemoryBufferView : IMemoryBuffer
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
 
     public ValueTask CopyToHostAsync<T>(
         Memory<T> destination,
         long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-    {
-        return _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
 
     public void Dispose()
     {
         // Views don't own the memory
     }
 
-    public ValueTask DisposeAsync()
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
 /// <summary>
@@ -505,7 +489,7 @@ internal class MockCompiledKernel : ICompiledKernel
     {
         // Simulate kernel execution
         await Task.Delay(50, cancellationToken);
-        
+
         // For demonstration, if this is a vector addition kernel, perform the operation
         if (Name == "vector_add" && arguments.Length >= 3)
         {
@@ -522,8 +506,5 @@ internal class MockCompiledKernel : ICompiledKernel
         }
     }
 
-    public ValueTask DisposeAsync()
-    {
-        return ValueTask.CompletedTask;
-    }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }

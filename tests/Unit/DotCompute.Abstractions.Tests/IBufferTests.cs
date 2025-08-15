@@ -1,10 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
 using Moq;
 using Xunit;
 using FluentAssertions;
@@ -32,7 +28,7 @@ public class IBufferTests
         // Use reflection to create MappedMemory since constructor is internal
         var constructor = typeof(MappedMemory<T>).GetConstructors(
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)[0];
-        return(MappedMemory<T>)constructor.Invoke(new object[] { buffer, memory, mode });
+        return (MappedMemory<T>)constructor.Invoke([buffer, memory, mode]);
     }
 
     #region Property Tests
@@ -106,7 +102,7 @@ public class IBufferTests
         // Arrange
         const int length = 250;
         const long expectedSizeInBytes = length * sizeof(float);
-        
+
         _mockFloatBuffer.SetupGet(b => b.Length).Returns(length);
         _mockFloatBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSizeInBytes);
 
@@ -130,7 +126,7 @@ public class IBufferTests
         const int offset = 100;
         const int length = 200;
         var mockSlice = new Mock<IBuffer<float>>();
-        
+
         mockSlice.SetupGet(s => s.Length).Returns(length);
         _mockFloatBuffer.Setup(b => b.Slice(offset, length))
                        .Returns(mockSlice.Object);
@@ -151,7 +147,7 @@ public class IBufferTests
         const int offset = 0;
         const int length = 50;
         var mockSlice = new Mock<IBuffer<float>>();
-        
+
         mockSlice.SetupGet(s => s.Length).Returns(length);
         _mockFloatBuffer.Setup(b => b.Slice(offset, length))
                        .Returns(mockSlice.Object);
@@ -199,7 +195,7 @@ public class IBufferTests
         // Arrange
         const int bufferLength = 100;
         const int invalidOffset = 150;
-        
+
         _mockFloatBuffer.SetupGet(b => b.Length).Returns(bufferLength);
         _mockFloatBuffer.Setup(b => b.Slice(invalidOffset, 10))
                        .Throws(new ArgumentOutOfRangeException("offset"));
@@ -217,7 +213,7 @@ public class IBufferTests
         const int bufferLength = 100;
         const int offset = 80;
         const int invalidLength = 30; // Would exceed buffer length
-        
+
         _mockFloatBuffer.SetupGet(b => b.Length).Returns(bufferLength);
         _mockFloatBuffer.Setup(b => b.Slice(offset, invalidLength))
                        .Throws(new ArgumentException("Slice extends beyond buffer boundary"));
@@ -288,13 +284,13 @@ public class IBufferTests
     {
         // Note: This is a conceptual test - actual implementation would need reflection
         // to create generic method calls dynamically, but we can test the pattern
-        
+
         // Arrange & Act & Assert would depend on the specific type
-        if(targetType == typeof(int))
+        if (targetType == typeof(int))
         {
             var mockIntBuffer = new Mock<IBuffer<int>>();
             _mockFloatBuffer.Setup(b => b.AsType<int>()).Returns(mockIntBuffer.Object);
-            
+
             var result = _mockFloatBuffer.Object.AsType<int>();
             Assert.NotNull(result);
         }
@@ -310,7 +306,7 @@ public class IBufferTests
     {
         // Arrange
         var mockDestination = new Mock<IBuffer<float>>();
-        
+
         _mockFloatBuffer.Setup(b => b.CopyToAsync(mockDestination.Object, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
 
@@ -342,7 +338,7 @@ public class IBufferTests
         const int destinationOffset = 20;
         const int count = 100;
         var mockDestination = new Mock<IBuffer<float>>();
-        
+
         _mockFloatBuffer.Setup(b => b.CopyToAsync(sourceOffset, mockDestination.Object, destinationOffset, count, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
 
@@ -358,7 +354,7 @@ public class IBufferTests
     {
         // Arrange
         var mockDestination = new Mock<IBuffer<float>>();
-        
+
         _mockFloatBuffer.Setup(b => b.CopyToAsync(-1, mockDestination.Object, 0, 10, CancellationToken.None))
                        .ThrowsAsync(new ArgumentOutOfRangeException("sourceOffset"));
 
@@ -373,7 +369,7 @@ public class IBufferTests
     {
         // Arrange
         var mockDestination = new Mock<IBuffer<float>>();
-        
+
         _mockFloatBuffer.Setup(b => b.CopyToAsync(0, mockDestination.Object, -1, 10, CancellationToken.None))
                        .ThrowsAsync(new ArgumentOutOfRangeException("destinationOffset"));
 
@@ -391,7 +387,7 @@ public class IBufferTests
     {
         // Arrange
         var mockDestination = new Mock<IBuffer<float>>();
-        
+
         _mockFloatBuffer.Setup(b => b.CopyToAsync(0, mockDestination.Object, 0, invalidCount, CancellationToken.None))
                        .ThrowsAsync(new ArgumentException("Count must be positive", "count"));
 
@@ -408,7 +404,7 @@ public class IBufferTests
         var mockDestination = new Mock<IBuffer<float>>();
         var cts = new CancellationTokenSource();
         cts.Cancel();
-        
+
         _mockFloatBuffer.Setup(b => b.CopyToAsync(mockDestination.Object, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
 
@@ -426,7 +422,7 @@ public class IBufferTests
     {
         // Arrange
         const float fillValue = 3.14f;
-        
+
         _mockFloatBuffer.Setup(b => b.FillAsync(fillValue, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
 
@@ -444,7 +440,7 @@ public class IBufferTests
         const float fillValue = 2.71f;
         const int offset = 50;
         const int count = 100;
-        
+
         _mockFloatBuffer.Setup(b => b.FillAsync(fillValue, offset, count, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
 
@@ -490,7 +486,7 @@ public class IBufferTests
         // Arrange
         var cts = new CancellationTokenSource();
         cts.Cancel();
-        
+
         _mockFloatBuffer.Setup(b => b.FillAsync(1.0f, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
 
@@ -531,7 +527,7 @@ public class IBufferTests
         // Arrange
         var mockMemory = new Memory<float>(new float[100]);
         var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
-        
+
         _mockFloatBuffer.Setup(b => b.Map(MapMode.ReadWrite))
                        .Returns(expectedMapping);
 
@@ -554,7 +550,7 @@ public class IBufferTests
         // Arrange
         var mockMemory = new Memory<float>(new float[100]);
         var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, mode);
-        
+
         _mockFloatBuffer.Setup(b => b.Map(mode))
                        .Returns(expectedMapping);
 
@@ -575,7 +571,7 @@ public class IBufferTests
         const MapMode mode = MapMode.Read;
         var mockMemory = new Memory<float>(new float[length]);
         var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, mode);
-        
+
         _mockFloatBuffer.Setup(b => b.MapRange(offset, length, mode))
                        .Returns(expectedMapping);
 
@@ -622,7 +618,7 @@ public class IBufferTests
         // Arrange
         var mockMemory = new Memory<float>(new float[100]);
         var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
-        
+
         _mockFloatBuffer.Setup(b => b.MapAsync(MapMode.ReadWrite, CancellationToken.None))
                        .ReturnsAsync(expectedMapping);
 
@@ -640,7 +636,7 @@ public class IBufferTests
         // Arrange
         var cts = new CancellationTokenSource();
         cts.Cancel();
-        
+
         _mockFloatBuffer.Setup(b => b.MapAsync(MapMode.ReadWrite, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
 
@@ -694,7 +690,7 @@ public class IBufferTests
         const int bufferLength = 1000;
         const long bufferSize = bufferLength * sizeof(float);
         const float fillValue = 42.0f;
-        
+
         var mockSlice = new Mock<IBuffer<float>>();
         var mockDestination = new Mock<IBuffer<float>>();
         var mockMemory = new Memory<float>(new float[bufferLength]);
@@ -756,7 +752,7 @@ public class IBufferTests
     {
         // Test that IBuffer<T> can be instantiated with different unmanaged types
         // This is more of a compile-time test, but we can verify the mock setup
-        
+
         // Arrange
         var intBuffer = new Mock<IBuffer<int>>();
         var doubleBuffer = new Mock<IBuffer<double>>();

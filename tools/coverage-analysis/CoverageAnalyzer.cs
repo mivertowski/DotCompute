@@ -7,9 +7,9 @@ namespace DotCompute.Tools.CoverageAnalysis;
 /// <summary>
 /// Analyzes code coverage reports and generates comprehensive analysis
 /// </summary>
-public class CoverageAnalyzer
+internal class CoverageAnalyzer
 {
-    public record CoverageMetrics(
+    internal record CoverageMetrics(
         double LineRate,
         double BranchRate,
         int LinesTotal,
@@ -18,7 +18,7 @@ public class CoverageAnalyzer
         int BranchesCovered,
         string ProjectName);
 
-    public record CoverageAnalysis(
+    internal record CoverageAnalysis(
         CoverageMetrics Overall,
         Dictionary<string, CoverageMetrics> ByProject,
         List<string> LowCoverageAreas,
@@ -42,21 +42,21 @@ public class CoverageAnalyzer
             .Where(f => !f.Contains("/bin/") && !f.Contains("/obj/"))
             .ToList();
 
-        if (!coverageFiles.Any())
+        if (coverageFiles.Count == 0)
         {
             Console.WriteLine($"No coverage files found in {_coverageDirectory}");
             return new CoverageAnalysis(
                 new CoverageMetrics(0, 0, 0, 0, 0, 0, "No Data"),
-                new Dictionary<string, CoverageMetrics>(),
-                new List<string> { "No coverage data found" },
-                new List<string>(),
-                new List<string> { "Run tests with coverage collection enabled" });
+                [],
+                ["No coverage data found"],
+                [],
+                ["Run tests with coverage collection enabled"]);
         }
 
         var projectMetrics = new Dictionary<string, CoverageMetrics>();
         var lowCoverageAreas = new List<string>();
         var uncoveredMethods = new List<string>();
-        
+
         int totalLines = 0, totalLinesCovered = 0;
         int totalBranches = 0, totalBranchesCovered = 0;
 
@@ -111,15 +111,17 @@ public class CoverageAnalyzer
         return new CoverageAnalysis(overall, projectMetrics, lowCoverageAreas, uncoveredMethods, recommendations);
     }
 
-    private async Task<CoverageMetrics?> AnalyzeCoverageFileAsync(string filePath)
+    private static async Task<CoverageMetrics?> AnalyzeCoverageFileAsync(string filePath)
     {
         try
         {
             var doc = await Task.Run(() => XDocument.Load(filePath));
             var coverage = doc.Root;
-            
+
             if (coverage?.Name.LocalName != "coverage")
+            {
                 return null;
+            }
 
             var lineRate = double.Parse(coverage.Attribute("line-rate")?.Value ?? "0");
             var branchRate = double.Parse(coverage.Attribute("branch-rate")?.Value ?? "0");
@@ -131,7 +133,7 @@ public class CoverageAnalyzer
             // Extract project name from file path
             var projectName = ExtractProjectName(filePath);
 
-            return new CoverageMetrics(lineRate, branchRate, linesTotal, linesCovered, 
+            return new CoverageMetrics(lineRate, branchRate, linesTotal, linesCovered,
                                      branchesTotal, branchesCovered, projectName);
         }
         catch
@@ -140,10 +142,10 @@ public class CoverageAnalyzer
         }
     }
 
-    private async Task<List<string>> FindUncoveredMethodsAsync(string filePath)
+    private static async Task<List<string>> FindUncoveredMethodsAsync(string filePath)
     {
         var uncovered = new List<string>();
-        
+
         try
         {
             var doc = await Task.Run(() => XDocument.Load(filePath));
@@ -164,12 +166,12 @@ public class CoverageAnalyzer
         return uncovered;
     }
 
-    private string ExtractProjectName(string filePath)
+    private static string ExtractProjectName(string filePath)
     {
         var parts = filePath.Split(Path.DirectorySeparatorChar);
-        
+
         // Look for TestResults folder and extract project name
-        for (int i = 0; i < parts.Length - 1; i++)
+        for (var i = 0; i < parts.Length - 1; i++)
         {
             if (parts[i] == "TestResults" && i > 0)
             {
@@ -188,7 +190,7 @@ public class CoverageAnalyzer
     }
 
     private List<string> GenerateRecommendations(
-        CoverageMetrics overall, 
+        CoverageMetrics overall,
         Dictionary<string, CoverageMetrics> byProject,
         List<string> lowCoverageAreas)
     {
@@ -207,9 +209,9 @@ public class CoverageAnalyzer
         }
 
         // Project-specific recommendations
-        var coreProjects = byProject.Where(p => 
+        var coreProjects = byProject.Where(p =>
             p.Key.Contains("Core") || p.Key.Contains("Abstractions")).ToList();
-        
+
         foreach (var project in coreProjects)
         {
             if (project.Value.LineRate * 100 < 80)
@@ -220,19 +222,19 @@ public class CoverageAnalyzer
 
         // Hardware project recommendations
         var hardwareProjects = byProject.Where(p => p.Key.Contains("Hardware")).ToList();
-        if (hardwareProjects.Any() && hardwareProjects.Average(p => p.Value.LineRate) * 100 < 60)
+        if (hardwareProjects.Count != 0 && hardwareProjects.Average(p => p.Value.LineRate) * 100 < 60)
         {
             recommendations.Add("Consider adding more mock-based tests for hardware components");
         }
 
         // Integration test recommendations
         var integrationProjects = byProject.Where(p => p.Key.Contains("Integration")).ToList();
-        if (integrationProjects.Any() && integrationProjects.Average(p => p.Value.LineRate) * 100 < 70)
+        if (integrationProjects.Count != 0 && integrationProjects.Average(p => p.Value.LineRate) * 100 < 70)
         {
             recommendations.Add("Add more end-to-end integration test scenarios");
         }
 
-        if (!recommendations.Any())
+        if (recommendations.Count == 0)
         {
             recommendations.Add("Coverage looks good! Consider adding property-based tests for enhanced quality");
         }
@@ -240,10 +242,10 @@ public class CoverageAnalyzer
         return recommendations;
     }
 
-    public async Task GenerateReportAsync(CoverageAnalysis analysis, string outputPath)
+    public static async Task GenerateReportAsync(CoverageAnalysis analysis, string outputPath)
     {
         var report = new StringBuilder();
-        
+
         report.AppendLine("# DotCompute Code Coverage Analysis Report");
         report.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
         report.AppendLine();
@@ -255,12 +257,12 @@ public class CoverageAnalyzer
         report.AppendLine();
 
         // By project
-        if (analysis.ByProject.Any())
+        if (analysis.ByProject.Count != 0)
         {
             report.AppendLine("## Coverage By Project");
             report.AppendLine("| Project | Line Coverage | Branch Coverage | Lines (Covered/Total) | Branches (Covered/Total) |");
             report.AppendLine("|---------|---------------|-----------------|----------------------|--------------------------|");
-            
+
             foreach (var project in analysis.ByProject.OrderBy(p => p.Key))
             {
                 var p = project.Value;
@@ -270,7 +272,7 @@ public class CoverageAnalyzer
         }
 
         // Low coverage areas
-        if (analysis.LowCoverageAreas.Any())
+        if (analysis.LowCoverageAreas.Count != 0)
         {
             report.AppendLine("## Areas Needing Attention");
             foreach (var area in analysis.LowCoverageAreas)
@@ -281,7 +283,7 @@ public class CoverageAnalyzer
         }
 
         // Uncovered methods
-        if (analysis.UncoveredMethods.Any())
+        if (analysis.UncoveredMethods.Count != 0)
         {
             report.AppendLine("## Uncovered Methods (Sample)");
             foreach (var method in analysis.UncoveredMethods.Take(20))
@@ -296,7 +298,7 @@ public class CoverageAnalyzer
         }
 
         // Recommendations
-        if (analysis.Recommendations.Any())
+        if (analysis.Recommendations.Count != 0)
         {
             report.AppendLine("## Recommendations");
             foreach (var recommendation in analysis.Recommendations)
@@ -310,14 +312,14 @@ public class CoverageAnalyzer
         Console.WriteLine($"Coverage analysis report generated: {outputPath}");
     }
 
-    public async Task GenerateJsonReportAsync(CoverageAnalysis analysis, string outputPath)
+    public static async Task GenerateJsonReportAsync(CoverageAnalysis analysis, string outputPath)
     {
-        var options = new JsonSerializerOptions 
-        { 
+        var options = new JsonSerializerOptions
+        {
             WriteIndented = true,
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         };
-        
+
         var json = JsonSerializer.Serialize(analysis, options);
         await File.WriteAllTextAsync(outputPath, json);
         Console.WriteLine($"Coverage JSON report generated: {outputPath}");

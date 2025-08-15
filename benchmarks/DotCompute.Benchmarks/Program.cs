@@ -30,7 +30,7 @@ if (args.Length == 0)
     Console.WriteLine("Running all benchmark suites...");
     Console.WriteLine("This may take several minutes. Press Ctrl+C to cancel.");
     Console.WriteLine();
-    
+
     // Run all benchmarks
     var summary = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly)
         .RunAll(config);
@@ -41,7 +41,7 @@ else if (args[0].Equals("list", StringComparison.OrdinalIgnoreCase))
     var types = typeof(Program).Assembly.GetTypes()
         .Where(t => t.Name.EndsWith("Benchmarks") && !t.IsAbstract)
         .OrderBy(t => t.Name);
-    
+
     Console.WriteLine("Available benchmark classes:");
     foreach (var type in types)
     {
@@ -65,9 +65,9 @@ else if (args[0].Equals("interactive", StringComparison.OrdinalIgnoreCase))
     Console.WriteLine("10 - Real-World Algorithms");
     Console.WriteLine("11 - Concurrent Operations");
     Console.WriteLine("A - All benchmarks");
-    
+
     var choice = Console.ReadLine();
-    
+
     switch (choice?.ToUpper())
     {
         case "1":
@@ -116,7 +116,7 @@ else
     // Run specific benchmark by class name
     var benchmarkType = args[0];
     var summary = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly)
-        .Run(new[] { benchmarkType }, config);
+        .Run([benchmarkType], config);
 }
 
 Console.WriteLine();

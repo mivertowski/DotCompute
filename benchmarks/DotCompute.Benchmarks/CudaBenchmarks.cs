@@ -7,7 +7,7 @@ namespace DotCompute.Benchmarks;
 [MemoryDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
-public class CudaBenchmarks
+internal class CudaBenchmarks
 {
     private IntPtr _cudaContext;
     private IntPtr _deviceMemory;
@@ -57,10 +57,14 @@ public class CudaBenchmarks
         if (_cudaAvailable)
         {
             if (_deviceMemory != IntPtr.Zero)
+            {
                 CudaFree(_deviceMemory);
-            
+            }
+
             if (_cudaContext != IntPtr.Zero)
+            {
                 CudaCtxDestroy(_cudaContext);
+            }
         }
     }
 
@@ -68,7 +72,10 @@ public class CudaBenchmarks
     [BenchmarkCategory("CUDA")]
     public int HostToDevice_CUDA()
     {
-        if (!_cudaAvailable) return -1;
+        if (!_cudaAvailable)
+        {
+            return -1;
+        }
 
         var handle = GCHandle.Alloc(_hostData, GCHandleType.Pinned);
         try
@@ -85,7 +92,10 @@ public class CudaBenchmarks
     [BenchmarkCategory("CUDA")]
     public int DeviceToHost_CUDA()
     {
-        if (!_cudaAvailable) return -1;
+        if (!_cudaAvailable)
+        {
+            return -1;
+        }
 
         var result = new byte[DataSize];
         var handle = GCHandle.Alloc(result, GCHandleType.Pinned);
@@ -103,13 +113,19 @@ public class CudaBenchmarks
     [BenchmarkCategory("CUDA")]
     public int DeviceToDevice_CUDA()
     {
-        if (!_cudaAvailable) return -1;
+        if (!_cudaAvailable)
+        {
+            return -1;
+        }
 
-        IntPtr tempDevice = IntPtr.Zero;
+        var tempDevice = IntPtr.Zero;
         try
         {
             var result = CudaMalloc(ref tempDevice, DataSize);
-            if (result != 0) return result;
+            if (result != 0)
+            {
+                return result;
+            }
 
             result = CudaMemcpyDtoD(tempDevice, _deviceMemory, DataSize);
             CudaFree(tempDevice);
@@ -118,7 +134,10 @@ public class CudaBenchmarks
         catch
         {
             if (tempDevice != IntPtr.Zero)
+            {
                 CudaFree(tempDevice);
+            }
+
             return -1;
         }
     }
@@ -127,7 +146,10 @@ public class CudaBenchmarks
     [BenchmarkCategory("CUDA")]
     public (ulong free, ulong total) GetMemoryInfo_CUDA()
     {
-        if (!_cudaAvailable) return (0, 0);
+        if (!_cudaAvailable)
+        {
+            return (0, 0);
+        }
 
         ulong free = 0, total = 0;
         CudaMemGetInfo(ref free, ref total);

@@ -15,12 +15,12 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-public class BackendComparisonBenchmarks
+internal class BackendComparisonBenchmarks
 {
     private IAcceleratorManager _acceleratorManager = null!;
     private IAccelerator _cpuAccelerator = null!;
     private IAccelerator? _gpuAccelerator;
-    private readonly List<IMemoryBuffer> _buffers = new();
+    private readonly List<IMemoryBuffer> _buffers = [];
 
     [Params("CPU", "GPU", "Both")]
     public string BackendType { get; set; } = "CPU";
@@ -41,21 +41,21 @@ public class BackendComparisonBenchmarks
     {
         var logger = new NullLogger<DefaultAcceleratorManager>();
         _acceleratorManager = new DefaultAcceleratorManager(logger);
-        
+
         // Setup CPU backend
         var cpuProvider = new CpuAcceleratorProvider(new NullLogger<CpuAcceleratorProvider>());
         _acceleratorManager.RegisterProvider(cpuProvider);
-        
+
         // Setup simulated GPU backend (using CPU with different characteristics)
         var simulatedGpuProvider = new CpuAcceleratorProvider(new NullLogger<CpuAcceleratorProvider>());
         _acceleratorManager.RegisterProvider(simulatedGpuProvider);
-        
+
         await _acceleratorManager.InitializeAsync();
-        
+
         var accelerators = (await _acceleratorManager.GetAcceleratorsAsync()).ToList();
         _cpuAccelerator = accelerators.First(a => a.Info.Name.Contains("CPU"));
         _gpuAccelerator = accelerators.FirstOrDefault(a => a.Info.Name.Contains("SimulatedGPU"));
-        
+
         SetupTestData();
     }
 
@@ -67,7 +67,7 @@ public class BackendComparisonBenchmarks
         _outputGpu = new float[DataSize];
 
         var random = new Random(42);
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _inputA[i] = (float)(random.NextDouble() * 2.0 - 1.0);
             _inputB[i] = (float)(random.NextDouble() * 2.0 - 1.0);
@@ -80,10 +80,12 @@ public class BackendComparisonBenchmarks
         foreach (var buffer in _buffers)
         {
             if (!buffer.IsDisposed)
+            {
                 await buffer.DisposeAsync();
+            }
         }
         _buffers.Clear();
-        
+
         await _acceleratorManager.DisposeAsync();
     }
 
@@ -93,16 +95,15 @@ public class BackendComparisonBenchmarks
         foreach (var buffer in _buffers)
         {
             if (!buffer.IsDisposed)
+            {
                 await buffer.DisposeAsync();
+            }
         }
         _buffers.Clear();
     }
 
     [Benchmark(Baseline = true)]
-    public async Task CpuBackendExecution()
-    {
-        await ExecuteWorkloadOnBackend(_cpuAccelerator, _outputCpu);
-    }
+    public async Task CpuBackendExecution() => await ExecuteWorkloadOnBackend(_cpuAccelerator, _outputCpu);
 
     [Benchmark]
     public async Task GpuBackendExecution()
@@ -119,10 +120,8 @@ public class BackendComparisonBenchmarks
 
     [Benchmark]
     public async Task BackendComparison()
-    {
         // Execute same workload on both backends and compare
-        await ExecuteWorkloadType(BackendType);
-    }
+        => await ExecuteWorkloadType(BackendType);
 
     private async Task ExecuteWorkloadType(string backendType)
     {
@@ -133,11 +132,14 @@ public class BackendComparisonBenchmarks
                 break;
             case "GPU":
                 if (_gpuAccelerator != null)
+                {
                     await ExecuteWorkloadOnBackend(_gpuAccelerator, _outputGpu);
+                }
+
                 break;
             case "Both":
                 var cpuTask = ExecuteWorkloadOnBackend(_cpuAccelerator, _outputCpu);
-                var gpuTask = _gpuAccelerator != null 
+                var gpuTask = _gpuAccelerator != null
                     ? ExecuteWorkloadOnBackend(_gpuAccelerator, _outputGpu)
                     : Task.CompletedTask;
                 await Task.WhenAll(cpuTask, gpuTask);
@@ -169,42 +171,42 @@ public class BackendComparisonBenchmarks
         var bufferA = await accelerator.Memory.AllocateAndCopyAsync<float>(_inputA);
         var bufferB = await accelerator.Memory.AllocateAndCopyAsync<float>(_inputB);
         var bufferResult = await accelerator.Memory.AllocateAsync(DataSize * sizeof(float));
-        
+
         // Simulate vector addition kernel execution
-        await SimulateKernelExecution(accelerator, "VectorAdd", new[] { bufferA, bufferB, bufferResult });
-        
+        await SimulateKernelExecution(accelerator, "VectorAdd", [bufferA, bufferB, bufferResult]);
+
         // Copy result back
         await bufferResult.CopyToHostAsync<float>(output);
-        
+
         _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
     }
 
     private async Task ExecuteMatrixMultiplication(IAccelerator accelerator, float[] output)
     {
-        int matrixSize = (int)Math.Sqrt(DataSize);
+        var matrixSize = (int)Math.Sqrt(DataSize);
         if (matrixSize * matrixSize != DataSize)
         {
             matrixSize = (int)Math.Sqrt(Math.Min(DataSize, 65536)); // Reasonable default
         }
-        
+
         var actualSize = matrixSize * matrixSize;
         var inputA = _inputA.Take(actualSize).ToArray();
         var inputB = _inputB.Take(actualSize).ToArray();
-        
+
         var bufferA = await accelerator.Memory.AllocateAndCopyAsync<float>(inputA);
         var bufferB = await accelerator.Memory.AllocateAndCopyAsync<float>(inputB);
         var bufferResult = await accelerator.Memory.AllocateAsync(actualSize * sizeof(float));
-        
+
         // Simulate matrix multiplication - more compute-intensive for GPU
         var executionTime = accelerator.Info.Name.Contains("SimulatedGPU") ? 10 : 50; // GPU should be faster
-        await SimulateKernelExecution(accelerator, "MatrixMultiply", new[] { bufferA, bufferB, bufferResult }, executionTime);
-        
+        await SimulateKernelExecution(accelerator, "MatrixMultiply", [bufferA, bufferB, bufferResult], executionTime);
+
         var result = new float[actualSize];
         await bufferResult.CopyToHostAsync<float>(result);
-        
+
         // Copy to output (pad if necessary)
         Array.Copy(result, 0, output, 0, Math.Min(result.Length, output.Length));
-        
+
         _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
     }
 
@@ -212,15 +214,15 @@ public class BackendComparisonBenchmarks
     {
         var bufferInput = await accelerator.Memory.AllocateAndCopyAsync<float>(_inputA);
         var bufferResult = await accelerator.Memory.AllocateAsync(sizeof(float));
-        
+
         // Reduction is typically more efficient on GPU due to parallel tree reduction
         var executionTime = accelerator.Info.Name.Contains("SimulatedGPU") ? 5 : 20;
-        await SimulateKernelExecution(accelerator, "Reduction", new[] { bufferInput, bufferResult }, executionTime);
-        
+        await SimulateKernelExecution(accelerator, "Reduction", [bufferInput, bufferResult], executionTime);
+
         var result = new float[1];
         await bufferResult.CopyToHostAsync<float>(result);
         output[0] = result[0];
-        
+
         _buffers.AddRange(new[] { bufferInput, bufferResult });
     }
 
@@ -228,22 +230,22 @@ public class BackendComparisonBenchmarks
     {
         const int filterSize = 5;
         var filter = new float[] { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f };
-        
+
         var bufferInput = await accelerator.Memory.AllocateAndCopyAsync<float>(_inputA);
         var bufferFilter = await accelerator.Memory.AllocateAndCopyAsync<float>(filter);
         var outputSize = DataSize - filterSize + 1;
         var bufferResult = await accelerator.Memory.AllocateAsync(outputSize * sizeof(float));
-        
+
         // Convolution benefits from GPU parallel processing
         var executionTime = accelerator.Info.Name.Contains("SimulatedGPU") ? 8 : 25;
-        await SimulateKernelExecution(accelerator, "Convolution", new[] { bufferInput, bufferFilter, bufferResult }, executionTime);
-        
+        await SimulateKernelExecution(accelerator, "Convolution", [bufferInput, bufferFilter, bufferResult], executionTime);
+
         var result = new float[outputSize];
         await bufferResult.CopyToHostAsync<float>(result);
-        
+
         // Copy to output
         Array.Copy(result, 0, output, 0, Math.Min(result.Length, output.Length));
-        
+
         _buffers.AddRange(new[] { bufferInput, bufferFilter, bufferResult });
     }
 
@@ -251,7 +253,7 @@ public class BackendComparisonBenchmarks
     {
         // Simulate different execution characteristics for different backends
         var executionTime = baseExecutionTime;
-        
+
         if (accelerator.Info.Name.Contains("SimulatedGPU"))
         {
             // GPU characteristics: higher setup overhead, better scaling
@@ -265,13 +267,13 @@ public class BackendComparisonBenchmarks
             var scalingFactor = (double)DataSize / 1024.0 / 1024.0; // Linear with data size
             executionTime = (int)(baseExecutionTime * Math.Max(0.1, scalingFactor));
         }
-        
+
         // Simulate memory bandwidth limitations
         var memoryTransferTime = CalculateMemoryTransferTime(buffers, accelerator);
-        
+
         // Simulate actual execution
         await Task.Delay(Math.Max(1, executionTime + memoryTransferTime));
-        
+
         // Simulate synchronization overhead
         if (accelerator.Info.Name.Contains("SimulatedGPU"))
         {
@@ -279,15 +281,15 @@ public class BackendComparisonBenchmarks
         }
     }
 
-    private int CalculateMemoryTransferTime(IMemoryBuffer[] buffers, IAccelerator accelerator)
+    private static int CalculateMemoryTransferTime(IMemoryBuffer[] buffers, IAccelerator accelerator)
     {
         var totalBytes = buffers.Sum(b => b.SizeInBytes);
-        
+
         // Different memory bandwidth for different backends
-        var bandwidth = accelerator.Info.Name.Contains("SimulatedGPU") 
+        var bandwidth = accelerator.Info.Name.Contains("SimulatedGPU")
             ? 500.0 * 1024 * 1024 * 1024 // 500 GB/s for simulated GPU
             : 50.0 * 1024 * 1024 * 1024;  // 50 GB/s for CPU
-        
+
         var transferTime = (totalBytes / bandwidth) * 1000; // Convert to milliseconds
         return Math.Max(1, (int)transferTime);
     }
@@ -297,13 +299,13 @@ public class BackendComparisonBenchmarks
     {
         const int largeDataSize = 64 * 1024 * 1024; // 64MB
         var largeData = new float[largeDataSize];
-        
+
         // CPU memory transfer
         var cpuBuffer = await _cpuAccelerator.Memory.AllocateAndCopyAsync<float>(largeData);
         var cpuResult = new float[largeDataSize];
         await cpuBuffer.CopyToHostAsync<float>(cpuResult);
         _buffers.Add(cpuBuffer);
-        
+
         // GPU memory transfer (if available)
         if (_gpuAccelerator != null)
         {
@@ -325,37 +327,39 @@ public class BackendComparisonBenchmarks
                     output[id] = input[id] * 2.0f + 1.0f;
                 }
             }";
-        
+
         var kernelSource_obj = new TextKernelSource(kernelSource, "test_kernel", KernelLanguage.OpenCL, "test_kernel");
         var kernelDef = new KernelDefinition("test_kernel", kernelSource_obj, new CompilationOptions());
-        
+
         var options = new CompilationOptions
         {
             OptimizationLevel = OptimizationLevel.Release
         };
-        
+
         // Compile on CPU
         var cpuKernel = await _cpuAccelerator.CompileKernelAsync(kernelDef, options);
-        
+
         // Compile on GPU (if available)
         ICompiledKernel? gpuKernel = null;
         if (_gpuAccelerator != null)
         {
             gpuKernel = await _gpuAccelerator.CompileKernelAsync(kernelDef, options);
         }
-        
+
         // Execute kernels
         var bufferA = await _cpuAccelerator.Memory.AllocateAndCopyAsync<float>(_inputA);
         var bufferResult = await _cpuAccelerator.Memory.AllocateAsync(DataSize * sizeof(float));
-        
+
         var args = new KernelArguments(bufferA, bufferResult, DataSize);
         await cpuKernel.ExecuteAsync(args);
-        
+
         _buffers.AddRange(new[] { bufferA, bufferResult });
-        
+
         await cpuKernel.DisposeAsync();
         if (gpuKernel != null)
+        {
             await gpuKernel.DisposeAsync();
+        }
     }
 
     [Benchmark]
@@ -364,11 +368,11 @@ public class BackendComparisonBenchmarks
         // Calculate relative performance ratio
         var cpuTime = SimulateCpuExecutionTime(WorkloadType, DataSize);
         var gpuTime = SimulateGpuExecutionTime(WorkloadType, DataSize);
-        
+
         return cpuTime / gpuTime; // Ratio > 1 means GPU is faster
     }
 
-    private double SimulateCpuExecutionTime(string workload, int dataSize)
+    private static double SimulateCpuExecutionTime(string workload, int dataSize)
     {
         // Simulate CPU execution time based on workload characteristics
         return workload switch
@@ -381,7 +385,7 @@ public class BackendComparisonBenchmarks
         };
     }
 
-    private double SimulateGpuExecutionTime(string workload, int dataSize)
+    private static double SimulateGpuExecutionTime(string workload, int dataSize)
     {
         // Simulate GPU execution time (generally better scaling)
         var baseTime = workload switch
@@ -392,7 +396,7 @@ public class BackendComparisonBenchmarks
             "Convolution" => dataSize * 0.0005, // 10x faster than CPU
             _ => dataSize * 0.0002
         };
-        
+
         // Add GPU setup overhead
         var setupOverhead = 5.0; // milliseconds
         return baseTime + setupOverhead;
@@ -403,19 +407,19 @@ public class BackendComparisonBenchmarks
     {
         // Simulate power consumption comparison
         var workTime = 100; // ms
-        
+
         // CPU: Lower peak power, longer execution
         var cpuPower = 65; // watts
         var cpuTime = workTime * 2;
         var cpuEnergy = cpuPower * cpuTime / 1000.0; // joules
-        
+
         // GPU: Higher peak power, shorter execution  
         var gpuPower = 250; // watts
         var gpuTime = workTime * 0.5;
         var gpuEnergy = gpuPower * gpuTime / 1000.0; // joules
-        
+
         await Task.Delay(Math.Max((int)cpuTime, (int)gpuTime));
-        
+
         // Store energy efficiency metric
         _outputCpu[0] = (float)cpuEnergy;
         _outputGpu[0] = (float)gpuEnergy;
@@ -427,17 +431,17 @@ public class BackendComparisonBenchmarks
         // Test how well each backend handles concurrent execution
         const int concurrentTasks = 4;
         var tasks = new List<Task>();
-        
-        for (int i = 0; i < concurrentTasks; i++)
+
+        for (var i = 0; i < concurrentTasks; i++)
         {
             tasks.Add(ExecuteWorkloadOnBackend(_cpuAccelerator, _outputCpu));
-            
+
             if (_gpuAccelerator != null)
             {
                 tasks.Add(ExecuteWorkloadOnBackend(_gpuAccelerator, _outputGpu));
             }
         }
-        
+
         await Task.WhenAll(tasks);
     }
 }

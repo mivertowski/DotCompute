@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Text;
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
@@ -40,7 +39,8 @@ public class CudaPerformanceTests : IDisposable
     public void CudaPerformance_DeviceInitialization_ShouldCompleteQuickly()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -51,7 +51,7 @@ public class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds .Should().BeLessThan(3000, 
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(3000,
             "Device initialization should complete within 3 seconds");
         _output.WriteLine($"Device initialization took {stopwatch.ElapsedMilliseconds}ms");
     }
@@ -66,7 +66,8 @@ public class CudaPerformanceTests : IDisposable
     public void CudaPerformance_MemoryAllocation_ShouldScaleLinearlyWithSize(long sizeInBytes)
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -79,25 +80,26 @@ public class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        var sizeInMB = sizeInBytes /(1024.0 * 1024.0);
+        var sizeInMB = sizeInBytes / (1024.0 * 1024.0);
         var timePerMB = stopwatch.ElapsedMilliseconds / Math.Max(sizeInMB, 0.001);
-        
+
         Assert.NotNull(buffer);
-        timePerMB .Should().BeLessThan(1000, $"Allocation time should be reasonable for {sizeInMB:F2}MB");
-        
+        timePerMB.Should().BeLessThan(1000, $"Allocation time should be reasonable for {sizeInMB:F2}MB");
+
         _output.WriteLine($"Allocated {sizeInMB:F2}MB in {stopwatch.ElapsedMilliseconds}ms{timePerMB:F2}ms/MB)");
     }
 
     [Theory]
     [Trait("Category", "Performance")]
     [Trait("Hardware", "CUDA")]
-    [InlineData(1024 * 1024, "1MB")]      
+    [InlineData(1024 * 1024, "1MB")]
     [InlineData(16 * 1024 * 1024, "16MB")]
     [InlineData(64 * 1024 * 1024, "64MB")]
     public unsafe void CudaPerformance_HostToDeviceTransfer_ShouldMeetBandwidthExpectations(long sizeInBytes, string description)
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -111,9 +113,9 @@ public class CudaPerformanceTests : IDisposable
         var benchmarkRuns = 10;
 
         // Warm up
-        fixed(byte* hostPtr = hostData)
+        fixed (byte* hostPtr = hostData)
         {
-            for(int i = 0; i < warmupRuns; i++)
+            for (var i = 0; i < warmupRuns; i++)
             {
                 memoryManager.CopyFromHost(hostPtr, buffer, sizeInBytes);
             }
@@ -122,9 +124,9 @@ public class CudaPerformanceTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
         // Act - Benchmark
-        fixed(byte* hostPtr = hostData)
+        fixed (byte* hostPtr = hostData)
         {
-            for(int i = 0; i < benchmarkRuns; i++)
+            for (var i = 0; i < benchmarkRuns; i++)
             {
                 memoryManager.CopyFromHost(hostPtr, buffer, sizeInBytes);
             }
@@ -133,11 +135,11 @@ public class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        var avgTimeMs = stopwatch.ElapsedMilliseconds /(double)benchmarkRuns;
+        var avgTimeMs = stopwatch.ElapsedMilliseconds / (double)benchmarkRuns;
         var bandwidthGBps = (sizeInBytes / 1024.0 / 1024.0 / 1024.0) / (avgTimeMs / 1000.0);
-        
+
         bandwidthGBps.Should().BeGreaterThan(0.1, "Host-to-device transfer should achieve reasonable bandwidth");
-        
+
         _output.WriteLine($"{description} H2D transfer: {avgTimeMs:F2}ms avg, {bandwidthGBps:F2} GB/s");
     }
 
@@ -150,7 +152,8 @@ public class CudaPerformanceTests : IDisposable
     public unsafe void CudaPerformance_DeviceToHostTransfer_ShouldMeetBandwidthExpectations(long sizeInBytes, string description)
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -165,9 +168,9 @@ public class CudaPerformanceTests : IDisposable
         memoryManager.Fill(buffer, 42, sizeInBytes);
 
         // Warm up
-        fixed(byte* hostPtr = hostData)
+        fixed (byte* hostPtr = hostData)
         {
-            for(int i = 0; i < warmupRuns; i++)
+            for (var i = 0; i < warmupRuns; i++)
             {
                 memoryManager.CopyToHost(buffer, hostPtr, sizeInBytes);
             }
@@ -176,9 +179,9 @@ public class CudaPerformanceTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
         // Act - Benchmark
-        fixed(byte* hostPtr = hostData)
+        fixed (byte* hostPtr = hostData)
         {
-            for(int i = 0; i < benchmarkRuns; i++)
+            for (var i = 0; i < benchmarkRuns; i++)
             {
                 memoryManager.CopyToHost(buffer, hostPtr, sizeInBytes);
             }
@@ -187,11 +190,11 @@ public class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        var avgTimeMs = stopwatch.ElapsedMilliseconds /(double)benchmarkRuns;
+        var avgTimeMs = stopwatch.ElapsedMilliseconds / (double)benchmarkRuns;
         var bandwidthGBps = (sizeInBytes / 1024.0 / 1024.0 / 1024.0) / (avgTimeMs / 1000.0);
-        
+
         bandwidthGBps.Should().BeGreaterThan(0.1, "Device-to-host transfer should achieve reasonable bandwidth");
-        
+
         _output.WriteLine($"{description} D2H transfer: {avgTimeMs:F2}ms avg, {bandwidthGBps:F2} GB/s");
     }
 
@@ -201,7 +204,8 @@ public class CudaPerformanceTests : IDisposable
     public async Task CudaPerformance_KernelCompilation_ShouldCacheEffectively()
     {
         // Arrange
-        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if (!IsCudaAvailable() || !IsNvrtcAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateBenchmarkKernel();
@@ -227,16 +231,16 @@ public class CudaPerformanceTests : IDisposable
         Assert.NotNull(kernel3);
 
         // Cache hits should be significantly faster
-        var cacheSpeedup =(double)stopwatch1.ElapsedMilliseconds / Math.Max(stopwatch2.ElapsedMilliseconds, 1);
-        cacheSpeedup .Should().BeGreaterThanOrEqualTo(0.1, "Cached compilation should be faster or similar speed");
+        var cacheSpeedup = (double)stopwatch1.ElapsedMilliseconds / Math.Max(stopwatch2.ElapsedMilliseconds, 1);
+        cacheSpeedup.Should().BeGreaterThanOrEqualTo(0.1, "Cached compilation should be faster or similar speed");
 
         _output.WriteLine($"First compile: {stopwatch1.ElapsedMilliseconds}ms");
         _output.WriteLine($"Second compile: {stopwatch2.ElapsedMilliseconds}msspeedup: {cacheSpeedup:F1}x)");
         _output.WriteLine($"Third compile: {stopwatch3.ElapsedMilliseconds}ms");
 
-       (kernel1 as IDisposable)?.Dispose();
-       (kernel2 as IDisposable)?.Dispose();
-       (kernel3 as IDisposable)?.Dispose();
+        (kernel1 as IDisposable)?.Dispose();
+        (kernel2 as IDisposable)?.Dispose();
+        (kernel3 as IDisposable)?.Dispose();
     }
 
     [Theory]
@@ -248,7 +252,8 @@ public class CudaPerformanceTests : IDisposable
     public async Task CudaPerformance_KernelCompilation_OptimizationLevelImpact(OptimizationLevel level)
     {
         // Arrange
-        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if (!IsCudaAvailable() || !IsNvrtcAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateComplexKernel();
@@ -262,12 +267,12 @@ public class CudaPerformanceTests : IDisposable
 
         // Assert
         Assert.NotNull(kernel);
-        stopwatch.ElapsedMilliseconds .Should().BeLessThan(30000, 
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(30000,
             $"Kernel compilation with {level} optimization should complete within 30 seconds");
-            
+
         _output.WriteLine($"Compilation with {level} optimization took {stopwatch.ElapsedMilliseconds}ms");
-        
-       (kernel as IDisposable)?.Dispose();
+
+        (kernel as IDisposable)?.Dispose();
     }
 
     [Fact]
@@ -276,11 +281,12 @@ public class CudaPerformanceTests : IDisposable
     public async Task CudaPerformance_ConcurrentCompilation_ShouldHandleParallelLoad()
     {
         // Arrange
-        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if (!IsCudaAvailable() || !IsNvrtcAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         const int concurrentKernels = 5;
-        
+
         var kernelDefinitions = Enumerable.Range(0, concurrentKernels)
             .Select(i => CreateUniqueKernel($"concurrent_kernel_{i}"))
             .ToArray();
@@ -298,17 +304,17 @@ public class CudaPerformanceTests : IDisposable
         // Assert
         Assert.Equal(concurrentKernels, compiledKernels.Count());
         compiledKernels.Should().AllSatisfy((k => k.Should().NotBeNull()));
-        
-        var avgTimePerKernel = stopwatch.ElapsedMilliseconds /(double)concurrentKernels;
-        avgTimePerKernel .Should().BeLessThan(15000, 
+
+        var avgTimePerKernel = stopwatch.ElapsedMilliseconds / (double)concurrentKernels;
+        avgTimePerKernel.Should().BeLessThan(15000,
             "Average concurrent compilation time should be reasonable");
-            
+
         _output.WriteLine($"Compiled {concurrentKernels} kernels concurrently in {stopwatch.ElapsedMilliseconds}ms");
         _output.WriteLine($"Average time per kernel: {avgTimePerKernel:F2}ms");
 
         foreach (var kernel in compiledKernels)
         {
-           (kernel as IDisposable)?.Dispose();
+            (kernel as IDisposable)?.Dispose();
         }
     }
 
@@ -318,13 +324,14 @@ public class CudaPerformanceTests : IDisposable
     public void CudaPerformance_SynchronizationOverhead_ShouldBeMeasurable()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         const int syncCount = 100;
 
         // Warm up
-        for(int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             accelerator.SynchronizeAsync().AsTask().Wait();
         }
@@ -332,7 +339,7 @@ public class CudaPerformanceTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
         // Act
-        for(int i = 0; i < syncCount; i++)
+        for (var i = 0; i < syncCount; i++)
         {
             accelerator.SynchronizeAsync().AsTask().Wait();
         }
@@ -340,9 +347,9 @@ public class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        var avgSyncTime = stopwatch.ElapsedMilliseconds /(double)syncCount;
-        avgSyncTime .Should().BeLessThan(100, "Average synchronization should be fast");
-        
+        var avgSyncTime = stopwatch.ElapsedMilliseconds / (double)syncCount;
+        avgSyncTime.Should().BeLessThan(100, "Average synchronization should be fast");
+
         _output.WriteLine($"Average synchronization time: {avgSyncTime:F3}ms{syncCount} operations)");
     }
 
@@ -352,7 +359,8 @@ public class CudaPerformanceTests : IDisposable
     public void CudaPerformance_MemoryStatisticsRetrieval_ShouldBeEfficient()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -361,7 +369,7 @@ public class CudaPerformanceTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
         // Act
-        for(int i = 0; i < queryCount; i++)
+        for (var i = 0; i < queryCount; i++)
         {
             var stats = memoryManager!.GetStatistics();
             Assert.NotNull(stats);
@@ -370,9 +378,9 @@ public class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        var avgQueryTime =(stopwatch.ElapsedTicks * 1000000.0 / Stopwatch.Frequency) /(double)queryCount;
-        avgQueryTime .Should().BeLessThan(1000, "Memory statistics queries should be very fast");
-        
+        var avgQueryTime = (stopwatch.ElapsedTicks * 1000000.0 / Stopwatch.Frequency) / (double)queryCount;
+        avgQueryTime.Should().BeLessThan(1000, "Memory statistics queries should be very fast");
+
         _output.WriteLine($"Average memory statistics query time: {avgQueryTime:F2}μs{queryCount} queries)");
     }
 
@@ -382,25 +390,26 @@ public class CudaPerformanceTests : IDisposable
     public void CudaPerformance_MemoryFragmentation_ShouldHandleRepeatedAllocations()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
-        
+
         const int cycles = 100;
         const int buffersPerCycle = 10;
         var allocationTimes = new List<double>();
 
         // Act
-        for(int cycle = 0; cycle < cycles; cycle++)
+        for (var cycle = 0; cycle < cycles; cycle++)
         {
             var cycleBuffers = new List<ISyncMemoryBuffer>();
             var cycleStopwatch = Stopwatch.StartNew();
 
             // Allocate buffers
-            for(int i = 0; i < buffersPerCycle; i++)
+            for (var i = 0; i < buffersPerCycle; i++)
             {
-                var size =(i + 1) * 1024; // Varying sizes
+                var size = (i + 1) * 1024; // Varying sizes
                 var buffer = memoryManager!.Allocate(size);
                 cycleBuffers.Add(buffer);
             }
@@ -414,7 +423,7 @@ public class CudaPerformanceTests : IDisposable
                 memoryManager!.Free(buffer);
             }
 
-            if(cycle % 20 == 0)
+            if (cycle % 20 == 0)
             {
                 _output.WriteLine($"Completed cycle {cycle}, avg allocation time: {allocationTimes.Skip(Math.Max(0, allocationTimes.Count - 20)).Average():F2}μs");
             }
@@ -425,26 +434,27 @@ public class CudaPerformanceTests : IDisposable
         var lastQuarter = allocationTimes.Skip(3 * cycles / 4).Average();
         var slowdown = lastQuarter / firstQuarter;
 
-        slowdown .Should().BeLessThan(10.0, "Memory fragmentation shouldn't cause severe performance degradation");
-        
+        slowdown.Should().BeLessThan(10.0, "Memory fragmentation shouldn't cause severe performance degradation");
+
         _output.WriteLine($"First quarter avg: {firstQuarter:F2}μs, Last quarter avg: {lastQuarter:F2}μs");
         _output.WriteLine($"Performance degradation: {slowdown:F2}x");
     }
 
     [Fact]
-    [Trait("Category", "Performance")]  
+    [Trait("Category", "Performance")]
     [Trait("Hardware", "CUDA")]
     public void CudaPerformance_DeviceReset_ShouldCompleteInReasonableTime()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
-        
+
         // Allocate some memory to make reset more meaningful
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
         var buffers = new List<ISyncMemoryBuffer>();
-        for(int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             buffers.Add(memoryManager!.Allocate((i + 1) * 1024 * 1024));
         }
@@ -456,9 +466,9 @@ public class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds .Should().BeLessThan(10000, 
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
             "Device reset should complete within 10 seconds");
-            
+
         _output.WriteLine($"Device reset took {stopwatch.ElapsedMilliseconds}ms");
     }
 
@@ -466,11 +476,9 @@ public class CudaPerformanceTests : IDisposable
     [Trait("Category", "Benchmark")]
     [Trait("Hardware", "CUDA")]
     public void CudaPerformance_RunBenchmarkSuite()
-    {
         // This would run the full benchmark suite
         // BenchmarkRunner.Run<CudaBenchmarkSuite>();
-        _output.WriteLine("Benchmark suite skipped - requires explicit BenchmarkDotNet runner");
-    }
+        => _output.WriteLine("Benchmark suite skipped - requires explicit BenchmarkDotNet runner");
 
     // Helper Methods
     private CudaAccelerator CreateAccelerator()
@@ -565,10 +573,7 @@ __global__ void {name}(float* input, float* output, int n)
         }
     }
 
-    private static bool IsNvrtcAvailable()
-    {
-        return DotCompute.Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
-    }
+    private static bool IsNvrtcAvailable() => DotCompute.Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
 
     public void Dispose()
     {
@@ -576,13 +581,13 @@ __global__ void {name}(float* input, float* output, int n)
         {
             try
             {
-                if(!buffer.IsDisposed)
+                if (!buffer.IsDisposed)
                 {
                     var syncMemoryManager = _accelerators.FirstOrDefault()?.Memory as ISyncMemoryManager;
                     syncMemoryManager?.Free(buffer);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing CUDA buffer");
             }
@@ -595,7 +600,7 @@ __global__ void {name}(float* input, float* output, int n)
             {
                 accelerator?.Dispose();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing CUDA accelerator");
             }
@@ -624,7 +629,7 @@ public class CudaBenchmarkSuite
     [GlobalSetup]
     public void Setup()
     {
-        if(IsCudaAvailable())
+        if (IsCudaAvailable())
         {
             var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
             _accelerator = new CudaAccelerator(0, acceleratorLogger);
@@ -633,33 +638,25 @@ public class CudaBenchmarkSuite
     }
 
     [GlobalCleanup]
-    public void Cleanup()
-    {
-        _accelerator?.Dispose();
-    }
+    public void Cleanup() => _accelerator?.Dispose();
 
     [Benchmark]
     [Arguments(1024)]
     [Arguments(1024 * 1024)]
     public void MemoryAllocation(int sizeInBytes)
     {
-        if(_memoryManager == null) return;
-        
+        if (_memoryManager == null)
+            return;
+
         var buffer = _memoryManager.Allocate(sizeInBytes);
         _memoryManager.Free(buffer);
     }
 
     [Benchmark]
-    public void DeviceSynchronization()
-    {
-        _accelerator?.SynchronizeAsync().AsTask().Wait();
-    }
+    public void DeviceSynchronization() => _accelerator?.SynchronizeAsync().AsTask().Wait();
 
     [Benchmark]
-    public void MemoryStatistics()
-    {
-        _memoryManager?.GetStatistics();
-    }
+    public void MemoryStatistics() => _memoryManager?.GetStatistics();
 
     private static bool IsCudaAvailable()
     {

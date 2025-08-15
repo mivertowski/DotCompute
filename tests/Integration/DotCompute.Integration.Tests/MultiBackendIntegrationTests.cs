@@ -35,20 +35,20 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
 
         // Act - Execute on CPU first
         var cpuResult = await ExecuteComputeWorkflowAsync("CPU_VectorAdd", cpuWorkflow);
-        
+
         // Switch to CUDA and use CPU results as input
-        cudaWorkflow.Inputs[0].Data =(float[])cpuResult.Results["result"];
+        cudaWorkflow.Inputs[0].Data = (float[])cpuResult.Results["result"];
         var cudaResult = await ExecuteComputeWorkflowAsync("CUDA_VectorMultiply", cudaWorkflow);
 
         // Assert
         cpuResult.Success.Should().BeTrue();
         cudaResult.Success.Should().BeTrue();
-        
+
         // Verify backend usage
         VerifyBackendUsage(cpuResult, ComputeBackendType.CPU);
         VerifyBackendUsage(cudaResult, ComputeBackendType.CUDA);
 
-        LogPerformanceMetrics("BackendSwitching_CPUToCUDA", 
+        LogPerformanceMetrics("BackendSwitching_CPUToCUDA",
             cpuResult.Duration + cudaResult.Duration, 2048);
     }
 
@@ -72,7 +72,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
-        
+
         // Verify each backend was used appropriately
         VerifyBackendUsage(results[0], ComputeBackendType.CPU);
         VerifyBackendUsage(results[1], ComputeBackendType.CUDA);
@@ -81,10 +81,10 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         // Verify parallel execution improved total time
         var totalSequentialTime = results.Sum(r => r.Duration.TotalMilliseconds);
         var actualParallelTime = results.Max(r => r.Duration.TotalMilliseconds);
-        
+
         Logger.LogInformation("Sequential time: {Sequential}ms, Parallel time: {Parallel}ms, " +
                              "Efficiency: {Efficiency:P1}",
-            totalSequentialTime, actualParallelTime, 
+            totalSequentialTime, actualParallelTime,
            (totalSequentialTime - actualParallelTime) / totalSequentialTime);
 
         Assert.True(actualParallelTime < totalSequentialTime * 0.8); // At least 20% improvement
@@ -99,35 +99,35 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         var workflow = new ComputeWorkflowDefinition
         {
             Name = "FallbackTest",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "vector_operation",
                     SourceCode = KernelSources.VectorAdd,
                     CompilationOptions = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum }
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "inputA", Data = TestDataGenerators.GenerateFloatArray(512) },
                 new WorkflowInput { Name = "inputB", Data = TestDataGenerators.GenerateFloatArray(512) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "result", Size = 512 }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "primary_execution",
                     Order = 1,
                     KernelName = "vector_operation",
                     BackendType = ComputeBackendType.CUDA, // Prefer CUDA but should fallback
-                    ArgumentNames = new[] { "inputA", "inputB", "result" }
+                    ArgumentNames = ["inputA", "inputB", "result"]
                 }
-            }
+            ]
         };
 
         // Act
@@ -135,7 +135,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        
+
         // Since CUDA failed, execution should have fallen back to CPU
         var actualBackend = DetectActualBackendUsed(result);
         Assert.Equal(ComputeBackendType.CPU, actualBackend);
@@ -149,7 +149,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         // Arrange
         const int dataSize = 8192;
         var originalData = TestDataGenerators.GenerateFloatArray(dataSize, -100f, 100f);
-        
+
         // Create workflow that processes on different backends
         var stage1Workflow = CreateWorkflowForBackend(ComputeBackendType.CPU, "data_preprocessing", dataSize);
         var stage2Workflow = CreateWorkflowForBackend(ComputeBackendType.CUDA, "data_processing", dataSize);
@@ -161,19 +161,19 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         var stage1Result = await ExecuteComputeWorkflowAsync("Stage1_CPU_Preprocess", stage1Workflow);
         stage1Result.Success.Should().BeTrue();
 
-        stage2Workflow.Inputs[0].Data =(float[])stage1Result.Results["result"];
+        stage2Workflow.Inputs[0].Data = (float[])stage1Result.Results["result"];
         var stage2Result = await ExecuteComputeWorkflowAsync("Stage2_CUDA_Process", stage2Workflow);
         stage2Result.Success.Should().BeTrue();
 
-        stage3Workflow.Inputs[0].Data =(float[])stage2Result.Results["result"];
+        stage3Workflow.Inputs[0].Data = (float[])stage2Result.Results["result"];
         var stage3Result = await ExecuteComputeWorkflowAsync("Stage3_Metal_Postprocess", stage3Workflow);
 
         // Assert
         stage3Result.Success.Should().BeTrue();
-        
-        var finalResult =(float[])stage3Result.Results["result"];
+
+        var finalResult = (float[])stage3Result.Results["result"];
         finalResult.Length.Should().Be(dataSize);
-        
+
         // Verify data integrity through the pipeline
         finalResult.Should().NotContain(float.NaN);
         finalResult.Should().NotContain(float.PositiveInfinity);
@@ -181,9 +181,9 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
 
         // Calculate total pipeline throughput
         var totalTime = stage1Result.Duration + stage2Result.Duration + stage3Result.Duration;
-        var totalDataMB =(dataSize * sizeof(float) * 4) / 1024.0 / 1024.0; // 4 transfers
+        var totalDataMB = (dataSize * sizeof(float) * 4) / 1024.0 / 1024.0; // 4 transfers
         var throughputMBps = totalDataMB / totalTime.TotalSeconds;
-        
+
         Logger.LogInformation("Cross-backend pipeline throughput: {Throughput:F2} MB/s", throughputMBps);
         Assert.True(throughputMBps > 10); // Minimum acceptable throughput
     }
@@ -199,25 +199,25 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         var workflow = new ComputeWorkflowDefinition
         {
             Name = $"BackendOptimization_{backend}",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "optimized_kernel",
                     SourceCode = GetBackendOptimizedKernel(backend),
                     CompilationOptions = GetBackendOptimizedCompilationOptions(backend)
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "data", Data = TestDataGenerators.GenerateFloatArray(optimalSize) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "result", Size = optimalSize }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "optimized_execution",
@@ -225,9 +225,9 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
                     KernelName = "optimized_kernel",
                     BackendType = backend,
                     ExecutionOptions = GetBackendOptimizedExecutionOptions(backend, optimalSize),
-                    ArgumentNames = new[] { "data", "result" }
+                    ArgumentNames = ["data", "result"]
                 }
-            }
+            ]
         };
 
         // Act
@@ -235,7 +235,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        
+
         // Verify backend-specific performance characteristics
         var metrics = result.Metrics!;
         ValidateBackendPerformanceCharacteristics(backend, metrics, optimalSize);
@@ -257,10 +257,10 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         {
             var workflow = CreateCompatibilityTestWorkflow(backend, inputData);
             var result = await ExecuteComputeWorkflowAsync($"Compatibility_{backend}", workflow);
-            
-            if(result.Success)
+
+            if (result.Success)
             {
-                results[backend] =(float[])result.Results["result"];
+                results[backend] = (float[])result.Results["result"];
             }
             else
             {
@@ -270,21 +270,21 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         Assert.NotEmpty(results);
-        
-        if(results.Count > 1)
+
+        if (results.Count > 1)
         {
             // Compare results across backends - they should be very similar
             var referenceResult = results.Values.First();
-            
+
             foreach (var (backend, backendResult) in results.Skip(1))
             {
                 Logger.LogInformation("Comparing {Backend} results with reference", backend);
-                
-                for(int i = 0; i < Math.Min(100, referenceResult.Length); i++)
+
+                for (var i = 0; i < Math.Min(100, referenceResult.Length); i++)
                 {
                     var difference = Math.Abs(referenceResult[i] - backendResult[i]);
                     var tolerance = Math.Max(Math.Abs(referenceResult[i]) * 0.001f, 1e-5f);
-                    
+
                     (difference < tolerance).Should().BeTrue(
                         $"Results should be similar across backends at index {i}. " +
                         $"Reference: {referenceResult[i]}, {backend}: {backendResult[i]}");
@@ -313,21 +313,21 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         {
             var workflow = CreateDynamicSelectionWorkflow(workload.Name, workload.Size);
             var result = await ExecuteComputeWorkflowAsync($"Dynamic_{workload.Name}", workflow);
-            
+
             result.Success.Should().BeTrue();
-            
+
             var selectedBackend = DetectActualBackendUsed(result);
             var performance = CalculatePerformanceScore(result, workload.Size);
-            
+
             results.Add((workload.Name, selectedBackend, performance));
-            
+
             Logger.LogInformation("Workload {Name}: Selected {Selected}, Expected {Expected}, Performance: {Performance:F2}",
                 workload.Name, selectedBackend, workload.OptimalBackend, performance);
         }
 
         // Assert
         results.Should().AllSatisfy(r => r.Performance.Should().BeGreaterThan(0));
-        
+
         // Verify that the selection made reasonable choices
         //(In a real implementation, this would validate against actual performance characteristics)
         var avgPerformance = results.Average(r => r.Performance);
@@ -336,31 +336,31 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
 
     // Helper methods
 
-    private ComputeWorkflowDefinition CreateWorkflowForBackend(ComputeBackendType backend, string operation, int size)
+    private static ComputeWorkflowDefinition CreateWorkflowForBackend(ComputeBackendType backend, string operation, int size)
     {
         return new ComputeWorkflowDefinition
         {
             Name = $"{backend}_{operation}",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = operation,
                     SourceCode = GetKernelSourceForOperation(operation),
                     CompilationOptions = GetBackendOptimizedCompilationOptions(backend)
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(size) },
                 new WorkflowInput { Name = "input2", Data = TestDataGenerators.GenerateFloatArray(size) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "result", Size = size }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "execute",
@@ -368,9 +368,9 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
                     KernelName = operation,
                     BackendType = backend,
                     ExecutionOptions = GetBackendOptimizedExecutionOptions(backend, size),
-                    ArgumentNames = new[] { "input", "input2", "result" }
+                    ArgumentNames = ["input", "input2", "result"]
                 }
-            }
+            ]
         };
     }
 
@@ -433,94 +433,94 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         {
             ComputeBackendType.CPU => new ExecutionOptions
             {
-                GlobalWorkSize = new[] { dataSize },
-                LocalWorkSize = new[] { Math.Min(64, dataSize) }
+                GlobalWorkSize = [dataSize],
+                LocalWorkSize = [Math.Min(64, dataSize)]
             },
             ComputeBackendType.CUDA => new ExecutionOptions
             {
-                GlobalWorkSize = new[] { dataSize },
-                LocalWorkSize = new[] { Math.Min(256, dataSize) }
+                GlobalWorkSize = [dataSize],
+                LocalWorkSize = [Math.Min(256, dataSize)]
             },
             ComputeBackendType.Metal => new ExecutionOptions
             {
-                GlobalWorkSize = new[] { dataSize },
-                LocalWorkSize = new[] { Math.Min(128, dataSize) }
+                GlobalWorkSize = [dataSize],
+                LocalWorkSize = [Math.Min(128, dataSize)]
             },
             _ => new ExecutionOptions
             {
-                GlobalWorkSize = new[] { dataSize },
-                LocalWorkSize = new[] { Math.Min(32, dataSize) }
+                GlobalWorkSize = [dataSize],
+                LocalWorkSize = [Math.Min(32, dataSize)]
             }
         };
     }
 
-    private ComputeWorkflowDefinition CreateCompatibilityTestWorkflow(ComputeBackendType backend, float[] inputData)
+    private static ComputeWorkflowDefinition CreateCompatibilityTestWorkflow(ComputeBackendType backend, float[] inputData)
     {
         return new ComputeWorkflowDefinition
         {
             Name = $"Compatibility_{backend}",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "compatibility_test",
                     SourceCode = KernelSources.CompatibilityTestKernel
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = inputData }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "result", Size = inputData.Length }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "test_execution",
                     Order = 1,
                     KernelName = "compatibility_test",
                     BackendType = backend,
-                    ArgumentNames = new[] { "input", "result" }
+                    ArgumentNames = ["input", "result"]
                 }
-            }
+            ]
         };
     }
 
-    private ComputeWorkflowDefinition CreateDynamicSelectionWorkflow(string workloadName, int size)
+    private static ComputeWorkflowDefinition CreateDynamicSelectionWorkflow(string workloadName, int size)
     {
         return new ComputeWorkflowDefinition
         {
             Name = $"Dynamic_{workloadName}",
-            Kernels = new()
-            {
+            Kernels =
+            [
                 new WorkflowKernel
                 {
                     Name = "dynamic_kernel",
                     SourceCode = GetWorkloadSpecificKernel(workloadName)
                 }
-            },
-            Inputs = new()
-            {
+            ],
+            Inputs =
+            [
                 new WorkflowInput { Name = "input", Data = TestDataGenerators.GenerateFloatArray(size) }
-            },
-            Outputs = new()
-            {
+            ],
+            Outputs =
+            [
                 new WorkflowOutput { Name = "result", Size = size }
-            },
-            ExecutionStages = new()
-            {
+            ],
+            ExecutionStages =
+            [
                 new WorkflowExecutionStage
                 {
                     Name = "dynamic_execution",
                     Order = 1,
                     KernelName = "dynamic_kernel",
                     BackendType = ComputeBackendType.CPU, // Will be dynamically selected
-                    ArgumentNames = new[] { "input", "result" }
+                    ArgumentNames = ["input", "result"]
                 }
-            }
+            ]
         };
     }
 
@@ -540,53 +540,55 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         // In a real implementation, this would check execution logs, performance characteristics,
         // or backend-specific metrics to verify the correct backend was used
         result.Success.Should().BeTrue();
-        
+
         var actualBackend = DetectActualBackendUsed(result);
-        Logger.LogInformation("Expected backend: {Expected}, Detected backend: {Actual}", 
+        Logger.LogInformation("Expected backend: {Expected}, Detected backend: {Actual}",
             expectedBackend, actualBackend);
-        
+
         // For testing purposes, we'll assume the backend was used correctly if execution succeeded
         // In a production system, this would be more sophisticated
     }
 
-    private ComputeBackendType DetectActualBackendUsed(WorkflowExecutionResult result)
+    private static ComputeBackendType DetectActualBackendUsed(WorkflowExecutionResult result)
     {
         // In a real implementation, this would analyze execution characteristics,
         // performance metrics, or execution logs to determine which backend was actually used
-        
+
         // For testing, we'll use performance characteristics as hints
-        if(result.Metrics != null)
+        if (result.Metrics != null)
         {
             var throughput = result.Metrics.ThroughputMBps;
             var executionTime = result.Metrics.ExecutionTime;
-            
+
             // Simulate backend detection based on performance characteristics
-            if(throughput > 100 && executionTime < 10) return ComputeBackendType.CUDA;
-            if(throughput > 50 && executionTime < 20) return ComputeBackendType.Metal;
+            if (throughput > 100 && executionTime < 10)
+                return ComputeBackendType.CUDA;
+            if (throughput > 50 && executionTime < 20)
+                return ComputeBackendType.Metal;
             return ComputeBackendType.CPU;
         }
-        
+
         return ComputeBackendType.CPU; // Default assumption
     }
 
-    private void ValidateBackendPerformanceCharacteristics(ComputeBackendType backend, 
+    private static void ValidateBackendPerformanceCharacteristics(ComputeBackendType backend,
         PerformanceMetrics metrics, int dataSize)
     {
-        switch(backend)
+        switch (backend)
         {
             case ComputeBackendType.CPU:
                 // CPU should have consistent performance with good memory efficiency
                 metrics.ResourceUtilization.CpuUsagePercent.Should().BeGreaterThan(10);
                 break;
-                
+
             case ComputeBackendType.CUDA:
                 // CUDA should show high throughput for large workloads
-                if(dataSize > 1024)
+                if (dataSize > 1024)
                 {
                     metrics.ThroughputMBps.Should().BeGreaterThan(20);
                 }
                 break;
-                
+
             case ComputeBackendType.Metal:
                 // Metal should show good performance with balanced resource usage
                 metrics.ResourceUtilization.GpuUsagePercent.Should().BeGreaterThan(5);
@@ -596,15 +598,16 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
 
     private static double CalculatePerformanceScore(WorkflowExecutionResult result, int dataSize)
     {
-        if(result.Metrics == null) return 0;
-        
+        if (result.Metrics == null)
+            return 0;
+
         // Simple performance scoring based on throughput and efficiency
         var throughputScore = Math.Min(result.Metrics.ThroughputMBps, 100);
         var efficiencyScore = Math.Max(0, 100 - result.Metrics.ExecutionTime);
-        var utilizationScore =(result.Metrics.ResourceUtilization.CpuUsagePercent + 
+        var utilizationScore = (result.Metrics.ResourceUtilization.CpuUsagePercent +
                                result.Metrics.ResourceUtilization.GpuUsagePercent) / 2;
-        
-        return(throughputScore + efficiencyScore + utilizationScore) / 3;
+
+        return (throughputScore + efficiencyScore + utilizationScore) / 3;
     }
 }
 

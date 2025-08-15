@@ -1,6 +1,5 @@
 using Xunit;
 using DotCompute.Abstractions;
-using DotCompute.Core.Compute;
 using DotCompute.Tests.Shared.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,12 +21,12 @@ public class ComputeEngineUnitTests : CoverageTestBase
         var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new XUnitLoggerProvider(output)));
         var typedLogger = loggerFactory.CreateLogger<HardwareSimulator>();
         _hardwareSimulator = RegisterDisposable(new HardwareSimulator(typedLogger));
-        
+
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddProvider(new XUnitLoggerProvider(output)));
         services.AddSingleton<IAcceleratorManager>(sp => new TestAcceleratorManager(_hardwareSimulator));
         services.AddTransient<IComputeEngine, DefaultComputeEngine>();
-        
+
         _serviceProvider = RegisterDisposable(services.BuildServiceProvider());
     }
 
@@ -120,7 +119,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
         var parameters = new object[] { 1, 2, 3 };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(async () => 
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
             await engine.ExecuteKernelAsync("", parameters, CancellationToken));
     }
 
@@ -133,7 +132,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
         var kernelSource = "kernel void test() { }";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => 
+        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await engine.ExecuteKernelAsync(kernelSource, null!, CancellationToken));
     }
 
@@ -145,12 +144,12 @@ public class ComputeEngineUnitTests : CoverageTestBase
         var engine = _serviceProvider.GetRequiredService<IComputeEngine>();
         var kernelSource = "kernel void longRunningTest() { }";
         var parameters = new object[] { };
-        
+
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromMilliseconds(10));
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(async () => 
+        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
             await engine.ExecuteKernelAsync(kernelSource, parameters, cts.Token));
     }
 
@@ -169,7 +168,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
         var accelerator = await engine.GetBestAcceleratorAsync(type, CancellationToken);
 
         // Assert
-        if(accelerator != null)
+        if (accelerator != null)
         {
             Assert.Equal(type, accelerator.Type);
         }
@@ -195,12 +194,12 @@ public class ComputeEngineUnitTests : CoverageTestBase
         // Arrange
         _hardwareSimulator.CreateStandardGpuSetup();
         var engine = _serviceProvider.GetRequiredService<IComputeEngine>();
-        
+
         var operations = new[]
         {
            ("kernel1", new object[] { 1 }),
-           ("kernel2", new object[] { 2 }),
-           ("kernel3", new object[] { 3 })
+           ("kernel2", [2]),
+           ("kernel3", [3])
         };
 
         // Act
@@ -222,7 +221,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
         engine.Dispose();
 
         // Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => 
+        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
             engine.GetAvailableAcceleratorsAsync(CancellationToken.None));
     }
 
@@ -268,9 +267,9 @@ public class ComputeEngineUnitTests : CoverageTestBase
         // Arrange
         _hardwareSimulator.CreateStandardGpuSetup();
         var engine = _serviceProvider.GetRequiredService<IComputeEngine>();
-        
+
         // Execute some operations first
-        await engine.ExecuteKernelAsync("kernel void test() { }", new object[0], CancellationToken);
+        await engine.ExecuteKernelAsync("kernel void test() { }", [], CancellationToken);
 
         // Act
         var metrics = await engine.GetPerformanceMetricsAsync();
@@ -293,75 +292,51 @@ public class ComputeEngineUnitTests : CoverageTestBase
             _accelerators = _simulator.GetAllAccelerators().Cast<IAccelerator>().ToList();
         }
 
-        public Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(_simulator.GetAllAccelerators().Cast<IAccelerator>());
-        }
+        public Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(CancellationToken cancellationToken = default) => Task.FromResult(_simulator.GetAllAccelerators().Cast<IAccelerator>());
 
-        public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(_simulator.GetAllAccelerators().Cast<IAccelerator>());
-        }
+        public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default) => Task.FromResult(_simulator.GetAllAccelerators().Cast<IAccelerator>());
 
-        public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
-        {
-            return Task.FromResult(_simulator.GetAccelerators(type).Cast<IAccelerator>());
-        }
+        public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default) => Task.FromResult(_simulator.GetAccelerators(type).Cast<IAccelerator>());
 
         public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default)
         {
-            var accelerators = type.HasValue 
+            var accelerators = type.HasValue
                 ? _simulator.GetAccelerators(type.Value)
                 : _simulator.GetAllAccelerators();
-            
+
             return Task.FromResult(accelerators.Cast<IAccelerator?>().FirstOrDefault());
         }
 
-        public ValueTask InitializeAsync(CancellationToken cancellationToken = default)
-        {
-            return ValueTask.CompletedTask;
-        }
+        public ValueTask InitializeAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
         public IAccelerator GetAccelerator(int index)
         {
-            if(index < 0 || index >= _accelerators.Count)
+            if (index < 0 || index >= _accelerators.Count)
                 throw new ArgumentOutOfRangeException(nameof(index));
             return _accelerators[index];
         }
 
-        public IAccelerator? GetAcceleratorById(string id)
-        {
-            return _accelerators.FirstOrDefault(a => a.Info.Id == id);
-        }
+        public IAccelerator? GetAcceleratorById(string id) => _accelerators.FirstOrDefault(a => a.Info.Id == id);
 
-        public IEnumerable<IAccelerator> GetAcceleratorsByType(AcceleratorType type)
-        {
-            return _accelerators.Where(a => a.Type == type);
-        }
+        public IEnumerable<IAccelerator> GetAcceleratorsByType(AcceleratorType type) => _accelerators.Where(a => a.Type == type);
 
         public IAccelerator? SelectBest(AcceleratorSelectionCriteria criteria)
         {
-            var candidates = criteria.PreferredType.HasValue 
+            var candidates = criteria.PreferredType.HasValue
                 ? _accelerators.Where(a => a.Type == criteria.PreferredType.Value)
                 : _accelerators;
-            
+
             return candidates.FirstOrDefault();
         }
 
-        public AcceleratorContext CreateContext(IAccelerator accelerator)
-        {
-            return new AcceleratorContext();
-        }
+        public AcceleratorContext CreateContext(IAccelerator accelerator) => new AcceleratorContext();
 
         public void RegisterProvider(IAcceleratorProvider provider)
         {
             // No-op for tests
         }
 
-        public ValueTask RefreshAsync(CancellationToken cancellationToken = default)
-        {
-            return ValueTask.CompletedTask;
-        }
+        public ValueTask RefreshAsync(CancellationToken cancellationToken = default) => ValueTask.CompletedTask;
 
         public IAccelerator Default => _accelerators.FirstOrDefault() ?? throw new InvalidOperationException("No accelerators available");
         public IReadOnlyList<IAccelerator> AvailableAccelerators => _accelerators;
@@ -373,10 +348,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
             return ValueTask.CompletedTask;
         }
 
-        public void Dispose()
-        {
-            _simulator.Dispose();
-        }
+        public void Dispose() => _simulator.Dispose();
     }
 
 
@@ -385,13 +357,13 @@ public class ComputeEngineUnitTests : CoverageTestBase
     /// </summary>
     private interface IComputeEngine : IDisposable
     {
-        Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(CancellationToken cancellationToken = default);
-        Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default);
-        Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default);
-        Task<object> ExecuteKernelAsync(string kernelSource, object[] parameters, CancellationToken cancellationToken = default);
-        Task<IEnumerable<object>> ExecuteParallelAsync(IEnumerable<(string kernel, object[] parameters)> operations, CancellationToken cancellationToken = default);
-        Task<IDisposable> CreateExecutionContextAsync(CancellationToken cancellationToken = default);
-        Task<object> GetPerformanceMetricsAsync();
+        public Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(CancellationToken cancellationToken = default);
+        public Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default);
+        public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default);
+        public Task<object> ExecuteKernelAsync(string kernelSource, object[] parameters, CancellationToken cancellationToken = default);
+        public Task<IEnumerable<object>> ExecuteParallelAsync(IEnumerable<(string kernel, object[] parameters)> operations, CancellationToken cancellationToken = default);
+        public Task<IDisposable> CreateExecutionContextAsync(CancellationToken cancellationToken = default);
+        public Task<object> GetPerformanceMetricsAsync();
     }
 
     /// <summary>
@@ -430,29 +402,29 @@ public class ComputeEngineUnitTests : CoverageTestBase
         public async Task<object> ExecuteKernelAsync(string kernelSource, object[] parameters, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            
-            if(string.IsNullOrWhiteSpace(kernelSource))
+
+            if (string.IsNullOrWhiteSpace(kernelSource))
                 throw new ArgumentException("Kernel source cannot be empty", nameof(kernelSource));
-            
-            if(parameters == null)
+
+            if (parameters == null)
                 throw new ArgumentNullException(nameof(parameters));
 
             var accelerator = await GetBestAcceleratorAsync(cancellationToken: cancellationToken);
-            if(accelerator is SimulatedAccelerator simAccelerator)
+            if (accelerator is SimulatedAccelerator simAccelerator)
             {
                 await simAccelerator.ExecuteKernelAsync(kernelSource, parameters, cancellationToken);
             }
-            
+
             return new { Success = true, KernelSource = kernelSource, Parameters = parameters };
         }
 
         public async Task<IEnumerable<object>> ExecuteParallelAsync(IEnumerable<(string kernel, object[] parameters)> operations, CancellationToken cancellationToken = default)
         {
             ThrowIfDisposed();
-            
-            var tasks = operations.Select(async op => 
+
+            var tasks = operations.Select(async op =>
                 await ExecuteKernelAsync(op.kernel, op.parameters, cancellationToken));
-            
+
             return await Task.WhenAll(tasks);
         }
 
@@ -471,13 +443,13 @@ public class ComputeEngineUnitTests : CoverageTestBase
 
         private void ThrowIfDisposed()
         {
-            if(_disposed)
+            if (_disposed)
                 throw new ObjectDisposedException(nameof(DefaultComputeEngine));
         }
 
         public void Dispose()
         {
-            if(_disposed)
+            if (_disposed)
                 return;
 
             if (_acceleratorManager is IDisposable disposable)

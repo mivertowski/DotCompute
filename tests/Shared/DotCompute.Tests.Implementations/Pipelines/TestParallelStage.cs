@@ -1,13 +1,6 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Core.Aot;
 using DotCompute.Core.Pipelines;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.Pipelines;
 
@@ -27,8 +20,8 @@ public class TestParallelStage : IPipelineStage
     {
         Id = $"parallel_{name}_{Guid.NewGuid():N}";
         Name = name;
-        _stages = new List<IPipelineStage>();
-        _metadata = new Dictionary<string, object>();
+        _stages = [];
+        _metadata = [];
         _metrics = new TestStageMetrics(Name);
         Dependencies = Array.Empty<string>();
         Type = PipelineStageType.Parallel;
@@ -55,37 +48,37 @@ public class TestParallelStage : IPipelineStage
     {
         var stopwatch = Stopwatch.StartNew();
         var startMemory = GC.GetTotalMemory(false);
-        
+
         try
         {
             _metrics.RecordExecutionStart();
-            
+
             var outputs = new Dictionary<string, object>();
             var stageResults = new List<StageExecutionResult>();
-            
-            switch(_synchronizationMode)
+
+            switch (_synchronizationMode)
             {
                 case SynchronizationMode.WaitAll:
                     stageResults = await ExecuteWaitAll(context, cancellationToken);
                     break;
-                    
+
                 case SynchronizationMode.WaitAny:
                     stageResults = await ExecuteWaitAny(context, cancellationToken);
                     break;
-                    
+
                 case SynchronizationMode.FireAndForget:
                     ExecuteFireAndForget(context, cancellationToken);
                     break;
-                    
+
                 case SynchronizationMode.Custom:
                     stageResults = await ExecuteCustom(context, cancellationToken);
                     break;
             }
-            
+
             // Merge outputs from all stages
             foreach (var result in stageResults)
             {
-                if(result.Outputs != null)
+                if (result.Outputs != null)
                 {
                     foreach (var (key, value) in result.Outputs)
                     {
@@ -93,15 +86,15 @@ public class TestParallelStage : IPipelineStage
                     }
                 }
             }
-            
-            if(_useBarrier)
+
+            if (_useBarrier)
             {
                 await Task.Yield(); // Simulate barrier synchronization
             }
-            
+
             stopwatch.Stop();
             var endMemory = GC.GetTotalMemory(false);
-            
+
             var memoryUsage = new MemoryUsageStats
             {
                 AllocatedBytes = Math.Max(0, endMemory - startMemory),
@@ -109,9 +102,9 @@ public class TestParallelStage : IPipelineStage
                 AllocationCount = _stages.Count,
                 DeallocationCount = 0
             };
-            
+
             _metrics.RecordExecutionSuccess(stopwatch.Elapsed, endMemory - startMemory);
-            
+
             return new StageExecutionResult
             {
                 StageId = Id,
@@ -128,11 +121,11 @@ public class TestParallelStage : IPipelineStage
                 }
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             stopwatch.Stop();
             _metrics.RecordExecutionError(stopwatch.Elapsed);
-            
+
             return new StageExecutionResult
             {
                 StageId = Id,
@@ -149,15 +142,15 @@ public class TestParallelStage : IPipelineStage
     {
         var semaphore = new SemaphoreSlim(_maxDegreeOfParallelism, _maxDegreeOfParallelism);
         var tasks = new List<Task<StageExecutionResult>>();
-        
+
         foreach (var stage in _stages)
         {
             tasks.Add(ExecuteStageWithSemaphore(stage, context, semaphore, cancellationToken));
         }
-        
+
         var results = await Task.WhenAll(tasks);
         semaphore.Dispose();
-        
+
         return results.ToList();
     }
 
@@ -165,24 +158,24 @@ public class TestParallelStage : IPipelineStage
         PipelineExecutionContext context,
         CancellationToken cancellationToken)
     {
-        var tasks = _stages.Select(stage => 
+        var tasks = _stages.Select(stage =>
             stage.ExecuteAsync(context, cancellationToken).AsTask()).ToList();
-        
+
         var results = new List<StageExecutionResult>();
-        
-        while(tasks.Count > 0)
+
+        while (tasks.Count > 0)
         {
             var completedTask = await Task.WhenAny(tasks);
             results.Add(await completedTask);
             tasks.Remove(completedTask);
-            
+
             // For WaitAny, we might want to cancel remaining tasks after first completion
-            if(results.Count == 1 && _metadata.ContainsKey("CancelOthersOnFirstCompletion"))
+            if (results.Count == 1 && _metadata.ContainsKey("CancelOthersOnFirstCompletion"))
             {
                 break;
             }
         }
-        
+
         return results;
     }
 
@@ -213,21 +206,21 @@ public class TestParallelStage : IPipelineStage
         // Custom synchronization - execute in batches
         var results = new List<StageExecutionResult>();
         var batchSize = Math.Max(1, _maxDegreeOfParallelism / 2);
-        
-        for(int i = 0; i < _stages.Count; i += batchSize)
+
+        for (var i = 0; i < _stages.Count; i += batchSize)
         {
             var batch = _stages.Skip(i).Take(batchSize);
-            var batchTasks = batch.Select(stage => 
+            var batchTasks = batch.Select(stage =>
                 stage.ExecuteAsync(context, cancellationToken).AsTask());
-            
+
             var batchResults = await Task.WhenAll(batchTasks);
             results.AddRange(batchResults);
         }
-        
+
         return results;
     }
 
-    private async Task<StageExecutionResult> ExecuteStageWithSemaphore(
+    private static async Task<StageExecutionResult> ExecuteStageWithSemaphore(
         IPipelineStage stage,
         PipelineExecutionContext context,
         SemaphoreSlim semaphore,
@@ -248,30 +241,30 @@ public class TestParallelStage : IPipelineStage
     {
         var errors = new List<string>();
         var warnings = new List<string>();
-        
-        if(_stages.Count == 0)
+
+        if (_stages.Count == 0)
         {
             errors.Add("Parallel stage has no child stages");
         }
-        
+
         foreach (var stage in _stages)
         {
             var validation = stage.Validate();
-            if(!validation.IsValid && validation.Errors != null)
+            if (!validation.IsValid && validation.Errors != null)
             {
                 errors.AddRange(validation.Errors.Select(e => $"{stage.Name}: {e}"));
             }
-            if(validation.Warnings != null)
+            if (validation.Warnings != null)
             {
                 warnings.AddRange(validation.Warnings.Select(w => $"{stage.Name}: {w}"));
             }
         }
-        
-        if(_maxDegreeOfParallelism < 1)
+
+        if (_maxDegreeOfParallelism < 1)
         {
             errors.Add("MaxDegreeOfParallelism must be at least 1");
         }
-        
+
         return new StageValidationResult
         {
             IsValid = errors.Count == 0,
@@ -282,35 +275,17 @@ public class TestParallelStage : IPipelineStage
 
     public IStageMetrics GetMetrics() => _metrics;
 
-    internal void AddStage(IPipelineStage stage)
-    {
-        _stages.Add(stage);
-    }
+    internal void AddStage(IPipelineStage stage) => _stages.Add(stage);
 
-    internal void SetMaxDegreeOfParallelism(int maxDegree)
-    {
-        _maxDegreeOfParallelism = maxDegree;
-    }
+    internal void SetMaxDegreeOfParallelism(int maxDegree) => _maxDegreeOfParallelism = maxDegree;
 
-    internal void SetSynchronizationMode(SynchronizationMode mode)
-    {
-        _synchronizationMode = mode;
-    }
+    internal void SetSynchronizationMode(SynchronizationMode mode) => _synchronizationMode = mode;
 
-    internal void SetBarrier(bool useBarrier)
-    {
-        _useBarrier = useBarrier;
-    }
+    internal void SetBarrier(bool useBarrier) => _useBarrier = useBarrier;
 
-    internal void AddMetadata(string key, object value)
-    {
-        _metadata[key] = value;
-    }
+    internal void AddMetadata(string key, object value) => _metadata[key] = value;
 
-    internal void SetDependencies(string[] dependencies)
-    {
-        Dependencies = dependencies;
-    }
+    internal void SetDependencies(string[] dependencies) => Dependencies = dependencies;
 }
 
 /// <summary>
@@ -331,13 +306,13 @@ public class TestParallelStageBuilder : IParallelStageBuilder
         Action<IKernelStageBuilder>? configure = null)
     {
         var kernelStage = new TestKernelStage(name, kernel);
-        
-        if(configure != null)
+
+        if (configure != null)
         {
             var builder = new TestKernelStageBuilder(kernelStage);
             configure(builder);
         }
-        
+
         _stage.AddStage(kernelStage);
         return this;
     }
@@ -349,13 +324,13 @@ public class TestParallelStageBuilder : IParallelStageBuilder
         var pipelineBuilder = new TestKernelPipelineBuilder();
         pipelineBuilder.WithName(name);
         configure(pipelineBuilder);
-        
+
         var pipeline = pipelineBuilder.Build();
-        
+
         // Wrap pipeline as a custom stage
         var pipelineStage = new TestCustomStage(
             name,
-            async(context, ct) =>
+            async (context, ct) =>
             {
                 var result = await pipeline.ExecuteAsync(context, ct);
                 return new StageExecutionResult
@@ -367,7 +342,7 @@ public class TestParallelStageBuilder : IParallelStageBuilder
                     Error = result.Errors?.FirstOrDefault()?.Exception
                 };
             });
-        
+
         _stage.AddStage(pipelineStage);
         return this;
     }

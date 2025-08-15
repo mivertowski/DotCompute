@@ -3,7 +3,6 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
-using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Tests.Shared;
 using Microsoft.Extensions.Logging;
@@ -37,7 +36,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Allocate_ShouldCreateValidBuffer()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as IMemoryManager;
@@ -63,7 +63,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Allocate_WithDifferentSizes_ShouldSucceed(long sizeInBytes)
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -83,13 +84,14 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Allocate_WithZeroSize_ShouldThrow()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
 
         // Act & Assert
-        Action allocateZero =() => syncMemoryManager!.Allocate(0);
+        Action allocateZero = () => syncMemoryManager!.Allocate(0);
         allocateZero.Should().Throw<ArgumentException>().WithMessage("*Size must be greater than zero*");
     }
 
@@ -99,13 +101,14 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Allocate_WithNegativeSize_ShouldThrow()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
 
         // Act & Assert
-        Action allocateNegative =() => syncMemoryManager!.Allocate(-1024);
+        Action allocateNegative = () => syncMemoryManager!.Allocate(-1024);
         allocateNegative.Should().Throw<ArgumentException>().WithMessage("*Size must be greater than zero*");
     }
 
@@ -118,7 +121,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_AllocateAligned_WithValidAlignment_ShouldSucceed(int alignment)
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -138,13 +142,14 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_AllocateAligned_WithInvalidAlignment_ShouldThrow()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
 
         // Act & Assert
-        Action allocateInvalidAlignment =() => syncMemoryManager!.AllocateAligned(1024, 100); // Not a power of 2
+        Action allocateInvalidAlignment = () => syncMemoryManager!.AllocateAligned(1024, 100); // Not a power of 2
         allocateInvalidAlignment.Should().Throw<ArgumentException>().WithMessage("*Alignment must be a power of 2*");
     }
 
@@ -154,7 +159,8 @@ public class CudaMemoryManagerTests : IDisposable
     public unsafe void CudaMemoryManager_CopyFromHost_ShouldTransferData()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -162,9 +168,9 @@ public class CudaMemoryManagerTests : IDisposable
         _buffers.Add(buffer);
 
         var hostData = TestDataGenerator.GenerateFloatArray(256);
-        
+
         // Act
-        fixed(float* hostPtr = hostData)
+        fixed (float* hostPtr = hostData)
         {
             syncMemoryManager.CopyFromHost(hostPtr, buffer, hostData.Length * sizeof(float));
         }
@@ -179,7 +185,8 @@ public class CudaMemoryManagerTests : IDisposable
     public unsafe void CudaMemoryManager_CopyToHost_ShouldRetrieveData()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -190,8 +197,8 @@ public class CudaMemoryManagerTests : IDisposable
         var retrievedData = new float[256];
 
         // Act
-        fixed(float* hostPtr = hostData)
-        fixed(float* retrievedPtr = retrievedData)
+        fixed (float* hostPtr = hostData)
+        fixed (float* retrievedPtr = retrievedData)
         {
             syncMemoryManager.CopyFromHost(hostPtr, buffer, hostData.Length * sizeof(float));
             syncMemoryManager.CopyToHost(buffer, retrievedPtr, hostData.Length * sizeof(float));
@@ -207,7 +214,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Copy_BetweenGpuBuffers_ShouldSucceed()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -216,7 +224,7 @@ public class CudaMemoryManagerTests : IDisposable
         _buffers.AddRange([sourceBuffer, destBuffer]);
 
         // Act & Assert
-        Action copyAction =() => syncMemoryManager.Copy(sourceBuffer, destBuffer, 512);
+        Action copyAction = () => syncMemoryManager.Copy(sourceBuffer, destBuffer, 512);
         copyAction(); // Should not throw
     }
 
@@ -226,7 +234,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Copy_WithInvalidParameters_ShouldThrow()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -235,7 +244,7 @@ public class CudaMemoryManagerTests : IDisposable
         _buffers.AddRange([sourceBuffer, destBuffer]);
 
         // Act & Assert - Copy more than buffer size
-        Action copyTooMuch =() => syncMemoryManager.Copy(sourceBuffer, destBuffer, 2048);
+        Action copyTooMuch = () => syncMemoryManager.Copy(sourceBuffer, destBuffer, 2048);
         copyTooMuch.Should().Throw<ArgumentException>().WithMessage("*would exceed buffer bounds*");
     }
 
@@ -248,7 +257,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Fill_WithDifferentValues_ShouldSucceed(byte fillValue)
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -256,7 +266,7 @@ public class CudaMemoryManagerTests : IDisposable
         _buffers.Add(buffer);
 
         // Act & Assert
-        Action fillAction =() => syncMemoryManager.Fill(buffer, fillValue, 512);
+        Action fillAction = () => syncMemoryManager.Fill(buffer, fillValue, 512);
         fillAction(); // Should not throw
     }
 
@@ -266,7 +276,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Zero_ShouldClearBuffer()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -274,7 +285,7 @@ public class CudaMemoryManagerTests : IDisposable
         _buffers.Add(buffer);
 
         // Act & Assert
-        Action zeroAction =() => syncMemoryManager.Zero(buffer);
+        Action zeroAction = () => syncMemoryManager.Zero(buffer);
         zeroAction(); // Should not throw
     }
 
@@ -284,7 +295,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_GetStatistics_ShouldReturnValidData()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -307,14 +319,15 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_MultipleAllocations_ShouldTrackCorrectly()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
 
         // Act
         var initialStats = syncMemoryManager!.GetStatistics();
-        
+
         var buffer1 = syncMemoryManager.Allocate(1024);
         var buffer2 = syncMemoryManager.Allocate(2048);
         _buffers.AddRange([buffer1, buffer2]);
@@ -332,7 +345,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Free_ShouldReleaseBuffer()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -351,7 +365,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Reset_ShouldClearAllBuffers()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -372,19 +387,20 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_StressTest_MultipleAllocationsAndDeallocations()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
         const int iterationCount = 100;
 
         // Act & Assert
-        for(int i = 0; i < iterationCount; i++)
+        for (var i = 0; i < iterationCount; i++)
         {
             var buffer = syncMemoryManager!.Allocate(1024 * (i % 10 + 1));
             Assert.NotNull(buffer);
-            
-            if(i % 2 == 0) // Free every other allocation
+
+            if (i % 2 == 0) // Free every other allocation
             {
                 syncMemoryManager.Free(buffer);
             }
@@ -407,7 +423,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_Allocate_WithMemoryOptions_ShouldRespectOptions(MemoryOptions options)
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -415,7 +432,7 @@ public class CudaMemoryManagerTests : IDisposable
         // Act & Assert
         var buffer = syncMemoryManager!.Allocate(1024, options);
         _buffers.Add(buffer);
-        
+
         Assert.NotNull(buffer);
         buffer.SizeInBytes.Should().Be(1024);
     }
@@ -426,7 +443,8 @@ public class CudaMemoryManagerTests : IDisposable
     public void CudaMemoryManager_LargeAllocation_ShouldCompleteInReasonableTime()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var syncMemoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -443,7 +461,7 @@ public class CudaMemoryManagerTests : IDisposable
         Assert.NotNull(buffer);
         //Large allocation should complete within 5 seconds
         (stopwatch.ElapsedMilliseconds < 5000).Should().BeTrue();
-        
+
         _output.WriteLine($"100MB allocation took {stopwatch.ElapsedMilliseconds}ms");
     }
 
@@ -476,13 +494,13 @@ public class CudaMemoryManagerTests : IDisposable
         {
             try
             {
-                if(!buffer.IsDisposed)
+                if (!buffer.IsDisposed)
                 {
                     var syncMemoryManager = _accelerators.FirstOrDefault()?.Memory as ISyncMemoryManager;
                     syncMemoryManager?.Free(buffer);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing CUDA buffer");
             }
@@ -495,7 +513,7 @@ public class CudaMemoryManagerTests : IDisposable
             {
                 accelerator?.Dispose();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing CUDA accelerator");
             }

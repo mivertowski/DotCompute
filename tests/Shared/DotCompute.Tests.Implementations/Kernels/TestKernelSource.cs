@@ -1,6 +1,4 @@
-using System.Collections.Generic;
 using DotCompute.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.Kernels;
 
@@ -13,5 +11,5 @@ public class TestKernelSource : IKernelSource
     public string Code { get; set; } = "";
     public string EntryPoint { get; set; } = "main";
     public KernelLanguage Language { get; set; } = KernelLanguage.OpenCL;
-    public string[] Dependencies { get; set; } = new string[0];
+    public string[] Dependencies { get; set; } = [];
 }

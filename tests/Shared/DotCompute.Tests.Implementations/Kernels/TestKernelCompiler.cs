@@ -1,13 +1,7 @@
-using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.Kernels;
 
@@ -24,7 +18,7 @@ public abstract class TestKernelCompilerBase
     protected TestKernelCompilerBase()
     {
         _compilationCache = new ConcurrentDictionary<string, CompiledKernelInfo>();
-        _diagnostics = new List<CompilationDiagnostic>();
+        _diagnostics = [];
     }
 
     public abstract KernelLanguage SupportedLanguage { get; }
@@ -32,8 +26,8 @@ public abstract class TestKernelCompilerBase
 
     public long CompilationCount => _compilationCount;
     public TimeSpan TotalCompilationTime => _totalCompilationTime;
-    public double AverageCompilationTimeMs => _compilationCount > 0 
-        ? _totalCompilationTime.TotalMilliseconds / _compilationCount 
+    public double AverageCompilationTimeMs => _compilationCount > 0
+        ? _totalCompilationTime.TotalMilliseconds / _compilationCount
         : 0;
 
     public IReadOnlyList<CompilationDiagnostic> Diagnostics => _diagnostics.AsReadOnly();
@@ -44,13 +38,13 @@ public abstract class TestKernelCompilerBase
         CancellationToken cancellationToken)
     {
         var stopwatch = Stopwatch.StartNew();
-        
+
         // Simulate compilation delay
         await Task.Delay(10, cancellationToken);
-        
+
         // Generate pseudo-assembly based on language
         var assembly = GeneratePseudoAssembly(source, options);
-        
+
         // Create compiled kernel info
         var info = new CompiledKernelInfo
         {
@@ -88,7 +82,7 @@ public abstract class TestKernelCompilerBase
 
     protected abstract string GeneratePseudoAssembly(IKernelSource source, CompilationOptions options);
 
-    protected string GenerateCacheKey(IKernelSource source, CompilationOptions options)
+    protected static string GenerateCacheKey(IKernelSource source, CompilationOptions options)
     {
         var builder = new StringBuilder();
         builder.Append(source.Name);
@@ -103,15 +97,9 @@ public abstract class TestKernelCompilerBase
         return builder.ToString();
     }
 
-    public void ClearCache()
-    {
-        _compilationCache.Clear();
-    }
+    public void ClearCache() => _compilationCache.Clear();
 
-    public void ClearDiagnostics()
-    {
-        _diagnostics.Clear();
-    }
+    public void ClearDiagnostics() => _diagnostics.Clear();
 }
 
 /// <summary>
@@ -127,7 +115,7 @@ public class TestCudaKernelCompiler : TestKernelCompilerBase
         CompilationOptions options,
         CancellationToken cancellationToken = default)
     {
-        if(source.Language != KernelLanguage.Cuda && source.Language != KernelLanguage.Ptx)
+        if (source.Language != KernelLanguage.Cuda && source.Language != KernelLanguage.Ptx)
         {
             throw new ArgumentException($"Unsupported language: {source.Language}. Expected CUDA or PTX.", nameof(source));
         }
@@ -160,22 +148,22 @@ public class TestCudaKernelCompiler : TestKernelCompilerBase
         assembly.AppendLine($"    mov.u32 %r3, %ntid.x;");
         assembly.AppendLine($"    mad.lo.s32 %r4, %r2, %r3, %r1;");
         assembly.AppendLine();
-        
-        if(options.FastMath)
+
+        if (options.FastMath)
         {
             assembly.AppendLine($"    // Fast math operations");
             assembly.AppendLine($"    mul.ftz.f32 %r5, %r4, 0.5;");
         }
-        
-        if(options.UnrollLoops)
+
+        if (options.UnrollLoops)
         {
             assembly.AppendLine($"    // Unrolled loop");
             assembly.AppendLine($"    #pragma unroll 4");
         }
-        
+
         assembly.AppendLine($"    ret;");
         assembly.AppendLine($"}}");
-        
+
         return assembly.ToString();
     }
 }
@@ -193,7 +181,7 @@ public class TestOpenCLKernelCompiler : TestKernelCompilerBase
         CompilationOptions options,
         CancellationToken cancellationToken = default)
     {
-        if(source.Language != KernelLanguage.OpenCL && source.Language != KernelLanguage.SPIRV)
+        if (source.Language != KernelLanguage.OpenCL && source.Language != KernelLanguage.SPIRV)
         {
             throw new ArgumentException($"Unsupported language: {source.Language}. Expected OpenCL or SPIRV.", nameof(source));
         }
@@ -227,16 +215,16 @@ public class TestOpenCLKernelCompiler : TestKernelCompilerBase
         assembly.AppendLine($"%func_type = OpTypeFunction %void");
         assembly.AppendLine($"%{source.EntryPoint} = OpFunction %void None %func_type");
         assembly.AppendLine($"%entry = OpLabel");
-        
-        if(options.FastMath)
+
+        if (options.FastMath)
         {
             assembly.AppendLine($"; Fast math enabled");
             assembly.AppendLine($"OpDecorate %mul_result FPFastMathMode Fast");
         }
-        
+
         assembly.AppendLine($"OpReturn");
         assembly.AppendLine($"OpFunctionEnd");
-        
+
         return assembly.ToString();
     }
 }
@@ -254,7 +242,7 @@ public class TestDirectComputeCompiler : TestKernelCompilerBase
         CompilationOptions options,
         CancellationToken cancellationToken = default)
     {
-        if(source.Language != KernelLanguage.HLSL)
+        if (source.Language != KernelLanguage.HLSL)
         {
             throw new ArgumentException($"Unsupported language: {source.Language}. Expected HLSL.", nameof(source));
         }
@@ -284,8 +272,8 @@ public class TestDirectComputeCompiler : TestKernelCompilerBase
         assembly.AppendLine($"mov r0.x, vThreadID.x");
         assembly.AppendLine($"ld_structured r1.x, r0.x, 0, t0.x");
         assembly.AppendLine($"ld_structured r2.x, r0.x, 0, t1.x");
-        
-        if(options.FastMath)
+
+        if (options.FastMath)
         {
             assembly.AppendLine($"// Fast math");
             assembly.AppendLine($"mad r3.x, r1.x, r2.x, 0.5");
@@ -294,10 +282,10 @@ public class TestDirectComputeCompiler : TestKernelCompilerBase
         {
             assembly.AppendLine($"add r3.x, r1.x, r2.x");
         }
-        
+
         assembly.AppendLine($"store_structured u0.x, r0.x, 0, r3.x");
         assembly.AppendLine($"ret");
-        
+
         return assembly.ToString();
     }
 }
@@ -312,7 +300,7 @@ public class CompiledKernelInfo
     public string Assembly { get; set; } = "";
     public DateTime CompiledAt { get; set; }
     public CompilationOptions Options { get; set; } = new();
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = [];
 }
 
 /// <summary>

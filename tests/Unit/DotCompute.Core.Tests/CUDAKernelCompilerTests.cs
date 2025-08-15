@@ -1,13 +1,8 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
-using Abstractions = DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -35,10 +30,8 @@ public class CUDAKernelCompilerTests : IDisposable
 
     [Fact]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
-    {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new CUDAKernelCompiler(null!));
-    }
+        => Assert.Throws<ArgumentNullException>(() => new CUDAKernelCompiler(null!));
 
     [Fact]
     public void AcceleratorType_ShouldReturnCUDA()
@@ -86,7 +79,7 @@ public class CUDAKernelCompilerTests : IDisposable
         var options = CreateValidCompilationOptions();
 
         // Act & Assert
-        var exception = await _compiler.Invoking(async c => await c.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options)))
+        var exception = await _compiler.Invoking(async c => await c.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options)))
             .Should().ThrowAsync<ArgumentException>();
         exception.Which.Message.Should().Contain("Expected CUDA kernel but received OpenCL");
     }
@@ -99,12 +92,12 @@ public class CUDAKernelCompilerTests : IDisposable
         var options = CreateValidCompilationOptions();
 
         // Act
-        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options));
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options));
 
         // Assert
         Assert.NotNull(result);
         Assert.Equal(kernel.Name, result.Name);
-        
+
         // Cast to the concrete type to access additional properties
         if (result is ManagedCompiledKernel managedResult)
         {
@@ -126,7 +119,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.TargetArchitecture = computeCapability;
 
         // Act
-        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options));
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options));
 
         // Assert
         Assert.NotNull(result);
@@ -134,7 +127,7 @@ public class CUDAKernelCompilerTests : IDisposable
         {
             Assert.NotNull(managedResult.Binary);
         }
-        
+
         // Verify the logger was called with the target architecture
         VerifyLoggerWasCalled("Compiling CUDA kernel", LogLevel.Information);
     }
@@ -148,7 +141,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.OptimizationLevel = DotCompute.Core.Kernels.OptimizationLevel.O3;
 
         // Act
-        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options));
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options));
 
         // Assert
         Assert.NotNull(result);
@@ -169,7 +162,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.Defines["TILE_SIZE"] = "16";
 
         // Act
-        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options));
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options));
 
         // Assert
         Assert.NotNull(result);
@@ -192,7 +185,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.OptimizationLevel = DotCompute.Core.Kernels.OptimizationLevel.O3;
 
         // Act
-        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options));
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options));
 
         // Assert
         Assert.NotNull(result);
@@ -200,9 +193,9 @@ public class CUDAKernelCompilerTests : IDisposable
         {
             Assert.NotNull(managedResult.Binary);
             Assert.NotNull(managedResult.PerformanceMetadata);
-            if(managedResult.PerformanceMetadata != null)
+            if (managedResult.PerformanceMetadata != null)
             {
-                Assert.True(managedResult.PerformanceMetadata.ContainsKey("shared_memory_size") || 
+                Assert.True(managedResult.PerformanceMetadata.ContainsKey("shared_memory_size") ||
                            managedResult.PerformanceMetadata.ContainsKey("registers_per_thread"));
             }
         }
@@ -237,7 +230,7 @@ public class CUDAKernelCompilerTests : IDisposable
         var options = CreateValidCompilationOptions();
 
         // Act
-        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options));
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options));
 
         // Assert
         // The compiler should handle the error gracefully(since we're using mocked NVRTC)
@@ -259,7 +252,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.OptimizationLevel = level;
 
         // Act
-        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options));
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options));
 
         // Assert
         Assert.NotNull(result);
@@ -279,7 +272,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.IncludeDirectories.Add("./headers");
 
         // Act
-        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options));
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options));
 
         // Assert
         Assert.NotNull(result);
@@ -300,7 +293,7 @@ public class CUDAKernelCompilerTests : IDisposable
         options.OptimizationLevel = DotCompute.Core.Kernels.OptimizationLevel.O1;
 
         // Act
-        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options));
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options));
 
         // Assert
         Assert.NotNull(result);
@@ -319,7 +312,7 @@ public class CUDAKernelCompilerTests : IDisposable
         var options = CreateValidCompilationOptions();
 
         // Act
-        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel),ConvertToCoreOptions(options));
+        var result = await _compiler.CompileAsync(ConvertToKernelDefinition(kernel), ConvertToCoreOptions(options));
 
         // Assert
         Assert.NotNull(result);
@@ -358,7 +351,7 @@ public class CUDAKernelCompilerTests : IDisposable
 
     #region Helper Methods
 
-    private GeneratedKernel CreateValidCudaKernel(string name = "test_kernel")
+    private static GeneratedKernel CreateValidCudaKernel(string name = "test_kernel")
     {
         return new GeneratedKernel
         {
@@ -371,16 +364,16 @@ __global__ void test_kernel(float* input, float* output, int size) {
     }
 }",
             Language = DotCompute.Core.Kernels.KernelLanguage.CUDA,
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
-            {
+            Parameters =
+            [
                 new() { Name = "input", Type = typeof(float[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
                 new() { Name = "output", Type = typeof(float[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
                 new() { Name = "size", Type = typeof(int), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Private }
-            }
+            ]
         };
     }
 
-    private GeneratedKernel CreateComplexCudaKernel()
+    private static GeneratedKernel CreateComplexCudaKernel()
     {
         return new GeneratedKernel
         {
@@ -423,23 +416,23 @@ __global__ void complex_kernel(float* A, float* B, float* C, int N) {
         C[row * N + col] = sum;
 }",
             Language = DotCompute.Core.Kernels.KernelLanguage.CUDA,
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
-            {
+            Parameters =
+            [
                 new() { Name = "A", Type = typeof(float[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
                 new() { Name = "B", Type = typeof(float[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
                 new() { Name = "C", Type = typeof(float[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
                 new() { Name = "N", Type = typeof(int), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Private }
-            },
+            ],
             OptimizationMetadata = new Dictionary<string, object>
             {
-                ["shared_memory_size"] =(TILE_SIZE * TILE_SIZE * 2 * sizeof(float)).ToString(),
+                ["shared_memory_size"] = (TILE_SIZE * TILE_SIZE * 2 * sizeof(float)).ToString(),
                 ["registers_per_thread"] = "32",
                 ["max_threads_per_block"] = "256"
             }
         };
     }
 
-    private GeneratedKernel CreateKernelWithIncludes()
+    private static GeneratedKernel CreateKernelWithIncludes()
     {
         return new GeneratedKernel
         {
@@ -456,16 +449,16 @@ __global__ void kernel_with_includes(float* input, float* output, int size) {
     }
 }",
             Language = DotCompute.Core.Kernels.KernelLanguage.CUDA,
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
-            {
+            Parameters =
+            [
                 new() { Name = "input", Type = typeof(float[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
                 new() { Name = "output", Type = typeof(float[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
                 new() { Name = "size", Type = typeof(int), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Private }
-            }
+            ]
         };
     }
 
-    private GeneratedKernel CreateKernelWithSharedMemory()
+    private static GeneratedKernel CreateKernelWithSharedMemory()
     {
         return new GeneratedKernel
         {
@@ -498,12 +491,12 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
         output[blockIdx.x] = shared_data[0];
 }",
             Language = DotCompute.Core.Kernels.KernelLanguage.CUDA,
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[]
-            {
+            Parameters =
+            [
                 new() { Name = "input", Type = typeof(float[]), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
                 new() { Name = "output", Type = typeof(float[]), IsOutput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Global },
                 new() { Name = "size", Type = typeof(int), IsInput = true, MemorySpace = DotCompute.Core.Kernels.MemorySpace.Private }
-            },
+            ],
             OptimizationMetadata = new Dictionary<string, object>
             {
                 ["uses_shared_memory"] = "true",
@@ -512,7 +505,7 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
         };
     }
 
-    private DotCompute.Core.Kernels.CompilationOptions CreateValidCompilationOptions()
+    private static DotCompute.Core.Kernels.CompilationOptions CreateValidCompilationOptions()
     {
         return new DotCompute.Core.Kernels.CompilationOptions
         {
@@ -520,8 +513,8 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
             TargetArchitecture = "sm_75",
             EnableFastMath = false,
             GenerateDebugInfo = false,
-            Defines = new Dictionary<string, string>(),
-            IncludeDirectories = new List<string>()
+            Defines = [],
+            IncludeDirectories = []
         };
     }
 
@@ -537,7 +530,7 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
             Times.AtLeastOnce);
     }
 
-    private Abstractions.CompilationOptions ConvertToCoreOptions(DotCompute.Core.Kernels.CompilationOptions coreOptions)
+    private static Abstractions.CompilationOptions ConvertToCoreOptions(DotCompute.Core.Kernels.CompilationOptions coreOptions)
     {
         return new Abstractions.CompilationOptions
         {
@@ -549,7 +542,7 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
         };
     }
 
-    private Abstractions.OptimizationLevel ConvertOptimizationLevel(DotCompute.Core.Kernels.OptimizationLevel level)
+    private static Abstractions.OptimizationLevel ConvertOptimizationLevel(DotCompute.Core.Kernels.OptimizationLevel level)
     {
         return level switch
         {
@@ -565,7 +558,7 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
 
     #endregion
 
-    private KernelDefinition CreateKernelDefinitionFromGenerated(GeneratedKernel generated)
+    private static KernelDefinition CreateKernelDefinitionFromGenerated(GeneratedKernel generated)
     {
         var sourceBytes = System.Text.Encoding.UTF8.GetBytes(generated.Source);
         return new KernelDefinition
@@ -576,7 +569,7 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
         };
     }
 
-    private DotCompute.Abstractions.CompilationOptions CreateAbstractionsOptions(DotCompute.Core.Kernels.CompilationOptions coreOptions)
+    private static DotCompute.Abstractions.CompilationOptions CreateAbstractionsOptions(DotCompute.Core.Kernels.CompilationOptions coreOptions)
     {
         return new DotCompute.Abstractions.CompilationOptions
         {
@@ -587,24 +580,24 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
 
     #region Helper Methods - Missing Implementations
 
-    private Abstractions.KernelDefinition ConvertToKernelDefinition(GeneratedKernel kernel)
+    private static Abstractions.KernelDefinition ConvertToKernelDefinition(GeneratedKernel kernel)
     {
         // Create a mock conversion - in real code this would properly convert
-        var source = new TextKernelSource(kernel.Source, kernel.Name, 
-            DotCompute.Abstractions.KernelLanguage.Cuda, 
+        var source = new TextKernelSource(kernel.Source, kernel.Name,
+            DotCompute.Abstractions.KernelLanguage.Cuda,
             "main");
         var options = new Abstractions.CompilationOptions();
         return new Abstractions.KernelDefinition(kernel.Name, source, options);
     }
 
-    private ValueTask<ICompiledKernel> CompileAsync(GeneratedKernel kernel, DotCompute.Core.Kernels.CompilationOptions options, CancellationToken cancellationToken = default)
+    private static ValueTask<ICompiledKernel> CompileAsync(GeneratedKernel kernel, DotCompute.Core.Kernels.CompilationOptions options, CancellationToken cancellationToken = default)
     {
         // Mock implementation for testing
         var managedKernel = new DotCompute.Core.Kernels.ManagedCompiledKernel
         {
             Name = kernel.Name,
-            Binary = new byte[] { 0x01, 0x02, 0x03 },
-            Parameters = new DotCompute.Core.Kernels.KernelParameter[0]
+            Binary = [0x01, 0x02, 0x03],
+            Parameters = []
         };
         return ValueTask.FromResult<ICompiledKernel>(managedKernel);
     }
@@ -612,8 +605,6 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
     #endregion
 
     public void Dispose()
-    {
         // Clean up any resources if needed
-        GC.SuppressFinalize(this);
-    }
+        => GC.SuppressFinalize(this);
 }

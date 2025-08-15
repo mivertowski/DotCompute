@@ -1,12 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using Xunit.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Hardware.Utilities;
 
@@ -37,7 +30,7 @@ public static class RTX2000TestUtilities
         var isValid = true;
 
         // Validate compute capability
-        if(deviceInfo.ComputeCapabilityMajor != RTX2000Specifications.ComputeCapabilityMajor ||
+        if (deviceInfo.ComputeCapabilityMajor != RTX2000Specifications.ComputeCapabilityMajor ||
             deviceInfo.ComputeCapabilityMinor < RTX2000Specifications.ComputeCapabilityMinor)
         {
             output.WriteLine($"⚠ Compute capability mismatch: Expected {RTX2000Specifications.ComputeCapabilityMajor}.{RTX2000Specifications.ComputeCapabilityMinor}, found {deviceInfo.ComputeCapabilityMajor}.{deviceInfo.ComputeCapabilityMinor}");
@@ -45,21 +38,21 @@ public static class RTX2000TestUtilities
         }
 
         // Validate memory size(allow some tolerance for system reserved memory)
-        var memoryGB = deviceInfo.TotalMemoryBytes /(1024.0 * 1024.0 * 1024.0);
-        if(memoryGB < RTX2000Specifications.ExpectedMemoryGB * 0.9)
+        var memoryGB = deviceInfo.TotalMemoryBytes / (1024.0 * 1024.0 * 1024.0);
+        if (memoryGB < RTX2000Specifications.ExpectedMemoryGB * 0.9)
         {
             output.WriteLine($"⚠ Memory size lower than expected: Expected ~{RTX2000Specifications.ExpectedMemoryGB}GB, found {memoryGB:F1}GB");
             isValid = false;
         }
 
         // Validate SM count(allow some tolerance for different variants)
-        if(deviceInfo.MultiProcessorCount < RTX2000Specifications.ExpectedSMCount * 0.8)
+        if (deviceInfo.MultiProcessorCount < RTX2000Specifications.ExpectedSMCount * 0.8)
         {
             output.WriteLine($"⚠ SM count lower than expected: Expected ~{RTX2000Specifications.ExpectedSMCount}, found {deviceInfo.MultiProcessorCount}");
             isValid = false;
         }
 
-        if(isValid)
+        if (isValid)
         {
             output.WriteLine("✓ Hardware validated as RTX 2000 Ada Generation compatible");
         }
@@ -81,8 +74,8 @@ public static class RTX2000TestUtilities
     /// </summary>
     public static string[] GetDefaultCompilationOptions()
     {
-        return new[]
-        {
+        return
+        [
             "--gpu-architecture=compute_89",
             "--use_fast_math",
             "--extra-device-vectorization",
@@ -91,7 +84,7 @@ public static class RTX2000TestUtilities
             "--prec-div=false", // Use fast division
             "--prec-sqrt=false", // Use fast square root
             "--fmad=true" // Enable fused multiply-add
-        };
+        ];
     }
 
     /// <summary>
@@ -109,20 +102,20 @@ public static class RTX2000TestUtilities
         try
         {
             // Warm-up runs
-            for(int i = 0; i < warmupRuns; i++)
+            for (var i = 0; i < warmupRuns; i++)
             {
                 await ExecuteKernel(kernel, launchParams, parameters);
                 CudaContextSynchronize();
             }
 
             // Measurement runs
-            for(int i = 0; i < measurementRuns; i++)
+            for (var i = 0; i < measurementRuns; i++)
             {
                 var sw = Stopwatch.StartNew();
                 await ExecuteKernel(kernel, launchParams, parameters);
                 CudaContextSynchronize();
                 sw.Stop();
-                
+
                 times.Add(sw.Elapsed.TotalMicroseconds);
             }
 
@@ -135,7 +128,7 @@ public static class RTX2000TestUtilities
                 AllTimes = times.ToArray()
             };
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             throw new InvalidOperationException($"Kernel execution measurement failed: {ex.Message}", ex);
         }
@@ -145,20 +138,20 @@ public static class RTX2000TestUtilities
     /// Creates optimized grid and block dimensions for the given problem size.
     /// </summary>
     public static KernelLaunchParameters CalculateOptimalLaunchParameters(
-        int problemSize, 
+        int problemSize,
         int maxThreadsPerBlock = 256,
         int preferredBlockSize = 256)
     {
         // Ensure block size is a multiple of warp size(32)
         var blockSize = Math.Min(maxThreadsPerBlock, ((preferredBlockSize + 31) / 32) * 32);
-        var gridSize =(problemSize + blockSize - 1) / blockSize;
+        var gridSize = (problemSize + blockSize - 1) / blockSize;
 
         return new KernelLaunchParameters
         {
-            GridDimX =(uint)gridSize,
+            GridDimX = (uint)gridSize,
             GridDimY = 1,
             GridDimZ = 1,
-            BlockDimX =(uint)blockSize,
+            BlockDimX = (uint)blockSize,
             BlockDimY = 1,
             BlockDimZ = 1,
             SharedMemoryBytes = 0
@@ -169,20 +162,20 @@ public static class RTX2000TestUtilities
     /// Creates 2D launch parameters for matrix operations.
     /// </summary>
     public static KernelLaunchParameters Calculate2DLaunchParameters(
-        int width, 
-        int height, 
+        int width,
+        int height,
         int tileSize = 16)
     {
-        var gridX =(width + tileSize - 1) / tileSize;
-        var gridY =(height + tileSize - 1) / tileSize;
+        var gridX = (width + tileSize - 1) / tileSize;
+        var gridY = (height + tileSize - 1) / tileSize;
 
         return new KernelLaunchParameters
         {
-            GridDimX =(uint)gridX,
-            GridDimY =(uint)gridY,
+            GridDimX = (uint)gridX,
+            GridDimY = (uint)gridY,
             GridDimZ = 1,
-            BlockDimX =(uint)tileSize,
-            BlockDimY =(uint)tileSize,
+            BlockDimX = (uint)tileSize,
+            BlockDimY = (uint)tileSize,
             BlockDimZ = 1,
             SharedMemoryBytes = 0
         };
@@ -192,7 +185,7 @@ public static class RTX2000TestUtilities
     /// Validates memory bandwidth against RTX 2000 Ada Gen specifications.
     /// </summary>
     public static BandwidthValidationResult ValidateBandwidthResults(
-        BandwidthMeasurement measurement, 
+        BandwidthMeasurement measurement,
         ITestOutputHelper output)
     {
         var result = new BandwidthValidationResult();
@@ -236,15 +229,15 @@ public static class RTX2000TestUtilities
         var random = new Random(seed);
         var data = new float[size];
 
-        switch(dataType)
+        switch (dataType)
         {
             case TestDataType.Random:
-                for(int i = 0; i < size; i++)
-                    data[i] =(float)(random.NextDouble() * 2.0 - 1.0);
+                for (var i = 0; i < size; i++)
+                    data[i] = (float)(random.NextDouble() * 2.0 - 1.0);
                 break;
 
             case TestDataType.Sequential:
-                for(int i = 0; i < size; i++)
+                for (var i = 0; i < size; i++)
                     data[i] = i;
                 break;
 
@@ -253,13 +246,13 @@ public static class RTX2000TestUtilities
                 break;
 
             case TestDataType.Sinusoidal:
-                for(int i = 0; i < size; i++)
-                    data[i] =(float)Math.Sin(i * 0.01);
+                for (var i = 0; i < size; i++)
+                    data[i] = (float)Math.Sin(i * 0.01);
                 break;
 
             case TestDataType.Gaussian:
-                for(int i = 0; i < size; i++)
-                    data[i] =(float)GenerateGaussian(random);
+                for (var i = 0; i < size; i++)
+                    data[i] = (float)GenerateGaussian(random);
                 break;
 
             default:
@@ -273,31 +266,31 @@ public static class RTX2000TestUtilities
     /// Validates computational results with specified tolerance.
     /// </summary>
     public static ValidationResult ValidateResults<T>(
-        T[] expected, 
-        T[] actual, 
+        T[] expected,
+        T[] actual,
         double tolerance = 1e-6,
         int maxSamples = 1000) where T : IComparable<T>
     {
-        if(expected.Length != actual.Length)
+        if (expected.Length != actual.Length)
         {
-            return new ValidationResult 
-            { 
-                IsValid = false, 
-                ErrorMessage = $"Array length mismatch: expected {expected.Length}, actual {actual.Length}" 
+            return new ValidationResult
+            {
+                IsValid = false,
+                ErrorMessage = $"Array length mismatch: expected {expected.Length}, actual {actual.Length}"
             };
         }
 
         var errors = new List<double>();
         var sampleStep = Math.Max(1, expected.Length / maxSamples);
 
-        for(int i = 0; i < expected.Length; i += sampleStep)
+        for (var i = 0; i < expected.Length; i += sampleStep)
         {
-            if(expected[i] is float expectedFloat && actual[i] is float actualFloat)
+            if (expected[i] is float expectedFloat && actual[i] is float actualFloat)
             {
                 var error = Math.Abs(expectedFloat - actualFloat);
                 errors.Add(error);
 
-                if(error > tolerance)
+                if (error > tolerance)
                 {
                     return new ValidationResult
                     {
@@ -323,11 +316,11 @@ public static class RTX2000TestUtilities
     private static async Task<string> LoadTestKernelSource()
     {
         var kernelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Kernels", "TestKernels.cu");
-        if(File.Exists(kernelPath))
+        if (File.Exists(kernelPath))
         {
             return await File.ReadAllTextAsync(kernelPath);
         }
-        
+
         // Fallback to embedded resource or minimal kernel
         return @"
 extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
@@ -344,7 +337,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         // This would integrate with NVRTC for actual compilation
         // For now, return a mock compiled kernel
         await Task.Delay(10); // Simulate compilation time
-        
+
         return new CompiledKernel
         {
             Name = kernelName,
@@ -355,10 +348,8 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
     }
 
     private static async Task ExecuteKernel(CompiledKernel kernel, KernelLaunchParameters launchParams, IntPtr[] parameters)
-    {
         // Mock kernel execution
-        await Task.Delay(1);
-    }
+        => await Task.Delay(1);
 
     private static void CudaContextSynchronize()
     {

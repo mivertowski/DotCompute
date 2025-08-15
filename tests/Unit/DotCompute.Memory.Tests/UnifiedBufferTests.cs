@@ -17,10 +17,8 @@ public sealed class UnifiedBufferTests : IDisposable
     }
 
     public void Dispose()
-    {
         // Cleanup if needed
-        GC.SuppressFinalize(this);
-    }
+        => GC.SuppressFinalize(this);
 
     [Fact]
     public void Constructor_WithValidParameters_ShouldInitializeCorrectly()
@@ -37,7 +35,7 @@ public sealed class UnifiedBufferTests : IDisposable
     public void Constructor_WithZeroLength_ShouldThrowArgumentException()
     {
         // Act & Assert
-        var act =() => new UnifiedBuffer<int>(_memoryManager, 0);
+        var act = () => new UnifiedBuffer<int>(_memoryManager, 0);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
@@ -45,7 +43,7 @@ public sealed class UnifiedBufferTests : IDisposable
     public void Constructor_WithNullMemoryManager_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        var act =() => new UnifiedBuffer<int>(null!, 1024);
+        var act = () => new UnifiedBuffer<int>(null!, 1024);
         Assert.Throws<ArgumentNullException>(() => act());
     }
 
@@ -61,7 +59,7 @@ public sealed class UnifiedBufferTests : IDisposable
         // Assert
         buffer.Length.Should().Be(5);
         var span = buffer.AsSpan();
-        for(var i = 0; i < data.Length; i++)
+        for (var i = 0; i < data.Length; i++)
         {
             span[i].Should().Be(data[i]);
         }
@@ -145,7 +143,7 @@ public sealed class UnifiedBufferTests : IDisposable
 
         // Assert
         var destSpan = destination.AsSpan();
-        for(var i = 0; i < sourceData.Length; i++)
+        for (var i = 0; i < sourceData.Length; i++)
         {
             destSpan[i].Should().Be(sourceData[i]);
         }
@@ -171,7 +169,7 @@ public sealed class UnifiedBufferTests : IDisposable
         Assert.Equal(10L * expectedElementSize, sizeInBytes);
 
         // Cleanup
-       ((IDisposable)buffer!).Dispose();
+        ((IDisposable)buffer!).Dispose();
     }
 
     [Fact]
@@ -215,14 +213,14 @@ public sealed class UnifiedBufferTests : IDisposable
         var span2 = buffer2.AsSpan();
 
         // Act
-        for(var i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             span1[i] = i;
             span2[i] = i * 10;
         }
 
         // Assert
-        for(var i = 0; i < 5; i++)
+        for (var i = 0; i < 5; i++)
         {
             span1[i].Should().Be(i);
             span2[i].Should().Be(i * 10);

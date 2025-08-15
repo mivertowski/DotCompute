@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.TestInfrastructure;
 
@@ -12,7 +11,7 @@ namespace DotCompute.Tests.Shared.TestInfrastructure;
 public class HardwareSimulator : IDisposable
 {
     private readonly ILogger<HardwareSimulator> _logger;
-    private readonly Dictionary<AcceleratorType, List<SimulatedAccelerator>> _accelerators = new();
+    private readonly Dictionary<AcceleratorType, List<SimulatedAccelerator>> _accelerators = [];
     private bool _disposed;
 
     public HardwareSimulator(ILogger<HardwareSimulator>? logger = null)
@@ -25,17 +24,17 @@ public class HardwareSimulator : IDisposable
     /// </summary>
     public SimulatedAccelerator AddAccelerator(AcceleratorType type, string name, long memorySize = 1024 * 1024 * 1024)
     {
-        if(!_accelerators.ContainsKey(type))
+        if (!_accelerators.ContainsKey(type))
         {
-            _accelerators[type] = new List<SimulatedAccelerator>();
+            _accelerators[type] = [];
         }
 
         var accelerator = new SimulatedAccelerator(type, name, memorySize, _logger);
         _accelerators[type].Add(accelerator);
-        
-        _logger.LogInformation("Added simulated {Type} accelerator: {Name} with {Memory} bytes memory", 
+
+        _logger.LogInformation("Added simulated {Type} accelerator: {Name} with {Memory} bytes memory",
             type, name, memorySize);
-        
+
         return accelerator;
     }
 
@@ -44,18 +43,15 @@ public class HardwareSimulator : IDisposable
     /// </summary>
     public IEnumerable<SimulatedAccelerator> GetAccelerators(AcceleratorType type)
     {
-        return _accelerators.TryGetValue(type, out var accelerators) 
-            ? accelerators 
+        return _accelerators.TryGetValue(type, out var accelerators)
+            ? accelerators
             : Enumerable.Empty<SimulatedAccelerator>();
     }
 
     /// <summary>
     /// Get all accelerators
     /// </summary>
-    public IEnumerable<SimulatedAccelerator> GetAllAccelerators()
-    {
-        return _accelerators.Values.SelectMany(list => list);
-    }
+    public IEnumerable<SimulatedAccelerator> GetAllAccelerators() => _accelerators.Values.SelectMany(list => list);
 
     /// <summary>
     /// Create a typical GPU setup
@@ -70,10 +66,7 @@ public class HardwareSimulator : IDisposable
     /// <summary>
     /// Create a CPU-only setup
     /// </summary>
-    public void CreateCpuOnlySetup()
-    {
-        AddAccelerator(AcceleratorType.CPU, "Intel Core i9-13900K", 32L * 1024 * 1024 * 1024);
-    }
+    public void CreateCpuOnlySetup() => AddAccelerator(AcceleratorType.CPU, "Intel Core i9-13900K", 32L * 1024 * 1024 * 1024);
 
     /// <summary>
     /// Simulate hardware failures
@@ -99,7 +92,7 @@ public class HardwareSimulator : IDisposable
 
     public void Dispose()
     {
-        if(_disposed)
+        if (_disposed)
             return;
 
         foreach (var accelerator in GetAllAccelerators())
@@ -119,7 +112,7 @@ public class HardwareSimulator : IDisposable
 public class SimulatedAccelerator : IAccelerator
 {
     private readonly ILogger _logger;
-    private readonly Dictionary<string, byte[]> _memory = new();
+    private readonly Dictionary<string, byte[]> _memory = [];
     private bool _disposed;
     private string? _failureMessage;
     private readonly IMemoryManager _memoryManager;
@@ -136,7 +129,7 @@ public class SimulatedAccelerator : IAccelerator
         Type = type;
         _logger = logger;
         _memoryManager = new TestMemoryManager();
-        
+
         Info = new AcceleratorInfo
         {
             Id = $"sim_{type}_{Guid.NewGuid():N}",
@@ -173,27 +166,27 @@ public class SimulatedAccelerator : IAccelerator
         _failureMessage = null;
         _logger.LogInformation("Reset failure simulation on {Name}", Info.Name);
     }
-    
+
     public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if(_disposed)
+        if (_disposed)
             throw new ObjectDisposedException(nameof(SimulatedAccelerator));
-            
-        if(!IsAvailable)
+
+        if (!IsAvailable)
             throw new InvalidOperationException(_failureMessage ?? "Accelerator not available");
-            
+
         var kernel = new TestCompiledKernel(definition.Name, definition.Code, options ?? new CompilationOptions());
         return ValueTask.FromResult<ICompiledKernel>(kernel);
     }
-    
+
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
-        if(_disposed)
+        if (_disposed)
             throw new ObjectDisposedException(nameof(SimulatedAccelerator));
-            
+
         // Simulate async synchronization
         return ValueTask.CompletedTask;
     }
@@ -204,15 +197,15 @@ public class SimulatedAccelerator : IAccelerator
     public string AllocateMemory(int size)
     {
         ThrowIfFailed();
-        
-        if(size > AvailableMemory)
+
+        if (size > AvailableMemory)
         {
             throw new OutOfMemoryException($"Not enough memory on {Info.Name}. Requested: {size}, Available: {AvailableMemory}");
         }
 
         var handle = Guid.NewGuid().ToString();
         _memory[handle] = new byte[size];
-        
+
         _logger.LogDebug("Allocated {Size} bytes on {Name}, handle: {Handle}", size, Info.Name, handle);
         return handle;
     }
@@ -222,7 +215,7 @@ public class SimulatedAccelerator : IAccelerator
     /// </summary>
     public void FreeMemory(string handle)
     {
-        if(_memory.Remove(handle))
+        if (_memory.Remove(handle))
         {
             _logger.LogDebug("Freed memory on {Name}, handle: {Handle}", Info.Name, handle);
         }
@@ -231,14 +224,14 @@ public class SimulatedAccelerator : IAccelerator
     /// <summary>
     /// Simulate kernel execution
     /// </summary>
-    public async Task<TimeSpan> ExecuteKernelAsync(string kernelSource, object[] parameters, 
+    public async Task<TimeSpan> ExecuteKernelAsync(string kernelSource, object[] parameters,
         CancellationToken cancellationToken = default)
     {
         ThrowIfFailed();
-        
+
         var executionTime = TimeSpan.FromMilliseconds(Random.Shared.Next(10, 100));
         await Task.Delay(executionTime, cancellationToken);
-        
+
         _logger.LogDebug("Executed kernel on {Name} in {Time}ms", Info.Name, executionTime.TotalMilliseconds);
         return executionTime;
     }
@@ -246,47 +239,47 @@ public class SimulatedAccelerator : IAccelerator
     /// <summary>
     /// Simulate memory copy
     /// </summary>
-    public async Task CopyMemoryAsync(byte[] source, string destinationHandle, 
+    public async Task CopyMemoryAsync(byte[] source, string destinationHandle,
         CancellationToken cancellationToken = default)
     {
         ThrowIfFailed();
-        
-        if(!_memory.TryGetValue(destinationHandle, out var destination))
+
+        if (!_memory.TryGetValue(destinationHandle, out var destination))
         {
             throw new ArgumentException($"Invalid memory handle: {destinationHandle}");
         }
 
-        if(source.Length > destination.Length)
+        if (source.Length > destination.Length)
         {
             throw new ArgumentException("Source data too large for destination");
         }
 
         var copyTime = TimeSpan.FromMilliseconds(source.Length / 1000.0); // Simulate bandwidth
         await Task.Delay(copyTime, cancellationToken);
-        
+
         Array.Copy(source, destination, source.Length);
         _logger.LogDebug("Copied {Size} bytes to {Name} in {Time}ms", source.Length, Info.Name, copyTime.TotalMilliseconds);
     }
 
     private void ThrowIfFailed()
     {
-        if(_disposed)
+        if (_disposed)
             throw new ObjectDisposedException(nameof(SimulatedAccelerator));
-        
-        if(_failureMessage != null)
+
+        if (_failureMessage != null)
             throw new InvalidOperationException(_failureMessage);
     }
 
     public void Dispose()
     {
-        if(_disposed)
+        if (_disposed)
             return;
 
         _memory.Clear();
         _disposed = true;
         _logger.LogDebug("Disposed simulated accelerator {Name}", Info.Name);
     }
-    
+
     public ValueTask DisposeAsync()
     {
         Dispose();
@@ -307,18 +300,13 @@ public class SimulatedAcceleratorContext
         _accelerator = accelerator;
     }
 
-    public void Synchronize()
-    {
+    public static void Synchronize()
         // Simulate synchronization
-        Thread.Sleep(1);
-    }
+        => Thread.Sleep(1);
 
-    public Task SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        return Task.Delay(1, cancellationToken);
-    }
+    public static Task SynchronizeAsync(CancellationToken cancellationToken = default) => Task.Delay(1, cancellationToken);
 
-    public void Dispose()
+    public static void Dispose()
     {
         // Nothing to dispose for simulation
     }

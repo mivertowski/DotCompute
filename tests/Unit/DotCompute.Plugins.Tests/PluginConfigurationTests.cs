@@ -1,4 +1,4 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Plugins.Configuration;
@@ -19,23 +19,23 @@ public class PluginOptionsTests
         var options = new PluginOptions();
 
         // Assert
-        options.PluginsDirectory.Should().BeNull();
+        options.Assert.Null(PluginsDirectory);
         options.EnableHotReload.Should().BeFalse();
         options.IsolatePlugins.Should().BeTrue();
         options.MaxConcurrentLoads.Should().Be(4);
         options.LoadTimeout.Should().Be(TimeSpan.FromSeconds(30));
         options.IsInitialized.Should().BeFalse();
-        
+
         options.SharedAssemblies.Should().NotBeEmpty();
-        options.SharedAssemblies.Should().Contain("DotCompute.Core");
-        options.SharedAssemblies.Should().Contain("DotCompute.Plugins");
-        options.SharedAssemblies.Should().Contain("Microsoft.Extensions.DependencyInjection.Abstractions");
-        
+        options.Assert.Contains("DotCompute.Core", SharedAssemblies);
+        options.Assert.Contains("DotCompute.Plugins", SharedAssemblies);
+        options.Assert.Contains("Microsoft.Extensions.DependencyInjection.Abstractions", SharedAssemblies);
+
         options.Plugins.Should().NotBeNull();
-        options.Plugins.Should().BeEmpty();
-        
+        options.Assert.Empty(Plugins);
+
         options.PluginDirectories.Should().NotBeNull();
-        options.PluginDirectories.Should().BeEmpty();
+        options.Assert.Empty(PluginDirectories);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class PluginOptionsTests
         options.SharedAssemblies.Remove("DotCompute.Core");
 
         // Assert
-        options.SharedAssemblies.Should().Contain("CustomAssembly");
+        options.Assert.Contains("CustomAssembly", SharedAssemblies);
         options.SharedAssemblies.Should().NotContain("DotCompute.Core");
     }
 
@@ -150,7 +150,7 @@ public class PluginOptionsTests
 
         // Assert
         options.Plugins.Should().ContainKey("test-plugin");
-        options.Plugins["test-plugin"].Should().BeSameAs(pluginConfig);
+        options.Plugins["test-plugin"].BeSameAs(pluginConfig);
     }
 
     [Fact]
@@ -165,8 +165,8 @@ public class PluginOptionsTests
 
         // Assert
         options.PluginDirectories.Count.Should().Be(2);
-        options.PluginDirectories.Should().Contain("/path/to/plugins1");
-        options.PluginDirectories.Should().Contain("/path/to/plugins2");
+        options.Assert.Contains("/path/to/plugins1", PluginDirectories);
+        options.Assert.Contains("/path/to/plugins2", PluginDirectories);
     }
 
     [Theory]
@@ -193,7 +193,7 @@ public class PluginOptionsTests
         var options = new PluginOptions();
 
         // Act & Assert - No validation in the class, so negative values are allowed
-        Action act =() => options.MaxConcurrentLoads = maxLoads;
+        Action act = () => options.MaxConcurrentLoads = maxLoads;
         act(); // Should not throw
         options.MaxConcurrentLoads.Should().Be(maxLoads);
     }
@@ -215,7 +215,7 @@ public class PluginConfigTests
         config.TypeName.Should().Be("");
         config.Enabled.Should().BeTrue();
         config.Settings.Should().NotBeNull();
-        config.Settings.Should().BeEmpty();
+        config.Assert.Empty(Settings);
     }
 
     [Fact]
@@ -307,7 +307,7 @@ public class PluginConfigTests
         config.Settings.Clear();
 
         // Assert
-        config.Settings.Should().BeEmpty();
+        config.Assert.Empty(Settings);
     }
 
     [Fact]
@@ -317,11 +317,11 @@ public class PluginConfigTests
         var config = new PluginConfig();
 
         // Act
-        config.Settings["NullValue"] = default!;
+        config.Settings["NullValue"] = null!;
 
         // Assert
         config.Settings.Should().ContainKey("NullValue");
-        config.Settings["NullValue"].Should().BeNull();
+        config.Settings["NullValue"].BeNull();
     }
 
     [Theory]
@@ -396,7 +396,7 @@ public class PluginConfigTests
         var settings2 = config2.Settings;
 
         // Assert
-        settings1.Should().BeSameAs(settings1Again);
+        settings1.BeSameAs(settings1Again);
         settings1.Should().NotBeSameAs(settings2);
     }
 }
@@ -411,7 +411,7 @@ public class PluginConfigurationIntegrationTests
     {
         // Arrange
         var options = new PluginOptions();
-        
+
         var cpuConfig = new PluginConfig
         {
             AssemblyPath = "/plugins/DotCompute.Backends.CPU.dll",
@@ -446,8 +446,8 @@ public class PluginConfigurationIntegrationTests
 
         // Assert
         options.Plugins.Count.Should().Be(2);
-        options.Plugins["cpu-backend"].Should().BeSameAs(cpuConfig);
-        options.Plugins["cuda-backend"].Should().BeSameAs(cudaConfig);
+        options.Plugins["cpu-backend"].BeSameAs(cpuConfig);
+        options.Plugins["cuda-backend"].BeSameAs(cudaConfig);
         options.PluginDirectories.Count.Should().Be(2);
         options.EnableHotReload.Should().BeTrue();
         options.MaxConcurrentLoads.Should().Be(2);
@@ -455,7 +455,7 @@ public class PluginConfigurationIntegrationTests
         // Verify individual plugin configurations
         cpuConfig.Enabled.Should().BeTrue();
         cpuConfig.Settings["MaxThreads"].Should().Be(Environment.ProcessorCount);
-        
+
         cudaConfig.Enabled.Should().BeFalse();
         cudaConfig.Settings["MemoryPoolSize"].Should().Be(512 * 1024 * 1024);
     }
@@ -467,11 +467,11 @@ public class PluginConfigurationIntegrationTests
         var options = new PluginOptions();
 
         // Act & Assert
-        options.SharedAssemblies.Should().Contain("DotCompute.Core");
-        options.SharedAssemblies.Should().Contain("DotCompute.Plugins");
-        options.SharedAssemblies.Should().Contain("Microsoft.Extensions.DependencyInjection.Abstractions");
-        options.SharedAssemblies.Should().Contain("Microsoft.Extensions.Logging.Abstractions");
-        options.SharedAssemblies.Should().Contain("Microsoft.Extensions.Configuration.Abstractions");
+        options.Assert.Contains("DotCompute.Core", SharedAssemblies);
+        options.Assert.Contains("DotCompute.Plugins", SharedAssemblies);
+        options.Assert.Contains("Microsoft.Extensions.DependencyInjection.Abstractions", SharedAssemblies);
+        options.Assert.Contains("Microsoft.Extensions.Logging.Abstractions", SharedAssemblies);
+        options.Assert.Contains("Microsoft.Extensions.Configuration.Abstractions", SharedAssemblies);
     }
 
     [Fact]
@@ -487,7 +487,7 @@ public class PluginConfigurationIntegrationTests
 
         // Assert
         options.SharedAssemblies.Count.Should().Be(originalCount); // +1 -1 = same count
-        options.SharedAssemblies.Should().Contain("Custom.Shared.Assembly");
+        options.Assert.Contains("Custom.Shared.Assembly", SharedAssemblies);
         options.SharedAssemblies.Should().NotContain("Microsoft.Extensions.Configuration.Abstractions");
     }
 

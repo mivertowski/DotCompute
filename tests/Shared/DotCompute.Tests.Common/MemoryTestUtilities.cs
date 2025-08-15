@@ -1,12 +1,10 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
-using DotCompute.Abstractions;
 using AbstractionsMemory = DotCompute.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared;
 
@@ -33,21 +31,21 @@ public sealed class MemoryMonitor : IDisposable
 
     public void TakeSnapshot(string label)
     {
-        if(_disposed)
+        if (_disposed)
         {
             return;
         }
 
         var timestamp = Stopwatch.GetTimestamp();
-        var elapsedMs =(timestamp - _startTime) * 1000 / Stopwatch.Frequency;
+        var elapsedMs = (timestamp - _startTime) * 1000 / Stopwatch.Frequency;
 
         _currentProcess.Refresh();
         var snapshot = new MemorySnapshot
         {
             Label = label,
             ElapsedMs = elapsedMs,
-            WorkingSetMB = _currentProcess.WorkingSet64 /(1024 * 1024),
-            PrivateMemoryMB = _currentProcess.PrivateMemorySize64 /(1024 * 1024),
+            WorkingSetMB = _currentProcess.WorkingSet64 / (1024 * 1024),
+            PrivateMemoryMB = _currentProcess.PrivateMemorySize64 / (1024 * 1024),
             GCGen0Collections = GC.CollectionCount(0),
             GCGen1Collections = GC.CollectionCount(1),
             GCGen2Collections = GC.CollectionCount(2),
@@ -76,7 +74,7 @@ public sealed class MemoryMonitor : IDisposable
         long peak = 0;
         foreach (var snapshot in _snapshots)
         {
-            if(snapshot.WorkingSetMB > peak)
+            if (snapshot.WorkingSetMB > peak)
             {
                 peak = snapshot.WorkingSetMB;
             }
@@ -86,7 +84,7 @@ public sealed class MemoryMonitor : IDisposable
 
     private int GetTotalGCCollections()
     {
-        if(_snapshots.Count < 2)
+        if (_snapshots.Count < 2)
         {
             return 0;
         }
@@ -94,14 +92,14 @@ public sealed class MemoryMonitor : IDisposable
         var start = _snapshots[0];
         var end = _snapshots[^1];
 
-        return(end.GCGen0Collections - start.GCGen0Collections) +
-              (end.GCGen1Collections - start.GCGen1Collections) +
-              (end.GCGen2Collections - start.GCGen2Collections);
+        return (end.GCGen0Collections - start.GCGen0Collections) +
+               (end.GCGen1Collections - start.GCGen1Collections) +
+               (end.GCGen2Collections - start.GCGen2Collections);
     }
 
     private bool DetectMemoryLeak()
     {
-        if(_snapshots.Count < 2)
+        if (_snapshots.Count < 2)
         {
             return false;
         }
@@ -124,12 +122,12 @@ public sealed class MemoryMonitor : IDisposable
 
     private void Dispose(bool disposing)
     {
-        if(_disposed)
+        if (_disposed)
         {
             return;
         }
 
-        if(disposing)
+        if (disposing)
         {
             _currentProcess?.Dispose();
         }
@@ -184,7 +182,7 @@ public class MemoryPerformanceBenchmark
 
         try
         {
-            for(var i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 var buffer = await memoryManager.AllocateAsync(bufferSize);
                 buffers.Add(buffer);
@@ -198,8 +196,8 @@ public class MemoryPerformanceBenchmark
                 BufferSize = bufferSize,
                 Iterations = iterations,
                 TotalTimeMs = stopwatch.ElapsedMilliseconds,
-                OperationsPerSecond = iterations /(stopwatch.ElapsedMilliseconds / 1000.0),
-                ThroughputMBps =(bufferSize * iterations) /(1024.0 * 1024.0) /(stopwatch.ElapsedMilliseconds / 1000.0)
+                OperationsPerSecond = iterations / (stopwatch.ElapsedMilliseconds / 1000.0),
+                ThroughputMBps = (bufferSize * iterations) / (1024.0 * 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0)
             };
 
             _results.Add(result);
@@ -223,7 +221,7 @@ public class MemoryPerformanceBenchmark
         {
             var stopwatch = Stopwatch.StartNew();
 
-            for(var i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 await buffer.CopyToHostAsync<byte>(hostData);
             }
@@ -236,8 +234,8 @@ public class MemoryPerformanceBenchmark
                 BufferSize = bufferSize,
                 Iterations = iterations,
                 TotalTimeMs = stopwatch.ElapsedMilliseconds,
-                OperationsPerSecond = iterations /(stopwatch.ElapsedMilliseconds / 1000.0),
-                ThroughputMBps =(bufferSize * iterations) /(1024.0 * 1024.0) /(stopwatch.ElapsedMilliseconds / 1000.0)
+                OperationsPerSecond = iterations / (stopwatch.ElapsedMilliseconds / 1000.0),
+                ThroughputMBps = (bufferSize * iterations) / (1024.0 * 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0)
             };
 
             _results.Add(result);
@@ -258,7 +256,7 @@ public class MemoryPerformanceBenchmark
         {
             var stopwatch = Stopwatch.StartNew();
 
-            for(var i = 0; i < iterations; i++)
+            for (var i = 0; i < iterations; i++)
             {
                 await buffer.CopyFromHostAsync<byte>(hostData);
             }
@@ -271,8 +269,8 @@ public class MemoryPerformanceBenchmark
                 BufferSize = bufferSize,
                 Iterations = iterations,
                 TotalTimeMs = stopwatch.ElapsedMilliseconds,
-                OperationsPerSecond = iterations /(stopwatch.ElapsedMilliseconds / 1000.0),
-                ThroughputMBps =(bufferSize * iterations) /(1024.0 * 1024.0) /(stopwatch.ElapsedMilliseconds / 1000.0)
+                OperationsPerSecond = iterations / (stopwatch.ElapsedMilliseconds / 1000.0),
+                ThroughputMBps = (bufferSize * iterations) / (1024.0 * 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0)
             };
 
             _results.Add(result);
@@ -361,7 +359,7 @@ public static class TestReporter
     [RequiresUnreferencedCode("This method uses System.Text.Json deserialization which may require dynamic code generation")]
     public static async Task<MemoryReport[]> LoadHistoricalReports(string testName)
     {
-        if(!Directory.Exists(ReportDirectory))
+        if (!Directory.Exists(ReportDirectory))
         {
             return [];
         }
@@ -375,7 +373,7 @@ public static class TestReporter
             {
                 var json = await File.ReadAllTextAsync(file);
                 var report = JsonSerializer.Deserialize<MemoryReport>(json);
-                if(report != null)
+                if (report != null)
                 {
                     reports.Add(report);
                 }
@@ -391,7 +389,7 @@ public static class TestReporter
 
     public static void CleanupOldReports(int maxDays = 30)
     {
-        if(!Directory.Exists(ReportDirectory))
+        if (!Directory.Exists(ReportDirectory))
         {
             return;
         }
@@ -404,7 +402,7 @@ public static class TestReporter
             try
             {
                 var fileInfo = new FileInfo(file);
-                if(fileInfo.CreationTime < cutoffDate)
+                if (fileInfo.CreationTime < cutoffDate)
                 {
                     fileInfo.Delete();
                 }
@@ -424,18 +422,18 @@ public static class RegressionDetector
 {
     public static bool DetectPerformanceRegression(BenchmarkResult current, BenchmarkResult baseline, double tolerancePercent = 10.0)
     {
-        if(current.OperationType != baseline.OperationType)
+        if (current.OperationType != baseline.OperationType)
         {
             return false;
         }
 
-        var performanceChange =(current.OperationsPerSecond - baseline.OperationsPerSecond) / baseline.OperationsPerSecond * 100;
+        var performanceChange = (current.OperationsPerSecond - baseline.OperationsPerSecond) / baseline.OperationsPerSecond * 100;
         return performanceChange < -tolerancePercent;
     }
 
     public static bool DetectMemoryRegression(MemoryReport current, MemoryReport baseline, double tolerancePercent = 20.0)
     {
-        if(current.Snapshots.Length == 0 || baseline.Snapshots.Length == 0)
+        if (current.Snapshots.Length == 0 || baseline.Snapshots.Length == 0)
         {
             return false;
         }
@@ -443,7 +441,7 @@ public static class RegressionDetector
         var currentPeak = current.PeakWorkingSetMB;
         var baselinePeak = baseline.PeakWorkingSetMB;
 
-        var memoryIncrease =(currentPeak - baselinePeak) /(double)baselinePeak * 100;
+        var memoryIncrease = (currentPeak - baselinePeak) / (double)baselinePeak * 100;
         return memoryIncrease > tolerancePercent;
     }
 }

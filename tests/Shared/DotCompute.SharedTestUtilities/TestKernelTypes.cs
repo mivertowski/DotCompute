@@ -1,9 +1,7 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
 using DotCompute.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared;
 /// <summary>
@@ -23,9 +21,9 @@ public static class MemoryTestUtilities
     {
         var data = new float[count];
         var random = new Random(42);
-        for(int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
-            data[i] =(float)random.NextDouble();
+            data[i] = (float)random.NextDouble();
         }
         return data;
     }
@@ -71,16 +69,16 @@ public static class KernelFactory
                         output[idx] = input[idx] * 2.0f;
                     }
                 }";
-        
+
         var kernelSource = new TextKernelSource(
             code: code,
             name: name,
             language: Abstractions.KernelLanguage.Cuda,
             entryPoint: "TestKernel");
-        
+
         return new KernelDefinition(
-            name, 
-            kernelSource, 
+            name,
+            kernelSource,
             new CompilationOptions());
     }
 
@@ -109,7 +107,7 @@ public static class KernelFactory
             new Dim3(1), // Grid dimensions
             new Dim3(256) // Block dimensions
         );
-        
+
         return new CompiledKernel(
             kernelId,
             nativeHandle,

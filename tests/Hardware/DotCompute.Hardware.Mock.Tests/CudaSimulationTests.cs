@@ -1,9 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Threading.Tasks;
-using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
@@ -48,10 +45,10 @@ public class CudaSimulationTests
         // Test memory bandwidth calculations without hardware
         const int memoryClockRateKHz = 14000000; // 14 GHz effective
         const int memoryBusWidth = 192; // bits
-        
+
         // Theoretical bandwidth =(Clock Rate * Bus Width) / 8
-        var theoreticalBandwidth =(memoryClockRateKHz / 1000.0 * memoryBusWidth) / 8.0 / 1000.0;
-        
+        var theoreticalBandwidth = (memoryClockRateKHz / 1000.0 * memoryBusWidth) / 8.0 / 1000.0;
+
         _output.WriteLine($"Theoretical memory bandwidth: {theoreticalBandwidth:F1} GB/s");
         theoreticalBandwidth.Should().BeGreaterThan(300, "RTX 2000 Ada Gen should have >300 GB/s theoretical bandwidth");
     }
@@ -67,7 +64,7 @@ public class CudaSimulationTests
         var c = new float[N];
 
         // Initialize data
-        for(int i = 0; i < N; i++)
+        for (var i = 0; i < N; i++)
         {
             a[i] = i * 0.5f;
             b[i] = i * 0.25f;
@@ -76,14 +73,14 @@ public class CudaSimulationTests
         // Simulate kernel execution on CPU
         await Task.Run(() =>
         {
-            for(int i = 0; i < N; i++)
+            for (var i = 0; i < N; i++)
             {
                 c[i] = a[i] + b[i]; // Vector addition
             }
         });
 
         // Verify results
-        for(int i = 0; i < N; i++)
+        for (var i = 0; i < N; i++)
         {
             var expected = a[i] + b[i];
             Assert.Equal(expected, c[i], 0.0001f);
@@ -103,13 +100,14 @@ public class CudaSimulationTests
 
         // Choose block size that's a multiple of warp size
         var blockSize = Math.Min(256, maxThreadsPerBlock); // Common choice
-        while(blockSize % warpSize != 0) blockSize--;
+        while (blockSize % warpSize != 0)
+            blockSize--;
 
-        var gridSize =(elements + blockSize - 1) / blockSize; // Ceiling division
+        var gridSize = (elements + blockSize - 1) / blockSize; // Ceiling division
 
         blockSize.Should().BeGreaterThanOrEqualTo(warpSize, "Block size should be at least one warp");
         blockSize.Should().BeLessThanOrEqualTo(maxThreadsPerBlock, "Block size should not exceed maximum");
-       (gridSize * blockSize).Should().BeGreaterThanOrEqualTo(elements, "Grid should cover all elements");
+        (gridSize * blockSize).Should().BeGreaterThanOrEqualTo(elements, "Grid should cover all elements");
 
         _output.WriteLine($"Simulated launch config for {elements} elements: Grid={gridSize}, Block={blockSize}");
     }
@@ -130,11 +128,11 @@ public class CudaSimulationTests
         foreach (var testCase in testCases)
         {
             var capabilities = SimulateComputeCapabilities(testCase.Major, testCase.Minor);
-            
+
             Assert.Contains("Unified Memory", capabilities);
             Assert.Contains("Dynamic Parallelism", capabilities);
-            
-            if(testCase.Major >= 8)
+
+            if (testCase.Major >= 8)
             {
                 Assert.Contains("Hardware Accelerated Ray Tracing", capabilities);
                 Assert.Contains("Tensor Cores", capabilities);
@@ -153,18 +151,18 @@ public class CudaSimulationTests
             "Cooperative Groups"
         };
 
-        if(major >= 7)
+        if (major >= 7)
         {
             capabilities.Add("Independent Thread Scheduling");
         }
 
-        if(major >= 8)
+        if (major >= 8)
         {
             capabilities.Add("Hardware Accelerated Ray Tracing");
             capabilities.Add("Tensor Cores");
         }
 
-        if(major == 8 && minor >= 9)
+        if (major == 8 && minor >= 9)
         {
             capabilities.Add("Ada Lovelace Architecture");
             capabilities.Add("3rd Gen Tensor Cores");
@@ -179,7 +177,7 @@ public class CudaSimulationTests
     {
         // Simulate memory coalescing analysis
         const int threadsPerWarp = 32;
-        
+
         // Test different access patterns
         var accessPatterns = new[]
         {
@@ -201,11 +199,11 @@ public class CudaSimulationTests
 
     private static double SimulateMemoryEfficiency(int stride, int threadsPerWarp)
     {
-        if(stride == 1)
+        if (stride == 1)
             return 1.0; // Perfect coalescing
-        else if(stride == 2)
+        else if (stride == 2)
             return 0.5; // Half efficiency
-        else if(stride == 4)
+        else if (stride == 4)
             return 0.25; // Quarter efficiency
         else
             return 0.1; // Random/worst case
@@ -227,8 +225,8 @@ public class CudaSimulationTests
         foreach (var error in errorCodes)
         {
             var canRecover = SimulateErrorRecovery(error.Code);
-            
-            if(error.IsError)
+
+            if (error.IsError)
             {
                 (error.Code != 0).Should().BeTrue();
                 _output.WriteLine($"Error {error.Code}{error.Name}): Recovery possible = {canRecover}");

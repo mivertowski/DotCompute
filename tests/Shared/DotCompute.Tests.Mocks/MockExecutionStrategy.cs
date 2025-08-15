@@ -1,10 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
-using DotCompute.Core.Execution;
 using FluentAssertions;
 
 namespace DotCompute.Tests.Shared;
@@ -14,8 +8,8 @@ namespace DotCompute.Tests.Shared;
 /// </summary>
 public class MockParallelExecutionStrategy
 {
-    private readonly List<IAccelerator> _accelerators = new();
-    private readonly Dictionary<string, object> _metrics = new();
+    private readonly List<IAccelerator> _accelerators = [];
+    private readonly Dictionary<string, object> _metrics = [];
     private bool _isDisposed;
 
     public MockParallelExecutionStrategy()
@@ -30,7 +24,8 @@ public class MockParallelExecutionStrategy
 
     public void AddAccelerator(IAccelerator accelerator)
     {
-        if(accelerator == null) throw new ArgumentNullException(nameof(accelerator));
+        if (accelerator == null)
+            throw new ArgumentNullException(nameof(accelerator));
         _accelerators.Add(accelerator);
     }
 
@@ -39,37 +34,40 @@ public class MockParallelExecutionStrategy
     public async Task<T> ExecuteAsync<T>(ExecutionTask<T> task, CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        if(task == null) throw new ArgumentNullException(nameof(task));
-        
+        if (task == null)
+            throw new ArgumentNullException(nameof(task));
+
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         // Simulate async execution
         await Task.Delay(10, cancellationToken);
-        
+
         // Execute the work item
-        if(task.WorkItem != null)
+        if (task.WorkItem != null)
         {
             return await task.WorkItem(cancellationToken);
         }
-        
+
         return default(T)!;
     }
 
     public async Task<IEnumerable<T>> ExecuteParallelAsync<T>(
-        IEnumerable<ExecutionTask<T>> tasks, 
+        IEnumerable<ExecutionTask<T>> tasks,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        if(tasks == null) throw new ArgumentNullException(nameof(tasks));
-        
+        if (tasks == null)
+            throw new ArgumentNullException(nameof(tasks));
+
         var taskList = tasks.ToList();
-        if(!taskList.Any()) return Enumerable.Empty<T>();
-        
+        if (taskList.Count == 0)
+            return Enumerable.Empty<T>();
+
         cancellationToken.ThrowIfCancellationRequested();
-        
+
         // Use SemaphoreSlim to limit concurrency
         using var semaphore = new SemaphoreSlim(MaxConcurrency, MaxConcurrency);
-        
+
         var executionTasks = taskList.Select(async task =>
         {
             await semaphore.WaitAsync(cancellationToken);
@@ -82,32 +80,27 @@ public class MockParallelExecutionStrategy
                 semaphore.Release();
             }
         });
-        
+
         return await Task.WhenAll(executionTasks);
     }
 
-    public void SetMetric(string key, object value)
-    {
-        _metrics[key] = value;
-    }
+    public void SetMetric(string key, object value) => _metrics[key] = value;
 
-    public object? GetMetric(string key)
-    {
-        return _metrics.TryGetValue(key, out var value) ? value : null;
-    }
+    public object? GetMetric(string key) => _metrics.TryGetValue(key, out var value) ? value : null;
 
     public void Dispose()
     {
-        if(_isDisposed) return;
-        
+        if (_isDisposed)
+            return;
+
         foreach (var accelerator in _accelerators)
         {
-            if(accelerator is IDisposable disposable)
+            if (accelerator is IDisposable disposable)
             {
                 disposable.Dispose();
             }
         }
-        
+
         _accelerators.Clear();
         _metrics.Clear();
         _isDisposed = true;
@@ -115,7 +108,7 @@ public class MockParallelExecutionStrategy
 
     private void ThrowIfDisposed()
     {
-        if(_isDisposed)
+        if (_isDisposed)
             throw new ObjectDisposedException(nameof(MockParallelExecutionStrategy));
     }
 }
@@ -135,7 +128,7 @@ public class ExecutionTask<T>
     public Func<CancellationToken, Task<T>>? WorkItem { get; }
     public AcceleratorType? PreferredAccelerator { get; set; }
     public int Priority { get; set; }
-    public Dictionary<string, object> Metadata { get; } = new();
+    public Dictionary<string, object> Metadata { get; } = [];
 }
 
 /// <summary>
@@ -154,41 +147,39 @@ public enum ExecutionStrategyType
 /// </summary>
 public class MockLoadBalancer
 {
-    private readonly List<IAccelerator> _accelerators = new();
+    private readonly List<IAccelerator> _accelerators = [];
     private int _nextIndex = 0;
-    
+
     public void AddAccelerator(IAccelerator accelerator)
     {
-        if(accelerator == null) throw new ArgumentNullException(nameof(accelerator));
+        if (accelerator == null)
+            throw new ArgumentNullException(nameof(accelerator));
         _accelerators.Add(accelerator);
     }
-    
+
     public IAccelerator GetNextAccelerator()
     {
-        if(_accelerators.Count == 0)
+        if (_accelerators.Count == 0)
             throw new InvalidOperationException("No accelerators available");
-        
+
         var accelerator = _accelerators[_nextIndex % _accelerators.Count];
         _nextIndex++;
         return accelerator;
     }
-    
+
     public IAccelerator GetLeastLoadedAccelerator()
     {
-        if(_accelerators.Count == 0)
+        if (_accelerators.Count == 0)
             throw new InvalidOperationException("No accelerators available");
-        
+
         // For mock, just return the one with most available memory
         return _accelerators
             .Where(a => a is MockAccelerator)
             .OrderByDescending(a => ((MockAccelerator)a).AvailableMemory)
             .FirstOrDefault() ?? _accelerators[0];
     }
-    
-    public void Reset()
-    {
-        _nextIndex = 0;
-    }
+
+    public void Reset() => _nextIndex = 0;
 }
 
 /// <summary>
@@ -196,11 +187,11 @@ public class MockLoadBalancer
 /// </summary>
 public class MockAcceleratorManager : IAcceleratorManager
 {
-    private readonly List<IAccelerator> _accelerators = new();
-    private readonly List<IAcceleratorProvider> _providers = new();
+    private readonly List<IAccelerator> _accelerators = [];
+    private readonly List<IAcceleratorProvider> _providers = [];
     private bool _isDisposed;
     private bool _isInitialized;
-    
+
     public MockAcceleratorManager()
     {
         // Add a default mock accelerator
@@ -209,138 +200,135 @@ public class MockAcceleratorManager : IAcceleratorManager
 
     // IAcceleratorManager implementation
     public IAccelerator Default => _accelerators.FirstOrDefault() ?? throw new InvalidOperationException("No accelerators available");
-    
+
     public IReadOnlyList<IAccelerator> AvailableAccelerators => _accelerators.AsReadOnly();
-    
+
     public int Count => _accelerators.Count;
-    
+
     public async ValueTask InitializeAsync(CancellationToken cancellationToken = default)
     {
-        if(_isDisposed)
+        if (_isDisposed)
             throw new ObjectDisposedException(nameof(MockAcceleratorManager));
-        
-        if(_isInitialized)
+
+        if (_isInitialized)
             return;
-        
+
         // Simulate async initialization
         await Task.Delay(10, cancellationToken);
-        
+
         // Discover accelerators from providers
         foreach (var provider in _providers)
         {
             var discovered = await provider.DiscoverAsync(cancellationToken);
             foreach (var accelerator in discovered)
             {
-                if(!_accelerators.Any(a => a.Info.Id == accelerator.Info.Id))
+                if (!_accelerators.Any(a => a.Info.Id == accelerator.Info.Id))
                 {
                     _accelerators.Add(accelerator);
                 }
             }
         }
-        
+
         _isInitialized = true;
     }
-    
+
     public IAccelerator GetAccelerator(int index)
     {
-        if(index < 0 || index >= _accelerators.Count)
+        if (index < 0 || index >= _accelerators.Count)
             throw new ArgumentOutOfRangeException(nameof(index));
-        
+
         return _accelerators[index];
     }
-    
+
     public IAccelerator? GetAcceleratorById(string id)
     {
-        if(string.IsNullOrEmpty(id))
+        if (string.IsNullOrEmpty(id))
             throw new ArgumentException("ID cannot be null or empty", nameof(id));
-        
+
         return _accelerators.FirstOrDefault(a => a.Info.Id == id);
     }
-    
-    public IEnumerable<IAccelerator> GetAcceleratorsByType(AcceleratorType type)
-    {
-        return _accelerators.Where(a => Enum.Parse<AcceleratorType>(a.Info.DeviceType) == type);
-    }
-    
+
+    public IEnumerable<IAccelerator> GetAcceleratorsByType(AcceleratorType type) => _accelerators.Where(a => Enum.Parse<AcceleratorType>(a.Info.DeviceType) == type);
+
     public IAccelerator? SelectBest(DotCompute.Abstractions.AcceleratorSelectionCriteria criteria)
     {
-        if(criteria == null)
+        if (criteria == null)
             throw new ArgumentNullException(nameof(criteria));
-        
+
         var query = _accelerators.AsEnumerable();
-        
-        if(criteria.PreferredType.HasValue)
+
+        if (criteria.PreferredType.HasValue)
         {
             query = query.Where(a => Enum.Parse<AcceleratorType>(a.Info.DeviceType) == criteria.PreferredType.Value);
         }
-        
-        if(criteria.MinimumMemory.HasValue)
+
+        if (criteria.MinimumMemory.HasValue)
         {
             query = query.Where(a => a.Info.TotalMemory >= criteria.MinimumMemory.Value);
         }
-        
-        if(criteria.RequiredFeatures.HasValue)
+
+        if (criteria.RequiredFeatures.HasValue)
         {
-            query = query.Where(a => 
+            query = query.Where(a =>
             {
-                if(a is MockAccelerator mock)
+                if (a is MockAccelerator mock)
                 {
-                    return(mock.Features & criteria.RequiredFeatures.Value) == criteria.RequiredFeatures.Value;
+                    return (mock.Features & criteria.RequiredFeatures.Value) == criteria.RequiredFeatures.Value;
                 }
                 return false;
             });
         }
-        
-        if(criteria.MinimumComputeCapability != null)
+
+        if (criteria.MinimumComputeCapability != null)
         {
-            query = query.Where(a => a.Info.ComputeCapability != null && 
+            query = query.Where(a => a.Info.ComputeCapability != null &&
                                     a.Info.ComputeCapability >= criteria.MinimumComputeCapability);
         }
-        
+
         // Apply custom scorer if provided
-        if(criteria.CustomScorer != null)
+        if (criteria.CustomScorer != null)
         {
             return query.OrderByDescending(criteria.CustomScorer).FirstOrDefault();
         }
-        
+
         // Default scoring: prefer dedicated, then by memory
-        if(criteria.PreferDedicated)
+        if (criteria.PreferDedicated)
         {
             query = query.OrderByDescending(a => a.Info.DeviceType != "CPU");
         }
-        
+
         return query.OrderByDescending(a => a.Info.TotalMemory).FirstOrDefault();
     }
-    
+
     public AcceleratorContext CreateContext(IAccelerator accelerator)
     {
-        if(accelerator == null)
+        if (accelerator == null)
             throw new ArgumentNullException(nameof(accelerator));
-        
+
         // For mock, create a simple context
         var deviceId = _accelerators.IndexOf(accelerator);
-        if(deviceId < 0)
+        if (deviceId < 0)
             throw new ArgumentException("Accelerator not managed by this manager", nameof(accelerator));
-        
+
         return new AcceleratorContext(IntPtr.Zero, deviceId);
     }
-    
+
     public void RegisterProvider(IAcceleratorProvider provider)
     {
-        if(provider == null)
+        if (provider == null)
             throw new ArgumentNullException(nameof(provider));
-        
-        if(!_providers.Contains(provider))
+
+        if (!_providers.Contains(provider))
         {
             _providers.Add(provider);
         }
     }
-    
+
     public async ValueTask RefreshAsync(CancellationToken cancellationToken = default)
     {
-        if(_isDisposed)
+        if (_isDisposed)
             throw new ObjectDisposedException(nameof(MockAcceleratorManager));
-        
+
         // Re-initialize to refresh
         _isInitialized = false;
         await InitializeAsync(cancellationToken);
@@ -348,7 +336,7 @@ public class MockAcceleratorManager : IAcceleratorManager
 
     public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(CancellationToken cancellationToken = default)
     {
-        if(_isDisposed)
+        if (_isDisposed)
             throw new ObjectDisposedException(nameof(MockAcceleratorManager));
 
         return Task.FromResult<IEnumerable<IAccelerator>>(_accelerators.AsReadOnly());
@@ -356,7 +344,7 @@ public class MockAcceleratorManager : IAcceleratorManager
 
     public Task<IEnumerable<IAccelerator>> GetAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
     {
-        if(_isDisposed)
+        if (_isDisposed)
             throw new ObjectDisposedException(nameof(MockAcceleratorManager));
 
         var result = GetAcceleratorsByType(type);
@@ -365,11 +353,11 @@ public class MockAcceleratorManager : IAcceleratorManager
 
     public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default)
     {
-        if(_isDisposed)
+        if (_isDisposed)
             throw new ObjectDisposedException(nameof(MockAcceleratorManager));
 
         IAccelerator? result;
-        if(type.HasValue)
+        if (type.HasValue)
         {
             var criteria = new DotCompute.Abstractions.AcceleratorSelectionCriteria { PreferredType = type.Value };
             result = SelectBest(criteria);
@@ -381,47 +369,46 @@ public class MockAcceleratorManager : IAcceleratorManager
 
         return Task.FromResult(result);
     }
-    
+
     public async ValueTask DisposeAsync()
     {
-        if(_isDisposed)
+        if (_isDisposed)
             return;
-        
+
         foreach (var accelerator in _accelerators)
         {
-            if(accelerator is IAsyncDisposable asyncDisposable)
+            if (accelerator is IAsyncDisposable asyncDisposable)
             {
                 await asyncDisposable.DisposeAsync();
             }
-            else if(accelerator is IDisposable disposable)
+            else if (accelerator is IDisposable disposable)
             {
                 disposable.Dispose();
             }
         }
-        
+
         _accelerators.Clear();
         _providers.Clear();
         _isDisposed = true;
         GC.SuppressFinalize(this);
     }
-    
+
     // Additional helper methods for testing
     public void AddAccelerator(IAccelerator accelerator)
     {
-        if(accelerator == null) throw new ArgumentNullException(nameof(accelerator));
+        if (accelerator == null)
+            throw new ArgumentNullException(nameof(accelerator));
         _accelerators.Add(accelerator);
     }
-    
+
     public void RemoveAccelerator(IAccelerator accelerator)
     {
-        if(accelerator == null) throw new ArgumentNullException(nameof(accelerator));
+        if (accelerator == null)
+            throw new ArgumentNullException(nameof(accelerator));
         _accelerators.Remove(accelerator);
     }
-    
-    public void ClearAccelerators()
-    {
-        _accelerators.Clear();
-    }
+
+    public void ClearAccelerators() => _accelerators.Clear();
 }
 
 /// <summary>
@@ -436,14 +423,11 @@ public class MockKernelReference
         Name = name ?? throw new ArgumentNullException(nameof(name));
         KernelInstance = kernelInstance ?? throw new ArgumentNullException(nameof(kernelInstance));
     }
-    
+
     public string Name { get; }
     public object KernelInstance { get; }
-    
-    public T GetKernel<T>() where T : class
-    {
-        return(T)KernelInstance;
-    }
+
+    public T GetKernel<T>() where T : class => (T)KernelInstance;
 }
 
 /// <summary>
@@ -452,42 +436,36 @@ public class MockKernelReference
 /// </summary>
 public class MockKernelManager
 {
-    private readonly Dictionary<string, MockKernelReference> _kernels = new();
-    
+    private readonly Dictionary<string, MockKernelReference> _kernels = [];
+
     public void RegisterKernel(string name, object kernelInstance)
     {
-        if(string.IsNullOrEmpty(name)) throw new ArgumentException("Name cannot be null or empty", nameof(name));
-        if(kernelInstance == null) throw new ArgumentNullException(nameof(kernelInstance));
-        
+        if (string.IsNullOrEmpty(name))
+            throw new ArgumentException("Name cannot be null or empty", nameof(name));
+        if (kernelInstance == null)
+            throw new ArgumentNullException(nameof(kernelInstance));
+
         _kernels[name] = new MockKernelReference(name, kernelInstance);
     }
-    
+
     public MockKernelReference? GetKernel(string name)
     {
-        if(string.IsNullOrEmpty(name)) return null;
+        if (string.IsNullOrEmpty(name))
+            return null;
         return _kernels.TryGetValue(name, out var kernel) ? kernel : null;
     }
-    
-    public bool HasKernel(string name)
-    {
-        return !string.IsNullOrEmpty(name) && _kernels.ContainsKey(name);
-    }
-    
+
+    public bool HasKernel(string name) => !string.IsNullOrEmpty(name) && _kernels.ContainsKey(name);
+
     public void RemoveKernel(string name)
     {
-        if(!string.IsNullOrEmpty(name))
+        if (!string.IsNullOrEmpty(name))
         {
             _kernels.Remove(name);
         }
     }
-    
-    public void Clear()
-    {
-        _kernels.Clear();
-    }
-    
-    public IEnumerable<string> GetKernelNames()
-    {
-        return _kernels.Keys;
-    }
+
+    public void Clear() => _kernels.Clear();
+
+    public IEnumerable<string> GetKernelNames() => _kernels.Keys;
 }

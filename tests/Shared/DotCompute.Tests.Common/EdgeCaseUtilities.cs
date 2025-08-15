@@ -1,10 +1,9 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared;
 
@@ -26,15 +25,15 @@ public static class EdgeCaseUtilities
         get
         {
             yield return 0;
-        yield return 1;
-        yield return -1;
-        yield return int.MinValue;
-        yield return int.MaxValue;
-        yield return int.MinValue + 1;
-        yield return int.MaxValue - 1;
-        
+            yield return 1;
+            yield return -1;
+            yield return int.MinValue;
+            yield return int.MaxValue;
+            yield return int.MinValue + 1;
+            yield return int.MaxValue - 1;
+
             // Powers of 2
-            for(int i = 0; i < 31; i++)
+            for (var i = 0; i < 31; i++)
             {
                 var value = 1 << i;
                 yield return value;
@@ -59,9 +58,9 @@ public static class EdgeCaseUtilities
             yield return long.MaxValue;
             yield return long.MinValue + 1;
             yield return long.MaxValue - 1;
-            
+
             // Powers of 2
-            for(int i = 0; i < 63; i++)
+            for (var i = 0; i < 63; i++)
             {
                 var value = 1L << i;
                 yield return value;
@@ -84,20 +83,20 @@ public static class EdgeCaseUtilities
             yield return 1.0f;
             yield return -1.0f;
             yield return float.MinValue;
-        yield return float.MaxValue;
-        yield return float.Epsilon;
-        yield return -float.Epsilon;
-        yield return float.PositiveInfinity;
-        yield return float.NegativeInfinity;
-        yield return float.NaN;
-        
-        // Very small and large values
-        yield return 1e-10f;
-        yield return -1e-10f;
-        yield return 1e10f;
-        yield return -1e10f;
-        yield return 1e38f;
-        yield return -1e38f;
+            yield return float.MaxValue;
+            yield return float.Epsilon;
+            yield return -float.Epsilon;
+            yield return float.PositiveInfinity;
+            yield return float.NegativeInfinity;
+            yield return float.NaN;
+
+            // Very small and large values
+            yield return 1e-10f;
+            yield return -1e-10f;
+            yield return 1e10f;
+            yield return -1e10f;
+            yield return 1e38f;
+            yield return -1e38f;
         }
     }
 
@@ -108,24 +107,24 @@ public static class EdgeCaseUtilities
     {
         get
         {
-        yield return "";
-        yield return " ";
-        yield return "\t";
-        yield return "\r";
-        yield return "\n";
-        yield return "\r\n";
-        yield return "\0";
-        yield return "null";
-        yield return "NULL";
-        yield return "undefined";
-        yield return new string('A', 10000); // Very long string
-        yield return "🔥💻🚀"; // Emojis
-        yield return "Тест"; // Cyrillic
-        yield return "テスト"; // Japanese
-        yield return "SELECT * FROM users"; // SQL injection attempt
-        yield return "<script>alert('test')</script>"; // XSS attempt
-        yield return "../../etc/passwd"; // Path traversal attempt
-        yield return "\uffff\ufffe"; // Unicode edge cases
+            yield return "";
+            yield return " ";
+            yield return "\t";
+            yield return "\r";
+            yield return "\n";
+            yield return "\r\n";
+            yield return "\0";
+            yield return "null";
+            yield return "NULL";
+            yield return "undefined";
+            yield return new string('A', 10000); // Very long string
+            yield return "🔥💻🚀"; // Emojis
+            yield return "Тест"; // Cyrillic
+            yield return "テスト"; // Japanese
+            yield return "SELECT * FROM users"; // SQL injection attempt
+            yield return "<script>alert('test')</script>"; // XSS attempt
+            yield return "../../etc/passwd"; // Path traversal attempt
+            yield return "\uffff\ufffe"; // Unicode edge cases
         }
     }
 
@@ -139,46 +138,46 @@ public static class EdgeCaseUtilities
     public static byte[] CreateMemoryTestPattern(int size, TestPattern pattern = TestPattern.Sequential)
     {
         var data = new byte[size];
-        
-        switch(pattern)
+
+        switch (pattern)
         {
             case TestPattern.Sequential:
-                for(int i = 0; i < size; i++)
+                for (var i = 0; i < size; i++)
                 {
-                    data[i] =(byte)(i % 256);
+                    data[i] = (byte)(i % 256);
                 }
                 break;
-                
+
             case TestPattern.AllZeros:
                 // Already initialized to zeros
                 break;
-                
+
             case TestPattern.AllOnes:
                 Array.Fill(data, (byte)0xFF);
                 break;
-                
+
             case TestPattern.Alternating:
-                for(int i = 0; i < size; i++)
+                for (var i = 0; i < size; i++)
                 {
-                    data[i] =(byte)(i % 2 == 0 ? 0xAA : 0x55);
+                    data[i] = (byte)(i % 2 == 0 ? 0xAA : 0x55);
                 }
                 break;
-                
+
             case TestPattern.Random:
-                using(var rng = RandomNumberGenerator.Create())
+                using (var rng = RandomNumberGenerator.Create())
                 {
                     rng.GetBytes(data);
                 }
                 break;
-                
+
             case TestPattern.Checksum:
-                for(int i = 0; i < size; i++)
+                for (var i = 0; i < size; i++)
                 {
-                    data[i] = (byte)((i ^ (i >> 8)) ^ (i >> 16) ^ (i >> 24));
+                    data[i] = (byte)(i ^ (i >> 8) ^ (i >> 16) ^ (i >> 24));
                 }
                 break;
         }
-        
+
         return data;
     }
 
@@ -187,65 +186,65 @@ public static class EdgeCaseUtilities
     /// </summary>
     public static bool VerifyMemoryTestPattern(ReadOnlySpan<byte> data, TestPattern pattern)
     {
-        switch(pattern)
+        switch (pattern)
         {
             case TestPattern.Sequential:
-                for(int i = 0; i < data.Length; i++)
+                for (var i = 0; i < data.Length; i++)
                 {
-                    if(data[i] != (byte)(i % 256))
+                    if (data[i] != (byte)(i % 256))
                     {
                         return false;
                     }
                 }
                 break;
-                
+
             case TestPattern.AllZeros:
-                for(int i = 0; i < data.Length; i++)
+                for (var i = 0; i < data.Length; i++)
                 {
-                    if(data[i] != 0)
+                    if (data[i] != 0)
                     {
                         return false;
                     }
                 }
                 break;
-                
+
             case TestPattern.AllOnes:
-                for(int i = 0; i < data.Length; i++)
+                for (var i = 0; i < data.Length; i++)
                 {
-                    if(data[i] != 0xFF)
+                    if (data[i] != 0xFF)
                     {
                         return false;
                     }
                 }
                 break;
-                
+
             case TestPattern.Alternating:
-                for(int i = 0; i < data.Length; i++)
+                for (var i = 0; i < data.Length; i++)
                 {
-                    var expected =(byte)(i % 2 == 0 ? 0xAA : 0x55);
-                    if(data[i] != expected)
+                    var expected = (byte)(i % 2 == 0 ? 0xAA : 0x55);
+                    if (data[i] != expected)
                     {
                         return false;
                     }
                 }
                 break;
-                
+
             case TestPattern.Checksum:
-                for(int i = 0; i < data.Length; i++)
+                for (var i = 0; i < data.Length; i++)
                 {
-                    var expected = (byte)((i ^ (i >> 8)) ^ (i >> 16) ^ (i >> 24));
-                    if(data[i] != expected)
+                    var expected = (byte)(i ^ (i >> 8) ^ (i >> 16) ^ (i >> 24));
+                    if (data[i] != expected)
                     {
                         return false;
                     }
                 }
                 break;
-                
+
             case TestPattern.Random:
                 // Can't verify random pattern
                 return true;
         }
-        
+
         return true;
     }
 
@@ -272,13 +271,13 @@ public static class EdgeCaseUtilities
             {
                 try
                 {
-                    for(int i = 0; i < operationsPerThread; i++)
+                    for (var i = 0; i < operationsPerThread; i++)
                     {
                         await action(threadId * operationsPerThread + i);
                         completedOperations.Add(threadId * operationsPerThread + i);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -317,14 +316,14 @@ public static class EdgeCaseUtilities
             {
                 try
                 {
-                    for(int i = 0; i < testData.Length; i++)
+                    for (var i = 0; i < testData.Length; i++)
                     {
-                        var dataIndex =(threadId * testData.Length + i) % testData.Length;
+                        var dataIndex = (threadId * testData.Length + i) % testData.Length;
                         await action(testData[dataIndex], threadId);
                         completedOperations.Add(threadId * testData.Length + i);
                     }
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -405,7 +404,7 @@ public static class EdgeCaseUtilities
         var files = new List<string>();
         using var rng = RandomNumberGenerator.Create();
 
-        for(int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
             var fileName = Path.GetTempFileName();
             files.Add(fileName);
@@ -448,21 +447,21 @@ public static class EdgeCaseUtilities
     {
         try
         {
-            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // Use performance counters or WMI on Windows
                 return 8L * 1024 * 1024 * 1024; // Default to 8GB
             }
-            else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 // Parse /proc/meminfo on Linux
                 var memInfo = File.ReadAllText("/proc/meminfo");
                 var lines = memInfo.Split('\n');
                 var memTotal = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:", StringComparison.Ordinal));
-                if(memTotal != null)
+                if (memTotal != null)
                 {
                     var parts = memTotal.Split(Separators, StringSplitOptions.RemoveEmptyEntries);
-                    if(parts.Length >= 2 && long.TryParse(parts[1], out var kb))
+                    if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
                     {
                         return kb * 1024; // Convert KB to bytes
                     }
@@ -503,8 +502,8 @@ public record ConcurrencyTestResult
     public int CompletedOperations { get; init; }
     public int ExpectedOperations { get; init; }
     public TimeSpan Duration { get; init; }
-    
-    public bool IsSuccessful => !TimedOut && Exceptions.Length == 0 && 
+
+    public bool IsSuccessful => !TimedOut && Exceptions.Length == 0 &&
                                 CompletedOperations == ExpectedOperations;
 }
 
@@ -520,7 +519,7 @@ public record MemoryUsageResult
     public int GcGen0Collections { get; init; }
     public int GcGen1Collections { get; init; }
     public int GcGen2Collections { get; init; }
-    
+
     public bool HasSignificantLeak => MemoryDelta > 10 * 1024 * 1024; // > 10MB
 }
 
@@ -556,7 +555,7 @@ public sealed class TempFileCollection : IDisposable
 
     public void Dispose()
     {
-        if(_disposed)
+        if (_disposed)
         {
             return;
         }
@@ -565,7 +564,7 @@ public sealed class TempFileCollection : IDisposable
         {
             try
             {
-                if(File.Exists(file))
+                if (File.Exists(file))
                 {
                     File.Delete(file);
                 }

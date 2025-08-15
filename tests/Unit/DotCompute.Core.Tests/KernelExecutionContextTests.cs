@@ -38,7 +38,7 @@ public class KernelExecutionContextTests
     public void Constructor_WithRequiredName_ShouldInitialize()
     {
         // Act & Assert
-        var act =() => new KernelExecutionContext { Name = "TestKernel" };
+        var act = () => new KernelExecutionContext { Name = "TestKernel" };
         act(); // Should not throw
     }
 
@@ -52,8 +52,8 @@ public class KernelExecutionContextTests
         IReadOnlyList<long> workDims = dimensions switch
         {
             1 => new long[] { 256 },
-            2 => new long[] { 256, 256 },
-            3 => new long[] { 64, 64, 64 },
+            2 => [256, 256],
+            3 => [64, 64, 64],
             _ => throw new ArgumentException("Invalid dimensions", nameof(dimensions))
         };
 

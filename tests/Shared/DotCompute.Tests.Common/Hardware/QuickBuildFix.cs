@@ -1,9 +1,8 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Common.Hardware;
 
@@ -17,25 +16,25 @@ public class QuickBuildTest
     /// <summary>
     /// Simple test showing the hardware abstraction layer works.
     /// </summary>
-    public void BasicHardwareAbstractionTest()
+    public static void BasicHardwareAbstractionTest()
     {
         // Create mock hardware provider
         using var provider = new MockHardwareProvider();
-        
+
         // Get available devices
         var devices = provider.GetAllDevices().ToList();
         var cudaDevice = provider.GetFirstDevice(AcceleratorType.CUDA);
         var cpuDevice = provider.GetFirstDevice(AcceleratorType.CPU);
 
         // Basic assertions
-        if(cudaDevice != null)
+        if (cudaDevice != null)
         {
             var info = cudaDevice.ToAcceleratorInfo();
             var isHealthy = cudaDevice.HealthCheck();
             var properties = cudaDevice.GetProperties();
         }
 
-        if(cpuDevice != null)
+        if (cpuDevice != null)
         {
             var info = cpuDevice.ToAcceleratorInfo();
             var isHealthy = cpuDevice.HealthCheck();

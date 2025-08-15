@@ -46,7 +46,7 @@ public class KernelCompilerSimpleTests : IDisposable
     public void DirectComputeCompiler_Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act =() => new DirectComputeKernelCompiler(null!);
+        Action act = () => new DirectComputeKernelCompiler(null!);
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -131,7 +131,7 @@ public class KernelCompilerSimpleTests : IDisposable
     public void OpenCLCompiler_Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act =() => new OpenCLKernelCompiler(null!);
+        Action act = () => new OpenCLKernelCompiler(null!);
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -324,7 +324,7 @@ public class KernelCompilerSimpleTests : IDisposable
 
     #region Helper Methods
 
-    private KernelDefinition CreateDirectComputeKernelDefinition(string name)
+    private static KernelDefinition CreateDirectComputeKernelDefinition(string name)
     {
         var hlslCode = @"
 [numthreads(8, 8, 1)]
@@ -335,7 +335,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         return CreateKernelDefinitionWithCode(name, hlslCode, DotCompute.Abstractions.KernelLanguage.HLSL);
     }
 
-    private KernelDefinition CreateOpenCLKernelDefinition(string name)
+    private static KernelDefinition CreateOpenCLKernelDefinition(string name)
     {
         var openclCode = @"
 __kernel void vectorAdd(__global const float* a, __global const float* b, __global float* c) {
@@ -345,7 +345,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         return CreateKernelDefinitionWithCode(name, openclCode, DotCompute.Abstractions.KernelLanguage.OpenCL);
     }
 
-    private KernelDefinition CreateKernelDefinitionWithCode(string name, string code, DotCompute.Abstractions.KernelLanguage language)
+    private static KernelDefinition CreateKernelDefinitionWithCode(string name, string code, DotCompute.Abstractions.KernelLanguage language)
     {
         var source = new TextKernelSource(code, name, language, "main");
         var options = new DotCompute.Abstractions.CompilationOptions();
@@ -356,7 +356,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
 
     public void Dispose()
     {
-        if(!_disposed)
+        if (!_disposed)
         {
             _disposed = true;
         }
@@ -468,7 +468,7 @@ public class CoreMemoryInterfaceTests
 
     #region Helper Methods
 
-    private KernelDefinition CreateKernelDefinitionFromGenerated(GeneratedKernel generated)
+    private static KernelDefinition CreateKernelDefinitionFromGenerated(GeneratedKernel generated)
     {
         var sourceBytes = System.Text.Encoding.UTF8.GetBytes(generated.Source);
         return new KernelDefinition
@@ -479,7 +479,7 @@ public class CoreMemoryInterfaceTests
         };
     }
 
-    private DotCompute.Abstractions.CompilationOptions CreateAbstractionsOptions(DotCompute.Core.Kernels.CompilationOptions coreOptions)
+    private static DotCompute.Abstractions.CompilationOptions CreateAbstractionsOptions(DotCompute.Core.Kernels.CompilationOptions coreOptions)
     {
         return new DotCompute.Abstractions.CompilationOptions
         {

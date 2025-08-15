@@ -1,4 +1,3 @@
-using System;
 using System.Runtime.InteropServices;
 using Xunit;
 using Xunit.Abstractions;
@@ -31,10 +30,10 @@ public class OpenCLHardwareTests
 
         uint platformCount = 0;
         var result = clGetPlatformIDs(0, null, ref platformCount);
-        
+
         _output.WriteLine($"OpenCL platform detection result: {result}");
         _output.WriteLine($"Number of OpenCL platforms found: {platformCount}");
-        
+
         platformCount.Should().BeGreaterThan(0, "No OpenCL platforms detected");
     }
 
@@ -46,19 +45,19 @@ public class OpenCLHardwareTests
 
         uint platformCount = 0;
         var result = clGetPlatformIDs(0, null, ref platformCount);
-        
-        if(platformCount > 0)
+
+        if (platformCount > 0)
         {
             var platforms = new IntPtr[platformCount];
             result = clGetPlatformIDs(platformCount, platforms, ref platformCount);
-            
+
             Assert.Equal(0, result); // CL_SUCCESS
-            
+
             foreach (var platform in platforms)
             {
                 uint deviceCount = 0;
                 result = clGetDeviceIDs(platform, DeviceType.CL_DEVICE_TYPE_ALL, 0, null, ref deviceCount);
-                
+
                 _output.WriteLine($"Platform has {deviceCount} devices");
                 Assert.True(deviceCount >= 0);
             }
@@ -73,27 +72,27 @@ public class OpenCLHardwareTests
 
         uint platformCount = 0;
         var result = clGetPlatformIDs(0, null, ref platformCount);
-        
-        if(platformCount > 0)
+
+        if (platformCount > 0)
         {
             var platforms = new IntPtr[1];
             result = clGetPlatformIDs(1, platforms, ref platformCount);
-            
+
             uint deviceCount = 0;
             result = clGetDeviceIDs(platforms[0], DeviceType.CL_DEVICE_TYPE_DEFAULT, 0, null, ref deviceCount);
-            
-            if(deviceCount > 0)
+
+            if (deviceCount > 0)
             {
                 var devices = new IntPtr[1];
                 result = clGetDeviceIDs(platforms[0], DeviceType.CL_DEVICE_TYPE_DEFAULT, 1, devices, ref deviceCount);
-                
-                int errorCode = 0;
+
+                var errorCode = 0;
                 var context = clCreateContext(IntPtr.Zero, 1, devices, IntPtr.Zero, IntPtr.Zero, ref errorCode);
-                
+
                 Assert.NotEqual(IntPtr.Zero, context);
                 Assert.Equal(0, errorCode); // CL_SUCCESS
-                
-                if(context != IntPtr.Zero)
+
+                if (context != IntPtr.Zero)
                 {
                     clReleaseContext(context);
                 }
@@ -132,10 +131,10 @@ public class OpenCLHardwareTests
 
     private enum DeviceType : ulong
     {
-        CL_DEVICE_TYPE_DEFAULT =(1 << 0),
-        CL_DEVICE_TYPE_CPU =(1 << 1),
-        CL_DEVICE_TYPE_GPU =(1 << 2),
-        CL_DEVICE_TYPE_ACCELERATOR =(1 << 3),
+        CL_DEVICE_TYPE_DEFAULT = (1 << 0),
+        CL_DEVICE_TYPE_CPU = (1 << 1),
+        CL_DEVICE_TYPE_GPU = (1 << 2),
+        CL_DEVICE_TYPE_ACCELERATOR = (1 << 3),
         CL_DEVICE_TYPE_ALL = 0xFFFFFFFF
     }
 }

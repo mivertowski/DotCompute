@@ -1,11 +1,7 @@
-using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Threading;
-using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Shared.Memory;
-using FluentAssertions;
 
 namespace DotCompute.Tests.Shared.Accelerators;
 
@@ -37,7 +33,7 @@ public class TestCpuAccelerator : IAccelerator
             IsUnifiedMemory = true,
             ComputeCapability = new Version(1, 0)
         };
-        
+
         _memoryManager = new TestMemoryManager();
         _compiledKernels = new ConcurrentDictionary<string, TestCompiledKernel>();
     }
@@ -51,30 +47,27 @@ public class TestCpuAccelerator : IAccelerator
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if(definition == null)
+        if (definition == null)
         {
             throw new ArgumentNullException(nameof(definition));
         }
 
         await Task.Delay(10, cancellationToken); // Simulate compilation time
-        
+
         var kernel = new TestCompiledKernel(
             definition.Name,
             definition.Code,
             options ?? new CompilationOptions());
-        
+
         _compiledKernels[definition.Name] = kernel;
         return kernel;
     }
 
-    public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-    {
-        await Task.Yield(); // Simulate synchronization
-    }
+    public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await Task.Yield(); // Simulate synchronization
 
     public async ValueTask DisposeAsync()
     {
-        if(!_disposed)
+        if (!_disposed)
         {
             _disposed = true;
             await SynchronizeAsync();
@@ -82,10 +75,7 @@ public class TestCpuAccelerator : IAccelerator
         }
     }
 
-    public void Dispose()
-    {
-        DisposeAsync().AsTask().Wait();
-    }
+    public void Dispose() => DisposeAsync().AsTask().Wait();
 }
 
 /// <summary>
@@ -113,19 +103,19 @@ public class TestCompiledKernel : ICompiledKernel
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        if(_disposed)
+        if (_disposed)
         {
             throw new ObjectDisposedException(nameof(TestCompiledKernel));
         }
 
         _executionTimer.Restart();
-        
+
         // Simulate kernel execution with parallel CPU computation
         await Task.Run(() =>
         {
             // Simulate different execution patterns based on kernel name
             var iterations = Name.Contains("simple", StringComparison.OrdinalIgnoreCase) ? 100 : 1000;
-            
+
             Parallel.For(0, iterations, new ParallelOptions
             {
                 CancellationToken = cancellationToken,
@@ -134,26 +124,26 @@ public class TestCompiledKernel : ICompiledKernel
             {
                 // Simulate compute work
                 var result = 0.0;
-                for(int j = 0; j < 100; j++)
+                for (var j = 0; j < 100; j++)
                 {
                     result += Math.Sin(i * j * 0.001) * Math.Cos(i * j * 0.001);
                 }
             });
         }, cancellationToken);
-        
+
         _executionTimer.Stop();
         Interlocked.Increment(ref _executionCount);
     }
 
     public long ExecutionCount => _executionCount;
     public TimeSpan TotalExecutionTime => _executionTimer.Elapsed;
-    public double AverageExecutionTimeMs => _executionCount > 0 
-        ? _executionTimer.Elapsed.TotalMilliseconds / _executionCount 
+    public double AverageExecutionTimeMs => _executionCount > 0
+        ? _executionTimer.Elapsed.TotalMilliseconds / _executionCount
         : 0;
 
     public async ValueTask DisposeAsync()
     {
-        if(!_disposed)
+        if (!_disposed)
         {
             _disposed = true;
             await Task.CompletedTask;

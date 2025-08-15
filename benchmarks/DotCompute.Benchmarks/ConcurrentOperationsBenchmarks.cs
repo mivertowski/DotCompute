@@ -16,12 +16,12 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-public class ConcurrentOperationsBenchmarks
+internal class ConcurrentOperationsBenchmarks
 {
     private IAcceleratorManager _acceleratorManager = null!;
     private IAccelerator _accelerator = null!;
     private IMemoryManager _memoryManager = null!;
-    private readonly ConcurrentBag<IMemoryBuffer> _buffers = new();
+    private readonly ConcurrentBag<IMemoryBuffer> _buffers = [];
     private readonly object _lockObject = new();
 
     [Params(1, 2, 4, 8, 16)]
@@ -58,20 +58,20 @@ public class ConcurrentOperationsBenchmarks
         _threadData = new float[ConcurrentThreads][];
         var random = new Random(42);
 
-        for (int t = 0; t < ConcurrentThreads; t++)
+        for (var t = 0; t < ConcurrentThreads; t++)
         {
             _threadData[t] = new float[DataSize];
-            for (int i = 0; i < DataSize; i++)
+            for (var i = 0; i < DataSize; i++)
             {
                 _threadData[t][i] = (float)(random.NextDouble() * 2.0 - 1.0);
             }
         }
 
         // Fill work queue for producer-consumer tests
-        for (int i = 0; i < ConcurrentThreads * 10; i++)
+        for (var i = 0; i < ConcurrentThreads * 10; i++)
         {
             var workItem = new float[DataSize / 10];
-            for (int j = 0; j < workItem.Length; j++)
+            for (var j = 0; j < workItem.Length; j++)
             {
                 workItem[j] = (float)random.NextDouble();
             }
@@ -85,7 +85,9 @@ public class ConcurrentOperationsBenchmarks
         while (_buffers.TryTake(out var buffer))
         {
             if (!buffer.IsDisposed)
+            {
                 await buffer.DisposeAsync();
+            }
         }
 
         await _acceleratorManager.DisposeAsync();

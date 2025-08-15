@@ -1,8 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
@@ -119,7 +117,7 @@ public class Dim3Tests
     public void ImplicitConversion_FromTwoComponentTuple_ShouldCreateDim3WithXY()
     {
         // Arrange & Act
-        Dim3 dim3 =(10, 20);
+        Dim3 dim3 = (10, 20);
 
         // Assert
         dim3.X.Should().Be(10);
@@ -131,7 +129,7 @@ public class Dim3Tests
     public void ImplicitConversion_FromThreeComponentTuple_ShouldCreateDim3WithXYZ()
     {
         // Arrange & Act
-        Dim3 dim3 =(100, 200, 300);
+        Dim3 dim3 = (100, 200, 300);
 
         // Assert
         dim3.X.Should().Be(100);
@@ -167,8 +165,8 @@ public class Dim3Tests
     public void ImplicitConversion_FromTupleWithZeros_ShouldCreateDim3WithZeros()
     {
         // Arrange & Act
-        Dim3 dim3XY =(0, 0);
-        Dim3 dim3XYZ =(0, 0, 0);
+        Dim3 dim3XY = (0, 0);
+        Dim3 dim3XYZ = (0, 0, 0);
 
         // Assert
         dim3XY.X.Should().Be(0);
@@ -184,8 +182,8 @@ public class Dim3Tests
     public void ImplicitConversion_FromTupleWithNegatives_ShouldCreateDim3WithNegatives()
     {
         // Arrange & Act
-        Dim3 dim3XY =(-1, -2);
-        Dim3 dim3XYZ =(-10, -20, -30);
+        Dim3 dim3XY = (-1, -2);
+        Dim3 dim3XYZ = (-10, -20, -30);
 
         // Assert
         dim3XY.X.Should().Be(-1);
@@ -296,7 +294,7 @@ public class Dim3Tests
 
         // Act & Assert
         dim3a.Equals(dim3b).Should().BeFalse();
-       (dim3a == dim3b).Should().BeFalse();
+        (dim3a == dim3b).Should().BeFalse();
         (dim3a != dim3b).Should().BeTrue();
     }
 
@@ -309,7 +307,7 @@ public class Dim3Tests
 
         // Act & Assert
         dim3a.Equals(dim3b).Should().BeFalse();
-       (dim3a == dim3b).Should().BeFalse();
+        (dim3a == dim3b).Should().BeFalse();
         (dim3a != dim3b).Should().BeTrue();
     }
 
@@ -322,7 +320,7 @@ public class Dim3Tests
 
         // Act & Assert
         dim3a.Equals(dim3b).Should().BeFalse();
-       (dim3a == dim3b).Should().BeFalse();
+        (dim3a == dim3b).Should().BeFalse();
         (dim3a != dim3b).Should().BeTrue();
     }
 
@@ -335,7 +333,7 @@ public class Dim3Tests
 
         // Act & Assert
         dim3a.Equals(dim3b).Should().BeFalse();
-       (dim3a == dim3b).Should().BeFalse();
+        (dim3a == dim3b).Should().BeFalse();
         (dim3a != dim3b).Should().BeTrue();
     }
 
@@ -409,7 +407,7 @@ public class Dim3Tests
     public void GetHashCode_WithDifferentInstances_ShouldReturnDifferentHashCodes()
     {
         // Note: Hash codes aren't guaranteed to be different, but should be different most of the time
-        
+
         // Arrange
         var dim3a = new Dim3(1, 2, 3);
         var dim3b = new Dim3(4, 5, 6);
@@ -573,10 +571,10 @@ public class Dim3Tests
     public void AllConversionMethods_ShouldProduceSameResults()
     {
         // Test that all ways of creating equivalent Dim3 instances produce the same results
-        
+
         // Single int conversion
         Dim3 fromInt1 = 42;
-        Dim3 fromInt2 = Dim3.FromInt32(42);
+        var fromInt2 = Dim3.FromInt32(42);
         var fromConstructor1 = new Dim3(42);
 
         Assert.Equal(fromInt2, fromInt1);
@@ -584,8 +582,8 @@ public class Dim3Tests
         Assert.Equal(fromConstructor1, fromInt2);
 
         // Two component tuple conversion
-        Dim3 fromTuple2a =(10, 20);
-        Dim3 fromTuple2b = Dim3.FromValueTuple((10, 20));
+        Dim3 fromTuple2a = (10, 20);
+        var fromTuple2b = Dim3.FromValueTuple((10, 20));
         var fromConstructor2 = new Dim3(10, 20);
 
         Assert.Equal(fromTuple2b, fromTuple2a);
@@ -593,8 +591,8 @@ public class Dim3Tests
         Assert.Equal(fromConstructor2, fromTuple2b);
 
         // Three component tuple conversion
-        Dim3 fromTuple3a =(100, 200, 300);
-        Dim3 fromTuple3b = Dim3.FromValueTuple((100, 200, 300));
+        Dim3 fromTuple3a = (100, 200, 300);
+        var fromTuple3b = Dim3.FromValueTuple((100, 200, 300));
         var fromConstructor3 = new Dim3(100, 200, 300);
 
         Assert.Equal(fromTuple3b, fromTuple3a);
@@ -614,7 +612,7 @@ public class Dim3Tests
         var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
 
         // Act - Multiple threads accessing properties
-        for(int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             tasks.Add(System.Threading.Tasks.Task.Run(() =>
             {

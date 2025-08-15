@@ -38,7 +38,7 @@ public class AcceleratorManagerTests
         await using var manager = new DefaultAcceleratorManager(_logger);
 
         // Act & Assert
-        var act =() => manager.RegisterProvider(null!);
+        var act = () => manager.RegisterProvider(null!);
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -52,7 +52,7 @@ public class AcceleratorManagerTests
         provider.Name.Returns("TestProvider");
 
         // Act
-        var act =() => manager.RegisterProvider(provider);
+        var act = () => manager.RegisterProvider(provider);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()
@@ -89,7 +89,7 @@ public class AcceleratorManagerTests
         await using var manager = new DefaultAcceleratorManager(_logger);
 
         // Act
-        var act =() => manager.GetAccelerator(0);
+        var act = () => manager.GetAccelerator(0);
 
         // Assert
         act.Should().Throw<InvalidOperationException>()

@@ -1,14 +1,11 @@
-// Copyright(c) 2025 Michael Ivertowski
+// Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System.Reflection;
-using System.Security;
 using DotCompute.Plugins.Security;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
-using FluentAssertions;
 
 namespace DotCompute.Plugins.Tests.Security
 {
@@ -35,7 +32,7 @@ namespace DotCompute.Plugins.Tests.Security
 
             // Act & Assert - Should not throw and copy only what fits
             var copied = SafeMemoryOperations.SafeCopy(source.AsSpan(), destination.AsSpan(), 10);
-            
+
             Assert.Equal(3, copied); // Only 3 elements should be copied
             Assert.Equal(1, destination[0]);
             Assert.Equal(2, destination[1]);
@@ -264,16 +261,16 @@ namespace DotCompute.Plugins.Tests.Security
         {
             // This would test the IsAssemblyPathSafe method if it were public
             // For now, we test through the loader's behavior
-            
+
             // Act & Assert
             _output.WriteLine($"Testing path: {path}, Expected safe: {expectedSafe}");
-            
+
             // We expect certain patterns to be rejected
             var hasDirectoryTraversal = path.Contains("..") || path.Contains("~");
             var hasHiddenFile = Path.GetFileName(path).StartsWith(".");
-            var hasSuspiciousName = new[] { "hack", "crack", "keygen" }.Any(p => 
+            var hasSuspiciousName = new[] { "hack", "crack", "keygen" }.Any(p =>
                 Path.GetFileNameWithoutExtension(path).Contains(p, StringComparison.OrdinalIgnoreCase));
-            
+
             var shouldBeUnsafe = hasDirectoryTraversal || hasHiddenFile || hasSuspiciousName;
             Assert.Equal(!shouldBeUnsafe, expectedSafe);
         }
@@ -282,17 +279,16 @@ namespace DotCompute.Plugins.Tests.Security
         public async Task PluginSandbox_CreateSandboxedPlugin_RequiresValidParameters()
         {
             // Arrange
-            var logger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<PluginSandbox>();
-            var sandbox = new PluginSandbox(logger);
+            var sandbox = new PluginSandbox(_mockLogger.Object);
             var permissions = SandboxPermissions.CreateRestrictive();
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await sandbox.CreateSandboxedPluginAsync<object>("", "TestType", permissions));
-            
+
             await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await sandbox.CreateSandboxedPluginAsync<object>("test.dll", "", permissions));
-            
+
             await Assert.ThrowsAsync<ArgumentNullException>(async () =>
                 await sandbox.CreateSandboxedPluginAsync<object>("test.dll", "TestType", null!));
         }
@@ -331,18 +327,18 @@ namespace DotCompute.Plugins.Tests.Security
 
             // Act - Simulate violation checking logic
             var violations = new List<string>();
-            
-            if(usage.MemoryUsageMB > limits.MaxMemoryMB)
-                violations.Add($"Memory usage{usage.MemoryUsageMB} MB) exceeds limit({limits.MaxMemoryMB} MB)");
-            
-            if(usage.CpuUsagePercent > limits.MaxCpuUsagePercent)
-                violations.Add($"CPU usage{usage.CpuUsagePercent}%) exceeds limit({limits.MaxCpuUsagePercent}%)");
-            
-            if(usage.ThreadCount > limits.MaxThreads)
-                violations.Add($"Thread count{usage.ThreadCount}) exceeds limit({limits.MaxThreads})");
-            
-            if(usage.ExecutionTime.TotalSeconds > limits.MaxExecutionTimeSeconds)
-                violations.Add($"Execution time{usage.ExecutionTime.TotalSeconds}s) exceeds limit({limits.MaxExecutionTimeSeconds}s)");
+
+            if (usage.MemoryUsageMB > limits.MaxMemoryMB)
+                violations.Add($"Memory usage ({usage.MemoryUsageMB} MB) exceeds limit ({limits.MaxMemoryMB} MB)");
+
+            if (usage.CpuUsagePercent > limits.MaxCpuUsagePercent)
+                violations.Add($"CPU usage ({usage.CpuUsagePercent}%) exceeds limit ({limits.MaxCpuUsagePercent}%)");
+
+            if (usage.ThreadCount > limits.MaxThreads)
+                violations.Add($"Thread count ({usage.ThreadCount}) exceeds limit ({limits.MaxThreads})");
+
+            if (usage.ExecutionTime.TotalSeconds > limits.MaxExecutionTimeSeconds)
+                violations.Add($"Execution time ({usage.ExecutionTime.TotalSeconds}s) exceeds limit ({limits.MaxExecutionTimeSeconds}s)");
 
             // Assert
             Assert.Equal(4, violations.Count);
@@ -384,7 +380,7 @@ namespace DotCompute.Plugins.Tests.Security
 
             // Assert
             Assert.True(allocation.IsDisposed);
-            Assert.Throws<ObjectDisposedException>(() => { var span = allocation.Span; });
+            Assert.Throws<ObjectDisposedException>(() => allocation.Span);
         }
 
         [Theory]
@@ -413,9 +409,9 @@ namespace DotCompute.Plugins.Tests.Security
             var span3 = new int[] { 1, 2, 3 }.AsSpan();
 
             // Act & Assert
-            Assert.True(SafeMemoryOperations.SafeEquals<int>(span1, span2, 0));
-            Assert.True(SafeMemoryOperations.SafeEquals<int>(span1, span3, 0));
-            Assert.False(SafeMemoryOperations.SafeEquals<int>(span1, span3, 1));
+            Assert.True(SafeMemoryOperations.SafeEquals(span1, span2, 0));
+            Assert.True(SafeMemoryOperations.SafeEquals(span1, span3, 0));
+            Assert.False(SafeMemoryOperations.SafeEquals(span1, span3, 1));
         }
 
         [Fact]
@@ -427,9 +423,9 @@ namespace DotCompute.Plugins.Tests.Security
             var data3 = new int[] { 1, 2, 3, 4, 6 }; // Different
 
             // Act
-            var hash1 = SafeMemoryOperations.SafeGetHashCode<int>(data1.AsSpan());
-            var hash2 = SafeMemoryOperations.SafeGetHashCode<int>(data2.AsSpan());
-            var hash3 = SafeMemoryOperations.SafeGetHashCode<int>(data3.AsSpan());
+            var hash1 = SafeMemoryOperations.SafeGetHashCode(data1.AsSpan());
+            var hash2 = SafeMemoryOperations.SafeGetHashCode(data2.AsSpan());
+            var hash3 = SafeMemoryOperations.SafeGetHashCode(data3.AsSpan());
 
             // Assert
             Assert.Equal(hash1, hash2); // Same data should have same hash

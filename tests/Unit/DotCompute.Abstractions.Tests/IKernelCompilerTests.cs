@@ -1,11 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-using System;
-using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using DotCompute.Abstractions;
 using Moq;
 using Xunit;
 using FluentAssertions;
@@ -26,7 +21,7 @@ public class IKernelCompilerTests
     {
         _mockCompiler = new Mock<IKernelCompiler>();
         _mockCompiledKernel = new Mock<ICompiledKernel>();
-        
+
         var source = new TextKernelSource("__global__ void test() {}", "test", KernelLanguage.Cuda);
         _testKernelDefinition = new KernelDefinition("TestKernel", source, new CompilationOptions());
         _testCompilationOptions = new CompilationOptions();
@@ -352,7 +347,7 @@ public class IKernelCompilerTests
         // Assert
         Assert.Contains(properties, p => p.Name == "Name");
         Assert.Contains(properties, p => p.Name == "SupportedSourceTypes");
-        
+
         Assert.Contains(methods, m => m.Name == "CompileAsync");
         Assert.Contains(methods, m => m.Name == "Validate");
     }
@@ -394,7 +389,7 @@ public class IKernelCompilerTests
     private class TestCompilerOptions : CompilerSpecificOptions
     {
         public override string CompilerName => "TestCompiler";
-        
+
         public string TestOption { get; set; } = "DefaultValue";
     }
 
@@ -469,9 +464,9 @@ public class IKernelCompilerTests
                     .ReturnsAsync(_mockCompiledKernel.Object);
 
         var tasks = new Task<ICompiledKernel>[10];
-        
+
         // Act
-        for(int i = 0; i < tasks.Length; i++)
+        for (var i = 0; i < tasks.Length; i++)
         {
             tasks[i] = _mockCompiler.Object.CompileAsync(_testKernelDefinition).AsTask();
         }
@@ -492,9 +487,9 @@ public class IKernelCompilerTests
         _mockCompiler.Setup(c => c.Validate(It.IsAny<KernelDefinition>())).Returns(successResult);
 
         var tasks = new Task<ValidationResult>[10];
-        
+
         // Act
-        for(int i = 0; i < tasks.Length; i++)
+        for (var i = 0; i < tasks.Length; i++)
         {
             tasks[i] = Task.Run(() => _mockCompiler.Object.Validate(_testKernelDefinition));
         }
@@ -524,8 +519,8 @@ public class IKernelCompilerTests
         // Act
         var validation = _mockCompiler.Object.Validate(_testKernelDefinition);
         ICompiledKernel? compiledKernel = null;
-        
-        if(validation.IsValid)
+
+        if (validation.IsValid)
         {
             compiledKernel = await _mockCompiler.Object.CompileAsync(_testKernelDefinition);
         }
@@ -534,7 +529,7 @@ public class IKernelCompilerTests
         validation.IsValid.Should().BeTrue();
         Assert.NotNull(compiledKernel);
         compiledKernel.Should().BeSameAs(_mockCompiledKernel.Object);
-        
+
         _mockCompiler.Verify(c => c.Validate(_testKernelDefinition), Times.Once);
         _mockCompiler.Verify(c => c.CompileAsync(_testKernelDefinition, null, default), Times.Once);
     }
@@ -549,8 +544,8 @@ public class IKernelCompilerTests
         // Act
         var validation = _mockCompiler.Object.Validate(_testKernelDefinition);
         ICompiledKernel? compiledKernel = null;
-        
-        if(validation.IsValid)
+
+        if (validation.IsValid)
         {
             compiledKernel = await _mockCompiler.Object.CompileAsync(_testKernelDefinition);
         }
@@ -559,7 +554,7 @@ public class IKernelCompilerTests
         validation.IsValid.Should().BeFalse();
         validation.ErrorMessage.Should().Be("Invalid kernel source");
         Assert.Null(compiledKernel);
-        
+
         _mockCompiler.Verify(c => c.Validate(_testKernelDefinition), Times.Once);
         _mockCompiler.Verify(c => c.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()), Times.Never);
     }

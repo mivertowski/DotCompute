@@ -38,11 +38,12 @@ public class CudaEndToEndTests : IDisposable
     public async Task CudaEndToEnd_VectorAddition_ShouldCompileAndExecuteSuccessfully()
     {
         // Arrange
-        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if (!IsCudaAvailable() || !IsNvrtcAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
-        
+
         const int arraySize = 1024;
         var hostA = TestDataGenerator.GenerateFloatArray(arraySize);
         var hostB = TestDataGenerator.GenerateFloatArray(arraySize);
@@ -61,7 +62,7 @@ public class CudaEndToEndTests : IDisposable
 
         unsafe
         {
-            fixed(float* ptrA = hostA, ptrB = hostB, ptrC = hostC)
+            fixed (float* ptrA = hostA, ptrB = hostB, ptrC = hostC)
             {
                 // Copy data to GPU
                 memoryManager.CopyFromHost(ptrA, bufferA, arraySize * sizeof(float));
@@ -71,7 +72,7 @@ public class CudaEndToEndTests : IDisposable
                 // This tests the compilation and memory management pipeline
 
                 // Simulate kernel execution result by copying expected results
-                fixed(float* expectedPtr = expectedResults)
+                fixed (float* expectedPtr = expectedResults)
                 {
                     memoryManager.CopyFromHost(expectedPtr, bufferC, arraySize * sizeof(float));
                 }
@@ -93,14 +94,15 @@ public class CudaEndToEndTests : IDisposable
     public async Task CudaEndToEnd_MatrixMultiplication_ShouldHandleComplexKernels()
     {
         // Arrange
-        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if (!IsCudaAvailable() || !IsNvrtcAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
-        
+
         const int matrixSize = 32; // Small matrix for testing
         const int totalElements = matrixSize * matrixSize;
-        
+
         var matrixA = TestDataGenerator.GenerateFloatArray(totalElements);
         var matrixB = TestDataGenerator.GenerateFloatArray(totalElements);
         var matrixC = new float[totalElements];
@@ -117,14 +119,14 @@ public class CudaEndToEndTests : IDisposable
 
         unsafe
         {
-            fixed(float* ptrA = matrixA, ptrB = matrixB, ptrC = matrixC)
+            fixed (float* ptrA = matrixA, ptrB = matrixB, ptrC = matrixC)
             {
                 memoryManager.CopyFromHost(ptrA, bufferA, totalElements * sizeof(float));
                 memoryManager.CopyFromHost(ptrB, bufferB, totalElements * sizeof(float));
-                
+
                 // Zero output buffer
                 memoryManager.Zero(bufferC);
-                
+
                 // Copy back to verify zero initialization
                 memoryManager.CopyToHost(bufferC, ptrC, totalElements * sizeof(float));
             }
@@ -142,7 +144,8 @@ public class CudaEndToEndTests : IDisposable
     public async Task CudaEndToEnd_MultipleKernelsSequential_ShouldExecuteInOrder()
     {
         // Arrange
-        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if (!IsCudaAvailable() || !IsNvrtcAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -165,21 +168,21 @@ public class CudaEndToEndTests : IDisposable
 
         unsafe
         {
-            fixed(float* inputPtr = inputData, outputPtr = outputData)
+            fixed (float* inputPtr = inputData, outputPtr = outputData)
             {
                 // Upload input data
                 memoryManager.CopyFromHost(inputPtr, inputBuffer, arraySize * sizeof(float));
 
                 // Simulate first kernel: multiply by 2
                 var doubledData = inputData.Select(x => x * 2.0f).ToArray();
-                fixed(float* doubledPtr = doubledData)
+                fixed (float* doubledPtr = doubledData)
                 {
                     memoryManager.CopyFromHost(doubledPtr, tempBuffer, arraySize * sizeof(float));
                 }
 
                 // Simulate second kernel: add 1
                 var finalData = doubledData.Select(x => x + 1.0f).ToArray();
-                fixed(float* finalPtr = finalData)
+                fixed (float* finalPtr = finalData)
                 {
                     memoryManager.CopyFromHost(finalPtr, outputBuffer, arraySize * sizeof(float));
                 }
@@ -205,7 +208,8 @@ public class CudaEndToEndTests : IDisposable
     public async Task CudaEndToEnd_MemoryIntensiveOperation_ShouldHandleLargeDatasets()
     {
         // Arrange
-        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if (!IsCudaAvailable() || !IsNvrtcAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -228,18 +232,18 @@ public class CudaEndToEndTests : IDisposable
 
         unsafe
         {
-            fixed(float* inputPtr = inputData, outputPtr = outputData)
+            fixed (float* inputPtr = inputData, outputPtr = outputData)
             {
                 // Upload
                 memoryManager.CopyFromHost(inputPtr, inputBuffer, arraySize * sizeof(float));
-                
+
                 // Process(simulate computation)
                 var processedData = inputData.Select(x => (float)Math.Sqrt(x * x + 1)).ToArray();
-                fixed(float* processedPtr = processedData)
+                fixed (float* processedPtr = processedData)
                 {
                     memoryManager.CopyFromHost(processedPtr, outputBuffer, arraySize * sizeof(float));
                 }
-                
+
                 // Download
                 memoryManager.CopyToHost(outputBuffer, outputPtr, arraySize * sizeof(float));
             }
@@ -252,10 +256,10 @@ public class CudaEndToEndTests : IDisposable
         Assert.NotNull(compiledKernel);
         Assert.Equal(arraySize, outputData.Count());
         outputData.Should().NotContainNulls();
-        
-        stopwatch.ElapsedMilliseconds .Should().BeLessThan(30000, 
+
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(30000,
             "Large dataset processing should complete within 30 seconds");
-            
+
         _output.WriteLine($"Processed {arraySize} elements in {stopwatch.ElapsedMilliseconds}ms");
     }
 
@@ -265,21 +269,22 @@ public class CudaEndToEndTests : IDisposable
     public async Task CudaEndToEnd_ErrorRecovery_ShouldHandleCompilationFailures()
     {
         // Arrange
-        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if (!IsCudaAvailable() || !IsNvrtcAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
 
         // Act & Assert
         // Try to compile an invalid kernel
         var invalidKernel = CreateInvalidKernel();
-        var compileInvalidAction = async() => await accelerator.CompileKernelAsync(invalidKernel);
+        var compileInvalidAction = async () => await accelerator.CompileKernelAsync(invalidKernel);
         await Assert.ThrowsAsync<InvalidOperationException>(compileInvalidAction);
 
         // Device should still be functional after compilation error
         var validKernel = CreateVectorAddKernel();
         var compiledKernel = await accelerator.CompileKernelAsync(validKernel); // Should not throw
-        
-        if(compiledKernel != null)
+
+        if (compiledKernel != null)
         {
             _kernels.Add(compiledKernel);
         }
@@ -291,7 +296,8 @@ public class CudaEndToEndTests : IDisposable
     public async Task CudaEndToEnd_DeviceReset_ShouldPreserveAcceleratorFunctionality()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -321,7 +327,8 @@ public class CudaEndToEndTests : IDisposable
     public async Task CudaEndToEnd_StressTest_MultipleOperationsConcurrently()
     {
         // Arrange
-        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if (!IsCudaAvailable() || !IsNvrtcAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
@@ -331,8 +338,8 @@ public class CudaEndToEndTests : IDisposable
 
         // Act
         var tasks = new List<Task>();
-        
-        for(int i = 0; i < operationCount; i++)
+
+        for (var i = 0; i < operationCount; i++)
         {
             var operationIndex = i;
             var task = Task.Run(async () =>
@@ -341,14 +348,14 @@ public class CudaEndToEndTests : IDisposable
                 {
                     var kernelDefinition = CreateUniqueKernel($"stress_kernel_{operationIndex}");
                     var compiledKernel = await accelerator.CompileKernelAsync(kernelDefinition);
-                    
-                    lock(_kernels)
+
+                    lock (_kernels)
                     {
                         _kernels.Add(compiledKernel);
                     }
 
                     var buffer = memoryManager!.Allocate(arraySize * sizeof(float));
-                    lock(_buffers)
+                    lock (_buffers)
                     {
                         _buffers.Add(buffer);
                     }
@@ -358,7 +365,7 @@ public class CudaEndToEndTests : IDisposable
 
                     unsafe
                     {
-                        fixed(float* testPtr = testData, resultPtr = resultData)
+                        fixed (float* testPtr = testData, resultPtr = resultData)
                         {
                             memoryManager.CopyFromHost(testPtr, buffer, arraySize * sizeof(float));
                             memoryManager.CopyToHost(buffer, resultPtr, arraySize * sizeof(float));
@@ -367,20 +374,20 @@ public class CudaEndToEndTests : IDisposable
 
                     return resultData;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     _output.WriteLine($"Stress test operation {operationIndex} failed: {ex.Message}");
                     throw;
                 }
             });
-            
+
             tasks.Add(task);
         }
 
         // Assert
-        var completionAction = async() => await Task.WhenAll(tasks);
+        var completionAction = async () => await Task.WhenAll(tasks);
         await completionAction.Should().NotThrowAsync("All stress test operations should complete successfully");
-        
+
         await accelerator.SynchronizeAsync();
     }
 
@@ -390,17 +397,18 @@ public class CudaEndToEndTests : IDisposable
     public void CudaEndToEnd_ResourceCleanup_ShouldReleaseAllResources()
     {
         // Arrange
-        if(!IsCudaAvailable()) return;
+        if (!IsCudaAvailable())
+            return;
 
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
 
         // Act
         var initialStats = memoryManager!.GetStatistics();
-        
+
         // Allocate several buffers
         var buffers = new List<ISyncMemoryBuffer>();
-        for(int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             var buffer = memoryManager.Allocate((i + 1) * 1024);
             buffers.Add(buffer);
@@ -419,7 +427,7 @@ public class CudaEndToEndTests : IDisposable
         // Assert
         (afterAllocStats.AllocationCount > initialStats.AllocationCount).Should().BeTrue();
         (afterAllocStats.AllocatedMemory > initialStats.AllocatedMemory).Should().BeTrue();
-        
+
         // Memory should be freed(though exact values may vary due to fragmentation)
         (afterFreeStats.AllocationCount <= afterAllocStats.AllocationCount).Should().BeTrue();
     }
@@ -572,10 +580,7 @@ __global__ void {name}(float* input, float* output, int n)
         }
     }
 
-    private static bool IsNvrtcAvailable()
-    {
-        return DotCompute.Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
-    }
+    private static bool IsNvrtcAvailable() => DotCompute.Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
 
     public void Dispose()
     {
@@ -583,9 +588,9 @@ __global__ void {name}(float* input, float* output, int n)
         {
             try
             {
-               (kernel as IDisposable)?.Dispose();
+                (kernel as IDisposable)?.Dispose();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing compiled kernel");
             }
@@ -596,13 +601,13 @@ __global__ void {name}(float* input, float* output, int n)
         {
             try
             {
-                if(!buffer.IsDisposed)
+                if (!buffer.IsDisposed)
                 {
                     var syncMemoryManager = _accelerators.FirstOrDefault()?.Memory as ISyncMemoryManager;
                     syncMemoryManager?.Free(buffer);
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing CUDA buffer");
             }
@@ -615,7 +620,7 @@ __global__ void {name}(float* input, float* output, int n)
             {
                 accelerator?.Dispose();
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing CUDA accelerator");
             }

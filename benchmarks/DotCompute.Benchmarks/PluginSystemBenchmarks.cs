@@ -16,11 +16,11 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-public class PluginSystemBenchmarks
+internal class PluginSystemBenchmarks
 {
     private ServiceCollection _services = null!;
     private IServiceProvider _serviceProvider = null!;
-    private readonly List<IDisposable> _disposables = new();
+    private readonly List<IDisposable> _disposables = [];
 
     [Params(1, 5, 10, 25)]
     public int PluginCount { get; set; }
@@ -68,7 +68,7 @@ public class PluginSystemBenchmarks
     [Benchmark]
     public void MultiplePluginLoading()
     {
-        for (int i = 0; i < PluginCount; i++)
+        for (var i = 0; i < PluginCount; i++)
         {
             var plugin = CreatePlugin(PluginType, i);
             plugin.Initialize();
@@ -80,22 +80,22 @@ public class PluginSystemBenchmarks
     public async Task AsyncPluginInitialization()
     {
         var plugins = new List<TestPluginInterface>();
-        
+
         // Load plugins first
-        for (int i = 0; i < PluginCount; i++)
+        for (var i = 0; i < PluginCount; i++)
         {
             var plugin = CreatePlugin(PluginType, i);
             plugins.Add(plugin);
         }
-        
+
         // Initialize all plugins asynchronously
         var initTasks = plugins.Select(async plugin =>
         {
             await Task.Run(() => plugin.Initialize());
         });
-        
+
         await Task.WhenAll(initTasks);
-        
+
         _disposables.AddRange(plugins);
     }
 
@@ -103,7 +103,7 @@ public class PluginSystemBenchmarks
     public void PluginDiscovery()
     {
         var discoveredPlugins = new List<TestPluginInterface>();
-        
+
         // Simulate plugin discovery from different sources
         var discoveryTasks = Enumerable.Range(0, PluginCount).Select(i =>
         {
@@ -114,15 +114,15 @@ public class PluginSystemBenchmarks
                 return CreatePlugin(PluginType, i);
             });
         });
-        
+
         var plugins = Task.WhenAll(discoveryTasks).Result;
-        
+
         foreach (var plugin in plugins)
         {
             discoveredPlugins.Add(plugin);
             plugin.Initialize();
         }
-        
+
         _disposables.AddRange(discoveredPlugins);
     }
 
@@ -130,22 +130,22 @@ public class PluginSystemBenchmarks
     public void DependencyResolution()
     {
         var plugins = new List<TestPluginInterface>();
-        
+
         // Create plugins with dependencies
-        for (int i = 0; i < PluginCount; i++)
+        for (var i = 0; i < PluginCount; i++)
         {
             var plugin = CreatePluginWithDependencies(i);
             plugins.Add(plugin);
         }
-        
+
         // Simulate dependency resolution
         var sortedPlugins = ResolveDependencies(plugins);
-        
+
         foreach (var plugin in sortedPlugins)
         {
             plugin.Initialize();
         }
-        
+
         _disposables.AddRange(plugins);
     }
 
@@ -153,26 +153,26 @@ public class PluginSystemBenchmarks
     public void PluginLifecycleManagement()
     {
         var plugins = new List<TestPluginInterface>();
-        
+
         // Load plugins
-        for (int i = 0; i < PluginCount; i++)
+        for (var i = 0; i < PluginCount; i++)
         {
             var plugin = CreatePlugin(PluginType, i);
             plugins.Add(plugin);
         }
-        
+
         // Initialize plugins
         foreach (var plugin in plugins)
         {
             plugin.Initialize();
         }
-        
+
         // Simulate usage
         foreach (var plugin in plugins)
         {
             plugin.DoWork();
         }
-        
+
         // Cleanup plugins
         foreach (var plugin in plugins)
         {
@@ -185,10 +185,10 @@ public class PluginSystemBenchmarks
     {
         var plugins = new List<TestPluginInterface>();
         var loadTasks = new List<Task>();
-        
-        for (int i = 0; i < PluginCount; i++)
+
+        for (var i = 0; i < PluginCount; i++)
         {
-            int pluginIndex = i;
+            var pluginIndex = i;
             loadTasks.Add(Task.Run(() =>
             {
                 var plugin = CreatePlugin(PluginType, pluginIndex);
@@ -199,7 +199,7 @@ public class PluginSystemBenchmarks
                 }
             }));
         }
-        
+
         Task.WaitAll(loadTasks.ToArray());
         _disposables.AddRange(plugins);
     }
@@ -209,22 +209,22 @@ public class PluginSystemBenchmarks
     {
         var start = DateTime.UtcNow;
         var plugins = new List<TestPluginInterface>();
-        
-        for (int i = 0; i < PluginCount; i++)
+
+        for (var i = 0; i < PluginCount; i++)
         {
             var plugin = CreatePlugin(PluginType, i);
             plugin.Initialize();
             plugins.Add(plugin);
         }
-        
+
         var elapsed = DateTime.UtcNow - start;
         var throughput = PluginCount / elapsed.TotalSeconds;
-        
+
         _disposables.AddRange(plugins);
         return throughput; // Plugins loaded per second
     }
 
-    private TestPluginInterface CreatePlugin(string type, int index)
+    private static TestPluginInterface CreatePlugin(string type, int index)
     {
         return type switch
         {
@@ -235,20 +235,20 @@ public class PluginSystemBenchmarks
         };
     }
 
-    private TestPluginInterface CreatePluginWithDependencies(int index)
+    private static TestPluginInterface CreatePluginWithDependencies(int index)
     {
         return new DependentTestPlugin($"DependentPlugin_{index}", $"Plugin with dependencies {index}")
         {
-            Dependencies = new[] { $"Dependency_{index % 3}", "CommonDependency" }
+            Dependencies = [$"Dependency_{index % 3}", "CommonDependency"]
         };
     }
 
-    private List<TestPluginInterface> ResolveDependencies(List<TestPluginInterface> plugins)
+    private static List<TestPluginInterface> ResolveDependencies(List<TestPluginInterface> plugins)
     {
         // Simple dependency resolution simulation
         var resolved = new List<TestPluginInterface>();
         var remaining = new List<TestPluginInterface>(plugins);
-        
+
         while (remaining.Count > 0)
         {
             var canResolve = remaining.Where(p =>
@@ -259,35 +259,37 @@ public class PluginSystemBenchmarks
                 }
                 return true;
             }).ToList();
-            
+
             if (canResolve.Count == 0)
+            {
                 break; // Circular dependency or unresolvable
-            
+            }
+
             foreach (var plugin in canResolve)
             {
                 resolved.Add(plugin);
                 remaining.Remove(plugin);
             }
         }
-        
+
         resolved.AddRange(remaining); // Add any unresolved ones
         return resolved;
     }
 }
 
 // Simplified test plugin interfaces and implementations
-public interface TestPluginInterface : IDisposable
+internal interface TestPluginInterface : IDisposable
 {
-    string Name { get; }
-    string Description { get; }
-    Version Version { get; }
-    bool IsInitialized { get; }
-    
-    void Initialize();
-    void DoWork();
+    public string Name { get; }
+    public string Description { get; }
+    public Version Version { get; }
+    public bool IsInitialized { get; }
+
+    public void Initialize();
+    public void DoWork();
 }
 
-public abstract class TestPluginBase : TestPluginInterface
+internal abstract class TestPluginBase : TestPluginInterface
 {
     public string Name { get; protected set; } = string.Empty;
     public string Description { get; protected set; } = string.Empty;
@@ -295,19 +297,13 @@ public abstract class TestPluginBase : TestPluginInterface
     public bool IsInitialized { get; protected set; }
 
     public abstract void Initialize();
-    
-    public virtual void DoWork()
-    {
-        Thread.Sleep(1);
-    }
 
-    public virtual void Dispose()
-    {
-        IsInitialized = false;
-    }
+    public virtual void DoWork() => Thread.Sleep(1);
+
+    public virtual void Dispose() => IsInitialized = false;
 }
 
-public class SimpleTestPlugin : TestPluginBase
+internal class SimpleTestPlugin : TestPluginBase
 {
     public SimpleTestPlugin(string name, string description)
     {
@@ -324,17 +320,17 @@ public class SimpleTestPlugin : TestPluginBase
     }
 }
 
-public class ComplexTestPlugin : TestPluginBase
+internal class ComplexTestPlugin : TestPluginBase
 {
-    private readonly Dictionary<string, object> _configuration = new();
-    private readonly List<object> _resources = new();
+    private readonly Dictionary<string, object> _configuration = [];
+    private readonly List<object> _resources = [];
 
     public ComplexTestPlugin(string name, string description)
     {
         Name = name;
         Description = description;
         Version = new Version(1, 0, 0);
-        
+
         // Add complex initialization
         _configuration["Setting1"] = "Value1";
         _configuration["Setting2"] = 42;
@@ -344,14 +340,14 @@ public class ComplexTestPlugin : TestPluginBase
     public override void Initialize()
     {
         // Complex initialization
-        for (int i = 0; i < 10; i++)
+        for (var i = 0; i < 10; i++)
         {
             _resources.Add(new object());
         }
-        
+
         // Simulate complex setup
         Thread.Sleep(5);
-        
+
         IsInitialized = true;
     }
 
@@ -363,7 +359,7 @@ public class ComplexTestPlugin : TestPluginBase
     }
 }
 
-public class DependentTestPlugin : TestPluginBase
+internal class DependentTestPlugin : TestPluginBase
 {
     public string[] Dependencies { get; set; } = Array.Empty<string>();
 
@@ -382,7 +378,7 @@ public class DependentTestPlugin : TestPluginBase
             // Simulate dependency checking
             Thread.Sleep(1);
         }
-        
+
         IsInitialized = true;
     }
 }

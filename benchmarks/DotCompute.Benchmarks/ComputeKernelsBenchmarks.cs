@@ -3,7 +3,6 @@ using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
-using System.Text;
 
 namespace DotCompute.Benchmarks;
 
@@ -16,13 +15,13 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-public class ComputeKernelsBenchmarks
+internal class ComputeKernelsBenchmarks
 {
     private IAcceleratorManager _acceleratorManager = null!;
     private IAccelerator _accelerator = null!;
     private IMemoryManager _memoryManager = null!;
-    private readonly Dictionary<string, ICompiledKernel> _kernels = new();
-    private readonly List<IMemoryBuffer> _buffers = new();
+    private readonly Dictionary<string, ICompiledKernel> _kernels = [];
+    private readonly List<IMemoryBuffer> _buffers = [];
 
     [Params(1024, 64 * 1024, 1024 * 1024, 16 * 1024 * 1024)]
     public int DataSize { get; set; }
@@ -39,14 +38,14 @@ public class ComputeKernelsBenchmarks
     {
         var logger = new NullLogger<DefaultAcceleratorManager>();
         _acceleratorManager = new DefaultAcceleratorManager(logger);
-        
+
         var cpuProvider = new CpuAcceleratorProvider(new NullLogger<CpuAcceleratorProvider>());
         _acceleratorManager.RegisterProvider(cpuProvider);
         await _acceleratorManager.InitializeAsync();
-        
+
         _accelerator = _acceleratorManager.Default;
         _memoryManager = _accelerator.Memory;
-        
+
         await SetupTestData();
         await CompileKernels();
     }
@@ -56,14 +55,14 @@ public class ComputeKernelsBenchmarks
         _inputA = new float[DataSize];
         _inputB = new float[DataSize];
         _output = new float[DataSize];
-        
+
         var random = new Random(42); // Fixed seed for reproducibility
-        for (int i = 0; i < DataSize; i++)
+        for (var i = 0; i < DataSize; i++)
         {
             _inputA[i] = (float)(random.NextDouble() * 2.0 - 1.0); // [-1, 1]
             _inputB[i] = (float)(random.NextDouble() * 2.0 - 1.0);
         }
-        
+
         // Fix CS1998: Add minimal await to satisfy async method requirement
         await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
     }
@@ -84,7 +83,7 @@ public class ComputeKernelsBenchmarks
                     result[id] = a[id] + b[id];
                 }
             }";
-        
+
         var vectorAddSource_obj = new TextKernelSource(vectorAddSource, "vector_add", KernelLanguage.OpenCL, "vector_add");
         var vectorAddDef = new KernelDefinition("vector_add", vectorAddSource_obj, options);
         _kernels["VectorAdd"] = await _accelerator.CompileKernelAsync(vectorAddDef, options);
@@ -97,7 +96,7 @@ public class ComputeKernelsBenchmarks
                     result[id] = a[id] * b[id];
                 }
             }";
-        
+
         var vectorMultiplySource_obj = new TextKernelSource(vectorMultiplySource, "vector_multiply", KernelLanguage.OpenCL, "vector_multiply");
         var vectorMultiplyDef = new KernelDefinition("vector_multiply", vectorMultiplySource_obj, options);
         _kernels["VectorMultiply"] = await _accelerator.CompileKernelAsync(vectorMultiplyDef, options);
@@ -126,7 +125,7 @@ public class ComputeKernelsBenchmarks
                     result[get_group_id(0)] = scratch[0];
                 }
             }";
-        
+
         var dotProductSource_obj = new TextKernelSource(dotProductSource, "dot_product", KernelLanguage.OpenCL, "dot_product");
         var dotProductDef = new KernelDefinition("dot_product", dotProductSource_obj, options);
         _kernels["DotProduct"] = await _accelerator.CompileKernelAsync(dotProductDef, options);
@@ -146,7 +145,7 @@ public class ComputeKernelsBenchmarks
                     C[row * N + col] = sum;
                 }
             }";
-        
+
         var matrixMultiplySource_obj = new TextKernelSource(matrixMultiplySource, "matrix_multiply", KernelLanguage.OpenCL, "matrix_multiply");
         var matrixMultiplyDef = new KernelDefinition("matrix_multiply", matrixMultiplySource_obj, options);
         _kernels["MatrixMultiply"] = await _accelerator.CompileKernelAsync(matrixMultiplyDef, options);
@@ -173,7 +172,7 @@ public class ComputeKernelsBenchmarks
                     output[get_group_id(0)] = scratch[0];
                 }
             }";
-        
+
         var reductionSource_obj = new TextKernelSource(reductionSource, "reduction_sum", KernelLanguage.OpenCL, "reduction_sum");
         var reductionDef = new KernelDefinition("reduction_sum", reductionSource_obj, options);
         _kernels["Reduction"] = await _accelerator.CompileKernelAsync(reductionDef, options);
@@ -192,7 +191,7 @@ public class ComputeKernelsBenchmarks
                     output[id] = sum;
                 }
             }";
-        
+
         var convolutionSource_obj = new TextKernelSource(convolutionSource, "convolution_1d", KernelLanguage.OpenCL, "convolution_1d");
         var convolutionDef = new KernelDefinition("convolution_1d", convolutionSource_obj, options);
         _kernels["Convolution"] = await _accelerator.CompileKernelAsync(convolutionDef, options);
@@ -206,14 +205,16 @@ public class ComputeKernelsBenchmarks
             await kernel.DisposeAsync();
         }
         _kernels.Clear();
-        
+
         foreach (var buffer in _buffers)
         {
             if (!buffer.IsDisposed)
+            {
                 await buffer.DisposeAsync();
+            }
         }
         _buffers.Clear();
-        
+
         await _acceleratorManager.DisposeAsync();
     }
 
@@ -223,16 +224,15 @@ public class ComputeKernelsBenchmarks
         foreach (var buffer in _buffers)
         {
             if (!buffer.IsDisposed)
+            {
                 await buffer.DisposeAsync();
+            }
         }
         _buffers.Clear();
     }
 
     [Benchmark(Baseline = true)]
-    public async Task ExecuteKernel()
-    {
-        await ExecuteSpecificKernel(KernelType);
-    }
+    public async Task ExecuteKernel() => await ExecuteSpecificKernel(KernelType);
 
     private async Task ExecuteSpecificKernel(string kernelType)
     {
@@ -264,12 +264,12 @@ public class ComputeKernelsBenchmarks
         var bufferA = await _memoryManager.AllocateAndCopyAsync<float>(_inputA);
         var bufferB = await _memoryManager.AllocateAndCopyAsync<float>(_inputB);
         var bufferResult = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
-        
+
         var args = new KernelArguments(bufferA, bufferB, bufferResult, DataSize);
         await _kernels["VectorAdd"].ExecuteAsync(args);
-        
+
         await bufferResult.CopyToHostAsync<float>(_output);
-        
+
         _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
     }
 
@@ -278,12 +278,12 @@ public class ComputeKernelsBenchmarks
         var bufferA = await _memoryManager.AllocateAndCopyAsync<float>(_inputA);
         var bufferB = await _memoryManager.AllocateAndCopyAsync<float>(_inputB);
         var bufferResult = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
-        
+
         var args = new KernelArguments(bufferA, bufferB, bufferResult, DataSize);
         await _kernels["VectorMultiply"].ExecuteAsync(args);
-        
+
         await bufferResult.CopyToHostAsync<float>(_output);
-        
+
         _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
     }
 
@@ -291,60 +291,60 @@ public class ComputeKernelsBenchmarks
     {
         var bufferA = await _memoryManager.AllocateAndCopyAsync<float>(_inputA);
         var bufferB = await _memoryManager.AllocateAndCopyAsync<float>(_inputB);
-        
+
         const int workGroupSize = 256;
         var numWorkGroups = (DataSize + workGroupSize - 1) / workGroupSize;
         var bufferResult = await _memoryManager.AllocateAsync(numWorkGroups * sizeof(float));
-        
+
         var args = new KernelArguments(bufferA, bufferB, bufferResult, IntPtr.Zero, DataSize);
         await _kernels["DotProduct"].ExecuteAsync(args);
-        
+
         var partialResults = new float[numWorkGroups];
         await bufferResult.CopyToHostAsync<float>(partialResults);
-        
+
         // Final reduction on CPU
         _output[0] = partialResults.Sum();
-        
+
         _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
     }
 
     private async Task ExecuteMatrixMultiply()
     {
-        int matrixSize = (int)Math.Sqrt(DataSize);
+        var matrixSize = (int)Math.Sqrt(DataSize);
         if (matrixSize * matrixSize != DataSize)
         {
             matrixSize = 256; // Default size if not perfect square
         }
-        
+
         var bufferA = await _memoryManager.AllocateAndCopyAsync<float>(_inputA.Take(matrixSize * matrixSize).ToArray());
         var bufferB = await _memoryManager.AllocateAndCopyAsync<float>(_inputB.Take(matrixSize * matrixSize).ToArray());
         var bufferResult = await _memoryManager.AllocateAsync(matrixSize * matrixSize * sizeof(float));
-        
+
         var args = new KernelArguments(bufferA, bufferB, bufferResult, matrixSize, matrixSize, matrixSize);
         await _kernels["MatrixMultiply"].ExecuteAsync(args);
-        
+
         var result = new float[matrixSize * matrixSize];
         await bufferResult.CopyToHostAsync<float>(result);
-        
+
         _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
     }
 
     private async Task ExecuteReduction()
     {
         var bufferInput = await _memoryManager.AllocateAndCopyAsync<float>(_inputA);
-        
+
         const int workGroupSize = 256;
         var numWorkGroups = (DataSize + workGroupSize - 1) / workGroupSize;
         var bufferResult = await _memoryManager.AllocateAsync(numWorkGroups * sizeof(float));
-        
+
         var args = new KernelArguments(bufferInput, bufferResult, IntPtr.Zero, DataSize);
         await _kernels["Reduction"].ExecuteAsync(args);
-        
+
         var partialResults = new float[numWorkGroups];
         await bufferResult.CopyToHostAsync<float>(partialResults);
-        
+
         _output[0] = partialResults.Sum();
-        
+
         _buffers.AddRange(new[] { bufferInput, bufferResult });
     }
 
@@ -352,17 +352,17 @@ public class ComputeKernelsBenchmarks
     {
         const int filterSize = 5;
         var filter = new float[] { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f }; // Simple average filter
-        
+
         var bufferInput = await _memoryManager.AllocateAndCopyAsync<float>(_inputA);
         var bufferFilter = await _memoryManager.AllocateAndCopyAsync<float>(filter);
         var bufferResult = await _memoryManager.AllocateAsync((DataSize - filterSize + 1) * sizeof(float));
-        
+
         var args = new KernelArguments(bufferInput, bufferFilter, bufferResult, DataSize, filterSize);
         await _kernels["Convolution"].ExecuteAsync(args);
-        
+
         var result = new float[DataSize - filterSize + 1];
         await bufferResult.CopyToHostAsync<float>(result);
-        
+
         _buffers.AddRange(new[] { bufferInput, bufferFilter, bufferResult });
     }
 
@@ -371,22 +371,24 @@ public class ComputeKernelsBenchmarks
     {
         const int iterations = 100;
         var start = DateTime.UtcNow;
-        
-        for (int i = 0; i < iterations; i++)
+
+        for (var i = 0; i < iterations; i++)
         {
             await ExecuteSpecificKernel("VectorAdd");
             // Clear buffers to prevent memory buildup
             foreach (var buffer in _buffers)
             {
                 if (!buffer.IsDisposed)
+                {
                     await buffer.DisposeAsync();
+                }
             }
             _buffers.Clear();
         }
-        
+
         var elapsed = DateTime.UtcNow - start;
         var throughput = iterations / elapsed.TotalSeconds;
-        
+
         Console.WriteLine($"Kernel throughput: {throughput:F2} executions/second");
     }
 
@@ -394,7 +396,7 @@ public class ComputeKernelsBenchmarks
     public double CalculateGFLOPS()
     {
         // Calculate theoretical GFLOPS for the current kernel type
-        long operations = KernelType switch
+        var operations = KernelType switch
         {
             "VectorAdd" => DataSize, // 1 add per element
             "VectorMultiply" => DataSize, // 1 multiply per element
@@ -404,7 +406,7 @@ public class ComputeKernelsBenchmarks
             "Convolution" => DataSize * 5 * 2, // 5-point convolution with multiply-add
             _ => DataSize
         };
-        
+
         var executionTime = 0.001; // Simulated 1ms execution time
         return (operations / executionTime) / 1e9; // GFLOPS
     }
@@ -417,13 +419,13 @@ public class ComputeKernelsBenchmarks
         var bufferB = await _memoryManager.AllocateAndCopyAsync<float>(_inputB);
         var bufferC = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
         var bufferD = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
-        
+
         // Multiple memory operations with minimal compute
         await bufferA.CopyToHostAsync<float>(_output);
         await bufferC.CopyFromHostAsync<float>(_output);
         await bufferC.CopyToHostAsync<float>(_output);
         await bufferD.CopyFromHostAsync<float>(_output);
-        
+
         _buffers.AddRange(new[] { bufferA, bufferB, bufferC, bufferD });
     }
 }

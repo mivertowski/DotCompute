@@ -1,11 +1,5 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Running;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -39,17 +33,17 @@ public class RTX2000PerformanceBenchmarks : IDisposable
         try
         {
             var result = CudaInit(0);
-            if(result == 0)
+            if (result == 0)
             {
                 result = CudaCtxCreate(ref _cudaContext, 0, 0);
-                if(result == 0)
+                if (result == 0)
                 {
                     _cudaInitialized = true;
                     _output.WriteLine("CUDA context initialized for benchmarking");
                 }
             }
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
             _output.WriteLine($"CUDA initialization failed: {ex.Message}");
         }
@@ -61,15 +55,15 @@ public class RTX2000PerformanceBenchmarks : IDisposable
         Skip.IfNot(_cudaInitialized, "CUDA not available");
 
         var results = new MemoryBandwidthResults();
-        
+
         // Test different transfer sizes
         var transferSizes = new[] { 1, 4, 16, 64, 256, 1024 }; // MB
-        
+
         foreach (var sizeMB in transferSizes)
         {
             var bandwidth = await MeasureMemoryBandwidth(sizeMB);
             results.AddResult(sizeMB, bandwidth);
-            
+
             _output.WriteLine($"Memory bandwidth{sizeMB} MB): {bandwidth.H2D:F2} GB/s(H2D), {bandwidth.D2H:F2} GB/s(D2H), {bandwidth.D2D:F2} GB/s(D2D)");
         }
 
@@ -81,41 +75,38 @@ public class RTX2000PerformanceBenchmarks : IDisposable
         maxD2DBandwidth.Should().BeGreaterThan(200.0, "D2D bandwidth should approach GDDR6 theoretical bandwidth");
 
         _output.WriteLine($"Peak bandwidth - H2D: {maxH2DBandwidth:F2} GB/s, D2D: {maxD2DBandwidth:F2} GB/s");
-        
+
         // Store baseline for regression testing
-        _baseline.MemoryBandwidth = new BandwidthMeasurement 
-        { 
-            H2D = maxH2DBandwidth, 
-            D2H = results.D2HBandwidths.Max(), 
-            D2D = maxD2DBandwidth 
+        _baseline.MemoryBandwidth = new BandwidthMeasurement
+        {
+            H2D = maxH2DBandwidth,
+            D2H = results.D2HBandwidths.Max(),
+            D2D = maxD2DBandwidth
         };
     }
 
-    private Task<BandwidthMeasurement> MeasureMemoryBandwidth(int sizeMB)
-    {
-        return Task.Run(() => MeasureMemoryBandwidthSync(sizeMB));
-    }
+    private static Task<BandwidthMeasurement> MeasureMemoryBandwidth(int sizeMB) => Task.Run(() => MeasureMemoryBandwidthSync(sizeMB));
 
-    private BandwidthMeasurement MeasureMemoryBandwidthSync(int sizeMB)
+    private static BandwidthMeasurement MeasureMemoryBandwidthSync(int sizeMB)
     {
         const int iterations = 20;
         var size = sizeMB * 1024 * 1024;
-        
+
         var hostData = new byte[size];
         new Random(42).NextBytes(hostData);
-        
+
         IntPtr d_ptr1 = IntPtr.Zero, d_ptr2 = IntPtr.Zero;
-        
+
         try
         {
             CudaMalloc(ref d_ptr1, size);
             CudaMalloc(ref d_ptr2, size);
-            
+
             var hostHandle = GCHandle.Alloc(hostData, GCHandleType.Pinned);
             try
             {
                 // Warm-up
-                for(int i = 0; i < 3; i++)
+                for (var i = 0; i < 3; i++)
                 {
                     CudaMemcpyHtoD(d_ptr1, hostHandle.AddrOfPinnedObject(), size);
                     CudaMemcpyDtoH(hostHandle.AddrOfPinnedObject(), d_ptr1, size);
@@ -124,7 +115,7 @@ public class RTX2000PerformanceBenchmarks : IDisposable
 
                 // Measure H2D
                 var sw = Stopwatch.StartNew();
-                for(int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     CudaMemcpyHtoD(d_ptr1, hostHandle.AddrOfPinnedObject(), size);
                 }
@@ -133,7 +124,7 @@ public class RTX2000PerformanceBenchmarks : IDisposable
 
                 // Measure D2H
                 sw.Restart();
-                for(int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     CudaMemcpyDtoH(hostHandle.AddrOfPinnedObject(), d_ptr1, size);
                 }
@@ -142,7 +133,7 @@ public class RTX2000PerformanceBenchmarks : IDisposable
 
                 // Measure D2D
                 sw.Restart();
-                for(int i = 0; i < iterations; i++)
+                for (var i = 0; i < iterations; i++)
                 {
                     CudaMemcpyDtoD(d_ptr2, d_ptr1, size);
                 }
@@ -158,8 +149,10 @@ public class RTX2000PerformanceBenchmarks : IDisposable
         }
         finally
         {
-            if(d_ptr1 != IntPtr.Zero) CudaFree(d_ptr1);
-            if(d_ptr2 != IntPtr.Zero) CudaFree(d_ptr2);
+            if (d_ptr1 != IntPtr.Zero)
+                CudaFree(d_ptr1);
+            if (d_ptr2 != IntPtr.Zero)
+                CudaFree(d_ptr2);
         }
     }
 
@@ -173,7 +166,7 @@ public class RTX2000PerformanceBenchmarks : IDisposable
 
         // Compile empty kernel for overhead measurement
         IntPtr program = IntPtr.Zero, module = IntPtr.Zero, kernel = IntPtr.Zero;
-        
+
         try
         {
             var result = NvrtcCreateProgram(ref program, emptyKernel, "empty.cu", 0, default!, default!);
@@ -196,7 +189,7 @@ public class RTX2000PerformanceBenchmarks : IDisposable
             Assert.Equal(0, result); // Kernel function retrieval should succeed;
 
             // Warm-up launches
-            for(int i = 0; i < 100; i++)
+            for (var i = 0; i < 100; i++)
             {
                 CuLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
             }
@@ -204,7 +197,7 @@ public class RTX2000PerformanceBenchmarks : IDisposable
 
             // Measure launch overhead
             var sw = Stopwatch.StartNew();
-            for(int i = 0; i < launchCount; i++)
+            for (var i = 0; i < launchCount; i++)
             {
                 result = CuLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
                 result.Should().Be(0, $"Kernel launch {i} should succeed");
@@ -216,14 +209,16 @@ public class RTX2000PerformanceBenchmarks : IDisposable
             _output.WriteLine($"Average kernel launch overhead: {averageLaunchTime:F2} μs");
 
             // RTX 2000 Ada Gen should have low launch overhead
-            averageLaunchTime .Should().BeLessThan(50.0, "Kernel launch overhead should be minimal");
+            averageLaunchTime.Should().BeLessThan(50.0, "Kernel launch overhead should be minimal");
 
             _baseline.KernelLaunchOverhead = averageLaunchTime;
         }
         finally
         {
-            if(module != IntPtr.Zero) CuModuleUnload(module);
-            if(program != IntPtr.Zero) NvrtcDestroyProgram(ref program);
+            if (module != IntPtr.Zero)
+                CuModuleUnload(module);
+            if (program != IntPtr.Zero)
+                NvrtcDestroyProgram(ref program);
         }
 
         await Task.CompletedTask;
@@ -249,9 +244,9 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
 
         const int dataSize = 1024 * 1024; // 1M elements
         const int computeIterations = 1000;
-        
+
         IntPtr program = IntPtr.Zero, module = IntPtr.Zero, kernel = IntPtr.Zero;
-        IntPtr deviceData = IntPtr.Zero;
+        var deviceData = IntPtr.Zero;
 
         try
         {
@@ -280,9 +275,9 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
             Assert.Equal(0, result);
 
             var hostData = new float[dataSize];
-            for(int i = 0; i < dataSize; i++)
+            for (var i = 0; i < dataSize; i++)
             {
-                hostData[i] =(float)(i % 100) / 100.0f;
+                hostData[i] = (float)(i % 100) / 100.0f;
             }
 
             var hostHandle = GCHandle.Alloc(hostData, GCHandleType.Pinned);
@@ -317,7 +312,7 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
 
                     // Launch compute-intensive kernel
                     const int blockSize = 256;
-                    int gridSize =(dataSize + blockSize - 1) / blockSize;
+                    var gridSize = (dataSize + blockSize - 1) / blockSize;
 
                     var sw = Stopwatch.StartNew();
                     result = CuLaunchKernel(
@@ -331,8 +326,8 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
                     CudaCtxSynchronize();
                     sw.Stop();
 
-                    var totalOperations =(long)dataSize * computeIterations * 6; // 6 operations per iteration
-                    var gflops = totalOperations /(sw.Elapsed.TotalSeconds * 1e9);
+                    var totalOperations = (long)dataSize * computeIterations * 6; // 6 operations per iteration
+                    var gflops = totalOperations / (sw.Elapsed.TotalSeconds * 1e9);
 
                     _output.WriteLine($"Compute throughput: {gflops:F2} GFLOPS");
                     _output.WriteLine($"Execution time: {sw.ElapsedMilliseconds} ms");
@@ -357,9 +352,12 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
         }
         finally
         {
-            if(deviceData != IntPtr.Zero) CudaFree(deviceData);
-            if(module != IntPtr.Zero) CuModuleUnload(module);
-            if(program != IntPtr.Zero) NvrtcDestroyProgram(ref program);
+            if (deviceData != IntPtr.Zero)
+                CudaFree(deviceData);
+            if (module != IntPtr.Zero)
+                CuModuleUnload(module);
+            if (program != IntPtr.Zero)
+                NvrtcDestroyProgram(ref program);
         }
 
         await Task.CompletedTask;
@@ -381,7 +379,7 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
 }";
 
         const int arraySize = 1024 * 1024; // 1M elements for cache miss testing
-        
+
         IntPtr program = IntPtr.Zero, module = IntPtr.Zero, kernel = IntPtr.Zero;
         IntPtr deviceData = IntPtr.Zero, deviceIndices = IntPtr.Zero, deviceResults = IntPtr.Zero;
 
@@ -419,8 +417,8 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
             var hostData = new float[arraySize];
             var hostIndices = new int[arraySize];
             var random = new Random(42);
-            
-            for(int i = 0; i < arraySize; i++)
+
+            for (var i = 0; i < arraySize; i++)
             {
                 hostData[i] = i;
                 hostIndices[i] = random.Next(arraySize);
@@ -429,7 +427,7 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
             // Copy data to device
             var dataHandle = GCHandle.Alloc(hostData, GCHandleType.Pinned);
             var indicesHandle = GCHandle.Alloc(hostIndices, GCHandleType.Pinned);
-            
+
             try
             {
                 result = CudaMemcpyHtoD(deviceData, dataHandle.AddrOfPinnedObject(), arraySize * sizeof(float));
@@ -465,7 +463,7 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
                     Marshal.Copy(kernelParams, 0, kernelParamsPtr, kernelParams.Length);
 
                     const int blockSize = 256;
-                    int gridSize =(arraySize + blockSize - 1) / blockSize;
+                    var gridSize = (arraySize + blockSize - 1) / blockSize;
 
                     // Warm up
                     CuLaunchKernel(kernel, (uint)gridSize, 1, 1, (uint)blockSize, 1, 1, 0, IntPtr.Zero, kernelParamsPtr, IntPtr.Zero);
@@ -478,11 +476,11 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
                     CudaCtxSynchronize();
                     sw.Stop();
 
-                    var averageLatency =(sw.Elapsed.TotalNanoseconds) / arraySize;
+                    var averageLatency = (sw.Elapsed.TotalNanoseconds) / arraySize;
                     _output.WriteLine($"Average memory access latency: {averageLatency:F2} ns");
 
                     // GDDR6 should provide reasonable latency for random access
-                    averageLatency .Should().BeLessThan(1000, "Memory latency should be reasonable for GDDR6");
+                    averageLatency.Should().BeLessThan(1000, "Memory latency should be reasonable for GDDR6");
 
                     _baseline.MemoryLatencyNs = averageLatency;
                 }
@@ -501,11 +499,16 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
         }
         finally
         {
-            if(deviceData != IntPtr.Zero) CudaFree(deviceData);
-            if(deviceIndices != IntPtr.Zero) CudaFree(deviceIndices);
-            if(deviceResults != IntPtr.Zero) CudaFree(deviceResults);
-            if(module != IntPtr.Zero) CuModuleUnload(module);
-            if(program != IntPtr.Zero) NvrtcDestroyProgram(ref program);
+            if (deviceData != IntPtr.Zero)
+                CudaFree(deviceData);
+            if (deviceIndices != IntPtr.Zero)
+                CudaFree(deviceIndices);
+            if (deviceResults != IntPtr.Zero)
+                CudaFree(deviceResults);
+            if (module != IntPtr.Zero)
+                CuModuleUnload(module);
+            if (program != IntPtr.Zero)
+                NvrtcDestroyProgram(ref program);
         }
 
         await Task.CompletedTask;
@@ -514,7 +517,7 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
     [Fact]
     public async Task SavePerformanceBaseline_ForRegressionTesting()
     {
-        if(!_cudaInitialized)
+        if (!_cudaInitialized)
         {
             _output.WriteLine("CUDA not available - skipping baseline creation");
             return;
@@ -538,7 +541,7 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
 
     public void Dispose()
     {
-        if(_cudaContext != IntPtr.Zero)
+        if (_cudaContext != IntPtr.Zero)
         {
             CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
@@ -558,18 +561,18 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
 
         public string ToJson()
         {
-            return System.Text.Json.JsonSerializer.Serialize(this, new System.Text.Json.JsonSerializerOptions 
-            { 
-                WriteIndented = true 
+            return System.Text.Json.JsonSerializer.Serialize(this, new System.Text.Json.JsonSerializerOptions
+            {
+                WriteIndented = true
             });
         }
     }
 
     private class MemoryBandwidthResults
     {
-        public List<double> H2DBandwidths { get; } = new();
-        public List<double> D2HBandwidths { get; } = new();
-        public List<double> D2DBandwidths { get; } = new();
+        public List<double> H2DBandwidths { get; } = [];
+        public List<double> D2HBandwidths { get; } = [];
+        public List<double> D2DBandwidths { get; } = [];
 
         public void AddResult(int sizeMB, BandwidthMeasurement bandwidth)
         {
@@ -665,7 +668,7 @@ public static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
-        if(!condition)
+        if (!condition)
         {
             throw new SkipException(reason);
         }

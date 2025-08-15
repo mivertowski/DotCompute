@@ -46,7 +46,7 @@ public class MemoryOptionsTests
         var options = MemoryOptions.ReadOnly | MemoryOptions.Cached;
 
         // Assert
-       ((int)options).Should().Be(1 | 8);
+        ((int)options).Should().Be(1 | 8);
         options.Should().HaveFlag(MemoryOptions.ReadOnly);
         options.Should().HaveFlag(MemoryOptions.Cached);
         options.Should().NotHaveFlag(MemoryOptions.WriteOnly);
@@ -59,7 +59,7 @@ public class MemoryOptionsTests
     [InlineData(MemoryOptions.HostVisible, 4)]
     [InlineData(MemoryOptions.Cached, 8)]
     [InlineData(MemoryOptions.Atomic, 16)]
-    public void Flag_Values_ShouldBeCorrect(MemoryOptions option, int expectedValue) =>((int)option).Should().Be(expectedValue);
+    public void Flag_Values_ShouldBeCorrect(MemoryOptions option, int expectedValue) => ((int)option).Should().Be(expectedValue);
 
     [Fact]
     public void Multiple_Flags_CanBeCombined()
