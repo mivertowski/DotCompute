@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
@@ -72,7 +72,7 @@ public static class CudaTestUtilities
     /// </summary>
     public static CudaDeviceProperties? GetDeviceProperties(int deviceId)
     {
-        if (!IsValidDeviceId(deviceId)) return null;
+        if(!IsValidDeviceId(deviceId)) return null;
 
         try
         {
@@ -92,10 +92,10 @@ public static class CudaTestUtilities
     public static bool SupportsComputeCapability(int deviceId, int minMajor, int minMinor = 0)
     {
         var props = GetDeviceProperties(deviceId);
-        if (props == null) return false;
+        if(props == null) return false;
 
         return props.Value.Major > minMajor || 
-               (props.Value.Major == minMajor && props.Value.Minor >= minMinor);
+              (props.Value.Major == minMajor && props.Value.Minor >= minMinor);
     }
 
     /// <summary>
@@ -118,23 +118,23 @@ public static class CudaTestUtilities
     /// </summary>
     public static bool SupportsTensorCores(int deviceId)
     {
-        // Tensor Cores are available on compute capability 7.0+ (Volta, Turing, Ampere, etc.)
+        // Tensor Cores are available on compute capability 7.0+(Volta, Turing, Ampere, etc.)
         return SupportsComputeCapability(deviceId, 7, 0);
     }
 
     /// <summary>
     /// Get memory usage information for a device
     /// </summary>
-    public static (ulong free, ulong total) GetMemoryInfo()
+    public static(ulong free, ulong total) GetMemoryInfo()
     {
         try
         {
             CudaRuntime.cudaMemGetInfo(out var free, out var total);
-            return (free, total);
+            return(free, total);
         }
         catch
         {
-            return (0, 0);
+            return(0, 0);
         }
     }
 
@@ -143,7 +143,7 @@ public static class CudaTestUtilities
     /// </summary>
     public static CudaAccelerator CreateTestAccelerator(int deviceId = 0, ILogger<CudaAccelerator>? logger = null)
     {
-        if (!IsValidDeviceId(deviceId))
+        if(!IsValidDeviceId(deviceId))
         {
             throw new ArgumentException($"Invalid device ID: {deviceId}");
         }
@@ -167,7 +167,7 @@ public static class CudaTestUtilities
     /// </summary>
     public static void RequireCuda()
     {
-        if (!IsCudaAvailable())
+        if(!IsCudaAvailable())
         {
             throw new SkipException("CUDA is not available");
         }
@@ -180,7 +180,7 @@ public static class CudaTestUtilities
     {
         RequireCuda();
         
-        if (!IsNvrtcAvailable())
+        if(!IsNvrtcAvailable())
         {
             throw new SkipException("NVRTC is not available");
         }
@@ -193,7 +193,7 @@ public static class CudaTestUtilities
     {
         RequireCuda();
         
-        if (!SupportsComputeCapability(deviceId, minMajor, minMinor))
+        if(!SupportsComputeCapability(deviceId, minMajor, minMinor))
         {
             throw new SkipException($"Compute capability {minMajor}.{minMinor}+ required");
         }
@@ -207,7 +207,7 @@ public static class CudaTestUtilities
         RequireCuda();
         
         var props = GetDeviceProperties(deviceId);
-        if (props == null || !IsRTX2000Series(props.Value.Name))
+        if(props == null || !IsRTX2000Series(props.Value.Name))
         {
             throw new SkipException("RTX 2000 series GPU required");
         }
@@ -237,25 +237,25 @@ public static class CudaTestUtilities
 
         // Check CUDA availability
         validation.CudaAvailable = IsCudaAvailable();
-        if (validation.CudaAvailable)
+        if(validation.CudaAvailable)
         {
             validation.DeviceCount = GetDeviceCount();
             
             // Get primary device info
             var props = GetDeviceProperties(0);
-            if (props != null)
+            if(props != null)
             {
                 validation.PrimaryDeviceName = props.Value.Name;
                 validation.ComputeCapability = $"{props.Value.Major}.{props.Value.Minor}";
-                validation.DeviceMemoryGB = (double)props.Value.TotalGlobalMem / (1024 * 1024 * 1024);
+                validation.DeviceMemoryGB =(double)props.Value.TotalGlobalMem /(1024 * 1024 * 1024);
             }
         }
 
         // Check NVRTC availability
         validation.NvrtcAvailable = IsNvrtcAvailable();
-        if (validation.NvrtcAvailable)
+        if(validation.NvrtcAvailable)
         {
-            var (major, minor) = CudaKernelCompiler.GetNvrtcVersion();
+            var(major, minor) = CudaKernelCompiler.GetNvrtcVersion();
             validation.NvrtcVersion = $"{major}.{minor}";
         }
 
@@ -283,7 +283,7 @@ public static class CudaTestData
 __global__ void vector_add(float* a, float* b, float* c, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         c[idx] = a[idx] + b[idx];
     }
 }"),
@@ -297,7 +297,7 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
 __global__ void scalar_multiply(float* input, float* output, float scalar, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         output[idx] = input[idx] * scalar;
     }
 }"),
@@ -314,17 +314,17 @@ __global__ void reduce_sum(float* input, float* output, int n)
     int tid = threadIdx.x;
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     
-    shared_data[tid] = (idx < n) ? input[idx] : 0.0f;
+    shared_data[tid] =(idx < n) ? input[idx] : 0.0f;
     __syncthreads();
     
-    for (int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
-        if (tid < stride) {
+    for(int stride = blockDim.x / 2; stride > 0; stride >>= 1) {
+        if(tid < stride) {
             shared_data[tid] += shared_data[tid + stride];
         }
         __syncthreads();
     }
     
-    if (tid == 0) {
+    if(tid == 0) {
         output[blockIdx.x] = shared_data[0];
     }
 }"),
@@ -340,9 +340,9 @@ __global__ void matrix_multiply(float* A, float* B, float* C, int n)
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
     
-    if (row < n && col < n) {
+    if(row < n && col < n) {
         float sum = 0.0f;
-        for (int k = 0; k < n; k++) {
+        for(int k = 0; k < n; k++) {
             sum += A[row * n + k] * B[k * n + col];
         }
         C[row * n + col] = sum;
@@ -365,7 +365,7 @@ __global__ void matrix_multiply(float* A, float* B, float* C, int n)
 __global__ void math_kernel(float* input, float* output, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         float val = input[idx];
         output[idx] = sinf(val) + cosf(val) + sqrtf(val);
     }
@@ -387,13 +387,13 @@ __global__ void tensor_core_gemm(half* a, half* b, float* c, int n)
     wmma::fragment<wmma::matrix_b, 16, 16, 16, half, wmma::col_major> b_frag;
     wmma::fragment<wmma::accumulator, 16, 16, 16, float> c_frag;
     
-    int warp_row = (blockIdx.y * blockDim.y + threadIdx.y) / 32 * 16;
-    int warp_col = (blockIdx.x * blockDim.x + threadIdx.x) / 32 * 16;
+    int warp_row =(blockIdx.y * blockDim.y + threadIdx.y) / 32 * 16;
+    int warp_col =(blockIdx.x * blockDim.x + threadIdx.x) / 32 * 16;
     
-    if (warp_row < n && warp_col < n) {
+    if(warp_row < n && warp_col < n) {
         wmma::fill_fragment(c_frag, 0.0f);
         
-        for (int k = 0; k < n; k += 16) {
+        for(int k = 0; k < n; k += 16) {
             wmma::load_matrix_sync(a_frag, a + warp_row * n + k, n);
             wmma::load_matrix_sync(b_frag, b + k * n + warp_col, n);
             wmma::mma_sync(c_frag, a_frag, b_frag, c_frag);
@@ -467,7 +467,7 @@ public class TestEnvironmentValidation
         sb.AppendLine("CUDA Test Environment Validation:");
         sb.AppendLine($"  CUDA Available: {CudaAvailable}");
         
-        if (CudaAvailable)
+        if(CudaAvailable)
         {
             sb.AppendLine($"  Device Count: {DeviceCount}");
             sb.AppendLine($"  Primary Device: {PrimaryDeviceName}");
@@ -476,7 +476,7 @@ public class TestEnvironmentValidation
         }
         
         sb.AppendLine($"  NVRTC Available: {NvrtcAvailable}");
-        if (NvrtcAvailable)
+        if(NvrtcAvailable)
         {
             sb.AppendLine($"  NVRTC Version: {NvrtcVersion}");
         }

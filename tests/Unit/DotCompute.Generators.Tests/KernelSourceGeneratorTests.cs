@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Immutable;
@@ -42,7 +42,7 @@ public class TestKernels
     [Kernel]
     public static void AddArrays(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -74,7 +74,7 @@ public class MathKernels
     [Kernel(Backends = KernelBackends.CPU, VectorSize = 8)]
     public static void MultiplyArrays(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] * b[i];
         }
@@ -106,7 +106,7 @@ public class MultiBackendKernel
     [Kernel(Backends = KernelBackends.CPU | KernelBackends.CUDA | KernelBackends.Metal)]
     public static void ProcessData(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i] * 2.0f;
         }
@@ -164,7 +164,7 @@ public class ParallelKernels
     [Kernel(IsParallel = true, VectorSize = 16)]
     public static void ParallelSum(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i] + 1.0f;
         }
@@ -194,7 +194,7 @@ public class OptimizedKernels
             MemoryPattern = MemoryAccessPattern.Sequential)]
     public static void OptimizedAdd(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -205,7 +205,7 @@ public class OptimizedKernels
         var result = TestHelper.RunGenerator(_generator, source);
 
         // Assert
-        result.Assert.Empty(Diagnostics);
+        resultDiagnostics.Should().BeEmpty();
         result.GeneratedSources.Should().NotBeEmpty();
     }
 
@@ -301,12 +301,12 @@ public class ComplexKernels
     [Kernel]
     public static void ComplexOperation(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             var value = input[i];
-            if (value > 0)
+            if(value > 0)
             {
-                output[i] = (float)Math.Sqrt(value * 2.0f + 1.0f);
+                output[i] =(float)Math.Sqrt(value * 2.0f + 1.0f);
             }
             else
             {
@@ -320,7 +320,7 @@ public class ComplexKernels
         var result = TestHelper.RunGenerator(_generator, source);
 
         // Assert
-        result.Assert.Empty(Diagnostics);
+        resultDiagnostics.Should().BeEmpty();
         result.GeneratedSources.Should().NotBeEmpty();
         var cpuImpl = result.GeneratedSources.First(s => s.HintName.Contains("CPU.g.cs"));
         cpuImpl.SourceText.ToString().Contain("ComplexOperationCpuKernel");
@@ -339,7 +339,7 @@ public class GenericKernels<T> where T : unmanaged
     [Kernel]
     public static void ProcessGeneric(T[] input, T[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i];
         }

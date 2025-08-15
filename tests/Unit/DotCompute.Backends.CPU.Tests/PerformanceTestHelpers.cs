@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 
@@ -18,12 +18,12 @@ internal static class PerformanceTestHelpers
     public static bool IsVirtualizedEnvironment()
     {
         // Check for WSL
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {
             try
             {
                 var osRelease = System.IO.File.ReadAllText("/proc/version");
-                if (osRelease.Contains("microsoft", StringComparison.OrdinalIgnoreCase) ||
+                if(osRelease.Contains("microsoft", StringComparison.OrdinalIgnoreCase) ||
                     osRelease.Contains("WSL", StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
@@ -36,7 +36,7 @@ internal static class PerformanceTestHelpers
         try
         {
             var cpuInfo = System.IO.File.ReadAllText("/proc/cpuinfo");
-            if (cpuInfo.Contains("hypervisor", StringComparison.OrdinalIgnoreCase))
+            if(cpuInfo.Contains("hypervisor", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
             }
@@ -52,14 +52,14 @@ internal static class PerformanceTestHelpers
     public static double GetMinimumExpectedSpeedup(double baselineSpeedup, string testName = "")
     {
         // In virtualized environments, performance can be significantly lower
-        if (IsVirtualizedEnvironment())
+        if(IsVirtualizedEnvironment())
         {
             // Reduce expectations by 40% in virtual environments
             return baselineSpeedup * 0.6;
         }
 
         // On CI/CD systems, performance can also be lower
-        if (Environment.GetEnvironmentVariable("CI") != null ||
+        if(Environment.GetEnvironmentVariable("CI") != null ||
             Environment.GetEnvironmentVariable("GITHUB_ACTIONS") != null)
         {
             // Reduce expectations by 30% on CI
@@ -77,9 +77,9 @@ internal static class PerformanceTestHelpers
     {
         var minimumSpeedup = GetMinimumExpectedSpeedup(baselineExpectedSpeedup, testName);
 
-        if (actualSpeedup < minimumSpeedup)
+        if(actualSpeedup < minimumSpeedup)
         {
-            var environment = IsVirtualizedEnvironment() ? " (virtualized environment detected)" : "";
+            var environment = IsVirtualizedEnvironment() ? "(virtualized environment detected)" : "";
             throw new Xunit.Sdk.XunitException(
                 $"Expected {testName} speedup > {minimumSpeedup:F1}x{environment}, but got {actualSpeedup:F2}x");
         }
@@ -90,12 +90,12 @@ internal static class PerformanceTestHelpers
     /// </summary>
     public static double GetPerformanceTolerance()
     {
-        if (IsVirtualizedEnvironment())
+        if(IsVirtualizedEnvironment())
         {
             return 0.15; // 15% tolerance in virtual environments
         }
 
-        if (Environment.GetEnvironmentVariable("CI") != null)
+        if(Environment.GetEnvironmentVariable("CI") != null)
         {
             return 0.10; // 10% tolerance on CI
         }

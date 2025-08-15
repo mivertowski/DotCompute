@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -96,7 +96,7 @@ public class CUDAKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _executor.ExecuteAsync(kernel, null!, config).AsTask());
+           () => _executor.ExecuteAsync(kernel, null!, config).AsTask());
     }
 
     [Fact]
@@ -108,7 +108,7 @@ public class CUDAKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), null!).AsTask());
+           () => _executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), null!).AsTask());
     }
 
     [Fact]
@@ -244,7 +244,7 @@ public class CUDAKernelExecutorTests : IDisposable
         Assert.NotNull(config);
         Assert.True(config.GlobalWorkSize![0] >= size);
         
-        // Should use reasonable block sizes for CUDA (typically 128, 256 or 512)
+        // Should use reasonable block sizes for CUDA(typically 128, 256 or 512)
         Assert.Contains(config.LocalWorkSize![0], 512 }); // new[] { 128;
     }
 
@@ -284,7 +284,7 @@ public class CUDAKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => _executor.ProfileAsync(kernel, arguments.ToCoreKernelArguments(), config, 0).AsTask());
+           () => _executor.ProfileAsync(kernel, arguments.ToCoreKernelArguments(), config, 0).AsTask());
     }
 
     [Fact]
@@ -297,7 +297,7 @@ public class CUDAKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => _executor.ProfileAsync(kernel, arguments.ToCoreKernelArguments(), config, -5).AsTask());
+           () => _executor.ProfileAsync(kernel, arguments.ToCoreKernelArguments(), config, -5).AsTask());
     }
 
     [Fact]
@@ -356,7 +356,7 @@ public class CUDAKernelExecutorTests : IDisposable
         // Assert
         Assert.NotNull(result);
         // Should either succeed or fail gracefully with resource constraints
-        if (!result.Success)
+        if(!result.Success)
         {
             Assert.NotNull(result.ErrorMessage);
             Assert.NotEmpty(result.ErrorMessage);
@@ -376,7 +376,7 @@ public class CUDAKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ObjectDisposedException>(
-            () => executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), config).AsTask());
+           () => executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), config).AsTask());
     }
 
     [Theory]

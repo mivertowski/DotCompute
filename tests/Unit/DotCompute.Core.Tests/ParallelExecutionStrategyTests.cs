@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -392,7 +392,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
     {
         var accelerators = new List<Mock<IAccelerator>>();
 
-        for (int i = 0; i < count; i++)
+        for(int i = 0; i < count; i++)
         {
             var mock = new Mock<IAccelerator>();
             mock.Setup(a => a.Info).Returns(new AcceleratorInfo(
@@ -410,18 +410,18 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                 Id = $"gpu_{i}"
             });
 
-            mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()
-                .Returns(ValueTask.CompletedTask)));
+            mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()))
+                .Returns(ValueTask.CompletedTask);
 
             // Setup Memory property to return a mock IMemoryManager
             var mockMemoryManager = new Mock<IMemoryManager>();
-            mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()
+            mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() =>
                 {
                     var mockBuffer = new Mock<IMemoryBuffer>();
                     mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
                     return mockBuffer.Object;
-                })));
+                });
             mock.Setup(a => a.Memory).Returns(mockMemoryManager.Object);
 
             accelerators.Add(mock);
@@ -443,18 +443,18 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
         {
             Id = "cpu_0"
         });
-        cpuMock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()
-            .Returns(ValueTask.CompletedTask)));
+        cpuMock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.CompletedTask);
         
         // Setup Memory property for CPU accelerator
         var cpuMemoryManager = new Mock<IMemoryManager>();
-        cpuMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()
+        cpuMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
             {
                 var mockBuffer = new Mock<IMemoryBuffer>();
                 mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
                 return mockBuffer.Object;
-            })));
+            });
         cpuMock.Setup(a => a.Memory).Returns(cpuMemoryManager.Object);
         
         accelerators.Add(cpuMock);
@@ -470,8 +470,8 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
         _mockAcceleratorManager.Setup(m => m.Count).Returns(allAccelerators.Length);
         _mockAcceleratorManager.Setup(m => m.Default).Returns(allAccelerators.First());
         
-        _mockAcceleratorManager.Setup(m => m.GetAcceleratorById(It.IsAny<string>()
-            .Returns<string>(id => allAccelerators.FirstOrDefault(a => a.Info.Id == id))));
+        _mockAcceleratorManager.Setup(m => m.GetAcceleratorById(It.IsAny<string>()))
+            .Returns<string>(id => allAccelerators.FirstOrDefault(a => a.Info.Id == id));
     }
 
     private void SetupMockKernelManager()
@@ -484,7 +484,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
             It.IsAny<IAccelerator>(),
             It.IsAny<KernelGenerationContext>(),
             It.IsAny<DotCompute.Core.Kernels.CompilationOptions>(),
-            It.IsAny<CancellationToken>()
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync((string kernelName, Type[] inputTypes, Type outputType, IAccelerator device, 
                           KernelGenerationContext context, DotCompute.Core.Kernels.CompilationOptions options, CancellationToken ct) =>
             {
@@ -493,28 +493,16 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                 {
                     Name = kernelName,
                     Binary = new byte[] { 0x01, 0x02, 0x03 }, // Dummy binary data
-                    Parameters = new DotCompute.Core.Execution.KernelParameter[]
+                    Parameters = new DotCompute.Core.Kernels.KernelParameter[]
                     {
-                        new DotCompute.Core.Execution.KernelParameter 
-                        { 
-                            Name = "input", 
-                            Type = typeof(float), 
-                            IsInput = true,
-                            IsOutput = false
-                        },
-                        new DotCompute.Core.Execution.KernelParameter 
-                        { 
-                            Name = "output", 
-                            Type = typeof(float), 
-                            IsInput = false,
-                            IsOutput = true
-                        }
+                        new DotCompute.Core.Kernels.KernelParameter { Name = "input", Type = typeof(float), IsInput = true, IsOutput = false },
+                        new DotCompute.Core.Kernels.KernelParameter { Name = "output", Type = typeof(float), IsInput = false, IsOutput = true }
                     },
                     Handle = IntPtr.Zero,
                     RequiredWorkGroupSize = new[] { 256, 1, 1 },
                     SharedMemorySize = 1024
                 };
-            })));
+            });
 
         // Setup ExecuteKernelAsync to return successful results
         _mockKernelManager.Setup(m => m.ExecuteKernelAsync(
@@ -522,7 +510,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
             It.IsAny<KernelArgument[]>(),
             It.IsAny<IAccelerator>(),
             It.IsAny<KernelExecutionConfig>(),
-            It.IsAny<CancellationToken>()
+            It.IsAny<CancellationToken>()))
             .ReturnsAsync(new KernelExecutionResult
             {
                 Success = true,
@@ -538,14 +526,14 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                     TotalTimeMs = 13.0,
                     EffectiveComputeThroughputGFLOPS = 100.0
                 }
-            })));
+            });
     }
 
     private DotCompute.Abstractions.IBuffer<T>[] CreateMockBuffers<T>(int elementCount, int bufferCount) where T : unmanaged
     {
         var buffers = new DotCompute.Abstractions.IBuffer<T>[bufferCount];
         
-        for (int i = 0; i < bufferCount; i++)
+        for(int i = 0; i < bufferCount; i++)
         {
             var mock = new Mock<DotCompute.Abstractions.IBuffer<T>>();
             mock.Setup(b => b.SizeInBytes).Returns(elementCount * System.Runtime.InteropServices.Marshal.SizeOf<T>());
@@ -559,57 +547,12 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
     private ModelParallelWorkload<T> CreateMockModelParallelWorkload<T>() where T : unmanaged
     {
         // Create actual ManagedCompiledKernel instances instead of mocking them
-        var kernel1 = new DotCompute.Core.Execution.ManagedCompiledKernel
-        {
-            Name = "linear_kernel",
-            Binary = new byte[] { 0x01, 0x02, 0x03, 0x04 },
-            Parameters = new DotCompute.Core.Execution.KernelParameter[]
-            {
-                new DotCompute.Core.Execution.KernelParameter 
-                { 
-                    Name = "input", 
-                    Type = typeof(T), 
-                    IsInput = true,
-                    IsOutput = false
-                },
-                new DotCompute.Core.Execution.KernelParameter 
-                { 
-                    Name = "output", 
-                    Type = typeof(T), 
-                    IsInput = false,
-                    IsOutput = true
-                }
-            },
-            Handle = IntPtr.Zero,
-            RequiredWorkGroupSize = new[] { 256, 1, 1 },
-            SharedMemorySize = 1024
-        };
+        var mockAccelerator = Mock.Of<IAccelerator>();
+        var compiledKernel = new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 1024, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
+        var kernel1 = new DotCompute.Core.Execution.ManagedCompiledKernel("linear_kernel", mockAccelerator, compiledKernel);
 
-        var kernel2 = new DotCompute.Core.Execution.ManagedCompiledKernel
-        {
-            Name = "relu_kernel",
-            Binary = new byte[] { 0x05, 0x06, 0x07, 0x08 },
-            Parameters = new DotCompute.Core.Execution.KernelParameter[]
-            {
-                new DotCompute.Core.Execution.KernelParameter 
-                { 
-                    Name = "input", 
-                    Type = typeof(T), 
-                    IsInput = true,
-                    IsOutput = false
-                },
-                new DotCompute.Core.Execution.KernelParameter 
-                { 
-                    Name = "output", 
-                    Type = typeof(T), 
-                    IsInput = false,
-                    IsOutput = true
-                }
-            },
-            Handle = IntPtr.Zero,
-            RequiredWorkGroupSize = new[] { 256, 1, 1 },
-            SharedMemorySize = 512
-        };
+        var compiledKernel2 = new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 512, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
+        var kernel2 = new DotCompute.Core.Execution.ManagedCompiledKernel("relu_kernel", mockAccelerator, compiledKernel2);
         
         return new ModelParallelWorkload<T>
         {
@@ -668,7 +611,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                     Id = i, 
                     InputBuffers = CreateMockBuffers<T>(64, 1),
                     OutputBuffers = CreateMockBuffers<T>(64, 1),
-                    EstimatedProcessingTimeMs = (i % 10) + 1
+                    EstimatedProcessingTimeMs =(i % 10) + 1
                 })
                 .ToList()
         };
@@ -684,7 +627,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
                     Id = i, 
                     InputBuffers = CreateMockBuffers<T>(32, 1),
                     OutputBuffers = CreateMockBuffers<T>(32, 1),
-                    EstimatedProcessingTimeMs = (i % 50) + 1
+                    EstimatedProcessingTimeMs =(i % 50) + 1
                 })
                 .ToList()
         };
@@ -694,7 +637,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_strategy != null)
+        if(_strategy != null)
         {
             await _strategy.DisposeAsync();
         }

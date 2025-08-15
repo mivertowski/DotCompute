@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -49,11 +49,11 @@ public class CudaSimulationTests
         const int memoryClockRateKHz = 14000000; // 14 GHz effective
         const int memoryBusWidth = 192; // bits
         
-        // Theoretical bandwidth = (Clock Rate * Bus Width) / 8
-        var theoreticalBandwidth = (memoryClockRateKHz / 1000.0 * memoryBusWidth) / 8.0 / 1000.0;
+        // Theoretical bandwidth =(Clock Rate * Bus Width) / 8
+        var theoreticalBandwidth =(memoryClockRateKHz / 1000.0 * memoryBusWidth) / 8.0 / 1000.0;
         
         _output.WriteLine($"Theoretical memory bandwidth: {theoreticalBandwidth:F1} GB/s");
-        Assert.True(theoreticalBandwidth > 300, "RTX 2000 Ada Gen should have >300 GB/s theoretical bandwidth");
+        theoreticalBandwidth.Should().BeGreaterThan(300, "RTX 2000 Ada Gen should have >300 GB/s theoretical bandwidth");
     }
 
     [Fact]
@@ -67,7 +67,7 @@ public class CudaSimulationTests
         var c = new float[N];
 
         // Initialize data
-        for (int i = 0; i < N; i++)
+        for(int i = 0; i < N; i++)
         {
             a[i] = i * 0.5f;
             b[i] = i * 0.25f;
@@ -76,14 +76,14 @@ public class CudaSimulationTests
         // Simulate kernel execution on CPU
         await Task.Run(() =>
         {
-            for (int i = 0; i < N; i++)
+            for(int i = 0; i < N; i++)
             {
                 c[i] = a[i] + b[i]; // Vector addition
             }
         });
 
         // Verify results
-        for (int i = 0; i < N; i++)
+        for(int i = 0; i < N; i++)
         {
             var expected = a[i] + b[i];
             Assert.Equal(expected, c[i], 0.0001f);
@@ -103,13 +103,13 @@ public class CudaSimulationTests
 
         // Choose block size that's a multiple of warp size
         var blockSize = Math.Min(256, maxThreadsPerBlock); // Common choice
-        while (blockSize % warpSize != 0) blockSize--;
+        while(blockSize % warpSize != 0) blockSize--;
 
-        var gridSize = (elements + blockSize - 1) / blockSize; // Ceiling division
+        var gridSize =(elements + blockSize - 1) / blockSize; // Ceiling division
 
-        Assert.True(blockSize >= warpSize, "Block size should be at least one warp");
-        Assert.True(blockSize <= maxThreadsPerBlock, "Block size should not exceed maximum");
-        Assert.True(gridSize * blockSize >= elements, "Grid should cover all elements");
+        blockSize.Should().BeGreaterThanOrEqualTo(warpSize, "Block size should be at least one warp");
+        blockSize.Should().BeLessThanOrEqualTo(maxThreadsPerBlock, "Block size should not exceed maximum");
+       (gridSize * blockSize).Should().BeGreaterThanOrEqualTo(elements, "Grid should cover all elements");
 
         _output.WriteLine($"Simulated launch config for {elements} elements: Grid={gridSize}, Block={blockSize}");
     }
@@ -121,10 +121,10 @@ public class CudaSimulationTests
         // Simulate compute capability validation
         var testCases = new[]
         {
-            new { Major = 8, Minor = 9, Expected = "Ada Lovelace (RTX 2000 series)" },
-            new { Major = 8, Minor = 6, Expected = "Ampere (RTX 30 series)" },
-            new { Major = 7, Minor = 5, Expected = "Turing (RTX 20 series)" },
-            new { Major = 6, Minor = 1, Expected = "Pascal (GTX 10 series)" }
+            new { Major = 8, Minor = 9, Expected = "Ada Lovelace(RTX 2000 series)" },
+            new { Major = 8, Minor = 6, Expected = "Ampere(RTX 30 series)" },
+            new { Major = 7, Minor = 5, Expected = "Turing(RTX 20 series)" },
+            new { Major = 6, Minor = 1, Expected = "Pascal(GTX 10 series)" }
         };
 
         foreach (var testCase in testCases)
@@ -134,13 +134,13 @@ public class CudaSimulationTests
             Assert.Contains("Unified Memory", capabilities);
             Assert.Contains("Dynamic Parallelism", capabilities);
             
-            if (testCase.Major >= 8)
+            if(testCase.Major >= 8)
             {
                 Assert.Contains("Hardware Accelerated Ray Tracing", capabilities);
                 Assert.Contains("Tensor Cores", capabilities);
             }
 
-            _output.WriteLine($"Compute {testCase.Major}.{testCase.Minor} ({testCase.Expected}): {string.Join(", ", capabilities)}");
+            _output.WriteLine($"Compute {testCase.Major}.{testCase.Minor}{testCase.Expected}): {string.Join(", ", capabilities)}");
         }
     }
 
@@ -153,18 +153,18 @@ public class CudaSimulationTests
             "Cooperative Groups"
         };
 
-        if (major >= 7)
+        if(major >= 7)
         {
             capabilities.Add("Independent Thread Scheduling");
         }
 
-        if (major >= 8)
+        if(major >= 8)
         {
             capabilities.Add("Hardware Accelerated Ray Tracing");
             capabilities.Add("Tensor Cores");
         }
 
-        if (major == 8 && minor >= 9)
+        if(major == 8 && minor >= 9)
         {
             capabilities.Add("Ada Lovelace Architecture");
             capabilities.Add("3rd Gen Tensor Cores");
@@ -201,11 +201,11 @@ public class CudaSimulationTests
 
     private static double SimulateMemoryEfficiency(int stride, int threadsPerWarp)
     {
-        if (stride == 1)
+        if(stride == 1)
             return 1.0; // Perfect coalescing
-        else if (stride == 2)
+        else if(stride == 2)
             return 0.5; // Half efficiency
-        else if (stride == 4)
+        else if(stride == 4)
             return 0.25; // Quarter efficiency
         else
             return 0.1; // Random/worst case
@@ -228,10 +228,10 @@ public class CudaSimulationTests
         {
             var canRecover = SimulateErrorRecovery(error.Code);
             
-            if (error.IsError)
+            if(error.IsError)
             {
-                Assert.True(error.Code != 0, "Error codes should be non-zero");
-                _output.WriteLine($"Error {error.Code} ({error.Name}): Recovery possible = {canRecover}");
+                (error.Code != 0).Should().BeTrue();
+                _output.WriteLine($"Error {error.Code}{error.Name}): Recovery possible = {canRecover}");
             }
             else
             {

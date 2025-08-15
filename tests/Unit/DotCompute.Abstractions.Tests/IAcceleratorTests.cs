@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -155,7 +155,7 @@ public class IAcceleratorTests
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(
-            () => _mockAccelerator.Object.CompileKernelAsync(definition, cancellationToken: cts.Token));
+            () => _mockAccelerator.Object.CompileKernelAsync(definition, cancellationToken: cts.Token).AsTask());
     }
 
     [Fact]
@@ -167,7 +167,7 @@ public class IAcceleratorTests
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _mockAccelerator.Object.CompileKernelAsync(null!));
+            () => _mockAccelerator.Object.CompileKernelAsync(null!).AsTask());
     }
 
     [Fact]
@@ -182,7 +182,7 @@ public class IAcceleratorTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AcceleratorException>(
-            () => _mockAccelerator.Object.CompileKernelAsync(definition));
+            () => _mockAccelerator.Object.CompileKernelAsync(definition).AsTask());
         exception.Message.Should().Be("Compilation failed");
     }
 
@@ -216,7 +216,7 @@ public class IAcceleratorTests
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(
-            () => _mockAccelerator.Object.SynchronizeAsync(cts.Token).AsTask());
+           () => _mockAccelerator.Object.SynchronizeAsync(cts.Token).AsTask());
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public class IAcceleratorTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AcceleratorException>(
-            () => _mockAccelerator.Object.SynchronizeAsync().AsTask());
+           () => _mockAccelerator.Object.SynchronizeAsync().AsTask());
         exception.Message.Should().Be("Device synchronization failed");
     }
 

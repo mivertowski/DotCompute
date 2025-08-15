@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -49,7 +49,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         compilationResult.CompilationTime.Should().BePositive();
         
         // Higher optimization levels might take longer to compile
-        if (level == OptimizationLevel.Maximum)
+        if(level == OptimizationLevel.Maximum)
         {
             compilationResult.CompilationTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
         }
@@ -62,10 +62,10 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         var kernelSources = new[]
         {
-            ("vector_add", VectorAddKernelSource),
-            ("vector_mul", VectorMultiplyKernelSource),
-            ("matrix_transpose", MatrixTransposeKernelSource),
-            ("reduction_sum", ReductionKernelSource)
+           ("vector_add", VectorAddKernelSource),
+           ("vector_mul", VectorMultiplyKernelSource),
+           ("matrix_transpose", MatrixTransposeKernelSource),
+           ("reduction_sum", ReductionKernelSource)
         };
 
         var compilationOptions = new CompilationOptions
@@ -84,7 +84,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(kernelSources.Length, concurrentResults.Count());
-        concurrentResults.Should().AllSatisfy(r => r.CompilationSuccess);
+        concurrentResults.Should().AllSatisfy(r => r.CompilationSuccess.Should().BeTrue());
         
         var totalCompilationTime = concurrentResults.Sum(r => r.CompilationTime.TotalMilliseconds);
         var concurrentTime = stopwatch.Elapsed.TotalMilliseconds;
@@ -125,7 +125,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 int i = get_global_id(0);
                 
                 #ifdef ENABLE_BOUNDS_CHECK
-                if (i < VECTOR_SIZE) {
+                if(i < VECTOR_SIZE) {
                 #endif
                     output[i] = input[i] * 2.0f;
                 #ifdef ENABLE_BOUNDS_CHECK
@@ -169,7 +169,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             await computeEngine.CompileKernelAsync(invalidKernel, "invalid_kernel", compilationOptions));
 
         Assert.NotNull(exception);
-        exception.Assert.Contains("compilation", Message);
+        exception.Message.Should().Contain("compilation");
     }
 
     [Fact]
@@ -216,7 +216,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         var availableBackends = computeEngine.AvailableBackends;
         
-        if (!availableBackends.Contains(backendType))
+        if(!availableBackends.Contains(backendType))
         {
             Logger.LogInformation($"Skipping backend test - {backendType} not available");
             return;
@@ -295,7 +295,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         secondCompilation.CompilationSuccess.Should().BeTrue();
         
         // Second compilation should be faster due to caching
-        // (This is an assumption - actual behavior depends on implementation)
+        //(This is an assumption - actual behavior depends on implementation)
         Logger.LogInformation($"First compilation: {firstCompilation.CompilationTime.TotalMilliseconds}ms");
         Logger.LogInformation($"Second compilation: {secondCompilation.CompilationTime.TotalMilliseconds}ms");
     }
@@ -428,7 +428,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 ExecutionTime = executionTime
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             Logger.LogError(ex, "Kernel compilation/execution failed");
@@ -500,7 +500,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 ExecutionTime = executionTime
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             Logger.LogError(ex, "Kernel compilation/execution with options failed");
@@ -517,7 +517,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
 
     private async Task<List<CompilationResult>> CompileKernelsConcurrently(
         IComputeEngine computeEngine,
-        (string Name, string Source)[] kernelSources,
+       (string Name, string Source)[] kernelSources,
         CompilationOptions compilationOptions)
     {
         var tasks = kernelSources.Select(async kernel =>
@@ -529,7 +529,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 compilationOptions);
         });
 
-        return (await Task.WhenAll(tasks)).ToList();
+        return(await Task.WhenAll(tasks)).ToList();
     }
 
     private async Task<CompilationResult> CompileKernelWithTiming(
@@ -553,7 +553,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 CompilationTime = stopwatch.Elapsed
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             Logger.LogError(ex, "Kernel compilation failed");
@@ -573,7 +573,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         var source = new System.Text.StringBuilder();
         
         // Generate many similar functions
-        for (int i = 0; i < functionCount; i++)
+        for(int i = 0; i < functionCount; i++)
         {
             source.AppendLine($@"
             float function_{i}(float x) {{
@@ -588,7 +588,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
                 int i = get_global_id(0);
                 float value = input[i];");
 
-        for (int i = 0; i < Math.Min(functionCount, 10); i++) // Use only first 10 to avoid too much computation
+        for(int i = 0; i < Math.Min(functionCount, 10); i++) // Use only first 10 to avoid too much computation
         {
             source.AppendLine($"                value = function_{i}(value);");
         }
@@ -632,7 +632,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             int col = get_global_id(0);
             int row = get_global_id(1);
             
-            if (col < width && row < height) {
+            if(col < width && row < height) {
                 int inputIndex = row * width + col;
                 int outputIndex = col * height + row;
                 output[outputIndex] = input[inputIndex];
@@ -649,14 +649,14 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
             scratch[lid] = input[gid];
             barrier(CLK_LOCAL_MEM_FENCE);
             
-            for (int offset = get_local_size(0) / 2; offset > 0; offset >>= 1) {
-                if (lid < offset) {
+            for(int offset = get_local_size(0) / 2; offset > 0; offset >>= 1) {
+                if(lid < offset) {
                     scratch[lid] += scratch[lid + offset];
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
             }
             
-            if (lid == 0) {
+            if(lid == 0) {
                 output[get_group_id(0)] = scratch[0];
             }
         }";

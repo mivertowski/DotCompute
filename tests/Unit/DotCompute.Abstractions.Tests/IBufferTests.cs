@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -32,7 +32,7 @@ public class IBufferTests
         // Use reflection to create MappedMemory since constructor is internal
         var constructor = typeof(MappedMemory<T>).GetConstructors(
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)[0];
-        return (MappedMemory<T>)constructor.Invoke(new object[] { buffer, memory, mode });
+        return(MappedMemory<T>)constructor.Invoke(new object[] { buffer, memory, mode });
     }
 
     #region Property Tests
@@ -173,7 +173,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(
-            () => _mockFloatBuffer.Object.Slice(-1, 100));
+           () => _mockFloatBuffer.Object.Slice(-1, 100));
         exception.ParamName.Should().Be("offset");
     }
 
@@ -189,7 +189,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(
-            () => _mockFloatBuffer.Object.Slice(0, invalidLength));
+           () => _mockFloatBuffer.Object.Slice(0, invalidLength));
         exception.ParamName.Should().Be("length");
     }
 
@@ -206,7 +206,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(
-            () => _mockFloatBuffer.Object.Slice(invalidOffset, 10));
+           () => _mockFloatBuffer.Object.Slice(invalidOffset, 10));
         exception.ParamName.Should().Be("offset");
     }
 
@@ -224,7 +224,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(
-            () => _mockFloatBuffer.Object.Slice(offset, invalidLength));
+           () => _mockFloatBuffer.Object.Slice(offset, invalidLength));
         exception.Message.Should().Be("Slice extends beyond buffer boundary");
     }
 
@@ -274,7 +274,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = Assert.Throws<InvalidOperationException>(
-            () => _mockFloatBuffer.Object.AsType<decimal>());
+           () => _mockFloatBuffer.Object.AsType<decimal>());
         exception.Message.Should().Be("Cannot convert to incompatible type");
     }
 
@@ -290,7 +290,7 @@ public class IBufferTests
         // to create generic method calls dynamically, but we can test the pattern
         
         // Arrange & Act & Assert would depend on the specific type
-        if (targetType == typeof(int))
+        if(targetType == typeof(int))
         {
             var mockIntBuffer = new Mock<IBuffer<int>>();
             _mockFloatBuffer.Setup(b => b.AsType<int>()).Returns(mockIntBuffer.Object);
@@ -330,7 +330,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _mockFloatBuffer.Object.CopyToAsync(null!).AsTask());
+           () => _mockFloatBuffer.Object.CopyToAsync(null!).AsTask());
         exception.ParamName.Should().Be("destination");
     }
 
@@ -364,7 +364,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => _mockFloatBuffer.Object.CopyToAsync(-1, mockDestination.Object, 0, 10).AsTask());
+           () => _mockFloatBuffer.Object.CopyToAsync(-1, mockDestination.Object, 0, 10).AsTask());
         exception.ParamName.Should().Be("sourceOffset");
     }
 
@@ -379,7 +379,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => _mockFloatBuffer.Object.CopyToAsync(0, mockDestination.Object, -1, 10).AsTask());
+           () => _mockFloatBuffer.Object.CopyToAsync(0, mockDestination.Object, -1, 10).AsTask());
         exception.ParamName.Should().Be("destinationOffset");
     }
 
@@ -397,7 +397,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _mockFloatBuffer.Object.CopyToAsync(0, mockDestination.Object, 0, invalidCount).AsTask());
+           () => _mockFloatBuffer.Object.CopyToAsync(0, mockDestination.Object, 0, invalidCount).AsTask());
         exception.ParamName.Should().Be("count");
     }
 
@@ -414,7 +414,7 @@ public class IBufferTests
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(
-            () => _mockFloatBuffer.Object.CopyToAsync(mockDestination.Object, cts.Token).AsTask());
+           () => _mockFloatBuffer.Object.CopyToAsync(mockDestination.Object, cts.Token).AsTask());
     }
 
     #endregion
@@ -464,7 +464,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => _mockFloatBuffer.Object.FillAsync(1.0f, -1, 10).AsTask());
+           () => _mockFloatBuffer.Object.FillAsync(1.0f, -1, 10).AsTask());
         exception.ParamName.Should().Be("offset");
     }
 
@@ -480,7 +480,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
-            () => _mockFloatBuffer.Object.FillAsync(1.0f, 0, invalidCount).AsTask());
+           () => _mockFloatBuffer.Object.FillAsync(1.0f, 0, invalidCount).AsTask());
         exception.ParamName.Should().Be("count");
     }
 
@@ -496,7 +496,7 @@ public class IBufferTests
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(
-            () => _mockFloatBuffer.Object.FillAsync(1.0f, cts.Token).AsTask());
+           () => _mockFloatBuffer.Object.FillAsync(1.0f, cts.Token).AsTask());
     }
 
     [Theory]
@@ -596,7 +596,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(
-            () => _mockFloatBuffer.Object.MapRange(-1, 10, MapMode.ReadWrite));
+           () => _mockFloatBuffer.Object.MapRange(-1, 10, MapMode.ReadWrite));
         exception.ParamName.Should().Be("offset");
     }
 
@@ -612,7 +612,7 @@ public class IBufferTests
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(
-            () => _mockFloatBuffer.Object.MapRange(0, invalidLength, MapMode.ReadWrite));
+           () => _mockFloatBuffer.Object.MapRange(0, invalidLength, MapMode.ReadWrite));
         exception.ParamName.Should().Be("length");
     }
 
@@ -646,7 +646,7 @@ public class IBufferTests
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(
-            () => _mockFloatBuffer.Object.MapAsync(cancellationToken: cts.Token).AsTask());
+           () => _mockFloatBuffer.Object.MapAsync(cancellationToken: cts.Token).AsTask());
     }
 
     #endregion
@@ -781,18 +781,18 @@ public class IBufferTests
     {
         // Arrange
         _mockFloatBuffer.SetupGet(b => b.IsDisposed).Returns(true);
-        _mockFloatBuffer.Setup(b => b.Slice(It.IsAny<int>(), It.IsAny<int>()
-                       .Throws(new ObjectDisposedException(nameof(IBuffer<float>)))));
+        _mockFloatBuffer.Setup(b => b.Slice(It.IsAny<int>(), It.IsAny<int>()))
+                       .Throws(new ObjectDisposedException(nameof(IBuffer<float>)));
         _mockFloatBuffer.Setup(b => b.AsType<int>())
                        .Throws(new ObjectDisposedException(nameof(IBuffer<float>)));
 
         // Act & Assert
         var sliceException = Assert.Throws<ObjectDisposedException>(
-            () => _mockFloatBuffer.Object.Slice(0, 10));
+           () => _mockFloatBuffer.Object.Slice(0, 10));
         sliceException.ObjectName.Should().Be(nameof(IBuffer<float>));
 
         var asTypeException = Assert.Throws<ObjectDisposedException>(
-            () => _mockFloatBuffer.Object.AsType<int>());
+           () => _mockFloatBuffer.Object.AsType<int>());
         asTypeException.ObjectName.Should().Be(nameof(IBuffer<float>));
     }
 

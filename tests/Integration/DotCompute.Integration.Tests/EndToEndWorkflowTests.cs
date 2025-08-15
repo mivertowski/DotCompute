@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -47,7 +47,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         Assert.NotNull(output);
         output.Length.Should().Be(arraySize);
         
-        for (int i = 0; i < arraySize; i++)
+        for(int i = 0; i < arraySize; i++)
         {
             output[i].Should().BeApproximately(expected[i], 0.001f);
         }
@@ -126,7 +126,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         output.Length.Should().Be(size);
         
         // Verify scaling
-        for (int i = 0; i < size; i++)
+        for(int i = 0; i < size; i++)
         {
             output[i].Should().BeApproximately(input[i] * 2.0f, 0.001f);
         }
@@ -183,10 +183,10 @@ public class EndToEndWorkflowTests : IntegrationTestBase
         Assert.NotNull(result);
         result.Success.Should().BeTrue();
         result.Metrics.Should().NotBeNull();
-        result.Metrics.Duration.Should().BePositive();
+        result.Metrics!.Duration.Should().BePositive();
         result.Metrics.MemoryUsage.Should().NotBeNull();
-        result.Metrics.ComputeUtilization.BeGreaterThanOrEqualTo(0);
-        result.Metrics.MemoryBandwidthUtilization.BeGreaterThanOrEqualTo(0);
+        result.Metrics!.ComputeUtilization.Should().BeGreaterThanOrEqualTo(0);
+        result.Metrics.MemoryBandwidthUtilization.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -202,7 +202,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             ExecuteEndToEndWorkflow("invalid", invalidKernel, Array.Empty<object>(), 0));
 
         Assert.NotNull(exception);
-        exception.Assert.Contains("compilation", Message);
+        exception.Message.Should().Contain("compilation");
     }
 
     [Fact]
@@ -253,7 +253,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
 
         foreach (var input in inputs)
         {
-            if (input is float[] arrayInput)
+            if(input is float[] arrayInput)
             {
                 var buffer = await CreateInputBuffer<float>(memoryManager, arrayInput);
                 buffers.Add(buffer);
@@ -266,8 +266,8 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             }
         }
         
-        // For kernels that need an output buffer (like vector_add), create it
-        if (kernelName.Contains("add") || kernelName.Contains("mul") || kernelName.Contains("scale") || kernelName.Contains("transform"))
+        // For kernels that need an output buffer(like vector_add), create it
+        if(kernelName.Contains("add") || kernelName.Contains("mul") || kernelName.Contains("scale") || kernelName.Contains("transform"))
         {
             // Matrix multiplication needs a square output buffer
             var outputSize = kernelName.Contains("matrix_mul") ? workSize * workSize : workSize;
@@ -276,7 +276,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             arguments.Add(outputBuffer);
             
             // Matrix multiplication needs the size parameter
-            if (kernelName.Contains("matrix_mul"))
+            if(kernelName.Contains("matrix_mul"))
             {
                 arguments.Add(workSize);
             }
@@ -299,12 +299,12 @@ public class EndToEndWorkflowTests : IntegrationTestBase
 
         // 4. Result Collection
         var results = new Dictionary<string, object>();
-        if (outputBuffer != null)
+        if(outputBuffer != null)
         {
             var resultData = await ReadBufferAsync<float>(outputBuffer);
             results["result"] = resultData;
         }
-        else if (buffers.Count > 0)
+        else if(buffers.Count > 0)
         {
             // For single input/output kernels, use the last buffer
             var resultData = await ReadBufferAsync<float>(buffers.Last());
@@ -402,7 +402,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             int col = get_global_id(1);
             
             float sum = 0.0f;
-            for (int k = 0; k < size; k++) {
+            for(int k = 0; k < size; k++) {
                 sum += a[row * size + k] * b[k * size + col];
             }
             c[row * size + col] = sum;
@@ -418,14 +418,14 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             scratch[lid] = input[gid];
             barrier(CLK_LOCAL_MEM_FENCE);
             
-            for (int offset = get_local_size(0) / 2; offset > 0; offset >>= 1) {
-                if (lid < offset) {
+            for(int offset = get_local_size(0) / 2; offset > 0; offset >>= 1) {
+                if(lid < offset) {
                     scratch[lid] += scratch[lid + offset];
                 }
                 barrier(CLK_LOCAL_MEM_FENCE);
             }
             
-            if (lid == 0) {
+            if(lid == 0) {
                 result[get_group_id(0)] = scratch[0];
             }
         }";
@@ -437,7 +437,7 @@ public class EndToEndWorkflowTests : IntegrationTestBase
             float value = input[i];
             
             // Simulate long computation
-            for (int j = 0; j < 10000; j++) {
+            for(int j = 0; j < 10000; j++) {
                 value = sin(value) * cos(value) + 1.0f;
             }
             
@@ -457,6 +457,6 @@ public class WorkflowResult
 
     public T GetOutput<T>(string key)
     {
-        return Results.TryGetValue(key, out var value) ? (T)value : default(T)!;
+        return Results.TryGetValue(key, out var value) ?(T)value : default(T)!;
     }
 }

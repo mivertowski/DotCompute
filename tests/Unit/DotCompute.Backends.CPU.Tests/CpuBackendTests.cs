@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -81,8 +81,8 @@ public class CpuBackendTests
 
         try
         {
-            accelerator.Memory.CopyToDevice(bufferA, MemoryMarshal.AsBytes(a.AsSpan()));
-            accelerator.Memory.CopyToDevice(bufferB, MemoryMarshal.AsBytes(b.AsSpan()));
+            accelerator.Memory.CopyToDevice<float>(bufferA, a.AsSpan());
+            accelerator.Memory.CopyToDevice<float>(bufferB, b.AsSpan());
 
             var execStopwatch = Stopwatch.StartNew();
             await compiledKernel.ExecuteAsync(new KernelArguments(bufferA, bufferB, bufferResult, size));
@@ -92,12 +92,12 @@ public class CpuBackendTests
             accelerator.Memory.CopyFromDevice(MemoryMarshal.AsBytes(result.AsSpan()), bufferResult);
 
             // Verify SIMD execution results
-            for (int i = 0; i < size; i++)
+            for(int i = 0; i < size; i++)
             {
                 result[i].Should().BeApproximately(a[i] + b[i], 1e-5f);
             }
 
-            _output.WriteLine($"SIMD vector addition ({size} elements): {execStopwatch.ElapsedMicroseconds} μs");
+            _output.WriteLine($"SIMD vector addition{size} elements): {execStopwatch.ElapsedMicroseconds} μs");
         }
         finally
         {
@@ -119,14 +119,14 @@ public class CpuBackendTests
 
         var stopwatch = Stopwatch.StartNew();
         
-        for (int i = 0; i < taskCount; i++)
+        for(int i = 0; i < taskCount; i++)
         {
             int taskIndex = i;
             tasks[i] = Task.Run(() =>
             {
                 // Simulate compute-intensive work
                 var sum = 0;
-                for (int j = 0; j < 1000000; j++)
+                for(int j = 0; j < 1000000; j++)
                 {
                     sum += j % 100;
                 }
@@ -156,7 +156,7 @@ public class CpuBackendTests
         _output.WriteLine($"Processors: {numaInfo.ProcessorCount}");
         _output.WriteLine($"Memory per node: {numaInfo.MemoryPerNode:N0} bytes");
         
-        if (numaInfo.NodeCount > 1)
+        if(numaInfo.NodeCount > 1)
         {
             _output.WriteLine("✓ NUMA topology detected - memory allocation will be optimized");
         }
@@ -186,12 +186,12 @@ public class CpuBackendTests
             
             // Test unified memory access
             var testData = TestDataGenerator.GenerateFloatArray(size / sizeof(float));
-            accelerator.Memory.CopyToDevice(buffer, MemoryMarshal.AsBytes(testData.AsSpan()));
+            accelerator.Memory.CopyToDevice<float>(buffer, testData.AsSpan());
             
             var result = new float[testData.Length];
             accelerator.Memory.CopyFromDevice(MemoryMarshal.AsBytes(result.AsSpan()), buffer);
             
-            result.BeEquivalentTo(testData);
+            result.Should().BeEquivalentTo(testData);
             
             _output.WriteLine($"Unified memory allocation: {size:N0} bytes");
         }
@@ -239,12 +239,12 @@ public class CpuBackendTests
             accelerator.Memory.CopyFromDevice(MemoryMarshal.AsBytes(result.AsSpan()), bufferResult);
 
             // Verify matrix multiplication results
-            for (int i = 0; i < matrixSize; i++)
+            for(int i = 0; i < matrixSize; i++)
             {
-                for (int j = 0; j < matrixSize; j++)
+                for(int j = 0; j < matrixSize; j++)
                 {
                     float expected = 0;
-                    for (int k = 0; k < matrixSize; k++)
+                    for(int k = 0; k < matrixSize; k++)
                     {
                         expected += matrixA[i * matrixSize + k] * matrixB[k * matrixSize + j];
                     }
@@ -252,7 +252,7 @@ public class CpuBackendTests
                 }
             }
 
-            _output.WriteLine($"Matrix multiplication ({matrixSize}x{matrixSize}): {execStopwatch.ElapsedMicroseconds} μs");
+            _output.WriteLine($"Matrix multiplication{matrixSize}x{matrixSize}): {execStopwatch.ElapsedMicroseconds} μs");
         }
         finally
         {
@@ -282,7 +282,7 @@ public class CpuBackendTests
         // CPU should complete within reasonable time
         (stopwatch.ElapsedMilliseconds < 1000).Should().BeTrue();
         
-        _output.WriteLine($"CPU vector addition ({size} elements): {stopwatch.ElapsedMicroseconds} μs");
+        _output.WriteLine($"CPU vector addition{size} elements): {stopwatch.ElapsedMicroseconds} μs");
     }
 
     [Fact]
@@ -301,13 +301,13 @@ public class CpuBackendTests
         _output.WriteLine($"Supported instruction sets: {string.Join(", ", capabilities.SupportedInstructionSets)}");
         
         // Platform-specific validation
-        if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+        if(RuntimeInformation.ProcessArchitecture == Architecture.X64)
         {
-            capabilities.SupportsSse2.Should().BeTrue("x64 should support SSE2 as baseline");
+            capabilities.SupportsSse2.Should().BeTrue();
         }
-        else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        else if(RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
         {
-            capabilities.Assert.Contains("NEON", SupportedInstructionSets);
+            capabilities.SupportedInstructionSets.Should().Contain("NEON");
         }
     }
 
@@ -353,7 +353,7 @@ public class CpuBackendTests
             accelerator.Memory.CopyFromDevice(MemoryMarshal.AsBytes(resultArray1.AsSpan()), result1);
             accelerator.Memory.CopyFromDevice(MemoryMarshal.AsBytes(resultArray2.AsSpan()), result2);
 
-            for (int i = 0; i < size; i++)
+            for(int i = 0; i < size; i++)
             {
                 resultArray1[i].Should().BeApproximately(data1[i] + data2[i], 1e-5f);
                 resultArray2[i].Should().BeApproximately(data1[i] * data2[i], 1e-5f);
@@ -384,7 +384,7 @@ public class CpuBackendTests
             
             // Memory should be aligned for SIMD operations
             var handle = alignedBuffer.Handle;
-            (handle.ToInt64() % 32).Should().Be(0, "Memory should be 32-byte aligned for AVX");
+            (handle.ToInt64() % 32).Should().Be(0); // Memory should be 32-byte aligned for AVX
             
             _output.WriteLine($"Memory alignment: {handle.ToInt64() % 32} bytes");
             _output.WriteLine("✓ Memory is properly aligned for SIMD operations");
@@ -414,8 +414,8 @@ public class CpuBackendTests
 
         try
         {
-            accelerator.Memory.CopyToDevice(bufferA, MemoryMarshal.AsBytes(a.AsSpan()));
-            accelerator.Memory.CopyToDevice(bufferB, MemoryMarshal.AsBytes(b.AsSpan()));
+            accelerator.Memory.CopyToDevice<float>(bufferA, a.AsSpan());
+            accelerator.Memory.CopyToDevice<float>(bufferB, b.AsSpan());
 
             var kernel = await accelerator.CompileKernelAsync(TestKernels.VectorizedAdd);
             await kernel.ExecuteAsync(new KernelArguments(bufferA, bufferB, bufferResult, size));
@@ -476,10 +476,10 @@ public static void MatrixMultiply(float[] A, float[] B, float[] C, int size)
 {
     System.Threading.Tasks.Parallel.For(0, size, i =>
     {
-        for (int j = 0; j < size; j++)
+        for(int j = 0; j < size; j++)
         {
             float sum = 0.0f;
-            for (int k = 0; k < size; k++)
+            for(int k = 0; k < size; k++)
             {
                 sum += A[i * size + k] * B[k * size + j];
             }
@@ -515,11 +515,11 @@ public static class SimdCapabilities
     {
         var sets = new List<string>();
         
-        if (System.Runtime.Intrinsics.X86.Sse2.IsSupported) sets.Add("SSE2");
-        if (System.Runtime.Intrinsics.X86.Avx.IsSupported) sets.Add("AVX");
-        if (System.Runtime.Intrinsics.X86.Avx2.IsSupported) sets.Add("AVX2");
-        if (System.Runtime.Intrinsics.X86.Avx512F.IsSupported) sets.Add("AVX512F");
-        if (System.Runtime.Intrinsics.Arm.AdvSimd.IsSupported) sets.Add("NEON");
+        if(System.Runtime.Intrinsics.X86.Sse2.IsSupported) sets.Add("SSE2");
+        if(System.Runtime.Intrinsics.X86.Avx.IsSupported) sets.Add("AVX");
+        if(System.Runtime.Intrinsics.X86.Avx2.IsSupported) sets.Add("AVX2");
+        if(System.Runtime.Intrinsics.X86.Avx512F.IsSupported) sets.Add("AVX512F");
+        if(System.Runtime.Intrinsics.Arm.AdvSimd.IsSupported) sets.Add("NEON");
         
         return sets.ToArray();
     }

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -44,7 +44,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             var throughputMBps = result.Metrics?.ThroughputMBps ?? 0;
             throughputResults[size] = throughputMBps;
             
-            Logger.LogInformation("Vector operations throughput ({Size} elements): {Throughput:F2} MB/s", 
+            Logger.LogInformation("Vector operations throughput{Size} elements): {Throughput:F2} MB/s", 
                 size, throughputMBps);
         }
 
@@ -52,7 +52,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         foreach (var (size, throughput) in throughputResults)
         {
             var expectedMinThroughput = CalculateExpectedMinThroughput(size, "vector_ops");
-            Assert.True(throughput > expectedMinThroughput, 
+            throughput.Should().BeGreaterThan(expectedMinThroughput, 
                 $"Throughput for {size} elements should meet minimum threshold");
         }
 
@@ -83,7 +83,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             result.Success.Should().BeTrue();
             latencyResults[size] = stopwatch.Elapsed;
             
-            Logger.LogInformation("Latency benchmark ({Size} elements): {Latency:F2}ms", 
+            Logger.LogInformation("Latency benchmark{Size} elements): {Latency:F2}ms", 
                 size, stopwatch.Elapsed.TotalMilliseconds);
         }
 
@@ -91,7 +91,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         foreach (var (size, latency) in latencyResults)
         {
             var expectedMaxLatency = CalculateExpectedMaxLatency(size);
-            Assert.True(latency < expectedMaxLatency, 
+            (latency < expectedMaxLatency).Should().BeTrue( 
                 $"Latency for {size} elements should be within acceptable bounds");
         }
 
@@ -115,7 +115,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             result.Success.Should().BeTrue();
             
             var transferTime = result.Duration;
-            var dataMB = (size * sizeof(float) * 2) / 1024.0 / 1024.0; // Round trip
+            var dataMB =(size * sizeof(float) * 2) / 1024.0 / 1024.0; // Round trip
             var bandwidth = dataMB / transferTime.TotalSeconds;
             
             var bandwidthResult = new MemoryBandwidthResult
@@ -128,7 +128,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             
             bandwidthResults[size] = bandwidthResult;
             
-            Logger.LogInformation("Memory bandwidth ({Size} elements): {Bandwidth:F2} MB/s, " +
+            Logger.LogInformation("Memory bandwidth{Size} elements): {Bandwidth:F2} MB/s, " +
                                  "Efficiency: {Efficiency:F1}%", 
                 size, bandwidth, bandwidthResult.MemoryEfficiency);
         }
@@ -137,10 +137,10 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         foreach (var (size, bandwidthResult) in bandwidthResults)
         {
             var expectedMinBandwidth = CalculateExpectedMinBandwidth(size);
-            bandwidthResult.Assert.True(BandwidthMBps > expectedMinBandwidth,
+            (bandwidthResult.BandwidthMBps > expectedMinBandwidth).Should().BeTrue(
                 $"Memory bandwidth for {size} elements should meet minimum threshold");
             
-            bandwidthResult.Assert.True(MemoryEfficiency < 90,
+            bandwidthResult.MemoryEfficiency .Should().BeLessThan(90,
                 "Memory usage efficiency should be reasonable");
         }
 
@@ -173,7 +173,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             
             computeResults[complexity] = computeResult;
             
-            Logger.LogInformation("Compute intensity (level {Level}): {Time:F2}ms, " +
+            Logger.LogInformation("Compute intensitylevel {Level}): {Time:F2}ms, " +
                                  "CPU: {CPU:F1}%, GPU: {GPU:F1}%",
                 complexity, result.Duration.TotalMilliseconds,
                 computeResult.ResourceUtilization.CpuUsagePercent,
@@ -185,7 +185,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         
         // Higher complexity should show increased resource utilization
         var maxComplexity = computeResults[complexityLevels.Max()];
-        maxComplexity.ResourceUtilization.Assert.True(CpuUsagePercent > 20,
+        maxComplexity.ResourceUtilization.CpuUsagePercent.Should().BeGreaterThan(20,
             "High complexity workloads should utilize CPU resources");
     }
 
@@ -228,7 +228,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             
             concurrencyResults[concurrency] = concurrencyResult;
             
-            Logger.LogInformation("Concurrent benchmark ({Level}x): {Success}/{Total} successful, " +
+            Logger.LogInformation("Concurrent benchmark{Level}x): {Success}/{Total} successful, " +
                                  "Throughput: {Throughput:F2} MB/s, Efficiency: {Efficiency:F1}%",
                 concurrency, successfulResults.Length, concurrency,
                 totalThroughput, concurrencyResult.ScalingEfficiency * 100);
@@ -254,7 +254,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         var iterations = 5;
         var iterationResults = new List<WorkflowExecutionResult>();
         
-        for (int i = 0; i < iterations; i++)
+        for(int i = 0; i < iterations; i++)
         {
             var result = await ExecuteComputeWorkflowAsync($"{algorithmType}Benchmark_{i}", benchmark);
             result.Success.Should().BeTrue();
@@ -267,20 +267,20 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         var minLatency = iterationResults.Min(r => r.Duration.TotalMilliseconds);
         var maxLatency = iterationResults.Max(r => r.Duration.TotalMilliseconds);
         
-        Logger.LogInformation("{Algorithm} benchmark ({Size}): Avg throughput: {AvgThroughput:F2} MB/s, " +
+        Logger.LogInformation("{Algorithm} benchmark{Size}): Avg throughput: {AvgThroughput:F2} MB/s, " +
                              "Avg latency: {AvgLatency:F2}ms, Range: [{Min:F2}, {Max:F2}]ms",
             algorithmType, dataSize, avgThroughput, avgLatency, minLatency, maxLatency);
 
         var expectedBaseline = GetAlgorithmBaseline(algorithmType, dataSize);
-        Assert.True(avgThroughput > expectedBaseline.MinThroughput,
+        (avgThroughput > expectedBaseline.MinThroughput).Should().BeTrue(
             $"{algorithmType} should meet minimum throughput baseline");
         
-        Assert.True(avgLatency < expectedBaseline.MaxLatency,
+        (avgLatency < expectedBaseline.MaxLatency).Should().BeTrue(
             $"{algorithmType} should meet maximum latency baseline");
         
-        // Verify consistency (low variance)
+        // Verify consistency(low variance)
         var latencyVariance = maxLatency - minLatency;
-        Assert.True(latencyVariance < avgLatency * 0.5,
+        (latencyVariance < avgLatency * 0.5).Should().BeTrue(
             "Algorithm performance should be consistent across iterations");
     }
 
@@ -338,32 +338,32 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         
         foreach (var (testName, currentThroughput) in currentResults)
         {
-            if (baselineResults.TryGetValue(testName, out var baselineThroughput))
+            if(baselineResults.TryGetValue(testName, out var baselineThroughput))
             {
                 var performanceRatio = currentThroughput / baselineThroughput;
                 
-                if (performanceRatio < 0.9) // 10% degradation threshold
+                if(performanceRatio < 0.9) // 10% degradation threshold
                 {
                     regressions.Add($"{testName}: {performanceRatio:P1} of baseline");
                 }
-                else if (performanceRatio > 1.1) // 10% improvement threshold
+                else if(performanceRatio > 1.1) // 10% improvement threshold
                 {
                     improvements.Add($"{testName}: {performanceRatio:P1} of baseline");
                 }
                 
                 Logger.LogInformation("Regression test {Test}: {Current:F2} MB/s vs {Baseline:F2} MB/s " +
-                                     "baseline ({Ratio:P1})",
+                                     "baseline({Ratio:P1})",
                     testName, currentThroughput, baselineThroughput, performanceRatio);
             }
         }
 
-        if (regressions.Any())
+        if(regressions.Any())
         {
             Logger.LogWarning("Performance regressions detected: {Regressions}", 
                 string.Join(", ", regressions));
         }
         
-        if (improvements.Any())
+        if(improvements.Any())
         {
             Logger.LogInformation("Performance improvements detected: {Improvements}", 
                 string.Join(", ", improvements));
@@ -401,7 +401,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
     private double CalculateScalingEfficiency(int concurrency, double totalThroughput, 
         Dictionary<int, ConcurrencyBenchmarkResult> previousResults)
     {
-        if (concurrency <= 1 || !previousResults.ContainsKey(1))
+        if(concurrency <= 1 || !previousResults.ContainsKey(1))
             return 1.0;
 
         var baselineThroughput = previousResults[1].AggregatedThroughput;
@@ -413,7 +413,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
     {
         var sizes = throughputResults.Keys.OrderBy(k => k).ToArray();
         
-        for (int i = 1; i < sizes.Length; i++)
+        for(int i = 1; i < sizes.Length; i++)
         {
             var smallSize = sizes[i - 1];
             var largeSize = sizes[i];
@@ -422,9 +422,9 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             var largeThroughput = throughputResults[largeSize];
             
             // Larger workloads should generally have better or similar throughput
-            if (largeSize >= smallSize * 4) // Only compare significantly larger workloads
+            if(largeSize >= smallSize * 4) // Only compare significantly larger workloads
             {
-                Assert.True(largeThroughput >= smallThroughput * 0.8,
+                (largeThroughput >= smallThroughput * 0.8).Should().BeTrue(
                     $"Throughput should scale reasonably from {smallSize} to {largeSize} elements");
             }
         }
@@ -434,7 +434,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
     {
         var sizes = latencyResults.Keys.OrderBy(k => k).ToArray();
         
-        for (int i = 1; i < sizes.Length; i++)
+        for(int i = 1; i < sizes.Length; i++)
         {
             var smallSize = sizes[i - 1];
             var largeSize = sizes[i];
@@ -444,7 +444,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             
             // Latency should scale sublinearly with data size
             var expectedMaxLatency = smallLatency * Math.Pow(largeSize / (double)smallSize, 0.7);
-            Assert.True(largeLatency < expectedMaxLatency,
+            (largeLatency < expectedMaxLatency).Should().BeTrue(
                 $"Latency should scale sublinearly from {smallSize} to {largeSize} elements");
         }
     }
@@ -455,15 +455,15 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         var minBandwidth = bandwidthResults.Values.Min(r => r.BandwidthMBps);
         
         // Bandwidth variance should be reasonable
-        var bandwidthVariance = (maxBandwidth - minBandwidth) / maxBandwidth;
-        Assert.True(bandwidthVariance < 0.8, "Memory bandwidth should be relatively consistent");
+        var bandwidthVariance =(maxBandwidth - minBandwidth) / maxBandwidth;
+        bandwidthVariance .Should().BeLessThan(0.8, "Memory bandwidth should be relatively consistent");
     }
 
     private void ValidateComputeIntensityScaling(Dictionary<int, ComputeIntensityResult> computeResults)
     {
         var complexityLevels = computeResults.Keys.OrderBy(k => k).ToArray();
         
-        for (int i = 1; i < complexityLevels.Length; i++)
+        for(int i = 1; i < complexityLevels.Length; i++)
         {
             var lowComplexity = complexityLevels[i - 1];
             var highComplexity = complexityLevels[i];
@@ -472,12 +472,12 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
             var highTime = computeResults[highComplexity].ExecutionTime.TotalMilliseconds;
             
             // Higher complexity should take more time, but not excessively
-            var complexityRatio = highComplexity / (double)lowComplexity;
+            var complexityRatio = highComplexity /(double)lowComplexity;
             var timeRatio = highTime / lowTime;
             
             timeRatio.Should().BeGreaterThan(0.8, 
-                $"Higher complexity ({highComplexity}) should take more time than lower complexity ({lowComplexity})");
-            Assert.True(timeRatio < complexityRatio * 1.5,
+                $"Higher complexity({highComplexity}) should take more time than lower complexity({lowComplexity})");
+            (timeRatio < complexityRatio * 1.5).Should().BeTrue(
                 "Execution time should scale reasonably with computational complexity");
         }
     }
@@ -489,12 +489,12 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         foreach (var (concurrency, result) in concurrencyResults.Skip(1))
         {
             // Scaling efficiency should be reasonable
-            result.Assert.True(ScalingEfficiency > 0.3,
+            result.ScalingEfficiency.Should().BeGreaterThan(0.3,
                 $"Concurrency level {concurrency} should show reasonable scaling efficiency");
             
             // Success rate should remain high
-            var successRate = (double)result.SuccessfulWorkflows / concurrency;
-            Assert.True(successRate >= 0.8,
+            var successRate =(double)result.SuccessfulWorkflows / concurrency;
+            successRate .Should().BeGreaterThanOrEqualTo(0.8,
                 $"Success rate should remain high at concurrency level {concurrency}");
         }
     }
@@ -536,7 +536,7 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
         var maxStageLatency = metrics.StageLatencies.Max();
         var avgStageLatency = metrics.StageLatencies.Average();
         
-        Assert.True(maxStageLatency < avgStageLatency * 3,
+        (maxStageLatency < avgStageLatency * 3).Should().BeTrue(
             "No single stage should be a significant bottleneck");
         
         // Resource utilization should be reasonable
@@ -570,9 +570,9 @@ public class PerformanceBenchmarkSuite
         _logger = logger;
     }
 
-    public async Task<ComputeWorkflowDefinition> CreateVectorOperationBenchmark(int size)
+    public Task<ComputeWorkflowDefinition> CreateVectorOperationBenchmark(int size)
     {
-        return new ComputeWorkflowDefinition
+        return Task.FromResult(new ComputeWorkflowDefinition
         {
             Name = $"VectorOperationBenchmark_{size}",
             Kernels = new()
@@ -603,12 +603,12 @@ public class PerformanceBenchmarkSuite
                     ArgumentNames = new[] { "inputA", "inputB", "output" }
                 }
             }
-        };
+        });
     }
 
-    public async Task<ComputeWorkflowDefinition> CreateLatencyBenchmark(int size)
+    public Task<ComputeWorkflowDefinition> CreateLatencyBenchmark(int size)
     {
-        return new ComputeWorkflowDefinition
+        return Task.FromResult(new ComputeWorkflowDefinition
         {
             Name = $"LatencyBenchmark_{size}",
             Kernels = new()
@@ -637,12 +637,12 @@ public class PerformanceBenchmarkSuite
                     ArgumentNames = new[] { "input", "output" }
                 }
             }
-        };
+        });
     }
 
-    public async Task<ComputeWorkflowDefinition> CreateMemoryBandwidthBenchmark(int size)
+    public Task<ComputeWorkflowDefinition> CreateMemoryBandwidthBenchmark(int size)
     {
-        return new ComputeWorkflowDefinition
+        return Task.FromResult(new ComputeWorkflowDefinition
         {
             Name = $"MemoryBandwidthBenchmark_{size}",
             Kernels = new()
@@ -671,12 +671,12 @@ public class PerformanceBenchmarkSuite
                     ArgumentNames = new[] { "input", "output" }
                 }
             }
-        };
+        });
     }
 
-    public async Task<ComputeWorkflowDefinition> CreateComputeIntensityBenchmark(int size, int complexity)
+    public Task<ComputeWorkflowDefinition> CreateComputeIntensityBenchmark(int size, int complexity)
     {
-        return new ComputeWorkflowDefinition
+        return Task.FromResult(new ComputeWorkflowDefinition
         {
             Name = $"ComputeIntensityBenchmark_{complexity}",
             Kernels = new()
@@ -706,7 +706,7 @@ public class PerformanceBenchmarkSuite
                     Parameters = new Dictionary<string, object> { ["complexity"] = complexity }
                 }
             }
-        };
+        });
     }
 
     public ComputeWorkflowDefinition CreateConcurrentBenchmark(string name, int size)
@@ -743,7 +743,7 @@ public class PerformanceBenchmarkSuite
         };
     }
 
-    public async Task<ComputeWorkflowDefinition> CreateAlgorithmSpecificBenchmark(string algorithmType, int dataSize)
+    public Task<ComputeWorkflowDefinition> CreateAlgorithmSpecificBenchmark(string algorithmType, int dataSize)
     {
         var kernelSource = algorithmType switch
         {
@@ -754,7 +754,7 @@ public class PerformanceBenchmarkSuite
             _ => BenchmarkKernels.VectorOperations
         };
 
-        return new ComputeWorkflowDefinition
+        return Task.FromResult(new ComputeWorkflowDefinition
         {
             Name = $"{algorithmType}Benchmark",
             Kernels = new()
@@ -784,15 +784,15 @@ public class PerformanceBenchmarkSuite
                     ArgumentNames = new[] { "input", "output" }
                 }
             }
-        };
+        });
     }
 
-    public async Task<ComputeWorkflowDefinition> CreateRealWorldPipelineBenchmark()
+    public Task<ComputeWorkflowDefinition> CreateRealWorldPipelineBenchmark()
     {
         const int imageSize = 512;
         var imageData = ComputeWorkflowTestBase.TestDataGenerators.GenerateFloatArray(imageSize * imageSize, 0f, 255f);
 
-        return new ComputeWorkflowDefinition
+        return Task.FromResult(new ComputeWorkflowDefinition
         {
             Name = "RealWorldPipelineBenchmark",
             Kernels = new()
@@ -823,7 +823,7 @@ public class PerformanceBenchmarkSuite
                 new WorkflowExecutionStage { Name = "analyze_stage", Order = 3, KernelName = "analyze", ArgumentNames = new[] { "filtered", "analyzed" } },
                 new WorkflowExecutionStage { Name = "postprocess_stage", Order = 4, KernelName = "postprocess", ArgumentNames = new[] { "analyzed", "processed_image" } }
             }
-        };
+        });
     }
 
     public async Task<Dictionary<string, ComputeWorkflowDefinition>> CreateRegressionTestSuite()
@@ -892,7 +892,7 @@ __kernel void vector_benchmark(__global const float* a, __global const float* b,
     float y = b[gid];
     
     // Multiple vector operations for throughput testing
-    result[gid] = (x + y) * (x - y) + sqrt(x * y);
+    result[gid] =(x + y) *(x - y) + sqrt(x * y);
 }";
 
     public const string MinimalOperation = @"
@@ -913,7 +913,7 @@ __kernel void compute_intensive(__global const float* input, __global float* out
     int gid = get_global_id(0);
     float value = input[gid];
     
-    for (int i = 0; i < complexity * 10; i++) {
+    for(int i = 0; i < complexity * 10; i++) {
         value = sin(value) * cos(value) + exp(-value * 0.1f);
     }
     
@@ -930,7 +930,7 @@ __kernel void concurrent_benchmark(__global const float* input, __global float* 
     barrier(CLK_LOCAL_MEM_FENCE);
     
     float sum = 0.0f;
-    for (int i = 0; i < get_local_size(0); i++) {
+    for(int i = 0; i < get_local_size(0); i++) {
         sum += shared[i];
     }
     
@@ -940,12 +940,12 @@ __kernel void concurrent_benchmark(__global const float* input, __global float* 
     public const string MatrixMultiplication = @"
 __kernel void matrixmultiplication(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
-    int size = (int)sqrt((float)get_global_size(0));
+    int size =(int)sqrt((float)get_global_size(0));
     int row = gid / size;
     int col = gid % size;
     
     float sum = 0.0f;
-    for (int k = 0; k < size; k++) {
+    for(int k = 0; k < size; k++) {
         sum += input[row * size + k] * input[k * size + col];
     }
     output[gid] = sum;
@@ -958,7 +958,7 @@ __kernel void fft(__global const float* input, __global float* output) {
     
     // Simplified FFT computation
     float sum_real = 0.0f, sum_imag = 0.0f;
-    for (int k = 0; k < n; k++) {
+    for(int k = 0; k < n; k++) {
         float angle = -2.0f * M_PI * gid * k / n;
         sum_real += input[k] * cos(angle);
         sum_imag += input[k] * sin(angle);
@@ -969,18 +969,18 @@ __kernel void fft(__global const float* input, __global float* output) {
     public const string Convolution = @"
 __kernel void convolution(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
-    int size = (int)sqrt((float)get_global_size(0));
+    int size =(int)sqrt((float)get_global_size(0));
     int x = gid % size;
     int y = gid / size;
     
     float kernel[9] = {-1, -1, -1, -1, 8, -1, -1, -1, -1};
     float sum = 0.0f;
     
-    for (int ky = -1; ky <= 1; ky++) {
-        for (int kx = -1; kx <= 1; kx++) {
+    for(int ky = -1; ky <= 1; ky++) {
+        for(int kx = -1; kx <= 1; kx++) {
             int px = clamp(x + kx, 0, size - 1);
             int py = clamp(y + ky, 0, size - 1);
-            sum += input[py * size + px] * kernel[(ky + 1) * 3 + (kx + 1)];
+            sum += input[py * size + px] * kernel[(ky + 1) * 3 +(kx + 1)];
         }
     }
     output[gid] = sum;
@@ -995,14 +995,14 @@ __kernel void reduction(__global const float* input, __global float* output,
     scratch[lid] = input[gid];
     barrier(CLK_LOCAL_MEM_FENCE);
     
-    for (int offset = get_local_size(0) / 2; offset > 0; offset >>= 1) {
-        if (lid < offset) {
+    for(int offset = get_local_size(0) / 2; offset > 0; offset >>= 1) {
+        if(lid < offset) {
             scratch[lid] += scratch[lid + offset];
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
     
-    if (lid == 0) {
+    if(lid == 0) {
         output[get_group_id(0)] = scratch[0];
     }
 }";

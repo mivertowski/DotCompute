@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -101,7 +101,7 @@ public class DirectComputeKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _executor.ExecuteAsync(kernel, arguments: null!, config).AsTask());
+           () => _executor.ExecuteAsync(kernel, arguments: null!, config).AsTask());
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class DirectComputeKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), null!).AsTask());
+           () => _executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), null!).AsTask());
     }
 
     [Fact]
@@ -320,7 +320,7 @@ public class DirectComputeKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
-            () => _executor.ProfileAsync(kernel, arguments.ToCoreKernelArguments(), config, 0).AsTask());
+           () => _executor.ProfileAsync(kernel, arguments.ToCoreKernelArguments(), config, 0).AsTask());
     }
 
     [Fact]
@@ -361,7 +361,7 @@ public class DirectComputeKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ObjectDisposedException>(
-            () => executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), config).AsTask());
+           () => executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), config).AsTask());
     }
 
     [Theory]

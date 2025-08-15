@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -83,7 +83,7 @@ public sealed class P2PBufferTests : IDisposable
         // Arrange
         var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var sourceData = new float[256];
-        for (var i = 0; i < sourceData.Length; i++)
+        for(var i = 0; i < sourceData.Length; i++)
         {
             sourceData[i] = i * 0.5f;
         }
@@ -136,7 +136,7 @@ public sealed class P2PBufferTests : IDisposable
         // Arrange
         var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var sourceData = new float[256];
-        for (var i = 0; i < sourceData.Length; i++)
+        for(var i = 0; i < sourceData.Length; i++)
         {
             sourceData[i] = i * 0.5f;
         }
@@ -226,7 +226,7 @@ public sealed class P2PBufferTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => 
-            buffer.CopyToAsync((IBuffer<float>)null!));
+            buffer.CopyToAsync((IBuffer<float>)null!).AsTask());
     }
 
     [Fact]
@@ -243,19 +243,19 @@ public sealed class P2PBufferTests : IDisposable
 
         // Act & Assert - invalid source offset
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => 
-            sourceBuffer.CopyToAsync(-1, targetBuffer, 0, 10));
+            sourceBuffer.CopyToAsync(-1, targetBuffer, 0, 10).AsTask());
 
         // Act & Assert - invalid destination offset
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => 
-            sourceBuffer.CopyToAsync(0, targetBuffer, -1, 10));
+            sourceBuffer.CopyToAsync(0, targetBuffer, -1, 10).AsTask());
 
         // Act & Assert - invalid count
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => 
-            sourceBuffer.CopyToAsync(0, targetBuffer, 0, -1));
+            sourceBuffer.CopyToAsync(0, targetBuffer, 0, -1).AsTask());
 
         // Act & Assert - count exceeds buffer bounds
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => 
-            sourceBuffer.CopyToAsync(0, targetBuffer, 0, 300));
+            sourceBuffer.CopyToAsync(0, targetBuffer, 0, 300).AsTask());
     }
 
     [Fact]
@@ -296,15 +296,15 @@ public sealed class P2PBufferTests : IDisposable
 
         // Act & Assert - invalid offset
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => 
-            buffer.FillAsync(fillValue, -1, 10));
+            buffer.FillAsync(fillValue, -1, 10).AsTask());
 
         // Act & Assert - invalid count
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => 
-            buffer.FillAsync(fillValue, 0, -1));
+            buffer.FillAsync(fillValue, 0, -1).AsTask());
 
         // Act & Assert - range exceeds buffer bounds
         await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => 
-            buffer.FillAsync(fillValue, 0, 300));
+            buffer.FillAsync(fillValue, 0, 300).AsTask());
     }
 
     [Fact]
@@ -440,7 +440,7 @@ public sealed class P2PBufferTests : IDisposable
             buffer.CopyToHostAsync(new float[10], 0));
         
         await Assert.ThrowsAsync<ObjectDisposedException>(() => 
-            buffer.FillAsync(1.0f));
+            buffer.FillAsync(1.0f).AsTask());
         
         Assert.Throws<ObjectDisposedException>(() => buffer.Slice(0, 10));
         
@@ -455,7 +455,7 @@ public sealed class P2PBufferTests : IDisposable
         var concurrentTasks = new Task[10];
 
         // Act - concurrent fill operations
-        for (var i = 0; i < concurrentTasks.Length; i++)
+        for(var i = 0; i < concurrentTasks.Length; i++)
         {
             var value = i * 0.1f;
             concurrentTasks[i] = buffer.FillAsync(value).AsTask();

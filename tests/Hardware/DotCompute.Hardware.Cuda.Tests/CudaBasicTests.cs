@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
@@ -33,7 +33,7 @@ public class CudaBasicTests : IDisposable
         
         _logger = loggerFactory.CreateLogger<CudaBasicTests>();
 
-        if (CudaBackend.IsAvailable())
+        if(CudaBackend.IsAvailable())
         {
             _backend = new CudaBackend(loggerFactory.CreateLogger<CudaBackend>());
             _accelerator = _backend.GetDefaultAccelerator();
@@ -87,7 +87,7 @@ public class CudaBasicTests : IDisposable
 
         const int SIZE = 1000;
         var testData = new float[SIZE];
-        for (int i = 0; i < SIZE; i++)
+        for(int i = 0; i < SIZE; i++)
         {
             testData[i] = i * 0.5f;
         }
@@ -104,7 +104,7 @@ public class CudaBasicTests : IDisposable
             await buffer.CopyToHostAsync<float>(result);
 
             // Verify data
-            for (int i = 0; i < SIZE; i++)
+            for(int i = 0; i < SIZE; i++)
             {
                 Assert.Equal(testData[i], result[i]);
             }
@@ -129,13 +129,13 @@ public class CudaBasicTests : IDisposable
 extern ""C"" __global__ void addOne(float* data, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         data[idx] += 1.0f;
     }
 }";
 
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
-        var kernelSource = new TextKernelSource(kernelSourceCode, "addOne", KernelLanguage.Cuda, "addOne");
+        var kernelSource = new TextKernelSource(kernelSourceCode, "addOne", DotCompute.Abstractions.KernelLanguage.Cuda, "addOne");
         var definition = new KernelDefinition("addOne", kernelSource, options);
 
         var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
@@ -156,7 +156,7 @@ extern ""C"" __global__ void addOne(float* data, int n)
 
         const int N = 1000;
         var data = new float[N];
-        for (int i = 0; i < N; i++)
+        for(int i = 0; i < N; i++)
         {
             data[i] = i;
         }
@@ -171,13 +171,14 @@ extern ""C"" __global__ void addOne(float* data, int n)
 extern ""C"" __global__ void multiply(float* data, float factor, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         data[idx] *= factor;
     }
 }";
 
-            var kernelSourceObj = new TextKernelSource(kernelSource, "multiply", KernelLanguage.Cuda, "multiply");
-        var definition = new KernelDefinition("multiply", kernelSourceObj, options);
+            var kernelSourceObj = new TextKernelSource(kernelSource, "multiply", DotCompute.Abstractions.KernelLanguage.Cuda, "multiply");
+            var options = new CompilationOptions();
+            var definition = new KernelDefinition("multiply", kernelSourceObj, options);
             var compiledKernel = await _accelerator.CompileKernelAsync(definition);
 
             const float FACTOR = 2.5f;
@@ -188,7 +189,7 @@ extern ""C"" __global__ void multiply(float* data, float factor, int n)
             await buffer.CopyToHostAsync<float>(result);
 
             // Verify results
-            for (int i = 0; i < N; i++)
+            for(int i = 0; i < N; i++)
             {
                 var expected = data[i] * FACTOR;
                 Assert.True(Math.Abs(result[i] - expected) < 0.001f,
@@ -217,12 +218,13 @@ extern ""C"" __global__ void multiply(float* data, float factor, int n)
 extern ""C"" __global__ void testConfig(int* data, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         data[idx] = blockIdx.x;
     }
 }";
 
-        var kernelSource = new TextKernelSource(kernelSourceCode, "testConfig", KernelLanguage.Cuda, "testConfig");
+        var kernelSource = new TextKernelSource(kernelSourceCode, "testConfig", DotCompute.Abstractions.KernelLanguage.Cuda, "testConfig");
+        var options = new CompilationOptions();
         var definition = new KernelDefinition("testConfig", kernelSource, options);
         var compiledKernel = await _accelerator.CompileKernelAsync(definition) as CudaCompiledKernel;
         Assert.NotNull(compiledKernel);
@@ -234,9 +236,9 @@ extern ""C"" __global__ void testConfig(int* data, int n)
 
             // Verify configuration makes sense
             var totalThreads = config.GridX * config.BlockX;
-            Assert.True(totalThreads >= N, "Launch config should cover all elements");
-            Assert.True(config.BlockX <= 1024, "Block size should be reasonable"); // Max for most GPUs
-            Assert.True(config.BlockX >= 32, "Block size should be at least one warp");
+            (totalThreads >= N).Should().BeTrue();
+            config.BlockX.Should().BeLessThanOrEqualTo(1024, "Block size should be reasonable"); // Max for most GPUs
+            config.BlockX.Should().BeGreaterThanOrEqualTo(32, "Block size should be at least one warp");
 
             _logger.LogInformation("Optimal config for {Elements} elements: Grid={Grid}, Block={Block}, Total Threads={Total}",
                 N, config.GridX, config.BlockX, totalThreads);
@@ -252,11 +254,11 @@ extern ""C"" __global__ void testConfig(int* data, int n)
 
                 await buffer.CopyToHostAsync<int>(data);
 
-                // Verify some results (block IDs should be reasonable)
-                Assert.True(data[0] >= 0, "Block ID should be non-negative");
-                if (N > 100)
+                // Verify some results(block IDs should be reasonable)
+                data[0] .Should().BeGreaterThanOrEqualTo(0, "Block ID should be non-negative");
+                if(N > 100)
                 {
-                    Assert.True(data[N - 1] >= 0, "Last element should have valid block ID");
+                    data[N - 1] .Should().BeGreaterThanOrEqualTo(0, "Last element should have valid block ID");
                 }
 
                 _logger.LogInformation("Launch configuration test passed");
@@ -274,7 +276,7 @@ extern ""C"" __global__ void testConfig(int* data, int n)
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if(_disposed) return;
 
         _accelerator?.Dispose();
         _backend?.Dispose();

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -186,7 +186,7 @@ public class KernelArgument
     /// </summary>
     private long EstimateSizeFromValue(object? value)
     {
-        if (value == null) return 0;
+        if(value == null) return 0;
 
         return value switch
         {
@@ -425,7 +425,7 @@ public static class TestKernelFactory
     /// </summary>
     private static long EstimateSizeInBytes(object? value)
     {
-        if (value == null) return 0;
+        if(value == null) return 0;
 
         return value switch
         {
@@ -463,7 +463,7 @@ public static class TestTypeConversions
     /// </summary>
     public static DotCompute.Abstractions.CompiledKernel ToAbstractionsCompiledKernel(this CompiledKernel testKernel)
     {
-        return (DotCompute.Abstractions.CompiledKernel)testKernel;
+        return(DotCompute.Abstractions.CompiledKernel)testKernel;
     }
 
     /// <summary>

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -49,22 +49,20 @@ public sealed class MemoryManagerTests : IDisposable
     public async Task CoreMemoryManager_CreateBufferAsync_WithValidParameters_ShouldSucceed()
     {
         // Arrange
-        var mockBuffer = new Mock<CoreMemory.IBuffer<int>>();
-        mockBuffer.Setup(b => b.ElementCount).Returns(100);
-        mockBuffer.Setup(b => b.Location).Returns(CoreMemory.MemoryLocation.Device);
-        mockBuffer.Setup(b => b.Access).Returns(CoreMemory.MemoryAccess.ReadWrite);
+        var mockBuffer = new Mock<DotCompute.Abstractions.IBuffer<int>>();
+        mockBuffer.Setup(b => b.Length).Returns(100);
+        mockBuffer.Setup(b => b.Accelerator).Returns(Mock.Of<IAccelerator>());
         
         _coreMemoryManagerMock
-            .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockBuffer.Object)));
+            .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockBuffer.Object);
 
         // Act
         var buffer = await _coreMemoryManagerMock.Object.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device);
 
         // Assert
         Assert.NotNull(buffer);
-        Assert.Equal(100, buffer.ElementCount);
-        Assert.Equal(CoreMemory.MemoryLocation.Device, buffer.Location);
+        Assert.Equal(100, buffer.Length);
     }
 
     [Fact]
@@ -72,8 +70,8 @@ public sealed class MemoryManagerTests : IDisposable
     {
         // Arrange
         _coreMemoryManagerMock
-            .Setup(m => m.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()
-            .ThrowsAsync(new ArgumentException("Element count must be positive"))));
+            .Setup(m => m.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ArgumentException("Element count must be positive"));
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(async () => 
@@ -84,14 +82,14 @@ public sealed class MemoryManagerTests : IDisposable
     public async Task CoreMemoryManager_CopyAsync_WithValidBuffers_ShouldSucceed()
     {
         // Arrange
-        var sourceBuffer = Mock.Of<CoreMemory.IBuffer<float>>();
-        var destBuffer = Mock.Of<CoreMemory.IBuffer<float>>();
+        var sourceBuffer = Mock.Of<DotCompute.Abstractions.IBuffer<float>>();
+        var destBuffer = Mock.Of<DotCompute.Abstractions.IBuffer<float>>();
         
         _coreMemoryManagerMock
-            .Setup(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>()
-            .Returns(ValueTask.CompletedTask)));
+            .Setup(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.CompletedTask);
 
-        // Act & Assert (should not throw)
+        // Act & Assert(should not throw)
         await _coreMemoryManagerMock.Object.CopyAsync(sourceBuffer, destBuffer);
         
         _coreMemoryManagerMock.Verify(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -121,8 +119,8 @@ public sealed class MemoryManagerTests : IDisposable
         mockBuffer.Setup(b => b.Options).Returns(AbstractionsMemory.MemoryOptions.None);
         
         _abstractionsMemoryManagerMock
-            .Setup(m => m.AllocateAsync(1024, AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockBuffer.Object)));
+            .Setup(m => m.AllocateAsync(1024, AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockBuffer.Object);
 
         // Act
         var buffer = await _abstractionsMemoryManagerMock.Object.AllocateAsync(1024);
@@ -137,8 +135,8 @@ public sealed class MemoryManagerTests : IDisposable
     {
         // Arrange
         _abstractionsMemoryManagerMock
-            .Setup(m => m.AllocateAsync(0, It.IsAny<AbstractionsMemory.MemoryOptions>(), It.IsAny<CancellationToken>()
-            .ThrowsAsync(new ArgumentException("Size must be positive"))));
+            .Setup(m => m.AllocateAsync(0, It.IsAny<AbstractionsMemory.MemoryOptions>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ArgumentException("Size must be positive"));
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(async () => 
@@ -154,8 +152,8 @@ public sealed class MemoryManagerTests : IDisposable
         mockBuffer.Setup(b => b.SizeInBytes).Returns(sourceData.Length * sizeof(int));
         
         _abstractionsMemoryManagerMock
-            .Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockBuffer.Object)));
+            .Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockBuffer.Object);
 
         // Act
         var buffer = await _abstractionsMemoryManagerMock.Object.AllocateAndCopyAsync<int>(sourceData);
@@ -190,7 +188,7 @@ public sealed class MemoryManagerTests : IDisposable
         // Arrange
         _coreMemoryManagerMock.Setup(m => m.DisposeAsync()).Returns(ValueTask.CompletedTask);
 
-        // Act & Assert (should not throw)
+        // Act & Assert(should not throw)
         await _coreMemoryManagerMock.Object.DisposeAsync();
         _coreMemoryManagerMock.Verify(m => m.DisposeAsync(), Times.Once);
     }
@@ -205,7 +203,7 @@ public sealed class MemoryManagerTests : IDisposable
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _disposed = true;
         }

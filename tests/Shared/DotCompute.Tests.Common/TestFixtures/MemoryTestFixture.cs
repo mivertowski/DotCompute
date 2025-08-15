@@ -43,7 +43,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
         Func<int, T> valueGenerator,
         MemoryOptions options = MemoryOptions.None) where T : unmanaged
     {
-        if (_memoryManager == null)
+        if(_memoryManager == null)
             throw new InvalidOperationException("Memory manager not initialized");
             
         var sizeInBytes = elementCount * Marshal.SizeOf<T>();
@@ -52,7 +52,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
         
         // Initialize buffer with test data
         var data = new T[elementCount];
-        for (int i = 0; i < elementCount; i++)
+        for(int i = 0; i < elementCount; i++)
         {
             data[i] = valueGenerator(i);
         }
@@ -66,7 +66,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
     /// </summary>
     public async Task<IMemoryBuffer> CreateRandomBufferAsync(long sizeInBytes, int seed = 42)
     {
-        if (_memoryManager == null)
+        if(_memoryManager == null)
             throw new InvalidOperationException("Memory manager not initialized");
             
         var buffer = await _memoryManager.AllocateAsync(sizeInBytes);
@@ -89,21 +89,21 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
         Func<int, T> expectedValueGenerator,
         double tolerance = 1e-6) where T : unmanaged, IComparable<T>
     {
-        var elementCount = (int)(buffer.SizeInBytes / Marshal.SizeOf<T>());
+        var elementCount =(int)(buffer.SizeInBytes / Marshal.SizeOf<T>());
         var hostData = new T[elementCount];
         
         await buffer.CopyToHostAsync<T>(hostData.AsMemory());
         
-        for (int i = 0; i < elementCount; i++)
+        for(int i = 0; i < elementCount; i++)
         {
             var expected = expectedValueGenerator(i);
             var actual = hostData[i];
             
-            if (typeof(T) == typeof(float) || typeof(T) == typeof(double))
+            if(typeof(T) == typeof(float) || typeof(T) == typeof(double))
             {
                 // For floating point, use tolerance
                 var diff = Math.Abs(Convert.ToDouble(expected) - Convert.ToDouble(actual));
-                if (diff > tolerance)
+                if(diff > tolerance)
                 {
                     _output?.WriteLine($"Mismatch at index {i}: expected {expected}, got {actual}");
                     return false;
@@ -112,7 +112,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
             else
             {
                 // For other types, use exact comparison
-                if (actual.CompareTo(expected) != 0)
+                if(actual.CompareTo(expected) != 0)
                 {
                     _output?.WriteLine($"Mismatch at index {i}: expected {expected}, got {actual}");
                     return false;
@@ -132,7 +132,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
         long maxSize,
         int concurrency = 4)
     {
-        if (_memoryManager == null)
+        if(_memoryManager == null)
             throw new InvalidOperationException("Memory manager not initialized");
             
         var result = new MemoryStressTestResult
@@ -145,7 +145,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
         var tasks = new List<Task>();
         var semaphore = new SemaphoreSlim(concurrency, concurrency);
         
-        for (int i = 0; i < iterations; i++)
+        for(int i = 0; i < iterations; i++)
         {
             await semaphore.WaitAsync();
             
@@ -165,7 +165,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
                     
                     Interlocked.Increment(ref result.SuccessfulAllocations);
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     Interlocked.Increment(ref result.FailedAllocations);
                     _output?.WriteLine($"Allocation failed: {ex.Message}");
@@ -203,7 +203,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
     
     public async Task DisposeAsync()
     {
-        if (_disposed)
+        if(_disposed)
             return;
             
         foreach (var buffer in _allocatedBuffers)
@@ -217,7 +217,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
     
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             DisposeAsync().GetAwaiter().GetResult();
         }
@@ -238,7 +238,7 @@ public class MemoryStressTestResult
     public long PeakMemoryUsage { get; set; }
     
     public double SuccessRate => 
-        Iterations > 0 ? (double)SuccessfulAllocations / Iterations * 100 : 0;
+        Iterations > 0 ?(double)SuccessfulAllocations / Iterations * 100 : 0;
     
     public double AllocationsPerSecond => 
         Duration.TotalSeconds > 0 ? SuccessfulAllocations / Duration.TotalSeconds : 0;

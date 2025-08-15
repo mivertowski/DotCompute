@@ -120,14 +120,14 @@ public abstract class TestKernelCompilerBase
 public class TestCudaKernelCompiler : TestKernelCompilerBase
 {
     public override KernelLanguage SupportedLanguage => KernelLanguage.Cuda;
-    public override string CompilerName => "Test CUDA Compiler (nvcc simulator)";
+    public override string CompilerName => "Test CUDA Compiler(nvcc simulator)";
 
     public async Task<CompiledKernelInfo> CompileAsync(
         IKernelSource source,
         CompilationOptions options,
         CancellationToken cancellationToken = default)
     {
-        if (source.Language != KernelLanguage.Cuda && source.Language != KernelLanguage.Ptx)
+        if(source.Language != KernelLanguage.Cuda && source.Language != KernelLanguage.Ptx)
         {
             throw new ArgumentException($"Unsupported language: {source.Language}. Expected CUDA or PTX.", nameof(source));
         }
@@ -161,13 +161,13 @@ public class TestCudaKernelCompiler : TestKernelCompilerBase
         assembly.AppendLine($"    mad.lo.s32 %r4, %r2, %r3, %r1;");
         assembly.AppendLine();
         
-        if (options.FastMath)
+        if(options.FastMath)
         {
             assembly.AppendLine($"    // Fast math operations");
             assembly.AppendLine($"    mul.ftz.f32 %r5, %r4, 0.5;");
         }
         
-        if (options.UnrollLoops)
+        if(options.UnrollLoops)
         {
             assembly.AppendLine($"    // Unrolled loop");
             assembly.AppendLine($"    #pragma unroll 4");
@@ -193,7 +193,7 @@ public class TestOpenCLKernelCompiler : TestKernelCompilerBase
         CompilationOptions options,
         CancellationToken cancellationToken = default)
     {
-        if (source.Language != KernelLanguage.OpenCL && source.Language != KernelLanguage.SPIRV)
+        if(source.Language != KernelLanguage.OpenCL && source.Language != KernelLanguage.SPIRV)
         {
             throw new ArgumentException($"Unsupported language: {source.Language}. Expected OpenCL or SPIRV.", nameof(source));
         }
@@ -228,7 +228,7 @@ public class TestOpenCLKernelCompiler : TestKernelCompilerBase
         assembly.AppendLine($"%{source.EntryPoint} = OpFunction %void None %func_type");
         assembly.AppendLine($"%entry = OpLabel");
         
-        if (options.FastMath)
+        if(options.FastMath)
         {
             assembly.AppendLine($"; Fast math enabled");
             assembly.AppendLine($"OpDecorate %mul_result FPFastMathMode Fast");
@@ -247,14 +247,14 @@ public class TestOpenCLKernelCompiler : TestKernelCompilerBase
 public class TestDirectComputeCompiler : TestKernelCompilerBase
 {
     public override KernelLanguage SupportedLanguage => KernelLanguage.HLSL;
-    public override string CompilerName => "Test DirectCompute Compiler (dxc simulator)";
+    public override string CompilerName => "Test DirectCompute Compiler(dxc simulator)";
 
     public async Task<CompiledKernelInfo> CompileAsync(
         IKernelSource source,
         CompilationOptions options,
         CancellationToken cancellationToken = default)
     {
-        if (source.Language != KernelLanguage.HLSL)
+        if(source.Language != KernelLanguage.HLSL)
         {
             throw new ArgumentException($"Unsupported language: {source.Language}. Expected HLSL.", nameof(source));
         }
@@ -285,7 +285,7 @@ public class TestDirectComputeCompiler : TestKernelCompilerBase
         assembly.AppendLine($"ld_structured r1.x, r0.x, 0, t0.x");
         assembly.AppendLine($"ld_structured r2.x, r0.x, 0, t1.x");
         
-        if (options.FastMath)
+        if(options.FastMath)
         {
             assembly.AppendLine($"// Fast math");
             assembly.AppendLine($"mad r3.x, r1.x, r2.x, 0.5");

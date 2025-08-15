@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
@@ -38,7 +38,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithSimpleKernel_ShouldSucceed()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateSimpleVectorAddKernel();
@@ -58,7 +58,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithOptimizationOptions_ShouldRespectSettings()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateSimpleVectorAddKernel();
@@ -83,7 +83,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithDebugInfo_ShouldIncludeDebugSymbols()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateSimpleVectorAddKernel();
@@ -111,7 +111,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithDifferentOptimizationLevels_ShouldSucceed(OptimizationLevel level)
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateSimpleVectorAddKernel();
@@ -131,14 +131,14 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithInvalidSyntax_ShouldThrow()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateInvalidKernel();
 
         // Act & Assert
-        var compileAction = async () => await accelerator.CompileKernelAsync(kernelDefinition);
-        await compileAction.ThrowAsync<InvalidOperationException>()
+        var compileAction = async() => await accelerator.CompileKernelAsync(kernelDefinition);
+        await compileAction.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Failed to compile CUDA kernel*");
     }
 
@@ -148,7 +148,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithMathFunctions_ShouldIncludeHeaders()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateMathKernel();
@@ -168,7 +168,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithSharedMemory_ShouldCompileSuccessfully()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateSharedMemoryKernel();
@@ -188,7 +188,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithCustomEntryPoint_ShouldRespectName()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateCustomEntryPointKernel();
@@ -208,7 +208,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_PerformanceTest_ShouldCompleteQuickly()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateSimpleVectorAddKernel();
@@ -222,7 +222,7 @@ public class CudaKernelCompilerTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        stopwatch.Assert.True(ElapsedMilliseconds < 10000, 
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000, 
             "Kernel compilation should complete within 10 seconds");
         
         _output.WriteLine($"Kernel compilation took {stopwatch.ElapsedMilliseconds}ms");
@@ -234,7 +234,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_CachingTest_SecondCompileShouldBeFaster()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateSimpleVectorAddKernel();
@@ -245,7 +245,7 @@ public class CudaKernelCompilerTests : IDisposable
         stopwatch1.Stop();
         _compiledKernels.Add(compiledKernel1);
 
-        // Act - Second compilation (should use cache)
+        // Act - Second compilation(should use cache)
         var stopwatch2 = System.Diagnostics.Stopwatch.StartNew();
         var compiledKernel2 = await accelerator.CompileKernelAsync(kernelDefinition);
         stopwatch2.Stop();
@@ -254,7 +254,7 @@ public class CudaKernelCompilerTests : IDisposable
         // Assert
         Assert.NotNull(compiledKernel1);
         Assert.NotNull(compiledKernel2);
-        stopwatch2.Assert.True(ElapsedMilliseconds < stopwatch1.ElapsedMilliseconds + 100,
+        (stopwatch2.ElapsedMilliseconds < stopwatch1.ElapsedMilliseconds + 100).Should().BeTrue(
             "Cached compilation should be faster or similar to first compilation");
             
         _output.WriteLine($"First compilation: {stopwatch1.ElapsedMilliseconds}ms, Second: {stopwatch2.ElapsedMilliseconds}ms");
@@ -266,7 +266,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithComplexKernel_ShouldHandleComplexity()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateComplexMatrixMultiplyKernel();
@@ -286,7 +286,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithAdditionalFlags_ShouldAcceptCustomOptions()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = CreateSimpleVectorAddKernel();
@@ -310,13 +310,13 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithNullDefinition_ShouldThrow()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
 
         // Act & Assert
-        var compileAction = async () => await accelerator.CompileKernelAsync(null!);
-        await await Assert.ThrowsAsync<ArgumentNullException>(async () => await compileAction());
+        var compileAction = async() => await accelerator.CompileKernelAsync(null!);
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await compileAction());
     }
 
     [Fact]
@@ -325,7 +325,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_WithEmptyKernelName_ShouldHandleGracefully()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinition = new KernelDefinition
@@ -336,8 +336,8 @@ public class CudaKernelCompilerTests : IDisposable
         };
 
         // Act & Assert
-        var compileAction = async () => await accelerator.CompileKernelAsync(kernelDefinition);
-        await await Assert.ThrowsAsync<InvalidOperationException>(async () => await compileAction());
+        var compileAction = async() => await accelerator.CompileKernelAsync(kernelDefinition);
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await compileAction());
     }
 
     [Fact]
@@ -346,7 +346,7 @@ public class CudaKernelCompilerTests : IDisposable
     public async Task CudaKernelCompiler_CompileAsync_ConcurrentCompilation_ShouldHandleParallelRequests()
     {
         // Arrange
-        if (!IsCudaAvailable() || !IsNvrtcAvailable()) return;
+        if(!IsCudaAvailable() || !IsNvrtcAvailable()) return;
 
         var accelerator = CreateAccelerator();
         var kernelDefinitions = Enumerable.Range(0, 5)
@@ -369,7 +369,7 @@ public class CudaKernelCompilerTests : IDisposable
     // Helper Methods
     private CudaAccelerator CreateAccelerator()
     {
-        var accelerator = new CudaAccelerator(0, _logger);
+        var accelerator = new CudaAccelerator(0, null);
         _accelerators.Add(accelerator);
         return accelerator;
     }
@@ -400,7 +400,7 @@ public class CudaKernelCompilerTests : IDisposable
 __global__ void math_kernel(float* input, float* output, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         output[idx] = sinf(input[idx]) + cosf(input[idx]) + expf(input[idx]);
     }
 }";
@@ -421,13 +421,13 @@ __global__ void shared_memory_kernel(float* input, float* output, int n)
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     int tid = threadIdx.x;
     
-    if (idx < n) {
+    if(idx < n) {
         shared_data[tid] = input[idx];
     }
     
     __syncthreads();
     
-    if (idx < n) {
+    if(idx < n) {
         output[idx] = shared_data[tid] * 2.0f;
     }
 }";
@@ -465,26 +465,26 @@ __global__ void matrix_multiply(float* A, float* B, float* C, int n)
     
     float Cvalue = 0.0f;
     
-    for (int m = 0; m < (n + 16 - 1) / 16; ++m) {
-        if ((Row < n) && (m * 16 + tx < n))
+    for(int m = 0; m <n + 16 - 1) / 16; ++m) {
+        if((Row < n) &&(m * 16 + tx < n))
             As[ty][tx] = A[Row * n + m * 16 + tx];
         else
             As[ty][tx] = 0.0f;
             
-        if ((Col < n) && (m * 16 + ty < n))
+        if((Col < n) &&(m * 16 + ty < n))
             Bs[ty][tx] = B[(m * 16 + ty) * n + Col];
         else
             Bs[ty][tx] = 0.0f;
             
         __syncthreads();
         
-        for (int k = 0; k < 16; ++k)
+        for(int k = 0; k < 16; ++k)
             Cvalue += As[ty][k] * Bs[k][tx];
             
         __syncthreads();
     }
     
-    if ((Row < n) && (Col < n))
+    if((Row < n) &&(Col < n))
         C[Row * n + Col] = Cvalue;
 }";
         return new KernelDefinition
@@ -512,7 +512,7 @@ __global__ void matrix_multiply(float* A, float* B, float* C, int n)
 __global__ void vector_add(float* a, float* b, float* c, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         c[idx] = a[idx] + b[idx];
     }
 }";
@@ -542,9 +542,9 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
         {
             try
             {
-                (kernel as IDisposable)?.Dispose();
+               (kernel as IDisposable)?.Dispose();
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing compiled kernel");
             }
@@ -557,7 +557,7 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
             {
                 accelerator?.Dispose();
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing CUDA accelerator");
             }

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -62,7 +62,7 @@ public class OpenCLSimulationTests
             
             Assert.NotEmpty(deviceTypes);
             
-            if (platform.HasGPU)
+            if(platform.HasGPU)
             {
                 Assert.Contains("GPU", deviceTypes);
             }
@@ -95,7 +95,7 @@ public class OpenCLSimulationTests
             new 
             { 
                 Name = "VectorAdd",
-                Source = "__kernel void vector_add(__global float* a, __global float* b, __global float* c, int n) { int gid = get_global_id(0); if (gid < n) c[gid] = a[gid] + b[gid]; }",
+                Source = "__kernel void vector_add(__global float* a, __global float* b, __global float* c, int n) { int gid = get_global_id(0); if(gid < n) c[gid] = a[gid] + b[gid]; }",
                 IsValid = true
             },
             new 
@@ -118,7 +118,7 @@ public class OpenCLSimulationTests
             
             Assert.Equal(kernel.IsValid, compilationResult.Success);
             
-            if (compilationResult.Success)
+            if(compilationResult.Success)
             {
                 Assert.True(compilationResult.BinarySize > 0);
                 _output.WriteLine($"Kernel '{kernel.Name}' compiled successfully - Binary size: {compilationResult.BinarySize} bytes");
@@ -136,15 +136,15 @@ public class OpenCLSimulationTests
         await Task.Delay(10); // Simulate compilation time
 
         // Simple validation - check for basic kernel syntax
-        if (source.Contains("__kernel") && source.Contains("{") && source.Contains("}"))
+        if(source.Contains("__kernel") && source.Contains("{") && source.Contains("}"))
         {
             // Simulate successful compilation
             var binarySize = source.Length * 2; // Rough binary size estimate
-            return (true, string.Empty, binarySize);
+            return(true, string.Empty, binarySize);
         }
         else
         {
-            return (false, "Syntax error: Invalid kernel definition", 0);
+            return(false, "Syntax error: Invalid kernel definition", 0);
         }
     }
 
@@ -165,12 +165,12 @@ public class OpenCLSimulationTests
         foreach (var device in devices)
         {
             var optimalWorkGroupSize = SimulateOptimalWorkGroupSize(globalSize, device.MaxWorkGroupSize, device.PreferredMultiple);
-            var numWorkGroups = (globalSize + optimalWorkGroupSize - 1) / optimalWorkGroupSize;
+            var numWorkGroups =(globalSize + optimalWorkGroupSize - 1) / optimalWorkGroupSize;
 
-            Assert.True(optimalWorkGroupSize <= device.MaxWorkGroupSize, "Work group size should not exceed maximum");
-            Assert.True(optimalWorkGroupSize % device.PreferredMultiple == 0 || device.PreferredMultiple == 1, 
+            optimalWorkGroupSize.Should().BeLessThanOrEqualTo(device.MaxWorkGroupSize, "Work group size should not exceed maximum");
+           (optimalWorkGroupSize % device.PreferredMultiple == 0 || device.PreferredMultiple == 1).Should().BeTrue(
                        "Work group size should be multiple of preferred size");
-            Assert.True(numWorkGroups * optimalWorkGroupSize >= globalSize, "Should cover all work items");
+           (numWorkGroups * optimalWorkGroupSize).Should().BeGreaterThanOrEqualTo(globalSize, "Should cover all work items");
 
             _output.WriteLine($"{device.Type}: Optimal work group size = {optimalWorkGroupSize}, Groups = {numWorkGroups}");
         }
@@ -180,9 +180,9 @@ public class OpenCLSimulationTests
     {
         // Find the largest multiple of preferredMultiple that doesn't exceed maxWorkGroupSize
         // and provides good occupancy
-        for (int size = maxWorkGroupSize; size >= preferredMultiple; size -= preferredMultiple)
+        for(int size = maxWorkGroupSize; size >= preferredMultiple; size -= preferredMultiple)
         {
-            if (size % preferredMultiple == 0)
+            if(size % preferredMultiple == 0)
             {
                 return size;
             }
@@ -206,17 +206,17 @@ public class OpenCLSimulationTests
 
         foreach (var device in deviceTypes)
         {
-            _output.WriteLine($"\n{device.Name} (Bandwidth: {device.BandwidthGBps} GB/s):");
+            _output.WriteLine($"\n{device.Name}Bandwidth: {device.BandwidthGBps} GB/s):");
             
             foreach (var size in transferSizes)
             {
                 var transferTime = await SimulateMemoryTransfer(size, device.BandwidthGBps);
-                var sizeStr = size < 1024 * 1024 ? $"{size / 1024}KB" : $"{size / (1024 * 1024)}MB";
+                var sizeStr = size < 1024 * 1024 ? $"{size / 1024}KB" : $"{size /(1024 * 1024)}MB";
                 
                 _output.WriteLine($"  {sizeStr}: {transferTime:F2}ms");
                 
                 // Validate transfer time makes sense
-                var expectedTimeMs = (size / 1024.0 / 1024.0 / 1024.0) / device.BandwidthGBps * 1000;
+                var expectedTimeMs =(size / 1024.0 / 1024.0 / 1024.0) / device.BandwidthGBps * 1000;
                 Assert.True(Math.Abs(transferTime - expectedTimeMs) < 0.1, 
                            $"Transfer time should be close to expected: {expectedTimeMs:F2}ms vs {transferTime:F2}ms");
             }
@@ -229,10 +229,10 @@ public class OpenCLSimulationTests
         await Task.Delay(1);
         
         // Calculate theoretical transfer time
-        var sizeGB = sizeBytes / (1024.0 * 1024.0 * 1024.0);
+        var sizeGB = sizeBytes /(1024.0 * 1024.0 * 1024.0);
         var transferTimeSeconds = sizeGB / bandwidthGBps;
         
-        // Add some overhead (10%)
+        // Add some overhead(10%)
         return transferTimeSeconds * 1000 * 1.1; // Convert to milliseconds
     }
 
@@ -272,9 +272,9 @@ public class OpenCLSimulationTests
             Assert.Equal(device.OpenCLVersion, capabilities.OpenCLVersion);
             Assert.Equal(device.GlobalMemMB, capabilities.GlobalMemoryMB);
             Assert.Equal(device.ComputeUnits, capabilities.ComputeUnits);
-            Assert.True(capabilities.Extensions.Length > 0, "Should have at least one extension");
+            capabilities.Extensions.Length.Should().BeGreaterThan(0, "Should have at least one extension");
             
-            _output.WriteLine($"Device: {device.Name} ({device.Type})");
+            _output.WriteLine($"Device: {device.Name}{device.Type})");
             _output.WriteLine($"  OpenCL: {capabilities.OpenCLVersion}");
             _output.WriteLine($"  Memory: {capabilities.GlobalMemoryMB}MB global, {capabilities.LocalMemoryKB}KB local");
             _output.WriteLine($"  Compute Units: {capabilities.ComputeUnits}");
@@ -282,10 +282,10 @@ public class OpenCLSimulationTests
         }
     }
 
-    private static (string OpenCLVersion, int GlobalMemoryMB, int LocalMemoryKB, int ComputeUnits, string[] Extensions) 
+    private static(string OpenCLVersion, int GlobalMemoryMB, int LocalMemoryKB, int ComputeUnits, string[] Extensions) 
         SimulateDeviceQuery(dynamic device)
     {
-        return (device.OpenCLVersion, device.GlobalMemMB, device.LocalMemKB, device.ComputeUnits, device.Extensions);
+        return(device.OpenCLVersion, device.GlobalMemMB, device.LocalMemKB, device.ComputeUnits, device.Extensions);
     }
 
     [Fact]

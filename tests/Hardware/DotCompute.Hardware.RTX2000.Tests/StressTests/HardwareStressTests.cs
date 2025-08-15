@@ -38,17 +38,17 @@ public class HardwareStressTests : IDisposable
         try
         {
             var result = CudaInit(0);
-            if (result == 0)
+            if(result == 0)
             {
                 result = CudaCtxCreate(ref _cudaContext, 0, 0);
-                if (result == 0)
+                if(result == 0)
                 {
                     _cudaInitialized = true;
                     _output.WriteLine("CUDA context initialized for stress testing");
                 }
             }
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _output.WriteLine($"CUDA initialization failed: {ex.Message}");
         }
@@ -73,9 +73,9 @@ public class HardwareStressTests : IDisposable
             int successfulAllocations = 0;
             var sw = Stopwatch.StartNew();
 
-            for (int i = 0; i < maxAllocations; i++)
+            for(int i = 0; i < maxAllocations; i++)
             {
-                if (_cancellationTokenSource.Token.IsCancellationRequested) break;
+                if(_cancellationTokenSource.Token.IsCancellationRequested) break;
 
                 // Vary allocation sizes to stress the memory allocator
                 var sizeMB = baseAllocationSizeMB + random.Next(0, baseAllocationSizeMB * 2);
@@ -84,16 +84,16 @@ public class HardwareStressTests : IDisposable
                 IntPtr devicePtr = IntPtr.Zero;
                 var result = CudaMalloc(ref devicePtr, sizeBytes);
 
-                if (result == 0)
+                if(result == 0)
                 {
                     allocations.Add(devicePtr);
                     allocationSizes.Add(sizeBytes);
                     successfulAllocations++;
 
                     // Log progress every 50 allocations
-                    if ((successfulAllocations % 50) == 0)
+                    if((successfulAllocations % 50) == 0)
                     {
-                        var totalAllocatedMB = allocationSizes.Sum() / (1024 * 1024);
+                        var totalAllocatedMB = allocationSizes.Sum() /(1024 * 1024);
                         _output.WriteLine($"Allocated {successfulAllocations} buffers, total: {totalAllocatedMB} MB");
                     }
                 }
@@ -105,7 +105,7 @@ public class HardwareStressTests : IDisposable
             }
 
             sw.Stop();
-            var totalAllocatedGB = allocationSizes.Sum() / (1024.0 * 1024.0 * 1024.0);
+            var totalAllocatedGB = allocationSizes.Sum() /(1024.0 * 1024.0 * 1024.0);
             var allocationRate = successfulAllocations / sw.Elapsed.TotalSeconds;
 
             _output.WriteLine($"Allocation phase completed:");
@@ -114,8 +114,8 @@ public class HardwareStressTests : IDisposable
             _output.WriteLine($"  Allocation rate: {allocationRate:F2} allocations/sec");
             _output.WriteLine($"  Total time: {sw.ElapsedMilliseconds} ms");
 
-            Assert.True(successfulAllocations > 50, "Should be able to perform substantial allocations");
-            Assert.True(totalAllocatedGB > 4.0, "Should allocate several GB before exhaustion");
+            successfulAllocations.Should().BeGreaterThan(50, "Should be able to perform substantial allocations");
+            totalAllocatedGB.Should().BeGreaterThan(4.0, "Should allocate several GB before exhaustion");
 
             // Phase 2: Random deallocation and reallocation
             _output.WriteLine("Starting random deallocation/reallocation phase...");
@@ -124,18 +124,18 @@ public class HardwareStressTests : IDisposable
             var reallocationsCount = 0;
             sw.Restart();
 
-            for (int cycle = 0; cycle < 100; cycle++)
+            for(int cycle = 0; cycle < 100; cycle++)
             {
-                if (_cancellationTokenSource.Token.IsCancellationRequested) break;
+                if(_cancellationTokenSource.Token.IsCancellationRequested) break;
 
                 // Randomly deallocate some buffers
                 var deallocationCount = Math.Min(10, allocations.Count / 4);
-                for (int i = 0; i < deallocationCount && allocations.Count > 0; i++)
+                for(int i = 0; i < deallocationCount && allocations.Count > 0; i++)
                 {
                     var index = random.Next(allocations.Count);
                     var result = CudaFree(allocations[index]);
                     
-                    if (result == 0)
+                    if(result == 0)
                     {
                         allocations.RemoveAt(index);
                         allocationSizes.RemoveAt(index);
@@ -144,7 +144,7 @@ public class HardwareStressTests : IDisposable
                 }
 
                 // Try to reallocate
-                for (int i = 0; i < deallocationCount; i++)
+                for(int i = 0; i < deallocationCount; i++)
                 {
                     var sizeMB = baseAllocationSizeMB + random.Next(0, baseAllocationSizeMB);
                     var sizeBytes = sizeMB * 1024 * 1024;
@@ -152,7 +152,7 @@ public class HardwareStressTests : IDisposable
                     IntPtr devicePtr = IntPtr.Zero;
                     var result = CudaMalloc(ref devicePtr, sizeBytes);
 
-                    if (result == 0)
+                    if(result == 0)
                     {
                         allocations.Add(devicePtr);
                         allocationSizes.Add(sizeBytes);
@@ -168,8 +168,8 @@ public class HardwareStressTests : IDisposable
             _output.WriteLine($"  Final allocation count: {allocations.Count}");
             _output.WriteLine($"  Phase duration: {sw.ElapsedMilliseconds} ms");
 
-            Assert.True(deallocationsCount > 0, "Should successfully deallocate memory");
-            Assert.True(reallocationsCount > 0, "Should successfully reallocate memory after fragmentation");
+            deallocationsCount.Should().BeGreaterThan(0, "Should successfully deallocate memory");
+            reallocationsCount.Should().BeGreaterThan(0, "Should successfully reallocate memory after fragmentation");
         }
         finally
         {
@@ -181,6 +181,8 @@ public class HardwareStressTests : IDisposable
             }
             _output.WriteLine($"Cleaned up {allocations.Count} allocations");
         }
+
+        await Task.CompletedTask;
     }
 
     [SkippableFact]
@@ -198,17 +200,17 @@ public class HardwareStressTests : IDisposable
 extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         float val = data[idx];
         
         // High-intensity compute to generate heat
-        for (int i = 0; i < iterations; i++) {
+        for(int i = 0; i < iterations; i++) {
             val = val * val + sqrtf(fabsf(val)) - sinf(val) + cosf(val * 2.0f);
             val = powf(val, 1.01f) + tanhf(val * 0.5f) - expf(val * 0.01f);
             val = fmaf(val, 0.99f, 0.01f);
             
             // Prevent overflow
-            if (fabsf(val) > 1e6f) val *= 0.5f;
+            if(fabsf(val) > 1e6f) val *= 0.5f;
         }
         
         data[idx] = val;
@@ -222,7 +224,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
         try
         {
             // Compile stress kernel
-            var result = NvrtcCreateProgram(ref program, stressKernel, "stress.cu", 0, null, null);
+            var result = NvrtcCreateProgram(ref program, stressKernel, "stress.cu", 0, null!, null!);
             Assert.Equal(0, result); // Stress kernel compilation should succeed;
 
             var options = new[] { "--gpu-architecture=compute_89", "--use_fast_math" };
@@ -242,23 +244,23 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             Assert.Equal(0, result); // Kernel function retrieval should succeed;
 
             // Prepare concurrent workloads
-            for (int i = 0; i < concurrentKernels; i++)
+            for(int i = 0; i < concurrentKernels; i++)
             {
                 result = CudaMalloc(ref deviceBuffers[i], dataSize * sizeof(float));
-                Assert.Equal(0, $"Memory allocation for buffer {i} should succeed", result);
+                result.Should().Be(0, $"Memory allocation for buffer {i} should succeed");
 
                 hostBuffers[i] = new float[dataSize];
                 var random = new Random(42 + i);
-                for (int j = 0; j < dataSize; j++)
+                for(int j = 0; j < dataSize; j++)
                 {
-                    hostBuffers[i][j] = (float)(random.NextDouble() * 2.0 - 1.0);
+                    hostBuffers[i][j] =(float)(random.NextDouble() * 2.0 - 1.0);
                 }
 
                 var hostHandle = GCHandle.Alloc(hostBuffers[i], GCHandleType.Pinned);
                 try
                 {
                     result = CudaMemcpyHtoD(deviceBuffers[i], hostHandle.AddrOfPinnedObject(), dataSize * sizeof(float));
-                    Assert.Equal(0, $"Data copy to device buffer {i} should succeed", result);
+                    result.Should().Be(0, $"Data copy to device buffer {i} should succeed");
                 }
                 finally
                 {
@@ -273,7 +275,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
             _output.WriteLine("Starting intensive thermal stress workload...");
 
-            while (stressTestSw.ElapsedMilliseconds < stressTestDurationMs && !_cancellationTokenSource.Token.IsCancellationRequested)
+            while(stressTestSw.ElapsedMilliseconds < stressTestDurationMs && !_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 // Launch concurrent kernels to maximize heat generation
                 var kernelParams = new IntPtr[concurrentKernels][];
@@ -281,7 +283,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
                 try
                 {
-                    for (int i = 0; i < concurrentKernels; i++)
+                    for(int i = 0; i < concurrentKernels; i++)
                     {
                         kernelParams[i] = new IntPtr[]
                         {
@@ -299,16 +301,16 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
                         // Launch kernel
                         const int blockSize = 256;
-                        int gridSize = (dataSize + blockSize - 1) / blockSize;
+                        int gridSize =(dataSize + blockSize - 1) / blockSize;
 
                         result = CuLaunchKernel(
                             kernel,
-                            (uint)gridSize, 1, 1,
-                            (uint)blockSize, 1, 1,
+                           (uint)gridSize, 1, 1,
+                           (uint)blockSize, 1, 1,
                             0, IntPtr.Zero,
                             kernelParamsPtrs[i], IntPtr.Zero);
 
-                        if (result != 0)
+                        if(result != 0)
                         {
                             kernelFailures++;
                             _output.WriteLine($"Kernel launch failed with error code: {result}");
@@ -317,7 +319,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
                     // Synchronize all kernels
                     result = CudaCtxSynchronize();
-                    if (result != 0)
+                    if(result != 0)
                     {
                         kernelFailures++;
                         _output.WriteLine($"Context synchronization failed with error code: {result}");
@@ -326,26 +328,26 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                     iterationCount++;
 
                     // Log progress every 10 iterations
-                    if (iterationCount % 10 == 0)
+                    if(iterationCount % 10 == 0)
                     {
                         var elapsedSeconds = stressTestSw.ElapsedMilliseconds / 1000.0;
-                        var progress = (stressTestSw.ElapsedMilliseconds * 100.0) / stressTestDurationMs;
+                        var progress =(stressTestSw.ElapsedMilliseconds * 100.0) / stressTestDurationMs;
                         _output.WriteLine($"Stress test progress: {progress:F1}% ({elapsedSeconds:F1}s), iterations: {iterationCount}, failures: {kernelFailures}");
                     }
                 }
                 finally
                 {
                     // Cleanup kernel parameters
-                    for (int i = 0; i < concurrentKernels; i++)
+                    for(int i = 0; i < concurrentKernels; i++)
                     {
-                        if (kernelParams[i] != null)
+                        if(kernelParams[i] != null)
                         {
                             foreach (var param in kernelParams[i])
                             {
                                 Marshal.FreeHGlobal(param);
                             }
                         }
-                        if (kernelParamsPtrs[i] != IntPtr.Zero)
+                        if(kernelParamsPtrs[i] != IntPtr.Zero)
                         {
                             Marshal.FreeHGlobal(kernelParamsPtrs[i]);
                         }
@@ -362,25 +364,25 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             _output.WriteLine($"  Duration: {stressTestSw.ElapsedMilliseconds / 1000.0:F1} seconds");
             _output.WriteLine($"  Total iterations: {iterationCount}");
             _output.WriteLine($"  Kernel failures: {kernelFailures}");
-            _output.WriteLine($"  Failure rate: {(kernelFailures * 100.0) / (iterationCount * concurrentKernels):F2}%");
+            _output.WriteLine($"  Failure rate: {(kernelFailures * 100.0) /(iterationCount * concurrentKernels):F2}%");
 
             // Validate thermal stability
-            var failureRate = (kernelFailures * 100.0) / (iterationCount * concurrentKernels);
-            Assert.True(failureRate < 5.0, "Failure rate should be low even under thermal stress");
-            Assert.True(iterationCount > 10, "Should complete multiple stress iterations");
+            var failureRate =(kernelFailures * 100.0) /(iterationCount * concurrentKernels);
+            failureRate.Should().BeLessThan(5.0, "Failure rate should be low even under thermal stress");
+            iterationCount.Should().BeGreaterThan(10, "Should complete multiple stress iterations");
 
             _output.WriteLine("✓ System maintained stability under thermal stress");
         }
         finally
         {
             // Cleanup
-            for (int i = 0; i < concurrentKernels; i++)
+            for(int i = 0; i < concurrentKernels; i++)
             {
-                if (deviceBuffers[i] != IntPtr.Zero)
+                if(deviceBuffers[i] != IntPtr.Zero)
                     CudaFree(deviceBuffers[i]);
             }
-            if (module != IntPtr.Zero) CuModuleUnload(module);
-            if (program != IntPtr.Zero) NvrtcDestroyProgram(ref program);
+            if(module != IntPtr.Zero) CuModuleUnload(module);
+            if(program != IntPtr.Zero) NvrtcDestroyProgram(ref program);
         }
     }
 
@@ -402,10 +404,10 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
         try
         {
             // Create CUDA streams
-            for (int i = 0; i < streamCount; i++)
+            for(int i = 0; i < streamCount; i++)
             {
-                var result = CudaStreamCreate(ref streams[i]);
-                Assert.Equal(0, $"Stream {i} creation should succeed", result);
+                var result = CudaStreamCreate(ref streams[i], 0);
+                Assert.Equal(0, result); // Stream creation should succeed
                 deviceBuffers[i] = new List<IntPtr>();
             }
 
@@ -415,7 +417,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             var tasks = new Task[streamCount];
             var stopwatch = Stopwatch.StartNew();
 
-            for (int streamIdx = 0; streamIdx < streamCount; streamIdx++)
+            for(int streamIdx = 0; streamIdx < streamCount; streamIdx++)
             {
                 int capturedStreamIdx = streamIdx; // Capture for closure
                 
@@ -423,24 +425,24 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                 {
                     var random = new Random(42 + capturedStreamIdx);
                     
-                    for (int op = 0; op < operationsPerStream; op++)
+                    for(int op = 0; op < operationsPerStream; op++)
                     {
-                        if (_cancellationTokenSource.Token.IsCancellationRequested) break;
+                        if(_cancellationTokenSource.Token.IsCancellationRequested) break;
 
                         try
                         {
                             // Allocate memory
                             IntPtr devicePtr = IntPtr.Zero;
                             var result = CudaMalloc(ref devicePtr, dataSize * sizeof(float));
-                            if (result == 0)
+                            if(result == 0)
                             {
                                 deviceBuffers[capturedStreamIdx].Add(devicePtr);
 
                                 // Perform memory operations
                                 var hostData = new float[dataSize];
-                                for (int i = 0; i < dataSize; i++)
+                                for(int i = 0; i < dataSize; i++)
                                 {
-                                    hostData[i] = (float)random.NextDouble();
+                                    hostData[i] =(float)random.NextDouble();
                                 }
 
                                 var hostHandle = GCHandle.Alloc(hostData, GCHandleType.Pinned);
@@ -453,7 +455,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                                         dataSize * sizeof(float), 
                                         streams[capturedStreamIdx]);
 
-                                    if (result == 0)
+                                    if(result == 0)
                                     {
                                         // Asynchronous copy back
                                         result = CudaMemcpyDtoHAsync(
@@ -463,7 +465,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                                             streams[capturedStreamIdx]);
                                     }
 
-                                    if (result == 0)
+                                    if(result == 0)
                                     {
                                         completedOperations[capturedStreamIdx]++;
                                     }
@@ -475,12 +477,12 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                             }
 
                             // Log progress
-                            if (op % 20 == 0)
+                            if(op % 20 == 0)
                             {
                                 _output.WriteLine($"Stream {capturedStreamIdx}: {op}/{operationsPerStream} operations completed");
                             }
                         }
-                        catch (Exception ex)
+                        catch(Exception ex)
                         {
                             _output.WriteLine($"Stream {capturedStreamIdx} operation failed: {ex.Message}");
                         }
@@ -496,10 +498,10 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             stopwatch.Stop();
 
             // Synchronize all streams
-            for (int i = 0; i < streamCount; i++)
+            for(int i = 0; i < streamCount; i++)
             {
                 var result = CudaStreamSynchronize(streams[i]);
-                Assert.Equal(0, $"Stream {i} synchronization should succeed", result);
+                Assert.Equal(0, result); // Stream synchronization should succeed
             }
 
             var totalOperations = completedOperations.Sum();
@@ -513,16 +515,16 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             _output.WriteLine($"  Average per stream: {averageOperationsPerStream:F1}");
             _output.WriteLine($"  Stream utilization:");
             
-            for (int i = 0; i < streamCount; i++)
+            for(int i = 0; i < streamCount; i++)
             {
-                var utilization = (completedOperations[i] * 100.0) / operationsPerStream;
-                _output.WriteLine($"    Stream {i}: {completedOperations[i]}/{operationsPerStream} ({utilization:F1}%)");
+                var utilization =(completedOperations[i] * 100.0) / operationsPerStream;
+                _output.WriteLine($"    Stream {i}: {completedOperations[i]}/{operationsPerStream}{utilization:F1}%)");
             }
 
             // Validate performance
-            Assert.True(totalOperations > streamCount * operationsPerStream * 0.8, 
+            totalOperations.Should().BeGreaterThan((int)(streamCount * operationsPerStream * 0.8), 
                 "Should complete most operations even under stress");
-            Assert.True(averageOperationsPerStream > operationsPerStream * 0.8,
+            averageOperationsPerStream.Should().BeGreaterThan((int)(operationsPerStream * 0.8),
                 "Each stream should maintain reasonable performance");
 
             _output.WriteLine("✓ Concurrent streams maintained performance under stress");
@@ -530,7 +532,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
         finally
         {
             // Cleanup
-            for (int i = 0; i < streamCount; i++)
+            for(int i = 0; i < streamCount; i++)
             {
                 // Free all buffers for this stream
                 foreach (var buffer in deviceBuffers[i])
@@ -539,7 +541,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                 }
 
                 // Destroy stream
-                if (streams[i] != IntPtr.Zero)
+                if(streams[i] != IntPtr.Zero)
                     CudaStreamDestroy(streams[i]);
             }
             _output.WriteLine("Cleanup completed for concurrent stream stress test");
@@ -558,20 +560,20 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
         // Test 1: Invalid memory operations
         _output.WriteLine("Testing invalid memory operations recovery...");
-        for (int i = 0; i < 50; i++)
+        for(int i = 0; i < 50; i++)
         {
             try
             {
                 // Try to free invalid pointer
                 var result = CudaFree(new IntPtr(0xDEADBEEF));
-                if (result != 0) totalErrors++;
+                if(result != 0) totalErrors++;
 
                 // Try to copy to/from invalid pointers
                 var dummyPtr = Marshal.AllocHGlobal(1024);
                 try
                 {
                     result = CudaMemcpyHtoD(new IntPtr(0xBADCAFE), dummyPtr, 1024);
-                    if (result != 0) totalErrors++;
+                    if(result != 0) totalErrors++;
                 }
                 finally
                 {
@@ -581,14 +583,14 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                 // Verify context is still valid after errors
                 ulong free = 0, total = 0;
                 result = CudaMemGetInfo(ref free, ref total);
-                if (result == 0) recoveryCount++;
+                if(result == 0) recoveryCount++;
 
-                if (i % 10 == 0)
+                if(i % 10 == 0)
                 {
                     _output.WriteLine($"Error recovery test: {i}/50 completed, {recoveryCount} recoveries");
                 }
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _output.WriteLine($"Error recovery test iteration {i} failed: {ex.Message}");
             }
@@ -601,7 +603,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
         var invalidKernelErrors = 0;
         var kernelRecoveries = 0;
 
-        for (int i = 0; i < 20; i++)
+        for(int i = 0; i < 20; i++)
         {
             try
             {
@@ -611,16 +613,16 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                     1, 1, 1, 1, 1, 1, 0, 
                     IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
                 
-                if (result != 0) invalidKernelErrors++;
+                if(result != 0) invalidKernelErrors++;
 
                 // Verify context is still functional
                 result = CudaCtxSynchronize();
-                if (result == 0 || result == 1) // Success or no error to report
+                if(result == 0 || result == 1) // Success or no error to report
                 {
                     kernelRecoveries++;
                 }
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _output.WriteLine($"Invalid kernel test iteration {i} failed: {ex.Message}");
             }
@@ -636,12 +638,12 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
         try
         {
             // Allocate until exhaustion
-            for (int i = 0; i < 100; i++)
+            for(int i = 0; i < 100; i++)
             {
                 IntPtr devicePtr = IntPtr.Zero;
                 var result = CudaMalloc(ref devicePtr, 512 * 1024 * 1024); // 512 MB chunks
 
-                if (result == 0)
+                if(result == 0)
                 {
                     largeAllocations.Add(devicePtr);
                 }
@@ -656,17 +658,17 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
             // Test recovery by freeing half and reallocating
             var halfCount = largeAllocations.Count / 2;
-            for (int i = 0; i < halfCount; i++)
+            for(int i = 0; i < halfCount; i++)
             {
                 var result = CudaFree(largeAllocations[i]);
-                if (result == 0) exhaustionRecoveries++;
+                if(result == 0) exhaustionRecoveries++;
             }
             largeAllocations.RemoveRange(0, halfCount);
 
             // Try to allocate again
             IntPtr recoveryPtr = IntPtr.Zero;
             var recoveryResult = CudaMalloc(ref recoveryPtr, 256 * 1024 * 1024);
-            if (recoveryResult == 0)
+            if(recoveryResult == 0)
             {
                 exhaustionRecoveries++;
                 largeAllocations.Add(recoveryPtr);
@@ -689,9 +691,9 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
         _output.WriteLine($"  Kernel recoveries: {kernelRecoveries}/20");
         _output.WriteLine($"  Memory exhaustion recoveries: {exhaustionRecoveries}");
 
-        Assert.True(recoveryCount > 40, "Should recover from most invalid memory operations");
-        Assert.True(kernelRecoveries > 15, "Should recover from most invalid kernel launches");
-        Assert.True(exhaustionRecoveries > 0, "Should recover from memory exhaustion");
+        recoveryCount.Should().BeGreaterThan(40, "Should recover from most invalid memory operations");
+        kernelRecoveries.Should().BeGreaterThan(15, "Should recover from most invalid kernel launches");
+        exhaustionRecoveries.Should().BeGreaterThan(0, "Should recover from memory exhaustion");
 
         _output.WriteLine("✓ System demonstrated robust error recovery capabilities");
     }
@@ -700,7 +702,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
     {
         _cancellationTokenSource.Cancel();
         
-        if (_cudaContext != IntPtr.Zero)
+        if(_cudaContext != IntPtr.Zero)
         {
             CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
@@ -813,7 +815,7 @@ public static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
-        if (!condition)
+        if(!condition)
         {
             throw new SkipException(reason);
         }

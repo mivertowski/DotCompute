@@ -39,7 +39,7 @@ public class TestKernelExecutor
         KernelConfiguration? configuration = null,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
+        if(_disposed)
         {
             throw new ObjectDisposedException(nameof(TestKernelExecutor));
         }
@@ -60,9 +60,9 @@ public class TestKernelExecutor
         await _executionSemaphore.WaitAsync(cancellationToken);
         try
         {
-            if (!_executionQueue.TryDequeue(out var dequeuedExecution) || dequeuedExecution.Id != execution.Id)
+            if(!_executionQueue.TryDequeue(out var dequeuedExecution) || dequeuedExecution.Id != execution.Id)
             {
-                // Find our execution in the queue (shouldn't happen in normal flow)
+                // Find our execution in the queue(shouldn't happen in normal flow)
                 _executionQueue.TryDequeue(out _);
             }
 
@@ -106,7 +106,7 @@ public class TestKernelExecutor
                     MaxDegreeOfParallelism = Environment.ProcessorCount
                 }, range =>
                 {
-                    for (int threadId = range.Item1; threadId < range.Item2; threadId++)
+                    for(int threadId = range.Item1; threadId < range.Item2; threadId++)
                     {
                         // Simulate compute work for each thread
                         SimulateThreadExecution(threadId, execution);
@@ -129,7 +129,7 @@ public class TestKernelExecutor
                 Throughput = CalculateThroughput(totalThreads, elapsed)
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             
@@ -154,15 +154,15 @@ public class TestKernelExecutor
         var localThreadId = threadId % threadsPerBlock;
         
         // Simulate different workloads based on kernel name
-        if (execution.KernelName.Contains("MatrixMultiply", StringComparison.OrdinalIgnoreCase))
+        if(execution.KernelName.Contains("MatrixMultiply", StringComparison.OrdinalIgnoreCase))
         {
             SimulateMatrixMultiply(threadId);
         }
-        else if (execution.KernelName.Contains("Reduction", StringComparison.OrdinalIgnoreCase))
+        else if(execution.KernelName.Contains("Reduction", StringComparison.OrdinalIgnoreCase))
         {
             SimulateReduction(threadId);
         }
-        else if (execution.KernelName.Contains("Convolution", StringComparison.OrdinalIgnoreCase))
+        else if(execution.KernelName.Contains("Convolution", StringComparison.OrdinalIgnoreCase))
         {
             SimulateConvolution(threadId);
         }
@@ -176,7 +176,7 @@ public class TestKernelExecutor
     {
         // Simulate matrix multiplication workload
         double sum = 0;
-        for (int i = 0; i < 100; i++)
+        for(int i = 0; i < 100; i++)
         {
             sum += Math.Sin(threadId * i * 0.001) * Math.Cos(threadId * i * 0.001);
         }
@@ -186,7 +186,7 @@ public class TestKernelExecutor
     {
         // Simulate reduction workload
         double value = threadId;
-        for (int i = 0; i < 10; i++)
+        for(int i = 0; i < 10; i++)
         {
             value = Math.Sqrt(value + 1);
         }
@@ -196,9 +196,9 @@ public class TestKernelExecutor
     {
         // Simulate convolution workload
         double result = 0;
-        for (int i = -2; i <= 2; i++)
+        for(int i = -2; i <= 2; i++)
         {
-            for (int j = -2; j <= 2; j++)
+            for(int j = -2; j <= 2; j++)
             {
                 result += Math.Exp(-(i * i + j * j) / 2.0) * threadId;
             }
@@ -209,7 +209,7 @@ public class TestKernelExecutor
     {
         // Generic compute simulation
         double result = threadId;
-        for (int i = 0; i < 50; i++)
+        for(int i = 0; i < 50; i++)
         {
             result = Math.Sin(result) + Math.Cos(result);
         }
@@ -219,14 +219,14 @@ public class TestKernelExecutor
     {
         long totalSize = 0;
         
-        for (int i = 0; i < arguments.Length; i++)
+        for(int i = 0; i < arguments.Length; i++)
         {
             var arg = arguments.Arguments.ToArray()[i];
-            if (arg is IMemoryBuffer buffer)
+            if(arg is IMemoryBuffer buffer)
             {
                 totalSize += buffer.SizeInBytes;
             }
-            else if (arg is Array array)
+            else if(arg is Array array)
             {
                 totalSize += array.Length * 8; // Rough estimate
             }
@@ -241,7 +241,7 @@ public class TestKernelExecutor
 
     private double CalculateThroughput(int threads, TimeSpan elapsed)
     {
-        if (elapsed.TotalSeconds == 0)
+        if(elapsed.TotalSeconds == 0)
             return 0;
             
         return threads / elapsed.TotalSeconds;
@@ -251,21 +251,21 @@ public class TestKernelExecutor
     {
         var stats = _statistics.AddOrUpdate(kernelName,
             k => new KernelStatistics { KernelName = k },
-            (k, existing) => existing);
+           (k, existing) => existing);
 
         stats.ExecutionCount++;
         stats.TotalExecutionTime = stats.TotalExecutionTime.Add(TimeSpan.FromMilliseconds(result.ExecutionTimeMs));
         
-        if (result.Success)
+        if(result.Success)
         {
             stats.SuccessfulExecutions++;
             stats.TotalThreadsExecuted += result.ThreadsExecuted;
             stats.TotalMemoryUsed += result.MemoryUsed;
             
-            if (result.ExecutionTimeMs < stats.MinExecutionTimeMs || stats.MinExecutionTimeMs == 0)
+            if(result.ExecutionTimeMs < stats.MinExecutionTimeMs || stats.MinExecutionTimeMs == 0)
                 stats.MinExecutionTimeMs = result.ExecutionTimeMs;
                 
-            if (result.ExecutionTimeMs > stats.MaxExecutionTimeMs)
+            if(result.ExecutionTimeMs > stats.MaxExecutionTimeMs)
                 stats.MaxExecutionTimeMs = result.ExecutionTimeMs;
         }
         else
@@ -278,7 +278,7 @@ public class TestKernelExecutor
 
     public async Task WaitForCompletionAsync(CancellationToken cancellationToken = default)
     {
-        while (!_executionQueue.IsEmpty)
+        while(!_executionQueue.IsEmpty)
         {
             await Task.Delay(10, cancellationToken);
         }
@@ -286,7 +286,7 @@ public class TestKernelExecutor
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _disposed = true;
             _executionSemaphore?.Dispose();
@@ -342,5 +342,5 @@ public class KernelStatistics
         ExecutionCount > 0 ? TotalExecutionTime.TotalMilliseconds / ExecutionCount : 0;
     
     public double SuccessRate => 
-        ExecutionCount > 0 ? (double)SuccessfulExecutions / ExecutionCount * 100 : 0;
+        ExecutionCount > 0 ?(double)SuccessfulExecutions / ExecutionCount * 100 : 0;
 }

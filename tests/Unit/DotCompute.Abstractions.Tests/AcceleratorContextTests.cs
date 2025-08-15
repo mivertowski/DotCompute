@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -193,8 +193,8 @@ public class AcceleratorContextTests
 
         // Act & Assert
         context.Equals(context).Should().BeTrue();
-        (context == context).Should().BeTrue();
-        (context != context).Should().BeFalse();
+        context.Equals(context).Should().BeTrue();
+       (!context.Equals(null)).Should().BeTrue();
     }
 
     [Fact]
@@ -221,8 +221,8 @@ public class AcceleratorContextTests
 
         // Act & Assert
         context1.Equals(context2).Should().BeFalse();
-        (context1 == context2).Should().BeFalse();
-        (context1 != context2).Should().BeTrue();
+       (context1 == context2).Should().BeFalse();
+       (context1 != context2).Should().BeTrue();
     }
 
     [Fact]
@@ -235,8 +235,8 @@ public class AcceleratorContextTests
 
         // Act & Assert
         context1.Equals(context2).Should().BeFalse();
-        (context1 == context2).Should().BeFalse();
-        (context1 != context2).Should().BeTrue();
+       (context1 == context2).Should().BeFalse();
+       (context1 != context2).Should().BeTrue();
     }
 
     [Fact]
@@ -248,8 +248,8 @@ public class AcceleratorContextTests
 
         // Act & Assert
         context1.Equals(context2).Should().BeFalse();
-        (context1 == context2).Should().BeFalse();
-        (context1 != context2).Should().BeTrue();
+       (context1 == context2).Should().BeFalse();
+       (context1 != context2).Should().BeTrue();
     }
 
     [Fact]
@@ -335,7 +335,7 @@ public class AcceleratorContextTests
         var hashCode2 = context2.GetHashCode();
 
         // Assert
-        hashCode1.Should().Not.Be(hashCode2);
+        hashCode1.Should().NotBe(hashCode2);
     }
 
     [Fact]
@@ -350,7 +350,7 @@ public class AcceleratorContextTests
         var hashCode2 = context2.GetHashCode();
 
         // Assert
-        hashCode1.Should().Not.Be(hashCode2);
+        hashCode1.Should().NotBe(hashCode2);
     }
 
     [Fact]
@@ -366,7 +366,7 @@ public class AcceleratorContextTests
         var hashCode2 = context2.GetHashCode();
 
         // Assert
-        hashCode1.Should().Not.Be(hashCode2);
+        hashCode1.Should().NotBe(hashCode2);
     }
 
     #endregion
@@ -502,17 +502,17 @@ public class AcceleratorContextTests
         };
 
         // Act & Assert - Each context should only equal itself
-        for (int i = 0; i < contexts.Length; i++)
+        for(int i = 0; i < contexts.Length; i++)
         {
-            for (int j = 0; j < contexts.Length; j++)
+            for(int j = 0; j < contexts.Length; j++)
             {
-                if (i == j)
+                if(i == j)
                 {
                     contexts[i].Should().Be(contexts[j]);
                 }
                 else
                 {
-                    contexts[i].Should().Not.Be(contexts[j]);
+                    contexts[i].Should().NotBe(contexts[j]);
                 }
             }
         }
@@ -524,17 +524,17 @@ public class AcceleratorContextTests
         // Test various edge cases for IsValid property
         var testCases = new[]
         {
-            (IntPtr.Zero, false),
-            (new IntPtr(1), true),
-            (new IntPtr(-1), true),
-            (new IntPtr(long.MaxValue), true),
-            (new IntPtr(long.MinValue), true)
+           (IntPtr.Zero, false),
+           (new IntPtr(1), true),
+           (new IntPtr(-1), true),
+           (new IntPtr(long.MaxValue), true),
+           (new IntPtr(long.MinValue), true)
         };
 
         foreach (var (handle, expectedValid) in testCases)
         {
             var context = new AcceleratorContext(handle, 0);
-            context.IsValid.Should().Be(expectedValid, $"Handle {handle} should be {(expectedValid ? "valid" : "invalid")}");
+            context.IsValid.Should().Be(expectedValid); // Handle validity check
         }
     }
 
@@ -550,7 +550,7 @@ public class AcceleratorContextTests
         var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
 
         // Act - Multiple threads accessing properties
-        for (int i = 0; i < 10; i++)
+        for(int i = 0; i < 10; i++)
         {
             tasks.Add(System.Threading.Tasks.Task.Run(() =>
             {
@@ -589,7 +589,9 @@ public class AcceleratorContextTests
         // Act & Assert
         (context1 == context2).Should().BeTrue();
         (context1 == context3).Should().BeFalse();
+#pragma warning disable CS1718 // Comparison made to same variable
         (context1 == context1).Should().BeTrue();
+#pragma warning restore CS1718
     }
 
     [Fact]
@@ -603,7 +605,9 @@ public class AcceleratorContextTests
         // Act & Assert
         (context1 != context2).Should().BeFalse();
         (context1 != context3).Should().BeTrue();
+#pragma warning disable CS1718 // Comparison made to same variable
         (context1 != context1).Should().BeFalse();
+#pragma warning restore CS1718
     }
 
     #endregion

@@ -99,7 +99,7 @@ public class TestKernelStage : IPipelineStage
                 }
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             _metrics.RecordExecutionError(stopwatch.Elapsed);
@@ -121,7 +121,7 @@ public class TestKernelStage : IPipelineStage
         // Add mapped inputs
         foreach (var (paramName, contextKey) in _inputMappings)
         {
-            if (context.State.TryGetValue(contextKey, out var value) ||
+            if(context.State.TryGetValue(contextKey, out var value) ||
                 context.Inputs.TryGetValue(contextKey, out value))
             {
                 args.Add(value);
@@ -162,22 +162,22 @@ public class TestKernelStage : IPipelineStage
         var errors = new List<string>();
         var warnings = new List<string>();
         
-        if (_kernel == null)
+        if(_kernel == null)
         {
             errors.Add("Kernel is not set");
         }
         
-        if (string.IsNullOrEmpty(Name))
+        if(string.IsNullOrEmpty(Name))
         {
             errors.Add("Stage name is required");
         }
         
-        if (_inputMappings.Count == 0 && _constantParameters.Count == 0)
+        if(_inputMappings.Count == 0 && _constantParameters.Count == 0)
         {
             warnings.Add("No input parameters configured");
         }
         
-        if (_outputMappings.Count == 0)
+        if(_outputMappings.Count == 0)
         {
             warnings.Add("No output mappings configured");
         }
@@ -309,17 +309,17 @@ public class TestKernelStageBuilder : IKernelStageBuilder
 
     private void UpdateConfiguration()
     {
-        if (_globalWorkSize != null)
+        if(_globalWorkSize != null)
         {
             var gridDim = new Dim3(
-                _globalWorkSize.Length > 0 ? (int)_globalWorkSize[0] : 1,
-                _globalWorkSize.Length > 1 ? (int)_globalWorkSize[1] : 1,
-                _globalWorkSize.Length > 2 ? (int)_globalWorkSize[2] : 1);
+                _globalWorkSize.Length > 0 ?(int)_globalWorkSize[0] : 1,
+                _globalWorkSize.Length > 1 ?(int)_globalWorkSize[1] : 1,
+                _globalWorkSize.Length > 2 ?(int)_globalWorkSize[2] : 1);
             
             var blockDim = new Dim3(
-                _localWorkSize?.Length > 0 ? (int)_localWorkSize[0] : 1,
-                _localWorkSize?.Length > 1 ? (int)_localWorkSize[1] : 1,
-                _localWorkSize?.Length > 2 ? (int)_localWorkSize[2] : 1);
+                _localWorkSize?.Length > 0 ?(int)_localWorkSize[0] : 1,
+                _localWorkSize?.Length > 1 ?(int)_localWorkSize[1] : 1,
+                _localWorkSize?.Length > 2 ?(int)_localWorkSize[2] : 1);
             
             _stage.SetConfiguration(new KernelConfiguration(gridDim, blockDim));
         }
@@ -362,7 +362,7 @@ public class TestStageMetrics : IStageMetrics
     public long ErrorCount => _errorCount;
     
     public double SuccessRate => 
-        _executionCount > 0 ? (double)(_executionCount - _errorCount) / _executionCount * 100 : 0;
+        _executionCount > 0 ?(double)(_executionCount - _errorCount) / _executionCount * 100 : 0;
     
     public long AverageMemoryUsage => 
         _executionCount > 0 ? _totalMemoryUsage / _executionCount : 0;
@@ -371,7 +371,7 @@ public class TestStageMetrics : IStageMetrics
 
     public void RecordExecutionStart()
     {
-        lock (_lock)
+        lock(_lock)
         {
             _executionCount++;
         }
@@ -379,22 +379,22 @@ public class TestStageMetrics : IStageMetrics
 
     public void RecordExecutionSuccess(TimeSpan duration, long memoryUsed)
     {
-        lock (_lock)
+        lock(_lock)
         {
             _totalExecutionTime = _totalExecutionTime.Add(duration);
             _totalMemoryUsage += memoryUsed;
             
-            if (duration < _minExecutionTime)
+            if(duration < _minExecutionTime)
                 _minExecutionTime = duration;
             
-            if (duration > _maxExecutionTime)
+            if(duration > _maxExecutionTime)
                 _maxExecutionTime = duration;
         }
     }
 
     public void RecordExecutionError(TimeSpan duration)
     {
-        lock (_lock)
+        lock(_lock)
         {
             _errorCount++;
             _totalExecutionTime = _totalExecutionTime.Add(duration);
@@ -403,7 +403,7 @@ public class TestStageMetrics : IStageMetrics
 
     public void RecordCustomMetric(string name, double value)
     {
-        lock (_lock)
+        lock(_lock)
         {
             _customMetrics[name] = value;
         }

@@ -22,10 +22,10 @@ namespace DotCompute.Tests.Unit;
 public class PipelineIntegrationTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
-    private TestMemoryManager _memoryManager = null!;
-    private TestCpuAccelerator _accelerator = null!;
-    private TestDevice _device = null!;
-    private TestPipelineMemoryManager _pipelineMemoryManager = null!;
+    private TestMemoryManager _memoryManager = default!;
+    private TestCpuAccelerator _accelerator = default!;
+    private TestDevice _device = default!;
+    private TestPipelineMemoryManager _pipelineMemoryManager = default!;
 
     public PipelineIntegrationTests(ITestOutputHelper output)
     {
@@ -149,7 +149,7 @@ public class PipelineIntegrationTests : IAsyncLifetime
         var builder = new TestKernelPipelineBuilder()
             .WithName("Branch Pipeline")
             .AddBranch(
-                context => context.State.ContainsKey("takeTrueBranch") && (bool)context.State["takeTrueBranch"],
+                context => context.State.ContainsKey("takeTrueBranch") &&(bool)context.State["takeTrueBranch"],
                 trueBranch => trueBranch.AddKernel("TruePath", kernelTrue, cfg => cfg
                     .MapOutput("result", "true_output")),
                 falseBranch => falseBranch.AddKernel("FalsePath", kernelFalse, cfg => cfg
@@ -198,7 +198,7 @@ public class PipelineIntegrationTests : IAsyncLifetime
         var builder = new TestKernelPipelineBuilder()
             .WithName("Loop Pipeline")
             .AddLoop(
-                (context, iteration) => iteration < maxIterations,
+               (context, iteration) => iteration < maxIterations,
                 body => body.AddKernel("IterationKernel", kernel, cfg => cfg
                     .MapOutput("result", $"iteration_output");
 
@@ -420,7 +420,7 @@ public class PipelineIntegrationTests : IAsyncLifetime
 
         public ValueTask<object> ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
         {
-            if (_failuresRemaining > 0)
+            if(_failuresRemaining > 0)
             {
                 _failuresRemaining--;
                 throw new InvalidOperationException($"Simulated failure, {_failuresRemaining} remaining");

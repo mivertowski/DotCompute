@@ -31,9 +31,9 @@ public class AcceleratorMockTests
         var compiled = await accelerator.CompileKernelAsync(kernelDef);
 
         // Assert
-        actualInfo.BeSameAs(info);
-        memory.BeSameAs(memoryManager);
-        compiled.BeSameAs(compiledKernel);
+        actualInfo.Should().BeSameAs(info);
+        memory.Should().BeSameAs(memoryManager);
+        compiled.Should().BeSameAs(compiledKernel);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class BufferMockTests
         var size = buffer.SizeInBytes;
 
         // Assert
-        acc.BeSameAs(accelerator);
+        acc.Should().BeSameAs(accelerator);
         Assert.Equal(4096, size);
     }
 
@@ -139,7 +139,7 @@ public class BufferMockTests
         var result = buffer.Slice(100, 200);
 
         // Assert
-        result.BeSameAs(sliced);
+        result.Should().BeSameAs(sliced);
     }
 
     [Fact]
@@ -154,7 +154,7 @@ public class BufferMockTests
         var result = buffer.AsType<int>();
 
         // Assert
-        result.BeSameAs(newBuffer);
+        result.Should().BeSameAs(newBuffer);
     }
 
     [Fact]
@@ -262,10 +262,10 @@ public class AcceleratorProviderMockTests
 
         // Assert
         Assert.Equal("TestProvider", name);
-        types.BeEquivalentTo(new[] { AcceleratorType.CUDA, AcceleratorType.CPU });
+        types.Should().BeEquivalentTo(new[] { AcceleratorType.CUDA, AcceleratorType.CPU });
         Assert.Equal(2, discovered.Count());
-        discovered.First().BeSameAs(accelerator1);
-        created.BeSameAs(accelerator1);
+        discovered.First().Should().BeSameAs(accelerator1);
+        created.Should().BeSameAs(accelerator1);
     }
 }
 
@@ -285,7 +285,7 @@ public class MemoryManagerMockTests
         var result = await memoryManager.AllocateAsync(1024);
 
         // Assert
-        result.BeSameAs(buffer);
+        result.Should().BeSameAs(buffer);
         result.SizeInBytes.Should().Be(1024);
     }
 
@@ -303,7 +303,7 @@ public class MemoryManagerMockTests
         var result = await memoryManager.AllocateAndCopyAsync<int>(new ReadOnlyMemory<int>(data));
 
         // Assert
-        result.BeSameAs(buffer);
+        result.Should().BeSameAs(buffer);
     }
 
     [Fact]
@@ -319,7 +319,7 @@ public class MemoryManagerMockTests
         var result = memoryManager.CreateView(buffer, 100, 200);
 
         // Assert
-        result.BeSameAs(view);
+        result.Should().BeSameAs(view);
     }
 }
 

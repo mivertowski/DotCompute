@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -26,7 +26,7 @@ public class ExceptionTests
         // Assert
         Assert.NotNull(exception);
         exception.Message.Should().NotBeNullOrEmpty();
-        exception.Assert.Null(InnerException);
+        exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -40,7 +40,7 @@ public class ExceptionTests
 
         // Assert
         exception.Message.Should().Be(expectedMessage);
-        exception.Assert.Null(InnerException);
+        exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public class ExceptionTests
 
         // Assert
         exception.Message.Should().Be(message);
-        exception.Assert.Null(InnerException);
+        exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class ExceptionTests
         // Act & Assert
         topException.InnerException.Should().Be(middleException);
         topException.InnerException!.InnerException.Should().Be(rootException);
-        topException.InnerException.InnerException!.Assert.Null(InnerException);
+        topException.InnerException.InnerException!.InnerException.Should().BeNull();
     }
 
     #endregion
@@ -145,7 +145,7 @@ public class ExceptionTests
         // Assert
         Assert.NotNull(exception);
         exception.Message.Should().NotBeNullOrEmpty();
-        exception.Assert.Null(InnerException);
+        exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -159,7 +159,7 @@ public class ExceptionTests
 
         // Assert
         exception.Message.Should().Be(expectedMessage);
-        exception.Assert.Null(InnerException);
+        exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class ExceptionTests
 
         // Assert
         exception.Message.Should().Be(message);
-        exception.Assert.Null(InnerException);
+        exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -248,7 +248,7 @@ public class ExceptionTests
         // Act & Assert
         topException.InnerException.Should().Be(middleException);
         topException.InnerException!.InnerException.Should().Be(rootException);
-        topException.InnerException.InnerException!.Assert.Null(InnerException);
+        topException.InnerException.InnerException!.InnerException.Should().BeNull();
     }
 
     #endregion
@@ -275,8 +275,8 @@ public class ExceptionTests
         var memoryException = new MemoryException();
 
         // Assert
-        acceleratorException.NotBeAssignableTo<MemoryException>();
-        memoryException.NotBeAssignableTo<AcceleratorException>();
+        acceleratorException.Should().NotBeAssignableTo<MemoryException>();
+        memoryException.Should().NotBeAssignableTo<AcceleratorException>();
     }
 
     [Fact]
@@ -288,9 +288,9 @@ public class ExceptionTests
         var exceptionType = typeof(Exception);
 
         // Assert
-        acceleratorType.Should().Not.Be(memoryType);
-        acceleratorType.Should().Not.Be(exceptionType);
-        memoryType.Should().Not.Be(exceptionType);
+        acceleratorType.Should().NotBe(memoryType);
+        acceleratorType.Should().NotBe(exceptionType);
+        memoryType.Should().NotBe(exceptionType);
 
         acceleratorType.IsSubclassOf(exceptionType).Should().BeTrue();
         memoryType.IsSubclassOf(exceptionType).Should().BeTrue();
@@ -312,7 +312,7 @@ public class ExceptionTests
         {
             throw new AcceleratorException(expectedMessage);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             caughtException = ex;
         }
@@ -335,7 +335,7 @@ public class ExceptionTests
         {
             throw new MemoryException(expectedMessage);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             caughtException = ex;
         }
@@ -358,7 +358,7 @@ public class ExceptionTests
         {
             throw new AcceleratorException(expectedMessage);
         }
-        catch (AcceleratorException ex)
+        catch(AcceleratorException ex)
         {
             caughtException = ex;
         }
@@ -380,7 +380,7 @@ public class ExceptionTests
         {
             throw new MemoryException(expectedMessage);
         }
-        catch (MemoryException ex)
+        catch(MemoryException ex)
         {
             caughtException = ex;
         }
@@ -405,12 +405,12 @@ public class ExceptionTests
             {
                 throw new MemoryException("Memory error");
             }
-            catch (AcceleratorException ex)
+            catch(AcceleratorException ex)
             {
                 caughtAcceleratorException = ex;
             }
         }
-        catch (MemoryException ex)
+        catch(MemoryException ex)
         {
             caughtMemoryException = ex;
             memoryExceptionThrown = true;
@@ -460,10 +460,10 @@ public class ExceptionTests
         var memoryString = memoryException.ToString();
 
         // Assert
-        acceleratorString.Contain(nameof(AcceleratorException));
+        acceleratorString.Should().Contain(nameof(AcceleratorException));
         Assert.Contains(message, acceleratorString);
 
-        memoryString.Contain(nameof(MemoryException));
+        memoryString.Should().Contain(nameof(MemoryException));
         Assert.Contains(message, memoryString);
     }
 
@@ -547,7 +547,7 @@ public class ExceptionTests
         var scenarios = new[]
         {
             "CUDA driver not found",
-            "Device compute capability insufficient (required: 7.0, found: 6.1)",
+            "Device compute capability insufficient(required: 7.0, found: 6.1)",
             "Failed to initialize OpenCL context",
             "Metal device not available on this system",
             "DirectML adapter initialization failed"
@@ -597,13 +597,13 @@ public class ExceptionTests
         }
 
         // Act & Assert
-        var acceleratorAction = () => SimulateAcceleratorOperation();
-        var memoryAction = () => SimulateMemoryOperation();
+        var acceleratorAction =() => SimulateAcceleratorOperation();
+        var memoryAction =() => SimulateMemoryOperation();
 
-        acceleratorAction.Throw<AcceleratorException>()
+        acceleratorAction.Should().Throw<AcceleratorException>()
                         .WithMessage("Simulated accelerator failure");
 
-        memoryAction.Throw<MemoryException>()
+        memoryAction.Should().Throw<MemoryException>()
                    .WithMessage("Simulated memory failure");
     }
 

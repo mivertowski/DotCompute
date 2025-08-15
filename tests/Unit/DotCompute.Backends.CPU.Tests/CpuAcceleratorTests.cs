@@ -1,23 +1,40 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Intrinsics;
+using DotCompute.Backends.CPU.Threading;
+using DotCompute.Backends.CPU.Tests.Helpers;
 using DotCompute.Core;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace DotCompute.Backends.CPU;
 
 public class CpuAcceleratorTests
 {
     private readonly FakeLogger<CpuAccelerator> _logger;
+    private readonly IOptions<CpuAcceleratorOptions> _options;
+    private readonly IOptions<CpuThreadPoolOptions> _threadPoolOptions;
     private readonly CpuAccelerator _accelerator;
 
     public CpuAcceleratorTests()
     {
         _logger = new FakeLogger<CpuAccelerator>();
-        _accelerator = new CpuAccelerator(_logger);
+        _options = Options.Create(new CpuAcceleratorOptions
+        {
+            EnableAutoVectorization = true,
+            PreferPerformanceOverPower = true
+        });
+        _threadPoolOptions = Options.Create(new CpuThreadPoolOptions
+        {
+            WorkerThreads = Environment.ProcessorCount,
+            MaxQueuedItems = 10000,
+            EnableWorkStealing = true
+        });
+        _accelerator = new CpuAccelerator(_options, _threadPoolOptions, _logger);
     }
 
     [Fact]
@@ -40,9 +57,9 @@ public class CpuAcceleratorTests
         Assert.NotNull(deviceInfo);
         deviceInfo.Name.Should().NotBeNullOrEmpty();
         deviceInfo.DeviceType.Should().Be(ComputeDeviceType.CPU);
-((deviceInfo.MemorySize > 0).Should().BeTrue();
-((deviceInfo.MaxComputeUnits > 0).Should().BeTrue();
-((deviceInfo.MaxWorkGroupSize > 0).Should().BeTrue();
+        (deviceInfo.MemorySize > 0).Should().BeTrue();
+        (deviceInfo.MaxComputeUnits > 0).Should().BeTrue();
+        (deviceInfo.MaxWorkGroupSize > 0).Should().BeTrue();
     }
 
     [Fact]
@@ -77,9 +94,9 @@ public class CpuAcceleratorTests
         Assert.NotNull(capabilities);
         Assert.IsType<SimdCapabilities>(capabilities);
         
-        var simdCaps = (SimdCapabilities)capabilities;
+        var simdCaps =(SimdCapabilities)capabilities;
         simdCaps.IsHardwareAccelerated.Should().Be(System.Numerics.Vector.IsHardwareAccelerated);
-((simdCaps.PreferredVectorWidth > 0).Should().BeTrue();
+        (simdCaps.PreferredVectorWidth > 0).Should().BeTrue();
         simdCaps.SupportedInstructionSets.Should().NotBeNull();
     }
 
@@ -111,7 +128,7 @@ public class CpuAcceleratorTests
     public async Task CompileKernelAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _accelerator.MethodCall().AsTask());
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _accelerator.CompileKernelAsync(null!).AsTask());
     }
 
     [Fact]
@@ -147,25 +164,25 @@ public class CpuAcceleratorTests
     public void WarmUp_ShouldCompleteSuccessfully()
     {
         // Act & Assert
-        _accelerator.Invoking(a => a.WarmUp()).NotThrow();
+        _accelerator.Invoking(a => a.WarmUp()).Should().NotThrow();
     }
 
     [Fact]
     public async Task DisposeAsync_ShouldCompleteSuccessfully()
     {
         // Arrange
-        var accelerator = new CpuAccelerator(_logger);
+        var accelerator = new CpuAccelerator(_options, _threadPoolOptions, _logger);
 
         // Act & Assert
         await accelerator.Invoking(a => a.DisposeAsync().AsTask())
-            .NotThrowAsync();
+            .Should().NotThrowAsync();
     }
 
     [Fact]
     public void IsInitialized_AfterDispose_ShouldRemainTrue()
     {
         // Arrange
-        var accelerator = new CpuAccelerator(_logger);
+        var accelerator = new CpuAccelerator(_options, _threadPoolOptions, _logger);
 
         // Act
         accelerator.DisposeAsync().AsTask().Wait();
@@ -198,20 +215,20 @@ public class CpuAcceleratorTests
         // Assert
         deviceInfo.Name.Should().Be(_accelerator.Name);
         deviceInfo.DeviceType.Should().Be(_accelerator.DeviceType);
-        deviceInfo.MaxComputeUnits >= 1.Should().BeTrue();
-        deviceInfo.MaxComputeUnits <= Environment.ProcessorCount.Should().BeTrue();
+        deviceInfo.MaxComputeUnits.Should().BeGreaterThanOrEqualTo(1);
+        (deviceInfo.MaxComputeUnits <= Environment.ProcessorCount).Should().BeTrue();
     }
 
     [Fact]
     public void Logger_ShouldReceiveInitializationMessages()
     {
         // Arrange & Act
-        var accelerator = new CpuAccelerator(_logger);
+        var accelerator = new CpuAccelerator(_options, _threadPoolOptions, _logger);
 
         // Assert
         _logger.Collector.GetSnapshot().Should().NotBeEmpty();
         _logger.Collector.GetSnapshot()
-            .Contain(log => log.Message != null && log.Message.Contains("CPU accelerator initialized"));
+            .Should().Contain(log => log.Message != null && log.Message.Contains("CPU accelerator initialized"));
     }
 }
 
@@ -223,7 +240,7 @@ public class CpuMemoryManagerTests
     public CpuMemoryManagerTests()
     {
         _logger = new FakeLogger<CpuMemoryManager>();
-        _memoryManager = new CpuMemoryManager(_logger);
+        _memoryManager = new CpuMemoryManager();
     }
 
     [Fact]
@@ -231,8 +248,8 @@ public class CpuMemoryManagerTests
     {
         // Assert
         Assert.NotNull(_memoryManager);
-((_memoryManager.TotalMemory > 0).Should().BeTrue();
-((_memoryManager.AvailableMemory > 0).Should().BeTrue();
+        (_memoryManager.TotalMemory > 0).Should().BeTrue();
+        (_memoryManager.AvailableMemory > 0).Should().BeTrue();
     }
 
     [Theory]
@@ -255,7 +272,7 @@ public class CpuMemoryManagerTests
     {
         // Act & Assert
         _memoryManager.Invoking(m => m.AllocateBuffer(0))
-            .Throw<ArgumentException>();
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -263,7 +280,7 @@ public class CpuMemoryManagerTests
     {
         // Act & Assert
         _memoryManager.Invoking(m => m.AllocateBuffer(-1))
-            .Throw<ArgumentException>();
+            .Should().Throw<ArgumentException>();
     }
 
     [Fact]
@@ -277,15 +294,15 @@ public class CpuMemoryManagerTests
         using var buffer2 = _memoryManager.AllocateBuffer(2048);
 
         // Assert
-        _memoryManager.AllocatedMemory >= 3072.Should().BeTrue();
-        _memoryManager.AvailableMemory <= initialAvailable.Should().BeTrue();
+        _memoryManager.AllocatedMemory.Should().BeGreaterThanOrEqualTo(3072);
+        (_memoryManager.AvailableMemory <= initialAvailable).Should().BeTrue();
     }
 
     [Fact]
     public async Task DisposeAsync_ShouldReleaseAllMemory()
     {
         // Arrange
-        var memoryManager = new CpuMemoryManager(_logger);
+        var memoryManager = new CpuMemoryManager();
         var buffer = memoryManager.AllocateBuffer(1024);
 
         // Act
@@ -320,7 +337,7 @@ public class CpuMemoryManagerTests
 
     protected virtual void Dispose(bool disposing)
     {
-        if (disposing)
+        if(disposing)
         {
             _memoryManager?.Dispose();
         }
@@ -353,7 +370,7 @@ public class CpuMemoryBufferTests
     public void Constructor_WithZeroSize_ShouldThrowArgumentException()
     {
         // Act & Assert
-        Action action = () => new CpuMemoryBuffer(0);
+        Action action =() => new CpuMemoryBuffer(0);
         Assert.Throws<ArgumentException>(() => action());
     }
 
@@ -382,7 +399,7 @@ public class CpuMemoryBufferTests
 
         // Assert
         var memory = buffer.GetMemory();
-        for (int i = 0; i < testData.Length; i++)
+        for(int i = 0; i < testData.Length; i++)
         {
             memory.Span[i].Should().Be(testData[i]);
         }
@@ -401,7 +418,7 @@ public class CpuMemoryBufferTests
         buffer.ReadData(readData, 0);
 
         // Assert
-        readData.BeEquivalentTo(testData);
+        readData.Should().BeEquivalentTo(testData);
     }
 
     [Fact]
@@ -426,6 +443,6 @@ public class CpuMemoryBufferTests
 
         // Act & Assert
         buffer.Invoking(b => b.GetMemory())
-            .Throw<ObjectDisposedException>();
+            .Should().Throw<ObjectDisposedException>();
     }
 }

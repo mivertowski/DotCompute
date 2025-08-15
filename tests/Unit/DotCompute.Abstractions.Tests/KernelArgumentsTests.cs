@@ -33,7 +33,7 @@ public class KernelArgumentsTests
         // Assert
         args.Get(0).Should().Be(testValue);
         args.Get(1).Should().Be(testString);
-        args.Get(2).BeEquivalentTo(testArray);
+        args.Get(2).Should().BeEquivalentTo(testArray);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class KernelArgumentsTests
         var args = KernelArguments.Create(2);
 
         // Act & Assert
-        var act = () => args.Get(5);
+        var act =() => args.Get(5);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
@@ -54,7 +54,7 @@ public class KernelArgumentsTests
         var args = new KernelArguments();
 
         // Act & Assert
-        var act = () => args.Get(0);
+        var act =() => args.Get(0);
         Assert.Throws<InvalidOperationException>(() => act());
     }
 
@@ -78,7 +78,7 @@ public class KernelArgumentsTests
         args.Set(0, null!);
 
         // Assert
-        args.Get(0).BeNull();
+        args.Get(0).Should().BeNull();
     }
 
     [Fact]

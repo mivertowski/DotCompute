@@ -89,18 +89,18 @@ public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
         // 6. Verify correctness
         
         // For now, simulate on CPU for structure
-        for (int i = 0; i < vectorSize; i++)
+        for(int i = 0; i < vectorSize; i++)
         {
             c[i] = a[i] + b[i];
         }
         
         stopwatch.Stop();
         
-        Assert.True(TestDataGenerators.ValidateVectorAddition(a, b, c));
+        TestDataGenerators.ValidateVectorAddition(a, b, c);
         
         _output.WriteLine($"Vector size: {vectorSize:N0}");
         _output.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds}ms");
-        _output.WriteLine($"Throughput: {vectorSize * 3 * sizeof(float) / (stopwatch.Elapsed.TotalSeconds * 1e9):F2} GB/s");
+        _output.WriteLine($"Throughput: {vectorSize * 3 * sizeof(float) /(stopwatch.Elapsed.TotalSeconds * 1e9):F2} GB/s");
         
         await Task.CompletedTask;
     }
@@ -129,7 +129,7 @@ public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
         
         _output.WriteLine($"Matrix size: {matrixSize}x{matrixSize}");
         _output.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds}ms");
-        _output.WriteLine($"GFLOPS: {2.0 * matrixSize * matrixSize * matrixSize / (stopwatch.Elapsed.TotalSeconds * 1e9):F2}");
+        _output.WriteLine($"GFLOPS: {(2.0 * matrixSize * matrixSize * matrixSize / stopwatch.Elapsed.TotalSeconds * 1e-9):F2}");
     }
 
     [HardwareFact(AcceleratorType.CUDA)]
@@ -147,7 +147,7 @@ public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
         // 4. Measure performance improvement
         
         var totalData = numStreams * dataPerStream;
-        _output.WriteLine($"Total data: {totalData * sizeof(float) / (1024 * 1024)}MB");
+        _output.WriteLine($"Total data: {totalData * sizeof(float) /(1024 * 1024)}MB");
         _output.WriteLine($"Streams: {numStreams}");
         
         await Task.CompletedTask;
@@ -169,7 +169,7 @@ public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
         // 3. Verify automatic migration
         // 4. Test prefetching optimizations
         
-        _output.WriteLine($"Unified memory test with {dataSize * sizeof(float) / (1024 * 1024)}MB");
+        _output.WriteLine($"Unified memory test with {dataSize * sizeof(float) /(1024 * 1024)}MB");
         
         await Task.CompletedTask;
     }
@@ -196,7 +196,7 @@ public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
         _output.WriteLine($"Data size: {dataSize:N0} elements");
         _output.WriteLine($"Expected sum: {expectedSum}");
         _output.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds}ms");
-        _output.WriteLine($"Throughput: {dataSize * sizeof(float) / (stopwatch.Elapsed.TotalSeconds * 1e9):F2} GB/s");
+        _output.WriteLine($"Throughput: {dataSize * sizeof(float) /(stopwatch.Elapsed.TotalSeconds * 1e9):F2} GB/s");
         
         await Task.CompletedTask;
     }

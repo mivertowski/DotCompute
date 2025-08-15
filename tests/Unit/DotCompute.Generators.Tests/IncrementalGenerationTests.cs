@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Generators.Kernel;
@@ -31,7 +31,7 @@ public class IncrementalGenerationTests
         result1.GeneratedSources.Length.Should().Be(result2.GeneratedSources.Length);
         result1.Diagnostics.Length.Should().Be(result2.Diagnostics.Length);
         
-        for (int i = 0; i < result1.GeneratedSources.Length; i++)
+        for(int i = 0; i < result1.GeneratedSources.Length; i++)
         {
             result1.GeneratedSources[i].SourceText.ToString()
                 .Should().Be(result2.GeneratedSources[i].SourceText.ToString());
@@ -57,7 +57,7 @@ public class TestKernels
     [Kernel]
     public static void AddArrays(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -66,7 +66,7 @@ public class TestKernels
     [Kernel]
     public static void MultiplyArrays(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] * b[i];
         }
@@ -78,7 +78,7 @@ public class TestKernels
         var updatedResult = TestHelper.RunIncrementalGenerator(_generator, updatedSource);
 
         // Assert
-        updatedResult.GeneratedSources.Length > initialResult.GeneratedSources.Length.Should().BeTrue();
+        (updatedResult.GeneratedSources.Length > initialResult.GeneratedSources.Length).Should().BeTrue();
         updatedResult.GeneratedSources.Contain(s => s.HintName.Contains("MultiplyArrays"));
     }
 
@@ -95,7 +95,7 @@ public class TestKernels
     [Kernel]
     public static void AddArrays(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -104,7 +104,7 @@ public class TestKernels
     [Kernel]
     public static void MultiplyArrays(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] * b[i];
         }
@@ -194,7 +194,7 @@ public class TestKernels
     [Kernel]
     public static void AddArrays(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -215,7 +215,7 @@ public class TestKernels
     [Kernel]
     public static void AddArrays(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -240,7 +240,7 @@ public class TestKernels
         initialResult.GeneratedSources.Length.Should().Be(updatedResult.GeneratedSources.Length);
         
         // Generated source should be identical
-        for (int i = 0; i < initialResult.GeneratedSources.Length; i++)
+        for(int i = 0; i < initialResult.GeneratedSources.Length; i++)
         {
             initialResult.GeneratedSources[i].SourceText.ToString()
                 .Should().Be(updatedResult.GeneratedSources[i].SourceText.ToString());
@@ -291,7 +291,7 @@ public class TestKernels
         var updatedKernels2Files = updatedResult.GeneratedSources.Where(s => s.HintName.Contains("Kernels2"));
         
         initialKernels2Files.Select(f => f.SourceText.ToString())
-            .BeEquivalentTo(updatedKernels2Files.Select(f => f.SourceText.ToString();
+            .Should().BeEquivalentTo(updatedKernels2Files.Select(f => f.SourceText.ToString());
     }
 
     [Fact]
@@ -335,7 +335,7 @@ public class MathKernels
     [Kernel]
     public static void Add(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -344,7 +344,7 @@ public class MathKernels
     [Kernel(VectorSize = 8)]
     public static void Multiply(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] * b[i];
         }
@@ -353,7 +353,7 @@ public class MathKernels
     [Kernel(Backends = KernelBackends.CPU | KernelBackends.CUDA)]
     public static void Divide(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] / b[i];
         }
@@ -370,7 +370,7 @@ public class MathKernels
     [Kernel(VectorSize = 16)] // Changed vector size
     public static void Add(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -381,7 +381,7 @@ public class MathKernels
     [Kernel(Backends = KernelBackends.CPU | KernelBackends.CUDA)]
     public static void Divide(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] / b[i];
         }
@@ -391,7 +391,7 @@ public class MathKernels
     [Kernel(IsParallel = true)]
     public static void Subtract(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] - b[i];
         }
@@ -440,7 +440,7 @@ public class InvalidKernels
     [Kernel]
     public static void BrokenKernel(float[] a, float[] b  // Missing closing parenthesis
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }

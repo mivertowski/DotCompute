@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Immutable;
@@ -64,7 +64,7 @@ using FluentAssertions;
 [Kernel]
 public static void GlobalKernel(float[] input, float[] output, int length)
 {
-    for (int i = 0; i < length; i++)
+    for(int i = 0; i < length; i++)
     {
         output[i] = input[i] * 2.0f;
     }
@@ -92,7 +92,7 @@ public class GenericKernels
     [Kernel]
     public static void ProcessBuffers(Span<float> input, Span<float> output)
     {
-        for (int i = 0; i < input.Length; i++)
+        for(int i = 0; i < input.Length; i++)
         {
             output[i] = input[i] * 2.0f;
         }
@@ -122,7 +122,7 @@ public class OuterClass
         [Kernel]
         public static void NestedKernel(float[] input, float[] output, int length)
         {
-            for (int i = 0; i < length; i++)
+            for(int i = 0; i < length; i++)
             {
                 output[i] = input[i] + 1.0f;
             }
@@ -152,7 +152,7 @@ public partial class PartialKernels
     [Kernel]
     public static void FirstKernel(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i] * 2.0f;
         }
@@ -168,7 +168,7 @@ public partial class PartialKernels
     [Kernel]
     public static void SecondKernel(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i] + 1.0f;
         }
@@ -184,7 +184,7 @@ public partial class PartialKernels
         result.GeneratedSources.Contain(s => s.HintName.Contains("SecondKernel"));
         
         var invokerCode = result.GeneratedSources.FirstOrDefault(s => s.HintName.Contains("Invoker.g.cs"));
-        if (invokerCode != null)
+        if(invokerCode != null)
         {
             var code = invokerCode.SourceText.ToString();
             Assert.Contains("FirstKernel", code);
@@ -205,7 +205,7 @@ public class KernelClass1
     [Kernel]
     public static void Process(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i] * 2.0f;
         }
@@ -217,7 +217,7 @@ public class KernelClass2
     [Kernel]
     public static void Process(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i] + 1.0f;
         }
@@ -252,7 +252,7 @@ public class OverloadedKernels
     [Kernel]
     public static void Process(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i] * 2.0f;
         }
@@ -261,7 +261,7 @@ public class OverloadedKernels
     [Kernel]
     public static void Process(double[] input, double[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i] * 2.0;
         }
@@ -316,7 +316,7 @@ public class CommentKernels
     public static void KernelWithSpecialComments(float[] input, float[] output, int length)
     {
         // Comment with special chars: <>""&'@#$%
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i]; // Another comment
         }
@@ -348,7 +348,7 @@ public class ExpressionKernels
     
     private static void ProcessArrays(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i] * 2.0f;
         }
@@ -380,7 +380,7 @@ public class AsyncKernels
     {
         await Task.Run(() =>
         {
-            for (int i = 0; i < length; i++)
+            for(int i = 0; i < length; i++)
             {
                 output[i] = input[i] * 2.0f;
             }
@@ -410,7 +410,7 @@ public class GenericKernels
     [Kernel]
     public static void GenericProcess<T>(T[] input, T[] output, int length) where T : unmanaged
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             output[i] = input[i];
         }
@@ -434,13 +434,13 @@ public class GenericKernels
         sourceBuilder.AppendLine("using DotCompute.Generators.Kernel;");
         sourceBuilder.AppendLine("public class ManyKernels {");
         
-        for (int i = 0; i < 50; i++)
+        for(int i = 0; i < 50; i++)
         {
             sourceBuilder.AppendLine($@"
     [Kernel]
     public static void Kernel{i:D3}(float[] input, float[] output, int length)
     {{
-        for (int j = 0; j < length; j++)
+        for(int j = 0; j < length; j++)
         {{
             output[j] = input[j] * {i + 1}.0f;
         }}
@@ -455,13 +455,13 @@ public class GenericKernels
 
         // Assert
         result.GeneratedSources.Should().NotBeEmpty();
-        result.GeneratedSources.Length > 50.Should().BeTrue(); // Registry + implementations
+        result.GeneratedSources.Length.Should().BeGreaterThan(50,); // Registry + implementations
         
         var registryCode = TestHelper.GetGeneratedSource(result, "KernelRegistry.g.cs");
         Assert.NotNull(registryCode);
         
         // Should contain all kernels
-        for (int i = 0; i < 50; i++)
+        for(int i = 0; i < 50; i++)
         {
             Assert.Contains($"Kernel{i:D3}", registryCode);
         }

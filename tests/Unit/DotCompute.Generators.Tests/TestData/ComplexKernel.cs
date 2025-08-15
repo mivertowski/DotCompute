@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -21,19 +21,19 @@ namespace DotCompute.Tests.Unit.TestData
                 MemoryPattern = MemoryAccessPattern.Sequential)]
         public static void SignalProcessor(float[] input, float[] output, float threshold, int length)
         {
-            for (int i = 0; i < length; i++)
+            for(int i = 0; i < length; i++)
             {
                 float value = input[i];
                 
-                if (Math.Abs(value) > threshold)
+                if(Math.Abs(value) > threshold)
                 {
                     // Apply nonlinear transformation
-                    float processed = (float)(Math.Sign(value) * Math.Pow(Math.Abs(value), 0.8));
+                    float processed =(float)(Math.Sign(value) * Math.Pow(Math.Abs(value), 0.8));
                     
                     // Apply smoothing filter
-                    if (i > 0 && i < length - 1)
+                    if(i > 0 && i < length - 1)
                     {
-                        processed = (input[i-1] * 0.25f + processed * 0.5f + input[i+1] * 0.25f);
+                        processed =(input[i-1] * 0.25f + processed * 0.5f + input[i+1] * 0.25f);
                     }
                     
                     output[i] = processed;
@@ -56,18 +56,18 @@ namespace DotCompute.Tests.Unit.TestData
         {
             int halfKernel = kernelSize / 2;
             
-            for (int y = halfKernel; y < height - halfKernel; y++)
+            for(int y = halfKernel; y < height - halfKernel; y++)
             {
-                for (int x = halfKernel; x < width - halfKernel; x++)
+                for(int x = halfKernel; x < width - halfKernel; x++)
                 {
                     float sum = 0.0f;
                     
-                    for (int ky = -halfKernel; ky <= halfKernel; ky++)
+                    for(int ky = -halfKernel; ky <= halfKernel; ky++)
                     {
-                        for (int kx = -halfKernel; kx <= halfKernel; kx++)
+                        for(int kx = -halfKernel; kx <= halfKernel; kx++)
                         {
-                            int imageIndex = (y + ky) * width + (x + kx);
-                            int kernelIndex = (ky + halfKernel) * kernelSize + (kx + halfKernel);
+                            int imageIndex =(y + ky) * width +(x + kx);
+                            int kernelIndex =(ky + halfKernel) * kernelSize +(kx + halfKernel);
                             sum += input[imageIndex] * kernel[kernelIndex];
                         }
                     }
@@ -85,7 +85,7 @@ namespace DotCompute.Tests.Unit.TestData
                 MemoryPattern = MemoryAccessPattern.Random)]
         public static void MonteCarloPI(float[] randomX, float[] randomY, int[] results, int samples)
         {
-            for (int i = 0; i < samples; i++)
+            for(int i = 0; i < samples; i++)
             {
                 float x = randomX[i];
                 float y = randomY[i];

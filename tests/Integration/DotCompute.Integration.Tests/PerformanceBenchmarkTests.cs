@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -53,12 +53,12 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         
         LoggerMessages.VectorPerformance(Logger, vectorSize, elementsPerSecond);
         
-        // Should process at least 1M elements per second (very conservative)
+        // Should process at least 1M elements per second(very conservative)
         Assert.True(elementsPerSecond > 1_000_000);
         
         // Memory bandwidth utilization
-        var bytesPerSecond = (vectorSize * sizeof(float) * 3) / benchmarkResult.ExecutionTime.TotalSeconds; // 3 arrays: A, B, Result
-        var mbPerSecond = bytesPerSecond / (1024 * 1024);
+        var bytesPerSecond =(vectorSize * sizeof(float) * 3) / benchmarkResult.ExecutionTime.TotalSeconds; // 3 arrays: A, B, Result
+        var mbPerSecond = bytesPerSecond /(1024 * 1024);
         benchmarkResult.MemoryBandwidthMBs = mbPerSecond;
         
         LoggerMessages.MemoryBandwidth(Logger, mbPerSecond);
@@ -87,7 +87,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         
-        var totalOperations = (long)matrixSize * matrixSize * matrixSize2 * 2; // Multiply-add operations
+        var totalOperations =(long)matrixSize * matrixSize * matrixSize2 * 2; // Multiply-add operations
         var operationsPerSecond = totalOperations / benchmarkResult.ExecutionTime.TotalSeconds;
         var gflops = operationsPerSecond / 1_000_000_000.0;
         
@@ -132,7 +132,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         // Reduction should still achieve good throughput
         Assert.True(elementsPerSecond > 10_000_000);
         
-        // Time complexity should be reasonable (better than O(n) on CPU)
+        // Time complexity should be reasonable(better than O(n) on CPU)
         var expectedLinearTime = dataSize / 500_000_000.0; // More realistic: assume 500 MHz effective rate
         (benchmarkResult.ExecutionTime.TotalSeconds < expectedLinearTime * 4).Should().BeTrue(); // Allow more variance
     }
@@ -155,7 +155,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         benchmarkResult.Success.Should().BeTrue();
         
         var bytesTransferred = dataSize * sizeof(float) * 4; // Multiple reads/writes per element
-        var mbPerSecond = bytesTransferred / benchmarkResult.ExecutionTime.TotalSeconds / (1024 * 1024);
+        var mbPerSecond = bytesTransferred / benchmarkResult.ExecutionTime.TotalSeconds /(1024 * 1024);
         benchmarkResult.MemoryBandwidthMBs = mbPerSecond;
         
         LoggerMessages.MemoryIntensiveWorkload(Logger, mbPerSecond);
@@ -183,7 +183,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         
-        var totalOperations = (long)dataSize * iterations * 10; // ~10 ops per element per iteration
+        var totalOperations =(long)dataSize * iterations * 10; // ~10 ops per element per iteration
         var operationsPerSecond = totalOperations / benchmarkResult.ExecutionTime.TotalSeconds;
         var gops = operationsPerSecond / 1_000_000_000.0;
         
@@ -222,9 +222,9 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         LoggerMessages.ParallelPerformance(Logger, threadCount, totalThroughput, averageLatency);
         
         // Parallel efficiency
-        if (threadCount > 1)
+        if(threadCount > 1)
         {
-            var efficiency = totalThroughput / (benchmarkResult.SingleThreadThroughput * threadCount);
+            var efficiency = totalThroughput /(benchmarkResult.SingleThreadThroughput * threadCount);
             benchmarkResult.ParallelEfficiency = efficiency;
             
             LoggerMessages.ParallelEfficiency(Logger, efficiency);
@@ -254,7 +254,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         Assert.NotNull(benchmarkResult);
         benchmarkResult.Success.Should().BeTrue();
         
-        var pixelsPerSecond = (imageWidth * imageHeight) / benchmarkResult.ExecutionTime.TotalSeconds;
+        var pixelsPerSecond =(imageWidth * imageHeight) / benchmarkResult.ExecutionTime.TotalSeconds;
         var megapixelsPerSecond = pixelsPerSecond / 1_000_000.0;
         
         LoggerMessages.ImageProcessingPerformance(Logger, megapixelsPerSecond);
@@ -273,7 +273,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         const int sampleRate = 48000; // 48kHz
         const double durationSeconds = 1.0;
-        const int sampleCount = (int)(sampleRate * durationSeconds);
+        const int sampleCount =(int)(sampleRate * durationSeconds);
         var audioSamples = GenerateAudioSignal(sampleCount, sampleRate);
 
         // Act
@@ -383,7 +383,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.VectorOperationBenchmarkFailed(Logger, ex);
@@ -438,7 +438,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.MatrixMultiplicationBenchmarkFailed(Logger, ex);
@@ -495,7 +495,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.ReductionOperationBenchmarkFailed(Logger, ex);
@@ -558,7 +558,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.MemoryIntensiveWorkloadBenchmarkFailed(Logger, ex);
@@ -585,7 +585,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 float value = input[i];
                 
                 // Intensive computation
-                for (int iter = 0; iter < iterations; iter++) {
+                for(int iter = 0; iter < iterations; iter++) {
                     value = sin(value) * cos(value) + sqrt(value + 1.0f);
                     value = fabs(value);
                     value = pow(value, 0.5f);
@@ -625,7 +625,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.ComputeIntensiveWorkloadBenchmarkFailed(Logger, ex);
@@ -703,18 +703,18 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 int x = get_global_id(0);
                 int y = get_global_id(1);
                 
-                if (x >= width || y >= height) return;
+                if(x >= width || y >= height) return;
                 
                 // Simple 3x3 blur
                 float sum = 0.0f;
                 int count = 0;
                 
-                for (int dy = -1; dy <= 1; dy++) {
-                    for (int dx = -1; dx <= 1; dx++) {
+                for(int dy = -1; dy <= 1; dy++) {
+                    for(int dx = -1; dx <= 1; dx++) {
                         int nx = x + dx;
                         int ny = y + dy;
                         
-                        if (nx >= 0 && nx < width && ny >= 0 && ny < height) {
+                        if(nx >= 0 && nx < width && ny >= 0 && ny < height) {
                             sum += input[ny * width + nx];
                             count++;
                         }
@@ -755,7 +755,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.ImageProcessingBenchmarkFailed(Logger, ex);
@@ -783,10 +783,10 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 
                 // Simple IIR lowpass filter
                 float alpha = 2.0f * 3.14159f * cutoff / sampleRate;
-                if (alpha > 1.0f) alpha = 1.0f;
+                if(alpha > 1.0f) alpha = 1.0f;
                 
                 // For this demo, just apply a simple filter
-                output[i] = input[i] * alpha + (i > 0 ? input[i-1] : 0.0f) * (1.0f - alpha);
+                output[i] = input[i] * alpha +(i > 0 ? input[i-1] : 0.0f) *(1.0f - alpha);
             }";
 
         var stopwatch = Stopwatch.StartNew();
@@ -822,7 +822,7 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                 ResultData = result
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.SignalProcessingBenchmarkFailed(Logger, ex);
@@ -889,12 +889,12 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
         var signal = new float[sampleCount];
         var random = new Random(seed);
         
-        for (int i = 0; i < sampleCount; i++)
+        for(int i = 0; i < sampleCount; i++)
         {
-            var t = (double)i / sampleRate;
+            var t =(double)i / sampleRate;
             
             // Mix of frequencies
-            signal[i] = (float)(
+            signal[i] =(float)(
                 0.5 * Math.Sin(2 * Math.PI * 440 * t) +    // A4 note
                 0.3 * Math.Sin(2 * Math.PI * 880 * t) +    // A5 note
                 0.2 * random.NextDouble() - 0.1           // Noise
@@ -921,9 +921,9 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
             int row = get_global_id(0);
             int col = get_global_id(1);
             
-            if (row < size && col < size) {
+            if(row < size && col < size) {
                 float sum = 0.0f;
-                for (int k = 0; k < size; k++) {
+                for(int k = 0; k < size; k++) {
                     sum += a[row * size + k] * b[k * size + col];
                 }
                 c[row * size + col] = sum;
@@ -935,9 +935,9 @@ public class PerformanceBenchmarkTests : IntegrationTestBase
                                __global float* output) {
             int i = get_global_id(0);
             // Simplified reduction - in real implementation would use proper reduction
-            if (i == 0) {
+            if(i == 0) {
                 float sum = 0.0f;
-                for (int j = 0; j < get_global_size(0); j++) {
+                for(int j = 0; j < get_global_size(0); j++) {
                     sum += input[j];
                 }
                 output[0] = sum;

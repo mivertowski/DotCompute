@@ -51,7 +51,7 @@ public class TestCustomStage : IPipelineStage
             _metrics.RecordExecutionSuccess(stopwatch.Elapsed, 0);
             
             // Ensure result has required fields
-            if (string.IsNullOrEmpty(result.StageId) || result.Duration == TimeSpan.Zero)
+            if(string.IsNullOrEmpty(result.StageId) || result.Duration == TimeSpan.Zero)
             {
                 result = new StageExecutionResult
                 {
@@ -67,7 +67,7 @@ public class TestCustomStage : IPipelineStage
             
             return result;
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             _metrics.RecordExecutionError(stopwatch.Elapsed);
@@ -86,12 +86,12 @@ public class TestCustomStage : IPipelineStage
     {
         var errors = new List<string>();
         
-        if (_executeFunc == null)
+        if(_executeFunc == null)
         {
             errors.Add("Execute function is not set");
         }
         
-        if (string.IsNullOrEmpty(Name))
+        if(string.IsNullOrEmpty(Name))
         {
             errors.Add("Stage name is required");
         }
@@ -165,7 +165,7 @@ public class TestBranchStage : IPipelineStage
             
             StageExecutionResult? branchResult = null;
             
-            if (selectedBranch != null)
+            if(selectedBranch != null)
             {
                 branchResult = await selectedBranch.ExecuteAsync(context, cancellationToken);
             }
@@ -178,7 +178,7 @@ public class TestBranchStage : IPipelineStage
                 ["BranchTaken"] = conditionResult ? "true" : "false"
             };
             
-            if (branchResult?.Outputs != null)
+            if(branchResult?.Outputs != null)
             {
                 foreach (var (key, value) in branchResult.Outputs)
                 {
@@ -200,7 +200,7 @@ public class TestBranchStage : IPipelineStage
                 }
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             _metrics.RecordExecutionError(stopwatch.Elapsed);
@@ -220,30 +220,30 @@ public class TestBranchStage : IPipelineStage
         var errors = new List<string>();
         var warnings = new List<string>();
         
-        if (_condition == null)
+        if(_condition == null)
         {
             errors.Add("Branch condition is not set");
         }
         
-        if (_trueBranch == null && _falseBranch == null)
+        if(_trueBranch == null && _falseBranch == null)
         {
             warnings.Add("Both branches are null - branch will have no effect");
         }
         
         // Validate branches
-        if (_trueBranch != null)
+        if(_trueBranch != null)
         {
             var validation = _trueBranch.Validate();
-            if (!validation.IsValid && validation.Errors != null)
+            if(!validation.IsValid && validation.Errors != null)
             {
                 errors.AddRange(validation.Errors.Select(e => $"True branch: {e}"));
             }
         }
         
-        if (_falseBranch != null)
+        if(_falseBranch != null)
         {
             var validation = _falseBranch.Validate();
-            if (!validation.IsValid && validation.Errors != null)
+            if(!validation.IsValid && validation.Errors != null)
             {
                 errors.AddRange(validation.Errors.Select(e => $"False branch: {e}"));
             }
@@ -313,7 +313,7 @@ public class TestLoopStage : IPipelineStage
             var iterationResults = new List<StageExecutionResult>();
             int iteration = 0;
             
-            while (iteration < _maxIterations && _condition(context, iteration))
+            while(iteration < _maxIterations && _condition(context, iteration))
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 
@@ -323,7 +323,7 @@ public class TestLoopStage : IPipelineStage
                 var result = await _body.ExecuteAsync(context, cancellationToken);
                 iterationResults.Add(result);
                 
-                if (!result.Success && !context.Options.ContinueOnError)
+                if(!result.Success && !context.Options.ContinueOnError)
                 {
                     break;
                 }
@@ -338,10 +338,10 @@ public class TestLoopStage : IPipelineStage
             outputs["SuccessfulIterations"] = iterationResults.Count(r => r.Success);
             
             // Merge outputs from last iteration
-            if (iterationResults.Count > 0)
+            if(iterationResults.Count > 0)
             {
                 var lastResult = iterationResults.Last();
-                if (lastResult.Outputs != null)
+                if(lastResult.Outputs != null)
                 {
                     foreach (var (key, value) in lastResult.Outputs)
                     {
@@ -360,11 +360,11 @@ public class TestLoopStage : IPipelineStage
                 {
                     ["Iterations"] = iteration,
                     ["AverageIterationTimeMs"] = iteration > 0 ? stopwatch.Elapsed.TotalMilliseconds / iteration : 0,
-                    ["SuccessRate"] = iteration > 0 ? (double)iterationResults.Count(r => r.Success) / iteration * 100 : 0
+                    ["SuccessRate"] = iteration > 0 ?(double)iterationResults.Count(r => r.Success) / iteration * 100 : 0
                 }
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             _metrics.RecordExecutionError(stopwatch.Elapsed);
@@ -384,31 +384,31 @@ public class TestLoopStage : IPipelineStage
         var errors = new List<string>();
         var warnings = new List<string>();
         
-        if (_condition == null)
+        if(_condition == null)
         {
             errors.Add("Loop condition is not set");
         }
         
-        if (_body == null)
+        if(_body == null)
         {
             errors.Add("Loop body is not set");
         }
         else
         {
             var validation = _body.Validate();
-            if (!validation.IsValid && validation.Errors != null)
+            if(!validation.IsValid && validation.Errors != null)
             {
                 errors.AddRange(validation.Errors.Select(e => $"Loop body: {e}"));
             }
         }
         
-        if (_maxIterations <= 0)
+        if(_maxIterations <= 0)
         {
             errors.Add("Max iterations must be positive");
         }
-        else if (_maxIterations > 10000)
+        else if(_maxIterations > 10000)
         {
-            warnings.Add($"Max iterations is very high ({_maxIterations}) - potential infinite loop");
+            warnings.Add($"Max iterations is very high{_maxIterations}) - potential infinite loop");
         }
         
         return new StageValidationResult

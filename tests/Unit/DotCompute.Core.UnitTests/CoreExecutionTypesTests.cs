@@ -107,7 +107,7 @@ public class CoreExecutionTypesTests
     public void Dimensions3D_ImplicitConversion_FromTuple2D_ShouldWork()
     {
         // Act
-        Dimensions3D dims = (100, 200);
+        Dimensions3D dims =(100, 200);
         
         // Assert
         Assert.Equal(100, dims.X);
@@ -119,7 +119,7 @@ public class CoreExecutionTypesTests
     public void Dimensions3D_ImplicitConversion_FromTuple3D_ShouldWork()
     {
         // Act
-        Dimensions3D dims = (100, 200, 300);
+        Dimensions3D dims =(100, 200, 300);
         
         // Assert
         Assert.Equal(100, dims.X);

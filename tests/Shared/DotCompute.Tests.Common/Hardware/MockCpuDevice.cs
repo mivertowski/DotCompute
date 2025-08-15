@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
@@ -22,7 +22,7 @@ public sealed class MockCpuDevice : MockHardwareDevice
     public int PhysicalCores { get; }
 
     /// <summary>
-    /// Gets the number of logical CPU cores (with hyperthreading).
+    /// Gets the number of logical CPU cores(with hyperthreading).
     /// </summary>
     public int LogicalCores { get; }
 
@@ -245,23 +245,23 @@ public sealed class MockCpuDevice : MockHardwareDevice
     /// <inheritdoc/>
     public override bool HealthCheck()
     {
-        if (!base.HealthCheck())
+        if(!base.HealthCheck())
             return false;
 
         // CPU-specific health checks
-        if (PhysicalCores == 0 || LogicalCores == 0)
+        if(PhysicalCores == 0 || LogicalCores == 0)
         {
             Logger?.LogWarning("CPU device {DeviceId} has invalid core configuration", Id);
             return false;
         }
 
-        if (LogicalCores < PhysicalCores)
+        if(LogicalCores < PhysicalCores)
         {
             Logger?.LogWarning("CPU device {DeviceId} has illogical core configuration", Id);
             return false;
         }
 
-        if (BaseClockMHz == 0 || MaxBoostClockMHz < BaseClockMHz)
+        if(BaseClockMHz == 0 || MaxBoostClockMHz < BaseClockMHz)
         {
             Logger?.LogWarning("CPU device {DeviceId} has invalid clock configuration", Id);
             return false;
@@ -308,11 +308,11 @@ public sealed class MockCpuDevice : MockHardwareDevice
             _ => 1
         };
 
-        // Assume 2 FMA units per core (typical for modern CPUs)
+        // Assume 2 FMA units per core(typical for modern CPUs)
         var fmaUnitsPerCore = 2;
         var opsPerCycle = vectorWidth * fmaUnitsPerCore * 2; // FMA = multiply + add
         
-        return (LogicalCores * opsPerCycle * MaxBoostClockMHz) / 1000.0; // Convert MHz to GHz
+        return(LogicalCores * opsPerCycle * MaxBoostClockMHz) / 1000.0; // Convert MHz to GHz
     }
 }
 

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -30,7 +30,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         var availableAccelerators = acceleratorManager.AvailableAccelerators;
         
         // Skip test if not enough accelerators
-        if (availableAccelerators.Count < 2)
+        if(availableAccelerators.Count < 2)
         {
             Logger.LogInformation("Skipping multi-accelerator test - insufficient devices");
             return;
@@ -46,7 +46,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(2, results.Count());
-        results.Should().AllSatisfy(r => r.Success);
+        results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
         
         var totalProcessed = results.Sum(r => r.ProcessedItems);
         Assert.Equal(totalWorkItems, totalProcessed);
@@ -60,7 +60,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var availableAccelerators = acceleratorManager.AvailableAccelerators;
         
-        if (availableAccelerators.Count < 2)
+        if(availableAccelerators.Count < 2)
         {
             Logger.LogInformation("Skipping load balancing test - insufficient devices");
             return;
@@ -76,17 +76,17 @@ public class MultiAcceleratorTests : IntegrationTestBase
 
         // Assert
         Assert.NotEmpty(results);
-        results.Should().AllSatisfy(r => r.Success);
+        results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
         
-        // Verify work distribution is reasonable (no device should have 0 or all work)
+        // Verify work distribution is reasonable(no device should have 0 or all work)
         var workDistribution = results.Select(r => r.ProcessedItems).ToList();
         workDistribution.Should().AllSatisfy(items => items.Should().BeGreaterThan(0));
         
-        if (workDistribution.Count > 1)
+        if(workDistribution.Count > 1)
         {
             var maxWork = workDistribution.Max();
             var minWork = workDistribution.Min();
-            (maxWork - minWork).Should().BeLessThan(totalWorkItems / 2); // Reasonable distribution
+           (maxWork - minWork).Should().BeLessThan(totalWorkItems / 2); // Reasonable distribution
         }
     }
 
@@ -98,7 +98,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (accelerators.Count < 2)
+        if(accelerators.Count < 2)
         {
             Logger.LogInformation("Skipping memory coherence test - insufficient devices");
             return;
@@ -114,11 +114,11 @@ public class MultiAcceleratorTests : IntegrationTestBase
 
         // Assert
         Assert.NotEmpty(coherenceResults);
-        coherenceResults.Should().AllSatisfy(r => r.DataIntegrity);
+        coherenceResults.Should().AllSatisfy(r => r.DataIntegrity.Should().BeTrue());
         
         // All accelerators should see the same final data
         var finalStates = coherenceResults.Select(r => r.FinalChecksum).Distinct().ToList();
-        Assert.Equal(1, "All accelerators should see consistent data", finalStates.Count());
+        Assert.Equal(1, finalStates.Count()); // All accelerators should see consistent data
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (accelerators.Count < 2)
+        if(accelerators.Count < 2)
         {
             Logger.LogInformation("Skipping async execution test - insufficient devices");
             return;
@@ -148,13 +148,13 @@ public class MultiAcceleratorTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(accelerators.Count, concurrentResults.Count());
-        concurrentResults.Should().AllSatisfy(r => r.Success);
+        concurrentResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
         
         // Concurrent execution should be faster than sequential
         var totalExecutionTime = stopwatch.Elapsed;
         var expectedSequentialTime = concurrentResults.Sum(r => r.ExecutionTime.TotalMilliseconds);
         
-        totalExecutionTime.Assert.True(TotalMilliseconds < 
+        Assert.True(totalExecutionTime.TotalMilliseconds < 
             expectedSequentialTime * 0.8, // Should be at least 20% faster
             "Concurrent execution should show performance benefit");
     }
@@ -167,7 +167,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (accelerators.Count < 3)
+        if(accelerators.Count < 3)
         {
             Logger.LogInformation("Skipping fault tolerance test - need at least 3 devices");
             return;
@@ -184,13 +184,13 @@ public class MultiAcceleratorTests : IntegrationTestBase
 
         // Assert
         Assert.NotEmpty(faultTolerantResults);
-        faultTolerantResults.Count(r => r.Success).BeGreaterThanOrEqualTo(accelerators.Count - 1);
+        faultTolerantResults.Count(r => r.Success).Should().BeGreaterThanOrEqualTo(accelerators.Count - 1);
         
         var totalProcessed = faultTolerantResults
             .Where(r => r.Success)
             .Sum(r => r.ProcessedItems);
         
-        Assert.Equal(totalWorkItems, "Work should be redistributed after failure", totalProcessed);
+        Assert.Equal(totalWorkItems, totalProcessed); // Work should be redistributed after failure
     }
 
     [Theory]
@@ -207,7 +207,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         var accelerator1 = accelerators.FirstOrDefault(a => GetBackendType(a) == backend1);
         var accelerator2 = accelerators.FirstOrDefault(a => GetBackendType(a) == backend2);
         
-        if (accelerator1 == null || accelerator2 == null)
+        if(accelerator1 == null || accelerator2 == null)
         {
             Logger.LogInformation($"Skipping heterogeneous test - missing {backend1} or {backend2}");
             return;
@@ -218,13 +218,13 @@ public class MultiAcceleratorTests : IntegrationTestBase
 
         // Act
         var heterogeneousResults = await ExecuteHeterogeneousWorkload(
-            [(accelerator1, backend1), (accelerator2, backend2)],
+            [(accelerator1, backend1),(accelerator2, backend2)],
             inputData,
             workItemsPerDevice);
 
         // Assert
         Assert.Equal(2, heterogeneousResults.Count());
-        heterogeneousResults.Should().AllSatisfy(r => r.Success);
+        heterogeneousResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
         
         // Results should be equivalent regardless of backend
         var results1 = heterogeneousResults[0].Results;
@@ -242,7 +242,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (accelerators.Count < 2)
+        if(accelerators.Count < 2)
         {
             Logger.LogInformation("Skipping P2P transfer test - insufficient devices");
             return;
@@ -263,7 +263,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         transferResults.TransferTime.Should().BePositive();
         transferResults.DataIntegrity.Should().BeTrue();
         
-        if (transferResults.DirectTransferSupported)
+        if(transferResults.DirectTransferSupported)
         {
             transferResults.TransferTime.Should().BeLessThan(TimeSpan.FromSeconds(1),
                 "P2P transfer should be reasonably fast");
@@ -295,7 +295,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
                     Results = result.Output
                 };
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 Logger.LogError(ex, $"Failed to execute work on accelerator {accelerator.Info.Id}");
                 return new AcceleratorResult
@@ -325,7 +325,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         var tasks = accelerators.Select(async (accelerator, index) =>
         {
             var weight = weights[index];
-            var allocatedItems = (int)(inputData.Length * (weight / totalWeight));
+            var allocatedItems = (int)(inputData.Length * weight / totalWeight);
             var workData = inputData[processedItems..(processedItems + allocatedItems)];
             Interlocked.Add(ref processedItems, allocatedItems);
 
@@ -341,7 +341,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
                     Results = result.Output
                 };
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 Logger.LogError(ex, $"Failed to execute work on accelerator {accelerator.Info.Id}");
                 return new AcceleratorResult
@@ -383,7 +383,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
                     FinalChecksum = checksum
                 };
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 Logger.LogError(ex, $"Memory coherence test failed for {accelerator.Info.Id}");
                 return new CoherenceResult
@@ -423,7 +423,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
                     Results = result.Output
                 };
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 stopwatch.Stop();
                 Logger.LogError(ex, $"Concurrent execution failed for {accelerator.Info.Id}");
@@ -446,11 +446,11 @@ public class MultiAcceleratorTests : IntegrationTestBase
         int failureIndex)
     {
         var results = new List<AcceleratorResult>();
-        var workItemsPerAccelerator = inputData.Length / (accelerators.Count - 1); // Account for failure
+        var workItemsPerAccelerator = inputData.Length /(accelerators.Count - 1); // Account for failure
 
         var tasks = accelerators.Select(async (accelerator, index) =>
         {
-            if (index == failureIndex)
+            if(index == failureIndex)
             {
                 // Simulate failure
                 await Task.Delay(100); // Simulate some work before failing
@@ -465,7 +465,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             // Redistribute work from failed accelerator
             var adjustedIndex = index > failureIndex ? index - 1 : index;
             var startIndex = adjustedIndex * workItemsPerAccelerator;
-            var endIndex = adjustedIndex == accelerators.Count - 2 ? inputData.Length : (adjustedIndex + 1) * workItemsPerAccelerator;
+            var endIndex = adjustedIndex == accelerators.Count - 2 ? inputData.Length :(adjustedIndex + 1) * workItemsPerAccelerator;
             var workData = inputData[startIndex..endIndex];
 
             try
@@ -480,7 +480,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
                     Results = result.Output
                 };
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 Logger.LogError(ex, $"Work execution failed for {accelerator.Info.Id}");
                 return new AcceleratorResult
@@ -518,7 +518,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
                     Results = result.Output
                 };
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 Logger.LogError(ex, $"Heterogeneous execution failed for {accelerator.Info.Id} on {backend}");
                 return new AcceleratorResult
@@ -564,7 +564,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
                 DirectTransferSupported = CheckDirectTransferSupport(sourceAccelerator, targetAccelerator)
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             Logger.LogError(ex, "P2P transfer failed");
@@ -608,17 +608,17 @@ public class MultiAcceleratorTests : IntegrationTestBase
 
     private static bool CompareComputeResults(object[] results1, object[] results2)
     {
-        if (results1.Length != results2.Length) return false;
+        if(results1.Length != results2.Length) return false;
         
-        for (int i = 0; i < results1.Length; i++)
+        for(int i = 0; i < results1.Length; i++)
         {
-            if (results1[i] is float[] arr1 && results2[i] is float[] arr2)
+            if(results1[i] is float[] arr1 && results2[i] is float[] arr2)
             {
-                if (arr1.Length != arr2.Length) return false;
+                if(arr1.Length != arr2.Length) return false;
                 
-                for (int j = 0; j < arr1.Length; j++)
+                for(int j = 0; j < arr1.Length; j++)
                 {
-                    if (Math.Abs(arr1[j] - arr2[j]) > 0.001f) return false;
+                    if(Math.Abs(arr1[j] - arr2[j]) > 0.001f) return false;
                 }
             }
         }
@@ -631,18 +631,18 @@ public class MultiAcceleratorTests : IntegrationTestBase
         uint checksum = 0;
         foreach (var value in data)
         {
-            checksum ^= (uint)value.GetHashCode();
+            checksum ^=(uint)value.GetHashCode();
         }
         return checksum;
     }
 
     private static bool VerifyDataIntegrity(float[] original, float[] transferred)
     {
-        if (original.Length != transferred.Length) return false;
+        if(original.Length != transferred.Length) return false;
         
-        for (int i = 0; i < original.Length; i++)
+        for(int i = 0; i < original.Length; i++)
         {
-            if (Math.Abs(original[i] - transferred[i]) > 0.001f) return false;
+            if(Math.Abs(original[i] - transferred[i]) > 0.001f) return false;
         }
         
         return true;
@@ -658,14 +658,14 @@ public class MultiAcceleratorTests : IntegrationTestBase
     private async Task<(TimeSpan ExecutionTime, object[] Output)> ExecuteWorkOnAccelerator(IAccelerator accelerator, float[] workData)
     {
         await Task.Delay(10); // Simulate work
-        return (TimeSpan.FromMilliseconds(10), new object[] { workData.Select(x => x * 2).ToArray() });
+        return(TimeSpan.FromMilliseconds(10), new object[] { workData.Select(x => x * 2).ToArray() });
     }
 
     private async Task<(TimeSpan ExecutionTime, object[] Output)> ExecuteWorkOnAcceleratorWithBackend(
         IAccelerator accelerator, ComputeBackendType backend, float[] workData)
     {
         await Task.Delay(10); // Simulate work
-        return (TimeSpan.FromMilliseconds(10), new object[] { workData.Select(x => x * 2).ToArray() });
+        return(TimeSpan.FromMilliseconds(10), new object[] { workData.Select(x => x * 2).ToArray() });
     }
 
     private async Task<IMemoryBuffer> CreateSharedBuffer(float[] data)

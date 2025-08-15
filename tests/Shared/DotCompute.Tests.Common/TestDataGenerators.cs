@@ -19,11 +19,11 @@ public static class TestDataGenerators
         var random = new Random(seed);
         var matrix = new float[rows, cols];
         
-        for (int i = 0; i < rows; i++)
+        for(int i = 0; i < rows; i++)
         {
-            for (int j = 0; j < cols; j++)
+            for(int j = 0; j < cols; j++)
             {
-                matrix[i, j] = min + (float)(random.NextDouble() * (max - min));
+                matrix[i, j] = min +(float)(random.NextDouble() *(max - min));
             }
         }
         
@@ -38,9 +38,9 @@ public static class TestDataGenerators
         var random = new Random(seed);
         var vector = new float[size];
         
-        for (int i = 0; i < size; i++)
+        for(int i = 0; i < size; i++)
         {
-            vector[i] = min + (float)(random.NextDouble() * (max - min));
+            vector[i] = min +(float)(random.NextDouble() *(max - min));
         }
         
         return vector;
@@ -52,7 +52,7 @@ public static class TestDataGenerators
     public static T[] GenerateSequentialData<T>(int count, Func<int, T> generator)
     {
         var data = new T[count];
-        for (int i = 0; i < count; i++)
+        for(int i = 0; i < count; i++)
         {
             data[i] = generator(i);
         }
@@ -60,41 +60,41 @@ public static class TestDataGenerators
     }
     
     /// <summary>
-    /// Generates test pattern data (checkerboard, gradient, etc.).
+    /// Generates test pattern data(checkerboard, gradient, etc.).
     /// </summary>
     public static float[,] GeneratePatternData(int width, int height, PatternType pattern)
     {
         var data = new float[height, width];
         
-        switch (pattern)
+        switch(pattern)
         {
             case PatternType.Checkerboard:
-                for (int y = 0; y < height; y++)
+                for(int y = 0; y < height; y++)
                 {
-                    for (int x = 0; x < width; x++)
+                    for(int x = 0; x < width; x++)
                     {
-                        data[y, x] = ((x + y) % 2 == 0) ? 1.0f : 0.0f;
+                        data[y, x] =((x + y) % 2 == 0) ? 1.0f : 0.0f;
                     }
                 }
                 break;
                 
             case PatternType.Gradient:
-                for (int y = 0; y < height; y++)
+                for(int y = 0; y < height; y++)
                 {
-                    for (int x = 0; x < width; x++)
+                    for(int x = 0; x < width; x++)
                     {
-                        data[y, x] = (float)x / width;
+                        data[y, x] =(float)x / width;
                     }
                 }
                 break;
                 
             case PatternType.Sine:
-                for (int y = 0; y < height; y++)
+                for(int y = 0; y < height; y++)
                 {
-                    for (int x = 0; x < width; x++)
+                    for(int x = 0; x < width; x++)
                     {
-                        data[y, x] = (float)Math.Sin(2 * Math.PI * x / width) * 
-                                    (float)Math.Sin(2 * Math.PI * y / height);
+                        data[y, x] =(float)Math.Sin(2 * Math.PI * x / width) * 
+                                   (float)Math.Sin(2 * Math.PI * y / height);
                     }
                 }
                 break;
@@ -104,9 +104,9 @@ public static class TestDataGenerators
                 float centerY = height / 2.0f;
                 float sigma = Math.Min(width, height) / 6.0f;
                 
-                for (int y = 0; y < height; y++)
+                for(int y = 0; y < height; y++)
                 {
-                    for (int x = 0; x < width; x++)
+                    for(int x = 0; x < width; x++)
                     {
                         float dx = x - centerX;
                         float dy = y - centerY;
@@ -123,13 +123,13 @@ public static class TestDataGenerators
     /// <summary>
     /// Generates sparse data with specified density.
     /// </summary>
-    public static (int[] indices, float[] values) GenerateSparseData(int size, float density, int seed = 42)
+    public static(int[] indices, float[] values) GenerateSparseData(int size, float density, int seed = 42)
     {
         var random = new Random(seed);
         var nonZeroCount = (int)(size * density);
         
         var indices = new HashSet<int>();
-        while (indices.Count < nonZeroCount)
+        while(indices.Count < nonZeroCount)
         {
             indices.Add(random.Next(size));
         }
@@ -137,12 +137,12 @@ public static class TestDataGenerators
         var sortedIndices = indices.OrderBy(i => i).ToArray();
         var values = new float[nonZeroCount];
         
-        for (int i = 0; i < nonZeroCount; i++)
+        for(int i = 0; i < nonZeroCount; i++)
         {
-            values[i] = (float)(random.NextDouble() * 2 - 1);
+            values[i] =(float)(random.NextDouble() * 2 - 1);
         }
         
-        return (sortedIndices, values);
+        return(sortedIndices, values);
     }
     
     /// <summary>
@@ -153,7 +153,7 @@ public static class TestDataGenerators
         var random = new Random(seed);
         var data = new Complex[count];
         
-        for (int i = 0; i < count; i++)
+        for(int i = 0; i < count; i++)
         {
             data[i] = new Complex(
                 random.NextDouble() * 2 - 1,
@@ -176,22 +176,22 @@ public static class TestDataGenerators
         int k = a.GetLength(1);
         int n = b.GetLength(1);
         
-        if (b.GetLength(0) != k || c.GetLength(0) != m || c.GetLength(1) != n)
+        if(b.GetLength(0) != k || c.GetLength(0) != m || c.GetLength(1) != n)
         {
             return false;
         }
         
-        for (int i = 0; i < m; i++)
+        for(int i = 0; i < m; i++)
         {
-            for (int j = 0; j < n; j++)
+            for(int j = 0; j < n; j++)
             {
                 float expected = 0;
-                for (int l = 0; l < k; l++)
+                for(int l = 0; l < k; l++)
                 {
                     expected += a[i, l] * b[l, j];
                 }
                 
-                if (Math.Abs(c[i, j] - expected) > tolerance)
+                if(Math.Abs(c[i, j] - expected) > tolerance)
                 {
                     return false;
                 }
@@ -210,14 +210,14 @@ public static class TestDataGenerators
         float[] c,
         float tolerance = 1e-6f)
     {
-        if (a.Length != b.Length || a.Length != c.Length)
+        if(a.Length != b.Length || a.Length != c.Length)
         {
             return false;
         }
         
-        for (int i = 0; i < a.Length; i++)
+        for(int i = 0; i < a.Length; i++)
         {
-            if (Math.Abs(c[i] - (a[i] + b[i])) > tolerance)
+            if(Math.Abs(c[i] - (a[i] + b[i])) > tolerance)
             {
                 return false;
             }
@@ -233,17 +233,17 @@ public static class TestDataGenerators
     {
         double sum = 0;
         
-        if (typeof(T) == typeof(float))
+        if(typeof(T) == typeof(float))
         {
             var floatData = data as float[];
             sum = floatData!.Sum(x => Math.Abs(x));
         }
-        else if (typeof(T) == typeof(double))
+        else if(typeof(T) == typeof(double))
         {
             var doubleData = data as double[];
             sum = doubleData!.Sum(x => Math.Abs(x));
         }
-        else if (typeof(T) == typeof(int))
+        else if(typeof(T) == typeof(int))
         {
             var intData = data as int[];
             sum = intData!.Sum(x => Math.Abs(x));

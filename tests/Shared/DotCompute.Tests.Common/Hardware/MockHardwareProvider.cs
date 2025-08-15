@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
@@ -67,7 +67,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(device);
 
-        if (device is not MockHardwareDevice mockDevice)
+        if(device is not MockHardwareDevice mockDevice)
         {
             throw new ArgumentException("Device must be a MockHardwareDevice", nameof(device));
         }
@@ -116,13 +116,13 @@ public sealed class MockHardwareProvider : IHardwareProvider
 
         _devices.Add(device);
         
-        if (!_devicesByType.ContainsKey(device.Type))
+        if(!_devicesByType.ContainsKey(device.Type))
         {
             _devicesByType[device.Type] = new List<IHardwareDevice>();
         }
         _devicesByType[device.Type].Add(device);
 
-        _logger.LogDebug("Added mock device: {DeviceId} ({DeviceType})", device.Id, device.Type);
+        _logger.LogDebug("Added mock device: {DeviceId}{DeviceType})", device.Id, device.Type);
     }
 
     /// <summary>
@@ -135,7 +135,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
         ThrowIfDisposed();
 
         var device = _devices.FirstOrDefault(d => d.Id == deviceId);
-        if (device == null)
+        if(device == null)
         {
             return false;
         }
@@ -157,7 +157,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
         ThrowIfDisposed();
 
         var device = _devices.FirstOrDefault(d => d.Id == deviceId) as MockHardwareDevice;
-        if (device != null)
+        if(device != null)
         {
             device.SimulateFailure(errorMessage ?? "Simulated device failure");
             _logger.LogWarning("Simulated failure for device {DeviceId}: {Error}", deviceId, errorMessage);
@@ -191,7 +191,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
         _devices.Clear();
         _devicesByType.Clear();
 
-        switch (configuration)
+        switch(configuration)
         {
             case HardwareConfiguration.HighEndGaming:
                 CreateHighEndGamingSetup();
@@ -279,7 +279,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
     /// <inheritdoc/>
     public void Dispose()
     {
-        if (_disposed)
+        if(_disposed)
             return;
 
         foreach (var device in _devices.OfType<IDisposable>())
@@ -288,7 +288,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
             {
                 device.Dispose();
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _logger.LogWarning(ex, "Error disposing device during cleanup");
             }

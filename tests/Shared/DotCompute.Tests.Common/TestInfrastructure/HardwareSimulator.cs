@@ -25,7 +25,7 @@ public class HardwareSimulator : IDisposable
     /// </summary>
     public SimulatedAccelerator AddAccelerator(AcceleratorType type, string name, long memorySize = 1024 * 1024 * 1024)
     {
-        if (!_accelerators.ContainsKey(type))
+        if(!_accelerators.ContainsKey(type))
         {
             _accelerators[type] = new List<SimulatedAccelerator>();
         }
@@ -99,7 +99,7 @@ public class HardwareSimulator : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
+        if(_disposed)
             return;
 
         foreach (var accelerator in GetAllAccelerators())
@@ -179,10 +179,10 @@ public class SimulatedAccelerator : IAccelerator
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
+        if(_disposed)
             throw new ObjectDisposedException(nameof(SimulatedAccelerator));
             
-        if (!IsAvailable)
+        if(!IsAvailable)
             throw new InvalidOperationException(_failureMessage ?? "Accelerator not available");
             
         var kernel = new TestCompiledKernel(definition.Name, definition.Code, options ?? new CompilationOptions());
@@ -191,7 +191,7 @@ public class SimulatedAccelerator : IAccelerator
     
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed)
+        if(_disposed)
             throw new ObjectDisposedException(nameof(SimulatedAccelerator));
             
         // Simulate async synchronization
@@ -205,7 +205,7 @@ public class SimulatedAccelerator : IAccelerator
     {
         ThrowIfFailed();
         
-        if (size > AvailableMemory)
+        if(size > AvailableMemory)
         {
             throw new OutOfMemoryException($"Not enough memory on {Info.Name}. Requested: {size}, Available: {AvailableMemory}");
         }
@@ -222,7 +222,7 @@ public class SimulatedAccelerator : IAccelerator
     /// </summary>
     public void FreeMemory(string handle)
     {
-        if (_memory.Remove(handle))
+        if(_memory.Remove(handle))
         {
             _logger.LogDebug("Freed memory on {Name}, handle: {Handle}", Info.Name, handle);
         }
@@ -251,12 +251,12 @@ public class SimulatedAccelerator : IAccelerator
     {
         ThrowIfFailed();
         
-        if (!_memory.TryGetValue(destinationHandle, out var destination))
+        if(!_memory.TryGetValue(destinationHandle, out var destination))
         {
             throw new ArgumentException($"Invalid memory handle: {destinationHandle}");
         }
 
-        if (source.Length > destination.Length)
+        if(source.Length > destination.Length)
         {
             throw new ArgumentException("Source data too large for destination");
         }
@@ -270,16 +270,16 @@ public class SimulatedAccelerator : IAccelerator
 
     private void ThrowIfFailed()
     {
-        if (_disposed)
+        if(_disposed)
             throw new ObjectDisposedException(nameof(SimulatedAccelerator));
         
-        if (_failureMessage != null)
+        if(_failureMessage != null)
             throw new InvalidOperationException(_failureMessage);
     }
 
     public void Dispose()
     {
-        if (_disposed)
+        if(_disposed)
             return;
 
         _memory.Clear();

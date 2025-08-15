@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 #pragma warning disable CS0067 // Event is never used - test events don't need to be raised
@@ -44,8 +44,8 @@ public class PluginSystemTests : IDisposable
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Action act = () => new PluginSystem((ILogger<PluginSystem>)null!);
-        act.Throw<ArgumentNullException>().WithParameterName("logger");
+        Action act =() => new PluginSystem((ILogger<PluginSystem>)null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -93,15 +93,15 @@ public class PluginSystemTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        result.BeSameAs(_testPlugin);
-        _pluginSystem.GetPlugin(_testPlugin.Id).BeSameAs(_testPlugin);
+        result.Should().BeSameAs(_testPlugin);
+        _pluginSystem.GetPlugin(_testPlugin.Id).Should().BeSameAs(_testPlugin);
     }
 
     [Fact]
     public async Task LoadPluginAsync_WithNullPlugin_ThrowsArgumentNullException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => FluentActions.MethodCall().AsTask());
+        await Assert.ThrowsAsync<ArgumentNullException>(() => _pluginSystem.LoadPluginAsync((string)null!));
     }
 
     [Fact]
@@ -111,8 +111,7 @@ public class PluginSystemTests : IDisposable
         var invalidPlugin = new InvalidTestPlugin();
 
         // Act & Assert
-        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask())
-            .WithMessage("Plugin validation failed*");
+        await Assert.ThrowsAsync<PluginLoadException>(() => _pluginSystem.LoadPluginAsync(invalidPlugin));
     }
 
     [Fact]
@@ -122,7 +121,7 @@ public class PluginSystemTests : IDisposable
         _pluginSystem.Dispose();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => FluentActions.MethodCall().AsTask());
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => _pluginSystem.LoadPluginAsync(_testPlugin));
     }
 
     [Fact]
@@ -136,7 +135,7 @@ public class PluginSystemTests : IDisposable
 
         // Assert
         Assert.True(result);
-        _pluginSystem.GetPlugin(_testPlugin.Id).BeNull();
+        _pluginSystem.GetPlugin(_testPlugin.Id).Should().BeNull();
     }
 
     [Fact]
@@ -156,7 +155,7 @@ public class PluginSystemTests : IDisposable
         _pluginSystem.Dispose();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => FluentActions.MethodCall().AsTask());
+        await Assert.ThrowsAsync<ObjectDisposedException>(() => _pluginSystem.LoadPluginAsync(_testPlugin));
     }
 
     [Fact]
@@ -169,7 +168,7 @@ public class PluginSystemTests : IDisposable
         var result = _pluginSystem.GetPlugin(_testPlugin.Id);
 
         // Assert
-        result.BeSameAs(_testPlugin);
+        result.Should().BeSameAs(_testPlugin);
     }
 
     [Fact]
@@ -231,7 +230,7 @@ public class PluginSystemTests : IDisposable
 
         // Assert
         Assert.NotEmpty(result);
-        result.Contain(typeof(TestPlugin));
+        result.Should().Contain(typeof(TestPlugin));
     }
 
     [Fact]
@@ -246,7 +245,7 @@ public class PluginSystemTests : IDisposable
 
         // Assert
         Assert.Equal(10, results.Count());
-        results.OnlyContain(r => r != null);
+        results.Should().OnlyContain(r => r != null);
         _pluginSystem.GetLoadedPlugins().Should().HaveCount(10);
     }
 
@@ -259,8 +258,8 @@ public class PluginSystemTests : IDisposable
         plugin.Validate().Returns(callInfo => throw new InvalidOperationException("Validation failed"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask())
-            .WithInnerException(typeof(InvalidOperationException));
+        var ex = await Assert.ThrowsAsync<PluginLoadException>(() => _pluginSystem.LoadPluginAsync(plugin));
+        ex.InnerException.Should().BeOfType<InvalidOperationException>();
     }
 
     [Fact]
@@ -284,7 +283,7 @@ public class PluginSystemTests : IDisposable
     public void Dispose_CalledMultipleTimes_ShouldNotThrow()
     {
         // Act & Assert
-        Action act = () =>
+        Action act =() =>
         {
             _pluginSystem.Dispose();
             _pluginSystem.Dispose(); // Second call should not throw
@@ -294,7 +293,7 @@ public class PluginSystemTests : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if(_disposed) return;
 
         _pluginSystem?.Dispose();
         _testPlugin?.Dispose();

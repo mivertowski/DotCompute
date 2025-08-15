@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -114,7 +114,7 @@ public class OpenCLKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _executor.ExecuteAsync(kernel, arguments: null!, config).AsTask());
+           () => _executor.ExecuteAsync(kernel, arguments: null!, config).AsTask());
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public class OpenCLKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(
-            () => _executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), null!).AsTask());
+           () => _executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), null!).AsTask());
     }
 
     [Fact]
@@ -244,9 +244,9 @@ public class OpenCLKernelExecutorTests : IDisposable
         // Assert
         Assert.NotNull(config);
         Assert.True(config.GlobalWorkSize![0] >= problemSize[0]);
-        // Local work size should be reasonable for OpenCL (typically power of 2)
+        // Local work size should be reasonable for OpenCL(typically power of 2)
         Assert.True(config.LocalWorkSize![0] <= workGroupSize);
-        Assert.True((config.LocalWorkSize[0] & (config.LocalWorkSize[0] - 1)) == 0 || config.LocalWorkSize[0] == 1);
+        Assert.True((config.LocalWorkSize[0] &config.LocalWorkSize[0] - 1)) == 0 || config.LocalWorkSize[0] == 1);
     }
 
     [Fact]
@@ -362,7 +362,7 @@ public class OpenCLKernelExecutorTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<ObjectDisposedException>(
-            () => executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), config).AsTask());
+           () => executor.ExecuteAsync(kernel, arguments.ToCoreKernelArguments(), config).AsTask());
     }
 
     [Theory]
@@ -641,7 +641,7 @@ public class OpenCLKernelExecutorTests : IDisposable
 
     private KernelExecutionConfig CreateMultiDimensionalConfig(int dimensions)
     {
-        switch (dimensions)
+        switch(dimensions)
         {
             case 1:
                 return new KernelExecutionConfig

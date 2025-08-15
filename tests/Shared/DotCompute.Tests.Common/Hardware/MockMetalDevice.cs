@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
@@ -47,7 +47,7 @@ public sealed class MockMetalDevice : MockHardwareDevice
     public Version MpsVersion { get; }
 
     /// <summary>
-    /// Gets whether this is unified memory (typical for Apple Silicon).
+    /// Gets whether this is unified memory(typical for Apple Silicon).
     /// </summary>
     public bool IsUnifiedMemory { get; }
 
@@ -108,7 +108,7 @@ public sealed class MockMetalDevice : MockHardwareDevice
             "Metal 3.1",
             "M2 Max",
             38, // GPU cores
-            9728, // ALUs (estimate)
+            9728, // ALUs(estimate)
             400.0, // GB/s
             new Version(3, 1),
             true, // Unified memory
@@ -128,7 +128,7 @@ public sealed class MockMetalDevice : MockHardwareDevice
             "Metal 3.1",
             "M2",
             10, // GPU cores
-            2560, // ALUs (estimate)
+            2560, // ALUs(estimate)
             100.0, // GB/s
             new Version(3, 1),
             true, // Unified memory
@@ -148,7 +148,7 @@ public sealed class MockMetalDevice : MockHardwareDevice
             "Metal 3.0",
             "M1 Pro",
             16, // GPU cores
-            4096, // ALUs (estimate)
+            4096, // ALUs(estimate)
             200.0, // GB/s
             new Version(3, 0),
             true, // Unified memory
@@ -168,7 +168,7 @@ public sealed class MockMetalDevice : MockHardwareDevice
             "Metal 3.0",
             "M1",
             8, // GPU cores
-            2048, // ALUs (estimate)
+            2048, // ALUs(estimate)
             68.25, // GB/s
             new Version(3, 0),
             true, // Unified memory
@@ -188,7 +188,7 @@ public sealed class MockMetalDevice : MockHardwareDevice
             "Metal 3.2",
             "M3",
             10, // GPU cores
-            2560, // ALUs (estimate)
+            2560, // ALUs(estimate)
             100.0, // GB/s
             new Version(3, 2),
             true, // Unified memory
@@ -208,10 +208,10 @@ public sealed class MockMetalDevice : MockHardwareDevice
             "Metal 2.4",
             "Intel Iris Xe",
             80, // Execution units
-            2560, // ALUs (80 EUs * 32 ALUs)
-            68.0, // GB/s (shared with system)
+            2560, // ALUs(80 EUs * 32 ALUs)
+            68.0, // GB/s(shared with system)
             new Version(2, 4),
-            true, // Unified memory (integrated)
+            true, // Unified memory(integrated)
             false, // No Neural Engine
             logger);
     }
@@ -239,23 +239,23 @@ public sealed class MockMetalDevice : MockHardwareDevice
     /// <inheritdoc/>
     public override bool HealthCheck()
     {
-        if (!base.HealthCheck())
+        if(!base.HealthCheck())
             return false;
 
         // Metal-specific health checks
-        if (ExecutionUnits == 0 || ShaderAlus == 0)
+        if(ExecutionUnits == 0 || ShaderAlus == 0)
         {
             Logger?.LogWarning("Metal device {DeviceId} has invalid execution unit configuration", Id);
             return false;
         }
 
-        if (string.IsNullOrEmpty(MetalFeatureSet))
+        if(string.IsNullOrEmpty(MetalFeatureSet))
         {
             Logger?.LogWarning("Metal device {DeviceId} has no feature set specified", Id);
             return false;
         }
 
-        if (MemoryBandwidth <= 0)
+        if(MemoryBandwidth <= 0)
         {
             Logger?.LogWarning("Metal device {DeviceId} has invalid memory bandwidth", Id);
             return false;
@@ -304,10 +304,10 @@ public sealed class MockMetalDevice : MockHardwareDevice
     /// <summary>
     /// Estimates the Neural Engine performance in operations per second.
     /// </summary>
-    /// <returns>Neural Engine TOPS (Trillions of Operations Per Second).</returns>
+    /// <returns>Neural Engine TOPS(Trillions of Operations Per Second).</returns>
     public double GetNeuralEnginePerformance()
     {
-        if (!HasNeuralEngine)
+        if(!HasNeuralEngine)
             return 0;
 
         // Rough estimates based on Apple Silicon generations

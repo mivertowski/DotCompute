@@ -38,6 +38,11 @@ public sealed class CUDAKernelCompiler : DotCompute.Abstractions.IKernelCompiler
     /// <inheritdoc/>
     public KernelSourceType[] SupportedSourceTypes { get; } = [KernelSourceType.CUDA, KernelSourceType.Binary];
 
+    /// <summary>
+    /// Gets the accelerator type this compiler targets.
+    /// </summary>
+    public AcceleratorType AcceleratorType => AcceleratorType.CUDA;
+
     /// <inheritdoc/>
     public async ValueTask<ICompiledKernel> CompileAsync(
         KernelDefinition definition,

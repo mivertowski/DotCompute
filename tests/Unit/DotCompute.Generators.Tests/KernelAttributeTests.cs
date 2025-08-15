@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Generators.Kernel;
@@ -17,10 +17,10 @@ public class KernelAttributeTests
 
         // Assert
         attribute.Backends.Should().Be(KernelBackends.CPU);
-        attribute.VectorSize.Should().Be(8, "Default vector size should be 8 (256-bit)");
-        attribute.IsParallel.Should().BeTrue("Default should enable parallel execution");
-        attribute.GridDimensions.BeNull("Grid dimensions should be null by default");
-        attribute.BlockDimensions.BeNull("Block dimensions should be null by default");
+        attribute.VectorSize.Should().Be(8); // Default vector size should be 8(256-bit)
+        attribute.IsParallel.Should().BeTrue(); // Default should enable parallel execution
+        attribute.GridDimensions.Should().BeNull; // Grid dimensions should be null by default
+        attribute.BlockDimensions.Should().BeNull; // Block dimensions should be null by default
         attribute.Optimizations.Should().Be(OptimizationHints.None);
         attribute.MemoryPattern.Should().Be(MemoryAccessPattern.Sequential);
     }
@@ -78,7 +78,7 @@ public class KernelAttributeTests
         attribute.GridDimensions = gridDims;
 
         // Assert
-        attribute.GridDimensions.BeEquivalentTo(gridDims);
+        attribute.GridDimensions.Should().BeEquivalentTo(gridDims);
     }
 
     [Fact]
@@ -92,7 +92,7 @@ public class KernelAttributeTests
         attribute.BlockDimensions = blockDims;
 
         // Assert
-        attribute.BlockDimensions.BeEquivalentTo(blockDims);
+        attribute.BlockDimensions.Should().BeEquivalentTo(blockDims);
     }
 
     [Fact]
@@ -132,19 +132,19 @@ public class KernelAttributeTests
     public void KernelBackends_EnumValues_ShouldHaveCorrectFlags(KernelBackends backend)
     {
         // Act & Assert
-        switch (backend)
+        switch(backend)
         {
             case KernelBackends.CPU:
-                ((int)backend).Should().Be(1);
+               ((int)backend).Should().Be(1);
                 break;
             case KernelBackends.CUDA:
-                ((int)backend).Should().Be(2);
+               ((int)backend).Should().Be(2);
                 break;
             case KernelBackends.Metal:
-                ((int)backend).Should().Be(4);
+               ((int)backend).Should().Be(4);
                 break;
             case KernelBackends.OpenCL:
-                ((int)backend).Should().Be(8);
+               ((int)backend).Should().Be(8);
                 break;
             case KernelBackends.All:
                 backend.HaveFlag(KernelBackends.CPU);
@@ -165,7 +165,7 @@ public class KernelAttributeTests
     public void OptimizationHints_EnumValues_ShouldHaveCorrectFlags(OptimizationHints hint, int expectedValue)
     {
         // Act & Assert
-        ((int)hint).Should().Be(expectedValue);
+       ((int)hint).Should().Be(expectedValue);
     }
 
     [Fact]
@@ -227,7 +227,7 @@ public class KernelAttributeTests
         attribute.Backends.HaveFlag(KernelBackends.Metal);
         attribute.Backends.Should().NotHaveFlag(KernelBackends.OpenCL);
         
-        var backendValue = (int)attribute.Backends;
+        var backendValue =(int)attribute.Backends;
         Assert.Equal(1 + 2 + 4, backendValue); // CPU + CUDA + Metal
     }
 
@@ -247,7 +247,7 @@ public class KernelAttributeTests
         attribute.Optimizations.Should().NotHaveFlag(OptimizationHints.AggressiveInlining);
         attribute.Optimizations.Should().NotHaveFlag(OptimizationHints.Prefetch);
         
-        var optimizationValue = (int)attribute.Optimizations;
+        var optimizationValue =(int)attribute.Optimizations;
         Assert.Equal(4 + 2 + 16, optimizationValue); // Vectorize + LoopUnrolling + FastMath
     }
 }

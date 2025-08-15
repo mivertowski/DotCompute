@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -82,13 +82,13 @@ public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         result.Validation?.IsValid.Should().BeTrue();
         result.Results.Should().ContainKey("result");
 
-        var resultData = (float[])result.Results["result"];
+        var resultData =(float[])result.Results["result"];
         resultData.Length.Should().Be(1024);
 
         // Verify the addition was performed correctly
         var inputA = workflow.Inputs[0].Data;
         var inputB = workflow.Inputs[1].Data;
-        for (int i = 0; i < 100; i++) // Check first 100 elements
+        for(int i = 0; i < 100; i++) // Check first 100 elements
         {
             resultData[i].Should().BeApproximately(inputA[i] + inputB[i], 0.001f);
         }
@@ -330,10 +330,10 @@ public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         result.Success.Should().BeTrue();
         result.Results.Should().ContainKey("output");
         
-        var output = (float[])result.Results["output"];
+        var output =(float[])result.Results["output"];
         output.Length.Should().Be(batchSize * outputChannels * outputSize * outputSize);
         
-        // Verify output is reasonable (no NaN, not all zeros)
+        // Verify output is reasonable(no NaN, not all zeros)
         output.Should().NotContain(float.NaN);
         output.Should().NotContain(float.PositiveInfinity);
         output.Should().NotContain(float.NegativeInfinity);
@@ -408,11 +408,11 @@ public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         result.Success.Should().BeTrue();
         result.Validation?.IsValid.Should().BeTrue();
         
-        var reductionResult = (float[])result.Results["result"];
+        var reductionResult =(float[])result.Results["result"];
         reductionResult[0].Should().BeApproximately(expectedSum, expectedSum * 0.01f);
 
         // Verify performance scales reasonably
-        if (arraySize > 64)
+        if(arraySize > 64)
         {
             var throughputMBps = result.Metrics?.ThroughputMBps ?? 0;
             Assert.True(throughputMBps > 0);
@@ -475,24 +475,24 @@ public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
 
     private static bool ValidateMatrixMultiplication(float[] result, float[] matrixA, float[] matrixB, int size)
     {
-        if (result.Length != size * size) return false;
+        if(result.Length != size * size) return false;
         
         // Check for valid values
-        if (result.Any(x => float.IsNaN(x) || float.IsInfinity(x))) return false;
+        if(result.Any(x => float.IsNaN(x) || float.IsInfinity(x))) return false;
         
         // Spot check a few elements using CPU computation
-        for (int i = 0; i < Math.Min(4, size); i++)
+        for(int i = 0; i < Math.Min(4, size); i++)
         {
-            for (int j = 0; j < Math.Min(4, size); j++)
+            for(int j = 0; j < Math.Min(4, size); j++)
             {
                 float expected = 0;
-                for (int k = 0; k < size; k++)
+                for(int k = 0; k < size; k++)
                 {
                     expected += matrixA[i * size + k] * matrixB[k * size + j];
                 }
                 
                 var actual = result[i * size + j];
-                if (Math.Abs(actual - expected) > Math.Abs(expected) * 0.01f + 1e-5f)
+                if(Math.Abs(actual - expected) > Math.Abs(expected) * 0.01f + 1e-5f)
                     return false;
             }
         }
@@ -502,7 +502,7 @@ public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
 
     private static bool ValidateConvolutionOutput(float[] result, int outputChannels)
     {
-        if (result.Any(x => float.IsNaN(x) || float.IsInfinity(x))) return false;
+        if(result.Any(x => float.IsNaN(x) || float.IsInfinity(x))) return false;
         
         // Check that we have reasonable activation values
         var activations = result.Where(x => Math.Abs(x) > 1e-6f).Count();
@@ -526,10 +526,10 @@ __kernel void matrix_multiply(__global const float* A, __global const float* B, 
     int row = get_global_id(0);
     int col = get_global_id(1);
     
-    if (row >= size || col >= size) return;
+    if(row >= size || col >= size) return;
     
     float sum = 0.0f;
-    for (int k = 0; k < size; k++) {
+    for(int k = 0; k < size; k++) {
         sum += A[row * size + k] * B[k * size + col];
     }
     C[row * size + col] = sum;
@@ -540,18 +540,18 @@ __kernel void gaussian_blur(__global const float* input, __global float* output,
     int x = get_global_id(0);
     int y = get_global_id(1);
     
-    if (x >= width || y >= height) return;
+    if(x >= width || y >= height) return;
     
     float kernel[9] = {0.077847f, 0.123317f, 0.077847f,
                        0.123317f, 0.195346f, 0.123317f,
                        0.077847f, 0.123317f, 0.077847f};
     
     float sum = 0.0f;
-    for (int ky = -1; ky <= 1; ky++) {
-        for (int kx = -1; kx <= 1; kx++) {
+    for(int ky = -1; ky <= 1; ky++) {
+        for(int kx = -1; kx <= 1; kx++) {
             int px = clamp(x + kx, 0, width - 1);
             int py = clamp(y + ky, 0, height - 1);
-            sum += input[py * width + px] * kernel[(ky + 1) * 3 + (kx + 1)];
+            sum += input[py * width + px] * kernel[(ky + 1) * 3 +(kx + 1)];
         }
     }
     output[y * width + x] = sum;
@@ -562,17 +562,17 @@ __kernel void edge_detection(__global const float* input, __global float* output
     int x = get_global_id(0);
     int y = get_global_id(1);
     
-    if (x >= width || y >= height || x == 0 || y == 0 || x == width-1 || y == height-1) {
-        if (x < width && y < height) output[y * width + x] = 0.0f;
+    if(x >= width || y >= height || x == 0 || y == 0 || x == width-1 || y == height-1) {
+        if(x < width && y < height) output[y * width + x] = 0.0f;
         return;
     }
     
-    float gx = -input[(y-1) * width + (x-1)] + input[(y-1) * width + (x+1)]
-               -2*input[y * width + (x-1)] + 2*input[y * width + (x+1)]
-               -input[(y+1) * width + (x-1)] + input[(y+1) * width + (x+1)];
+    float gx = -input[(y-1) * width +(x-1)] + input[(y-1) * width +(x+1)]
+               -2*input[y * width +(x-1)] + 2*input[y * width +(x+1)]
+               -input[(y+1) * width +(x-1)] + input[(y+1) * width +(x+1)];
     
-    float gy = -input[(y-1) * width + (x-1)] - 2*input[(y-1) * width + x] - input[(y-1) * width + (x+1)]
-               +input[(y+1) * width + (x-1)] + 2*input[(y+1) * width + x] + input[(y+1) * width + (x+1)];
+    float gy = -input[(y-1) * width +(x-1)] - 2*input[(y-1) * width + x] - input[(y-1) * width +(x+1)]
+               +input[(y+1) * width +(x-1)] + 2*input[(y+1) * width + x] + input[(y+1) * width +(x+1)];
     
     output[y * width + x] = sqrt(gx*gx + gy*gy);
 }";
@@ -594,22 +594,22 @@ __kernel void convolution2d(__global const float* input, __global const float* w
     int outChannel = get_global_id(2);
     
     int outputSize = inputSize - kernelSize + 1;
-    if (x >= outputSize || y >= outputSize || outChannel >= outputChannels) return;
+    if(x >= outputSize || y >= outputSize || outChannel >= outputChannels) return;
     
-    for (int batch = 0; batch < batchSize; batch++) {
+    for(int batch = 0; batch < batchSize; batch++) {
         float sum = biases[outChannel];
         
-        for (int inChannel = 0; inChannel < inputChannels; inChannel++) {
-            for (int ky = 0; ky < kernelSize; ky++) {
-                for (int kx = 0; kx < kernelSize; kx++) {
-                    int inputIdx = ((batch * inputChannels + inChannel) * inputSize + (y + ky)) * inputSize + (x + kx);
-                    int weightIdx = ((outChannel * inputChannels + inChannel) * kernelSize + ky) * kernelSize + kx;
+        for(int inChannel = 0; inChannel < inputChannels; inChannel++) {
+            for(int ky = 0; ky < kernelSize; ky++) {
+                for(int kx = 0; kx < kernelSize; kx++) {
+                    int inputIdx =((batch * inputChannels + inChannel) * inputSize +(y + ky)) * inputSize +(x + kx);
+                    int weightIdx =((outChannel * inputChannels + inChannel) * kernelSize + ky) * kernelSize + kx;
                     sum += input[inputIdx] * weights[weightIdx];
                 }
             }
         }
         
-        int outputIdx = ((batch * outputChannels + outChannel) * outputSize + y) * outputSize + x;
+        int outputIdx =((batch * outputChannels + outChannel) * outputSize + y) * outputSize + x;
         output[outputIdx] = fmax(0.0f, sum); // ReLU activation
     }
 }";
@@ -622,19 +622,19 @@ __kernel void parallel_reduction(__global const float* input, __global float* re
     int lsize = get_local_size(0);
     
     // Load data into local memory
-    scratch[lid] = (gid < size) ? input[gid] : 0.0f;
+    scratch[lid] =(gid < size) ? input[gid] : 0.0f;
     barrier(CLK_LOCAL_MEM_FENCE);
     
     // Parallel reduction in local memory
-    for (int offset = lsize / 2; offset > 0; offset >>= 1) {
-        if (lid < offset) {
+    for(int offset = lsize / 2; offset > 0; offset >>= 1) {
+        if(lid < offset) {
             scratch[lid] += scratch[lid + offset];
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
     
     // Write result for this work group
-    if (lid == 0) {
+    if(lid == 0) {
         atomic_add_global(result, scratch[0]);
     }
 }";

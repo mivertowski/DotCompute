@@ -40,8 +40,8 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
         Logger.LogInformation("  Allocation efficiency: {Efficiency} bytes/ms", result.AllocationEfficiency);
 
         // Assert performance requirements
-        Assert.True(result.AverageAllocTimeMs < 10.0, "Memory allocation should be under 10ms average");
-        Assert.True(result.AllocationEfficiency > 100, "Allocation efficiency should be > 100 bytes/ms");
+        result.AverageAllocTimeMs.Should().BeLessThan(10.0, "Memory allocation should be under 10ms average");
+        result.AllocationEfficiency.Should().BeGreaterThan(100, "Allocation efficiency should be > 100 bytes/ms");
     }
 
     [Fact]
@@ -58,9 +58,9 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
         foreach (var kernel in kernelSources)
         {
             await AssertPerformance(
-                () => CompileKernelAsync(kernel),
+               () => CompileKernelAsync(kernel),
                 expectedMaxTime: TimeSpan.FromMilliseconds(500),
-                operationName: $"Kernel compilation ({kernel.Length} chars)",
+                operationName: $"Kernel compilation({kernel.Length} chars)",
                 iterations: 10);
         }
     }
@@ -76,9 +76,9 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
             var data = CreateTestData(size);
             
             var result = await Benchmark.MeasureAsync(
-                () => TransferDataAsync(data),
+               () => TransferDataAsync(data),
                 iterations: 50,
-                operationName: $"Data transfer ({size} bytes)");
+                operationName: $"Data transfer({size} bytes)");
 
             var bandwidthMBps = (size / (1024.0 * 1024.0)) / result.AverageTime.TotalSeconds;
             
@@ -86,7 +86,7 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
                 size, bandwidthMBps);
 
             // Assert minimum bandwidth requirements
-            Assert.True(bandwidthMBps > 10.0, $"Data transfer bandwidth should be > 10 MB/s, got {bandwidthMBps:F2}");
+            bandwidthMBps.Should().BeGreaterThan(10.0, $"Data transfer bandwidth should be > 10 MB/s, got {bandwidthMBps:F2}");
         }
     }
 
@@ -100,11 +100,11 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
         foreach (var concurrency in concurrencyLevels)
         {
             var result = await Benchmark.MeasureAsync(
-                () => ExecuteConcurrentOperationsAsync(concurrency),
+               () => ExecuteConcurrentOperationsAsync(concurrency),
                 iterations: 10,
-                operationName: $"Concurrent operations (x{concurrency})");
+                operationName: $"Concurrent operations(x{concurrency})");
 
-            if (concurrency == 1)
+            if(concurrency == 1)
             {
                 baselineTime = result.AverageTime;
             }
@@ -115,9 +115,9 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
                 concurrency, result.AverageTime.TotalMilliseconds, efficiency);
 
             // Assert reasonable scaling efficiency
-            if (concurrency > 1)
+            if(concurrency > 1)
             {
-                Assert.True(efficiency > 0.7 * concurrency, 
+                efficiency.Should().BeGreaterThan(0.7 * concurrency, 
                     $"Concurrency efficiency should be > 70% of ideal, got {efficiency / concurrency * 100:F1}%");
             }
         }
@@ -136,31 +136,31 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
         var initialMemory = GC.GetTotalMemory(false);
 
         var baselineResult = await Benchmark.MeasureAsync(
-            () => AllocateAndReleaseMemoryAsync(allocationSize),
+           () => AllocateAndReleaseMemoryAsync(allocationSize),
             iterations,
-            "Memory operations (clean)");
+            "Memory operations(clean)");
 
         // Performance under pressure
         var allocatedMemory = new List<byte[]>();
         try
         {
             // Allocate memory to create pressure
-            for (int i = 0; i < 100; i++)
+            for(int i = 0; i < 100; i++)
             {
                 allocatedMemory.Add(new byte[allocationSize]);
             }
 
             var pressureResult = await Benchmark.MeasureAsync(
-                () => AllocateAndReleaseMemoryAsync(allocationSize),
+               () => AllocateAndReleaseMemoryAsync(allocationSize),
                 iterations,
-                "Memory operations (pressure)");
+                "Memory operations(pressure)");
 
             var performanceImpact = pressureResult.AverageTime.TotalMilliseconds / baselineResult.AverageTime.TotalMilliseconds;
             
             Logger.LogInformation("Memory pressure impact: {Impact:F2}x slowdown", performanceImpact);
 
             // Assert reasonable performance degradation
-            Assert.True(performanceImpact < 3.0, $"Memory pressure impact should be < 3x, got {performanceImpact:F2}x");
+            performanceImpact .Should().BeLessThan(3.0, $"Memory pressure impact should be < 3x, got {performanceImpact:F2}x");
         }
         finally
         {
@@ -235,9 +235,9 @@ kernel void matrixMultiply(
     int row = get_global_id(0);
     int col = get_global_id(1);
     
-    if (row < N && col < N) {
+    if(row < N && col < N) {
         float sum = 0.0f;
-        for (int k = 0; k < N; k++) {
+        for(int k = 0; k < N; k++) {
             sum += A[row * N + k] * B[k * N + col];
         }
         C[row * N + col] = sum;

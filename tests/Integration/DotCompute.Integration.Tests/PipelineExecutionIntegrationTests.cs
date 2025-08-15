@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -77,12 +77,12 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         // Calculate expected vs actual execution time
         var parallelExecutionTime = parallelStages.Max(s => s.Value.Duration.TotalMilliseconds);
         var sequentialTime = parallelStages.Sum(s => s.Value.Duration.TotalMilliseconds);
-        var parallelEfficiency = (sequentialTime - parallelExecutionTime) / sequentialTime;
+        var parallelEfficiency =(sequentialTime - parallelExecutionTime) / sequentialTime;
         
-        Logger.LogInformation("Parallel efficiency: {Efficiency:P1} (Sequential: {Sequential:F1}ms, Parallel: {Parallel:F1}ms)",
+        Logger.LogInformation("Parallel efficiency: {Efficiency:P1}Sequential: {Sequential:F1}ms, Parallel: {Parallel:F1}ms)",
             parallelEfficiency, sequentialTime, parallelExecutionTime);
         
-        Assert.True(parallelEfficiency > 0.3, "Parallel execution should show significant improvement");
+        parallelEfficiency.Should().BeGreaterThan(0.3, "Parallel execution should show significant improvement");
         
         LogPerformanceMetrics("ParallelPipeline", result.Duration, 1024 * 3);
     }
@@ -105,7 +105,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         
         // Check that all final outputs are present and valid
         result.Results.Should().ContainKey("final_output");
-        var finalOutput = (float[])result.Results["final_output"];
+        var finalOutput =(float[])result.Results["final_output"];
         Assert.NotEmpty(finalOutput);
         finalOutput.Should().NotContain(float.NaN);
         
@@ -125,7 +125,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         // Act - Process data in streaming fashion
         var chunkTasks = new List<Task>();
         
-        for (int offset = 0; offset < totalDataSize; offset += chunkSize)
+        for(int offset = 0; offset < totalDataSize; offset += chunkSize)
         {
             var currentChunk = sourceData
                 .Skip(offset)
@@ -139,7 +139,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
                 var chunkResult = await ExecuteComputeWorkflowAsync(
                     $"StreamingChunk_{offset / chunkSize}", chunkPipeline);
                 
-                if (chunkResult.Success && chunkResult.Results.ContainsKey("processed_chunk"))
+                if(chunkResult.Success && chunkResult.Results.ContainsKey("processed_chunk"))
                 {
                     results.Enqueue((float[])chunkResult.Results["processed_chunk"]);
                 }
@@ -163,13 +163,13 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         var totalProcessedElements = results.Sum(chunk => chunk.Length);
         Assert.Equal(totalDataSize, totalProcessedElements);
         
-        var streamingThroughput = (totalDataSize * sizeof(float)) / 1024.0 / 1024.0 / 
+        var streamingThroughput =(totalDataSize * sizeof(float)) / 1024.0 / 1024.0 / 
                                  processingStopwatch.Elapsed.TotalSeconds;
         
         Logger.LogInformation("Streaming pipeline: {Chunks} chunks, {Throughput:F2} MB/s",
             chunkResults.Length, streamingThroughput);
         
-        Assert.True(streamingThroughput > 5, "Streaming should maintain reasonable throughput");
+        streamingThroughput.Should().BeGreaterThan(5, "Streaming should maintain reasonable throughput");
         
         LogPerformanceMetrics("StreamingPipeline", processingStopwatch.Elapsed, totalDataSize);
     }
@@ -193,10 +193,10 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         var executionResults = result.ExecutionResults.Values.ToList();
         
         // Should have reasonable resource utilization despite pressure
-        if (result.Metrics != null)
+        if(result.Metrics != null)
         {
             var resourceUtil = result.Metrics.ResourceUtilization;
-            resourceUtil.Assert.True(MemoryUsagePercent < 90, 
+            resourceUtil.MemoryUsagePercent .Should().BeLessThan(90, 
                 "Adaptive pipeline should manage memory pressure");
         }
         
@@ -231,11 +231,11 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         result.Results.Should().ContainKey("iterations_count");
         result.Results.Should().ContainKey("convergence_achieved");
         
-        var iterationsCount = (float[])result.Results["iterations_count"];
-        var convergenceAchieved = (float[])result.Results["convergence_achieved"];
+        var iterationsCount =(float[])result.Results["iterations_count"];
+        var convergenceAchieved =(float[])result.Results["convergence_achieved"];
         
-        iterationsCount[0].BeLessOrEqualTo(maxIterations);
-        convergenceAchieved[0].Should().Be(1.0f, "Algorithm should converge");
+        iterationsCount[0].Should().BeLessOrEqualTo(maxIterations);
+        convergenceAchieved[0].Should().Be(1.0f); // Algorithm should converge
         
         Logger.LogInformation("Feedback pipeline converged in {Iterations} iterations", iterationsCount[0]);
         
@@ -259,8 +259,8 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Pipeline execution: {Successful} successful, {Failed} failed stages",
             successfulStages, failedStages);
         
-        Assert.True(failedStages > 0, "Should have simulated failures");
-        Assert.True(successfulStages > failedStages, "Should recover from most failures");
+        failedStages.Should().BeGreaterThan(0, "Should have simulated failures");
+        (successfulStages > failedStages).Should().BeTrue();
         
         // Should have partial results available
         result.Results.Should().NotBeEmpty();
@@ -283,13 +283,13 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         result.ExecutionResults.Count.Should().Be(stages);
         
         // Verify performance scaling
-        if (result.Metrics != null)
+        if(result.Metrics != null)
         {
             var throughputPerStage = result.Metrics.ThroughputMBps / stages;
-            Assert.True(throughputPerStage > 1, "Each stage should maintain reasonable throughput");
+            throughputPerStage.Should().BeGreaterThan(1, "Each stage should maintain reasonable throughput");
             
             var executionTimePerElement = result.Metrics.ExecutionTime / dataSize;
-            Assert.True(executionTimePerElement < 1, "Per-element processing should be efficient");
+            executionTimePerElement .Should().BeLessThan(1, "Per-element processing should be efficient");
         }
         
         LogPerformanceMetrics($"ScalablePipeline_{stages}_{dataSize}", result.Duration, dataSize * stages);
@@ -653,7 +653,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         };
 
         // Create intermediate buffers
-        for (int i = 0; i < numStages - 1; i++)
+        for(int i = 0; i < numStages - 1; i++)
         {
             workflow.IntermediateBuffers.Add(new WorkflowIntermediateBuffer
             {
@@ -663,7 +663,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         }
 
         // Create execution stages
-        for (int stage = 0; stage < numStages; stage++)
+        for(int stage = 0; stage < numStages; stage++)
         {
             var inputName = stage == 0 ? "input" : $"intermediate_{stage - 1}";
             var outputName = stage == numStages - 1 ? "output" : $"intermediate_{stage}";
@@ -728,7 +728,7 @@ __kernel void data_split(__global const float* input,
                         __global float* ch0, __global float* ch1, __global float* ch2,
                         int channel_size) {
     int gid = get_global_id(0);
-    if (gid < channel_size) {
+    if(gid < channel_size) {
         ch0[gid] = input[gid];
         ch1[gid] = input[gid + channel_size];
         ch2[gid] = input[gid + 2 * channel_size];
@@ -746,7 +746,7 @@ __kernel void process_channel(__global const float* input, __global float* outpu
 __kernel void data_merge(__global const float* ch0, __global const float* ch1, __global const float* ch2,
                         __global float* output, int channel_size) {
     int gid = get_global_id(0);
-    if (gid < channel_size) {
+    if(gid < channel_size) {
         output[gid] = ch0[gid];
         output[gid + channel_size] = ch1[gid];
         output[gid + 2 * channel_size] = ch2[gid];
@@ -756,13 +756,13 @@ __kernel void data_merge(__global const float* ch0, __global const float* ch1, _
     public const string PreprocessData = @"
 __kernel void preprocess(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
-    output[gid] = (input[gid] - 128.0f) / 128.0f; // Normalize to [-1, 1]
+    output[gid] =(input[gid] - 128.0f) / 128.0f; // Normalize to [-1, 1]
 }";
 
     public const string FeatureExtract = @"
 __kernel void feature_extract(__global const float* input, __global float* output, char mode) {
     int gid = get_global_id(0);
-    if (mode == 'A') {
+    if(mode == 'A') {
         output[gid] = fabs(input[gid]); // Absolute value features
     } else {
         output[gid] = input[gid] * input[gid]; // Squared features
@@ -773,14 +773,14 @@ __kernel void feature_extract(__global const float* input, __global float* outpu
 __kernel void normalize(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
     float value = input[gid];
-    output[gid] = value / (1.0f + fabs(value)); // Soft normalization
+    output[gid] = value /(1.0f + fabs(value)); // Soft normalization
 }";
 
     public const string ClassifyData = @"
 __kernel void classify(__global const float* features_a, __global const float* features_b, __global float* output) {
     int gid = get_global_id(0);
     float combined = features_a[gid] * 0.6f + features_b[gid] * 0.4f;
-    output[gid] = 1.0f / (1.0f + exp(-combined)); // Sigmoid classification
+    output[gid] = 1.0f /(1.0f + exp(-combined)); // Sigmoid classification
 }";
 
     public const string PostprocessData = @"
@@ -807,8 +807,8 @@ __kernel void adaptive_process(__global const float* input, __global float* outp
     
     float result = shared[lid];
     // Adaptive processing based on local values
-    if (lid > 0) result += shared[lid - 1] * 0.1f;
-    if (lid < get_local_size(0) - 1) result += shared[lid + 1] * 0.1f;
+    if(lid > 0) result += shared[lid - 1] * 0.1f;
+    if(lid < get_local_size(0) - 1) result += shared[lid + 1] * 0.1f;
     
     output[gid] = result;
 }";
@@ -821,32 +821,32 @@ __kernel void iterative_process(__global const float* initial,
                                int max_iterations, float threshold, int data_size) {
     int gid = get_global_id(0);
     
-    if (gid == 0) {
+    if(gid == 0) {
         float prev_error = 1000.0f;
         int iter = 0;
         
-        for (iter = 0; iter < max_iterations; iter++) {
+        for(iter = 0; iter < max_iterations; iter++) {
             float current_error = 0.0f;
             
-            // Simulate iterative algorithm (simple gradient descent)
-            for (int i = 0; i < data_size; i++) {
-                float current = (iter == 0) ? initial[i] : result[i];
+            // Simulate iterative algorithm(simple gradient descent)
+            for(int i = 0; i < data_size; i++) {
+                float current =(iter == 0) ? initial[i] : result[i];
                 float target = 50.0f; // Target value
-                float gradient = 2.0f * (current - target);
+                float gradient = 2.0f *(current - target);
                 result[i] = current - 0.01f * gradient;
                 current_error += fabs(result[i] - target);
             }
             
             current_error /= data_size;
-            if (fabs(prev_error - current_error) < threshold) {
+            if(fabs(prev_error - current_error) < threshold) {
                 converged[0] = 1.0f;
                 break;
             }
             prev_error = current_error;
         }
         
-        iterations[0] = (float)iter;
-        if (converged[0] != 1.0f) converged[0] = 0.0f;
+        iterations[0] =(float)iter;
+        if(converged[0] != 1.0f) converged[0] = 0.0f;
     }
 }";
 
@@ -861,7 +861,7 @@ __kernel void reliable_process(__global const float* input, __global float* outp
 __kernel void error_prone_process(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
     // Simulate occasional errors
-    if (gid % 100 == 13) { // ~1% error rate
+    if(gid % 100 == 13) { // ~1% error rate
         output[gid] = NAN; // Introduce error
     } else {
         output[gid] = input[gid] * 2.0f;
@@ -871,7 +871,7 @@ __kernel void error_prone_process(__global const float* input, __global float* o
     public const string RecoveryProcess = @"
 __kernel void recovery_process(__global const float* input, __global const float* backup, __global float* output) {
     int gid = get_global_id(0);
-    if (isnan(input[gid]) || isinf(input[gid])) {
+    if(isnan(input[gid]) || isinf(input[gid])) {
         output[gid] = backup[gid] * 2.0f; // Use backup value
     } else {
         output[gid] = input[gid];

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text.RegularExpressions;
@@ -99,7 +99,7 @@ namespace MyProject.Kernels
         [Kernel]
         public static void Add(float[] a, float[] b, float[] result, int length)
         {
-            for (int i = 0; i < length; i++)
+            for(int i = 0; i < length; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -116,7 +116,7 @@ namespace MyProject.Kernels
         foreach (var generated in result.GeneratedSources)
         {
             var code = generated.SourceText.ToString();
-            if (code.Contains("namespace"))
+            if(code.Contains("namespace"))
             {
                 // Should contain valid namespace declarations
                 code.Should().MatchRegex(@"namespace\s+[\w\.]+\s*\{");
@@ -168,7 +168,7 @@ namespace MyProject.Kernels
             var code = generated.SourceText.ToString();
             
             // Should have required using statements for CPU implementations
-            if (code.Contains("ExecuteScalar") || code.Contains("ExecuteSIMD"))
+            if(code.Contains("ExecuteScalar") || code.Contains("ExecuteSIMD"))
             {
                 Assert.Contains("using System;", code);
                 Assert.Contains("using System.Runtime.CompilerServices;", code);
@@ -200,7 +200,7 @@ public class MultiKernels
 
         // Assert
         Assert.NotNull(invokerCode);
-        invokerCode.Contain("switch (methodName)");
+        invokerCode.Contain("switchmethodName)");
         Assert.Contains("case \"Add\":", invokerCode);
         Assert.Contains("case \"Multiply\":", invokerCode);
         Assert.Contains("InvokeAdd", invokerCode);
@@ -221,7 +221,7 @@ public class Special_Class_123
     [Kernel]
     public static void Method_With_Underscores(float[] input_data, float[] output_data, int data_length)
     {
-        for (int i = 0; i < data_length; i++)
+        for(int i = 0; i < data_length; i++)
         {
             output_data[i] = input_data[i];
         }
@@ -306,7 +306,7 @@ public class Special_Class_123
             "TestKernels",
             methodName,
             "float[] a, float[] b, float[] result, int length",
-            $@"for (int i = 0; i < length; i++) {{ {operation} }}");
+            $@"for(int i = 0; i < length; i++) {{ {operation} }}");
 
         // Act
         var result = TestHelper.RunIncrementalGenerator(_generator, source);
@@ -371,7 +371,7 @@ public class Special_Class_123
             var lines = code.Split('\n');
             foreach (var line in lines.Where(l => !string.IsNullOrWhiteSpace(l)
             {
-                if (line.TrimStart() != line)
+                if(line.TrimStart() != line)
                 {
                     // Indented lines should use spaces, not tabs
                     var indent = line.TakeWhile(char.IsWhiteSpace).ToArray();

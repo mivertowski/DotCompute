@@ -63,7 +63,7 @@ public class TestParallelStage : IPipelineStage
             var outputs = new Dictionary<string, object>();
             var stageResults = new List<StageExecutionResult>();
             
-            switch (_synchronizationMode)
+            switch(_synchronizationMode)
             {
                 case SynchronizationMode.WaitAll:
                     stageResults = await ExecuteWaitAll(context, cancellationToken);
@@ -85,7 +85,7 @@ public class TestParallelStage : IPipelineStage
             // Merge outputs from all stages
             foreach (var result in stageResults)
             {
-                if (result.Outputs != null)
+                if(result.Outputs != null)
                 {
                     foreach (var (key, value) in result.Outputs)
                     {
@@ -94,7 +94,7 @@ public class TestParallelStage : IPipelineStage
                 }
             }
             
-            if (_useBarrier)
+            if(_useBarrier)
             {
                 await Task.Yield(); // Simulate barrier synchronization
             }
@@ -128,7 +128,7 @@ public class TestParallelStage : IPipelineStage
                 }
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             _metrics.RecordExecutionError(stopwatch.Elapsed);
@@ -170,14 +170,14 @@ public class TestParallelStage : IPipelineStage
         
         var results = new List<StageExecutionResult>();
         
-        while (tasks.Count > 0)
+        while(tasks.Count > 0)
         {
             var completedTask = await Task.WhenAny(tasks);
             results.Add(await completedTask);
             tasks.Remove(completedTask);
             
             // For WaitAny, we might want to cancel remaining tasks after first completion
-            if (results.Count == 1 && _metadata.ContainsKey("CancelOthersOnFirstCompletion"))
+            if(results.Count == 1 && _metadata.ContainsKey("CancelOthersOnFirstCompletion"))
             {
                 break;
             }
@@ -214,7 +214,7 @@ public class TestParallelStage : IPipelineStage
         var results = new List<StageExecutionResult>();
         var batchSize = Math.Max(1, _maxDegreeOfParallelism / 2);
         
-        for (int i = 0; i < _stages.Count; i += batchSize)
+        for(int i = 0; i < _stages.Count; i += batchSize)
         {
             var batch = _stages.Skip(i).Take(batchSize);
             var batchTasks = batch.Select(stage => 
@@ -249,7 +249,7 @@ public class TestParallelStage : IPipelineStage
         var errors = new List<string>();
         var warnings = new List<string>();
         
-        if (_stages.Count == 0)
+        if(_stages.Count == 0)
         {
             errors.Add("Parallel stage has no child stages");
         }
@@ -257,17 +257,17 @@ public class TestParallelStage : IPipelineStage
         foreach (var stage in _stages)
         {
             var validation = stage.Validate();
-            if (!validation.IsValid && validation.Errors != null)
+            if(!validation.IsValid && validation.Errors != null)
             {
                 errors.AddRange(validation.Errors.Select(e => $"{stage.Name}: {e}"));
             }
-            if (validation.Warnings != null)
+            if(validation.Warnings != null)
             {
                 warnings.AddRange(validation.Warnings.Select(w => $"{stage.Name}: {w}"));
             }
         }
         
-        if (_maxDegreeOfParallelism < 1)
+        if(_maxDegreeOfParallelism < 1)
         {
             errors.Add("MaxDegreeOfParallelism must be at least 1");
         }
@@ -332,7 +332,7 @@ public class TestParallelStageBuilder : IParallelStageBuilder
     {
         var kernelStage = new TestKernelStage(name, kernel);
         
-        if (configure != null)
+        if(configure != null)
         {
             var builder = new TestKernelStageBuilder(kernelStage);
             configure(builder);
@@ -355,7 +355,7 @@ public class TestParallelStageBuilder : IParallelStageBuilder
         // Wrap pipeline as a custom stage
         var pipelineStage = new TestCustomStage(
             name,
-            async (context, ct) =>
+            async(context, ct) =>
             {
                 var result = await pipeline.ExecuteAsync(context, ct);
                 return new StageExecutionResult

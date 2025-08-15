@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 
@@ -59,31 +59,31 @@ public sealed class SimdCapabilitiesTests(ITestOutputHelper output)
         var summary = SimdCapabilities.GetSummary();
 
         // Act & Assert
-        if (Sse.IsSupported)
+        if(Sse.IsSupported)
         {
             Assert.Contains("SSE", summary.SupportedInstructionSets);
             _output.WriteLine("SSE is supported");
         }
 
-        if (Sse2.IsSupported)
+        if(Sse2.IsSupported)
         {
             Assert.Contains("SSE2", summary.SupportedInstructionSets);
             _output.WriteLine("SSE2 is supported");
         }
 
-        if (Avx.IsSupported)
+        if(Avx.IsSupported)
         {
             Assert.Contains("AVX", summary.SupportedInstructionSets);
             _output.WriteLine("AVX is supported");
         }
 
-        if (Avx2.IsSupported)
+        if(Avx2.IsSupported)
         {
             Assert.Contains("AVX2", summary.SupportedInstructionSets);
             _output.WriteLine("AVX2 is supported");
         }
 
-        if (Avx512F.IsSupported)
+        if(Avx512F.IsSupported)
         {
             Assert.Contains("AVX512F", summary.SupportedInstructionSets);
             _output.WriteLine("AVX512F is supported");
@@ -116,7 +116,7 @@ public sealed class SimdCapabilitiesTests(ITestOutputHelper output)
     public void VectorWidthCorrespondsToFloatCount(int vectorWidth, int expectedFloatCount)
     {
         // Act
-        var floatCount = vectorWidth / (sizeof(float) * 8);
+        var floatCount = vectorWidth /(sizeof(float) * 8);
 
         // Assert
         Assert.Equal(expectedFloatCount, floatCount);
@@ -144,10 +144,10 @@ public sealed class SimdCapabilitiesTests(ITestOutputHelper output)
         var result = new float[count];
 
         // Test with Vector<T>
-        if (Vector.IsHardwareAccelerated)
+        if(Vector.IsHardwareAccelerated)
         {
             var vectorSize = Vector<float>.Count;
-            for (var i = 0; i < count; i += vectorSize)
+            for(var i = 0; i < count; i += vectorSize)
             {
                 var va = new Vector<float>(a, i);
                 var vb = new Vector<float>(b, i);
@@ -156,7 +156,7 @@ public sealed class SimdCapabilitiesTests(ITestOutputHelper output)
             }
 
             // All results should be 9
-            for (var i = 0; i < Math.Min(count, vectorSize); i++)
+            for(var i = 0; i < Math.Min(count, vectorSize); i++)
             {
                 Assert.Equal(9.0f, result[i], 0.0001f);
             }

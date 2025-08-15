@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
@@ -73,7 +73,7 @@ public sealed class HardwareSimulator : IDisposable
     /// </summary>
     public void Stop()
     {
-        if (!IsRunning)
+        if(!IsRunning)
             return;
 
         _simulationTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
@@ -108,7 +108,7 @@ public sealed class HardwareSimulator : IDisposable
     {
         ThrowIfDisposed();
 
-        if (_activeScenarios.Remove(scenarioId))
+        if(_activeScenarios.Remove(scenarioId))
         {
             _logger.LogDebug("Removed simulation scenario: {ScenarioId}", scenarioId);
             return true;
@@ -143,7 +143,7 @@ public sealed class HardwareSimulator : IDisposable
     /// Simulates thermal throttling on devices of the specified type.
     /// </summary>
     /// <param name="deviceType">The device type to throttle.</param>
-    /// <param name="throttlePercentage">The throttling percentage (0.0 to 1.0).</param>
+    /// <param name="throttlePercentage">The throttling percentage(0.0 to 1.0).</param>
     public void SimulateThermalThrottling(AcceleratorType deviceType, double throttlePercentage = 0.3)
     {
         ThrowIfDisposed();
@@ -165,7 +165,7 @@ public sealed class HardwareSimulator : IDisposable
     /// Simulates memory pressure by consuming memory on devices.
     /// </summary>
     /// <param name="deviceType">The device type to apply memory pressure to.</param>
-    /// <param name="memoryPressurePercentage">Percentage of memory to consume (0.0 to 1.0).</param>
+    /// <param name="memoryPressurePercentage">Percentage of memory to consume(0.0 to 1.0).</param>
     public void SimulateMemoryPressure(AcceleratorType deviceType, double memoryPressurePercentage = 0.8)
     {
         ThrowIfDisposed();
@@ -174,18 +174,18 @@ public sealed class HardwareSimulator : IDisposable
 
         foreach (var device in _hardwareProvider.GetDevices(deviceType).OfType<MockHardwareDevice>())
         {
-            var memoryToConsume = (long)(device.TotalMemory * memoryPressurePercentage);
+            var memoryToConsume =(long)(device.TotalMemory * memoryPressurePercentage);
             device.SimulateMemoryUsage(memoryToConsume);
             
             _logger.LogWarning("Applied memory pressure to device {DeviceId}: {Consumed}MB consumed", 
-                device.Id, memoryToConsume / (1024 * 1024));
+                device.Id, memoryToConsume /(1024 * 1024));
         }
     }
 
     /// <summary>
     /// Simulates random device failures for chaos testing.
     /// </summary>
-    /// <param name="failureProbability">Probability of failure per device (0.0 to 1.0).</param>
+    /// <param name="failureProbability">Probability of failure per device(0.0 to 1.0).</param>
     /// <param name="deviceTypes">Device types to consider for failures.</param>
     public void SimulateRandomFailures(double failureProbability = 0.1, params AcceleratorType[] deviceTypes)
     {
@@ -200,7 +200,7 @@ public sealed class HardwareSimulator : IDisposable
         {
             foreach (var device in _hardwareProvider.GetDevices(deviceType).OfType<MockHardwareDevice>())
             {
-                if (random.NextDouble() < failureProbability)
+                if(random.NextDouble() < failureProbability)
                 {
                     var errorMessages = new[]
                     {
@@ -311,7 +311,7 @@ public sealed class HardwareSimulator : IDisposable
 
     private void UpdateSimulations(object? state)
     {
-        if (!IsRunning || _disposed)
+        if(!IsRunning || _disposed)
             return;
 
         try
@@ -321,7 +321,7 @@ public sealed class HardwareSimulator : IDisposable
 
             foreach (var (scenarioId, scenario) in _activeScenarios)
             {
-                if (currentTime - scenario.StartTime > scenario.Duration)
+                if(currentTime - scenario.StartTime > scenario.Duration)
                 {
                     scenariosToRemove.Add(scenarioId);
                     continue;
@@ -336,7 +336,7 @@ public sealed class HardwareSimulator : IDisposable
                 RemoveScenario(scenarioId);
             }
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _logger.LogError(ex, "Error during simulation update");
         }
@@ -348,31 +348,31 @@ public sealed class HardwareSimulator : IDisposable
         {
             try
             {
-                switch (action.ActionType)
+                switch(action.ActionType)
                 {
                     case SimulationActionType.MemoryPressure:
-                        if (action.Parameters.TryGetValue("Percentage", out var memPercent))
+                        if(action.Parameters.TryGetValue("Percentage", out var memPercent))
                         {
                             SimulateMemoryPressure(action.TargetDeviceType, Convert.ToDouble(memPercent));
                         }
                         break;
                         
                     case SimulationActionType.ThermalThrottling:
-                        if (action.Parameters.TryGetValue("Percentage", out var thermalPercent))
+                        if(action.Parameters.TryGetValue("Percentage", out var thermalPercent))
                         {
                             SimulateThermalThrottling(action.TargetDeviceType, Convert.ToDouble(thermalPercent));
                         }
                         break;
                         
                     case SimulationActionType.RandomFailures:
-                        if (action.Parameters.TryGetValue("Probability", out var probability))
+                        if(action.Parameters.TryGetValue("Probability", out var probability))
                         {
                             SimulateRandomFailures(Convert.ToDouble(probability), action.TargetDeviceType);
                         }
                         break;
                 }
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _logger.LogWarning(ex, "Error executing simulation action {ActionType} for scenario {ScenarioId}", 
                     action.ActionType, scenario.Id);
@@ -388,7 +388,7 @@ public sealed class HardwareSimulator : IDisposable
     /// <inheritdoc/>
     public void Dispose()
     {
-        if (_disposed)
+        if(_disposed)
             return;
 
         Stop();

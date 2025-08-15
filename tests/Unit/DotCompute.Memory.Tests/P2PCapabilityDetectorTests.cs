@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -309,14 +309,14 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
 
         // Act - concurrent detection calls
         var tasks = new Task<P2PConnectionCapability>[10];
-        for (var i = 0; i < tasks.Length; i++)
+        for(var i = 0; i < tasks.Length; i++)
         {
             tasks[i] = _detector.DetectP2PCapabilityAsync(device1, device2).AsTask();
         }
 
         var results = await Task.WhenAll(tasks);
 
-        // Assert - all results should be identical (cached)
+        // Assert - all results should be identical(cached)
         var firstResult = results[0];
         foreach (var result in results)
         {

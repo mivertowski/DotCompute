@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Algorithms.Types.Management;
@@ -63,7 +63,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         result.PackageIdentity.Version.ToString().Should().Be("1.0.0");
         result.LoadedAssemblyPaths.Should().NotBeEmpty();
         result.FromCache.Should().BeFalse();
-        result.LoadTime > TimeSpan.Zero.Should().BeTrue();
+        (result.LoadTime > TimeSpan.Zero).Should().BeTrue();
     }
 
     [Fact]
@@ -178,8 +178,8 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var cachedPackage = cachedPackages.First();
         cachedPackage.Identity.Id.Should().Be("TestPackage");
         cachedPackage.Identity.Version.ToString().Should().Be("1.0.0");
-((cachedPackage.AssemblyCount > 0).Should().BeTrue();
-        cachedPackage.CacheAge > TimeSpan.Zero.Should().BeTrue();
+        (cachedPackage.AssemblyCount > 0).Should().BeTrue();
+        (cachedPackage.CacheAge > TimeSpan.Zero).Should().BeTrue();
         cachedPackage.IsSecurityValidated.Should().BeTrue(); // Since we disabled security validation, it should pass
     }
 
@@ -208,14 +208,14 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         var packagePath = await CreateTestPackageAsync("TestPackage", "1.0.0");
         await _pluginLoader.LoadPackageAsync(packagePath, "net9.0");
 
-        // Act - clear packages older than 1 minute (should not clear anything)
+        // Act - clear packages older than 1 minute(should not clear anything)
         await _pluginLoader.ClearCacheAsync(TimeSpan.FromMinutes(1));
 
         // Assert
         var cachedPackages = _pluginLoader.GetCachedPackages();
         Assert.NotEmpty(cachedPackages); // Nothing should be cleared
 
-        // Act - clear packages older than 0 seconds (should clear everything)
+        // Act - clear packages older than 0 seconds(should clear everything)
         await _pluginLoader.ClearCacheAsync(TimeSpan.Zero);
 
         // Assert
@@ -271,7 +271,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         info.DependencyCount.Should().Be(3);
         info.PackageSize.Should().Be(1024 * 1024);
         info.IsSecurityValidated.Should().BeTrue();
-        info.CacheAge.BeCloseTo(TimeSpan.FromMinutes(5), TimeSpan.FromSeconds(10));
+        info.CacheAge.Should().BeCloseTo(TimeSpan.FromMinutes(5), TimeSpan.FromSeconds(10));
     }
 
     [Fact]
@@ -298,7 +298,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         // Assert
         result.PackageIdentity.Should().Be(identity);
         result.LoadedAssemblyPaths.Equal(["assembly1.dll", "assembly2.dll"]);
-        result.Assert.Empty(ResolvedDependencies);
+        resultResolvedDependencies.Should().BeEmpty();
         result.LoadTime.Should().Be(loadTime);
         result.TotalSize.Should().Be(2048);
         result.SecurityValidationResult.Should().Be("Valid signature");
@@ -333,11 +333,11 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         // Assert
         Assert.NotNull(result);
         result.LoadedAssemblyPaths.Should().NotBeEmpty();
-((result.TotalSize > 0).Should().BeTrue();
+        (result.TotalSize > 0).Should().BeTrue();
     }
 
     [Fact]
-    public void Dispose_CalledMultipleTimes_ShouldShould().NotThrow()
+    public void Dispose_CalledMultipleTimes_ShouldNotThrow()
     {
         // Act & Assert
         _pluginLoader.Dispose(); // First dispose
@@ -353,7 +353,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         // Create nuspec file
         var nuspec = CreateNuspecContent(packageId, version);
         var nuspecEntry = archive.CreateEntry($"{packageId}.nuspec");
-        using (var nuspecStream = nuspecEntry.Open())
+        using(var nuspecStream = nuspecEntry.Open())
         {
             await nuspecStream.WriteAsync(Encoding.UTF8.GetBytes(nuspec));
         }
@@ -363,16 +363,16 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         
         // Create main assembly
         var mainAssemblyEntry = archive.CreateEntry($"{libPath}{packageId}.dll");
-        using (var assemblyStream = mainAssemblyEntry.Open())
+        using(var assemblyStream = mainAssemblyEntry.Open())
         {
             await assemblyStream.WriteAsync(CreateDummyAssemblyBytes(packageId));
         }
 
-        if (includeMultipleAssemblies)
+        if(includeMultipleAssemblies)
         {
             // Create additional assemblies
             var helperAssemblyEntry = archive.CreateEntry($"{libPath}{packageId}.Helper.dll");
-            using (var helperStream = helperAssemblyEntry.Open())
+            using(var helperStream = helperAssemblyEntry.Open())
             {
                 await helperStream.WriteAsync(CreateDummyAssemblyBytes($"{packageId}.Helper"));
             }
@@ -413,7 +413,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
     {
         _pluginLoader?.Dispose();
         
-        if (Directory.Exists(_tempDirectory))
+        if(Directory.Exists(_tempDirectory))
         {
             try
             {

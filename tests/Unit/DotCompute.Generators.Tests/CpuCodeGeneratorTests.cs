@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Generic;
@@ -19,10 +19,10 @@ public class CpuCodeGeneratorTests
         var methodName = "AddArrays";
         var parameters = new List<(string name, string type, bool isBuffer)>
         {
-            ("input1", "float[]", true),
-            ("input2", "float[]", true),
-            ("output", "float[]", true),
-            ("length", "int", false)
+           ("input1", "float[]", true),
+           ("input2", "float[]", true),
+           ("output", "float[]", true),
+           ("length", "int", false)
         };
         var methodSyntax = CreateSimpleMethodSyntax();
         var generator = new CpuCodeGenerator(methodName, parameters, methodSyntax);
@@ -49,11 +49,11 @@ public class CpuCodeGeneratorTests
         var methodName = "ProcessData";
         var parameters = new List<(string name, string type, bool isBuffer)>
         {
-            ("intArray", "int[]", true),
-            ("doubleArray", "double[]", true),
-            ("floatPtr", "float*", true),
-            ("count", "int", false),
-            ("scale", "double", false)
+           ("intArray", "int[]", true),
+           ("doubleArray", "double[]", true),
+           ("floatPtr", "float*", true),
+           ("count", "int", false),
+           ("scale", "double", false)
         };
         var methodSyntax = CreateSimpleMethodSyntax();
         var generator = new CpuCodeGenerator(methodName, parameters, methodSyntax);
@@ -204,8 +204,8 @@ public class CpuCodeGeneratorTests
         var methodName = "ComplexKernel";
         var parameters = new List<(string name, string type, bool isBuffer)>
         {
-            ("input", "float[]", true),
-            ("output", "float[]", true)
+           ("input", "float[]", true),
+           ("output", "float[]", true)
         };
         var complexMethod = CreateComplexMethodSyntax();
         var generator = new CpuCodeGenerator(methodName, parameters, complexMethod);
@@ -233,7 +233,7 @@ public class CpuCodeGeneratorTests
         Assert.Contains("Vector.Add", result);
         Assert.Contains("Avx.Add", result);
         Assert.Contains("Avx512F.Add", result);
-        Assert.Contains("fixed (float*", result);
+        Assert.Contains("fixedfloat*", result);
     }
 
     [Fact]
@@ -277,7 +277,7 @@ public class CpuCodeGeneratorTests
         // Assert
         Assert.Contains("public static unsafe class", result);
         Assert.Contains("unsafe", result);
-        Assert.Contains("fixed (float*", result);
+        Assert.Contains("fixedfloat*", result);
     }
 
     [Fact]
@@ -291,7 +291,7 @@ public class CpuCodeGeneratorTests
 
         // Assert
         Assert.Contains("// Process remainder", result);
-        result.Contain("if (alignedEnd < end)");
+        result.Contain("ifalignedEnd < end)");
         Assert.Contains("ExecuteScalar(", result);
     }
 
@@ -321,8 +321,8 @@ public class CpuCodeGeneratorTests
         var methodName = "SimpleCalculation";
         var parameters = new List<(string name, string type, bool isBuffer)>
         {
-            ("value", "float", false),
-            ("multiplier", "float", false)
+           ("value", "float", false),
+           ("multiplier", "float", false)
         };
         var methodSyntax = CreateSimpleMethodSyntax();
         var generator = new CpuCodeGenerator(methodName, parameters, methodSyntax);
@@ -342,9 +342,9 @@ public class CpuCodeGeneratorTests
         var methodName = "TestKernel";
         var parameters = new List<(string name, string type, bool isBuffer)>
         {
-            ("input", "float[]", true),
-            ("output", "float[]", true),
-            ("length", "int", false)
+           ("input", "float[]", true),
+           ("output", "float[]", true),
+           ("length", "int", false)
         };
         var methodSyntax = CreateSimpleMethodSyntax();
         return new CpuCodeGenerator(methodName, parameters, methodSyntax);
@@ -355,10 +355,10 @@ public class CpuCodeGeneratorTests
         var methodName = "TestKernel";
         var parameters = new List<(string name, string type, bool isBuffer)>
         {
-            ("input1", "float[]", true),
-            ("input2", "float[]", true),
-            ("output", "float[]", true),
-            ("length", "int", false)
+           ("input1", "float[]", true),
+           ("input2", "float[]", true),
+           ("output", "float[]", true),
+           ("length", "int", false)
         };
         return new CpuCodeGenerator(methodName, parameters, methodSyntax);
     }
@@ -368,7 +368,7 @@ public class CpuCodeGeneratorTests
         var source = @"
 public static void TestMethod(float[] input, float[] output, int length)
 {
-    for (int i = 0; i < length; i++)
+    for(int i = 0; i < length; i++)
     {
         output[i] = input[i] * 2.0f;
     }
@@ -382,12 +382,12 @@ public static void TestMethod(float[] input, float[] output, int length)
         var source = @"
 public static void ComplexMethod(float[] input, float[] output, int length)
 {
-    for (int i = 0; i < length; i++)
+    for(int i = 0; i < length; i++)
     {
         var value = input[i];
-        if (value > 0)
+        if(value > 0)
         {
-            output[i] = (float)Math.Sqrt(value * 2.0f + 1.0f);
+            output[i] =(float)Math.Sqrt(value * 2.0f + 1.0f);
         }
         else
         {
@@ -404,7 +404,7 @@ public static void ComplexMethod(float[] input, float[] output, int length)
         var source = @"
 public static void ArithmeticMethod(float[] a, float[] b, float[] result, int length)
 {
-    for (int i = 0; i < length; i++)
+    for(int i = 0; i < length; i++)
     {
         result[i] = a[i] + b[i] * 2.0f - 1.0f;
     }
@@ -418,7 +418,7 @@ public static void ArithmeticMethod(float[] a, float[] b, float[] result, int le
         var source = @"
 public static void MemoryMethod(float[] input, float[] output, int length)
 {
-    for (int i = 0; i < length; i++)
+    for(int i = 0; i < length; i++)
     {
         output[i] = input[i];
     }

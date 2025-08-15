@@ -51,7 +51,7 @@ public class TestCpuAccelerator : IAccelerator
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (definition == null)
+        if(definition == null)
         {
             throw new ArgumentNullException(nameof(definition));
         }
@@ -74,7 +74,7 @@ public class TestCpuAccelerator : IAccelerator
 
     public async ValueTask DisposeAsync()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _disposed = true;
             await SynchronizeAsync();
@@ -113,7 +113,7 @@ public class TestCompiledKernel : ICompiledKernel
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
+        if(_disposed)
         {
             throw new ObjectDisposedException(nameof(TestCompiledKernel));
         }
@@ -134,7 +134,7 @@ public class TestCompiledKernel : ICompiledKernel
             {
                 // Simulate compute work
                 var result = 0.0;
-                for (int j = 0; j < 100; j++)
+                for(int j = 0; j < 100; j++)
                 {
                     result += Math.Sin(i * j * 0.001) * Math.Cos(i * j * 0.001);
                 }
@@ -153,7 +153,7 @@ public class TestCompiledKernel : ICompiledKernel
 
     public async ValueTask DisposeAsync()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _disposed = true;
             await Task.CompletedTask;

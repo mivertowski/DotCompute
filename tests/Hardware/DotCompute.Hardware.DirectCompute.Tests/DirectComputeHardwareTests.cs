@@ -7,7 +7,7 @@ using FluentAssertions;
 namespace DotCompute.Tests.Hardware;
 
 /// <summary>
-/// Hardware-dependent tests for DirectCompute (DirectX Compute Shader) functionality.
+/// Hardware-dependent tests for DirectCompute(DirectX Compute Shader) functionality.
 /// These tests require DirectX 11 runtime on Windows.
 /// </summary>
 [Collection("Hardware")]
@@ -52,9 +52,9 @@ public class DirectComputeHardwareTests
         Assert.NotEqual(IntPtr.Zero, context);
 
         // Cleanup
-        if (context != IntPtr.Zero)
+        if(context != IntPtr.Zero)
             Marshal.Release(context);
-        if (device != IntPtr.Zero)
+        if(device != IntPtr.Zero)
             Marshal.Release(device);
     }
 
@@ -70,34 +70,34 @@ public class DirectComputeHardwareTests
         var result = CreateDXGIFactory(typeof(IDXGIFactory).GUID, out factory);
         
         // If regular factory fails, try Factory1
-        if (result != 0 || factory == IntPtr.Zero)
+        if(result != 0 || factory == IntPtr.Zero)
         {
             result = CreateDXGIFactory1(typeof(IDXGIFactory1).GUID, out factory);
         }
         
-        if (result == 0 && factory != IntPtr.Zero)
+        if(result == 0 && factory != IntPtr.Zero)
         {
             uint adapterIndex = 0;
             int adapterCount = 0;
             
             try
             {
-                while (true)
+                while(true)
                 {
                     result = EnumAdapters(factory, adapterIndex, out IntPtr adapter);
-                    if (result != 0) // DXGI_ERROR_NOT_FOUND (0x887A0002)
+                    if(result != 0) // DXGI_ERROR_NOT_FOUND(0x887A0002)
                         break;
                         
                     adapterCount++;
                     _output.WriteLine($"Found adapter {adapterIndex}");
                     
-                    if (adapter != IntPtr.Zero)
+                    if(adapter != IntPtr.Zero)
                         Marshal.Release(adapter);
                         
                     adapterIndex++;
                 }
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _output.WriteLine($"Error enumerating adapters: {ex.Message}");
                 // Don't fail the test if enumeration has issues, as long as factory was created
@@ -109,11 +109,11 @@ public class DirectComputeHardwareTests
             
             _output.WriteLine($"Total adapters found: {adapterCount}");
             // It's okay if no adapters are found on CI/build servers
-            _output.WriteLine(adapterCount > 0 ? "DirectX adapters enumerated successfully" : "No DirectX adapters found (this is okay on CI servers)");
+            _output.WriteLine(adapterCount > 0 ? "DirectX adapters enumerated successfully" : "No DirectX adapters foundthis is okay on CI servers)");
         }
         else
         {
-            _output.WriteLine($"Could not create DXGI factory (HRESULT: 0x{result:X8}). This is expected on CI servers without DirectX runtime.");
+            _output.WriteLine($"Could not create DXGI factoryHRESULT: 0x{result:X8}). This is expected on CI servers without DirectX runtime.");
             Skip.If(true, "DXGI factory creation failed - this is expected on CI servers");
         }
     }
@@ -126,12 +126,12 @@ public class DirectComputeHardwareTests
         Skip.IfNot(RuntimeInformation.IsOSPlatform(OSPlatform.Windows), "DirectCompute requires Windows");
         Skip.IfNot(IsDirectComputeAvailable(), "DirectCompute/DirectX 11 not available");
 
-        // Simple compute shader bytecode (compiled from HLSL)
+        // Simple compute shader bytecode(compiled from HLSL)
         // This is a minimal compute shader that does nothing
         byte[] shaderBytecode = new byte[]
         {
             0x44, 0x58, 0x42, 0x43, // DXBC header
-            // ... (actual shader bytecode would go here)
+            // ...(actual shader bytecode would go here)
         };
 
         var result = D3D11CreateDevice(
@@ -146,7 +146,7 @@ public class DirectComputeHardwareTests
             out int featureLevel,
             out IntPtr context);
 
-        if (result == 0 && device != IntPtr.Zero)
+        if(result == 0 && device != IntPtr.Zero)
         {
             // In a real test, we would create a compute shader here
             _output.WriteLine("DirectCompute device created successfully");
@@ -161,7 +161,7 @@ public class DirectComputeHardwareTests
 
     private static bool IsDirectComputeAvailable()
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return false;
 
         try
@@ -179,7 +179,7 @@ public class DirectComputeHardwareTests
                 out _,
                 out IntPtr context);
 
-            if (result == 0 && device != IntPtr.Zero)
+            if(result == 0 && device != IntPtr.Zero)
             {
                 Marshal.Release(context);
                 Marshal.Release(device);
@@ -226,7 +226,7 @@ public class DirectComputeHardwareTests
     {
         // Get the vtable pointer
         var vtablePtr = Marshal.ReadIntPtr(factory);
-        // EnumAdapters is at index 7 in IDXGIFactory vtable (after 3 IUnknown + 4 other methods)
+        // EnumAdapters is at index 7 in IDXGIFactory vtable(after 3 IUnknown + 4 other methods)
         var enumAdaptersPtr = Marshal.ReadIntPtr(vtablePtr, IntPtr.Size * 7);
         
         // Create delegate for the function

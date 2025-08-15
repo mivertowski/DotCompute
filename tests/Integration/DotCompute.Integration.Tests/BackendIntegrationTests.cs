@@ -121,7 +121,7 @@ public class BackendIntegrationTests : CoverageTestBase
 
         // Act & Assert - Out of memory
         Assert.Throws<OutOfMemoryException>(() => 
-            accelerator.AllocateMemory((int)accelerator.TotalMemory + 1));
+            accelerator.AllocateMemory((int)accelerator.Info.TotalMemory + 1));
     }
 
     [Fact]
@@ -132,8 +132,8 @@ public class BackendIntegrationTests : CoverageTestBase
         var accelerator = _hardwareSimulator.GetAccelerators(AcceleratorType.CPU).First();
 
         // Act
-        using var context = accelerator.Context;
-        await context.SynchronizeAsync(CancellationToken);
+        var context = accelerator.Context;
+        await accelerator.SynchronizeAsync(CancellationToken);
 
         // Assert
         Assert.NotNull(context);

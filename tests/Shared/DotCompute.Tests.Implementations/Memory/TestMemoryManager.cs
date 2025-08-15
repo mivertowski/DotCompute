@@ -25,7 +25,7 @@ public class TestMemoryManager : IMemoryManager, IDisposable
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default)
     {
-        if (sizeInBytes <= 0)
+        if(sizeInBytes <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size must be positive");
         }
@@ -41,7 +41,7 @@ public class TestMemoryManager : IMemoryManager, IDisposable
         
         var newTotal = Interlocked.Add(ref _totalAllocated, sizeInBytes);
         var currentPeak = _peakAllocated;
-        while (newTotal > currentPeak)
+        while(newTotal > currentPeak)
         {
             Interlocked.CompareExchange(ref _peakAllocated, newTotal, currentPeak);
             currentPeak = _peakAllocated;
@@ -63,17 +63,17 @@ public class TestMemoryManager : IMemoryManager, IDisposable
 
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
-        if (buffer is not TestMemoryBuffer testBuffer)
+        if(buffer is not TestMemoryBuffer testBuffer)
         {
             throw new ArgumentException("Buffer must be a TestMemoryBuffer", nameof(buffer));
         }
         
-        if (offset < 0 || offset >= buffer.SizeInBytes)
+        if(offset < 0 || offset >= buffer.SizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(offset));
         }
         
-        if (length <= 0 || offset + length > buffer.SizeInBytes)
+        if(length <= 0 || offset + length > buffer.SizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(length));
         }
@@ -90,7 +90,7 @@ public class TestMemoryManager : IMemoryManager, IDisposable
 
     public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
     {
-        if (buffer is not TestMemoryBuffer testBuffer)
+        if(buffer is not TestMemoryBuffer testBuffer)
         {
             throw new ArgumentException("Buffer must be a TestMemoryBuffer", nameof(buffer));
         }
@@ -98,16 +98,16 @@ public class TestMemoryManager : IMemoryManager, IDisposable
         var elementSize = Marshal.SizeOf<T>();
         var sizeInBytes = data.Length * elementSize;
         
-        if (sizeInBytes > buffer.SizeInBytes)
+        if(sizeInBytes > buffer.SizeInBytes)
         {
             throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
         }
 
         unsafe
         {
-            fixed (T* dataPtr = data)
+            fixed(T* dataPtr = data)
             {
-                var destPtr = (byte*)testBuffer.Handle.ToPointer();
+                var destPtr =(byte*)testBuffer.Handle.ToPointer();
                 Buffer.MemoryCopy(dataPtr, destPtr, buffer.SizeInBytes, sizeInBytes);
             }
         }
@@ -115,7 +115,7 @@ public class TestMemoryManager : IMemoryManager, IDisposable
 
     public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
     {
-        if (buffer is not TestMemoryBuffer testBuffer)
+        if(buffer is not TestMemoryBuffer testBuffer)
         {
             throw new ArgumentException("Buffer must be a TestMemoryBuffer", nameof(buffer));
         }
@@ -123,16 +123,16 @@ public class TestMemoryManager : IMemoryManager, IDisposable
         var elementSize = Marshal.SizeOf<T>();
         var sizeInBytes = data.Length * elementSize;
         
-        if (sizeInBytes > buffer.SizeInBytes)
+        if(sizeInBytes > buffer.SizeInBytes)
         {
             throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
         }
 
         unsafe
         {
-            fixed (T* dataPtr = data)
+            fixed(T* dataPtr = data)
             {
-                var sourcePtr = (byte*)testBuffer.Handle.ToPointer();
+                var sourcePtr =(byte*)testBuffer.Handle.ToPointer();
                 Buffer.MemoryCopy(sourcePtr, dataPtr, sizeInBytes, sizeInBytes);
             }
         }
@@ -140,7 +140,7 @@ public class TestMemoryManager : IMemoryManager, IDisposable
 
     public void Free(IMemoryBuffer buffer)
     {
-        if (buffer is TestMemoryBuffer testBuffer)
+        if(buffer is TestMemoryBuffer testBuffer)
         {
             testBuffer.Dispose();
         }
@@ -152,7 +152,7 @@ public class TestMemoryManager : IMemoryManager, IDisposable
 
     internal void ReleaseBuffer(TestMemoryBuffer buffer)
     {
-        if (_allocations.TryRemove(buffer.Handle, out _))
+        if(_allocations.TryRemove(buffer.Handle, out _))
         {
             Interlocked.Add(ref _totalAllocated, -buffer.SizeInBytes);
         }
@@ -213,7 +213,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
         var elementSize = Marshal.SizeOf<T>();
         var bytesToCopy = source.Length * elementSize;
         
-        if (offset < 0 || offset + bytesToCopy > SizeInBytes)
+        if(offset < 0 || offset + bytesToCopy > SizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(offset));
         }
@@ -224,7 +224,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
             unsafe
             {
                 var sourcePtr = sourceHandle.Pointer;
-                var destPtr = (byte*)Handle.ToPointer() + offset;
+                var destPtr =(byte*)Handle.ToPointer() + offset;
                 Buffer.MemoryCopy(sourcePtr, destPtr, SizeInBytes - offset, bytesToCopy);
             }
         }, cancellationToken);
@@ -240,7 +240,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
         var elementSize = Marshal.SizeOf<T>();
         var bytesToCopy = destination.Length * elementSize;
         
-        if (offset < 0 || offset + bytesToCopy > SizeInBytes)
+        if(offset < 0 || offset + bytesToCopy > SizeInBytes)
         {
             throw new ArgumentOutOfRangeException(nameof(offset));
         }
@@ -250,7 +250,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
             using var destHandle = destination.Pin();
             unsafe
             {
-                var sourcePtr = (byte*)Handle.ToPointer() + offset;
+                var sourcePtr =(byte*)Handle.ToPointer() + offset;
                 var destPtr = destHandle.Pointer;
                 Buffer.MemoryCopy(sourcePtr, destPtr, bytesToCopy, bytesToCopy);
             }
@@ -265,7 +265,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _disposed = true;
             _handle.Free();
@@ -276,7 +276,7 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
+        if(_disposed)
         {
             throw new ObjectDisposedException(nameof(TestMemoryBuffer));
         }

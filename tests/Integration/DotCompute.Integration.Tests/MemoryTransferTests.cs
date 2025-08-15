@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -34,7 +34,7 @@ public class MemoryTransferTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (!accelerators.Any())
+        if(!accelerators.Any())
         {
             LoggerMessages.SkippingTestNoAccelerators(Logger, "host-to-device transfer test");
             return;
@@ -57,8 +57,8 @@ public class MemoryTransferTests : IntegrationTestBase
         transferResult.TransferredBytes.Should().Be(dataSize);
         
         // Performance assertions
-        var throughput = dataSize / transferResult.TransferTime.TotalSeconds / (1024 * 1024); // MB/s
-        Assert.True(throughput > 1, "Transfer throughput should be reasonable");
+        var throughput = dataSize / transferResult.TransferTime.TotalSeconds /(1024 * 1024); // MB/s
+        throughput.Should().BeGreaterThan(1, "Transfer throughput should be reasonable");
     }
 
     [Theory]
@@ -73,7 +73,7 @@ public class MemoryTransferTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (!accelerators.Any())
+        if(!accelerators.Any())
         {
             LoggerMessages.SkippingTestNoAccelerators(Logger, "device-to-host transfer test");
             return;
@@ -103,7 +103,7 @@ public class MemoryTransferTests : IntegrationTestBase
         Assert.NotNull(transferredData);
         transferredData!.Length.Should().Be(testData.Length);
         
-        for (int i = 0; i < testData.Length; i++)
+        for(int i = 0; i < testData.Length; i++)
         {
             transferredData[i].Should().BeApproximately(testData[i], 0.001f);
         }
@@ -118,7 +118,7 @@ public class MemoryTransferTests : IntegrationTestBase
         var accelerators = acceleratorManager.AvailableAccelerators;
         var unifiedMemoryAccelerator = accelerators.FirstOrDefault(a => a.Info.IsUnifiedMemory);
         
-        if (unifiedMemoryAccelerator == null)
+        if(unifiedMemoryAccelerator == null)
         {
             LoggerMessages.SkippingTestNoAccelerators(Logger, "unified memory test - no unified memory accelerators available");
             return;
@@ -153,7 +153,7 @@ public class MemoryTransferTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (!accelerators.Any())
+        if(!accelerators.Any())
         {
             LoggerMessages.SkippingTestNoAccelerators(Logger, "async transfer test");
             return;
@@ -162,8 +162,8 @@ public class MemoryTransferTests : IntegrationTestBase
         const int dataSize = 4 * 1024 * 1024; // 4MB
         const int transferCount = 4;
         var testDataSets = Enumerable.Range(0, transferCount)
-            .Select(_ => GenerateTestData(dataSize / sizeof(float)
-            .ToArray()));
+            .Select(_ => GenerateTestData(dataSize / sizeof(float)))
+            .ToArray();
         
         var accelerator = accelerators.First();
 
@@ -177,8 +177,8 @@ public class MemoryTransferTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(transferCount, asyncResults.Count());
-        asyncResults.Should().AllSatisfy(r => r.Success);
-        asyncResults.Should().AllSatisfy(r => r.DataIntegrity);
+        asyncResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        asyncResults.Should().AllSatisfy(r => r.DataIntegrity.Should().BeTrue());
         
         var totalTransferTime = asyncResults.Sum(r => r.TransferTime.TotalMilliseconds);
         var concurrentTime = stopwatch.Elapsed.TotalMilliseconds;
@@ -189,14 +189,14 @@ public class MemoryTransferTests : IntegrationTestBase
         // Instead of strict performance assertions, verify that async transfers completed
         // and that we didn't exceed a reasonable timeout based on data size
         var reasonableTimeout = transferCount * (dataSize / (1024 * 1024)) * 1000; // 1 second per MB
-        Assert.True(concurrentTime < reasonableTimeout, 
+        concurrentTime.Should().BeLessThan(reasonableTimeout,  
             "Async transfers should complete within reasonable time");
         
         // Verify that concurrent time is less than the sum of all transfers
         // This is a more lenient check that accounts for system variations
-        if (totalTransferTime > 50) // Only check if transfers took meaningful time
+        if(totalTransferTime > 50) // Only check if transfers took meaningful time
         {
-            Assert.True(concurrentTime < totalTransferTime * 1.2,
+            concurrentTime.Should().BeLessThan(totalTransferTime * 1.2,
                 "Concurrent execution should not take significantly longer than sequential would");
         }
     }
@@ -210,7 +210,7 @@ public class MemoryTransferTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (!accelerators.Any())
+        if(!accelerators.Any())
         {
             LoggerMessages.SkippingTestNoAccelerators(Logger, "pinned memory test");
             return;
@@ -240,29 +240,29 @@ public class MemoryTransferTests : IntegrationTestBase
         var regularThroughput = dataSize / regularResult.TransferTime.TotalSeconds;
         var pinnedThroughput = dataSize / pinnedResult.TransferTime.TotalSeconds;
         
-        LoggerMessages.RegularMemoryThroughput(Logger, regularThroughput / (1024 * 1024));
-        LoggerMessages.PinnedMemoryThroughput(Logger, pinnedThroughput / (1024 * 1024));
+        LoggerMessages.RegularMemoryThroughput(Logger, regularThroughput /(1024 * 1024));
+        LoggerMessages.PinnedMemoryThroughput(Logger, pinnedThroughput /(1024 * 1024));
         LoggerMessages.RegularTransferTime(Logger, regularResult.TransferTime.TotalMilliseconds);
         LoggerMessages.PinnedTransferTime(Logger, pinnedResult.TransferTime.TotalMilliseconds);
         
-        // Instead of requiring pinned memory to be faster (which isn't guaranteed on all platforms),
+        // Instead of requiring pinned memory to be faster(which isn't guaranteed on all platforms),
         // verify that both transfers completed successfully with reasonable performance
         
-        // Both transfers should complete within reasonable time (10 seconds for 8MB is very conservative)
+        // Both transfers should complete within reasonable time(10 seconds for 8MB is very conservative)
         regularResult.TransferTime.Should().BeLessThan(TimeSpan.FromSeconds(10), 
             "Regular memory transfer should complete within reasonable time");
         pinnedResult.TransferTime.Should().BeLessThan(TimeSpan.FromSeconds(10), 
             "Pinned memory transfer should complete within reasonable time");
         
-        // Both should achieve minimum throughput (1 MB/s is very conservative)
-        Assert.True(regularThroughput > 1024 * 1024, // 1 MB/s
+        // Both should achieve minimum throughput(1 MB/s is very conservative)
+        (regularThroughput > 1024 * 1024).Should().BeTrue( // 1 MB/s
             "Regular memory transfer should achieve minimum throughput");
-        Assert.True(pinnedThroughput > 1024 * 1024, // 1 MB/s
+        (pinnedThroughput > 1024 * 1024).Should().BeTrue( // 1 MB/s
             "Pinned memory transfer should achieve minimum throughput");
         
         // Pinned memory should not be significantly worse than regular memory
         // Allow up to 50% degradation to account for system variations and test environment
-        Assert.True(pinnedThroughput > regularThroughput * 0.5,
+        (pinnedThroughput > regularThroughput * 0.5).Should().BeTrue(
             "Pinned memory should not be significantly slower than regular memory");
     }
 
@@ -274,7 +274,7 @@ public class MemoryTransferTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (accelerators.Count < 2)
+        if(accelerators.Count < 2)
         {
             LoggerMessages.SkippingTestNeedTwoAccelerators(Logger, "multi-device transfer test");
             return;
@@ -291,11 +291,11 @@ public class MemoryTransferTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(2, multiDeviceResults.Count());
-        multiDeviceResults.Should().AllSatisfy(r => r.Success);
-        multiDeviceResults.Should().AllSatisfy(r => r.DataIntegrity);
+        multiDeviceResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        multiDeviceResults.Should().AllSatisfy(r => r.DataIntegrity.Should().BeTrue());
         
         // Each device should process its own data independently
-        for (int i = 0; i < 2; i++)
+        for(int i = 0; i < 2; i++)
         {
             var result = multiDeviceResults[i];
             var originalData = testDataSets[i];
@@ -318,7 +318,7 @@ public class MemoryTransferTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (!accelerators.Any())
+        if(!accelerators.Any())
         {
             LoggerMessages.SkippingMemoryTypeTest(Logger, memoryType.ToString());
             return;
@@ -342,7 +342,7 @@ public class MemoryTransferTests : IntegrationTestBase
         memoryTypeResult.MemoryType.Should().Be(memoryType);
         
         // Performance should vary based on memory type
-        switch (memoryType)
+        switch(memoryType)
         {
             case MemoryType.DeviceLocal:
                 // Should be fastest for device operations
@@ -368,7 +368,7 @@ public class MemoryTransferTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (!accelerators.Any())
+        if(!accelerators.Any())
         {
             LoggerMessages.SkippingTestNoAccelerators(Logger, "large dataset test");
             return;
@@ -378,7 +378,7 @@ public class MemoryTransferTests : IntegrationTestBase
         var accelerator = accelerators.First();
         
         // Check if device has enough memory
-        if (accelerator.Info.AvailableMemory < largeDataSize * 2)
+        if(accelerator.Info.AvailableMemory < largeDataSize * 2)
         {
             LoggerMessages.SkippingTestInsufficientMemory(Logger, "large dataset test");
             return;
@@ -400,8 +400,8 @@ public class MemoryTransferTests : IntegrationTestBase
         largeTransferResult.DataIntegrity.Should().BeTrue();
         largeTransferResult.TransferTime.Should().BeLessThan(TimeSpan.FromSeconds(10));
         
-        var throughput = largeDataSize / largeTransferResult.TransferTime.TotalSeconds / (1024 * 1024);
-        Assert.True(throughput > 10, "Large transfer should maintain good throughput");
+        var throughput = largeDataSize / largeTransferResult.TransferTime.TotalSeconds /(1024 * 1024);
+        throughput.Should().BeGreaterThan(10, "Large transfer should maintain good throughput");
     }
 
     [Fact]
@@ -413,7 +413,7 @@ public class MemoryTransferTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
         
-        if (!accelerators.Any())
+        if(!accelerators.Any())
         {
             LoggerMessages.SkippingTestNoAccelerators(Logger, "error recovery test");
             return;
@@ -427,7 +427,7 @@ public class MemoryTransferTests : IntegrationTestBase
         await Assert.ThrowsAsync<ArgumentException>(() =>
             CreateInvalidBuffer(memoryManager, -1));
             
-        // 2. Out of memory condition (simulate by requesting huge allocation)
+        // 2. Out of memory condition(simulate by requesting huge allocation)
         var largeSize = accelerator.Info.TotalMemory * 2; // Request more than available
         var result = await TryCreateOversizedBuffer(memoryManager, accelerator, largeSize);
         result.Success.Should().BeFalse();
@@ -470,7 +470,7 @@ public class MemoryTransferTests : IntegrationTestBase
                 Data = readData
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.HostToDeviceTransferFailed(Logger, ex);
@@ -504,7 +504,7 @@ public class MemoryTransferTests : IntegrationTestBase
                 Data = data
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.DeviceToHostTransferFailed(Logger, ex);
@@ -529,7 +529,7 @@ public class MemoryTransferTests : IntegrationTestBase
             hostStopwatch.Stop();
 
             var deviceStopwatch = System.Diagnostics.Stopwatch.StartNew();
-            // Simulate device access (through buffer creation)
+            // Simulate device access(through buffer creation)
             var buffer = await CreateInputBuffer(accelerator.Memory, testData);
             var deviceData = await ReadBufferAsync<float>(buffer);
             deviceStopwatch.Stop();
@@ -545,7 +545,7 @@ public class MemoryTransferTests : IntegrationTestBase
                 DataConsistency = consistency
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             LoggerMessages.UnifiedMemoryTestFailed(Logger, ex);
             return new UnifiedMemoryResult
@@ -621,7 +621,7 @@ public class MemoryTransferTests : IntegrationTestBase
                 Data = readData
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.PinnedMemoryTransferFailed(Logger, ex);
@@ -647,7 +647,7 @@ public class MemoryTransferTests : IntegrationTestBase
             return result;
         });
 
-        return (await Task.WhenAll(tasks)).ToList();
+        return(await Task.WhenAll(tasks)).ToList();
     }
 
     private async Task<MemoryTypeResult> TestMemoryTypeTransfer(
@@ -676,7 +676,7 @@ public class MemoryTransferTests : IntegrationTestBase
                 HostAccessible = memoryType != MemoryType.DeviceLocal
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.MemoryTypeTestFailed(Logger, memoryType.ToString(), ex);
@@ -699,7 +699,7 @@ public class MemoryTransferTests : IntegrationTestBase
         
         try
         {
-            LoggerMessages.CreatingInputBuffer(Logger, largeTestData.Length, largeTestData.Length * sizeof(float) / (1024 * 1024));
+            LoggerMessages.CreatingInputBuffer(Logger, largeTestData.Length, largeTestData.Length * sizeof(float) /(1024 * 1024));
             var buffer = await CreateInputBuffer(memoryManager, largeTestData);
             LoggerMessages.InputBufferCreated(Logger);
             
@@ -712,7 +712,7 @@ public class MemoryTransferTests : IntegrationTestBase
             var integrity = readData != null && readData.Length == largeTestData.Length;
             LoggerMessages.InitialIntegrityCheck(Logger, integrity, readData != null, readData?.Length == largeTestData.Length);
             
-            if (integrity && readData != null)
+            if(integrity && readData != null)
             {
                 // For large data, we'll verify a sample rather than the entire array
                 var sampleSize = Math.Min(100, largeTestData.Length); // Reduce sample size for faster testing
@@ -720,7 +720,7 @@ public class MemoryTransferTests : IntegrationTestBase
                 var sampleIndices = new int[sampleSize];
                 
                 // Generate random sample indices for better coverage
-                for (int i = 0; i < sampleSize; i++)
+                for(int i = 0; i < sampleSize; i++)
                 {
                     sampleIndices[i] = random.Next(0, largeTestData.Length);
                 }
@@ -728,18 +728,18 @@ public class MemoryTransferTests : IntegrationTestBase
                 LoggerMessages.PerformingSpotCheck(Logger, sampleSize);
                 
                 int mismatchCount = 0;
-                for (int i = 0; i < sampleIndices.Length; i++)
+                for(int i = 0; i < sampleIndices.Length; i++)
                 {
                     var index = sampleIndices[i];
                     
                     // Ensure index is within bounds of both arrays
-                    if (index >= 0 && index < readData.Length && index < largeTestData.Length)
+                    if(index >= 0 && index < readData.Length && index < largeTestData.Length)
                     {
                         var diff = Math.Abs(readData[index] - largeTestData[index]);
-                        if (diff > 0.001f)
+                        if(diff > 0.001f)
                         {
                             mismatchCount++;
-                            if (mismatchCount <= 5) // Log first few mismatches
+                            if(mismatchCount <= 5) // Log first few mismatches
                             {
                                 LoggerMessages.DataMismatch(Logger, index, largeTestData[index], readData[index], diff);
                             }
@@ -754,10 +754,10 @@ public class MemoryTransferTests : IntegrationTestBase
                 }
                 
                 // Allow a small percentage of mismatches for large datasets due to potential floating point precision issues
-                var mismatchRate = (double)mismatchCount / sampleSize;
+                var mismatchRate =(double)mismatchCount / sampleSize;
                 LoggerMessages.MismatchRate(Logger, mismatchRate, mismatchCount, sampleSize);
                 
-                if (mismatchRate > 0.01) // Allow up to 1% mismatch rate
+                if(mismatchRate > 0.01) // Allow up to 1% mismatch rate
                 {
                     LoggerMessages.TooManyMismatches(Logger, mismatchRate);
                     integrity = false;
@@ -775,7 +775,7 @@ public class MemoryTransferTests : IntegrationTestBase
                 Data = readData
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.LargeDataTransferFailed(Logger, ex);
@@ -804,7 +804,7 @@ public class MemoryTransferTests : IntegrationTestBase
                 Success = true // Unexpected success
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return new ErrorResult
             {
@@ -824,12 +824,12 @@ public class MemoryTransferTests : IntegrationTestBase
             var buffer = await CreateInputBuffer(memoryManager, testData);
             
             // Dispose the buffer
-            if (buffer is IDisposable disposable)
+            if(buffer is IDisposable disposable)
                 disposable.Dispose();
-            else if (buffer is IAsyncDisposable asyncDisposable)
+            else if(buffer is IAsyncDisposable asyncDisposable)
                 await asyncDisposable.DisposeAsync();
             
-            // Try to read from disposed buffer (should fail)
+            // Try to read from disposed buffer(should fail)
             var readData = await ReadBufferAsync<float>(buffer);
             
             return new ErrorResult
@@ -838,7 +838,7 @@ public class MemoryTransferTests : IntegrationTestBase
                 Error = "Expected exception when accessing disposed buffer"
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             return new ErrorResult
             {
@@ -855,7 +855,7 @@ public class MemoryTransferTests : IntegrationTestBase
 
     private async Task<IMemoryBuffer> CreateInvalidBuffer(IMemoryManager memoryManager, long size)
     {
-        if (size < 0)
+        if(size < 0)
             throw new ArgumentException("Invalid buffer size");
             
         var data = new float[size];
@@ -864,12 +864,12 @@ public class MemoryTransferTests : IntegrationTestBase
 
     private static bool VerifyDataIntegrity(float[] original, float[]? transferred)
     {
-        if (transferred == null || original.Length != transferred.Length)
+        if(transferred == null || original.Length != transferred.Length)
             return false;
             
-        for (int i = 0; i < original.Length; i++)
+        for(int i = 0; i < original.Length; i++)
         {
-            if (Math.Abs(original[i] - transferred[i]) > 0.001f)
+            if(Math.Abs(original[i] - transferred[i]) > 0.001f)
                 return false;
         }
         

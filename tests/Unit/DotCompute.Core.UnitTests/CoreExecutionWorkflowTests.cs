@@ -82,7 +82,7 @@ public class CoreExecutionWorkflowTests
     }
     
     [Fact]
-    public async Task CompiledKernelCache_EvictLeastRecentlyUsedAsync_EmptyCache_ShouldShould().NotThrow()
+    public async Task CompiledKernelCache_EvictLeastRecentlyUsedAsync_EmptyCache_Should_NotThrow()
     {
         // Arrange
         await using var cache = new CompiledKernelCache();

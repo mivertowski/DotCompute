@@ -90,7 +90,7 @@ public class AcceleratorInfoTests
         string name, string vendor, string driverVersion, AcceleratorType type)
     {
         // Act & Assert
-        var act = () => new AcceleratorInfo(name, vendor, driverVersion, type,
+        var act =() => new AcceleratorInfo(name, vendor, driverVersion, type,
             7.5, 1024, 49152, 8589934592L, 8589934592L);
         Assert.Throws<ArgumentException>(() => act());
     }
@@ -102,7 +102,7 @@ public class AcceleratorInfoTests
         double computeCapability)
     {
         // Act & Assert
-        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
+        var act =() => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             computeCapability, 1024, 49152, 8589934592L, 8589934592L);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
@@ -114,7 +114,7 @@ public class AcceleratorInfoTests
         int maxThreadsPerBlock)
     {
         // Act & Assert
-        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
+        var act =() => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, maxThreadsPerBlock, 49152, 8589934592L, 8589934592L);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
@@ -123,7 +123,7 @@ public class AcceleratorInfoTests
     public void FullConstructor_WithNegativeSharedMemory_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert
-        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
+        var act =() => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, 1024, -1, 8589934592L, 8589934592L);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
@@ -136,7 +136,7 @@ public class AcceleratorInfoTests
         long totalMemory, long availableMemory)
     {
         // Act & Assert
-        var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
+        var act =() => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, 1024, 49152, totalMemory, availableMemory);
         Assert.Throws<ArgumentException>(() => act());
     }

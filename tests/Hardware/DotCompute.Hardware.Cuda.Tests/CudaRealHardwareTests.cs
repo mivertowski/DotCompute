@@ -34,7 +34,7 @@ public class CudaRealHardwareTests : IDisposable
         {
             // Initialize CUDA
             var result = CudaInit(0);
-            if (result != 0)
+            if(result != 0)
             {
                 _output.WriteLine($"CUDA initialization failed with error code: {result}");
                 return;
@@ -43,7 +43,7 @@ public class CudaRealHardwareTests : IDisposable
             // Get device count
             int deviceCount = 0;
             result = CudaGetDeviceCount(ref deviceCount);
-            if (result != 0 || deviceCount == 0)
+            if(result != 0 || deviceCount == 0)
             {
                 _output.WriteLine($"No CUDA devices found. Error code: {result}, Device count: {deviceCount}");
                 return;
@@ -53,7 +53,7 @@ public class CudaRealHardwareTests : IDisposable
 
             // Create context on first device
             result = CudaCtxCreate(ref _cudaContext, 0, 0);
-            if (result == 0)
+            if(result == 0)
             {
                 _cudaInitialized = true;
                 _output.WriteLine("CUDA context created successfully");
@@ -63,7 +63,7 @@ public class CudaRealHardwareTests : IDisposable
                 _output.WriteLine($"Failed to create CUDA context. Error code: {result}");
             }
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _output.WriteLine($"CUDA initialization exception: {ex.Message}");
         }
@@ -80,7 +80,7 @@ public class CudaRealHardwareTests : IDisposable
         var result = CudaGetDeviceCount(ref deviceCount);
         
         Assert.Equal(0, result);
-        Assert.True(deviceCount > 0, "Should have at least one CUDA device");
+        deviceCount.Should().BeGreaterThan(0, "Should have at least one CUDA device");
         
         _output.WriteLine($"CUDA device count: {deviceCount}");
         
@@ -104,9 +104,9 @@ public class CudaRealHardwareTests : IDisposable
         var result = CudaMemGetInfo(ref free, ref total);
         
         Assert.Equal(0, result);
-        Assert.True(total > 0, "Total memory should be greater than 0");
-        Assert.True(free > 0, "Free memory should be greater than 0");
-        Assert.True(free <= total, "Free memory should not exceed total memory");
+        total.Should().BeGreaterThan(0, "Total memory should be greater than 0");
+        free.Should().BeGreaterThan(0, "Free memory should be greater than 0");
+        (free <= total).Should().BeTrue();
         
         _output.WriteLine($"GPU Memory - Total: {total / (1024 * 1024)} MB, Free: {free / (1024 * 1024)} MB");
     }
@@ -147,9 +147,9 @@ public class CudaRealHardwareTests : IDisposable
         // Create test data
         var hostData = new float[elementCount];
         var random = new Random(42);
-        for (int i = 0; i < elementCount; i++)
+        for(int i = 0; i < elementCount; i++)
         {
-            hostData[i] = (float)random.NextDouble() * 100;
+            hostData[i] =(float)random.NextDouble() * 100;
         }
         
         IntPtr devicePtr = IntPtr.Zero;
@@ -178,7 +178,7 @@ public class CudaRealHardwareTests : IDisposable
                     _output.WriteLine($"Copied {size} bytes from device");
                     
                     // Verify data integrity
-                    for (int i = 0; i < elementCount; i++)
+                    for(int i = 0; i < elementCount; i++)
                     {
                         Assert.Equal(hostData[i], resultData[i], 5);
                     }
@@ -196,7 +196,7 @@ public class CudaRealHardwareTests : IDisposable
         }
         finally
         {
-            if (devicePtr != IntPtr.Zero)
+            if(devicePtr != IntPtr.Zero)
             {
                 CudaFree(devicePtr);
             }
@@ -219,7 +219,7 @@ public class CudaRealHardwareTests : IDisposable
         var h_b = new float[N];
         var h_result = new float[N];
         
-        for (int i = 0; i < N; i++)
+        for(int i = 0; i < N; i++)
         {
             h_a[i] = i;
             h_b[i] = i * 2;
@@ -252,7 +252,7 @@ public class CudaRealHardwareTests : IDisposable
             // For this test, we'll simulate by doing a device-to-device copy
             // In a real implementation, we'd use cuModuleLoad and cuLaunchKernel
             
-            // Simulate kernel execution (copy a to result as placeholder)
+            // Simulate kernel execution(copy a to result as placeholder)
             Assert.Equal(0, CudaMemcpyDtoD(d_result, d_a, size));
             
             // Copy result back to host
@@ -274,9 +274,9 @@ public class CudaRealHardwareTests : IDisposable
         }
         finally
         {
-            if (d_a != IntPtr.Zero) CudaFree(d_a);
-            if (d_b != IntPtr.Zero) CudaFree(d_b);
-            if (d_result != IntPtr.Zero) CudaFree(d_result);
+            if(d_a != IntPtr.Zero) CudaFree(d_a);
+            if(d_b != IntPtr.Zero) CudaFree(d_b);
+            if(d_result != IntPtr.Zero) CudaFree(d_result);
         }
         
         await Task.CompletedTask;
@@ -311,29 +311,29 @@ public class CudaRealHardwareTests : IDisposable
                 
                 // Measure H2D bandwidth
                 var sw = Stopwatch.StartNew();
-                for (int i = 0; i < iterations; i++)
+                for(int i = 0; i < iterations; i++)
                 {
                     result = CudaMemcpyHtoD(devicePtr, hostHandle.AddrOfPinnedObject(), size);
                     Assert.Equal(0, result);
                 }
                 sw.Stop();
                 
-                double h2dBandwidth = (size * iterations / (1024.0 * 1024.0 * 1024.0)) / (sw.Elapsed.TotalSeconds);
+                double h2dBandwidth = (size * iterations / 1024.0 / 1024.0 / 1024.0) / (sw.Elapsed.TotalSeconds);
                 _output.WriteLine($"Host to Device bandwidth: {h2dBandwidth:F2} GB/s");
-                Assert.True(h2dBandwidth > 1.0, "H2D bandwidth should be at least 1 GB/s");
+                h2dBandwidth.Should().BeGreaterThan(1.0, "H2D bandwidth should be at least 1 GB/s");
                 
                 // Measure D2H bandwidth
                 sw.Restart();
-                for (int i = 0; i < iterations; i++)
+                for(int i = 0; i < iterations; i++)
                 {
                     result = CudaMemcpyDtoH(hostHandle.AddrOfPinnedObject(), devicePtr, size);
                     Assert.Equal(0, result);
                 }
                 sw.Stop();
                 
-                double d2hBandwidth = (size * iterations / (1024.0 * 1024.0 * 1024.0)) / (sw.Elapsed.TotalSeconds);
+                double d2hBandwidth = (size * iterations / 1024.0 / 1024.0 / 1024.0) / (sw.Elapsed.TotalSeconds);
                 _output.WriteLine($"Device to Host bandwidth: {d2hBandwidth:F2} GB/s");
-                Assert.True(d2hBandwidth > 1.0, "D2H bandwidth should be at least 1 GB/s");
+                d2hBandwidth.Should().BeGreaterThan(1.0, "D2H bandwidth should be at least 1 GB/s");
             }
             finally
             {
@@ -342,7 +342,7 @@ public class CudaRealHardwareTests : IDisposable
         }
         finally
         {
-            if (devicePtr != IntPtr.Zero)
+            if(devicePtr != IntPtr.Zero)
             {
                 CudaFree(devicePtr);
             }
@@ -351,7 +351,7 @@ public class CudaRealHardwareTests : IDisposable
 
     public void Dispose()
     {
-        if (_cudaContext != IntPtr.Zero)
+        if(_cudaContext != IntPtr.Zero)
         {
             CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
@@ -441,9 +441,9 @@ public class CudaRealHardwareTests : IDisposable
     // Platform-agnostic wrapper methods
     private static int CudaInit(uint flags)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaInit(flags);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaInit(flags);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -451,9 +451,9 @@ public class CudaRealHardwareTests : IDisposable
 
     private static int CudaGetDeviceCount(ref int count)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaGetDeviceCount(ref count);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaGetDeviceCount(ref count);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -461,9 +461,9 @@ public class CudaRealHardwareTests : IDisposable
 
     private static int CudaDeviceGetName(byte[] name, int len, int dev)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaDeviceGetName(name, len, dev);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaDeviceGetName(name, len, dev);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -471,9 +471,9 @@ public class CudaRealHardwareTests : IDisposable
 
     private static int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaCtxCreate(ref ctx, flags, dev);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaCtxCreate(ref ctx, flags, dev);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -481,9 +481,9 @@ public class CudaRealHardwareTests : IDisposable
 
     private static int CudaCtxDestroy(IntPtr ctx)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaCtxDestroy(ctx);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaCtxDestroy(ctx);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -491,9 +491,9 @@ public class CudaRealHardwareTests : IDisposable
 
     private static int CudaMemGetInfo(ref ulong free, ref ulong total)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaMemGetInfo(ref free, ref total);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaMemGetInfo(ref free, ref total);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -501,9 +501,9 @@ public class CudaRealHardwareTests : IDisposable
 
     private static int CudaMalloc(ref IntPtr dptr, long bytesize)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaMalloc(ref dptr, bytesize);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaMalloc(ref dptr, bytesize);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -511,9 +511,9 @@ public class CudaRealHardwareTests : IDisposable
 
     private static int CudaFree(IntPtr dptr)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaFree(dptr);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaFree(dptr);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -521,9 +521,9 @@ public class CudaRealHardwareTests : IDisposable
 
     private static int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaMemcpyHtoD(dstDevice, srcHost, byteCount);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaMemcpyHtoD(dstDevice, srcHost, byteCount);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -531,9 +531,9 @@ public class CudaRealHardwareTests : IDisposable
 
     private static int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaMemcpyDtoH(dstHost, srcDevice, byteCount);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaMemcpyDtoH(dstHost, srcDevice, byteCount);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -541,9 +541,9 @@ public class CudaRealHardwareTests : IDisposable
 
     private static int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount)
     {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaMemcpyDtoD(dstDevice, srcDevice, byteCount);
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             return CudaNative.Linux.CudaMemcpyDtoD(dstDevice, srcDevice, byteCount);
         else
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -565,7 +565,7 @@ public static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
-        if (!condition)
+        if(!condition)
         {
             throw new SkipException(reason);
         }

@@ -65,7 +65,7 @@ public abstract class CoverageTestBase : IDisposable
     protected static byte[] CreateTestData(int size, byte? pattern = null)
     {
         var data = new byte[size];
-        if (pattern.HasValue)
+        if(pattern.HasValue)
         {
             Array.Fill(data, pattern.Value);
         }
@@ -82,9 +82,9 @@ public abstract class CoverageTestBase : IDisposable
     protected static T[,] CreateTestArray<T>(int width, int height, Func<int, int, T> generator)
     {
         var array = new T[width, height];
-        for (int x = 0; x < width; x++)
+        for(int x = 0; x < width; x++)
         {
-            for (int y = 0; y < height; y++)
+            for(int y = 0; y < height; y++)
             {
                 array[x, y] = generator(x, y);
             }
@@ -115,7 +115,7 @@ public abstract class CoverageTestBase : IDisposable
     /// </summary>
     protected static void SkipIfNot(bool condition, string reason)
     {
-        if (!condition)
+        if(!condition)
         {
             throw new Xunit.SkipException(reason);
         }
@@ -199,17 +199,17 @@ public abstract class CoverageTestBase : IDisposable
 
     public virtual void Dispose()
     {
-        if (_disposed)
+        if(_disposed)
             return;
 
         // Dispose in reverse order
-        for (int i = _disposables.Count - 1; i >= 0; i--)
+        for(int i = _disposables.Count - 1; i >= 0; i--)
         {
             try
             {
                 _disposables[i]?.Dispose();
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 Logger.LogWarning(ex, "Error disposing test resource {Index}", i);
             }
@@ -286,7 +286,7 @@ public class XUnitLogger : ILogger
             var message = formatter(state, exception);
             _output.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [{logLevel}] [{_categoryName}] {message}");
             
-            if (exception != null)
+            if(exception != null)
             {
                 _output.WriteLine($"Exception: {exception}");
             }

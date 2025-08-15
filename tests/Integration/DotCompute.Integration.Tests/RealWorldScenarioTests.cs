@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.InteropServices;
@@ -89,7 +89,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         (processingResult.ProcessingSteps > 0).Should().BeTrue();
         processingResult.ProcessingTime.Should().BeLessThan(TimeSpan.FromSeconds(10));
         
-        var megapixelsPerSecond = (imageWidth * imageHeight) / processingResult.ProcessingTime.TotalSeconds / 1_000_000.0;
+        var megapixelsPerSecond =(imageWidth * imageHeight) / processingResult.ProcessingTime.TotalSeconds / 1_000_000.0;
         LoggerMessages.ImageProcessing(Logger, megapixelsPerSecond);
         
         Assert.True(megapixelsPerSecond > 1); // Should process at least 1 MP/s on CPU
@@ -127,7 +127,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         simulationResult.TimeStepsCompleted.Should().Be(timeSteps);
         simulationResult.SimulationTime.Should().BeLessThan(TimeSpan.FromMinutes(2));
         
-        var cellUpdatesPerSecond = (long)gridWidth * gridHeight * timeSteps / simulationResult.SimulationTime.TotalSeconds;
+        var cellUpdatesPerSecond =(long)gridWidth * gridHeight * timeSteps / simulationResult.SimulationTime.TotalSeconds;
         LoggerMessages.CFDSimulation(Logger, cellUpdatesPerSecond);
         
         Assert.True(cellUpdatesPerSecond > 1_000_000); // At least 1M cell updates/sec
@@ -175,7 +175,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
     [Fact]
     public async Task RealWorldScenario_Cryptography_HashComputation()
     {
-        // Arrange - Cryptographic hash computation (simplified)
+        // Arrange - Cryptographic hash computation(simplified)
         const int numHashes = 100_000;
         const int dataSize = 1024; // 1KB per hash
         
@@ -204,7 +204,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
     [Fact]
     public async Task RealWorldScenario_GameDevelopment_PhysicsSimulation()
     {
-        // Arrange - Game physics simulation (scaled for CPU testing)
+        // Arrange - Game physics simulation(scaled for CPU testing)
         const int numParticles = 1_000;
         const int simulationSteps = 10; // Reduced for CPU testing
         const float deltaTime = 1.0f / 60.0f;
@@ -231,7 +231,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         physicsResult.SimulationSteps.Should().Be(simulationSteps);
         physicsResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(10)); // Reasonable CPU performance
         
-        var particleUpdatesPerSecond = (long)numParticles * simulationSteps / physicsResult.ExecutionTime.TotalSeconds;
+        var particleUpdatesPerSecond =(long)numParticles * simulationSteps / physicsResult.ExecutionTime.TotalSeconds;
         LoggerMessages.PhysicsSimulation(Logger, particleUpdatesPerSecond);
         
         // Should complete physics simulation within reasonable time
@@ -249,7 +249,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         var audioBuffers = new List<float[]>();
         
-        for (int i = 0; i < numBuffers; i++)
+        for(int i = 0; i < numBuffers; i++)
         {
             audioBuffers.Add(GenerateTestData<float>(bufferSize));
         }
@@ -267,13 +267,13 @@ public class RealWorldScenarioTests : IntegrationTestBase
         audioResult.BuffersProcessed.Should().BeGreaterThan(0).And.BeLessThanOrEqualTo(numBuffers);
         
         var totalSamples = audioResult.BuffersProcessed * bufferSize;
-        var realTimeSeconds = (double)totalSamples / sampleRate;
+        var realTimeSeconds =(double)totalSamples / sampleRate;
         var processingTimeSeconds = audioResult.ExecutionTime.TotalSeconds;
         var realTimeRatio = processingTimeSeconds / realTimeSeconds;
         
         LoggerMessages.AudioProcessing(Logger, realTimeRatio);
         
-        // Should process reasonably close to real-time (CPU backend may be slower)
+        // Should process reasonably close to real-time(CPU backend may be slower)
         Assert.True(realTimeRatio < 100.0); // Processing shouldn't be 100x slower than real-time
     }
 
@@ -323,13 +323,13 @@ public class RealWorldScenarioTests : IntegrationTestBase
                                      __global float* output,
                                      int inputSize, int outputSize) {
                 int outputIdx = get_global_id(0);
-                if (outputIdx >= outputSize) return;
+                if(outputIdx >= outputSize) return;
                 
                 float sum = 0.0f;
-                for (int i = 0; i < inputSize; i++) {
+                for(int i = 0; i < inputSize; i++) {
                     sum += input[i] * weights[i * outputSize + outputIdx];
                 }
-                output[outputIdx] = 1.0f / (1.0f + exp(-sum)); // Sigmoid activation
+                output[outputIdx] = 1.0f /(1.0f + exp(-sum)); // Sigmoid activation
             }";
 
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -343,7 +343,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 "forward_pass",
                 new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum });
 
-            for (int epoch = 0; epoch < epochs; epoch++)
+            for(int epoch = 0; epoch < epochs; epoch++)
             {
                 // Simulate training epoch
                 var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
@@ -358,7 +358,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                     new ExecutionOptions { GlobalWorkSize = [128] });
 
                 // Simulate loss decrease
-                finalLoss = initialLoss * (1.0f - (float)(epoch + 1) / epochs * 0.8f);
+                finalLoss = initialLoss * (1.0f - ((float)(epoch + 1) / epochs * 0.8f));
             }
 
             stopwatch.Stop();
@@ -372,7 +372,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 FinalLoss = finalLoss
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.NeuralNetworkTrainingFailed(Logger, ex);
@@ -400,7 +400,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 int x = get_global_id(0);
                 int y = get_global_id(1);
                 
-                if (x >= width || y >= height) return;
+                if(x >= width || y >= height) return;
                 
                 int idx = y * width + x;
                 
@@ -411,7 +411,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 pixel *= 1.2f;
                 
                 // Contrast enhancement
-                pixel = (pixel - 0.5f) * 1.5f + 0.5f;
+                pixel =(pixel - 0.5f) * 1.5f + 0.5f;
                 
                 // Gamma correction
                 pixel = pow(pixel, 1.0f / 2.2f);
@@ -449,7 +449,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 OutputData = await ReadBufferAsync<float>(outputBuffer)
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.ImageProcessingPipelineFailed(Logger, ex);
@@ -481,19 +481,19 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 int x = get_global_id(0);
                 int y = get_global_id(1);
                 
-                if (x >= width || y >= height || x == 0 || y == 0 || 
+                if(x >= width || y >= height || x == 0 || y == 0 || 
                     x == width-1 || y == height-1) return;
                 
                 int idx = y * width + x;
                 
                 // Simplified Navier-Stokes update
-                float dvx_dt = -(vx[idx] * (vx[idx+1] - vx[idx-1]) / (2.0f) +
-                                vy[idx] * (vx[idx+width] - vx[idx-width]) / (2.0f)) +
-                               0.01f * (vx[idx+1] + vx[idx-1] + vx[idx+width] + vx[idx-width] - 4*vx[idx]);
+                float dvx_dt = -(vx[idx] *vx[idx+1] - vx[idx-1]) /(2.0f) +
+                                vy[idx] *(vx[idx+width] - vx[idx-width]) /(2.0f)) +
+                               0.01f *(vx[idx+1] + vx[idx-1] + vx[idx+width] + vx[idx-width] - 4*vx[idx]);
                 
-                float dvy_dt = -(vx[idx] * (vy[idx+1] - vy[idx-1]) / (2.0f) +
-                                vy[idx] * (vy[idx+width] - vy[idx-width]) / (2.0f)) +
-                               0.01f * (vy[idx+1] + vy[idx-1] + vy[idx+width] + vy[idx-width] - 4*vy[idx]);
+                float dvy_dt = -(vx[idx] *vy[idx+1] - vy[idx-1]) /(2.0f) +
+                                vy[idx] *(vy[idx+width] - vy[idx-width]) /(2.0f)) +
+                               0.01f *(vy[idx+1] + vy[idx-1] + vy[idx+width] + vy[idx-width] - 4*vy[idx]);
                 
                 vx[idx] += dt * dvx_dt;
                 vy[idx] += dt * dvy_dt;
@@ -513,7 +513,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
             var vyBuffer = await CreateInputBuffer(memoryManager, velocityY);
             var pBuffer = await CreateInputBuffer(memoryManager, pressure);
 
-            for (int step = 0; step < timeSteps; step++)
+            for(int step = 0; step < timeSteps; step++)
             {
                 await computeEngine.ExecuteAsync(
                     compiledKernel,
@@ -533,7 +533,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 FinalVelocityY = await ReadBufferAsync<float>(vyBuffer)
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.CFDSimulationFailed(Logger, ex);
@@ -568,7 +568,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 float dt = 1.0f / timeSteps;
                 
                 // Geometric Brownian Motion
-                for (int i = 0; i < timeSteps; i++) {
+                for(int i = 0; i < timeSteps; i++) {
                     float z = randoms[sim * timeSteps + i];
                     S *= exp((r - 0.5f * sigma * sigma) * dt + sigma * sqrt(dt) * z);
                 }
@@ -600,23 +600,23 @@ public class RealWorldScenarioTests : IntegrationTestBase
             var averagePayoff = payoffs.Average();
             
             // If kernel didn't produce results, use a simplified Black-Scholes approximation
-            if (averagePayoff <= 0)
+            if(averagePayoff <= 0)
             {
                 // Simple Black-Scholes approximation for call option
-                var d1 = (Math.Log(spotPrice / strikePrice) + (riskFreeRate + 0.5 * volatility * volatility) * 1.0) / (volatility * Math.Sqrt(1.0));
+                var d1 =(Math.Log(spotPrice / strikePrice) +(riskFreeRate + 0.5 * volatility * volatility) * 1.0) /(volatility * Math.Sqrt(1.0));
                 var d2 = d1 - volatility * Math.Sqrt(1.0);
                 
                 // Approximate normal CDF using error function approximation
                 double approxNormalCDF(double x)
                 {
-                    return 0.5 * (1.0 + Math.Sign(x) * Math.Sqrt(1.0 - Math.Exp(-2.0 * x * x / Math.PI)));
+                    return 0.5 *(1.0 + Math.Sign(x) * Math.Sqrt(1.0 - Math.Exp(-2.0 * x * x / Math.PI)));
                 }
                 
                 var callPrice = spotPrice * approxNormalCDF(d1) - strikePrice * Math.Exp(-riskFreeRate) * approxNormalCDF(d2);
-                averagePayoff = (float)Math.Max(callPrice, 0);
+                averagePayoff =(float)Math.Max(callPrice, 0);
             }
             
-            var optionPrice = averagePayoff * (float)Math.Exp(-riskFreeRate); // Discount to present value
+            var optionPrice = averagePayoff *(float)Math.Exp(-riskFreeRate); // Discount to present value
 
             stopwatch.Stop();
 
@@ -626,10 +626,10 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 SimulationsCompleted = numSimulations,
                 ExecutionTime = stopwatch.Elapsed,
                 OptionPrice = optionPrice,
-                StandardError = (float)(Math.Sqrt(payoffs.Select(p => Math.Pow(p - averagePayoff, 2)).Average()) / Math.Sqrt(numSimulations))
+                StandardError =(float)(Math.Sqrt(payoffs.Select(p => Math.Pow(p - averagePayoff, 2)).Average()) / Math.Sqrt(numSimulations))
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.MonteCarloSimulationFailed(Logger, ex);
@@ -690,15 +690,15 @@ public class RealWorldScenarioTests : IntegrationTestBase
             __kernel void lowpass_filter(__global const float* input, __global float* output, int size, float cutoff)
             {
                 int idx = get_global_id(0);
-                if (idx >= size) return;
+                if(idx >= size) return;
                 
                 // Simple low-pass filter with optimized computation
-                float alpha = cutoff / (cutoff + 1.0f);
+                float alpha = cutoff /(cutoff + 1.0f);
                 
-                if (idx == 0) {
+                if(idx == 0) {
                     output[idx] = input[idx] * alpha;
                 } else {
-                    output[idx] = input[idx] * alpha + output[idx-1] * (1.0f - alpha);
+                    output[idx] = input[idx] * alpha + output[idx-1] *(1.0f - alpha);
                 }
             }";
 
@@ -738,7 +738,7 @@ public class RealWorldScenarioTests : IntegrationTestBase
                 ExecutionTime = stopwatch.Elapsed
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             LoggerMessages.AudioProcessingFailed(Logger, ex);

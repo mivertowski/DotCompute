@@ -10,7 +10,7 @@ using FluentAssertions;
 namespace DotCompute.Tests.Hardware.NVRTC;
 
 /// <summary>
-/// Tests for NVRTC (NVIDIA Runtime Compilation) on RTX 2000 Ada Generation GPU.
+/// Tests for NVRTC(NVIDIA Runtime Compilation) on RTX 2000 Ada Generation GPU.
 /// Validates real-time kernel compilation and execution capabilities.
 /// </summary>
 [Trait("Category", "RTX2000")]
@@ -35,7 +35,7 @@ public class NVRTCKernelCompilationTests : IDisposable
         {
             // Initialize CUDA
             var result = CudaInit(0);
-            if (result != 0)
+            if(result != 0)
             {
                 _output.WriteLine($"CUDA initialization failed with error code: {result}");
                 return;
@@ -43,7 +43,7 @@ public class NVRTCKernelCompilationTests : IDisposable
 
             // Create CUDA context
             result = CudaCtxCreate(ref _cudaContext, 0, 0);
-            if (result == 0)
+            if(result == 0)
             {
                 _cudaInitialized = true;
                 _output.WriteLine("CUDA context created successfully");
@@ -54,7 +54,7 @@ public class NVRTCKernelCompilationTests : IDisposable
             {
                 int major = 0, minor = 0;
                 result = NvrtcVersion(ref major, ref minor);
-                if (result == 0)
+                if(result == 0)
                 {
                     _nvrtcAvailable = true;
                     _output.WriteLine($"NVRTC available - Version {major}.{minor}");
@@ -64,12 +64,12 @@ public class NVRTCKernelCompilationTests : IDisposable
                     _output.WriteLine($"NVRTC version query failed with error: {result}");
                 }
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _output.WriteLine($"NVRTC not available: {ex.Message}");
             }
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _output.WriteLine($"Initialization exception: {ex.Message}");
         }
@@ -84,7 +84,7 @@ public class NVRTCKernelCompilationTests : IDisposable
 extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i < n) {
+    if(i < n) {
         c[i] = a[i] + b[i];
     }
 }";
@@ -94,12 +94,12 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         try
         {
             // Create NVRTC program
-            var result = NvrtcCreateProgram(ref program, kernelSource, "vectorAdd.cu", 0, null, null);
+            var result = NvrtcCreateProgram(ref program, kernelSource, "vectorAdd.cu", 0, default!, default!);
             Assert.Equal(0, result); // NVRTC program creation should succeed;
 
             _output.WriteLine("NVRTC program created successfully");
 
-            // Set compilation options for RTX 2000 Ada Gen (compute capability 8.9)
+            // Set compilation options for RTX 2000 Ada Gen(compute capability 8.9)
             var options = new[]
             {
                 "--gpu-architecture=compute_89",
@@ -111,12 +111,12 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             result = NvrtcCompileProgram(program, options.Length, options);
             
             // Check compilation result
-            if (result != 0)
+            if(result != 0)
             {
                 // Get compilation log
                 long logSize = 0;
                 NvrtcGetProgramLogSize(program, ref logSize);
-                if (logSize > 0)
+                if(logSize > 0)
                 {
                     var log = new byte[logSize];
                     NvrtcGetProgramLog(program, log);
@@ -139,7 +139,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             Assert.Equal(0, result); // PTX retrieval should succeed;
 
             var ptxString = Encoding.ASCII.GetString(ptx).TrimEnd('\0');
-            _output.WriteLine($"Generated PTX ({ptxSize} bytes)");
+            _output.WriteLine($"Generated PTX{ptxSize} bytes)");
             _output.WriteLine($"PTX preview: {ptxString.Substring(0, Math.Min(200, ptxString.Length))}...");
 
             // Validate PTX contains expected elements
@@ -148,7 +148,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         }
         finally
         {
-            if (program != IntPtr.Zero)
+            if(program != IntPtr.Zero)
             {
                 NvrtcDestroyProgram(ref program);
             }
@@ -166,7 +166,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i < n) {
+    if(i < n) {
         c[i] = a[i] + b[i];
     }
 }";
@@ -182,7 +182,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         try
         {
             // Compile kernel
-            var result = NvrtcCreateProgram(ref program, kernelSource, "vectorAdd.cu", 0, null, null);
+            var result = NvrtcCreateProgram(ref program, kernelSource, "vectorAdd.cu", 0, default!, default!);
             Assert.Equal(0, result); // Program creation should succeed;
 
             var options = new[] { "--gpu-architecture=compute_89" };
@@ -218,7 +218,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             var h_b = new float[N];
             var h_c = new float[N];
             
-            for (int i = 0; i < N; i++)
+            for(int i = 0; i < N; i++)
             {
                 h_a[i] = i;
                 h_b[i] = i * 2;
@@ -263,13 +263,13 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 
                     // Launch kernel
                     const int blockSize = 256;
-                    int gridSize = (N + blockSize - 1) / blockSize;
+                    int gridSize =(N + blockSize - 1) / blockSize;
                     
                     var sw = Stopwatch.StartNew();
                     result = CuLaunchKernel(
                         kernel,
-                        (uint)gridSize, 1, 1,    // grid dimensions
-                        (uint)blockSize, 1, 1,   // block dimensions
+                       (uint)gridSize, 1, 1,    // grid dimensions
+                       (uint)blockSize, 1, 1,   // block dimensions
                         0,                       // shared memory
                         IntPtr.Zero,            // stream
                         kernelParamsPtr,        // parameters
@@ -297,14 +297,14 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                     }
 
                     // Verify results
-                    for (int i = 0; i < Math.Min(10, N); i++)
+                    for(int i = 0; i < Math.Min(10, N); i++)
                     {
                         var expected = h_a[i] + h_b[i];
                         h_c[i].Should().Be(expected, $"Result at index {i} should be correct");
                     }
 
                     _output.WriteLine($"Vector addition completed successfully. Sample results:");
-                    for (int i = 0; i < Math.Min(5, N); i++)
+                    for(int i = 0; i < Math.Min(5, N); i++)
                     {
                         _output.WriteLine($"  {h_a[i]} + {h_b[i]} = {h_c[i]}");
                     }
@@ -325,11 +325,11 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         finally
         {
             // Cleanup
-            if (d_a != IntPtr.Zero) CudaFree(d_a);
-            if (d_b != IntPtr.Zero) CudaFree(d_b);
-            if (d_c != IntPtr.Zero) CudaFree(d_c);
-            if (module != IntPtr.Zero) CuModuleUnload(module);
-            if (program != IntPtr.Zero) NvrtcDestroyProgram(ref program);
+            if(d_a != IntPtr.Zero) CudaFree(d_a);
+            if(d_b != IntPtr.Zero) CudaFree(d_b);
+            if(d_c != IntPtr.Zero) CudaFree(d_c);
+            if(module != IntPtr.Zero) CuModuleUnload(module);
+            if(program != IntPtr.Zero) NvrtcDestroyProgram(ref program);
         }
 
         await Task.CompletedTask;
@@ -356,9 +356,9 @@ extern ""C"" __global__ void matrixMul(
     int row = by * blockDim.y + ty;
     int col = bx * blockDim.x + tx;
     
-    if (row < heightA && col < widthB) {
+    if(row < heightA && col < widthB) {
         float sum = 0.0f;
-        for (int k = 0; k < widthA; ++k) {
+        for(int k = 0; k < widthA; ++k) {
             sum += A[row * widthA + k] * B[k * widthB + col];
         }
         C[row * widthB + col] = sum;
@@ -382,15 +382,15 @@ extern ""C"" __global__ void fastMatrixMul(
     
     float sum = 0.0f;
     
-    for (int m = 0; m < (widthA + 15) / 16; ++m) {
+    for(int m = 0; m <widthA + 15) / 16; ++m) {
         // Load tiles into shared memory
-        if (row < heightA && m * 16 + tx < widthA) {
+        if(row < heightA && m * 16 + tx < widthA) {
             As[ty][tx] = A[row * widthA + m * 16 + tx];
         } else {
             As[ty][tx] = 0.0f;
         }
         
-        if (col < widthB && m * 16 + ty < widthA) {
+        if(col < widthB && m * 16 + ty < widthA) {
             Bs[ty][tx] = B[(m * 16 + ty) * widthB + col];
         } else {
             Bs[ty][tx] = 0.0f;
@@ -399,14 +399,14 @@ extern ""C"" __global__ void fastMatrixMul(
         __syncthreads();
         
         // Compute partial sum
-        for (int k = 0; k < 16; ++k) {
+        for(int k = 0; k < 16; ++k) {
             sum += As[ty][k] * Bs[k][tx];
         }
         
         __syncthreads();
     }
     
-    if (row < heightA && col < widthB) {
+    if(row < heightA && col < widthB) {
         C[row * widthB + col] = sum;
     }
 }";
@@ -415,7 +415,7 @@ extern ""C"" __global__ void fastMatrixMul(
         
         try
         {
-            var result = NvrtcCreateProgram(ref program, complexKernelSource, "matrixMul.cu", 0, null, null);
+            var result = NvrtcCreateProgram(ref program, complexKernelSource, "matrixMul.cu", 0, default!, default!);
             Assert.Equal(0, result); // Complex program creation should succeed;
 
             // Use aggressive optimization options for RTX 2000 Ada Gen
@@ -435,11 +435,11 @@ extern ""C"" __global__ void fastMatrixMul(
             result = NvrtcCompileProgram(program, options.Length, options);
             sw.Stop();
 
-            if (result != 0)
+            if(result != 0)
             {
                 long logSize = 0;
                 NvrtcGetProgramLogSize(program, ref logSize);
-                if (logSize > 0)
+                if(logSize > 0)
                 {
                     var log = new byte[logSize];
                     NvrtcGetProgramLog(program, log);
@@ -458,7 +458,7 @@ extern ""C"" __global__ void fastMatrixMul(
             NvrtcGetPTX(program, ptx);
 
             var ptxString = Encoding.ASCII.GetString(ptx).TrimEnd('\0');
-            _output.WriteLine($"Generated optimized PTX ({ptxSize} bytes)");
+            _output.WriteLine($"Generated optimized PTX{ptxSize} bytes)");
 
             // Check for optimization indicators
             Assert.Contains("matrixMul", ptxString); // "PTX should contain matrix multiplication kernel";
@@ -467,7 +467,7 @@ extern ""C"" __global__ void fastMatrixMul(
         }
         finally
         {
-            if (program != IntPtr.Zero)
+            if(program != IntPtr.Zero)
             {
                 NvrtcDestroyProgram(ref program);
             }
@@ -488,18 +488,18 @@ extern ""C"" __global__ void fastMatrixMul(
 extern ""C"" __global__ void benchmark(float* data, int n)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
-    if (i < n) {
+    if(i < n) {
         data[i] = data[i] * data[i] + sqrtf(data[i]);
     }
 }";
 
-        for (int run = 0; run < compilationRuns; run++)
+        for(int run = 0; run < compilationRuns; run++)
         {
             IntPtr program = IntPtr.Zero;
             
             try
             {
-                var result = NvrtcCreateProgram(ref program, kernelSource, $"benchmark_{run}.cu", 0, null, null);
+                var result = NvrtcCreateProgram(ref program, kernelSource, $"benchmark_{run}.cu", 0, default!, default!);
                 Assert.Equal(0, result); // Program creation should succeed;
 
                 var options = new[] { "--gpu-architecture=compute_89" };
@@ -513,7 +513,7 @@ extern ""C"" __global__ void benchmark(float* data, int n)
             }
             finally
             {
-                if (program != IntPtr.Zero)
+                if(program != IntPtr.Zero)
                 {
                     NvrtcDestroyProgram(ref program);
                 }
@@ -530,15 +530,15 @@ extern ""C"" __global__ void benchmark(float* data, int n)
         _output.WriteLine($"  Max: {maxTime} ms");
 
         // NVRTC should compile simple kernels reasonably quickly
-        Assert.True(averageTime < 1000, "Average compilation time should be under 1 second");
-        Assert.True(maxTime < 2000, "Maximum compilation time should be under 2 seconds");
+        averageTime .Should().BeLessThan(1000, "Average compilation time should be under 1 second");
+        maxTime .Should().BeLessThan(2000, "Maximum compilation time should be under 2 seconds");
 
         await Task.CompletedTask;
     }
 
     public void Dispose()
     {
-        if (_cudaContext != IntPtr.Zero)
+        if(_cudaContext != IntPtr.Zero)
         {
             CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
@@ -641,7 +641,7 @@ public static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
-        if (!condition)
+        if(!condition)
         {
             throw new SkipException(reason);
         }

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -143,10 +143,10 @@ public class IKernelTests
     public void IKernel_RequiredSharedMemory_ShouldBeNonNegative()
     {
         // Act & Assert
-        TestKernel.RequiredSharedMemory >= 0.Should().BeTrue();
-        VectorAddKernel.RequiredSharedMemory >= 0.Should().BeTrue();
-        SharedMemoryKernel.RequiredSharedMemory >= 0.Should().BeTrue();
-        MinimalKernel.RequiredSharedMemory >= 0.Should().BeTrue();
+        TestKernel.RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
+        VectorAddKernel.RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
+        SharedMemoryKernel.RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
+        MinimalKernel.RequiredSharedMemory.Should().BeGreaterThanOrEqualTo(0);
     }
 
     #endregion
@@ -170,19 +170,19 @@ public class IKernelTests
         // Arrange & Act
         var kernelType = typeof(TestKernel);
 
-        // Assert
-        Assert.IsAssignableFrom<IKernel>(kernelType);
+        // Assert - Check type hierarchy
+        Assert.True(typeof(TestKernel).IsAssignableTo(typeof(IKernel)));
         kernelType.IsValueType.Should().BeTrue(); // Should be struct for performance
     }
 
     [Fact]
     public void AllTestKernels_ShouldImplementIKernel()
     {
-        // Assert
-        typeof(TestKernel).Should().BeAssignableTo<IKernel>();
-        typeof(VectorAddKernel).Should().BeAssignableTo<IKernel>();
-        typeof(SharedMemoryKernel).Should().BeAssignableTo<IKernel>();
-        typeof(MinimalKernel).Should().BeAssignableTo<IKernel>();
+        // Assert - Check type assignability
+        Assert.True(typeof(TestKernel).IsAssignableTo(typeof(IKernel)));
+        Assert.True(typeof(VectorAddKernel).IsAssignableTo(typeof(IKernel)));
+        Assert.True(typeof(SharedMemoryKernel).IsAssignableTo(typeof(IKernel)));
+        Assert.True(typeof(MinimalKernel).IsAssignableTo(typeof(IKernel)));
     }
 
     #endregion
@@ -238,12 +238,12 @@ public class IKernelTests
     public void DifferentKernels_ShouldHaveDifferentProperties()
     {
         // Assert - Each kernel should have unique characteristics
-        TestKernel.Name.Should().Not.Be(VectorAddKernel.Name);
-        TestKernel.Name.Should().Not.Be(SharedMemoryKernel.Name);
-        TestKernel.Name.Should().Not.Be(MinimalKernel.Name);
+        TestKernel.Name.Should().NotBe(VectorAddKernel.Name);
+        TestKernel.Name.Should().NotBe(SharedMemoryKernel.Name);
+        TestKernel.Name.Should().NotBe(MinimalKernel.Name);
 
-        TestKernel.Source.Should().Not.Be(VectorAddKernel.Source);
-        TestKernel.EntryPoint.Should().Not.Be(VectorAddKernel.EntryPoint);
+        TestKernel.Source.Should().NotBe(VectorAddKernel.Source);
+        TestKernel.EntryPoint.Should().NotBe(VectorAddKernel.EntryPoint);
     }
 
     [Fact]
@@ -252,7 +252,7 @@ public class IKernelTests
         // Assert
         (SharedMemoryKernel.RequiredSharedMemory > TestKernel.RequiredSharedMemory).Should().BeTrue();
         (SharedMemoryKernel.RequiredSharedMemory > VectorAddKernel.RequiredSharedMemory).Should().BeTrue();
-        SharedMemoryKernel.RequiredSharedMemory > MinimalKernel.RequiredSharedMemory.Should().BeTrue();
+        SharedMemoryKernel.RequiredSharedMemory.Should().BeGreaterThan(MinimalKernel.RequiredSharedMemory);
     }
 
     #endregion
@@ -262,13 +262,13 @@ public class IKernelTests
     [Fact]
     public void IKernel_StaticMemberAccess_ShouldBeEfficient()
     {
-        // Test that accessing static members is efficient (no boxing/allocation)
+        // Test that accessing static members is efficient(no boxing/allocation)
         // This is a performance characteristic test
         
         var startTime = DateTime.UtcNow;
         
         // Act - Access properties many times
-        for (int i = 0; i < 10000; i++)
+        for(int i = 0; i < 10000; i++)
         {
             var _ = TestKernel.Name;
             var __ = TestKernel.Source;
@@ -279,7 +279,7 @@ public class IKernelTests
         var endTime = DateTime.UtcNow;
         var duration = endTime - startTime;
 
-        // Assert - Should complete quickly (less than 100ms for 10000 iterations)
+        // Assert - Should complete quickly(less than 100ms for 10000 iterations)
         duration.Should().BeLessThan(TimeSpan.FromMilliseconds(100));
     }
 
@@ -372,8 +372,8 @@ public class IKernelTests
         TestKernel.Source.Should().NotBeNullOrEmpty("Source code is required for compilation");
         TestKernel.EntryPoint.Should().NotBeNullOrEmpty("Entry point is required for execution");
         
-        // Shared memory can be zero (valid case)
-        (TestKernel.RequiredSharedMemory >= 0).Should().BeTrue("Shared memory requirement must be non-negative");
+        // Shared memory can be zero(valid case)
+        (TestKernel.RequiredSharedMemory >= 0).Should().BeTrue();
     }
 
     [Fact]
@@ -402,7 +402,7 @@ public class IKernelTests
         var results = new System.Collections.Concurrent.ConcurrentBag<string>();
         
         // Act - Multiple threads accessing static members
-        for (int i = 0; i < 10; i++)
+        for(int i = 0; i < 10; i++)
         {
             tasks.Add(System.Threading.Tasks.Task.Run(() =>
             {

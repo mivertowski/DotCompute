@@ -35,7 +35,7 @@ public sealed class MemoryAllocatorTests : IDisposable
     public void Allocate_WithZeroSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert
-        var act = () => _allocator.Allocate<int>(0);
+        var act =() => _allocator.Allocate<int>(0);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
@@ -85,7 +85,7 @@ public sealed class MemoryAllocatorTests : IDisposable
         var memory = _allocator.Allocate<int>(1024);
 
         // Act & Assert
-        var act = () => memory.Dispose();
+        var act =() => memory.Dispose();
         act(); // Should not throw
     }
 
@@ -101,7 +101,7 @@ public sealed class MemoryAllocatorTests : IDisposable
         var allocatedBytes = _allocator.TotalAllocatedBytes;
 
         // Assert
-        allocatedBytes.BeGreaterThanOrEqualTo(initialBytes + 3072);
+        allocatedBytes.Should().BeGreaterThanOrEqualTo(initialBytes + 3072);
     }
 
     [Fact]
@@ -126,14 +126,14 @@ public sealed class MemoryAllocatorTests : IDisposable
         var memories = new List<IMemoryOwner<int>>();
 
         // Act - Allocate multiple blocks
-        for (var i = 0; i < 10; i++)
+        for(var i = 0; i < 10; i++)
         {
-            memories.Add(_allocator.Allocate<int>(256 * (i + 1)));
+            memories.Add(_allocator.Allocate<int>(256 * i + 1));
         }
 
         // Assert - All should be valid
-        memories.OnlyContain(m => m != null && m.Memory.Length > 0);
-        _allocator.TotalAllocations.BeGreaterThanOrEqualTo(10);
+        memories.Should().OnlyContain(m => m != null && m.Memory.Length > 0);
+        _allocator.TotalAllocations.Should().BeGreaterThanOrEqualTo(10);
 
         // Cleanup
         foreach (var memory in memories)
@@ -165,7 +165,7 @@ public sealed class MemoryAllocatorTests : IDisposable
         allocator.Dispose();
 
         // Act & Assert
-        var act = () => allocator.Allocate<int>(256);
+        var act =() => allocator.Allocate<int>(256);
         Assert.Throws<ObjectDisposedException>(() => act());
     }
 }

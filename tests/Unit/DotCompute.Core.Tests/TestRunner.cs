@@ -31,7 +31,7 @@ public class TestRunner
         var destData = new float[size / sizeof(float)];
         
         // Initialize source data with real values
-        for (int i = 0; i < sourceData.Length; i++)
+        for(int i = 0; i < sourceData.Length; i++)
         {
             sourceData[i] = MathF.Sin(i * 0.01f);
         }
@@ -57,16 +57,16 @@ public class TestRunner
             
             // Verify the copy
             bool copySuccessful = true;
-            for (int i = 0; i < sourceData.Length; i++)
+            for(int i = 0; i < sourceData.Length; i++)
             {
-                if (Math.Abs(sourceData[i] - destData[i]) > 0.0001f)
+                if(Math.Abs(sourceData[i] - destData[i]) > 0.0001f)
                 {
                     copySuccessful = false;
                     break;
                 }
             }
             
-            Assert.True(copySuccessful, "Memory copy verification failed");
+            copySuccessful.Should().BeTrue();
             _output.WriteLine("Memory copy successful and verified!");
         }
         finally
@@ -91,10 +91,10 @@ public class TestRunner
         
         // Initialize inputs
         var random = new Random(42);
-        for (int i = 0; i < problemSize; i++)
+        for(int i = 0; i < problemSize; i++)
         {
-            inputA[i] = (float)random.NextDouble();
-            inputB[i] = (float)random.NextDouble();
+            inputA[i] =(float)random.NextDouble();
+            inputB[i] =(float)random.NextDouble();
         }
         
         // Measure execution time
@@ -119,16 +119,16 @@ public class TestRunner
         
         // Verify results
         bool hasValidOutput = true;
-        for (int i = 0; i < problemSize; i++)
+        for(int i = 0; i < problemSize; i++)
         {
-            if (float.IsNaN(output[i]) || float.IsInfinity(output[i]))
+            if(float.IsNaN(output[i]) || float.IsInfinity(output[i]))
             {
                 hasValidOutput = false;
                 break;
             }
         }
         
-        Assert.True(hasValidOutput, "Kernel produced invalid output");
+        hasValidOutput.Should().BeTrue();
         _output.WriteLine("Kernel output validated successfully!");
     }
 
@@ -141,9 +141,9 @@ public class TestRunner
         var pipelineData = new float[1000];
         var random = new Random(42);
         
-        for (int i = 0; i < pipelineData.Length; i++)
+        for(int i = 0; i < pipelineData.Length; i++)
         {
-            pipelineData[i] = (float)random.NextDouble() * 100;
+            pipelineData[i] =(float)random.NextDouble() * 100;
         }
         
         // Stage 1: Normalize
@@ -159,16 +159,16 @@ public class TestRunner
             }
             
             var range = max - min;
-            for (int i = 0; i < data.Length; i++)
+            for(int i = 0; i < data.Length; i++)
             {
-                data[i] = (data[i] - min) / range;
+                data[i] =(data[i] - min) / range;
             }
         });
         
         // Stage 2: Apply transform
         var stage2Result = await ExecutePipelineStage("Transform", stage1Result, data =>
         {
-            for (int i = 0; i < data.Length; i++)
+            for(int i = 0; i < data.Length; i++)
             {
                 data[i] = MathF.Pow(data[i], 2.0f);
             }
@@ -177,7 +177,7 @@ public class TestRunner
         // Stage 3: Scale
         var stage3Result = await ExecutePipelineStage("Scale", stage2Result, data =>
         {
-            for (int i = 0; i < data.Length; i++)
+            for(int i = 0; i < data.Length; i++)
             {
                 data[i] *= 255.0f;
             }
@@ -186,7 +186,7 @@ public class TestRunner
         // Verify pipeline output
         bool pipelineValid = stage3Result.All(val => val >= 0 && val <= 255);
         
-        Assert.True(pipelineValid, "Pipeline output out of expected range");
+        pipelineValid.Should().BeTrue();
         _output.WriteLine("Pipeline execution completed successfully!");
     }
 
@@ -227,8 +227,8 @@ public class TestRunner
         _output.WriteLine($"Name: {acceleratorInfo.Name}");
         _output.WriteLine($"SIMD Width: {acceleratorInfo.SimdWidth} bits");
         
-        Assert.True(processorCount > 0, "No processors detected");
-        Assert.True(acceleratorInfo.MemorySize > 0, "No memory detected");
+        processorCount.Should().BeGreaterThan(0, "No processors detected");
+        acceleratorInfo.MemorySize.Should().BeGreaterThan(0, "No memory detected");
         
         await Task.CompletedTask;
     }
@@ -246,13 +246,13 @@ public class TestRunner
         var stopwatch = Stopwatch.StartNew();
         
         // Launch concurrent compute tasks
-        for (int taskId = 0; taskId < numTasks; taskId++)
+        for(int taskId = 0; taskId < numTasks; taskId++)
         {
             var localId = taskId;
             tasks[taskId] = Task.Run(() =>
             {
                 double sum = 0;
-                for (int i = 0; i < workPerTask; i++)
+                for(int i = 0; i < workPerTask; i++)
                 {
                     sum += Math.Sin(i * 0.001) * Math.Cos(i * 0.001);
                 }
@@ -269,16 +269,16 @@ public class TestRunner
         
         // Verify all tasks completed
         bool allCompleted = true;
-        for (int i = 0; i < numTasks; i++)
+        for(int i = 0; i < numTasks; i++)
         {
-            if (double.IsNaN(results[i]))
+            if(double.IsNaN(results[i]))
             {
                 allCompleted = false;
                 break;
             }
         }
         
-        Assert.True(allCompleted, "Not all concurrent tasks completed successfully");
+        allCompleted.Should().BeTrue();
         _output.WriteLine("All concurrent tasks validated!");
     }
 

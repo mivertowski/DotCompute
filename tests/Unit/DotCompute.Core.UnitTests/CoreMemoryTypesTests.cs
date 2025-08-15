@@ -39,19 +39,19 @@ public class CoreMemoryTypesTests
     [Fact]
     public void MemoryType_DeviceLocal_ShouldHaveCorrectValue()
     {
-        Assert.Equal(0, (int)MemoryType.DeviceLocal);
+        Assert.Equal(0,int)MemoryType.DeviceLocal);
     }
 
     [Fact]
     public void MemoryType_HostVisible_ShouldHaveCorrectValue()
     {
-        Assert.Equal(1, (int)MemoryType.HostVisible);
+        Assert.Equal(1,int)MemoryType.HostVisible);
     }
 
     [Fact]
     public void MemoryType_Shared_ShouldHaveCorrectValue()
     {
-        Assert.Equal(2, (int)MemoryType.Shared);
+        Assert.Equal(2,int)MemoryType.Shared);
     }
 
     [Fact]
@@ -81,20 +81,20 @@ public class CoreMemoryTypesTests
     [Fact]
     public void MemoryType_TryParse_ValidValues_ShouldReturnTrue()
     {
-        Assert.True(Enum.TryParse<MemoryType>("DeviceLocal", out var result1));
+        Enum.TryParse< MemoryType>("DeviceLocal".Should().BeTrue( out var result1));
         Assert.Equal(MemoryType.DeviceLocal, result1);
         
-        Assert.True(Enum.TryParse<MemoryType>("HostVisible", out var result2));
+        Enum.TryParse< MemoryType>("HostVisible".Should().BeTrue( out var result2));
         Assert.Equal(MemoryType.HostVisible, result2);
         
-        Assert.True(Enum.TryParse<MemoryType>("Shared", out var result3));
+        Enum.TryParse< MemoryType>("Shared".Should().BeTrue( out var result3));
         Assert.Equal(MemoryType.Shared, result3);
     }
 
     [Fact]
     public void MemoryType_TryParse_InvalidValue_ShouldReturnFalse()
     {
-        Assert.False(Enum.TryParse<MemoryType>("InvalidMemoryType", out var result));
+        Enum.TryParse<MemoryType>("InvalidMemoryType".Should().BeFalse( out var result));
         Assert.Equal(default, result);
     }
 

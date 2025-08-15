@@ -31,14 +31,14 @@ public sealed class MemoryPoolTests : IDisposable
 
         // Assert
         Assert.NotNull(buffer);
-        buffer.Length.BeGreaterThanOrEqualTo(1024);
+        buffer.Length.Should().BeGreaterThanOrEqualTo(1024);
     }
 
     [Fact]
     public void Rent_WithZeroSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert
-        var act = () => _pool.Rent(0);
+        var act =() => _pool.Rent(0);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
@@ -46,7 +46,7 @@ public sealed class MemoryPoolTests : IDisposable
     public void Rent_WithNegativeSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert
-        var act = () => _pool.Rent(-1);
+        var act =() => _pool.Rent(-1);
         Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
@@ -63,7 +63,7 @@ public sealed class MemoryPoolTests : IDisposable
 
         // Assert
         Assert.NotNull(buffer);
-        buffer.Length.BeGreaterThanOrEqualTo(size);
+        buffer.Length.Should().BeGreaterThanOrEqualTo(size);
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public sealed class MemoryPoolTests : IDisposable
     {
         // Arrange & Act
         IMemoryBuffer<int>? buffer = null;
-        var act = () =>
+        var act =() =>
         {
             buffer = _pool.Rent(1024);
             buffer.Dispose();
@@ -100,7 +100,7 @@ public sealed class MemoryPoolTests : IDisposable
 
         // Act & Assert
         Assert.NotNull(buffer);
-        buffer.Length.BeGreaterThanOrEqualTo(10);
+        buffer.Length.Should().BeGreaterThanOrEqualTo(10);
 
         // Cleanup
         buffer.Dispose();
@@ -136,7 +136,7 @@ public sealed class MemoryPoolTests : IDisposable
         var totalBytes = _pool.TotalAllocatedBytes;
 
         // Assert
-        totalBytes.BeGreaterThanOrEqualTo(initialBytes);
+        totalBytes.Should().BeGreaterThanOrEqualTo(initialBytes);
 
         // Cleanup
         buffer1.Dispose();
@@ -148,7 +148,7 @@ public sealed class MemoryPoolTests : IDisposable
     {
         // Arrange
         var buffers = new List<IMemoryBuffer<int>>();
-        for (var i = 0; i < 10; i++)
+        for(var i = 0; i < 10; i++)
         {
             buffers.Add(_pool.Rent(1024));
         }
@@ -165,7 +165,7 @@ public sealed class MemoryPoolTests : IDisposable
         var bytesAfter = _pool.TotalAllocatedBytes;
 
         // Assert
-        bytesAfter.BeLessThanOrEqualTo(bytesBefore);
+        bytesAfter.Should().BeLessThanOrEqualTo(bytesBefore);
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public sealed class MemoryPoolTests : IDisposable
     {
         // Arrange
         var buffers = new List<IMemoryBuffer<int>>();
-        for (var i = 0; i < 5; i++)
+        for(var i = 0; i < 5; i++)
         {
             var buffer = _pool.Rent(1024 * 1024); // 1MB each
             buffers.Add(buffer);
@@ -190,7 +190,7 @@ public sealed class MemoryPoolTests : IDisposable
 
         // Assert
         // Memory pressure handling should not throw
-        _pool.TotalReturnedBuffers.BeGreaterThanOrEqualTo(5);
+        _pool.TotalReturnedBuffers.Should().BeGreaterThanOrEqualTo(5);
     }
 
     [Fact]
@@ -202,11 +202,11 @@ public sealed class MemoryPoolTests : IDisposable
         var threadCount = 10;
 
         // Act
-        for (var t = 0; t < threadCount; t++)
+        for(var t = 0; t < threadCount; t++)
         {
             tasks.Add(Task.Run(() =>
             {
-                for (var i = 0; i < bufferCount; i++)
+                for(var i = 0; i < bufferCount; i++)
                 {
 #pragma warning disable CA5394 // Do not use insecure randomness - Test code uses Random for test data generation
                     var buffer = _pool.Rent(Random.Shared.Next(100, 1000));
@@ -235,7 +235,7 @@ public sealed class MemoryPoolTests : IDisposable
         pool.Dispose();
 
         // Assert
-        var act = () => pool.Rent(100);
+        var act =() => pool.Rent(100);
         Assert.Throws<ObjectDisposedException>(() => act());
     }
 
@@ -248,7 +248,7 @@ public sealed class MemoryPoolTests : IDisposable
         pool.Dispose();
 
         // Act & Assert
-        var act = () => pool.Rent(100);
+        var act =() => pool.Rent(100);
         Assert.Throws<ObjectDisposedException>(() => act());
     }
 }

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -26,7 +26,7 @@ public class MappedMemoryTests
         // Use reflection to create MappedMemory since constructor is internal
         var constructor = typeof(MappedMemory<T>).GetConstructors(
             System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)[0];
-        return (MappedMemory<T>)constructor.Invoke(new object[] { buffer, memory, mode });
+        return(MappedMemory<T>)constructor.Invoke(new object[] { buffer, memory, mode });
     }
 
     #region Property Tests
@@ -45,7 +45,7 @@ public class MappedMemoryTests
 
         // Assert
         actualMemory.Length.Should().Be(sourceData.Length);
-        actualMemory.Span.ToArray().BeEquivalentTo(sourceData);
+        actualMemory.Span.ToArray().Should().BeEquivalentTo(sourceData);
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public class MappedMemoryTests
 
         // Assert
         span.Length.Should().Be(sourceData.Length);
-        span.ToArray().BeEquivalentTo(sourceData);
+        span.ToArray().Should().BeEquivalentTo(sourceData);
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public class MappedMemoryTests
         var memory = new Memory<float>(new float[10]);
         var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
-        // Act & Assert (should not throw)
+        // Act & Assert(should not throw)
         mappedMemory.Dispose();
     }
 
@@ -198,7 +198,7 @@ public class MappedMemoryTests
         var memory = new Memory<float>(new float[5]);
         var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
-        // Act & Assert (should not throw)
+        // Act & Assert(should not throw)
         mappedMemory.Dispose();
         mappedMemory.Dispose();
         mappedMemory.Dispose();
@@ -234,8 +234,8 @@ public class MappedMemoryTests
 
         // Act & Assert
         mappedMemory.Equals(mappedMemory).Should().BeTrue();
-        (mappedMemory == mappedMemory).Should().BeTrue();
-        (mappedMemory != mappedMemory).Should().BeFalse();
+        mappedMemory.Equals(mappedMemory).Should().BeTrue();
+       (!mappedMemory.Equals(null)).Should().BeTrue();
     }
 
     [Fact]
@@ -269,8 +269,8 @@ public class MappedMemoryTests
 
         // Act & Assert
         mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
-        (mappedMemory1 == mappedMemory2).Should().BeFalse();
-        (mappedMemory1 != mappedMemory2).Should().BeTrue();
+       (mappedMemory1 == mappedMemory2).Should().BeFalse();
+       (mappedMemory1 != mappedMemory2).Should().BeTrue();
     }
 
     [Fact]
@@ -283,8 +283,8 @@ public class MappedMemoryTests
 
         // Act & Assert
         mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
-        (mappedMemory1 == mappedMemory2).Should().BeFalse();
-        (mappedMemory1 != mappedMemory2).Should().BeTrue();
+       (mappedMemory1 == mappedMemory2).Should().BeFalse();
+       (mappedMemory1 != mappedMemory2).Should().BeTrue();
     }
 
     [Fact]
@@ -300,8 +300,8 @@ public class MappedMemoryTests
 
         // Act & Assert
         mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
-        (mappedMemory1 == mappedMemory2).Should().BeFalse();
-        (mappedMemory1 != mappedMemory2).Should().BeTrue();
+       (mappedMemory1 == mappedMemory2).Should().BeFalse();
+       (mappedMemory1 != mappedMemory2).Should().BeTrue();
     }
 
     [Fact]
@@ -382,7 +382,7 @@ public class MappedMemoryTests
         var hashCode2 = mappedMemory2.GetHashCode();
 
         // Assert
-        hashCode1.Should().Not.Be(hashCode2);
+        hashCode1.Should().NotBe(hashCode2);
     }
 
     [Fact]
@@ -398,7 +398,7 @@ public class MappedMemoryTests
         var hashCode2 = mappedMemory2.GetHashCode();
 
         // Assert
-        hashCode1.Should().Not.Be(hashCode2);
+        hashCode1.Should().NotBe(hashCode2);
     }
 
     #endregion
@@ -466,10 +466,9 @@ public class MappedMemoryTests
     {
         // Arrange
         var memory = new Memory<float>(new float[10]);
-        var disposeCalled = false;
 
-        // Act & Assert (should not throw)
-        using (var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite))
+        // Act & Assert(should not throw)
+        using(var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite))
         {
             mappedMemory.Memory.Length.Should().Be(10);
             mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
@@ -559,7 +558,7 @@ public class MappedMemoryTests
         var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
 
         // Act - Multiple threads accessing properties
-        for (int i = 0; i < 10; i++)
+        for(int i = 0; i < 10; i++)
         {
             tasks.Add(System.Threading.Tasks.Task.Run(() =>
             {

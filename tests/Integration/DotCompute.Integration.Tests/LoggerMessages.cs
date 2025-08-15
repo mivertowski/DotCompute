@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using Microsoft.Extensions.Logging;
@@ -87,7 +87,7 @@ internal static partial class LoggerMessages
     [LoggerMessage(
         EventId = 1013,
         Level = LogLevel.Information,
-        Message = "Attempting to create input buffer for {ElementCount} elements ({SizeMB}MB)")]
+        Message = "Attempting to create input buffer for {ElementCount} elements({SizeMB}MB)")]
     public static partial void CreatingInputBuffer(ILogger logger, int elementCount, long sizeMB);
 
     [LoggerMessage(
@@ -111,7 +111,7 @@ internal static partial class LoggerMessages
     [LoggerMessage(
         EventId = 1017,
         Level = LogLevel.Information,
-        Message = "Initial integrity check: {Integrity} (readData != null: {NotNull}, lengths match: {LengthsMatch})")]
+        Message = "Initial integrity check: {Integrity}(readData != null: {NotNull}, lengths match: {LengthsMatch})")]
     public static partial void InitialIntegrityCheck(ILogger logger, bool integrity, bool notNull, bool lengthsMatch);
 
     [LoggerMessage(
@@ -135,7 +135,7 @@ internal static partial class LoggerMessages
     [LoggerMessage(
         EventId = 1021,
         Level = LogLevel.Information,
-        Message = "Mismatch rate: {MismatchRate:P2} ({MismatchCount}/{SampleSize})")]
+        Message = "Mismatch rate: {MismatchRate:P2}({MismatchCount}/{SampleSize})")]
     public static partial void MismatchRate(ILogger logger, double mismatchRate, int mismatchCount, int sampleSize);
 
     [LoggerMessage(

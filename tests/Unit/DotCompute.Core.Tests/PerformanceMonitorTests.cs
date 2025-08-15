@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
@@ -43,7 +43,7 @@ public sealed class PerformanceMonitorTests : IDisposable
         // Arrange
         var result = CreateMockParallelExecutionResult();
 
-        // Act & Assert (should not throw)
+        // Act & Assert(should not throw)
         _performanceMonitor.RecordExecution(result);
         
         // Verify metrics are updated
@@ -55,7 +55,7 @@ public sealed class PerformanceMonitorTests : IDisposable
     [Fact]
     public void RecordKernelExecution_WithValidParameters_ShouldNotThrow()
     {
-        // Act & Assert (should not throw)
+        // Act & Assert(should not throw)
         _performanceMonitor.RecordKernelExecution("TestKernel", "Device1", 100.5, 15.2);
         
         // Multiple executions should be handled
@@ -185,7 +185,7 @@ public sealed class PerformanceMonitorTests : IDisposable
         var tasks = new List<Task>();
 
         // Act
-        for (int i = 0; i < operationCount; i++)
+        for(int i = 0; i < operationCount; i++)
         {
             var index = i;
             tasks.Add(Task.Run(() =>
@@ -249,7 +249,7 @@ public sealed class PerformanceMonitorTests : IDisposable
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _performanceMonitor?.Dispose();
             _disposed = true;

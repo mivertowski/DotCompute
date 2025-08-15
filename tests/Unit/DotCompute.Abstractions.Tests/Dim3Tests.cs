@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -119,7 +119,7 @@ public class Dim3Tests
     public void ImplicitConversion_FromTwoComponentTuple_ShouldCreateDim3WithXY()
     {
         // Arrange & Act
-        Dim3 dim3 = (10, 20);
+        Dim3 dim3 =(10, 20);
 
         // Assert
         dim3.X.Should().Be(10);
@@ -131,7 +131,7 @@ public class Dim3Tests
     public void ImplicitConversion_FromThreeComponentTuple_ShouldCreateDim3WithXYZ()
     {
         // Arrange & Act
-        Dim3 dim3 = (100, 200, 300);
+        Dim3 dim3 =(100, 200, 300);
 
         // Assert
         dim3.X.Should().Be(100);
@@ -167,8 +167,8 @@ public class Dim3Tests
     public void ImplicitConversion_FromTupleWithZeros_ShouldCreateDim3WithZeros()
     {
         // Arrange & Act
-        Dim3 dim3XY = (0, 0);
-        Dim3 dim3XYZ = (0, 0, 0);
+        Dim3 dim3XY =(0, 0);
+        Dim3 dim3XYZ =(0, 0, 0);
 
         // Assert
         dim3XY.X.Should().Be(0);
@@ -184,8 +184,8 @@ public class Dim3Tests
     public void ImplicitConversion_FromTupleWithNegatives_ShouldCreateDim3WithNegatives()
     {
         // Arrange & Act
-        Dim3 dim3XY = (-1, -2);
-        Dim3 dim3XYZ = (-10, -20, -30);
+        Dim3 dim3XY =(-1, -2);
+        Dim3 dim3XYZ =(-10, -20, -30);
 
         // Assert
         dim3XY.X.Should().Be(-1);
@@ -267,8 +267,11 @@ public class Dim3Tests
 
         // Act & Assert
         dim3.Equals(dim3).Should().BeTrue();
-        (dim3 == dim3).Should().BeTrue();
-        (dim3 != dim3).Should().BeFalse();
+        // Note: Self-comparison tests are always true by definition
+#pragma warning disable CS1718 // Comparison made to same variable
+        Assert.True(dim3 == dim3);
+        Assert.False(dim3 != dim3);
+#pragma warning restore CS1718
     }
 
     [Fact]
@@ -293,7 +296,7 @@ public class Dim3Tests
 
         // Act & Assert
         dim3a.Equals(dim3b).Should().BeFalse();
-        (dim3a == dim3b).Should().BeFalse();
+       (dim3a == dim3b).Should().BeFalse();
         (dim3a != dim3b).Should().BeTrue();
     }
 
@@ -306,7 +309,7 @@ public class Dim3Tests
 
         // Act & Assert
         dim3a.Equals(dim3b).Should().BeFalse();
-        (dim3a == dim3b).Should().BeFalse();
+       (dim3a == dim3b).Should().BeFalse();
         (dim3a != dim3b).Should().BeTrue();
     }
 
@@ -319,7 +322,7 @@ public class Dim3Tests
 
         // Act & Assert
         dim3a.Equals(dim3b).Should().BeFalse();
-        (dim3a == dim3b).Should().BeFalse();
+       (dim3a == dim3b).Should().BeFalse();
         (dim3a != dim3b).Should().BeTrue();
     }
 
@@ -332,7 +335,7 @@ public class Dim3Tests
 
         // Act & Assert
         dim3a.Equals(dim3b).Should().BeFalse();
-        (dim3a == dim3b).Should().BeFalse();
+       (dim3a == dim3b).Should().BeFalse();
         (dim3a != dim3b).Should().BeTrue();
     }
 
@@ -416,7 +419,7 @@ public class Dim3Tests
         var hashCode2 = dim3b.GetHashCode();
 
         // Assert
-        hashCode1.Should().Not.Be(hashCode2);
+        hashCode1.Should().NotBe(hashCode2);
     }
 
     [Fact]
@@ -431,7 +434,7 @@ public class Dim3Tests
         var hashCode2 = dim3b.GetHashCode();
 
         // Assert
-        hashCode1.Should().Not.Be(hashCode2);
+        hashCode1.Should().NotBe(hashCode2);
     }
 
     #endregion
@@ -449,7 +452,9 @@ public class Dim3Tests
         // Act & Assert
         (dim3a == dim3b).Should().BeTrue();
         (dim3a == dim3c).Should().BeFalse();
+#pragma warning disable CS1718 // Comparison made to same variable
         (dim3a == dim3a).Should().BeTrue();
+#pragma warning restore CS1718
     }
 
     [Fact]
@@ -463,7 +468,9 @@ public class Dim3Tests
         // Act & Assert
         (dim3a != dim3b).Should().BeFalse();
         (dim3a != dim3c).Should().BeTrue();
+#pragma warning disable CS1718 // Comparison made to same variable
         (dim3a != dim3a).Should().BeFalse();
+#pragma warning restore CS1718
     }
 
     #endregion
@@ -538,9 +545,9 @@ public class Dim3Tests
         foreach (var dim3 in testCases)
         {
             // Should not throw and should have reasonable values
-(dim3.X > 0).Should().BeTrue();
-(dim3.Y > 0).Should().BeTrue();
-(dim3.Z > 0).Should().BeTrue();
+            (dim3.X > 0).Should().BeTrue();
+            (dim3.Y > 0).Should().BeTrue();
+            (dim3.Z > 0).Should().BeTrue();
         }
     }
 
@@ -577,7 +584,7 @@ public class Dim3Tests
         Assert.Equal(fromConstructor1, fromInt2);
 
         // Two component tuple conversion
-        Dim3 fromTuple2a = (10, 20);
+        Dim3 fromTuple2a =(10, 20);
         Dim3 fromTuple2b = Dim3.FromValueTuple((10, 20));
         var fromConstructor2 = new Dim3(10, 20);
 
@@ -586,7 +593,7 @@ public class Dim3Tests
         Assert.Equal(fromConstructor2, fromTuple2b);
 
         // Three component tuple conversion
-        Dim3 fromTuple3a = (100, 200, 300);
+        Dim3 fromTuple3a =(100, 200, 300);
         Dim3 fromTuple3b = Dim3.FromValueTuple((100, 200, 300));
         var fromConstructor3 = new Dim3(100, 200, 300);
 
@@ -607,7 +614,7 @@ public class Dim3Tests
         var tasks = new System.Collections.Generic.List<System.Threading.Tasks.Task>();
 
         // Act - Multiple threads accessing properties
-        for (int i = 0; i < 10; i++)
+        for(int i = 0; i < 10; i++)
         {
             tasks.Add(System.Threading.Tasks.Task.Run(() =>
             {

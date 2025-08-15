@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -23,9 +23,9 @@ public static class MemoryTestUtilities
     {
         var data = new float[count];
         var random = new Random(42);
-        for (int i = 0; i < count; i++)
+        for(int i = 0; i < count; i++)
         {
-            data[i] = (float)random.NextDouble();
+            data[i] =(float)random.NextDouble();
         }
         return data;
     }
@@ -67,7 +67,7 @@ public static class KernelFactory
         var code = @"
                 __global__ void TestKernel(float* input, float* output, int n) {
                     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-                    if (idx < n) {
+                    if(idx < n) {
                         output[idx] = input[idx] * 2.0f;
                     }
                 }";

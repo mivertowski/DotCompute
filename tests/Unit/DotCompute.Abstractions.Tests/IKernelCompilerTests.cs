@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -78,7 +78,7 @@ public class IKernelCompilerTests
         var actualTypes = _mockCompiler.Object.SupportedSourceTypes;
 
         // Assert
-        actualTypes.BeEquivalentTo(expectedTypes);
+        actualTypes.Should().BeEquivalentTo(expectedTypes);
         _mockCompiler.Verify(c => c.SupportedSourceTypes, Times.Once);
     }
 
@@ -108,7 +108,7 @@ public class IKernelCompilerTests
 
         // Assert
         Assert.Equal(allSourceTypes.Length, actualTypes.Count());
-        actualTypes.BeEquivalentTo(allSourceTypes);
+        actualTypes.Should().BeEquivalentTo(allSourceTypes);
     }
 
     #endregion
@@ -127,7 +127,7 @@ public class IKernelCompilerTests
 
         // Assert
         Assert.NotNull(result);
-        result.BeSameAs(_mockCompiledKernel.Object);
+        result.Should().BeSameAs(_mockCompiledKernel.Object);
         _mockCompiler.Verify(c => c.CompileAsync(_testKernelDefinition, null, default), Times.Once);
     }
 
@@ -142,7 +142,7 @@ public class IKernelCompilerTests
         var result = await _mockCompiler.Object.CompileAsync(_testKernelDefinition, _testCompilationOptions);
 
         // Assert
-        result.BeSameAs(_mockCompiledKernel.Object);
+        result.Should().BeSameAs(_mockCompiledKernel.Object);
         _mockCompiler.Verify(c => c.CompileAsync(_testKernelDefinition, _testCompilationOptions, default), Times.Once);
     }
 
@@ -158,7 +158,7 @@ public class IKernelCompilerTests
         var result = await _mockCompiler.Object.CompileAsync(_testKernelDefinition, null, cancellationToken);
 
         // Assert
-        result.BeSameAs(_mockCompiledKernel.Object);
+        result.Should().BeSameAs(_mockCompiledKernel.Object);
         _mockCompiler.Verify(c => c.CompileAsync(_testKernelDefinition, null, cancellationToken), Times.Once);
     }
 
@@ -235,9 +235,9 @@ public class IKernelCompilerTests
         var result = _mockCompiler.Object.Validate(_testKernelDefinition);
 
         // Assert
-        result.BeSameAs(successResult);
+        result.Should().BeSameAs(successResult);
         result.IsValid.Should().BeTrue();
-        result.Assert.Null(ErrorMessage);
+        result.ErrorMessage.Should().BeNull();
         _mockCompiler.Verify(c => c.Validate(_testKernelDefinition), Times.Once);
     }
 
@@ -254,8 +254,8 @@ public class IKernelCompilerTests
 
         // Assert
         result.IsValid.Should().BeTrue();
-        result.Assert.Null(ErrorMessage);
-        result.Warnings.BeEquivalentTo(warnings);
+        result.ErrorMessage.Should().BeNull();
+        result.Warnings.Should().BeEquivalentTo(warnings);
     }
 
     [Fact]
@@ -272,7 +272,7 @@ public class IKernelCompilerTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.ErrorMessage.Should().Be(errorMessage);
-        result.Assert.Empty(Warnings);
+        result.Warnings.Should().BeEmpty();
     }
 
     [Fact]
@@ -290,7 +290,7 @@ public class IKernelCompilerTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.ErrorMessage.Should().Be(errorMessage);
-        result.Warnings.BeEquivalentTo(warnings);
+        result.Warnings.Should().BeEquivalentTo(warnings);
     }
 
     [Fact]
@@ -350,11 +350,11 @@ public class IKernelCompilerTests
         var methods = compilerType.GetMethods();
 
         // Assert
-        Assert.Contains(p => p.Name == "Name", properties);
-        Assert.Contains(p => p.Name == "SupportedSourceTypes", properties);
+        Assert.Contains(properties, p => p.Name == "Name");
+        Assert.Contains(properties, p => p.Name == "SupportedSourceTypes");
         
-        Assert.Contains(m => m.Name == "CompileAsync", methods);
-        Assert.Contains(m => m.Name == "Validate", methods);
+        Assert.Contains(methods, m => m.Name == "CompileAsync");
+        Assert.Contains(methods, m => m.Name == "Validate");
     }
 
     #endregion
@@ -384,7 +384,7 @@ public class IKernelCompilerTests
 
         // Assert
         Assert.NotNull(compilerNameProperty);
-        compilerNameProperty!.PropertyType.Be<string>();
+        compilerNameProperty!.PropertyType.Should().Be<string>();
         compilerNameProperty.GetMethod!.IsAbstract.Should().BeTrue();
     }
 
@@ -454,7 +454,7 @@ public class IKernelCompilerTests
         var actualValues = Enum.GetValues<KernelSourceType>();
 
         // Assert
-        actualValues.BeEquivalentTo(expectedValues);
+        actualValues.Should().BeEquivalentTo(expectedValues);
     }
 
     #endregion
@@ -465,22 +465,22 @@ public class IKernelCompilerTests
     public async Task CompileAsync_MultipleParallelCalls_ShouldHandleConcurrency()
     {
         // Arrange
-        _mockCompiler.Setup(c => c.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()
-                    .ReturnsAsync(_mockCompiledKernel.Object)));
+        _mockCompiler.Setup(c => c.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()))
+                    .ReturnsAsync(_mockCompiledKernel.Object);
 
         var tasks = new Task<ICompiledKernel>[10];
         
         // Act
-        for (int i = 0; i < tasks.Length; i++)
+        for(int i = 0; i < tasks.Length; i++)
         {
-            tasks[i] = _mockCompiler.Object.CompileAsync(_testKernelDefinition);
+            tasks[i] = _mockCompiler.Object.CompileAsync(_testKernelDefinition).AsTask();
         }
 
         var results = await Task.WhenAll(tasks);
 
         // Assert
         Assert.Equal(10, results.Count());
-        results.Should().AllSatisfy(r => r.BeSameAs(_mockCompiledKernel.Object));
+        results.Should().AllSatisfy(r => r.Should().BeSameAs(_mockCompiledKernel.Object));
         _mockCompiler.Verify(c => c.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(10));
     }
 
@@ -489,12 +489,12 @@ public class IKernelCompilerTests
     {
         // Arrange
         var successResult = ValidationResult.Success();
-        _mockCompiler.Setup(c => c.Validate(It.IsAny<KernelDefinition>().Returns(successResult)));
+        _mockCompiler.Setup(c => c.Validate(It.IsAny<KernelDefinition>())).Returns(successResult);
 
         var tasks = new Task<ValidationResult>[10];
         
         // Act
-        for (int i = 0; i < tasks.Length; i++)
+        for(int i = 0; i < tasks.Length; i++)
         {
             tasks[i] = Task.Run(() => _mockCompiler.Object.Validate(_testKernelDefinition));
         }
@@ -525,7 +525,7 @@ public class IKernelCompilerTests
         var validation = _mockCompiler.Object.Validate(_testKernelDefinition);
         ICompiledKernel? compiledKernel = null;
         
-        if (validation.IsValid)
+        if(validation.IsValid)
         {
             compiledKernel = await _mockCompiler.Object.CompileAsync(_testKernelDefinition);
         }
@@ -533,7 +533,7 @@ public class IKernelCompilerTests
         // Assert
         validation.IsValid.Should().BeTrue();
         Assert.NotNull(compiledKernel);
-        compiledKernel.BeSameAs(_mockCompiledKernel.Object);
+        compiledKernel.Should().BeSameAs(_mockCompiledKernel.Object);
         
         _mockCompiler.Verify(c => c.Validate(_testKernelDefinition), Times.Once);
         _mockCompiler.Verify(c => c.CompileAsync(_testKernelDefinition, null, default), Times.Once);
@@ -550,7 +550,7 @@ public class IKernelCompilerTests
         var validation = _mockCompiler.Object.Validate(_testKernelDefinition);
         ICompiledKernel? compiledKernel = null;
         
-        if (validation.IsValid)
+        if(validation.IsValid)
         {
             compiledKernel = await _mockCompiler.Object.CompileAsync(_testKernelDefinition);
         }
@@ -598,9 +598,9 @@ public class IKernelCompilerTests
         var types2 = _mockCompiler.Object.SupportedSourceTypes;
 
         // Assert
-        types1.BeEquivalentTo(sourceTypes);
-        types2.BeEquivalentTo(sourceTypes);
-        types1.BeEquivalentTo(types2);
+        types1.Should().BeEquivalentTo(sourceTypes);
+        types2.Should().BeEquivalentTo(sourceTypes);
+        types1.Should().BeEquivalentTo(types2);
     }
 
     #endregion

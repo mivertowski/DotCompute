@@ -36,7 +36,7 @@ public class TestKernelPipelineBuilder : IKernelPipelineBuilder
     {
         var stage = new TestKernelStage(name, kernel);
         
-        if (configure != null)
+        if(configure != null)
         {
             var builder = new TestKernelStageBuilder(stage);
             configure(builder);
@@ -68,7 +68,7 @@ public class TestKernelPipelineBuilder : IKernelPipelineBuilder
         IPipelineStage? trueStage = null;
         IPipelineStage? falseStage = null;
         
-        if (trueBranch != null)
+        if(trueBranch != null)
         {
             var trueBuilder = new TestKernelPipelineBuilder();
             trueBranch(trueBuilder);
@@ -76,7 +76,7 @@ public class TestKernelPipelineBuilder : IKernelPipelineBuilder
             
             trueStage = new TestCustomStage(
                 "TrueBranch",
-                async (ctx, ct) =>
+                async(ctx, ct) =>
                 {
                     var result = await truePipeline.ExecuteAsync(ctx, ct);
                     return new StageExecutionResult
@@ -90,7 +90,7 @@ public class TestKernelPipelineBuilder : IKernelPipelineBuilder
                 });
         }
         
-        if (falseBranch != null)
+        if(falseBranch != null)
         {
             var falseBuilder = new TestKernelPipelineBuilder();
             falseBranch(falseBuilder);
@@ -98,7 +98,7 @@ public class TestKernelPipelineBuilder : IKernelPipelineBuilder
             
             falseStage = new TestCustomStage(
                 "FalseBranch",
-                async (ctx, ct) =>
+                async(ctx, ct) =>
                 {
                     var result = await falsePipeline.ExecuteAsync(ctx, ct);
                     return new StageExecutionResult
@@ -134,7 +134,7 @@ public class TestKernelPipelineBuilder : IKernelPipelineBuilder
         
         var bodyStage = new TestCustomStage(
             "LoopBody",
-            async (ctx, ct) =>
+            async(ctx, ct) =>
             {
                 var result = await bodyPipeline.ExecuteAsync(ctx, ct);
                 return new StageExecutionResult
@@ -191,8 +191,8 @@ public class TestKernelPipelineBuilder : IKernelPipelineBuilder
 
     public IKernelPipeline Build()
     {
-        // Set up dependencies based on order (unless already specified)
-        for (int i = 1; i < _stageOrder.Count; i++)
+        // Set up dependencies based on order(unless already specified)
+        for(int i = 1; i < _stageOrder.Count; i++)
         {
             var currentStageId = _stageOrder[i];
             var previousStageId = _stageOrder[i - 1];
@@ -200,25 +200,25 @@ public class TestKernelPipelineBuilder : IKernelPipelineBuilder
             var currentStage = _pipeline.Stages.FirstOrDefault(s => s.Id == currentStageId);
             
             // Only add dependency if stage doesn't already have dependencies
-            if (currentStage != null && currentStage.Dependencies.Count == 0)
+            if(currentStage != null && currentStage.Dependencies.Count == 0)
             {
-                if (currentStage is TestKernelStage kernelStage)
+                if(currentStage is TestKernelStage kernelStage)
                 {
                     kernelStage.SetDependencies(new[] { previousStageId });
                 }
-                else if (currentStage is TestParallelStage parallelStage)
+                else if(currentStage is TestParallelStage parallelStage)
                 {
                     parallelStage.SetDependencies(new[] { previousStageId });
                 }
-                else if (currentStage is TestCustomStage customStage)
+                else if(currentStage is TestCustomStage customStage)
                 {
                     customStage.SetDependencies(previousStageId);
                 }
-                else if (currentStage is TestBranchStage branchStage)
+                else if(currentStage is TestBranchStage branchStage)
                 {
                     branchStage.SetDependencies(previousStageId);
                 }
-                else if (currentStage is TestLoopStage loopStage)
+                else if(currentStage is TestLoopStage loopStage)
                 {
                     loopStage.SetDependencies(previousStageId);
                 }
@@ -273,7 +273,7 @@ public class TestPipelineMetrics : IPipelineMetrics
         _totalExecutionTime.TotalSeconds > 0 ? _executionCount / _totalExecutionTime.TotalSeconds : 0;
     
     public double SuccessRate => 
-        _executionCount > 0 ? (double)_successCount / _executionCount * 100 : 0;
+        _executionCount > 0 ?(double)_successCount / _executionCount * 100 : 0;
     
     public long AverageMemoryUsage => 
         _executionCount > 0 ? _totalMemoryUsage / _executionCount : 0;
@@ -288,7 +288,7 @@ public class TestPipelineMetrics : IPipelineMetrics
 
     public void Reset()
     {
-        lock (_lock)
+        lock(_lock)
         {
             _executionCount = 0;
             _successCount = 0;
@@ -304,7 +304,7 @@ public class TestPipelineMetrics : IPipelineMetrics
 
     public string Export(MetricsExportFormat format)
     {
-        lock (_lock)
+        lock(_lock)
         {
             return format switch
             {
@@ -318,7 +318,7 @@ public class TestPipelineMetrics : IPipelineMetrics
 
     public void RecordExecutionStart()
     {
-        lock (_lock)
+        lock(_lock)
         {
             _executionCount++;
         }
@@ -326,22 +326,22 @@ public class TestPipelineMetrics : IPipelineMetrics
 
     public void RecordExecutionComplete(TimeSpan duration, bool success)
     {
-        lock (_lock)
+        lock(_lock)
         {
-            if (success)
+            if(success)
                 _successCount++;
             
             _totalExecutionTime = _totalExecutionTime.Add(duration);
             
-            if (duration < _minExecutionTime)
+            if(duration < _minExecutionTime)
                 _minExecutionTime = duration;
             
-            if (duration > _maxExecutionTime)
+            if(duration > _maxExecutionTime)
                 _maxExecutionTime = duration;
             
             var memoryUsage = GC.GetTotalMemory(false);
             _totalMemoryUsage += memoryUsage;
-            if (memoryUsage > _peakMemoryUsage)
+            if(memoryUsage > _peakMemoryUsage)
                 _peakMemoryUsage = memoryUsage;
                 
             _timeSeries.Add(new TimeSeriesMetric

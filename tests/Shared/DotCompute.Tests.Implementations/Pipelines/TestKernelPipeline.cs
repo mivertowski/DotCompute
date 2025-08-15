@@ -43,7 +43,7 @@ public class TestKernelPipeline : IKernelPipeline
         PipelineExecutionContext context,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
+        if(_disposed)
         {
             throw new ObjectDisposedException(nameof(TestKernelPipeline));
         }
@@ -65,17 +65,17 @@ public class TestKernelPipeline : IKernelPipeline
                 Message = $"Pipeline '{Name}' started"
             });
             
-            // Execute stages in order (respecting dependencies)
+            // Execute stages in order(respecting dependencies)
             var executedStages = new HashSet<string>();
             
-            while (executedStages.Count < _stages.Count)
+            while(executedStages.Count < _stages.Count)
             {
                 var stagesToExecute = _stages
                     .Where(s => !executedStages.Contains(s.Id) && 
                                s.Dependencies.All(d => executedStages.Contains(d)))
                     .ToList();
                 
-                if (stagesToExecute.Count == 0)
+                if(stagesToExecute.Count == 0)
                 {
                     // No stages can be executed - circular dependency or invalid configuration
                     throw new InvalidOperationException("Pipeline has circular dependencies or invalid stage configuration");
@@ -104,7 +104,7 @@ public class TestKernelPipeline : IKernelPipeline
                     executedStages.Add(stage.Id);
                     stageResults.Add(result);
                     
-                    if (result.Success)
+                    if(result.Success)
                     {
                         FireEvent(new PipelineEvent
                         {
@@ -115,7 +115,7 @@ public class TestKernelPipeline : IKernelPipeline
                         });
                         
                         // Merge outputs
-                        if (result.Outputs != null)
+                        if(result.Outputs != null)
                         {
                             foreach (var (key, value) in result.Outputs)
                             {
@@ -145,14 +145,14 @@ public class TestKernelPipeline : IKernelPipeline
                             Message = error.Message
                         });
                         
-                        if (!context.Options.ContinueOnError)
+                        if(!context.Options.ContinueOnError)
                         {
                             break;
                         }
                     }
                 }
                 
-                if (errors.Count > 0 && !context.Options.ContinueOnError)
+                if(errors.Count > 0 && !context.Options.ContinueOnError)
                 {
                     break;
                 }
@@ -198,7 +198,7 @@ public class TestKernelPipeline : IKernelPipeline
                 StageResults = stageResults
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             _metrics.RecordExecutionComplete(stopwatch.Elapsed, false);
@@ -259,13 +259,13 @@ public class TestKernelPipeline : IKernelPipeline
             var result = await stage.ExecuteAsync(context, cancellationToken);
             return result;
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
-            if (_errorHandler != null)
+            if(_errorHandler != null)
             {
                 var handlingResult = _errorHandler(ex, context);
                 
-                switch (handlingResult)
+                switch(handlingResult)
                 {
                     case ErrorHandlingResult.Retry:
                         // Retry once
@@ -310,11 +310,11 @@ public class TestKernelPipeline : IKernelPipeline
 
     private double CalculateThroughput(IReadOnlyList<StageExecutionResult> stageResults, TimeSpan totalDuration)
     {
-        if (totalDuration.TotalSeconds == 0)
+        if(totalDuration.TotalSeconds == 0)
             return 0;
         
         var totalBytes = CalculateTotalMemoryUsage(stageResults);
-        var totalMB = totalBytes / (1024.0 * 1024.0);
+        var totalMB = totalBytes /(1024.0 * 1024.0);
         
         return totalMB / totalDuration.TotalSeconds;
     }
@@ -333,7 +333,7 @@ public class TestKernelPipeline : IKernelPipeline
         foreach (var stage in _stages)
         {
             var validation = stage.Validate();
-            if (!validation.IsValid && validation.Errors != null)
+            if(!validation.IsValid && validation.Errors != null)
             {
                 errors.AddRange(validation.Errors.Select(e => new Core.Pipelines.ValidationError
                 {
@@ -343,7 +343,7 @@ public class TestKernelPipeline : IKernelPipeline
                 }));
             }
             
-            if (validation.Warnings != null)
+            if(validation.Warnings != null)
             {
                 warnings.AddRange(validation.Warnings.Select(w => new Core.Pipelines.ValidationWarning
                 {
@@ -355,7 +355,7 @@ public class TestKernelPipeline : IKernelPipeline
         }
         
         // Check for circular dependencies
-        if (HasCircularDependencies())
+        if(HasCircularDependencies())
         {
             errors.Add(new Core.Pipelines.ValidationError
             {
@@ -371,7 +371,7 @@ public class TestKernelPipeline : IKernelPipeline
         {
             foreach (var dep in stage.Dependencies)
             {
-                if (!stageIds.Contains(dep))
+                if(!stageIds.Contains(dep))
                 {
                     errors.Add(new Core.Pipelines.ValidationError
                     {
@@ -398,7 +398,7 @@ public class TestKernelPipeline : IKernelPipeline
         
         foreach (var stage in _stages)
         {
-            if (HasCircularDependencyDFS(stage.Id, visited, recursionStack))
+            if(HasCircularDependencyDFS(stage.Id, visited, recursionStack))
             {
                 return true;
             }
@@ -413,18 +413,18 @@ public class TestKernelPipeline : IKernelPipeline
         recursionStack.Add(stageId);
         
         var stage = _stages.FirstOrDefault(s => s.Id == stageId);
-        if (stage != null)
+        if(stage != null)
         {
             foreach (var dep in stage.Dependencies)
             {
-                if (!visited.Contains(dep))
+                if(!visited.Contains(dep))
                 {
-                    if (HasCircularDependencyDFS(dep, visited, recursionStack))
+                    if(HasCircularDependencyDFS(dep, visited, recursionStack))
                     {
                         return true;
                     }
                 }
-                else if (recursionStack.Contains(dep))
+                else if(recursionStack.Contains(dep))
                 {
                     return true;
                 }
@@ -465,7 +465,7 @@ public class TestKernelPipeline : IKernelPipeline
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed)
+        if(_disposed)
             return;
         
         _disposed = true;
@@ -473,11 +473,11 @@ public class TestKernelPipeline : IKernelPipeline
         // Dispose any disposable stages
         foreach (var stage in _stages)
         {
-            if (stage is IAsyncDisposable asyncDisposable)
+            if(stage is IAsyncDisposable asyncDisposable)
             {
                 await asyncDisposable.DisposeAsync();
             }
-            else if (stage is IDisposable disposable)
+            else if(stage is IDisposable disposable)
             {
                 disposable.Dispose();
             }

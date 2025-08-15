@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
@@ -28,14 +28,14 @@ public class QuickBuildTest
         var cpuDevice = provider.GetFirstDevice(AcceleratorType.CPU);
 
         // Basic assertions
-        if (cudaDevice != null)
+        if(cudaDevice != null)
         {
             var info = cudaDevice.ToAcceleratorInfo();
             var isHealthy = cudaDevice.HealthCheck();
             var properties = cudaDevice.GetProperties();
         }
 
-        if (cpuDevice != null)
+        if(cpuDevice != null)
         {
             var info = cpuDevice.ToAcceleratorInfo();
             var isHealthy = cpuDevice.HealthCheck();

@@ -9,7 +9,7 @@ using FluentAssertions;
 namespace DotCompute.Tests.Hardware.Libraries;
 
 /// <summary>
-/// Integration tests for cuBLAS (CUDA Basic Linear Algebra Subroutines) on RTX 2000 Ada Generation.
+/// Integration tests for cuBLAS(CUDA Basic Linear Algebra Subroutines) on RTX 2000 Ada Generation.
 /// Tests GPU-accelerated linear algebra operations and performance validation.
 /// </summary>
 [Trait("Category", "RTX2000")]
@@ -35,7 +35,7 @@ public class CuBLASIntegrationTests : IDisposable
         {
             // Initialize CUDA
             var result = CudaInit(0);
-            if (result != 0)
+            if(result != 0)
             {
                 _output.WriteLine($"CUDA initialization failed with error code: {result}");
                 return;
@@ -43,7 +43,7 @@ public class CuBLASIntegrationTests : IDisposable
 
             // Create CUDA context
             result = CudaCtxCreate(ref _cudaContext, 0, 0);
-            if (result != 0)
+            if(result != 0)
             {
                 _output.WriteLine($"CUDA context creation failed with error code: {result}");
                 return;
@@ -51,7 +51,7 @@ public class CuBLASIntegrationTests : IDisposable
 
             // Create cuBLAS handle
             var cublasResult = CublasCreate(ref _cublasHandle);
-            if (cublasResult == CublasStatus.CUBLAS_STATUS_SUCCESS)
+            if(cublasResult == CublasStatus.CUBLAS_STATUS_SUCCESS)
             {
                 _cublasInitialized = true;
                 _output.WriteLine("cuBLAS initialized successfully");
@@ -66,7 +66,7 @@ public class CuBLASIntegrationTests : IDisposable
                 _output.WriteLine($"cuBLAS initialization failed with status: {cublasResult}");
             }
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _output.WriteLine($"cuBLAS initialization exception: {ex.Message}");
         }
@@ -77,11 +77,11 @@ public class CuBLASIntegrationTests : IDisposable
     {
         Skip.IfNot(_cublasInitialized, "cuBLAS not available");
 
-        _cublasHandle.Should().Not.Be(IntPtr.Zero, "cuBLAS handle should be valid");
+        _cublasHandle.Should().NotBe(IntPtr.Zero, "cuBLAS handle should be valid");
         
         // Test basic cuBLAS functionality
         var result = CublasSetPointerMode(_cublasHandle, CublasPointerMode.CUBLAS_POINTER_MODE_HOST);
-        Assert.Equal(CublasStatus.CUBLAS_STATUS_SUCCESS, "Setting pointer mode should succeed", result);
+        result.Should().Be(CublasStatus.CUBLAS_STATUS_SUCCESS, "Setting pointer mode should succeed");
 
         _output.WriteLine("✓ cuBLAS initialization and basic operations validated");
         await Task.CompletedTask;
@@ -110,10 +110,10 @@ public class CuBLASIntegrationTests : IDisposable
             var h_x = new float[vectorSize];
             var h_y = new float[vectorSize];
             
-            for (int i = 0; i < vectorSize; i++)
+            for(int i = 0; i < vectorSize; i++)
             {
                 h_x[i] = i + 1.0f;
-                h_y[i] = (i + 1.0f) * 2.0f;
+                h_y[i] =(i + 1.0f) * 2.0f;
             }
 
             // Copy vectors to device
@@ -141,27 +141,27 @@ public class CuBLASIntegrationTests : IDisposable
             var cublasResult = CublasSdot(_cublasHandle, vectorSize, d_x, 1, d_y, 1, ref dotResult);
             
             sw.Stop();
-            Assert.Equal(CublasStatus.CUBLAS_STATUS_SUCCESS, "cuBLAS dot product should succeed", cublasResult);
+            cublasResult.Should().Be(CublasStatus.CUBLAS_STATUS_SUCCESS, "cuBLAS dot product should succeed");
 
             _output.WriteLine($"Dot product computed in {sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency:F1} μs");
             _output.WriteLine($"Result: {dotResult:E6}, Expected: {expectedDot:E6}");
 
-            // Validate result (allow for floating-point precision)
-            var relativeError = (float)Math.Abs((dotResult - expectedDot) / expectedDot);
-            Assert.True(relativeError < 1e-5, "Dot product should be accurate within floating-point precision");
+            // Validate result(allow for floating-point precision)
+            var relativeError =(float)Math.Abs((dotResult - expectedDot) / expectedDot);
+            relativeError.Should().BeLessThan(1e-5f, "Dot product should be accurate within floating-point precision");
 
             // Performance validation - should be much faster than CPU
-            var elementsPerSecond = vectorSize / ((sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency) / 1e6);
+            var elementsPerSecond = vectorSize /((sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency) / 1e6);
             _output.WriteLine($"Performance: {elementsPerSecond:E2} elements/second");
             
-            Assert.True(elementsPerSecond > 1e8, "cuBLAS should achieve high throughput");
+            elementsPerSecond.Should().BeGreaterThan(1e8, "cuBLAS should achieve high throughput");
 
             _output.WriteLine("✓ Vector dot product accuracy and performance validated");
         }
         finally
         {
-            if (d_x != IntPtr.Zero) CudaFree(d_x);
-            if (d_y != IntPtr.Zero) CudaFree(d_y);
+            if(d_x != IntPtr.Zero) CudaFree(d_x);
+            if(d_y != IntPtr.Zero) CudaFree(d_y);
         }
 
         await Task.CompletedTask;
@@ -196,14 +196,14 @@ public class CuBLASIntegrationTests : IDisposable
             var h_x = new float[matrixCols];
             var random = new Random(42);
 
-            for (int i = 0; i < matrixRows * matrixCols; i++)
+            for(int i = 0; i < matrixRows * matrixCols; i++)
             {
-                h_A[i] = (float)(random.NextDouble() * 2.0 - 1.0);
+                h_A[i] =(float)(random.NextDouble() * 2.0 - 1.0);
             }
             
-            for (int i = 0; i < matrixCols; i++)
+            for(int i = 0; i < matrixCols; i++)
             {
-                h_x[i] = (float)(random.NextDouble() * 2.0 - 1.0);
+                h_x[i] =(float)(random.NextDouble() * 2.0 - 1.0);
             }
 
             // Copy data to device
@@ -227,29 +227,31 @@ public class CuBLASIntegrationTests : IDisposable
             // Perform matrix-vector multiplication: y = alpha * A * x + beta * y
             var sw = Stopwatch.StartNew();
             
+            var alphaLocal = alpha;
+            var betaLocal = beta;
             var cublasResult = CublasSgemv(
                 _cublasHandle,
                 CublasOperation.CUBLAS_OP_N, // No transpose
                 matrixRows, matrixCols,
-                ref alpha,
-                d_A, matrixRows, // lda = matrixRows (column-major)
+                ref alphaLocal,
+                d_A, matrixRows, // lda = matrixRows(column-major)
                 d_x, 1,
-                ref beta,
+                ref betaLocal,
                 d_y, 1);
             
             sw.Stop();
-            Assert.Equal(CublasStatus.CUBLAS_STATUS_SUCCESS, "Matrix-vector multiplication should succeed", cublasResult);
+            cublasResult.Should().Be(CublasStatus.CUBLAS_STATUS_SUCCESS, "Matrix-vector multiplication should succeed");
 
-            _output.WriteLine($"Matrix-vector multiplication ({matrixRows}x{matrixCols}) completed in {sw.ElapsedMilliseconds} ms");
+            _output.WriteLine($"Matrix-vector multiplication{matrixRows}x{matrixCols}) completed in {sw.ElapsedMilliseconds} ms");
 
             // Calculate performance metrics
-            var totalOps = (long)matrixRows * matrixCols * 2; // FMA operations
-            var gflops = totalOps / (sw.ElapsedMilliseconds / 1000.0) / 1e9;
+            var totalOps =(long)matrixRows * matrixCols * 2; // FMA operations
+            var gflops = totalOps /(sw.ElapsedMilliseconds / 1000.0) / 1e9;
             
             _output.WriteLine($"Performance: {gflops:F2} GFLOPS");
 
             // Validate performance - RTX 2000 Ada Gen should achieve substantial GFLOPS
-            Assert.True(gflops > 100.0, "Matrix-vector multiplication should achieve high GFLOPS");
+            gflops.Should().BeGreaterThan(100.0, "Matrix-vector multiplication should achieve high GFLOPS");
 
             // Verify result by copying back and spot-checking
             var h_y = new float[matrixRows];
@@ -261,16 +263,16 @@ public class CuBLASIntegrationTests : IDisposable
                 Assert.Equal(0, result); // Result vector copy should succeed;
 
                 // Spot-check a few results manually
-                for (int row = 0; row < Math.Min(5, matrixRows); row++)
+                for(int row = 0; row < Math.Min(5, matrixRows); row++)
                 {
                     float expectedValue = 0.0f;
-                    for (int col = 0; col < matrixCols; col++)
+                    for(int col = 0; col < matrixCols; col++)
                     {
                         expectedValue += h_A[row + col * matrixRows] * h_x[col]; // Column-major indexing
                     }
 
-                    var error = (float)(Math.Abs(h_y[row] - expectedValue) / Math.Max(Math.Abs(expectedValue), 1e-6f));
-                    Assert.True(error < 1e-4, $"Result at row {row} should be accurate");
+                    var error =(float)(Math.Abs(h_y[row] - expectedValue) / Math.Max(Math.Abs(expectedValue), 1e-6f));
+                    error.Should().BeLessThan(1e-4f, $"Result at row {row} should be accurate");
                 }
             }
             finally
@@ -282,9 +284,9 @@ public class CuBLASIntegrationTests : IDisposable
         }
         finally
         {
-            if (d_A != IntPtr.Zero) CudaFree(d_A);
-            if (d_x != IntPtr.Zero) CudaFree(d_x);
-            if (d_y != IntPtr.Zero) CudaFree(d_y);
+            if(d_A != IntPtr.Zero) CudaFree(d_A);
+            if(d_x != IntPtr.Zero) CudaFree(d_x);
+            if(d_y != IntPtr.Zero) CudaFree(d_y);
         }
 
         await Task.CompletedTask;
@@ -321,10 +323,10 @@ public class CuBLASIntegrationTests : IDisposable
             var h_B = new float[matrixElements];
             var random = new Random(42);
 
-            for (int i = 0; i < matrixElements; i++)
+            for(int i = 0; i < matrixElements; i++)
             {
-                h_A[i] = (float)(random.NextDouble() * 2.0 - 1.0);
-                h_B[i] = (float)(random.NextDouble() * 2.0 - 1.0);
+                h_A[i] =(float)(random.NextDouble() * 2.0 - 1.0);
+                h_B[i] =(float)(random.NextDouble() * 2.0 - 1.0);
             }
 
             // Copy matrices to device
@@ -348,13 +350,15 @@ public class CuBLASIntegrationTests : IDisposable
             _output.WriteLine($"Performing {matrixSize}x{matrixSize} matrix multiplication...");
 
             // Warm-up run
+            var alphaLocal = alpha;
+            var betaLocal = beta;
             CublasSgemm(_cublasHandle,
                 CublasOperation.CUBLAS_OP_N, CublasOperation.CUBLAS_OP_N,
                 matrixSize, matrixSize, matrixSize,
-                ref alpha,
+                ref alphaLocal,
                 d_A, matrixSize,
                 d_B, matrixSize,
-                ref beta,
+                ref betaLocal,
                 d_C, matrixSize);
 
             CudaCtxSynchronize();
@@ -362,26 +366,28 @@ public class CuBLASIntegrationTests : IDisposable
             // Timed run
             var sw = Stopwatch.StartNew();
             
+            alphaLocal = alpha;
+            betaLocal = beta;
             var cublasResult = CublasSgemm(
                 _cublasHandle,
                 CublasOperation.CUBLAS_OP_N, CublasOperation.CUBLAS_OP_N,
                 matrixSize, matrixSize, matrixSize,
-                ref alpha,
+                ref alphaLocal,
                 d_A, matrixSize,
                 d_B, matrixSize,
-                ref beta,
+                ref betaLocal,
                 d_C, matrixSize);
             
             CudaCtxSynchronize();
             sw.Stop();
 
-            Assert.Equal(CublasStatus.CUBLAS_STATUS_SUCCESS, "Matrix multiplication should succeed", cublasResult);
+            cublasResult.Should().Be(CublasStatus.CUBLAS_STATUS_SUCCESS, "Matrix multiplication should succeed");
 
             // Calculate performance metrics
-            var totalOps = (long)matrixSize * matrixSize * matrixSize * 2; // FMA operations
-            var gflops = totalOps / (sw.ElapsedMilliseconds / 1000.0) / 1e9;
-            var matrixSizeGB = matrixSizeBytes * 3 / (1024.0 * 1024.0 * 1024.0);
-            var bandwidth = matrixSizeGB / (sw.ElapsedMilliseconds / 1000.0);
+            var totalOps =(long)matrixSize * matrixSize * matrixSize * 2; // FMA operations
+            var gflops = totalOps /(sw.ElapsedMilliseconds / 1000.0) / 1e9;
+            var matrixSizeGB = matrixSizeBytes * 3 /(1024.0 * 1024.0 * 1024.0);
+            var bandwidth = matrixSizeGB /(sw.ElapsedMilliseconds / 1000.0);
 
             _output.WriteLine($"Matrix multiplication performance:");
             _output.WriteLine($"  Execution time: {sw.ElapsedMilliseconds} ms");
@@ -390,8 +396,8 @@ public class CuBLASIntegrationTests : IDisposable
             _output.WriteLine($"  Matrix size: {matrixSize}x{matrixSize}");
 
             // Performance validation for RTX 2000 Ada Gen
-            Assert.True(gflops > 1000.0, "Matrix multiplication should achieve >1 TFLOPS on RTX 2000 Ada Gen");
-            Assert.True(bandwidth > 100.0, "Should achieve substantial memory bandwidth");
+            gflops.Should().BeGreaterThan(1000.0, "Matrix multiplication should achieve >1 TFLOPS on RTX 2000 Ada Gen");
+            bandwidth.Should().BeGreaterThan(100.0, "Should achieve substantial memory bandwidth");
 
             // Validate a portion of the result
             var h_C = new float[matrixElements];
@@ -403,13 +409,13 @@ public class CuBLASIntegrationTests : IDisposable
                 Assert.Equal(0, result); // Result matrix copy should succeed;
 
                 // Verify a few random elements using CPU computation
-                for (int verification = 0; verification < 10; verification++)
+                for(int verification = 0; verification < 10; verification++)
                 {
                     int row = random.Next(matrixSize);
                     int col = random.Next(matrixSize);
                     
                     float expectedValue = 0.0f;
-                    for (int k = 0; k < matrixSize; k++)
+                    for(int k = 0; k < matrixSize; k++)
                     {
                         expectedValue += h_A[row + k * matrixSize] * h_B[k + col * matrixSize];
                     }
@@ -417,7 +423,7 @@ public class CuBLASIntegrationTests : IDisposable
                     float actualValue = h_C[row + col * matrixSize];
                     var error = Math.Abs(actualValue - expectedValue) / Math.Max(Math.Abs(expectedValue), 1e-6f);
                     
-                    error.Should().BeLessThan(1e-3, $"Result at ({row},{col}) should be accurate within tolerance");
+                    error.Should().BeLessThan(1e-3f, $"Result at{row},{col}) should be accurate within tolerance");
                 }
             }
             finally
@@ -429,9 +435,9 @@ public class CuBLASIntegrationTests : IDisposable
         }
         finally
         {
-            if (d_A != IntPtr.Zero) CudaFree(d_A);
-            if (d_B != IntPtr.Zero) CudaFree(d_B);
-            if (d_C != IntPtr.Zero) CudaFree(d_C);
+            if(d_A != IntPtr.Zero) CudaFree(d_A);
+            if(d_B != IntPtr.Zero) CudaFree(d_B);
+            if(d_C != IntPtr.Zero) CudaFree(d_C);
         }
 
         await Task.CompletedTask;
@@ -470,10 +476,10 @@ public class CuBLASIntegrationTests : IDisposable
             var h_B = new float[matrixElements * batchSize];
             var random = new Random(42);
 
-            for (int i = 0; i < h_A.Length; i++)
+            for(int i = 0; i < h_A.Length; i++)
             {
-                h_A[i] = (float)(random.NextDouble() * 2.0 - 1.0);
-                h_B[i] = (float)(random.NextDouble() * 2.0 - 1.0);
+                h_A[i] =(float)(random.NextDouble() * 2.0 - 1.0);
+                h_B[i] =(float)(random.NextDouble() * 2.0 - 1.0);
             }
 
             // Copy to device
@@ -501,7 +507,7 @@ public class CuBLASIntegrationTests : IDisposable
             var h_B_array = new IntPtr[batchSize];
             var h_C_array = new IntPtr[batchSize];
 
-            for (int i = 0; i < batchSize; i++)
+            for(int i = 0; i < batchSize; i++)
             {
                 h_A_array[i] = new IntPtr(d_A.ToInt64() + i * matrixSizeBytes);
                 h_B_array[i] = new IntPtr(d_B.ToInt64() + i * matrixSizeBytes);
@@ -538,26 +544,28 @@ public class CuBLASIntegrationTests : IDisposable
                 // Perform batched matrix multiplication
                 var sw = Stopwatch.StartNew();
                 
+                var alphaLocal = alpha;
+                var betaLocal = beta;
                 var cublasResult = CublasSgemmBatched(
                     _cublasHandle,
                     CublasOperation.CUBLAS_OP_N, CublasOperation.CUBLAS_OP_N,
                     matrixSize, matrixSize, matrixSize,
-                    ref alpha,
+                    ref alphaLocal,
                     d_A_array, matrixSize,
                     d_B_array, matrixSize,
-                    ref beta,
+                    ref betaLocal,
                     d_C_array, matrixSize,
                     batchSize);
                 
                 CudaCtxSynchronize();
                 sw.Stop();
 
-                Assert.Equal(CublasStatus.CUBLAS_STATUS_SUCCESS, "Batched matrix multiplication should succeed", cublasResult);
+                cublasResult.Should().Be(CublasStatus.CUBLAS_STATUS_SUCCESS, "Batched matrix multiplication should succeed");
 
                 // Calculate performance metrics
-                var totalOps = (long)batchSize * matrixSize * matrixSize * matrixSize * 2;
-                var gflops = totalOps / (sw.ElapsedMilliseconds / 1000.0) / 1e9;
-                var avgTimePerMatrix = sw.ElapsedMilliseconds / (double)batchSize;
+                var totalOps =(long)batchSize * matrixSize * matrixSize * matrixSize * 2;
+                var gflops = totalOps /(sw.ElapsedMilliseconds / 1000.0) / 1e9;
+                var avgTimePerMatrix = sw.ElapsedMilliseconds /(double)batchSize;
 
                 _output.WriteLine($"Batched matrix multiplication performance:");
                 _output.WriteLine($"  Total execution time: {sw.ElapsedMilliseconds} ms");
@@ -566,8 +574,8 @@ public class CuBLASIntegrationTests : IDisposable
                 _output.WriteLine($"  Batch size: {batchSize}");
 
                 // Performance validation
-                Assert.True(gflops > 500.0, "Batched operations should achieve high throughput");
-                Assert.True(avgTimePerMatrix < 50.0, "Individual matrices should be processed quickly");
+                gflops.Should().BeGreaterThan(500.0, "Batched operations should achieve high throughput");
+                avgTimePerMatrix .Should().BeLessThan(50.0, "Individual matrices should be processed quickly");
 
                 _output.WriteLine("✓ Batched matrix operations performance validated");
             }
@@ -577,16 +585,16 @@ public class CuBLASIntegrationTests : IDisposable
                 h_B_array_handle.Free();
                 h_C_array_handle.Free();
                 
-                if (d_A_array != IntPtr.Zero) CudaFree(d_A_array);
-                if (d_B_array != IntPtr.Zero) CudaFree(d_B_array);
-                if (d_C_array != IntPtr.Zero) CudaFree(d_C_array);
+                if(d_A_array != IntPtr.Zero) CudaFree(d_A_array);
+                if(d_B_array != IntPtr.Zero) CudaFree(d_B_array);
+                if(d_C_array != IntPtr.Zero) CudaFree(d_C_array);
             }
         }
         finally
         {
-            if (d_A != IntPtr.Zero) CudaFree(d_A);
-            if (d_B != IntPtr.Zero) CudaFree(d_B);
-            if (d_C != IntPtr.Zero) CudaFree(d_C);
+            if(d_A != IntPtr.Zero) CudaFree(d_A);
+            if(d_B != IntPtr.Zero) CudaFree(d_B);
+            if(d_C != IntPtr.Zero) CudaFree(d_C);
         }
 
         await Task.CompletedTask;
@@ -594,13 +602,13 @@ public class CuBLASIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        if (_cublasHandle != IntPtr.Zero)
+        if(_cublasHandle != IntPtr.Zero)
         {
             CublasDestroy(_cublasHandle);
             _cublasHandle = IntPtr.Zero;
         }
 
-        if (_cudaContext != IntPtr.Zero)
+        if(_cudaContext != IntPtr.Zero)
         {
             CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
@@ -713,7 +721,7 @@ public static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
-        if (!condition)
+        if(!condition)
         {
             throw new SkipException(reason);
         }

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
@@ -37,7 +37,7 @@ public class TestMemoryManager : IMemoryManager
     {
         ThrowIfDisposed();
 
-        if (sizeInBytes <= 0)
+        if(sizeInBytes <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size must be positive");
         }
@@ -72,17 +72,17 @@ public class TestMemoryManager : IMemoryManager
     {
         ThrowIfDisposed();
 
-        if (buffer == null)
+        if(buffer == null)
         {
             throw new ArgumentNullException(nameof(buffer));
         }
 
-        if (buffer is not TestMemoryBuffer testBuffer)
+        if(buffer is not TestMemoryBuffer testBuffer)
         {
             throw new ArgumentException("Buffer must be a TestMemoryBuffer", nameof(buffer));
         }
 
-        if (offset < 0 || length <= 0 || offset + length > testBuffer.SizeInBytes)
+        if(offset < 0 || length <= 0 || offset + length > testBuffer.SizeInBytes)
         {
             throw new ArgumentOutOfRangeException("Invalid offset or length for buffer view");
         }
@@ -147,7 +147,7 @@ public class TestMemoryManager : IMemoryManager
     /// <param name="buffer">The buffer to free</param>
     public void Free(IMemoryBuffer buffer)
     {
-        if (buffer is TestMemoryBuffer testBuffer)
+        if(buffer is TestMemoryBuffer testBuffer)
         {
             // The TestMemoryBuffer.Dispose() method will call ReleaseBuffer internally
             testBuffer.Dispose();
@@ -188,7 +188,7 @@ public class TestMemoryManager : IMemoryManager
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
+        if(_disposed)
         {
             throw new ObjectDisposedException(nameof(TestMemoryManager));
         }
@@ -199,7 +199,7 @@ public class TestMemoryManager : IMemoryManager
     /// </summary>
     public void Dispose()
     {
-        if (_disposed)
+        if(_disposed)
             return;
 
         Clear();
@@ -250,7 +250,7 @@ public class TestMemoryBuffer : IMemoryBuffer
         ThrowIfDisposed();
 
         var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(source.Span);
-        if (offset + sourceBytes.Length > SizeInBytes)
+        if(offset + sourceBytes.Length > SizeInBytes)
         {
             throw new ArgumentException("Source data is too large for buffer");
         }
@@ -268,7 +268,7 @@ public class TestMemoryBuffer : IMemoryBuffer
         ThrowIfDisposed();
 
         var destBytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(destination.Span);
-        if (offset + destBytes.Length > SizeInBytes)
+        if(offset + destBytes.Length > SizeInBytes)
         {
             throw new ArgumentException("Destination buffer is too small");
         }
@@ -279,7 +279,7 @@ public class TestMemoryBuffer : IMemoryBuffer
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
+        if(_disposed)
         {
             throw new ObjectDisposedException(nameof(TestMemoryBuffer));
         }
@@ -288,7 +288,7 @@ public class TestMemoryBuffer : IMemoryBuffer
     /// <inheritdoc/>
     public void Dispose()
     {
-        if (_disposed)
+        if(_disposed)
             return;
 
         _manager.ReleaseBuffer(_bufferId);
@@ -334,7 +334,7 @@ public class TestMemoryBufferView : TestMemoryBuffer
     /// <summary>
     /// Gets access to the view data
     /// </summary>
-    public new ReadOnlySpan<byte> Data => _parentBuffer.Data.Slice((int)_offset, (int)_length);
+    public new ReadOnlySpan<byte> Data => _parentBuffer.Data.Slice((int)_offset,(int)_length);
 
     /// <inheritdoc/>
     public override ValueTask CopyFromHostAsync<T>(
@@ -342,7 +342,7 @@ public class TestMemoryBufferView : TestMemoryBuffer
         long offset = 0,
         CancellationToken cancellationToken = default)
     {
-        if (IsDisposed)
+        if(IsDisposed)
         {
             throw new ObjectDisposedException(nameof(TestMemoryBufferView));
         }
@@ -357,7 +357,7 @@ public class TestMemoryBufferView : TestMemoryBuffer
         long offset = 0,
         CancellationToken cancellationToken = default)
     {
-        if (IsDisposed)
+        if(IsDisposed)
         {
             throw new ObjectDisposedException(nameof(TestMemoryBufferView));
         }

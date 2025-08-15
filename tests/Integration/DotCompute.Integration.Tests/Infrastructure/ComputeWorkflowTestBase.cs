@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -59,7 +59,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
         var stopwatch = Stopwatch.StartNew();
         var executionId = Guid.NewGuid().ToString();
         
-        Logger.LogInformation("Starting compute workflow '{WorkflowName}' (ID: {ExecutionId})", 
+        Logger.LogInformation("Starting compute workflow '{WorkflowName}'ID: {ExecutionId})", 
             workflowName, executionId);
 
         try
@@ -94,7 +94,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
                 ExecutionId = executionId,
                 TotalDuration = stopwatch.Elapsed,
                 CompilationTime = compilationResults.Values.Sum(r => r.CompilationTime.TotalMilliseconds),
-                ExecutionTime = executionResults.Values.Sum(r => r.ExecutionTime.TotalMilliseconds),
+                ExecutionTime = executionResults.Values.Sum(r => r.Duration.TotalMilliseconds),
                 MemoryUsageDelta = finalStats.UsedMemory - initialStats.UsedMemory,
                 ThroughputMBps = CalculateThroughput(workflow, stopwatch.Elapsed),
                 ResourceUtilization = ResourceTracker.GetUtilization(executionId)
@@ -118,7 +118,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
                 Metrics = performanceMetrics
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             stopwatch.Stop();
             ResourceTracker.EndTracking(executionId);
@@ -175,7 +175,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
                 Logger.LogDebug("Successfully compiled kernel '{KernelName}' in {Duration}ms",
                     kernel.Name, compilationStopwatch.ElapsedMilliseconds);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 compilationStopwatch.Stop();
                 
@@ -248,7 +248,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
             
             try
             {
-                if (!compilationResults.TryGetValue(stage.KernelName, out var compilationResult) ||
+                if(!compilationResults.TryGetValue(stage.KernelName, out var compilationResult) ||
                     !compilationResult.Success)
                 {
                     throw new InvalidOperationException($"Kernel '{stage.KernelName}' was not successfully compiled");
@@ -272,14 +272,14 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
                     StageId = stage.Name,
                     Success = true,
                     Duration = stageStopwatch.Elapsed,
-                    ExecutionTime = stageStopwatch.Elapsed,
+                    // ExecutionTime property removed - using Duration instead
                     Outputs = new Dictionary<string, object>()
                 };
 
                 Logger.LogDebug("Successfully executed stage '{StageName}' in {Duration}ms",
                     stage.Name, stageStopwatch.ElapsedMilliseconds);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 stageStopwatch.Stop();
                 
@@ -288,7 +288,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
                     StageId = stage.Name,
                     Success = false,
                     Duration = stageStopwatch.Elapsed,
-                    ExecutionTime = stageStopwatch.Elapsed,
+                    // ExecutionTime property removed - using Duration instead
                     Error = ex,
                     Outputs = new Dictionary<string, object>()
                 };
@@ -296,7 +296,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
                 Logger.LogWarning(ex, "Failed to execute stage '{StageName}' after {Duration}ms",
                     stage.Name, stageStopwatch.ElapsedMilliseconds);
 
-                if (!workflow.ContinueOnError)
+                if(!workflow.ContinueOnError)
                     throw;
             }
         }
@@ -313,22 +313,22 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
 
         foreach (var argName in stage.ArgumentNames)
         {
-            if (memoryContext.InputBuffers.TryGetValue(argName, out var inputBuffer))
+            if(memoryContext.InputBuffers.TryGetValue(argName, out var inputBuffer))
             {
                 arguments.Add(inputBuffer);
             }
-            else if (memoryContext.OutputBuffers.TryGetValue(argName, out var outputBuffer))
+            else if(memoryContext.OutputBuffers.TryGetValue(argName, out var outputBuffer))
             {
                 arguments.Add(outputBuffer);
             }
-            else if (memoryContext.IntermediateBuffers.TryGetValue(argName, out var intermediateBuffer))
+            else if(memoryContext.IntermediateBuffers.TryGetValue(argName, out var intermediateBuffer))
             {
                 arguments.Add(intermediateBuffer);
             }
             else
             {
                 // Assume it's a scalar value stored in stage parameters
-                if (stage.Parameters.TryGetValue(argName, out var parameter))
+                if(stage.Parameters.TryGetValue(argName, out var parameter))
                 {
                     arguments.Add(parameter);
                 }
@@ -354,7 +354,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
 
         foreach (var output in workflow.Outputs)
         {
-            if (memoryContext.OutputBuffers.TryGetValue(output.Name, out var buffer))
+            if(memoryContext.OutputBuffers.TryGetValue(output.Name, out var buffer))
             {
                 var data = await ReadBufferAsync<float>(buffer);
                 results[output.Name] = data;
@@ -375,22 +375,22 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
 
         foreach (var expectedOutput in workflow.Outputs)
         {
-            if (!results.ContainsKey(expectedOutput.Name))
+            if(!results.ContainsKey(expectedOutput.Name))
             {
                 validation.IsValid = false;
                 validation.Issues.Add($"Missing expected output: {expectedOutput.Name}");
                 continue;
             }
 
-            if (results[expectedOutput.Name] is float[] data)
+            if(results[expectedOutput.Name] is float[] data)
             {
-                if (data.Length != expectedOutput.Size)
+                if(data.Length != expectedOutput.Size)
                 {
                     validation.IsValid = false;
                     validation.Issues.Add($"Output '{expectedOutput.Name}' size mismatch: expected {expectedOutput.Size}, got {data.Length}");
                 }
 
-                if (expectedOutput.Validator != null && !expectedOutput.Validator(data))
+                if(expectedOutput.Validator != null && !expectedOutput.Validator(data))
                 {
                     validation.IsValid = false;
                     validation.Issues.Add($"Output '{expectedOutput.Name}' failed validation");
@@ -408,7 +408,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
     {
         var totalDataMB = workflow.Inputs.Sum(i => i.Data.Length * sizeof(float)) +
                          workflow.Outputs.Sum(o => o.Size * sizeof(float));
-        totalDataMB /= (1024 * 1024); // Convert to MB
+        totalDataMB /=(1024 * 1024); // Convert to MB
 
         return totalDataMB / duration.TotalSeconds;
     }
@@ -430,11 +430,11 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
         public static float[] GenerateGaussianArray(int size, float mean = 0f, float stdDev = 1f)
         {
             var result = new float[size];
-            for (int i = 0; i < size; i += 2)
+            for(int i = 0; i < size; i += 2)
             {
-                var (g1, g2) = GenerateGaussianPair(mean, stdDev);
+                var(g1, g2) = GenerateGaussianPair(mean, stdDev);
                 result[i] = g1;
-                if (i + 1 < size) result[i + 1] = g2;
+                if(i + 1 < size) result[i + 1] = g2;
             }
             return result;
         }
@@ -442,14 +442,14 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
         public static float[] GenerateSparseArray(int size, float sparsity = 0.9f)
         {
             var result = new float[size];
-            for (int i = 0; i < size; i++)
+            for(int i = 0; i < size; i++)
             {
-                result[i] = Random.NextDouble() < sparsity ? 0f : (float)Random.NextDouble() * 100f;
+                result[i] = Random.NextDouble() < sparsity ? 0f :(float)Random.NextDouble() * 100f;
             }
             return result;
         }
 
-        private static (float, float) GenerateGaussianPair(float mean, float stdDev)
+        private static(float, float) GenerateGaussianPair(float mean, float stdDev)
         {
             var u1 = 1.0 - Random.NextDouble();
             var u2 = 1.0 - Random.NextDouble();
@@ -461,7 +461,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
             var randStdNormal2 = Math.Sqrt(-2.0 * Math.Log(u3)) * Math.Cos(2.0 * Math.PI * u4);
             var randNormal2 = mean + stdDev * randStdNormal2;
             
-            return ((float)randNormal, (float)randNormal2);
+            return((float)randNormal,(float)randNormal2);
         }
     }
 }
@@ -599,7 +599,7 @@ public class TestResourceTracker : IDisposable
 
     public void EndTracking(string sessionId)
     {
-        if (_sessions.TryRemove(sessionId, out var session))
+        if(_sessions.TryRemove(sessionId, out var session))
         {
             session.EndTime = DateTime.UtcNow;
         }
@@ -607,7 +607,7 @@ public class TestResourceTracker : IDisposable
 
     public ResourceUtilization GetUtilization(string sessionId)
     {
-        if (_sessions.TryGetValue(sessionId, out var session) && session.Samples.Count > 0)
+        if(_sessions.TryGetValue(sessionId, out var session) && session.Samples.Count > 0)
         {
             return new ResourceUtilization
             {
@@ -622,11 +622,11 @@ public class TestResourceTracker : IDisposable
 
     private void MonitorResources(object? state)
     {
-        if (_disposed) return;
+        if(_disposed) return;
 
         var currentTime = DateTime.UtcNow;
         
-        // Sample current resource usage (simplified for testing)
+        // Sample current resource usage(simplified for testing)
         var sample = new ResourceSample
         {
             Timestamp = currentTime,
@@ -637,7 +637,7 @@ public class TestResourceTracker : IDisposable
 
         foreach (var session in _sessions.Values)
         {
-            if (session.EndTime == null) // Still active
+            if(session.EndTime == null) // Still active
             {
                 session.Samples.Add(sample);
             }
@@ -646,7 +646,7 @@ public class TestResourceTracker : IDisposable
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _monitoringTimer?.Dispose();
             _sessions.Clear();

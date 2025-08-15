@@ -56,7 +56,7 @@ public class EndToEndWorkflowTests : IDisposable
         {
             // Step 1: Create test data
             var inputA = Enumerable.Range(0, vectorSize).Select(i => (float)i).ToArray();
-            var inputB = Enumerable.Range(0, vectorSize).Select(i => (float)i * 2).ToArray();
+            var inputB = Enumerable.Range(0, vectorSize).Select(i => (float)(i * 2)).ToArray();
             var expectedResult = inputA.Zip(inputB, (a, b) => a + b).ToArray();
 
             _output.WriteLine("✓ Test data created");
@@ -81,7 +81,7 @@ public class EndToEndWorkflowTests : IDisposable
 
             _output.WriteLine("✓ Data copied to GPU");
 
-            // Step 5: Execute kernel (simulated)
+            // Step 5: Execute kernel(simulated)
             var kernelExecutionTime = await ExecuteVectorAdditionKernel(bufferA, bufferB, bufferResult);
 
             _output.WriteLine($"✓ Kernel executed in {kernelExecutionTime:F2} ms");
@@ -93,7 +93,7 @@ public class EndToEndWorkflowTests : IDisposable
             _output.WriteLine("✓ Results copied back from GPU");
 
             // Step 7: Validate results
-            for (int i = 0; i < Math.Min(1000, vectorSize); i++) // Sample validation
+            for(int i = 0; i < Math.Min(1000, vectorSize); i++) // Sample validation
             {
                 actualResult[i].Should().BeApproximately(expectedResult[i], 0.001f, 
                     $"Result at index {i} should match expected value");
@@ -102,16 +102,16 @@ public class EndToEndWorkflowTests : IDisposable
             _output.WriteLine("✓ Results validated successfully");
 
             // Performance validation
-            var elementsPerSecond = vectorSize / (kernelExecutionTime / 1000.0);
-            var bandwidth = (vectorSize * 3 * sizeof(float)) / (kernelExecutionTime / 1000.0) / (1024 * 1024 * 1024);
+            var elementsPerSecond = vectorSize /(kernelExecutionTime / 1000.0);
+            var bandwidth =(vectorSize * 3 * sizeof(float)) /(kernelExecutionTime / 1000.0) /(1024 * 1024 * 1024);
             
             _output.WriteLine($"Performance metrics:");
             _output.WriteLine($"  Elements/sec: {elementsPerSecond:E2}");
             _output.WriteLine($"  Effective bandwidth: {bandwidth:F2} GB/s");
 
-            Assert.True(elementsPerSecond > 1e6, "Should process at least 1M elements per second");
+            elementsPerSecond.Should().BeGreaterThan(1e6, "Should process at least 1M elements per second");
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _output.WriteLine($"End-to-end test failed: {ex.Message}");
             throw;
@@ -125,7 +125,7 @@ public class EndToEndWorkflowTests : IDisposable
 
         const int matrixSize = 512; // 512x512 matrices
         
-        _output.WriteLine($"Starting end-to-end matrix multiplication workflow ({matrixSize}x{matrixSize})");
+        _output.WriteLine($"Starting end-to-end matrix multiplication workflow{matrixSize}x{matrixSize})");
 
         try
         {
@@ -166,22 +166,22 @@ public class EndToEndWorkflowTests : IDisposable
 
             _output.WriteLine("✓ Result matrix copied back from GPU");
 
-            // Step 7: Validate results (sample-based for performance)
+            // Step 7: Validate results(sample-based for performance)
             ValidateMatrixResults(expectedResult, actualResult, matrixSize, sampleSize: 1000);
 
             _output.WriteLine("✓ Matrix multiplication results validated");
 
             // Performance analysis
-            var totalOperations = (long)matrixSize * matrixSize * matrixSize * 2; // FMA operations
-            var gflops = totalOperations / (kernelExecutionTime / 1000.0) / 1e9;
+            var totalOperations =(long)matrixSize * matrixSize * matrixSize * 2; // FMA operations
+            var gflops = totalOperations /(kernelExecutionTime / 1000.0) / 1e9;
             
             _output.WriteLine($"Performance metrics:");
             _output.WriteLine($"  GFLOPS: {gflops:F2}");
             _output.WriteLine($"  Execution time: {kernelExecutionTime:F2} ms");
 
-            Assert.True(gflops > 100, "Should achieve significant GFLOPS for matrix multiplication");
+            gflops.Should().BeGreaterThan(100, "Should achieve significant GFLOPS for matrix multiplication");
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _output.WriteLine($"Matrix multiplication test failed: {ex.Message}");
             throw;
@@ -207,33 +207,33 @@ public class EndToEndWorkflowTests : IDisposable
             var memoryManager = new MockUnifiedMemoryManager();
 
             // Step 2: Multi-stage processing pipeline
-            using var stageBuffers = new MockUnifiedBuffer<float>[4];
-            for (int i = 0; i < stageBuffers.Length; i++)
+            var stageBuffers = new MockUnifiedBuffer<float>[4];
+            for(int i = 0; i < stageBuffers.Length; i++)
             {
                 stageBuffers[i] = await memoryManager.AllocateAsync<float>(datasetSize);
             }
 
             _output.WriteLine("✓ Pipeline buffers allocated");
 
-            // Stage 1: Data preprocessing (normalization)
+            // Stage 1: Data preprocessing(normalization)
             await stageBuffers[0].CopyFromAsync(inputData);
             var stage1Time = await ExecuteNormalizationKernel(stageBuffers[0], stageBuffers[1]);
-            _output.WriteLine($"✓ Stage 1 (Normalization): {stage1Time:F2} ms");
+            _output.WriteLine($"✓ Stage 1Normalization): {stage1Time:F2} ms");
 
-            // Stage 2: Feature extraction (filtering)
+            // Stage 2: Feature extraction(filtering)
             var stage2Time = await ExecuteFilteringKernel(stageBuffers[1], stageBuffers[2]);
-            _output.WriteLine($"✓ Stage 2 (Filtering): {stage2Time:F2} ms");
+            _output.WriteLine($"✓ Stage 2Filtering): {stage2Time:F2} ms");
 
-            // Stage 3: Statistical analysis (reduction)
+            // Stage 3: Statistical analysis(reduction)
             var stage3Time = await ExecuteReductionKernel(stageBuffers[2], stageBuffers[3]);
-            _output.WriteLine($"✓ Stage 3 (Reduction): {stage3Time:F2} ms");
+            _output.WriteLine($"✓ Stage 3Reduction): {stage3Time:F2} ms");
 
             // Step 3: Retrieve and validate results
             var finalResults = new float[datasetSize];
             await stageBuffers[3].CopyToAsync(finalResults);
 
             var totalPipelineTime = stage1Time + stage2Time + stage3Time;
-            var throughput = datasetSize / (totalPipelineTime / 1000.0);
+            var throughput = datasetSize /(totalPipelineTime / 1000.0);
 
             _output.WriteLine($"Pipeline completed:");
             _output.WriteLine($"  Total time: {totalPipelineTime:F2} ms");
@@ -241,14 +241,14 @@ public class EndToEndWorkflowTests : IDisposable
             _output.WriteLine($"  Average per stage: {totalPipelineTime / 3:F2} ms");
 
             // Validate pipeline efficiency
-            Assert.True(throughput > 1e6, "Pipeline should maintain high throughput");
-            Assert.True(totalPipelineTime < 5000, "Pipeline should complete within reasonable time");
+            throughput.Should().BeGreaterThan(1e6, "Pipeline should maintain high throughput");
+            totalPipelineTime .Should().BeLessThan(5000, "Pipeline should complete within reasonable time");
 
             // Validate data integrity through pipeline
             ValidatePipelineResults(inputData, finalResults);
             _output.WriteLine("✓ Pipeline data integrity validated");
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             _output.WriteLine($"Pipeline test failed: {ex.Message}");
             throw;
@@ -303,9 +303,9 @@ public class EndToEndWorkflowTests : IDisposable
         var random = new Random(seed);
         var matrix = new float[rows * cols];
         
-        for (int i = 0; i < matrix.Length; i++)
+        for(int i = 0; i < matrix.Length; i++)
         {
-            matrix[i] = (float)(random.NextDouble() * 2.0 - 1.0);
+            matrix[i] =(float)(random.NextDouble() * 2.0 - 1.0);
         }
         
         return matrix;
@@ -315,12 +315,12 @@ public class EndToEndWorkflowTests : IDisposable
     {
         var result = new float[size * size];
         
-        for (int i = 0; i < size; i++)
+        for(int i = 0; i < size; i++)
         {
-            for (int j = 0; j < size; j++)
+            for(int j = 0; j < size; j++)
             {
                 float sum = 0;
-                for (int k = 0; k < size; k++)
+                for(int k = 0; k < size; k++)
                 {
                     sum += a[i * size + k] * b[k * size + j];
                 }
@@ -336,7 +336,7 @@ public class EndToEndWorkflowTests : IDisposable
         var random = new Random(44);
         var totalElements = size * size;
         
-        for (int i = 0; i < sampleSize; i++)
+        for(int i = 0; i < sampleSize; i++)
         {
             var index = random.Next(totalElements);
             actual[index].Should().BeApproximately(expected[index], 0.01f,
@@ -349,10 +349,10 @@ public class EndToEndWorkflowTests : IDisposable
         var data = new float[size];
         var random = new Random(45);
         
-        for (int i = 0; i < size; i++)
+        for(int i = 0; i < size; i++)
         {
             // Generate complex synthetic data with patterns
-            data[i] = (float)(Math.Sin(i * 0.001) * random.NextDouble() + random.NextGaussian() * 0.1);
+            data[i] =(float)(Math.Sin(i * 0.001) * random.NextDouble() + random.NextGaussian() * 0.1);
         }
         
         return data;
@@ -453,7 +453,7 @@ public static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
-        if (!condition)
+        if(!condition)
         {
             throw new SkipException(reason);
         }

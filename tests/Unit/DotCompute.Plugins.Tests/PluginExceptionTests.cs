@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Plugins.Exceptions;
@@ -22,8 +22,8 @@ public class PluginExceptionTests
         // Assert
         Assert.NotNull(exception);
         exception.Message.Should().NotBeNullOrEmpty();
-        exception.Assert.Null(PluginId);
-        exception.Assert.Null(InnerException);
+        exception.PluginId.Should().BeNull();
+        exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public class PluginExceptionTests
 
         // Assert
         exception.Message.Should().Be(message);
-        exception.Assert.Null(PluginId);
+        exception.PluginId.Should().BeNull();
     }
 
     [Fact]
@@ -52,8 +52,8 @@ public class PluginExceptionTests
 
         // Assert
         exception.Message.Should().Be(message);
-        exception.InnerException.BeSameAs(innerException);
-        exception.Assert.Null(PluginId);
+        exception.InnerException.Should().BeSameAs(innerException);
+        exception.PluginId.Should().BeNull();
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class PluginExceptionTests
         // Assert
         exception.Message.Should().Be(message);
         exception.PluginId.Should().Be(pluginId);
-        exception.InnerException.BeSameAs(innerException);
+        exception.InnerException.Should().BeSameAs(innerException);
     }
 
     [Fact]
@@ -121,7 +121,7 @@ public class PluginExceptionTests
         exception.Message.Should().Be(message);
         exception.PluginId.Should().Be(pluginId);
         exception.FilePath.Should().Be(filePath);
-        exception.InnerException.BeSameAs(innerException);
+        exception.InnerException.Should().BeSameAs(innerException);
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public class PluginExceptionTests
         // Assert
         exception.Message.Should().Be(message);
         exception.PluginId.Should().Be(pluginId);
-        exception.ValidationErrors.BeEquivalentTo(errors);
+        exception.ValidationErrors.Should().BeEquivalentTo(errors);
     }
 
     [Fact]
@@ -278,7 +278,7 @@ public class PluginExceptionTests
     public void AllPluginExceptions_AreSerializable(Type exceptionType)
     {
         // Assert
-        exceptionType.BeDecoratedWith<SerializableAttribute>();
+        exceptionType.Should().BeDecoratedWith<SerializableAttribute>();
     }
 
     [Fact]
@@ -294,7 +294,7 @@ public class PluginExceptionTests
 
         // Assert
         Assert.Contains(message, result);
-        result.Contain(typeof(PluginException).FullName!);
+        result.Should().Contain(typeof(PluginException).FullName!);
     }
 
     [Fact]
@@ -311,7 +311,7 @@ public class PluginExceptionTests
 
         // Assert
         Assert.Contains(message, result);
-        result.Contain(typeof(PluginLoadException).FullName!);
+        result.Should().Contain(typeof(PluginLoadException).FullName!);
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public class PluginExceptionTests
 
         // Assert
         Assert.Contains(message, result);
-        result.Contain(typeof(PluginDependencyException).FullName!);
+        result.Should().Contain(typeof(PluginDependencyException).FullName!);
     }
 
     [Fact]
@@ -339,7 +339,7 @@ public class PluginExceptionTests
 
         // Assert
         exception.ValidationErrors.Should().NotBeNull();
-        exception.Assert.Empty(ValidationErrors);
+        exception.ValidationErrors.Should().BeEmpty();
     }
 
     [Fact]
@@ -361,7 +361,7 @@ public class PluginExceptionTests
 
         // Assert
         exception.ConfigurationKey.Should().Be("key");
-        exception.Assert.Null(InvalidValue);
+        exception.InvalidValue.Should().BeNull();
     }
 
     [Theory]
@@ -385,8 +385,8 @@ public class PluginExceptionTests
         var pluginException = new PluginException("Plugin error", "test-plugin", intermediate);
 
         // Act & Assert
-        pluginException.InnerException.BeSameAs(intermediate);
-        pluginException.InnerException!.InnerException.BeSameAs(rootCause);
+        pluginException.InnerException.Should().BeSameAs(intermediate);
+        pluginException.InnerException!.InnerException.Should().BeSameAs(rootCause);
     }
 
     [Fact]

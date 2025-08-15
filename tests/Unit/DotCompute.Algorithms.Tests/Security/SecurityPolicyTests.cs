@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Algorithms.Types.Security;
@@ -147,7 +147,7 @@ public sealed class SecurityPolicyTests : IDisposable
         _securityPolicy.AddTrustedPublisher(thumbprint);
 
         // Assert
-        _securityPolicy.IsTrustedPublisher(thumbprint).Should().BeTrue();
+        _securityPolicy.IsTrustedPublisherthumbprint.Should().BeTrue();
         _securityPolicy.IsTrustedPublisher(thumbprint.ToUpperInvariant()).Should().BeTrue();
         _securityPolicy.IsTrustedPublisher(thumbprint.ToLowerInvariant()).Should().BeTrue();
     }
@@ -251,7 +251,7 @@ public sealed class SecurityPolicyTests : IDisposable
     }
 
     [Fact]
-    public async Task LoadPolicyFromFile_NonExistentFile_ShouldShould().NotThrow()
+    public async Task LoadPolicyFromFile_NonExistentFile_ShouldNotThrow()
     {
         // Arrange
         var nonExistentFile = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
@@ -329,7 +329,7 @@ public sealed class SecurityPolicyTests : IDisposable
         // Assert
         context.AssemblyPath.Should().Be("test.dll");
         context.AssemblyBytes.Equal([1, 2, 3]);
-        context.Assert.Null(Certificate);
+        contextCertificate.Should().BeNull;
         context.StrongNameKey.Equal([4, 5, 6]);
         context.Metadata.Should().ContainKey("TestKey");
         context.Metadata["TestKey"].Should().Be("TestValue");
@@ -344,9 +344,9 @@ public sealed class SecurityPolicyTests : IDisposable
         // Assert
         result.IsAllowed.Should().BeTrue();
         result.SecurityLevel.Should().Be(SecurityLevel.High);
-        result.Assert.Empty(Violations);
-        result.Assert.Empty(Warnings);
-        result.Assert.Empty(Metadata);
+        resultViolations.Should().BeEmpty();
+        resultWarnings.Should().BeEmpty();
+        resultMetadata.Should().BeEmpty();
     }
 
     public void Dispose()

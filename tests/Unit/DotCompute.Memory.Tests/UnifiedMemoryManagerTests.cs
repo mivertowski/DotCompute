@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -40,8 +40,8 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         var mockDeviceBuffer = Mock.Of<IMemoryBuffer>(b => b.SizeInBytes == length * sizeof(int));
 
         _baseMemoryManagerMock
-            .Setup(m => m.AllocateAsync(length * sizeof(int), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockDeviceBuffer)));
+            .Setup(m => m.AllocateAsync(length * sizeof(int), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockDeviceBuffer);
 
         // Act
         var buffer = await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(length);
@@ -62,8 +62,8 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         var mockDeviceBuffer = Mock.Of<IMemoryBuffer>();
 
         _baseMemoryManagerMock
-            .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockDeviceBuffer)));
+            .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockDeviceBuffer);
 
         // Act
         await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(length, options);
@@ -98,7 +98,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         const int length = 256;
         var testData = new int[length];
         new Random(42).Next();
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             testData[i] = i * 2;
         }
@@ -123,7 +123,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         // Arrange
         const int length = 64;
         var testData = new float[length];
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             testData[i] = i * 0.5f;
         }
@@ -132,18 +132,18 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         // This needs to handle both the initial allocation and any subsequent allocations
         var mockDeviceBuffer = new Mock<IMemoryBuffer>();
         mockDeviceBuffer.Setup(b => b.SizeInBytes).Returns(length * sizeof(float));
-        mockDeviceBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()
-            .Returns(ValueTask.CompletedTask)));
+        mockDeviceBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            .Returns(ValueTask.CompletedTask);
 
         // Use a callback to verify the mock is being called and return the buffer
         _baseMemoryManagerMock
-            .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()
+            .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Callback<long, DotCompute.Abstractions.MemoryOptions, CancellationToken>((size, options, ct) =>
             {
                 // This helps debug if the mock is being called
                 // In a real test we wouldn't use Console.WriteLine
             })
-            .ReturnsAsync(mockDeviceBuffer.Object)));
+            .ReturnsAsync(mockDeviceBuffer.Object);
         
         // Act
         var unifiedBuffer = await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(length);
@@ -179,7 +179,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         
         // Verify data was copied
         var span = unifiedBuffer.AsSpan();
-        for (int i = 0; i < testData.Length; i++)
+        for(int i = 0; i < testData.Length; i++)
         {
             Assert.Equal(testData[i], span[i]);
         }
@@ -291,7 +291,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _unifiedMemoryManager?.Dispose();
             _disposed = true;

@@ -13,7 +13,7 @@ namespace DotCompute.Tests.Hardware;
 
 /// <summary>
 /// Hardware-dependent tests for OpenCL devices.
-/// These tests require actual OpenCL-capable hardware (GPU, CPU, or FPGA).
+/// These tests require actual OpenCL-capable hardware(GPU, CPU, or FPGA).
 /// </summary>
 public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
 {
@@ -33,7 +33,7 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
         
         // TODO: When real OpenCL backend is implemented:
         // 1. Query platforms using clGetPlatformIDs
-        // 2. Get platform info (vendor, version, extensions)
+        // 2. Get platform info(vendor, version, extensions)
         // 3. List all available devices per platform
         
         Assert.True(AcceleratorTestFixture.IsOpenCLAvailable(), "OpenCL runtime is available");
@@ -50,7 +50,7 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
         // TODO: When real OpenCL backend is implemented:
         // 1. Query device properties using clGetDeviceInfo
         // 2. Report compute units, memory, work group sizes
-        // 3. Check for specific extensions (cl_khr_fp64, etc.)
+        // 3. Check for specific extensions(cl_khr_fp64, etc.)
         
         _output.WriteLine("Device properties:");
         _output.WriteLine("  - Type: GPU/CPU/Accelerator");
@@ -73,7 +73,7 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
                                     const unsigned int n)
             {
                 int id = get_global_id(0);
-                if (id < n) {
+                if(id < n) {
                     c[id] = a[id] + b[id];
                 }
             }
@@ -110,8 +110,8 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
         
         stopwatch.Stop();
         
-        var bandwidth = dataSize * sizeof(float) * 2 / (stopwatch.Elapsed.TotalSeconds * 1e9);
-        _output.WriteLine($"Transfer size: {dataSize * sizeof(float) / (1024 * 1024)}MB");
+        var bandwidth = dataSize * sizeof(float) * 2 /(stopwatch.Elapsed.TotalSeconds * 1e9);
+        _output.WriteLine($"Transfer size: {dataSize * sizeof(float) /(1024 * 1024)}MB");
         _output.WriteLine($"Transfer time: {stopwatch.ElapsedMilliseconds}ms");
         _output.WriteLine($"Bandwidth: {bandwidth:F2} GB/s");
         
@@ -130,11 +130,11 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
         // TODO: When real OpenCL backend is implemented:
         // 1. Create 2D image object
         // 2. Write image data
-        // 3. Apply image processing kernel (e.g., blur, edge detection)
+        // 3. Apply image processing kernel(e.g., blur, edge detection)
         // 4. Read back processed image
         
         _output.WriteLine($"Image size: {width}x{height}");
-        _output.WriteLine($"Image memory: {width * height * sizeof(float) / (1024 * 1024)}MB");
+        _output.WriteLine($"Image memory: {width * height * sizeof(float) /(1024 * 1024)}MB");
         
         await Task.CompletedTask;
     }

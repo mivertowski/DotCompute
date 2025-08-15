@@ -42,7 +42,7 @@ public class MockAccelerator : IAccelerator
         Features = AcceleratorFeature.DoublePrecision | AcceleratorFeature.UnifiedMemory;
         IsAvailable = true;
         
-        _logger.LogDebug("Created MockAccelerator {DeviceId} ({DeviceName}) with {TotalMemory} bytes memory", 
+        _logger.LogDebug("Created MockAccelerator {DeviceId}{DeviceName}) with {TotalMemory} bytes memory", 
             DeviceId, name, totalMemory);
 
         // Initialize AcceleratorInfo with required properties
@@ -106,10 +106,10 @@ public class MockAccelerator : IAccelerator
 
     public async ValueTask DisposeAsync()
     {
-        if (_isDisposed) return;
+        if(_isDisposed) return;
         _isDisposed = true;
         IsAvailable = false;
-        if (_memoryManager is IAsyncDisposable disposable)
+        if(_memoryManager is IAsyncDisposable disposable)
         {
             await disposable.DisposeAsync();
         }
@@ -149,7 +149,7 @@ public class MockAccelerator : IAccelerator
 
     private void ThrowIfDisposed()
     {
-        if (_isDisposed)
+        if(_isDisposed)
             throw new ObjectDisposedException(nameof(MockAccelerator));
     }
 }
@@ -174,7 +174,7 @@ public class MockCompiledKernel : ICompiledKernel
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        if (_isDisposed)
+        if(_isDisposed)
             throw new ObjectDisposedException(nameof(MockCompiledKernel));
         
         // Simulate kernel execution
@@ -183,7 +183,7 @@ public class MockCompiledKernel : ICompiledKernel
 
     public ValueTask DisposeAsync()
     {
-        if (_isDisposed) return ValueTask.CompletedTask;
+        if(_isDisposed) return ValueTask.CompletedTask;
         _isDisposed = true;
         GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;
@@ -210,7 +210,7 @@ public class MockMemoryManager : IMemoryManager
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default)
     {
-        if (_isDisposed)
+        if(_isDisposed)
             throw new ObjectDisposedException(nameof(MockMemoryManager));
         
         await Task.Yield(); // Simulate async operation
@@ -222,7 +222,7 @@ public class MockMemoryManager : IMemoryManager
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_isDisposed)
+        if(_isDisposed)
             throw new ObjectDisposedException(nameof(MockMemoryManager));
         
         var sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
@@ -233,13 +233,13 @@ public class MockMemoryManager : IMemoryManager
 
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
-        if (_isDisposed)
+        if(_isDisposed)
             throw new ObjectDisposedException(nameof(MockMemoryManager));
         
-        if (buffer == null) throw new ArgumentNullException(nameof(buffer));
-        if (offset < 0 || offset >= buffer.SizeInBytes)
+        if(buffer == null) throw new ArgumentNullException(nameof(buffer));
+        if(offset < 0 || offset >= buffer.SizeInBytes)
             throw new ArgumentOutOfRangeException(nameof(offset));
-        if (length < 0 || offset + length > buffer.SizeInBytes)
+        if(length < 0 || offset + length > buffer.SizeInBytes)
             throw new ArgumentOutOfRangeException(nameof(length));
         
         // For mock, we create a new buffer that represents the view
@@ -254,7 +254,7 @@ public class MockMemoryManager : IMemoryManager
 
     public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
     {
-        if (buffer is MockMemoryBuffer mockBuffer)
+        if(buffer is MockMemoryBuffer mockBuffer)
         {
             // Simulate copying data to the mock buffer
             var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
@@ -264,7 +264,7 @@ public class MockMemoryManager : IMemoryManager
 
     public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
     {
-        if (buffer is MockMemoryBuffer mockBuffer)
+        if(buffer is MockMemoryBuffer mockBuffer)
         {
             // Simulate copying data from the mock buffer
             var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
@@ -279,7 +279,7 @@ public class MockMemoryManager : IMemoryManager
 
     public ValueTask DisposeAsync()
     {
-        if (_isDisposed) return ValueTask.CompletedTask;
+        if(_isDisposed) return ValueTask.CompletedTask;
         _isDisposed = true;
         GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;
@@ -296,7 +296,7 @@ public class MockMemoryBuffer : IMemoryBuffer, IDisposable
 
     public MockMemoryBuffer(long sizeInBytes, MemoryOptions options)
     {
-        if (sizeInBytes <= 0)
+        if(sizeInBytes <= 0)
             throw new ArgumentException("Size must be positive", nameof(sizeInBytes));
         
         SizeInBytes = sizeInBytes;
@@ -316,7 +316,7 @@ public class MockMemoryBuffer : IMemoryBuffer, IDisposable
         ThrowIfDisposed();
         
         var sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
-        if (offset < 0 || offset + sizeInBytes > SizeInBytes)
+        if(offset < 0 || offset + sizeInBytes > SizeInBytes)
             throw new ArgumentOutOfRangeException(nameof(offset));
         
         // Copy data - for simplicity in mock, we just simulate the operation
@@ -331,7 +331,7 @@ public class MockMemoryBuffer : IMemoryBuffer, IDisposable
         ThrowIfDisposed();
         
         var sizeInBytes = destination.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
-        if (offset < 0 || offset + sizeInBytes > SizeInBytes)
+        if(offset < 0 || offset + sizeInBytes > SizeInBytes)
             throw new ArgumentOutOfRangeException(nameof(offset));
         
         // Copy data - for simplicity in mock, we just simulate the operation
@@ -340,14 +340,14 @@ public class MockMemoryBuffer : IMemoryBuffer, IDisposable
 
     public void Dispose()
     {
-        if (_isDisposed) return;
+        if(_isDisposed) return;
         _isDisposed = true;
         GC.SuppressFinalize(this);
     }
 
     public ValueTask DisposeAsync()
     {
-        if (_isDisposed) return ValueTask.CompletedTask;
+        if(_isDisposed) return ValueTask.CompletedTask;
         _isDisposed = true;
         GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;
@@ -355,7 +355,7 @@ public class MockMemoryBuffer : IMemoryBuffer, IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_isDisposed)
+        if(_isDisposed)
             throw new ObjectDisposedException(nameof(MockMemoryBuffer));
     }
 
@@ -389,7 +389,7 @@ public class MockMemoryBufferView : IMemoryBuffer, IDisposable
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_isDisposed)
+        if(_isDisposed)
             throw new ObjectDisposedException(nameof(MockMemoryBufferView));
         
         return _parentBuffer.CopyFromHostAsync(source, _offset + offset, cancellationToken);
@@ -400,7 +400,7 @@ public class MockMemoryBufferView : IMemoryBuffer, IDisposable
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_isDisposed)
+        if(_isDisposed)
             throw new ObjectDisposedException(nameof(MockMemoryBufferView));
         
         return _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
@@ -408,14 +408,14 @@ public class MockMemoryBufferView : IMemoryBuffer, IDisposable
 
     public void Dispose()
     {
-        if (_isDisposed) return;
+        if(_isDisposed) return;
         _isDisposed = true;
         GC.SuppressFinalize(this);
     }
 
     public ValueTask DisposeAsync()
     {
-        if (_isDisposed) return ValueTask.CompletedTask;
+        if(_isDisposed) return ValueTask.CompletedTask;
         _isDisposed = true;
         GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;

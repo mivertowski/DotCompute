@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -223,7 +223,7 @@ public class MemoryManagerInterfaceTests
         foreach (var location in allLocations)
         {
             location.BeDefined();
-            ((int)location).BeGreaterOrEqualTo(0);
+           ((int)location).BeGreaterOrEqualTo(0);
         }
     }
 
@@ -241,7 +241,7 @@ public class MemoryManagerInterfaceTests
     {
         // Act & Assert
         access.BeDefined();
-        ((int)access).Should().BeGreaterThan(0);
+       ((int)access).Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -251,8 +251,8 @@ public class MemoryManagerInterfaceTests
         var readWrite = MemoryAccess.ReadWrite;
 
         // Assert
-        readWrite.HasFlag(MemoryAccess.ReadOnly).Should().BeTrue();
-        readWrite.HasFlag(MemoryAccess.WriteOnly).Should().BeTrue();
+        readWrite.HasFlagMemoryAccess.ReadOnly.Should().BeTrue();
+        readWrite.HasFlagMemoryAccess.WriteOnly.Should().BeTrue();
         Assert.Equal(MemoryAccess.ReadOnly | MemoryAccess.WriteOnly, readWrite);
     }
 
@@ -272,19 +272,19 @@ public class MemoryManagerInterfaceTests
         // Act & Assert
         Assert.Equal(2, createBufferMethods.Count()); // Two overloads
         
-        // Check first overload (elementCount)
+        // Check first overload(elementCount)
         var firstOverload = createBufferMethods.FirstOrDefault(m => 
             m.GetParameters().Length >= 2 && 
             m.GetParameters()[0].ParameterType == typeof(int));
         Assert.NotNull(firstOverload);
-        firstOverload!.IsGenericMethodDefinition.Should().BeTrue();
+        firstOverload! .IsGenericMethodDefinition.Should().BeTrue();
         
-        // Check second overload (data)
+        // Check second overload(data)
         var secondOverload = createBufferMethods.FirstOrDefault(m => 
             m.GetParameters().Length >= 2 && 
             m.GetParameters()[0].ParameterType.IsGenericType);
         Assert.NotNull(secondOverload);
-        secondOverload!.IsGenericMethodDefinition.Should().BeTrue();
+        secondOverload! .IsGenericMethodDefinition.Should().BeTrue();
     }
 
     [Fact]
@@ -296,7 +296,7 @@ public class MemoryManagerInterfaceTests
 
         // Act & Assert
         Assert.NotNull(copyMethod);
-        copyMethod!.IsGenericMethodDefinition.Should().BeTrue();
+        copyMethod! .IsGenericMethodDefinition.Should().BeTrue();
         
         var parameters = copyMethod.GetParameters();
         parameters.HaveCountGreaterThan(2);
@@ -318,7 +318,7 @@ public class MemoryManagerInterfaceTests
         // Act & Assert
         Assert.Equal(6, properties.Count());
         
-        // Verify all properties are read-only (no setters)
+        // Verify all properties are read-only(no setters)
         foreach (var property in properties)
         {
             property.CanRead.Should().BeTrue();
@@ -363,8 +363,8 @@ public class MemoryInterfaceUsageTests
     }
 
     [Theory]
-    [InlineData(MemoryLocation.Host, "Host (CPU) memory")]
-    [InlineData(MemoryLocation.Device, "Device (GPU) memory")]
+    [InlineData(MemoryLocation.Host, "HostCPU) memory")]
+    [InlineData(MemoryLocation.Device, "DeviceGPU) memory")]
     [InlineData(MemoryLocation.HostPinned, "Pinned host memory for faster transfers")]
     [InlineData(MemoryLocation.Unified, "Unified memory accessible by both host and device")]
     [InlineData(MemoryLocation.Managed, "Managed memory with automatic migration")]
@@ -389,17 +389,17 @@ public class MemoryInterfaceUsageTests
         var readWriteWithHost = MemoryAccess.ReadWrite | MemoryAccess.HostAccess;
 
         // Act & Assert
-        readOnlyWithHost.HasFlag(MemoryAccess.ReadOnly).Should().BeTrue();
-        readOnlyWithHost.HasFlag(MemoryAccess.HostAccess).Should().BeTrue();
+        readOnlyWithHost.HasFlagMemoryAccess.ReadOnly.Should().BeTrue();
+        readOnlyWithHost.HasFlagMemoryAccess.HostAccess.Should().BeTrue();
         readOnlyWithHost.HasFlag(MemoryAccess.WriteOnly).Should().BeFalse();
 
-        writeOnlyWithHost.HasFlag(MemoryAccess.WriteOnly).Should().BeTrue();
-        writeOnlyWithHost.HasFlag(MemoryAccess.HostAccess).Should().BeTrue();
+        writeOnlyWithHost.HasFlagMemoryAccess.WriteOnly.Should().BeTrue();
+        writeOnlyWithHost.HasFlagMemoryAccess.HostAccess.Should().BeTrue();
         writeOnlyWithHost.HasFlag(MemoryAccess.ReadOnly).Should().BeFalse();
 
-        readWriteWithHost.HasFlag(MemoryAccess.ReadOnly).Should().BeTrue();
-        readWriteWithHost.HasFlag(MemoryAccess.WriteOnly).Should().BeTrue();
-        readWriteWithHost.HasFlag(MemoryAccess.HostAccess).Should().BeTrue();
+        readWriteWithHost.HasFlagMemoryAccess.ReadOnly.Should().BeTrue();
+        readWriteWithHost.HasFlagMemoryAccess.WriteOnly.Should().BeTrue();
+        readWriteWithHost.HasFlagMemoryAccess.HostAccess.Should().BeTrue();
     }
 
     [Fact]
@@ -428,7 +428,7 @@ public class MemoryInterfaceUsageTests
         mode.BeDefined();
         
         // Test logical consistency
-        switch (mode)
+        switch(mode)
         {
             case MemoryMapMode.ReadOnly:
                 Assert.True(canRead);

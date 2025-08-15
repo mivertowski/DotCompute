@@ -19,8 +19,8 @@ namespace DotCompute.Tests.Unit;
 public class RealImplementationTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
-    private TestCpuAccelerator _accelerator = null!;
-    private TestMemoryManager _memoryManager = null!;
+    private TestCpuAccelerator _accelerator = default!;
+    private TestMemoryManager _memoryManager = default!;
 
     public RealImplementationTests(ITestOutputHelper output)
     {
@@ -46,7 +46,7 @@ public class RealImplementationTests : IAsyncLifetime
         // Arrange
         const int elementCount = 1024;
         var sourceData = new float[elementCount];
-        for (int i = 0; i < elementCount; i++)
+        for(int i = 0; i < elementCount; i++)
         {
             sourceData[i] = MathF.Sin(i * 0.01f);
         }
@@ -64,7 +64,7 @@ public class RealImplementationTests : IAsyncLifetime
         await buffer.CopyToHostAsync<float>(readbackData.AsMemory());
 
         // Assert - Verify data integrity
-        for (int i = 0; i < elementCount; i++)
+        for(int i = 0; i < elementCount; i++)
         {
             Assert.Equal(sourceData[i], readbackData[i], 5);
         }
@@ -125,7 +125,7 @@ public class RealImplementationTests : IAsyncLifetime
         var inputData = new float[dataSize];
         var outputData = new float[dataSize];
         
-        for (int i = 0; i < dataSize; i++)
+        for(int i = 0; i < dataSize; i++)
         {
             inputData[i] = i * 0.5f;
         }
@@ -166,7 +166,7 @@ public class RealImplementationTests : IAsyncLifetime
         var tasks = new Task<IMemoryBuffer>[concurrentCount];
 
         // Act - Allocate multiple buffers concurrently
-        for (int i = 0; i < concurrentCount; i++)
+        for(int i = 0; i < concurrentCount; i++)
         {
             tasks[i] = _memoryManager.AllocateAsync(bufferSize).AsTask();
         }
@@ -224,7 +224,7 @@ public class RealImplementationTests : IAsyncLifetime
         await kernel2.ExecuteAsync(args);
         await kernel3.ExecuteAsync(args);
 
-        if (kernel3 is TestCompiledKernel testKernel)
+        if(kernel3 is TestCompiledKernel testKernel)
         {
             _output.WriteLine($"Kernel {testKernel.Name} executed {testKernel.ExecutionCount} times");
             _output.WriteLine($"Average execution time: {testKernel.AverageExecutionTimeMs:F2}ms");
@@ -238,9 +238,9 @@ public class RealImplementationTests : IAsyncLifetime
     public async Task MemoryOperations_DifferentSizes_ShouldWork(long size)
     {
         // Arrange
-        var elementCount = (int)(size / sizeof(double));
+        var elementCount =(int)(size / sizeof(double));
         var testData = new double[elementCount];
-        for (int i = 0; i < elementCount; i++)
+        for(int i = 0; i < elementCount; i++)
         {
             testData[i] = Math.Sin(i * 0.001);
         }
@@ -257,7 +257,7 @@ public class RealImplementationTests : IAsyncLifetime
         await buffer.CopyToHostAsync<double>(readback.AsMemory());
 
         // Assert - Verify data
-        for (int i = 0; i < Math.Min(10, elementCount); i++)
+        for(int i = 0; i < Math.Min(10, elementCount); i++)
         {
             Assert.Equal(testData[i], readback[i], 10);
         }
@@ -280,7 +280,7 @@ public class RealImplementationTests : IAsyncLifetime
         var inputB = new float[dataSize];
         var expected = new float[dataSize];
         
-        for (int i = 0; i < dataSize; i++)
+        for(int i = 0; i < dataSize; i++)
         {
             inputA[i] = i * 0.1f;
             inputB[i] = i * 0.2f;
@@ -306,7 +306,7 @@ public class RealImplementationTests : IAsyncLifetime
             Code = @"
                 __kernel void vector_add(__global float* a, __global float* b, __global float* result, int n) {
                     int idx = get_global_id(0);
-                    if (idx < n) {
+                    if(idx < n) {
                         result[idx] = a[idx] + b[idx];
                     }
                 }
@@ -331,14 +331,14 @@ public class RealImplementationTests : IAsyncLifetime
         var results = new float[dataSize];
         await bufferResult.CopyToHostAsync<float>(results.AsMemory());
 
-        // Step 8: Verify results (approximate since we're simulating)
+        // Step 8: Verify results(approximate since we're simulating)
         _output.WriteLine("Verifying results...");
         int correctCount = 0;
-        for (int i = 0; i < dataSize; i++)
+        for(int i = 0; i < dataSize; i++)
         {
             // In a real implementation, this would match exactly
             // For our test implementation, we just check if data was transferred
-            if (!float.IsNaN(results[i]) && !float.IsInfinity(results[i]))
+            if(!float.IsNaN(results[i]) && !float.IsInfinity(results[i]))
             {
                 correctCount++;
             }

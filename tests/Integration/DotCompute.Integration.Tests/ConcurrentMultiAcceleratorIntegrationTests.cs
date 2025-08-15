@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -56,7 +56,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Calculate performance metrics
         var totalDataProcessed = workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length));
-        var parallelThroughput = (totalDataProcessed * sizeof(float)) / 1024.0 / 1024.0 / 
+        var parallelThroughput =(totalDataProcessed * sizeof(float)) / 1024.0 / 1024.0 / 
                                 executionStopwatch.Elapsed.TotalSeconds;
 
         Logger.LogInformation("Parallel multi-accelerator execution: {Count} workflows, " +
@@ -71,7 +71,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         Logger.LogInformation("Backend usage: {Usage}", 
             string.Join(", ", backendUsage.Select(kvp => $"{kvp.Key}: {kvp.Value}")));
 
-        Assert.True(parallelThroughput > 50, "Parallel execution should achieve good throughput");
+        parallelThroughput.Should().BeGreaterThan(50, "Parallel execution should achieve good throughput");
     }
 
     [Fact]
@@ -107,7 +107,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Well-balanced execution should have relatively low variance
         var normalizedVariance = executionTimeVariance / maxExecutionTime;
-        Assert.True(normalizedVariance < 0.5, "Load balancing should minimize execution time variance");
+        normalizedVariance .Should().BeLessThan(0.5, "Load balancing should minimize execution time variance");
     }
 
     [Fact]
@@ -128,9 +128,9 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         {
             var result = await ExecuteComputeWorkflowAsync($"SynchronizedExecution_{index}", workflow);
             
-            if (result.Success && result.Results.ContainsKey("output"))
+            if(result.Success && result.Results.ContainsKey("output"))
             {
-                results[workflow.Name] = (float[])result.Results["output"];
+                results[workflow.Name] =(float[])result.Results["output"];
             }
 
             // Signal completion
@@ -149,7 +149,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         var referenceResult = results.Values.First();
         foreach (var result in results.Values.Skip(1))
         {
-            for (int i = 0; i < Math.Min(100, referenceResult.Length); i++)
+            for(int i = 0; i < Math.Min(100, referenceResult.Length); i++)
             {
                 result[i].Should().BeApproximately(referenceResult[i], 0.01f,
                     $"Synchronized execution should produce consistent results at index {i}");
@@ -186,9 +186,9 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         var peakMemoryUsage = results.Max(r => r.Metrics?.ResourceUtilization.MemoryUsagePercent ?? 0);
 
         Logger.LogInformation("Resource coordination: Total memory used: {Total}MB, Peak usage: {Peak:F1}%",
-            totalMemoryUsed / (1024 * 1024), peakMemoryUsage);
+            totalMemoryUsed /(1024 * 1024), peakMemoryUsage);
 
-        Assert.True(peakMemoryUsage < 90, "Resource coordination should prevent memory exhaustion");
+        peakMemoryUsage .Should().BeLessThan(90, "Resource coordination should prevent memory exhaustion");
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
             successfulResults.Length, failedResults.Length);
 
         // At least half should succeed despite failures
-        successfulResults.Assert.True(Length >= workflows.Length / 2,
+        (successfulResults.Length >= workflows.Length / 2).Should().BeTrue(
             "Fault tolerance should allow majority of work to complete");
 
         // Failed results should have meaningful error information
@@ -290,7 +290,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Assert
         scalingResults.Should().AllSatisfy(r => 
-            r.SuccessfulWorkflows.BeGreaterOrEqualTo(r.WorkflowCount / 2));
+            r.SuccessfulWorkflows.Should().BeGreaterThanOrEqualTo(r.WorkflowCount / 2));
 
         // Verify scaling behavior
         ValidateScalingBehavior(scalingResults);
@@ -325,7 +325,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
                              "Stage time: {StageTime:F1}ms, Pipeline time: {PipelineTime:F1}ms",
             pipelineDepth, pipelineEfficiency, totalStageTime, actualPipelineTime);
 
-        Assert.True(pipelineEfficiency > 0.2, "Pipeline should show parallelism benefits");
+        pipelineEfficiency.Should().BeGreaterThan(0.2, "Pipeline should show parallelism benefits");
     }
 
     [Theory]
@@ -352,19 +352,19 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Assert
         var successfulResults = results.Where(r => r.Success).ToArray();
-        var successRate = (double)successfulResults.Length / workflows.Length;
+        var successRate =(double)successfulResults.Length / workflows.Length;
 
         Logger.LogInformation("Concurrency scaling test: {AcceleratorCount} accelerators, " +
                              "{Workflows} workflows, {SuccessRate:P1} success rate, {Duration:F1}ms",
             acceleratorCount, workflows.Length, successRate, concurrencyStopwatch.ElapsedMilliseconds);
 
-        Assert.True(successRate >= 0.75, "Most workflows should complete successfully");
+        successRate .Should().BeGreaterThanOrEqualTo(0.75, "Most workflows should complete successfully");
 
         // Calculate effective throughput
         var totalDataMB = workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length * sizeof(float) / 1024.0 / 1024.0));
         var effectiveThroughput = totalDataMB / concurrencyStopwatch.Elapsed.TotalSeconds;
 
-        Assert.True(effectiveThroughput > 10, "Concurrent execution should maintain good throughput");
+        effectiveThroughput.Should().BeGreaterThan(10, "Concurrent execution should maintain good throughput");
 
         LogPerformanceMetrics($"ConcurrencyScaling_{acceleratorCount}", 
             concurrencyStopwatch.Elapsed, workflows.Sum(w => w.Inputs.Sum(i => i.Data.Length)));
@@ -610,7 +610,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         };
 
         // Create intermediate buffers
-        for (int i = 0; i < stageCount - 1; i++)
+        for(int i = 0; i < stageCount - 1; i++)
         {
             workflow.IntermediateBuffers.Add(new WorkflowIntermediateBuffer
             {
@@ -622,7 +622,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         // Create pipeline stages with different backend preferences
         var backends = new[] { ComputeBackendType.CPU, ComputeBackendType.CUDA, ComputeBackendType.Metal, ComputeBackendType.CPU };
         
-        for (int stage = 0; stage < stageCount; stage++)
+        for(int stage = 0; stage < stageCount; stage++)
         {
             var inputName = stage == 0 ? "input" : $"stage_{stage - 1}_output";
             var outputName = stage == stageCount - 1 ? "output" : $"stage_{stage}_output";
@@ -679,8 +679,8 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
     {
         // In a real implementation, this would analyze execution characteristics
         // For testing, use performance hints or default assignment
-        if (result.Metrics?.ThroughputMBps > 100) return ComputeBackendType.CUDA;
-        if (result.Metrics?.ThroughputMBps > 50) return ComputeBackendType.Metal;
+        if(result.Metrics?.ThroughputMBps > 100) return ComputeBackendType.CUDA;
+        if(result.Metrics?.ThroughputMBps > 50) return ComputeBackendType.Metal;
         return ComputeBackendType.CPU;
     }
 
@@ -688,7 +688,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
     {
         return backend switch
         {
-            ComputeBackendType.CUDA => KernelSources.CudaOptimizedKernel,
+            ComputeBackendType.CUDA => KernelSources.SimpleVectorOperation,
             ComputeBackendType.Metal => KernelSources.MetalOptimizedKernel,
             ComputeBackendType.CPU => KernelSources.CpuOptimizedKernel,
             _ => KernelSources.SimpleVectorOperation
@@ -732,12 +732,12 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
             peakLoad.SuccessfulWorkflows, peakLoad.WorkflowCount);
 
         // Success rate should remain reasonable even at peak load
-        var peakSuccessRate = (double)peakLoad.SuccessfulWorkflows / peakLoad.WorkflowCount;
-        Assert.True(peakSuccessRate >= 0.6, "System should handle peak load gracefully");
+        var peakSuccessRate =(double)peakLoad.SuccessfulWorkflows / peakLoad.WorkflowCount;
+        peakSuccessRate .Should().BeGreaterThanOrEqualTo(0.6, "System should handle peak load gracefully");
 
         // Memory usage should scale reasonably
         var maxMemoryUsage = scalingResults.Max(r => r.PeakMemoryUsage);
-        Assert.True(maxMemoryUsage < 95, "System should not exhaust memory during scaling");
+        maxMemoryUsage .Should().BeLessThan(95, "System should not exhaust memory during scaling");
     }
 }
 
@@ -780,14 +780,14 @@ public class WorkloadLoadBalancer
         _logger = logger;
     }
 
-    public async Task<WorkloadAssignment[]> CreateDistributionPlanAsync(ComputeWorkflowDefinition[] workflows)
+    public Task<WorkloadAssignment[]> CreateDistributionPlanAsync(ComputeWorkflowDefinition[] workflows)
     {
         var assignments = new List<WorkloadAssignment>();
         
         // Simple round-robin assignment for testing
         var backends = new[] { ComputeBackendType.CPU, ComputeBackendType.CUDA, ComputeBackendType.Metal };
         
-        for (int i = 0; i < workflows.Length; i++)
+        for(int i = 0; i < workflows.Length; i++)
         {
             assignments.Add(new WorkloadAssignment
             {
@@ -799,7 +799,7 @@ public class WorkloadLoadBalancer
         }
 
         _logger.LogInformation("Created distribution plan for {Count} workflows", workflows.Length);
-        return assignments.ToArray();
+        return Task.FromResult(assignments.ToArray());
     }
 
     private static int CalculatePriority(ComputeWorkflowDefinition workflow)
@@ -819,7 +819,7 @@ public class MultiAcceleratorResourceCoordinator
         _logger = logger;
     }
 
-    public async Task<WorkloadAssignment[]> CoordinateResourcesAsync(ComputeWorkflowDefinition[] workflows)
+    public Task<WorkloadAssignment[]> CoordinateResourcesAsync(ComputeWorkflowDefinition[] workflows)
     {
         var assignments = new List<WorkloadAssignment>();
 
@@ -828,9 +828,9 @@ public class MultiAcceleratorResourceCoordinator
         var memoryBudgetPerWorkflow = totalMemoryRequired / workflows.Length;
 
         _logger.LogInformation("Coordinating resources: {Total}MB total memory, {Budget}MB per workflow",
-            totalMemoryRequired / (1024 * 1024), memoryBudgetPerWorkflow / (1024 * 1024));
+            totalMemoryRequired /(1024 * 1024), memoryBudgetPerWorkflow /(1024 * 1024));
 
-        for (int i = 0; i < workflows.Length; i++)
+        for(int i = 0; i < workflows.Length; i++)
         {
             assignments.Add(new WorkloadAssignment
             {
@@ -841,7 +841,7 @@ public class MultiAcceleratorResourceCoordinator
             });
         }
 
-        return assignments.ToArray();
+        return Task.FromResult(assignments.ToArray());
     }
 
     private static ComputeBackendType SelectOptimalBackend(ComputeWorkflowDefinition workflow)
@@ -849,8 +849,8 @@ public class MultiAcceleratorResourceCoordinator
         var inputSize = workflow.Inputs.Sum(i => i.Data.Length);
         
         // Simple heuristic: larger workloads prefer GPU
-        if (inputSize > 2048) return ComputeBackendType.CUDA;
-        if (inputSize > 1024) return ComputeBackendType.Metal;
+        if(inputSize > 2048) return ComputeBackendType.CUDA;
+        if(inputSize > 1024) return ComputeBackendType.Metal;
         return ComputeBackendType.CPU;
     }
 }
@@ -866,7 +866,7 @@ __kernel void balanced_compute(__global const float* input, __global float* outp
     float value = input[gid];
     
     // Balanced computation load
-    for (int i = 0; i < 10; i++) {
+    for(int i = 0; i < 10; i++) {
         value = value * 0.95f + sin(value * 0.1f);
     }
     
@@ -894,7 +894,7 @@ __kernel void memory_intensive(__global const float* input, __global float* temp
     barrier(CLK_GLOBAL_MEM_FENCE);
     
     // Combine temporary results
-    output[gid] = (temp[gid] + temp[gid + size]) * 0.5f;
+    output[gid] =(temp[gid] + temp[gid + size]) * 0.5f;
 }";
 
     public const string FaultTolerantCompute = @"
@@ -903,7 +903,7 @@ __kernel void fault_tolerant(__global const float* input, __global float* output
     float value = input[gid];
     
     // Fault-tolerant computation
-    if (isnan(value) || isinf(value)) {
+    if(isnan(value) || isinf(value)) {
         value = 0.0f;
     }
     
@@ -920,7 +920,7 @@ __kernel void scalable_compute(__global const float* input, __global float* outp
     
     // Scalable algorithm that adapts to work group size
     int iterations = min(global_size / 64, 10);
-    for (int i = 0; i < iterations; i++) {
+    for(int i = 0; i < iterations; i++) {
         value = value * 0.99f + cos(value);
     }
     
@@ -936,7 +936,7 @@ __kernel void pipeline_stage(__global const float* input, __global float* output
     float value = input[gid] * stage_factor;
     
     // Add stage-specific computation
-    switch (stage_id % 4) {
+    switch(stage_id % 4) {
         case 0: value = sqrt(fabs(value)); break;
         case 1: value = value * value; break;
         case 2: value = sin(value); break;
@@ -958,7 +958,7 @@ __kernel void concurrent_compute(__global const float* input, __global float* ou
     
     float sum = 0.0f;
     int local_size = min(get_local_size(0), 64);
-    for (int i = 0; i < local_size; i++) {
+    for(int i = 0; i < local_size; i++) {
         sum += shared[i] * 0.1f;
     }
     
@@ -970,8 +970,8 @@ __kernel void cpu_optimized(__global const float* input, __global float* output)
     int gid = get_global_id(0);
     
     // CPU-optimized: sequential access, minimal branching
-    float4 data = vload4(gid / 4, (__global float4*)input);
+    float4 data = vload4(gid / 4,__global float4*)input);
     data = data + 1.0f;
-    vstore4(data, gid / 4, (__global float4*)output);
+    vstore4(data, gid / 4,__global float4*)output);
 }";
 }

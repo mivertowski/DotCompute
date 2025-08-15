@@ -18,11 +18,11 @@ namespace DotCompute.Tests.Unit;
 public class AdvancedIntegrationTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
-    private TestAcceleratorManager _acceleratorManager = null!;
-    private TestKernelExecutor _kernelExecutor = null!;
-    private TestCudaKernelCompiler _cudaCompiler = null!;
-    private TestOpenCLKernelCompiler _openClCompiler = null!;
-    private TestDirectComputeCompiler _directComputeCompiler = null!;
+    private TestAcceleratorManager _acceleratorManager = default!;
+    private TestKernelExecutor _kernelExecutor = default!;
+    private TestCudaKernelCompiler _cudaCompiler = default!;
+    private TestOpenCLKernelCompiler _openClCompiler = default!;
+    private TestDirectComputeCompiler _directComputeCompiler = default!;
 
     public AdvancedIntegrationTests(ITestOutputHelper output)
     {
@@ -58,7 +58,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         foreach (var accelerator in _acceleratorManager.AvailableAccelerators)
         {
             _output.WriteLine($"  - {accelerator.Info.Name}: {accelerator.Info.DeviceType}, " +
-                            $"Memory: {accelerator.Info.TotalMemory / (1024 * 1024)}MB");
+                            $"Memory: {accelerator.Info.TotalMemory /(1024 * 1024)}MB");
         }
         
         await Task.CompletedTask;
@@ -114,7 +114,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         stopwatch.Stop();
         var firstCompileTime = stopwatch.ElapsedMilliseconds;
 
-        // Act - Second compilation (should be cached)
+        // Act - Second compilation(should be cached)
         stopwatch.Restart();
         var compiledInfo2 = await _cudaCompiler.CompileAsync(source, options);
         stopwatch.Stop();
@@ -128,7 +128,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         
         _output.WriteLine($"CUDA Compiler Results:");
         _output.WriteLine($"  First compile: {firstCompileTime}ms");
-        _output.WriteLine($"  Second compile (cached): {secondCompileTime}ms");
+        _output.WriteLine($"  Second compilecached): {secondCompileTime}ms");
         _output.WriteLine($"  Total compilations: {_cudaCompiler.CompilationCount}");
         _output.WriteLine($"  Average time: {_cudaCompiler.AverageCompilationTimeMs:F2}ms");
     }
@@ -170,7 +170,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         var config = new KernelConfiguration(new Dim3(32), new Dim3(32));
 
         // Act - Execute multiple times
-        for (int i = 0; i < 5; i++)
+        for(int i = 0; i < 5; i++)
         {
             var result = await _kernelExecutor.ExecuteAsync(kernel, args, config);
             Assert.True(result.Success);
@@ -221,10 +221,10 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         var hostB = new float[matrixSize * matrixSize];
         
         var random = new Random(42);
-        for (int i = 0; i < hostA.Length; i++)
+        for(int i = 0; i < hostA.Length; i++)
         {
-            hostA[i] = (float)random.NextDouble();
-            hostB[i] = (float)random.NextDouble();
+            hostA[i] =(float)random.NextDouble();
+            hostB[i] =(float)random.NextDouble();
         }
         
         await bufferA.CopyFromHostAsync<float>(hostA.AsMemory());
@@ -245,7 +245,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
                     int row = get_global_id(0);
                     int col = get_global_id(1);
                     float sum = 0.0f;
-                    for (int k = 0; k < N; k++) {
+                    for(int k = 0; k < N; k++) {
                         sum += A[row * N + k] * B[k * N + col];
                     }
                     C[row * N + col] = sum;
@@ -279,16 +279,16 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         _output.WriteLine($"  Threads: {execResult.ThreadsExecuted:N0}");
         _output.WriteLine($"  Throughput: {execResult.Throughput:F0} threads/sec");
 
-        // Step 6: Verify results (simplified)
+        // Step 6: Verify results(simplified)
         var hostC = new float[matrixSize * matrixSize];
         await bufferC.CopyToHostAsync<float>(hostC.AsMemory());
         
-        // Check that output buffer was written to (simplified check)
+        // Check that output buffer was written to(simplified check)
         // In test implementation, the buffer remains unchanged but we verify the operation completed
         Assert.NotNull(hostC);
         Assert.Equal(matrixSize * matrixSize, hostC.Length);
         
-        _output.WriteLine($"Result validation: Buffer size verified ({hostC.Length} elements)");
+        _output.WriteLine($"Result validation: Buffer size verified{hostC.Length} elements)");
 
         // Cleanup
         await bufferA.DisposeAsync();
@@ -352,7 +352,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         const int kernelCount = 20;
         var kernels = new TestCompiledKernel[kernelCount];
         
-        for (int i = 0; i < kernelCount; i++)
+        for(int i = 0; i < kernelCount; i++)
         {
             kernels[i] = new TestCompiledKernel(
                 $"Kernel_{i}", 
@@ -366,7 +366,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
                 kernel,
                 new KernelArguments(),
                 new KernelConfiguration(new Dim3(64), new Dim3(64))
-            .ToArray()));
+            )).ToArray();
 
         // Monitor queue
         _output.WriteLine($"Initial queue size: {_kernelExecutor.QueuedExecutions}");
@@ -401,9 +401,9 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         var view3 = accelerator.Memory.CreateView(mainBuffer, viewOffset * 2, viewSize);
         
         // Initialize data through views
-        var data1 = Enumerable.Range(0, (int)(viewSize / sizeof(int).ToArray()));
-        var data2 = Enumerable.Range(1000, (int)(viewSize / sizeof(int).ToArray()));
-        var data3 = Enumerable.Range(2000, (int)(viewSize / sizeof(int).ToArray()));
+        var data1 = Enumerable.Range(0, (int)(viewSize / sizeof(int))).ToArray();
+        var data2 = Enumerable.Range(1000, (int)(viewSize / sizeof(int))).ToArray();
+        var data3 = Enumerable.Range(2000, (int)(viewSize / sizeof(int))).ToArray();
         
         await view1.CopyFromHostAsync<int>(data1.AsMemory());
         await view2.CopyFromHostAsync<int>(data2.AsMemory());
@@ -480,15 +480,15 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         Assert.NotNull(hlslResult);
         
         _output.WriteLine("Compiler Comparison:");
-        _output.WriteLine($"  CUDA (PTX):");
+        _output.WriteLine($"  CUDAPTX):");
         _output.WriteLine($"    Assembly size: {cudaResult.Assembly.Length} chars");
         _output.WriteLine($"    Compile time: {_cudaCompiler.AverageCompilationTimeMs:F2}ms");
         
-        _output.WriteLine($"  OpenCL (SPIR-V):");
+        _output.WriteLine($"  OpenCLSPIR-V):");
         _output.WriteLine($"    Assembly size: {openclResult.Assembly.Length} chars");
         _output.WriteLine($"    Compile time: {_openClCompiler.AverageCompilationTimeMs:F2}ms");
         
-        _output.WriteLine($"  DirectCompute (DXIL):");
+        _output.WriteLine($"  DirectComputeDXIL):");
         _output.WriteLine($"    Assembly size: {hlslResult.Assembly.Length} chars");
         _output.WriteLine($"    Compile time: {_directComputeCompiler.AverageCompilationTimeMs:F2}ms");
     }

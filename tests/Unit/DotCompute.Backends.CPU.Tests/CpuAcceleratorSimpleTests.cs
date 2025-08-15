@@ -1,8 +1,9 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
+using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -19,12 +20,14 @@ public class CpuAcceleratorSimpleTests : IDisposable
 {
     private readonly Mock<ILogger<CpuAccelerator>> _mockLogger;
     private readonly Mock<IOptions<CpuAcceleratorOptions>> _mockOptions;
+    private readonly Mock<IOptions<CpuThreadPoolOptions>> _mockThreadPoolOptions;
     private bool _disposed;
 
     public CpuAcceleratorSimpleTests()
     {
         _mockLogger = new Mock<ILogger<CpuAccelerator>>();
         _mockOptions = new Mock<IOptions<CpuAcceleratorOptions>>();
+        _mockThreadPoolOptions = new Mock<IOptions<CpuThreadPoolOptions>>();
 
         // Setup default options
         _mockOptions.Setup(o => o.Value).Returns(new CpuAcceleratorOptions
@@ -32,16 +35,24 @@ public class CpuAcceleratorSimpleTests : IDisposable
             EnableAutoVectorization = true,
             PreferPerformanceOverPower = true
         });
+
+        _mockThreadPoolOptions.Setup(o => o.Value).Returns(new CpuThreadPoolOptions
+        {
+            WorkerThreads = Environment.ProcessorCount,
+            MaxQueuedItems = 10000,
+            EnableWorkStealing = true
+        });
     }
 
     #region Constructor Tests
 
     [Fact]
-    public void Constructor_WithValidOptions_ShouldInitializeSuccessfully()
+    public async Task Constructor_WithValidOptions_ShouldInitializeSuccessfully()
     {
         // Act
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             _mockOptions.Object,
+            _mockThreadPoolOptions.Object,
             _mockLogger.Object);
 
         // Assert
@@ -55,16 +66,16 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public void Constructor_WithNullOptions_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act = () => new CpuAccelerator(null!, _mockLogger.Object);
-        Assert.Throws<ArgumentNullException>(() => act());
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new CpuAccelerator(null!, Options.Create(new CpuThreadPoolOptions()), _mockLogger.Object));
     }
 
     [Fact]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act = () => new CpuAccelerator(_mockOptions.Object, null!);
-        Assert.Throws<ArgumentNullException>(() => act());
+        // Act & Assert
+        Assert.Throws<ArgumentNullException>(() => new CpuAccelerator(_mockOptions.Object, Options.Create(new CpuThreadPoolOptions()), null!));
     }
 
     #endregion
@@ -72,10 +83,10 @@ public class CpuAcceleratorSimpleTests : IDisposable
     #region Properties Tests
 
     [Fact]
-    public void Type_ShouldReturnCpu()
+    public async Task Type_ShouldReturnCpu()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
 
         // Act
         var type = accelerator.Type;
@@ -85,29 +96,29 @@ public class CpuAcceleratorSimpleTests : IDisposable
     }
 
     [Fact]
-    public void Info_ShouldContainValidInformation()
+    public async Task Info_ShouldContainValidInformation()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
 
         // Act
         var info = accelerator.Info;
 
         // Assert
         Assert.NotNull(info);
-        info.Type.Should().Be(AcceleratorType.CPU);
+        info.DeviceType.Should().Be("CPU");
         info.Name.Should().NotBeNullOrEmpty();
-(info.DeviceMemory > 0).Should().BeTrue();
-(info.ComputeUnits > 0).Should().BeTrue();
-        info.IsUnified.Should().BeTrue();
+       info.TotalMemory > 0.Should().BeTrue();
+info.ComputeUnits > 0.Should().BeTrue();
+        info.IsUnifiedMemory.Should().BeTrue();
         info.Capabilities.Should().NotBeNull();
     }
 
     [Fact]
-    public void Info_Capabilities_ShouldContainSimdInformation()
+    public async Task Info_Capabilities_ShouldContainSimdInformation()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
 
         // Act
         var capabilities = accelerator.Info.Capabilities;
@@ -120,10 +131,10 @@ public class CpuAcceleratorSimpleTests : IDisposable
     }
 
     [Fact]
-    public void Memory_ShouldReturnValidMemoryManager()
+    public async Task Memory_ShouldReturnValidMemoryManager()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
 
         // Act
         var memory = accelerator.Memory;
@@ -141,7 +152,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public async Task CompileKernelAsync_WithValidDefinition_ShouldReturnCompiledKernel()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
         var definition = CreateTestKernelDefinition("TestKernel");
 
         // Act
@@ -156,7 +167,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public async Task CompileKernelAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() => accelerator.MethodCall().AsTask());
@@ -166,7 +177,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public async Task CompileKernelAsync_WithCancellation_ShouldRespectCancellationToken()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
         var definition = CreateTestKernelDefinition("CancelledKernel");
         using var cts = new CancellationTokenSource();
         cts.Cancel();
@@ -182,7 +193,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public async Task CompileKernelAsync_WithDifferentKernelTypes_ShouldSucceed(string kernelType)
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
         var definition = CreateTestKernelDefinition($"{kernelType}Kernel", kernelType);
 
         // Act
@@ -201,7 +212,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public async Task SynchronizeAsync_ShouldCompleteSuccessfully()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
 
         // Act
         var task = accelerator.SynchronizeAsync();
@@ -215,7 +226,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public async Task SynchronizeAsync_WithCancellation_ShouldCompleteSuccessfully()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
         using var cts = new CancellationTokenSource();
 
         // Act
@@ -234,7 +245,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public async Task MemoryManager_CreateBuffer_ShouldReturnValidBuffer()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
         var memory = accelerator.Memory;
 
         // Act
@@ -249,7 +260,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public async Task MemoryManager_CopyBuffer_ShouldTransferData()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
         var memory = accelerator.Memory;
         var testData = new float[] { 1.0f, 2.0f, 3.0f, 4.0f };
 
@@ -263,10 +274,10 @@ public class CpuAcceleratorSimpleTests : IDisposable
     }
 
     [Fact]
-    public void MemoryManager_GetStatistics_ShouldReturnValidStatistics()
+    public async Task MemoryManager_GetStatistics_ShouldReturnValidStatistics()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        await using var accelerator = new CpuAccelerator(_mockOptions.Object, _mockThreadPoolOptions.Object, _mockLogger.Object);
         var memory = accelerator.Memory;
 
         // Act
@@ -274,9 +285,9 @@ public class CpuAcceleratorSimpleTests : IDisposable
 
         // Assert
         Assert.NotNull(statistics);
-        statistics.TotalAllocatedBytes >= 0.Should().BeTrue();
-(statistics.AvailableBytes > 0).Should().BeTrue();
-        statistics.AllocationCount >= 0.Should().BeTrue();
+        statistics.TotalAllocatedBytes .Should().BeGreaterThanOrEqualTo(0,);
+statistics.AvailableBytes > 0.Should().BeTrue();
+        statistics.AllocationCount .Should().BeGreaterThanOrEqualTo(0,);
         statistics.FragmentationPercentage.Should().BeInRange(0.0, 100.0);
         statistics.UsageByLocation.Should().NotBeNull();
     }
@@ -289,7 +300,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public async Task DisposeAsync_ShouldCompleteSuccessfully()
     {
         // Arrange
-        var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        var accelerator = new CpuAccelerator(_mockOptions.Object, Options.Create(new CpuThreadPoolOptions()), _mockLogger.Object);
 
         // Act
         await accelerator.DisposeAsync();
@@ -301,7 +312,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
     public async Task DisposeAsync_CalledMultipleTimes_ShouldNotThrow()
     {
         // Arrange
-        var accelerator = new CpuAccelerator(_mockOptions.Object, _mockLogger.Object);
+        var accelerator = new CpuAccelerator(_mockOptions.Object, Options.Create(new CpuThreadPoolOptions()), _mockLogger.Object);
 
         // Act
         await accelerator.DisposeAsync();
@@ -325,7 +336,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
         options.EnableNumaAwareAllocation.Should().BeTrue();
         options.PreferPerformanceOverPower.Should().BeTrue();
         options.MemoryAlignment.Should().Be(64);
-(options.MaxMemoryAllocation > 0).Should().BeTrue();
+options.MaxMemoryAllocation > 0.Should().BeTrue();
         options.EnableKernelCaching.Should().BeTrue();
     }
 
@@ -345,9 +356,9 @@ public class CpuAcceleratorSimpleTests : IDisposable
 
         // Assert
         Assert.NotEmpty(errors);
-        errors.Contain(e => e.Contains("MaxWorkGroupSize"));
-        errors.Contain(e => e.Contains("MaxMemoryAllocation"));
-        errors.Contain(e => e.Contains("TargetVectorWidth"));
+        errors.Should().Contain(e => e.Contains("MaxWorkGroupSize"));
+        errors.Should().Contain(e => e.Contains("MaxMemoryAllocation"));
+        errors.Should().Contain(e => e.Contains("TargetVectorWidth"));
     }
 
     [Theory]
@@ -417,7 +428,7 @@ public class CpuAcceleratorSimpleTests : IDisposable
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _disposed = true;
         }

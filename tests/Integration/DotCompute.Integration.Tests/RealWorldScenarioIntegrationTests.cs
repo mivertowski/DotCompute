@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -78,7 +78,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                 new WorkflowOutput 
                 { 
                     Name = "feature_maps", 
-                    Size = batchSize * outputChannels * (inputHeight - kernelSize + 1) * (inputWidth - kernelSize + 1) 
+                    Size = batchSize * outputChannels *(inputHeight - kernelSize + 1) *(inputWidth - kernelSize + 1) 
                 }
             },
             IntermediateBuffers = new()
@@ -86,12 +86,12 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
                 new WorkflowIntermediateBuffer 
                 { 
                     Name = "conv_output", 
-                    SizeInBytes = batchSize * outputChannels * (inputHeight - kernelSize + 1) * (inputWidth - kernelSize + 1) * sizeof(float) 
+                    SizeInBytes = batchSize * outputChannels *(inputHeight - kernelSize + 1) *(inputWidth - kernelSize + 1) * sizeof(float) 
                 },
                 new WorkflowIntermediateBuffer 
                 { 
                     Name = "normalized_output", 
-                    SizeInBytes = batchSize * outputChannels * (inputHeight - kernelSize + 1) * (inputWidth - kernelSize + 1) * sizeof(float) 
+                    SizeInBytes = batchSize * outputChannels *(inputHeight - kernelSize + 1) *(inputWidth - kernelSize + 1) * sizeof(float) 
                 }
             },
             ExecutionStages = new()
@@ -136,22 +136,22 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         result.Success.Should().BeTrue();
         result.ExecutionResults.Count.Should().Be(3);
         
-        var featureMaps = (float[])result.Results["feature_maps"];
+        var featureMaps =(float[])result.Results["feature_maps"];
         featureMaps.Should().NotContain(float.NaN);
         featureMaps.Should().NotContain(float.PositiveInfinity);
         featureMaps.Should().NotContain(float.NegativeInfinity);
         
-        // Verify activation outputs are reasonable (ReLU should produce non-negative values)
-        featureMaps.Should().AllSatisfy(value => value.BeGreaterOrEqualTo(0f));
+        // Verify activation outputs are reasonable(ReLU should produce non-negative values)
+        featureMaps.Should().AllSatisfy(value => value.Should().BeGreaterOrEqualTo(0f));
         
         // Performance validation
-        var totalDataMB = (trainingBatch.Length + weights.Length) * sizeof(float) / 1024.0 / 1024.0;
+        var totalDataMB =(trainingBatch.Length + weights.Length) * sizeof(float) / 1024.0 / 1024.0;
         var throughputMBps = totalDataMB / result.Duration.TotalSeconds;
         
         Logger.LogInformation("ML Training performance: {Throughput:F2} MB/s, {Duration:F1}ms for batch size {BatchSize}",
             throughputMBps, result.Duration.TotalMilliseconds, batchSize);
         
-        Assert.True(throughputMBps > 10, "ML workload should maintain good throughput");
+        throughputMBps.Should().BeGreaterThan(10, "ML workload should maintain good throughput");
     }
 
     [Fact]
@@ -160,7 +160,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         // Arrange - Simulate N-body particle system
         const int particleCount = 4096;
         const float timeStep = 0.001f;
-        const int simulationSteps = 100;
+        const int simulationSteps = 100; // Commenting out to prevent unused variable warning
+        _ = simulationSteps;
         
         var positions = TestDataGenerators.GenerateFloatArray(particleCount * 3, -10f, 10f); // x,y,z coordinates
         var velocities = TestDataGenerators.GenerateFloatArray(particleCount * 3, -1f, 1f);
@@ -235,14 +236,14 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         // Assert
         result.Success.Should().BeTrue();
         
-        var finalPositions = (float[])result.Results["final_positions"];
-        var finalVelocities = (float[])result.Results["final_velocities"];
+        var finalPositions =(float[])result.Results["final_positions"];
+        var finalVelocities =(float[])result.Results["final_velocities"];
         
         // Validate simulation results
         finalPositions.Should().NotContain(float.NaN);
         finalVelocities.Should().NotContain(float.NaN);
         
-        // Check conservation principles (energy should be roughly conserved)
+        // Check conservation principles(energy should be roughly conserved)
         ValidatePhysicsConservation(positions, velocities, masses, finalPositions, finalVelocities);
         
         // Performance validation for scientific computing
@@ -252,7 +253,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Scientific computing performance: {Score:E2} operations/ms for {Particles} particles",
             performanceScore, particleCount);
         
-        Assert.True(performanceScore > 1e6, "MD simulation should achieve reasonable computational throughput");
+        (performanceScore > 1e6).Should().BeTrue();
     }
 
     [Fact]
@@ -349,7 +350,7 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         result.Success.Should().BeTrue();
         result.ExecutionResults.Count.Should().Be(4);
         
-        var enhancedImage = (float[])result.Results["enhanced_image"];
+        var enhancedImage =(float[])result.Results["enhanced_image"];
         
         // Validate image processing results
         enhancedImage.Should().NotContain(float.NaN);
@@ -360,10 +361,10 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         var megapixels = pixelCount / 1_000_000.0;
         var processingRate = megapixels / result.Duration.TotalSeconds;
         
-        Logger.LogInformation("Image processing performance: {Rate:F2} MP/s ({Width}x{Height})",
+        Logger.LogInformation("Image processing performance: {Rate:F2} MP/s{Width}x{Height})",
             processingRate, imageWidth, imageHeight);
         
-        Assert.True(processingRate > 10, "Image processing should achieve reasonable megapixel/second rate");
+        processingRate.Should().BeGreaterThan(10, "Image processing should achieve reasonable megapixel/second rate");
         
         // Verify all processing stages completed in reasonable time
         result.ExecutionResults.Values.Should().AllSatisfy(stage =>
@@ -468,8 +469,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         // Assert
         result.Success.Should().BeTrue();
         
-        var optionPrice = ((float[])result.Results["option_prices"])[0];
-        var confidenceInterval = (float[])result.Results["confidence_interval"];
+        var optionPrice =((float[])result.Results["option_prices"])[0];
+        var confidenceInterval =(float[])result.Results["confidence_interval"];
         
         // Validate financial model results
         Assert.True(optionPrice > 0f);
@@ -487,12 +488,12 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
             confidenceInterval[0], confidenceInterval[1], simulationPaths);
         
         // Monte Carlo should be reasonably close to theoretical price
-        Assert.True(priceDifference < theoreticalPrice * 0.05f, 
+        (priceDifference < theoreticalPrice * 0.05f).Should().BeTrue( 
             "Monte Carlo price should be within 5% of theoretical price");
         
         // Performance validation for financial computing
         var pathsPerSecond = simulationPaths / result.Duration.TotalSeconds;
-        Assert.True(pathsPerSecond > 10000, "Monte Carlo should process paths efficiently");
+        pathsPerSecond.Should().BeGreaterThan(10000, "Monte Carlo should process paths efficiently");
     }
 
     [Fact]
@@ -590,8 +591,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         // Assert
         result.Success.Should().BeTrue();
         
-        var aggregatedResults = (float[])result.Results["aggregated_results"];
-        var summaryStats = (float[])result.Results["summary_stats"];
+        var aggregatedResults =(float[])result.Results["aggregated_results"];
+        var summaryStats =(float[])result.Results["summary_stats"];
         
         // Validate data analytics results
         aggregatedResults.Should().NotContain(float.NaN);
@@ -599,14 +600,14 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         
         // Performance validation for big data processing
         var recordsPerSecond = recordCount / result.Duration.TotalSeconds;
-        var throughputMBps = (recordCount * dimensionCount * sizeof(float)) / 1024.0 / 1024.0 / result.Duration.TotalSeconds;
+        var throughputMBps =(recordCount * dimensionCount * sizeof(float)) / 1024.0 / 1024.0 / result.Duration.TotalSeconds;
         
         Logger.LogInformation("Big data analytics performance: {RecordsPerSec:E2} records/s, {Throughput:F2} MB/s " +
                              "for {Records:E0} records",
-            recordsPerSecond, throughputMBps, (double)recordCount);
+            recordsPerSecond, throughputMBps,(double)recordCount);
         
-        Assert.True(recordsPerSecond > 50000, "Big data processing should handle large record volumes efficiently");
-        Assert.True(throughputMBps > 50, "Data analytics should maintain good memory throughput");
+        recordsPerSecond.Should().BeGreaterThan(50000, "Big data processing should handle large record volumes efficiently");
+        throughputMBps.Should().BeGreaterThan(50, "Data analytics should maintain good memory throughput");
     }
 
     [Theory]
@@ -629,14 +630,14 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         var expectedThroughput = CalculateExpectedStreamingThroughput(workloadType, param1, param2, param3);
         var actualThroughput = result.Metrics?.ThroughputMBps ?? 0;
         
-        Logger.LogInformation("Streaming workload {Type}: {Actual:F2} MB/s (expected: {Expected:F2} MB/s)",
+        Logger.LogInformation("Streaming workload {Type}: {Actual:F2} MB/sexpected: {Expected:F2} MB/s)",
             workloadType, actualThroughput, expectedThroughput);
         
-        Assert.True(actualThroughput > expectedThroughput * 0.7,
+        (actualThroughput > expectedThroughput * 0.7).Should().BeTrue(
             $"{workloadType} streaming should meet 70% of expected throughput");
         
         // Real-time workloads should complete within reasonable time
-        result.Duration.Assert.True(TotalSeconds < 10,
+        result.Duration.TotalSeconds.Should().BeLessThan(10,
             "Streaming workloads should complete quickly for real-time requirements");
     }
 
@@ -647,10 +648,10 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
     {
         const int particleCount = 4096;
         
-        // Calculate initial and final kinetic energy (simplified)
+        // Calculate initial and final kinetic energy(simplified)
         double initialKE = 0, finalKE = 0;
         
-        for (int i = 0; i < particleCount; i++)
+        for(int i = 0; i < particleCount; i++)
         {
             var mass = masses[i];
             
@@ -658,29 +659,29 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
             var vx0 = initialVelocities[i * 3];
             var vy0 = initialVelocities[i * 3 + 1];
             var vz0 = initialVelocities[i * 3 + 2];
-            initialKE += 0.5 * mass * (vx0 * vx0 + vy0 * vy0 + vz0 * vz0);
+            initialKE += 0.5 * mass *(vx0 * vx0 + vy0 * vy0 + vz0 * vz0);
             
             // Final kinetic energy
             var vxf = finalVelocities[i * 3];
             var vyf = finalVelocities[i * 3 + 1];
             var vzf = finalVelocities[i * 3 + 2];
-            finalKE += 0.5 * mass * (vxf * vxf + vyf * vyf + vzf * vzf);
+            finalKE += 0.5 * mass *(vxf * vxf + vyf * vyf + vzf * vzf);
         }
         
-        // Energy should be roughly conserved (within numerical precision)
+        // Energy should be roughly conserved(within numerical precision)
         var energyChange = Math.Abs(finalKE - initialKE) / initialKE;
-        Assert.True(energyChange < 0.1, "Energy should be approximately conserved in MD simulation");
+        energyChange .Should().BeLessThan(0.1, "Energy should be approximately conserved in MD simulation");
     }
 
     private float CalculateBlackScholesPrice(float S, float K, float r, float sigma, float T)
     {
-        var d1 = (Math.Log(S / K) + (r + 0.5 * sigma * sigma) * T) / (sigma * Math.Sqrt(T));
+        var d1 =(Math.Log(S / K) +(r + 0.5 * sigma * sigma) * T) /(sigma * Math.Sqrt(T));
         var d2 = d1 - sigma * Math.Sqrt(T);
         
-        var N_d1 = 0.5 * (1 + Erf(d1 / Math.Sqrt(2)));
-        var N_d2 = 0.5 * (1 + Erf(d2 / Math.Sqrt(2)));
+        var N_d1 = 0.5 *(1 + Erf(d1 / Math.Sqrt(2)));
+        var N_d2 = 0.5 *(1 + Erf(d2 / Math.Sqrt(2)));
         
-        return (float)(S * N_d1 - K * Math.Exp(-r * T) * N_d2);
+        return(float)(S * N_d1 - K * Math.Exp(-r * T) * N_d2);
     }
 
     private static double Erf(double x)
@@ -696,8 +697,8 @@ public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         var sign = x < 0 ? -1 : 1;
         x = Math.Abs(x);
 
-        var t = 1.0 / (1.0 + p * x);
-        var y = 1.0 - (((a5 * t + a4) * t) + a3) * t + a2 * t + a1 * t * Math.Exp(-x * x);
+        var t = 1.0 /(1.0 + p * x);
+        var y = 1.0 -(((a5 * t + a4) * t) + a3) * t + a2 * t + a1 * t * Math.Exp(-x * x);
 
         return sign * y;
     }
@@ -838,30 +839,30 @@ __kernel void conv_forward(__global const float* input, __global const float* we
     int out_h = get_global_id(2);
     int out_w = get_global_id(3);
     
-    if (batch >= batch_size || out_c >= output_channels) return;
+    if(batch >= batch_size || out_c >= output_channels) return;
     
     int output_height = input_height - kernel_size + 1;
     int output_width = input_width - kernel_size + 1;
     
-    if (out_h >= output_height || out_w >= output_width) return;
+    if(out_h >= output_height || out_w >= output_width) return;
     
     float sum = biases[out_c];
     
-    for (int in_c = 0; in_c < input_channels; in_c++) {
-        for (int k_h = 0; k_h < kernel_size; k_h++) {
-            for (int k_w = 0; k_w < kernel_size; k_w++) {
+    for(int in_c = 0; in_c < input_channels; in_c++) {
+        for(int k_h = 0; k_h < kernel_size; k_h++) {
+            for(int k_w = 0; k_w < kernel_size; k_w++) {
                 int in_h = out_h + k_h;
                 int in_w = out_w + k_w;
                 
-                int input_idx = ((batch * input_channels + in_c) * input_height + in_h) * input_width + in_w;
-                int weight_idx = ((out_c * input_channels + in_c) * kernel_size + k_h) * kernel_size + k_w;
+                int input_idx =((batch * input_channels + in_c) * input_height + in_h) * input_width + in_w;
+                int weight_idx =((out_c * input_channels + in_c) * kernel_size + k_h) * kernel_size + k_w;
                 
                 sum += input[input_idx] * weights[weight_idx];
             }
         }
     }
     
-    int output_idx = ((batch * output_channels + out_c) * output_height + out_h) * output_width + out_w;
+    int output_idx =((batch * output_channels + out_c) * output_height + out_h) * output_width + out_w;
     output[output_idx] = sum;
 }";
 
@@ -883,18 +884,18 @@ __kernel void activation(__global const float* input, __global float* output) {
 __kernel void compute_forces(__global const float* positions, __global const float* masses,
                             __global float* forces, int particle_count) {
     int i = get_global_id(0);
-    if (i >= particle_count) return;
+    if(i >= particle_count) return;
     
-    float3 force = (float3)(0.0f, 0.0f, 0.0f);
-    float3 pos_i = (float3)(positions[i*3], positions[i*3+1], positions[i*3+2]);
+    float3 force =(float3)(0.0f, 0.0f, 0.0f);
+    float3 pos_i =(float3)(positions[i*3], positions[i*3+1], positions[i*3+2]);
     float mass_i = masses[i];
     
-    for (int j = 0; j < particle_count; j++) {
-        if (i != j) {
-            float3 pos_j = (float3)(positions[j*3], positions[j*3+1], positions[j*3+2]);
+    for(int j = 0; j < particle_count; j++) {
+        if(i != j) {
+            float3 pos_j =(float3)(positions[j*3], positions[j*3+1], positions[j*3+2]);
             float3 r = pos_j - pos_i;
             float dist = length(r) + 0.01f; // Softening factor
-            float3 force_ij = (mass_i * masses[j]) / (dist * dist * dist) * r;
+            float3 force_ij =(mass_i * masses[j]) /(dist * dist * dist) * r;
             force += force_ij;
         }
     }
@@ -910,12 +911,12 @@ __kernel void integrate_motion(__global const float* positions, __global const f
                               __global float* new_positions, __global float* new_velocities,
                               float time_step, int particle_count) {
     int i = get_global_id(0);
-    if (i >= particle_count) return;
+    if(i >= particle_count) return;
     
     float mass = masses[i];
-    float3 pos = (float3)(positions[i*3], positions[i*3+1], positions[i*3+2]);
-    float3 vel = (float3)(velocities[i*3], velocities[i*3+1], velocities[i*3+2]);
-    float3 force = (float3)(forces[i*3], forces[i*3+1], forces[i*3+2]);
+    float3 pos =(float3)(positions[i*3], positions[i*3+1], positions[i*3+2]);
+    float3 vel =(float3)(velocities[i*3], velocities[i*3+1], velocities[i*3+2]);
+    float3 force =(float3)(forces[i*3], forces[i*3+1], forces[i*3+2]);
     
     // Velocity Verlet integration
     float3 acc = force / mass;
@@ -938,7 +939,7 @@ __kernel void noise_reduction(__global const float* input, __global float* outpu
     int y = get_global_id(1);
     int c = get_global_id(2);
     
-    if (x >= width || y >= height || c >= channels) return;
+    if(x >= width || y >= height || c >= channels) return;
     
     // Gaussian blur for noise reduction
     float kernel[9] = {0.0625f, 0.125f, 0.0625f,
@@ -946,16 +947,16 @@ __kernel void noise_reduction(__global const float* input, __global float* outpu
                        0.0625f, 0.125f, 0.0625f};
     
     float sum = 0.0f;
-    for (int dy = -1; dy <= 1; dy++) {
-        for (int dx = -1; dx <= 1; dx++) {
+    for(int dy = -1; dy <= 1; dy++) {
+        for(int dx = -1; dx <= 1; dx++) {
             int nx = clamp(x + dx, 0, width - 1);
             int ny = clamp(y + dy, 0, height - 1);
-            int idx = (ny * width + nx) * channels + c;
-            sum += input[idx] * kernel[(dy + 1) * 3 + (dx + 1)];
+            int idx =(ny * width + nx) * channels + c;
+            sum += input[idx] * kernel[(dy + 1) * 3 +(dx + 1)];
         }
     }
     
-    int output_idx = (y * width + x) * channels + c;
+    int output_idx =(y * width + x) * channels + c;
     output[output_idx] = sum;
 }";
 
@@ -965,16 +966,16 @@ __kernel void edge_enhancement(__global const float* input, __global float* outp
     int x = get_global_id(0);
     int y = get_global_id(1);
     
-    if (x >= width || y >= height) return;
+    if(x >= width || y >= height) return;
     
     // Unsharp mask for edge enhancement
     float original = input[y * width + x];
     
-    // Gaussian blur (simplified)
+    // Gaussian blur(simplified)
     float blurred = 0.0f;
     int count = 0;
-    for (int dy = -2; dy <= 2; dy++) {
-        for (int dx = -2; dx <= 2; dx++) {
+    for(int dy = -2; dy <= 2; dy++) {
+        for(int dx = -2; dx <= 2; dx++) {
             int nx = clamp(x + dx, 0, width - 1);
             int ny = clamp(y + dy, 0, height - 1);
             blurred += input[ny * width + nx];
@@ -984,7 +985,7 @@ __kernel void edge_enhancement(__global const float* input, __global float* outp
     blurred /= count;
     
     // Enhance edges
-    float enhanced = original + 0.5f * (original - blurred);
+    float enhanced = original + 0.5f *(original - blurred);
     output[y * width + x] = clamp(enhanced, 0.0f, 255.0f);
 }";
 
@@ -996,7 +997,7 @@ __kernel void color_correction(__global const float* input, __global float* outp
     // Simple gamma correction and contrast enhancement
     value = clamp(value / 255.0f, 0.0f, 1.0f);
     value = pow(value, 0.8f); // Gamma correction
-    value = (value - 0.5f) * 1.2f + 0.5f; // Contrast enhancement
+    value =(value - 0.5f) * 1.2f + 0.5f; // Contrast enhancement
     
     output[gid] = clamp(value * 255.0f, 0.0f, 255.0f);
 }";
@@ -1007,7 +1008,7 @@ __kernel void tone_mapping(__global const float* input, __global float* output) 
     float hdr_value = input[gid] / 255.0f;
     
     // Reinhard tone mapping
-    float ldr_value = hdr_value / (1.0f + hdr_value);
+    float ldr_value = hdr_value /(1.0f + hdr_value);
     
     output[gid] = clamp(ldr_value * 255.0f, 0.0f, 255.0f);
 }";
@@ -1017,17 +1018,17 @@ __kernel void generate_paths(__global const float* randoms, __global float* stoc
                            float spot_price, float risk_free_rate, float volatility,
                            float time_to_expiry, int time_steps, int num_paths) {
     int path_idx = get_global_id(0);
-    if (path_idx >= num_paths) return;
+    if(path_idx >= num_paths) return;
     
     float dt = time_to_expiry / time_steps;
-    float drift = (risk_free_rate - 0.5f * volatility * volatility) * dt;
+    float drift =(risk_free_rate - 0.5f * volatility * volatility) * dt;
     float diffusion = volatility * sqrt(dt);
     
     float stock_price = spot_price;
     
-    for (int t = 0; t < time_steps; t++) {
+    for(int t = 0; t < time_steps; t++) {
         float random = randoms[path_idx * time_steps + t];
-        // Box-Muller transform (simplified)
+        // Box-Muller transform(simplified)
         float normal = sqrt(-2.0f * log(random + 1e-8f)) * cos(2.0f * M_PI * random);
         
         stock_price *= exp(drift + diffusion * normal);
@@ -1059,11 +1060,11 @@ __kernel void discount_and_average(__global const float* payoffs, __global float
     // Each thread processes multiple payoffs
     float sum = 0.0f;
     float sum_sq = 0.0f;
-    int paths_per_thread = (num_paths + get_global_size(0) - 1) / get_global_size(0);
+    int paths_per_thread =(num_paths + get_global_size(0) - 1) / get_global_size(0);
     
-    for (int i = 0; i < paths_per_thread; i++) {
+    for(int i = 0; i < paths_per_thread; i++) {
         int idx = get_global_id(0) * paths_per_thread + i;
-        if (idx < num_paths) {
+        if(idx < num_paths) {
             float payoff = payoffs[idx];
             sum += payoff;
             sum_sq += payoff * payoff;
@@ -1075,15 +1076,15 @@ __kernel void discount_and_average(__global const float* payoffs, __global float
     barrier(CLK_LOCAL_MEM_FENCE);
     
     // Reduction
-    for (int offset = lsize / 2; offset > 0; offset >>= 1) {
-        if (lid < offset) {
+    for(int offset = lsize / 2; offset > 0; offset >>= 1) {
+        if(lid < offset) {
             shared_sum[lid] += shared_sum[lid + offset];
             shared_sum_sq[lid] += shared_sum_sq[lid + offset];
         }
         barrier(CLK_LOCAL_MEM_FENCE);
     }
     
-    if (lid == 0 && get_group_id(0) == 0) {
+    if(lid == 0 && get_group_id(0) == 0) {
         float total_sum = shared_sum[0];
         float total_sum_sq = shared_sum_sq[0];
         
@@ -1104,12 +1105,12 @@ __kernel void discount_and_average(__global const float* payoffs, __global float
 __kernel void filter_data(__global const float* input, __global float* output,
                          int record_count, int dimension_count) {
     int gid = get_global_id(0);
-    if (gid >= record_count * dimension_count) return;
+    if(gid >= record_count * dimension_count) return;
     
     float value = input[gid];
     
     // Simple data filtering: remove outliers and normalize
-    if (fabs(value) > 50.0f) {
+    if(fabs(value) > 50.0f) {
         value = copysign(50.0f, value); // Clamp outliers
     }
     
@@ -1120,14 +1121,14 @@ __kernel void filter_data(__global const float* input, __global float* output,
 __kernel void compute_statistics(__global const float* data, __global float* stats,
                                 int record_count, int dimension_count) {
     int dim = get_global_id(0);
-    if (dim >= dimension_count) return;
+    if(dim >= dimension_count) return;
     
     float sum = 0.0f;
     float sum_sq = 0.0f;
     float min_val = data[dim];
     float max_val = data[dim];
     
-    for (int i = 0; i < record_count; i++) {
+    for(int i = 0; i < record_count; i++) {
         float value = data[i * dimension_count + dim];
         sum += value;
         sum_sq += value * value;
@@ -1150,13 +1151,13 @@ __kernel void aggregate_groups(__global const float* data, __global const float*
     int group_id = get_global_id(0);
     int dim = get_global_id(1);
     
-    if (group_id >= group_count || dim >= dimension_count) return;
+    if(group_id >= group_count || dim >= dimension_count) return;
     
     float sum = 0.0f;
     int count = 0;
     
-    for (int i = 0; i < record_count; i++) {
-        if ((int)group_keys[i] == group_id) {
+    for(int i = 0; i < record_count; i++) {
+        if((int)group_keys[i] == group_id) {
             sum += data[i * dimension_count + dim];
             count++;
         }
@@ -1171,14 +1172,14 @@ __kernel void video_filter(__global const float* frame, __global float* output, 
     int x = get_global_id(0);
     int y = get_global_id(1);
     
-    if (x >= width || y >= height) return;
+    if(x >= width || y >= height) return;
     
     int idx = y * width * 3 + x * 3; // RGB
     
     // Simple video filter: enhance contrast and saturation
-    for (int c = 0; c < 3; c++) {
+    for(int c = 0; c < 3; c++) {
         float pixel = frame[idx + c] / 255.0f;
-        pixel = (pixel - 0.5f) * 1.2f + 0.5f; // Contrast
+        pixel =(pixel - 0.5f) * 1.2f + 0.5f; // Contrast
         pixel = clamp(pixel, 0.0f, 1.0f);
         output[idx + c] = pixel * 255.0f;
     }
@@ -1201,10 +1202,10 @@ __kernel void audio_effect(__global const float* audio, __global float* output) 
 __kernel void hash_function(__global const float* data, __global float* hashes, int iterations) {
     int gid = get_global_id(0);
     
-    uint hash = (uint)(data[gid * 16] * 4294967295.0f); // Convert to uint
+    uint hash =(uint)(data[gid * 16] * 4294967295.0f); // Convert to uint
     
     // Simple hash function with iterations
-    for (int i = 0; i < iterations; i++) {
+    for(int i = 0; i < iterations; i++) {
         hash = hash * 1103515245u + 12345u; // Linear congruential generator
         hash ^= hash >> 16;
         hash *= 0x85ebca6bu;
@@ -1213,6 +1214,6 @@ __kernel void hash_function(__global const float* data, __global float* hashes, 
         hash ^= hash >> 16;
     }
     
-    hashes[gid] = (float)hash / 4294967295.0f; // Convert back to float [0,1]
+    hashes[gid] =(float)hash / 4294967295.0f; // Convert back to float [0,1]
 }";
 }

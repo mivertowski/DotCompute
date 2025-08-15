@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Plugins.Interfaces;
@@ -28,7 +28,7 @@ public class PluginInterfaceTests
         Enum.IsDefined(typeof(PluginCapabilities), "MonitoringProvider").Should().BeTrue();
         
         // Verify it's a flags enum
-        typeof(PluginCapabilities).BeDecoratedWith<FlagsAttribute>();
+        typeof(PluginCapabilities).Should().BeDecoratedWith<FlagsAttribute>();
     }
 
     [Fact]
@@ -85,11 +85,11 @@ public class PluginInterfaceTests
         // Assert
         result.IsValid.Should().BeFalse(); // Default is false
         result.Errors.Should().NotBeNull();
-        result.Assert.Empty(Errors);
+        result.Errors.Should().BeEmpty();
         result.Warnings.Should().NotBeNull();
-        result.Assert.Empty(Warnings);
+        result.Warnings.Should().BeEmpty();
         result.Metadata.Should().NotBeNull();
-        result.Assert.Empty(Metadata);
+        result.Metadata.Should().BeEmpty();
     }
 
     [Fact]
@@ -107,10 +107,10 @@ public class PluginInterfaceTests
 
         // Assert
         result.Errors.Count.Should().Be(2);
-        result.Assert.Contains("Error 1", Errors);
-        result.Assert.Contains("Error 2", Errors);
+        result.Errors.Should().Contain("Error 1");
+        result.Errors.Should().Contain("Error 2");
         result.Warnings.Count.Should().Be(1);
-        result.Assert.Contains("Warning 1", Warnings);
+        result.Warnings.Should().Contain("Warning 1");
         result.Metadata.Count.Should().Be(2);
         result.Metadata["Key1"].Should().Be("Value1");
         result.Metadata["Key2"].Should().Be(42);
@@ -123,7 +123,7 @@ public class PluginInterfaceTests
         var metrics = new PluginMetrics();
 
         // Assert
-        metrics.Timestamp.BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(5));
+        metrics.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
         metrics.Uptime.Should().Be(TimeSpan.Zero);
         metrics.RequestCount.Should().Be(0);
         metrics.ErrorCount.Should().Be(0);
@@ -131,7 +131,7 @@ public class PluginInterfaceTests
         metrics.MemoryUsage.Should().Be(0);
         metrics.CpuUsage.Should().Be(0);
         metrics.CustomMetrics.Should().NotBeNull();
-        metrics.Assert.Empty(CustomMetrics);
+        metrics.CustomMetrics.Should().BeEmpty();
     }
 
     [Fact]
@@ -181,7 +181,7 @@ public class PluginInterfaceTests
         eventArgs.OldState.Should().Be(oldState);
         eventArgs.NewState.Should().Be(newState);
         eventArgs.Reason.Should().Be(reason);
-        eventArgs.Timestamp.BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(5));
+        eventArgs.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public class PluginInterfaceTests
         var eventArgs = new PluginStateChangedEventArgs(PluginState.Loaded, PluginState.Running);
 
         // Assert
-        eventArgs.Assert.Null(Reason);
+        eventArgs.Reason.Should().BeNull();
     }
 
     [Fact]
@@ -210,10 +210,10 @@ public class PluginInterfaceTests
         var eventArgs = new PluginErrorEventArgs(exception, context, additionalData);
 
         // Assert
-        eventArgs.Exception.BeSameAs(exception);
+        eventArgs.Exception.Should().BeSameAs(exception);
         eventArgs.Context.Should().Be(context);
-        eventArgs.AdditionalData.BeSameAs(additionalData);
-        eventArgs.Timestamp.BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(5));
+        eventArgs.AdditionalData.Should().BeSameAs(additionalData);
+        eventArgs.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public class PluginInterfaceTests
 
         // Assert
         eventArgs.AdditionalData.Should().NotBeNull();
-        eventArgs.Assert.Empty(AdditionalData);
+        eventArgs.AdditionalData.Should().BeEmpty();
     }
 
     [Fact]
@@ -251,8 +251,8 @@ public class PluginInterfaceTests
         eventArgs.OldHealth.Should().Be(oldHealth);
         eventArgs.NewHealth.Should().Be(newHealth);
         eventArgs.Reason.Should().Be(reason);
-        eventArgs.HealthData.BeSameAs(healthData);
-        eventArgs.Timestamp.BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(5));
+        eventArgs.HealthData.Should().BeSameAs(healthData);
+        eventArgs.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -262,9 +262,9 @@ public class PluginInterfaceTests
         var eventArgs = new PluginHealthChangedEventArgs(PluginHealth.Healthy, PluginHealth.Degraded);
 
         // Assert
-        eventArgs.Assert.Null(Reason);
+        eventArgs.Reason.Should().BeNull();
         eventArgs.HealthData.Should().NotBeNull();
-        eventArgs.Assert.Empty(HealthData);
+        eventArgs.HealthData.Should().BeEmpty();
     }
 
     [Fact]
@@ -274,29 +274,29 @@ public class PluginInterfaceTests
         var interfaceType = typeof(IBackendPlugin);
 
         // Assert - verify interface has all required properties
-        interfaceType.GetProperty(nameof(IBackendPlugin.Id)).NotBeNull();
-        interfaceType.GetProperty(nameof(IBackendPlugin.Name)).NotBeNull();
-        interfaceType.GetProperty(nameof(IBackendPlugin.Version)).NotBeNull();
-        interfaceType.GetProperty(nameof(IBackendPlugin.Description)).NotBeNull();
-        interfaceType.GetProperty(nameof(IBackendPlugin.Author)).NotBeNull();
-        interfaceType.GetProperty(nameof(IBackendPlugin.Capabilities)).NotBeNull();
-        interfaceType.GetProperty(nameof(IBackendPlugin.State)).NotBeNull();
-        interfaceType.GetProperty(nameof(IBackendPlugin.Health)).NotBeNull();
+        interfaceType.GetProperty(nameof(IBackendPlugin.Id)).Should().NotBeNull();
+        interfaceType.GetProperty(nameof(IBackendPlugin.Name)).Should().NotBeNull();
+        interfaceType.GetProperty(nameof(IBackendPlugin.Version)).Should().NotBeNull();
+        interfaceType.GetProperty(nameof(IBackendPlugin.Description)).Should().NotBeNull();
+        interfaceType.GetProperty(nameof(IBackendPlugin.Author)).Should().NotBeNull();
+        interfaceType.GetProperty(nameof(IBackendPlugin.Capabilities)).Should().NotBeNull();
+        interfaceType.GetProperty(nameof(IBackendPlugin.State)).Should().NotBeNull();
+        interfaceType.GetProperty(nameof(IBackendPlugin.Health)).Should().NotBeNull();
 
         // Assert - verify interface has all required methods
-        interfaceType.GetMethod(nameof(IBackendPlugin.ConfigureServices)).NotBeNull();
-        interfaceType.GetMethod(nameof(IBackendPlugin.InitializeAsync)).NotBeNull();
-        interfaceType.GetMethod(nameof(IBackendPlugin.StartAsync)).NotBeNull();
-        interfaceType.GetMethod(nameof(IBackendPlugin.StopAsync)).NotBeNull();
-        interfaceType.GetMethod(nameof(IBackendPlugin.Validate)).NotBeNull();
-        interfaceType.GetMethod(nameof(IBackendPlugin.GetConfigurationSchema)).NotBeNull();
-        interfaceType.GetMethod(nameof(IBackendPlugin.OnConfigurationChangedAsync)).NotBeNull();
-        interfaceType.GetMethod(nameof(IBackendPlugin.GetMetrics)).NotBeNull();
+        interfaceType.GetMethod(nameof(IBackendPlugin.ConfigureServices)).Should().NotBeNull();
+        interfaceType.GetMethod(nameof(IBackendPlugin.InitializeAsync)).Should().NotBeNull();
+        interfaceType.GetMethod(nameof(IBackendPlugin.StartAsync)).Should().NotBeNull();
+        interfaceType.GetMethod(nameof(IBackendPlugin.StopAsync)).Should().NotBeNull();
+        interfaceType.GetMethod(nameof(IBackendPlugin.Validate)).Should().NotBeNull();
+        interfaceType.GetMethod(nameof(IBackendPlugin.GetConfigurationSchema)).Should().NotBeNull();
+        interfaceType.GetMethod(nameof(IBackendPlugin.OnConfigurationChangedAsync)).Should().NotBeNull();
+        interfaceType.GetMethod(nameof(IBackendPlugin.GetMetrics)).Should().NotBeNull();
 
         // Assert - verify interface has all required events
-        interfaceType.GetEvent(nameof(IBackendPlugin.StateChanged)).NotBeNull();
-        interfaceType.GetEvent(nameof(IBackendPlugin.ErrorOccurred)).NotBeNull();
-        interfaceType.GetEvent(nameof(IBackendPlugin.HealthChanged)).NotBeNull();
+        interfaceType.GetEvent(nameof(IBackendPlugin.StateChanged)).Should().NotBeNull();
+        interfaceType.GetEvent(nameof(IBackendPlugin.ErrorOccurred)).Should().NotBeNull();
+        interfaceType.GetEvent(nameof(IBackendPlugin.HealthChanged)).Should().NotBeNull();
 
         // Assert - verify interface inherits from IDisposable
         typeof(IDisposable).IsAssignableFrom(interfaceType).Should().BeTrue();
@@ -335,16 +335,16 @@ public class PluginInterfaceTests
         plugin.Health.Should().Be(PluginHealth.Healthy);
 
         // Act & Assert - verify all methods work
-        Action configureServices = () => plugin.ConfigureServices(serviceCollection, configuration);
+        Action configureServices =() => plugin.ConfigureServices(serviceCollection, configuration);
         configureServices(); // Should not throw
 
-        Func<Task> initialize = () => plugin.InitializeAsync(serviceProvider);
+        Func<Task> initialize =() => plugin.InitializeAsync(serviceProvider, CancellationToken.None);
         initialize(); // Should not throw
 
-        Func<Task> start = () => plugin.StartAsync();
+        Func<Task> start =() => plugin.StartAsync(CancellationToken.None);
         start(); // Should not throw
 
-        Func<Task> stop = () => plugin.StopAsync();
+        Func<Task> stop =() => plugin.StopAsync(CancellationToken.None);
         stop(); // Should not throw
 
         var validationResult = plugin.Validate();
@@ -354,13 +354,13 @@ public class PluginInterfaceTests
         var schema = plugin.GetConfigurationSchema();
         Assert.Equal("{}", schema);
 
-        Func<Task> configChanged = () => plugin.OnConfigurationChangedAsync(configuration);
+        Func<Task> configChanged =() => plugin.OnConfigurationChangedAsync(configuration, CancellationToken.None);
         configChanged(); // Should not throw
 
         var metrics = plugin.GetMetrics();
         Assert.NotNull(metrics);
 
-        Action dispose = () => plugin.Dispose();
+        Action dispose =() => plugin.Dispose();
         dispose(); // Should not throw
     }
 
@@ -434,7 +434,7 @@ public class PluginInterfaceTests
         metrics.CustomMetrics["DateTime"] = DateTime.UtcNow;
         metrics.CustomMetrics["TimeSpan"] = TimeSpan.FromMinutes(5);
         metrics.CustomMetrics["Array"] = _testArray;
-        metrics.CustomMetrics["Null"] = null!;
+        metrics.CustomMetrics["Null"] = default!;
 
         // Assert
         metrics.CustomMetrics.Count.Should().Be(8);
@@ -442,9 +442,9 @@ public class PluginInterfaceTests
         metrics.CustomMetrics["Int"].Should().Be(42);
         metrics.CustomMetrics["Double"].Should().Be(3.14);
         metrics.CustomMetrics["Bool"].Should().Be(true);
-        metrics.CustomMetrics["DateTime"].BeOfType<DateTime>();
-        metrics.CustomMetrics["TimeSpan"].BeOfType<TimeSpan>();
-        metrics.CustomMetrics["Array"].BeEquivalentTo(new[] { 1, 2, 3 });
-        metrics.CustomMetrics["Null"].BeNull();
+        metrics.CustomMetrics["DateTime"].Should().BeOfType<DateTime>();
+        metrics.CustomMetrics["TimeSpan"].Should().BeOfType<TimeSpan>();
+        metrics.CustomMetrics["Array"].Should().BeEquivalentTo(new[] { 1, 2, 3 });
+        metrics.CustomMetrics["Null"].Should().BeNull();
     }
 }

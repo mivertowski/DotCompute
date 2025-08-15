@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Immutable;
@@ -137,37 +137,37 @@ public static class TestHelper
 
         // Add System.Runtime references
         var systemRuntimePath = Path.Combine(runtimePath, "System.Runtime.dll");
-        if (File.Exists(systemRuntimePath))
+        if(File.Exists(systemRuntimePath))
         {
             references.Add(MetadataReference.CreateFromFile(systemRuntimePath));
         }
 
         // Add System.Runtime.CompilerServices.Unsafe
         var unsafePath = Path.Combine(runtimePath, "System.Runtime.CompilerServices.Unsafe.dll");
-        if (File.Exists(unsafePath))
+        if(File.Exists(unsafePath))
         {
             references.Add(MetadataReference.CreateFromFile(unsafePath));
         }
 
         // Add System.Numerics.Vectors
         var vectorsPath = Path.Combine(runtimePath, "System.Numerics.Vectors.dll");
-        if (File.Exists(vectorsPath))
+        if(File.Exists(vectorsPath))
         {
             references.Add(MetadataReference.CreateFromFile(vectorsPath));
         }
 
         // Add System.Runtime.Intrinsics
         var intrinsicsPath = Path.Combine(runtimePath, "System.Runtime.Intrinsics.dll");
-        if (File.Exists(intrinsicsPath))
+        if(File.Exists(intrinsicsPath))
         {
             references.Add(MetadataReference.CreateFromFile(intrinsicsPath));
         }
 
-        // Try to add the generators assembly (for KernelAttribute)
+        // Try to add the generators assembly(for KernelAttribute)
         try
         {
             var generatorsAssembly = Assembly.GetAssembly(typeof(DotCompute.Generators.Kernel.KernelAttribute));
-            if (generatorsAssembly != null)
+            if(generatorsAssembly != null)
             {
                 references.Add(MetadataReference.CreateFromFile(generatorsAssembly.Location));
             }
@@ -193,7 +193,7 @@ public static class TestHelper
     /// </summary>
     public static void VerifyGeneratedSourceCount(GeneratorDriverRunResult result, int expectedCount)
     {
-        if (result.GeneratedSources.Length != expectedCount)
+        if(result.GeneratedSources.Length != expectedCount)
         {
             throw new InvalidOperationException(
                 $"Expected {expectedCount} generated sources, but got {result.GeneratedSources.Length}");
@@ -205,7 +205,7 @@ public static class TestHelper
     /// </summary>
     public static void VerifyNoDiagnostics(GeneratorDriverRunResult result)
     {
-        if (result.Diagnostics.Any())
+        if(result.Diagnostics.Any())
         {
             var diagnosticMessages = string.Join("\n", result.Diagnostics.Select(d => d.ToString();
             throw new InvalidOperationException($"Expected no diagnostics, but got:\n{diagnosticMessages}");
@@ -220,7 +220,7 @@ public static class TestHelper
         var expectedIds = expectedDescriptors.Select(d => d.Id).ToHashSet();
         var actualIds = result.Diagnostics.Select(d => d.Id).ToHashSet();
 
-        if (!expectedIds.SetEquals(actualIds))
+        if(!expectedIds.SetEquals(actualIds))
         {
             var missing = expectedIds.Except(actualIds);
             var unexpected = actualIds.Except(expectedIds);
@@ -293,30 +293,30 @@ public unsafe class {className}
     public static class KernelBodies
     {
         public const string SimpleAdd = @"
-            for (int i = 0; i < length; i++)
+            for(int i = 0; i < length; i++)
             {
                 result[i] = a[i] + b[i];
             }";
 
         public const string SimpleMultiply = @"
-            for (int i = 0; i < length; i++)
+            for(int i = 0; i < length; i++)
             {
                 result[i] = a[i] * b[i];
             }";
 
         public const string ScalarOperation = @"
-            for (int i = 0; i < length; i++)
+            for(int i = 0; i < length; i++)
             {
                 result[i] = input[i] * scale;
             }";
 
         public const string ComplexOperation = @"
-            for (int i = 0; i < length; i++)
+            for(int i = 0; i < length; i++)
             {
                 var value = input[i];
-                if (value > 0)
+                if(value > 0)
                 {
-                    result[i] = (float)Math.Sqrt(value * 2.0f + 1.0f);
+                    result[i] =(float)Math.Sqrt(value * 2.0f + 1.0f);
                 }
                 else
                 {
@@ -325,15 +325,15 @@ public unsafe class {className}
             }";
 
         public const string MemoryCopy = @"
-            for (int i = 0; i < length; i++)
+            for(int i = 0; i < length; i++)
             {
                 output[i] = input[i];
             }";
 
         public const string NestedLoop = @"
-            for (int i = 0; i < height; i++)
+            for(int i = 0; i < height; i++)
             {
-                for (int j = 0; j < width; j++)
+                for(int j = 0; j < width; j++)
                 {
                     result[i * width + j] = input[i * width + j] * 2.0f;
                 }

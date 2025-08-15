@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
@@ -46,7 +46,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         // System should either complete successfully or fail gracefully with proper error handling
-        if (!result.Success)
+        if(!result.Success)
         {
             result.Error.Should().NotBeNull();
             result.Error!.Message.Should().NotBeEmpty();
@@ -78,11 +78,12 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("MemoryExhaustionRecovery", workflow);
 
         // Assert
-        if (!result.Success)
+        if(!result.Success)
         {
             // Should fail with memory-related error
             result.Error.Should().NotBeNull();
-            result.Error!.Message.ToLower().ContainAny("memory", "allocation", "exhausted");
+            var message = result.Error!.Message.ToLower();
+            Assert.True(message.Contains("memory") || message.Contains("allocation") || message.Contains("exhausted"));
         }
         else
         {
@@ -114,11 +115,11 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         {
             result = await ExecuteComputeWorkflowAsync("TimeoutRecovery", workflow, cts.Token);
         }
-        catch (OperationCanceledException ex)
+        catch(OperationCanceledException ex)
         {
             caughtException = ex;
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             caughtException = ex;
         }
@@ -128,12 +129,12 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         // Assert
         stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(5), "Should timeout quickly");
         
-        if (caughtException != null)
+        if(caughtException != null)
         {
             Assert.IsAssignableFrom<OperationCanceledException>(caughtException);
             Logger.LogInformation("Operation cancelled gracefully after {Duration}ms", stopwatch.ElapsedMilliseconds);
         }
-        else if (result != null && !result.Success)
+        else if(result != null && !result.Success)
         {
             Logger.LogInformation("Operation failed gracefully: {Error}", result.Error?.Message);
         }
@@ -141,7 +142,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         // System should remain responsive
         var quickWorkflow = CreateTestWorkflow("QuickTest", 64);
         var quickResult = await ExecuteComputeWorkflowAsync("TimeoutRecoveryQuickTest", quickWorkflow);
-        quickResult.Success.Should().BeTrue("System should remain operational after timeout");
+        quickResult.Success.Should().BeTrue();
     }
 
     [Fact]
@@ -268,15 +269,15 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var errorStageSuccess = result.ExecutionResults["error_stage"].Success;
         var recoveryStageSuccess = result.ExecutionResults["recovery_stage"].Success;
         
-        if (!errorStageSuccess)
+        if(!errorStageSuccess)
         {
-            recoveryStageSuccess.Should().BeTrue("Recovery stage should handle error stage failure");
+            recoveryStageSuccess.Should().BeTrue();
             Logger.LogInformation("Runtime error recovered successfully");
         }
         
         // Should have final output
         result.Results.Should().ContainKey("final_output");
-        var finalOutput = (float[])result.Results["final_output"];
+        var finalOutput =(float[])result.Results["final_output"];
         finalOutput.Should().NotContain(float.NaN);
     }
 
@@ -293,20 +294,20 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("NetworkFailureRecovery", workflow);
 
         // Assert
-        if (result.Success)
+        if(result.Success)
         {
             Logger.LogInformation("Distributed compute fell back to local execution successfully");
         }
         else
         {
             result.Error.Should().NotBeNull();
-            Logger.LogInformation("Network failure handled: {Error}", result.Error.Message);
+            Logger.LogInformation("Network failure handled: {Error}", result.Error!.Message);
         }
         
         // Verify system can still perform local computation
         var localWorkflow = CreateTestWorkflow("LocalFallback", 256);
         var localResult = await ExecuteComputeWorkflowAsync("LocalFallbackTest", localWorkflow);
-        localResult.Success.Should().BeTrue("Local computation should work after network failure");
+        localResult.Success.Should().BeTrue();
         
         HardwareSimulator.ResetAllConditions();
     }
@@ -361,15 +362,15 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         // Assert
         result.Success.Should().BeTrue();
         
-        var sanitizedOutput = (float[])result.Results["sanitized_output"];
+        var sanitizedOutput =(float[])result.Results["sanitized_output"];
         sanitizedOutput.Should().NotContain(float.NaN);
         sanitizedOutput.Should().NotContain(float.PositiveInfinity);
         sanitizedOutput.Should().NotContain(float.NegativeInfinity);
         
         // Verify corrupted values were replaced with safe defaults
-        sanitizedOutput[10].Should().Not.Should().Be(float.NaN);
-        sanitizedOutput[20].Should().Not.Should().Be(float.PositiveInfinity);
-        sanitizedOutput[30].Should().Not.Should().Be(float.NegativeInfinity);
+        sanitizedOutput[10].Should().NotBe(float.NaN);
+        sanitizedOutput[20].Should().NotBe(float.PositiveInfinity);
+        sanitizedOutput[30].Should().NotBe(float.NegativeInfinity);
         
         Logger.LogInformation("Data corruption successfully detected and sanitized");
     }
@@ -398,7 +399,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             successCount, failureCount, results.Length);
         
         // At least 50% should succeed even under resource pressure
-        Assert.True(successCount >= concurrentWorkflows / 2,
+        (successCount >= concurrentWorkflows / 2).Should().BeTrue(
             "System should handle resource exhaustion gracefully");
         
         // Failed workflows should have meaningful error messages
@@ -464,13 +465,13 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             successfulStages, failedStages);
         
         // Should have contained the failure and recovered
-        Assert.True(successfulStages >= 3, "Most stages should complete successfully");
+        successfulStages.Should().BeGreaterThanOrEqualTo(3, "Most stages should complete successfully");
         
-        if (failedStages > 0)
+        if(failedStages > 0)
         {
             // Recovery mechanisms should have activated
             result.ExecutionResults.Values.Where(r => !r.Success).Should().AllSatisfy(r =>
-                r.Error.NotBeNull());
+                r.Error.Should().NotBeNull());
         }
     }
 
@@ -497,7 +498,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         // Assert
         var recoveryTime = stopwatch.Elapsed;
         
-        if (result.Success)
+        if(result.Success)
         {
             Logger.LogInformation("Successfully recovered from {ErrorType} in {Duration}ms", 
                 errorType, recoveryTime.TotalMilliseconds);
@@ -506,7 +507,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         {
             result.Error.Should().NotBeNull();
             Logger.LogInformation("Error {ErrorType} handled gracefully: {Error}", 
-                errorType, result.Error.Message);
+                errorType, result.Error?.Message ?? "Unknown error");
         }
         
         // Recovery should be reasonably fast
@@ -716,7 +717,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
 
     private void SimulateErrorCondition(ErrorType errorType)
     {
-        switch (errorType)
+        switch(errorType)
         {
             case ErrorType.OutOfMemory:
                 HardwareSimulator.SimulateMemoryPressure(AcceleratorType.CUDA, 0.98);
@@ -735,19 +736,21 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
 
     private void ValidateErrorTypeRecovery(ErrorType errorType, WorkflowExecutionResult result, TimeSpan recoveryTime)
     {
-        switch (errorType)
+        switch(errorType)
         {
             case ErrorType.OutOfMemory:
-                if (!result.Success)
+                if(!result.Success)
                 {
-                    result.Error!.Message.ToLower().ContainAny("memory", "allocation");
+                    var lowerMessage = result.Error!.Message.ToLower();
+                    (lowerMessage.Contains("memory") || lowerMessage.Contains("allocation")).Should().BeTrue();
                 }
                 break;
                 
             case ErrorType.DeviceReset:
-                if (!result.Success)
+                if(!result.Success)
                 {
-                    result.Error!.Message.ToLower().ContainAny("device", "hardware", "failure");
+                    var lowerMessage = result.Error!.Message.ToLower();
+                    (lowerMessage.Contains("device") || lowerMessage.Contains("hardware") || lowerMessage.Contains("failure")).Should().BeTrue();
                 }
                 break;
                 
@@ -757,7 +760,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
                 break;
                 
             case ErrorType.InvalidOperation:
-                if (!result.Success)
+                if(!result.Success)
                 {
                     result.Error!.Message.Should().NotBeEmpty();
                 }
@@ -789,9 +792,9 @@ __kernel void safe_kernel(__global const float* input, __global float* output) {
 __kernel void error_kernel(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
     // Introduce errors for certain indices
-    if (gid % 127 == 0) {
+    if(gid % 127 == 0) {
         output[gid] = input[gid] / 0.0f; // Division by zero
-    } else if (gid % 131 == 0) {
+    } else if(gid % 131 == 0) {
         output[gid] = sqrt(-1.0f); // Invalid operation
     } else {
         output[gid] = input[gid] * 2.0f;
@@ -805,7 +808,7 @@ __kernel void recovery_kernel(__global const float* safe_input, __global const f
     float error_val = error_input[gid];
     
     // Use safe value if error value is invalid
-    if (isnan(error_val) || isinf(error_val)) {
+    if(isnan(error_val) || isinf(error_val)) {
         output[gid] = safe_val * 2.0f; // Fallback computation
     } else {
         output[gid] = error_val;
@@ -818,11 +821,11 @@ __kernel void data_sanitizer(__global const float* input, __global float* output
     float value = input[gid];
     
     // Sanitize invalid values
-    if (isnan(value)) {
+    if(isnan(value)) {
         output[gid] = 0.0f;
-    } else if (isinf(value)) {
+    } else if(isinf(value)) {
         output[gid] = copysign(1000.0f, value); // Cap to reasonable value
-    } else if (value == -0.0f) {
+    } else if(value == -0.0f) {
         output[gid] = 0.0f;
     } else {
         output[gid] = value;
@@ -835,9 +838,9 @@ __kernel void memory_intensive(__global const float* input, __global float* temp
     int size = get_global_size(0);
     
     // Use lots of memory by accessing temp buffer extensively
-    for (int i = 0; i < 4; i++) {
-        int temp_idx = (gid + i * size) % (size * 4);
-        if (temp_idx < size * 4) {
+    for(int i = 0; i < 4; i++) {
+        int temp_idx =(gid + i * size) %(size * 4);
+        if(temp_idx < size * 4) {
             temp[temp_idx] = input[gid] + i;
         }
     }
@@ -846,9 +849,9 @@ __kernel void memory_intensive(__global const float* input, __global float* temp
     
     // Compute result using temporary data
     float sum = 0.0f;
-    for (int i = 0; i < 4; i++) {
-        int temp_idx = (gid + i * size) % (size * 4);
-        if (temp_idx < size * 4) {
+    for(int i = 0; i < 4; i++) {
+        int temp_idx =(gid + i * size) %(size * 4);
+        if(temp_idx < size * 4) {
             sum += temp[temp_idx];
         }
     }
@@ -862,9 +865,9 @@ __kernel void long_running(__global const float* input, __global float* output) 
     float value = input[gid];
     
     // Perform many iterations to simulate long computation
-    for (int i = 0; i < 100000; i++) {
+    for(int i = 0; i < 100000; i++) {
         value = sin(value) * cos(value) + 0.001f;
-        if (i % 10000 == 0) {
+        if(i % 10000 == 0) {
             // Periodic check - in real implementation this would check for cancellation
             barrier(CLK_GLOBAL_MEM_FENCE);
         }
@@ -882,10 +885,10 @@ __kernel void distributed_compute(__global const float* input, __global float* o
     float local_sum = input[gid];
     
     // Simulate inter-node communication patterns
-    for (int step = 1; step < global_size; step *= 2) {
+    for(int step = 1; step < global_size; step *= 2) {
         int partner = gid ^ step;
-        if (partner < global_size) {
-            local_sum = (local_sum + input[partner]) * 0.5f;
+        if(partner < global_size) {
+            local_sum =(local_sum + input[partner]) * 0.5f;
         }
         barrier(CLK_GLOBAL_MEM_FENCE);
     }
@@ -903,8 +906,8 @@ __kernel void reliable(__global const float* input, __global float* output) {
 __kernel void unstable(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
     // Occasionally produce unstable results
-    if ((gid * 7) % 100 < 5) { // 5% chance
-        output[gid] = input[gid] / (input[gid] - input[gid]); // NaN
+    if((gid * 7) % 100 < 5) { // 5% chance
+        output[gid] = input[gid] /(input[gid] - input[gid]); // NaN
     } else {
         output[gid] = input[gid] * 2.0f;
     }
@@ -916,7 +919,7 @@ __kernel void failsafe(__global const float* input, __global float* output) {
     float value = input[gid];
     
     // Failsafe: always produce valid output
-    if (isnan(value) || isinf(value)) {
+    if(isnan(value) || isinf(value)) {
         output[gid] = 0.0f;
     } else {
         output[gid] = clamp(value, -1000.0f, 1000.0f);
@@ -934,7 +937,7 @@ __kernel void device_stress(__global const float* input, __global float* output)
     barrier(CLK_LOCAL_MEM_FENCE);
     
     float result = shared[lid];
-    for (int i = 0; i < get_local_size(0); i++) {
+    for(int i = 0; i < get_local_size(0); i++) {
         result += shared[i] * 0.001f;
         barrier(CLK_LOCAL_MEM_FENCE);
     }

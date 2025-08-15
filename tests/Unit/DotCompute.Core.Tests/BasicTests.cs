@@ -2,6 +2,7 @@ using System;
 using Xunit;
 using FluentAssertions;
 using DotCompute.Core;
+using DotCompute.Abstractions;
 
 namespace DotCompute.Core.Tests
 {
@@ -10,7 +11,7 @@ namespace DotCompute.Core.Tests
         [Fact]
         public void Core_Assembly_Loads()
         {
-            var assembly = typeof(ComputeContext).Assembly;
+            var assembly = typeof(IAccelerator).Assembly;
             Assert.NotNull(assembly);
             Assert.Contains("DotCompute.Core", assembly.FullName);
         }

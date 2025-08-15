@@ -38,8 +38,8 @@ public class AcceleratorManagerTests
         await using var manager = new DefaultAcceleratorManager(_logger);
 
         // Act & Assert
-        var act = () => manager.RegisterProvider(null!);
-        Assert.Throws<ArgumentNullException>(() => act());
+        var act =() => manager.RegisterProvider(null!);
+        act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -52,10 +52,10 @@ public class AcceleratorManagerTests
         provider.Name.Returns("TestProvider");
 
         // Act
-        var act = () => manager.RegisterProvider(provider);
+        var act =() => manager.RegisterProvider(provider);
 
         // Assert
-        act.Throw<InvalidOperationException>()
+        act.Should().Throw<InvalidOperationException>()
             .WithMessage("*Cannot register providers after initialization*");
     }
 
@@ -79,7 +79,7 @@ public class AcceleratorManagerTests
         var result = manager.GetAccelerator(0);
 
         // Assert
-        result.BeSameAs(accelerator);
+        result.Should().BeSameAs(accelerator);
     }
 
     [Fact]
@@ -89,10 +89,10 @@ public class AcceleratorManagerTests
         await using var manager = new DefaultAcceleratorManager(_logger);
 
         // Act
-        var act = () => manager.GetAccelerator(0);
+        var act =() => manager.GetAccelerator(0);
 
         // Assert
-        act.Throw<InvalidOperationException>()
+        act.Should().Throw<InvalidOperationException>()
             .WithMessage("*must be initialized*");
     }
 
@@ -116,7 +116,7 @@ public class AcceleratorManagerTests
         var result = manager.GetAcceleratorById("CPU_Test");
 
         // Assert
-        result.BeSameAs(accelerator);
+        result.Should().BeSameAs(accelerator);
     }
 
     [Fact]
@@ -238,7 +238,7 @@ public class AcceleratorManagerTests
         var result = manager.SelectBest(criteria);
 
         // Assert
-        result.BeSameAs(accel3); // GPU2 with 4GB
+        result.Should().BeSameAs(accel3); // GPU2 with 4GB
     }
 
     [Fact]

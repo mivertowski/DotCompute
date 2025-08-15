@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -30,13 +30,13 @@ public sealed class CpuBackendStressTests
 
         // Assert - Verify detection logic
         capabilities.IsHardwareAccelerated.Should().Be(Vector.IsHardwareAccelerated);
-        (capabilities.PreferredVectorWidth > 0).Should().BeTrue();
+       capabilities.PreferredVectorWidth > 0.Should().BeTrue();
         capabilities.SupportedInstructionSets.Should().NotBeEmpty();
 
         // On ARM systems
-        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        if(RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
         {
-            capabilities.HasNeon.Should().BeTrue();
+            capabilities.SupportedInstructionSets.Should().Contain("NEON");
         }
     }
 
@@ -56,19 +56,19 @@ public sealed class CpuBackendStressTests
     {
         // Arrange
         var data = new float[size];
-        for (int i = 0; i < size; i++)
+        for(int i = 0; i < size; i++)
         {
             data[i] = i + 1.0f;
         }
 
         // Act - Try SIMD operations on various sizes
-        if (size > 0)
+        if(size > 0)
         {
             var result = new float[size];
             ProcessDataWithSimd(data, result);
 
             // Assert - Results should be correct regardless of size
-            for (int i = 0; i < size; i++)
+            for(int i = 0; i < size; i++)
             {
                 result[i].Should().BeApproximately(data[i] * 2.0f, 0.001f);
             }
@@ -83,7 +83,7 @@ public sealed class CpuBackendStressTests
         var originalData = new float[size + 1];
         var data = originalData.AsSpan(1); // Offset by 1 to create misalignment
 
-        for (int i = 0; i < data.Length; i++)
+        for(int i = 0; i < data.Length; i++)
         {
             data[i] = i + 1.0f;
         }
@@ -93,7 +93,7 @@ public sealed class CpuBackendStressTests
         ProcessDataWithSimd(data, result);
 
         // Assert
-        for (int i = 0; i < data.Length; i++)
+        for(int i = 0; i < data.Length; i++)
         {
             result[i].Should().BeApproximately(data[i] * 2.0f, 0.001f);
         }
@@ -118,17 +118,17 @@ public sealed class CpuBackendStressTests
 
         // Act
         var result = new float[size];
-        var act = () => ProcessDataWithSimd(data, result);
+        var act =() => ProcessDataWithSimd(data, result);
 
         // Assert - Should not throw, even with extreme values
-        act.NotThrow("SIMD operations should handle extreme values gracefully");
+        act.Should().NotThrow("SIMD operations should handle extreme values gracefully");
 
         // For non-NaN inputs, verify basic properties
-        if (!float.IsNaN(extremeValue))
+        if(!float.IsNaN(extremeValue))
         {
-            for (int i = 0; i < size; i++)
+            for(int i = 0; i < size; i++)
             {
-                if (float.IsInfinity(extremeValue))
+                if(float.IsInfinity(extremeValue))
                 {
                     result[i].Should().Be(extremeValue); // Infinity * 2 = Infinity
                 }
@@ -148,9 +148,9 @@ public sealed class CpuBackendStressTests
         var data = new float[size];
         var random = new Random(42);
         
-        for (int i = 0; i < size; i++)
+        for(int i = 0; i < size; i++)
         {
-            data[i] = (float)random.NextDouble() * 1000;
+            data[i] =(float)random.NextDouble() * 1000;
         }
 
         var result = new float[size];
@@ -162,11 +162,12 @@ public sealed class CpuBackendStressTests
         stopwatch.Stop();
 
         // Assert
-        stopwatch.Assert.True(ElapsedMilliseconds < 100, 
+        stopwatch.Stop();
+        stopwatch.ElapsedMilliseconds .Should().BeLessThan(100, 
             "SIMD operations on large datasets should complete quickly");
 
         // Verify correctness on sample points
-        for (int i = 0; i < Math.Min(100, size); i += 10)
+        for(int i = 0; i < Math.Min(100, size); i += 10)
         {
             result[i].Should().BeApproximately(data[i] * 2.0f, 0.001f);
         }
@@ -193,34 +194,34 @@ public sealed class CpuBackendStressTests
             {
                 try
                 {
-                    for (int i = 0; i < operationsPerThread; i++)
+                    for(int i = 0; i < operationsPerThread; i++)
                     {
                         // Create thread-local data
                         var inputData = new float[dataSize];
                         var outputData = new float[dataSize];
                         
                         // Initialize with thread-specific pattern
-                        for (int j = 0; j < dataSize; j++)
+                        for(int j = 0; j < dataSize; j++)
                         {
                             inputData[j] = threadId * 1000 + i * 10 + j;
                         }
 
-                        // Process data (simulate kernel execution)
+                        // Process data(simulate kernel execution)
                         ProcessDataWithSimd(inputData, outputData);
 
                         // Verify results
                         var success = true;
-                        for (int j = 0; j < dataSize; j++)
+                        for(int j = 0; j < dataSize; j++)
                         {
                             var expected = inputData[j] * 2.0f;
-                            if (Math.Abs(outputData[j] - expected) > 0.001f)
+                            if(Math.Abs(outputData[j] - expected) > 0.001f)
                             {
                                 success = false;
                                 break;
                             }
                         }
 
-                        if (!success)
+                        if(!success)
                         {
                             results.Add((threadId, false));
                             return;
@@ -229,7 +230,7 @@ public sealed class CpuBackendStressTests
 
                     results.Add((threadId, true));
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     exceptions.Add(ex);
                     results.Add((threadId, false));
@@ -241,7 +242,7 @@ public sealed class CpuBackendStressTests
         // Assert
         exceptions.Should().BeEmpty("High concurrency should not cause exceptions");
         results.Count.Should().Be(threadCount);
-        results.OnlyContain(r => r.Success, "All threads should complete successfully");
+        results.Should().OnlyContain(r => r.Success, "All threads should complete successfully");
     }
 
     [Fact]
@@ -263,19 +264,19 @@ public sealed class CpuBackendStressTests
             {
                 try
                 {
-                    for (int request = 0; request < requestsPerClient; request++)
+                    for(int request = 0; request < requestsPerClient; request++)
                     {
                         // Simulate accelerator operations
                         var data = new float[256];
                         var result = new float[256];
                         
                         // Fill with client-specific pattern
-                        for (int i = 0; i < data.Length; i++)
+                        for(int i = 0; i < data.Length; i++)
                         {
                             data[i] = clientId * 100 + request * 10 + i;
                         }
 
-                        // Process (this would be kernel execution in real scenario)
+                        // Process(this would be kernel execution in real scenario)
                         ProcessDataWithSimd(data, result);
 
                         // Small delay to increase contention
@@ -284,7 +285,7 @@ public sealed class CpuBackendStressTests
                         completedRequests.Add(clientId * requestsPerClient + request);
                     }
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -322,18 +323,18 @@ public sealed class CpuBackendStressTests
         var source = new byte[size];
         var destination = new byte[size];
         
-        for (int i = 0; i < size; i++)
+        for(int i = 0; i < size; i++)
         {
-            source[i] = (byte)(i % 256);
+            source[i] =(byte)(i % 256);
         }
 
         // Act - Test memory copy operations at various boundaries
         source.AsSpan().CopyTo(destination.AsSpan());
 
         // Assert
-        for (int i = 0; i < size; i++)
+        for(int i = 0; i < size; i++)
         {
-            destination[i].Should().Be(source[i], "Memory copy should preserve all bytes");
+            destination[i].Should().Be(source[i]); // Memory copy should preserve all bytes
         }
     }
 
@@ -346,17 +347,17 @@ public sealed class CpuBackendStressTests
         var destination = new byte[largeSize];
 
         // Fill with pattern
-        for (int i = 0; i < largeSize; i++)
+        for(int i = 0; i < largeSize; i++)
         {
-            source[i] = (byte)(i % 256);
+            source[i] =(byte)(i % 256);
         }
 
         // Act & Assert - Should not cause stack overflow
-        var act = () => source.AsSpan().CopyTo(destination.AsSpan());
-        act.NotThrow("Large memory operations should not cause stack overflow");
+        var act =() => source.AsSpan().CopyTo(destination.AsSpan());
+        act.Should().NotThrow("Large memory operations should not cause stack overflow");
 
         // Verify some sample points
-        for (int i = 0; i < 1000; i += 100)
+        for(int i = 0; i < 1000; i += 100)
         {
             destination[i].Should().Be(source[i]);
         }
@@ -370,11 +371,11 @@ public sealed class CpuBackendStressTests
     public void SimdOperations_WithNullInput_ShouldThrowArgumentNullException()
     {
         // Arrange
-        float[] nullData = null!;
+        float[] nullData = default!;
         var result = new float[10];
 
         // Act & Assert
-        var act = () => ProcessDataWithSimd(nullData, result);
+        var act =() => ProcessDataWithSimd(nullData, result);
         Assert.Throws<ArgumentNullException>(() => act());
     }
 
@@ -386,7 +387,7 @@ public sealed class CpuBackendStressTests
         var result = new float[5]; // Mismatched size
 
         // Act & Assert
-        var act = () => ProcessDataWithSimd(data, result);
+        var act =() => ProcessDataWithSimd(data, result);
         Assert.Throws<ArgumentException>(() => act());
     }
 
@@ -397,10 +398,10 @@ public sealed class CpuBackendStressTests
         // where SIMD isn't available or detection fails
 
         // Act
-        var act = () => SimdCapabilities.GetSummary();
+        var act =() => SimdCapabilities.GetSummary();
 
         // Assert - Should not throw, even on unsupported platforms
-        act.NotThrow("Capability detection should be robust");
+        act.Should().NotThrow("Capability detection should be robust");
 
         var capabilities = SimdCapabilities.GetSummary();
         
@@ -411,7 +412,7 @@ public sealed class CpuBackendStressTests
         var hasAnySimd = capabilities.HasSse41 || capabilities.HasAvx2 || 
                         capabilities.HasAvx512 || capabilities.HasNeon;
         
-        if (RuntimeInformation.ProcessArchitecture is Architecture.X64 or Architecture.X86)
+        if(RuntimeInformation.ProcessArchitecture is Architecture.X64 or Architecture.X86)
         {
             // Most modern x64 systems should have at least SSE4.1
             capabilities.HasSse41.Should().BeTrue();
@@ -435,11 +436,11 @@ public sealed class CpuBackendStressTests
             Task.Run(() =>
             {
                 var loadData = new float[1000];
-                for (int i = 0; i < 10000; i++) // Background processing
+                for(int i = 0; i < 10000; i++) // Background processing
                 {
-                    for (int j = 0; j < loadData.Length; j++)
+                    for(int j = 0; j < loadData.Length; j++)
                     {
-                        loadData[j] = (float)Math.Sin(i * j);
+                        loadData[j] =(float)Math.Sin(i * j);
                     }
                 }
             })).ToArray();
@@ -448,15 +449,15 @@ public sealed class CpuBackendStressTests
         var totalResults = 0;
 
         // Act - Perform operations under load
-        for (int iteration = 0; iteration < iterationCount; iteration++)
+        for(int iteration = 0; iteration < iterationCount; iteration++)
         {
             var data = new float[dataSize];
             var result = new float[dataSize];
 
             // Generate test data
-            for (int i = 0; i < dataSize; i++)
+            for(int i = 0; i < dataSize; i++)
             {
-                data[i] = (float)random.NextDouble() * 1000;
+                data[i] =(float)random.NextDouble() * 1000;
             }
 
             // Process data
@@ -464,16 +465,16 @@ public sealed class CpuBackendStressTests
 
             // Verify correctness
             var isCorrect = true;
-            for (int i = 0; i < dataSize; i++)
+            for(int i = 0; i < dataSize; i++)
             {
-                if (Math.Abs(result[i] - data[i] * 2.0f) > 0.001f)
+                if(Math.Abs(result[i] - data[i] * 2.0f) > 0.001f)
                 {
                     isCorrect = false;
                     break;
                 }
             }
 
-            if (isCorrect) correctResults++;
+            if(isCorrect) correctResults++;
             totalResults++;
         }
 
@@ -499,13 +500,13 @@ public sealed class CpuBackendStressTests
         var initialMemory = GC.GetTotalMemory(true);
 
         // Act - Perform many operations that could potentially leak
-        for (int i = 0; i < iterationCount; i++)
+        for(int i = 0; i < iterationCount; i++)
         {
             var data = new float[dataSize];
             var result = new float[dataSize];
 
             // Fill with data
-            for (int j = 0; j < dataSize; j++)
+            for(int j = 0; j < dataSize; j++)
             {
                 data[j] = i + j;
             }
@@ -513,7 +514,7 @@ public sealed class CpuBackendStressTests
             ProcessDataWithSimd(data, result);
 
             // Occasionally force GC to detect leaks
-            if (i % 100 == 0)
+            if(i % 100 == 0)
             {
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
@@ -525,7 +526,7 @@ public sealed class CpuBackendStressTests
         var memoryGrowth = finalMemory - initialMemory;
 
         // Assert - Memory growth should be minimal
-        Assert.True(memoryGrowth < 10 * 1024 * 1024, // 10MB threshold
+        (memoryGrowth < 10 * 1024 * 1024).Should().BeTrue( // 10MB threshold
             "Repeated operations should not cause significant memory growth");
     }
 
@@ -537,16 +538,16 @@ public sealed class CpuBackendStressTests
     /// </summary>
     private static void ProcessDataWithSimd(ReadOnlySpan<float> input, Span<float> output)
     {
-        if (input == null) throw new ArgumentNullException(nameof(input));
-        if (input.Length != output.Length)
+        if(input == null) throw new ArgumentNullException(nameof(input));
+        if(input.Length != output.Length)
             throw new ArgumentException("Input and output must have the same length");
 
         // Simple operation: multiply each element by 2
-        if (Vector256.IsHardwareAccelerated && input.Length >= Vector256<float>.Count)
+        if(Vector256.IsHardwareAccelerated && input.Length >= Vector256<float>.Count)
         {
             ProcessWithAvx(input, output);
         }
-        else if (Vector128.IsHardwareAccelerated && input.Length >= Vector128<float>.Count)
+        else if(Vector128.IsHardwareAccelerated && input.Length >= Vector128<float>.Count)
         {
             ProcessWithSse(input, output);
         }
@@ -563,7 +564,7 @@ public sealed class CpuBackendStressTests
         int i = 0;
 
         // Process vectors
-        for (; i <= input.Length - vectorSize; i += vectorSize)
+        for(; i <= input.Length - vectorSize; i += vectorSize)
         {
             var vector = Vector256.Create(input.Slice(i, vectorSize));
             var result = Vector256.Multiply(vector, factor);
@@ -571,7 +572,7 @@ public sealed class CpuBackendStressTests
         }
 
         // Process remaining elements
-        for (; i < input.Length; i++)
+        for(; i < input.Length; i++)
         {
             output[i] = input[i] * 2.0f;
         }
@@ -584,7 +585,7 @@ public sealed class CpuBackendStressTests
         int i = 0;
 
         // Process vectors
-        for (; i <= input.Length - vectorSize; i += vectorSize)
+        for(; i <= input.Length - vectorSize; i += vectorSize)
         {
             var vector = Vector128.Create(input.Slice(i, vectorSize));
             var result = Vector128.Multiply(vector, factor);
@@ -592,7 +593,7 @@ public sealed class CpuBackendStressTests
         }
 
         // Process remaining elements
-        for (; i < input.Length; i++)
+        for(; i < input.Length; i++)
         {
             output[i] = input[i] * 2.0f;
         }
@@ -600,7 +601,7 @@ public sealed class CpuBackendStressTests
 
     private static void ProcessScalar(ReadOnlySpan<float> input, Span<float> output)
     {
-        for (int i = 0; i < input.Length; i++)
+        for(int i = 0; i < input.Length; i++)
         {
             output[i] = input[i] * 2.0f;
         }

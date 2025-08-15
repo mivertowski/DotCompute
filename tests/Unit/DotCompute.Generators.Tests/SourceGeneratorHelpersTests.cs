@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Generators.Utils;
@@ -98,9 +98,9 @@ public class SourceGeneratorHelpersTests
         // Arrange
         var parameters = new[]
         {
-            ("input", "float[]", true),
-            ("output", "int[]", true),
-            ("length", "int", false)
+           ("input", "float[]", true),
+           ("output", "int[]", true),
+           ("length", "int", false)
         };
 
         // Act
@@ -118,17 +118,17 @@ public class SourceGeneratorHelpersTests
         // Arrange
         var parameters = new[]
         {
-            ("spanInput", "Span<float>", true),
-            ("memoryInput", "Memory<int>", true),
-            ("value", "double", false)
+           ("spanInput", "Span<float>", true),
+           ("memoryInput", "Memory<int>", true),
+           ("value", "double", false)
         };
 
         // Act
         var result = SourceGeneratorHelpers.GenerateParameterValidation(parameters);
 
         // Assert
-        result.Contain("if (spanInput.IsEmpty) throw new ArgumentException(\"Buffer cannot be empty\", nameof(spanInput));");
-        result.Contain("if (memoryInput.IsEmpty) throw new ArgumentException(\"Buffer cannot be empty\", nameof(memoryInput));");
+        result.Contain("ifspanInput.IsEmpty) throw new ArgumentException(\"Buffer cannot be empty\", nameof(spanInput));");
+        result.Contain("ifmemoryInput.IsEmpty) throw new ArgumentException(\"Buffer cannot be empty\", nameof(memoryInput));");
         result.Should().NotContain("value");
     }
 
@@ -138,8 +138,8 @@ public class SourceGeneratorHelpersTests
         // Arrange
         var parameters = new[]
         {
-            ("value1", "int", false),
-            ("value2", "float", false)
+           ("value1", "int", false),
+           ("value2", "float", false)
         };
 
         // Act
@@ -158,11 +158,11 @@ public class SourceGeneratorHelpersTests
         var result = SourceGeneratorHelpers.GenerateOptimizedLoop(indexVar, limitVar, body, unroll, unrollFactor);
 
         // Assert
-        Assert.Contains($"for (int {indexVar}", result);
+        Assert.Contains($"forint {indexVar}", result);
         Assert.Contains(limitVar, result);
         Assert.Contains(body, result);
 
-        if (unroll)
+        if(unroll)
         {
             Assert.Contains($"var remainder = {limitVar} % {unrollFactor};", result);
             Assert.Contains("// Handle remainder", result);
@@ -233,7 +233,7 @@ public abstract void AbstractMethod();";
         var source = @"
 public static void VectorizableMethod()
 {
-    for (int i = 0; i < length; i++)
+    for(int i = 0; i < length; i++)
     {
         output[i] = input[i] + 2.0f;
     }
@@ -247,7 +247,7 @@ public static void VectorizableMethod()
         result.LoopCount.Should().Be(1);
         result.VectorizableLoops.Should().Be(1);
         result.HasArrayAccess.Should().BeTrue();
-((result.ArithmeticOperationCount > 0).Should().BeTrue();
+(result.ArithmeticOperationCount > 0.Should().BeTrue();
         result.IsVectorizable.Should().BeTrue();
         result.IsArithmetic.Should().BeTrue();
         result.IsMemoryOperation.Should().BeTrue();
@@ -260,9 +260,9 @@ public static void VectorizableMethod()
         var source = @"
 public static void ComplexMethod()
 {
-    for (int i = 0; i < length; i += 2)
+    for(int i = 0; i < length; i += 2)
     {
-        if (condition)
+        if(condition)
         {
             DoSomething();
         }
@@ -286,12 +286,12 @@ public static void ComplexMethod()
         var source = @"
 public static void MultipleLoopsMethod()
 {
-    for (int i = 0; i < length; i++)
+    for(int i = 0; i < length; i++)
     {
         output[i] = input[i] * 2.0f;
     }
     
-    for (int j = 0; j < width; j++)
+    for(int j = 0; j < width; j++)
     {
         result[j] = data[j] + 1.0f;
     }
@@ -350,7 +350,7 @@ public abstract void AbstractMethod();";
     public void GetSimdType_WithUnsupportedType_ShouldThrow(string elementType)
     {
         // Act & Assert
-        var action = () => SourceGeneratorHelpers.GetSimdType(elementType, 8);
+        var action =() => SourceGeneratorHelpers.GetSimdType(elementType, 8);
         Assert.Throws<NotSupportedException>(() => action());
     }
 
@@ -376,7 +376,7 @@ public abstract void AbstractMethod();";
     public void GetIntrinsicOperation_WithUnsupportedOperation_ShouldThrow()
     {
         // Act & Assert
-        var action = () => SourceGeneratorHelpers.GetIntrinsicOperation("unsupported", "Vector");
+        var action =() => SourceGeneratorHelpers.GetIntrinsicOperation("unsupported", "Vector");
         Assert.Throws<NotSupportedException>(() => action());
     }
 
@@ -393,9 +393,9 @@ public abstract void AbstractMethod();";
         };
 
         // Assert
-        info.IsVectorizable.Should().BeTrue("Has vectorizable loops and array access");
-        info.IsArithmetic.Should().BeTrue("Has arithmetic operations");
-        info.IsMemoryOperation.Should().BeTrue("Has array access");
+        info.IsVectorizable.Should().BeTrue();
+        info.IsArithmetic.Should().BeTrue();
+        info.IsMemoryOperation.Should().BeTrue();
     }
 
     [Fact]
@@ -413,7 +413,7 @@ public abstract void AbstractMethod();";
         // Assert
         info.IsVectorizable.Should().BeFalse("No vectorizable loops");
         info.IsArithmetic.Should().BeFalse("No arithmetic operations");
-        info.IsMemoryOperation.Should().BeTrue("Has array access");
+        info.IsMemoryOperation.Should().BeTrue();
     }
 
     private static MethodDeclarationSyntax ParseMethod(string source)

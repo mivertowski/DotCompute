@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -114,7 +114,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
     {
         // Arrange
         var cudaDevice = _devices[0]; // CUDA
-        var rocmDevice = _devices[2]; // ROCm (different type, no P2P)
+        var rocmDevice = _devices[2]; // ROCm(different type, no P2P)
         
         var sourceBuffer = await CreateMockBuffer<float>(cudaDevice, 1024);
         var targetBuffer = await CreateMockBuffer<float>(rocmDevice, 1024);
@@ -194,7 +194,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
     [Fact]
     public async Task CreateBufferSlice_SingleGpuFallback_WorksWithoutP2P()
     {
-        // Arrange - use same device (no P2P needed)
+        // Arrange - use same device(no P2P needed)
         var device = _devices[0];
         var sourceBuffer = await CreateMockBuffer<float>(device, 1024);
 
@@ -219,7 +219,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
 
         // Assert
         var stats = _memoryManager.GetMemoryStatistics();
-        // Should have some P2P connections (at least CUDA-CUDA and CPU-CPU)
+        // Should have some P2P connections(at least CUDA-CUDA and CPU-CPU)
         Assert.True(stats.TotalP2PConnections >= 0);
     }
 
@@ -232,7 +232,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         
         await _memoryManager.EnablePeerToPeerAsync(device1, device2);
         
-        // Create large buffers (simulating large dataset)
+        // Create large buffers(simulating large dataset)
         var sourceBuffer = await CreateMockBuffer<float>(device1, 16 * 1024 * 1024); // 64MB
         var targetBuffer = await CreateMockBuffer<float>(device2, 16 * 1024 * 1024);
 
@@ -262,7 +262,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         Assert.True(stats.P2PEfficiencyRatio >= 0.0);
         Assert.True(stats.P2PEfficiencyRatio <= 1.0);
         
-        if (stats.TotalP2PConnections > 0)
+        if(stats.TotalP2PConnections > 0)
         {
             Assert.True(stats.P2PEfficiencyRatio > 0.0);
         }
@@ -280,7 +280,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         var buffers1 = new IBuffer<float>[5];
         var buffers2 = new IBuffer<float>[5];
         
-        for (var i = 0; i < 5; i++)
+        for(var i = 0; i < 5; i++)
         {
             buffers1[i] = await CreateMockBuffer<float>(device1, 1024);
             buffers2[i] = await CreateMockBuffer<float>(device2, 1024);
@@ -288,7 +288,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
 
         // Act - concurrent transfers
         var transferTasks = new Task[10];
-        for (var i = 0; i < 5; i++)
+        for(var i = 0; i < 5; i++)
         {
             // var gpu1Task = manager.TransferAsync(unifiedBuffer1, gpuDevice1, 0, testData1.Length, CancellationToken.None).AsTask();
             // var gpu2Task = manager.TransferAsync(unifiedBuffer2, gpuDevice2, 0, testData2.Length, CancellationToken.None).AsTask();
@@ -378,7 +378,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         
         foreach (var device in _devices)
         {
-            if (device != null) await device.DisposeAsync();
+            if(device != null) await device.DisposeAsync();
         }
     }
 
@@ -485,7 +485,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         public IBuffer<TNew> AsType<TNew>() where TNew : unmanaged
         {
             ThrowIfDisposed();
-            var newElementCount = (int)(SizeInBytes / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
+            var newElementCount =(int)(SizeInBytes / System.Runtime.CompilerServices.Unsafe.SizeOf<TNew>());
             return new MockBuffer<TNew>(_memoryBuffer, Accelerator, newElementCount);
         }
 
@@ -514,7 +514,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
 
         public void Dispose()
         {
-            if (!_disposed)
+            if(!_disposed)
             {
                 _memoryBuffer.Dispose();
                 _disposed = true;
@@ -523,7 +523,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
 
         public async ValueTask DisposeAsync()
         {
-            if (!_disposed)
+            if(!_disposed)
             {
                 await _memoryBuffer.DisposeAsync();
                 _disposed = true;

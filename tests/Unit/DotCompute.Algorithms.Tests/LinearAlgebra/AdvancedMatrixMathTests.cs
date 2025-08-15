@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Algorithms.Types;
@@ -33,27 +33,27 @@ public class AdvancedMatrixMathTests
         });
 
         // Act
-        var (q, r) = await MatrixMath.QRDecompositionAsync(matrix, _mockAccelerator);
+        var(q, r) = await MatrixMath.QRDecompositionAsync(matrix, _mockAccelerator);
 
         // Assert
         Assert.NotNull(q);
         Assert.NotNull(r);
         
-        // Verify Q is orthogonal (Q^T * Q = I)
+        // Verify Q is orthogonal(Q^T * Q = I)
         var qTranspose = await MatrixMath.TransposeAsync(q, _mockAccelerator);
         var qtq = await MatrixMath.MultiplyAsync(qTranspose, q, _mockAccelerator);
         
         // Check diagonal elements are close to 1
-        for (int i = 0; i < qtq.Rows; i++)
+        for(int i = 0; i < qtq.Rows; i++)
         {
             qtq[i, i].Should().BeApproximately(1.0f, 1e-5f);
         }
         
         // Verify QR = A
         var reconstructed = await MatrixMath.MultiplyAsync(q, r, _mockAccelerator);
-        for (int i = 0; i < matrix.Rows; i++)
+        for(int i = 0; i < matrix.Rows; i++)
         {
-            for (int j = 0; j < matrix.Columns; j++)
+            for(int j = 0; j < matrix.Columns; j++)
             {
                 reconstructed[i, j].Should().BeApproximately(matrix[i, j], 1e-5f);
             }
@@ -78,9 +78,9 @@ public class AdvancedMatrixMathTests
         Assert.NotNull(l);
         
         // Verify L is lower triangular
-        for (int i = 0; i < l.Rows; i++)
+        for(int i = 0; i < l.Rows; i++)
         {
-            for (int j = i + 1; j < l.Columns; j++)
+            for(int j = i + 1; j < l.Columns; j++)
             {
                 l[i, j].Should().BeApproximately(0, 1e-6f);
             }
@@ -90,9 +90,9 @@ public class AdvancedMatrixMathTests
         var lTranspose = await MatrixMath.TransposeAsync(l, _mockAccelerator);
         var reconstructed = await MatrixMath.MultiplyAsync(l, lTranspose, _mockAccelerator);
         
-        for (int i = 0; i < matrix.Rows; i++)
+        for(int i = 0; i < matrix.Rows; i++)
         {
-            for (int j = 0; j < matrix.Columns; j++)
+            for(int j = 0; j < matrix.Columns; j++)
             {
                 reconstructed[i, j].Should().BeApproximately(matrix[i, j], 1e-5f);
             }
@@ -110,7 +110,7 @@ public class AdvancedMatrixMathTests
         });
 
         // Act
-        var (u, s, vt) = await MatrixMath.SVDAsync(matrix, _mockAccelerator);
+        var(u, s, vt) = await MatrixMath.SVDAsync(matrix, _mockAccelerator);
 
         // Assert
         Assert.NotNull(u);
@@ -126,10 +126,10 @@ public class AdvancedMatrixMathTests
         vt.Columns.Should().Be(matrix.Columns);
         
         // Verify singular values are non-negative and sorted
-        for (int i = 0; i < s.Rows; i++)
+        for(int i = 0; i < s.Rows; i++)
         {
             s[i, i].BeGreaterOrEqualTo(0);
-            if (i > 0)
+            if(i > 0)
             {
                 s[i - 1, i - 1].BeGreaterOrEqualTo(s[i, i]);
             }
@@ -147,7 +147,7 @@ public class AdvancedMatrixMathTests
         });
 
         // Act
-        var (eigenvalues, eigenvectors) = await MatrixMath.EigenDecompositionAsync(matrix, _mockAccelerator);
+        var(eigenvalues, eigenvectors) = await MatrixMath.EigenDecompositionAsync(matrix, _mockAccelerator);
 
         // Assert
         Assert.NotNull(eigenvalues);
@@ -161,7 +161,7 @@ public class AdvancedMatrixMathTests
         
         // For this specific matrix, eigenvalues should be 3 and 1
         var sortedEigenvalues = new List<float>();
-        for (int i = 0; i < eigenvalues.Rows; i++)
+        for(int i = 0; i < eigenvalues.Rows; i++)
         {
             sortedEigenvalues.Add(eigenvalues[i, 0]);
         }
@@ -206,7 +206,7 @@ public class AdvancedMatrixMathTests
         
         // Verify Ax ≈ b
         var result = await MatrixMath.MultiplyAsync(a, x, _mockAccelerator);
-        for (int i = 0; i < b.Rows; i++)
+        for(int i = 0; i < b.Rows; i++)
         {
             result[i, 0].Should().BeApproximately(b[i, 0], 1e-6f);
         }
@@ -223,7 +223,7 @@ public class AdvancedMatrixMathTests
         });
 
         // Act & Assert
-        var act = async () => await MatrixMath.CholeskyDecompositionAsync(matrix, _mockAccelerator);
+        var act = async() => await MatrixMath.CholeskyDecompositionAsync(matrix, _mockAccelerator);
         act.ThrowAsync<InvalidOperationException>()
            .WithMessage("Matrix is not positive definite.");
     }

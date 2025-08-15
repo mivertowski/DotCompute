@@ -1,10 +1,11 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
+using DotCompute.Backends.CPU.Tests.Helpers;
 using Microsoft.Extensions.Options;
 using FluentAssertions;
 
@@ -49,7 +50,7 @@ public class CpuKernelExecutorTests
             }
         };
 
-        using var memoryManager = new CpuMemoryManager(new FakeLogger<CpuMemoryManager>());
+        using var memoryManager = new CpuMemoryManager();
         using var buffer1 = memoryManager.AllocateBuffer(1024);
         using var buffer2 = memoryManager.AllocateBuffer(1024);
         using var buffer3 = memoryManager.AllocateBuffer(1024);
@@ -72,7 +73,7 @@ public class CpuKernelExecutorTests
 
         // Act & Assert
         await _executor.Invoking(e => e.ExecuteAsync(definition, arguments, executionPlan))
-            .NotThrowAsync();
+            .NotThrowAsync;
     }
 
     [Fact]
@@ -111,7 +112,7 @@ public class CpuKernelExecutorTests
             }
         };
 
-        using var memoryManager = new CpuMemoryManager(new FakeLogger<CpuMemoryManager>());
+        using var memoryManager = new CpuMemoryManager();
         using var buffer1 = memoryManager.AllocateBuffer(4096); // Larger buffer for vectorization
         using var buffer2 = memoryManager.AllocateBuffer(4096);
         using var buffer3 = memoryManager.AllocateBuffer(4096);
@@ -134,7 +135,7 @@ public class CpuKernelExecutorTests
 
         // Act & Assert
         await _executor.Invoking(e => e.ExecuteAsync(definition, arguments, executionPlan))
-            .NotThrowAsync();
+            .NotThrowAsync;
     }
 
     [Fact]
@@ -145,8 +146,8 @@ public class CpuKernelExecutorTests
 
         // Assert
         Assert.NotNull(metrics);
-        metrics.ExecutionCount >= 0.Should().BeTrue();
-        metrics.TotalExecutionTimeMs >= 0.Should().BeTrue();
+        metrics.ExecutionCount .Should().BeGreaterThanOrEqualTo(0,);
+        metrics.TotalExecutionTimeMs .Should().BeGreaterThanOrEqualTo(0,);
         metrics.ThreadPoolStatistics.Should().NotBeNull();
     }
 
@@ -196,7 +197,7 @@ public class SimdKernelExecutorTests
     public void Constructor_WithNullCapabilities_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Action action = () => new SimdKernelExecutor(null!);
+        Action action =() => new SimdKernelExecutor(null!);
         Assert.Throws<ArgumentNullException>(() => action());
     }
 
@@ -210,28 +211,28 @@ public class SimdKernelExecutorTests
         var output = new byte[elementCount * sizeof(float)];
 
         // Fill input buffers with test data
-        fixed (byte* p1 = input1, p2 = input2)
+        fixed(byte* p1 = input1, p2 = input2)
         {
-            var f1 = (float*)p1;
-            var f2 = (float*)p2;
-            for (int i = 0; i < elementCount; i++)
+            var f1 =(float*)p1;
+            var f2 =(float*)p2;
+            for(int i = 0; i < elementCount; i++)
             {
                 f1[i] = i + 1.0f;
-                f2[i] = (i + 1.0f) * 2.0f;
+                f2[i] =(i + 1.0f) * 2.0f;
             }
         }
 
         // Act & Assert
         _executor.Invoking(e => e.Execute(input1, input2, output, elementCount, 256))
-            .NotThrow();
+            .Should().NotThrow();
 
         // Verify results
-        fixed (byte* pOut = output)
+        fixed(byte* pOut = output)
         {
-            var fOut = (float*)pOut;
-            for (int i = 0; i < elementCount; i++)
+            var fOut =(float*)pOut;
+            for(int i = 0; i < elementCount; i++)
             {
-                fOut[i].Should().BeApproximately((i + 1.0f) + (i + 1.0f) * 2.0f, 0.001f);
+                fOut[i].Should().BeApproximately((i + 1.0f) +(i + 1.0f) * 2.0f, 0.001f);
             }
         }
     }
@@ -245,12 +246,12 @@ public class SimdKernelExecutorTests
         var output = new byte[elementCount * sizeof(float)];
 
         // Fill input with perfect squares
-        fixed (byte* pIn = input)
+        fixed(byte* pIn = input)
         {
-            var fIn = (float*)pIn;
-            for (int i = 0; i < elementCount; i++)
+            var fIn =(float*)pIn;
+            for(int i = 0; i < elementCount; i++)
             {
-                fIn[i] = (i + 1) * (i + 1); // 1, 4, 9, 16, 25, 36, 49, 64
+                fIn[i] =(i + 1) *(i + 1); // 1, 4, 9, 16, 25, 36, 49, 64
             }
         }
 
@@ -258,10 +259,10 @@ public class SimdKernelExecutorTests
         _executor.ExecuteUnary(input, output, elementCount, UnaryOperation.Sqrt);
 
         // Assert
-        fixed (byte* pOut = output)
+        fixed(byte* pOut = output)
         {
-            var fOut = (float*)pOut;
-            for (int i = 0; i < elementCount; i++)
+            var fOut =(float*)pOut;
+            for(int i = 0; i < elementCount; i++)
             {
                 fOut[i].Should().BeApproximately(i + 1, 0.001f);
             }
@@ -278,13 +279,13 @@ public class SimdKernelExecutorTests
         var input3 = new byte[elementCount * sizeof(float)];
         var output = new byte[elementCount * sizeof(float)];
 
-        // Fill inputs: result = (input1 * input2) + input3
-        fixed (byte* p1 = input1, p2 = input2, p3 = input3)
+        // Fill inputs: result =(input1 * input2) + input3
+        fixed(byte* p1 = input1, p2 = input2, p3 = input3)
         {
-            var f1 = (float*)p1;
-            var f2 = (float*)p2;
-            var f3 = (float*)p3;
-            for (int i = 0; i < elementCount; i++)
+            var f1 =(float*)p1;
+            var f2 =(float*)p2;
+            var f3 =(float*)p3;
+            for(int i = 0; i < elementCount; i++)
             {
                 f1[i] = i + 1.0f;     // 1, 2, 3, 4, 5, 6, 7, 8
                 f2[i] = 2.0f;         // 2, 2, 2, 2, 2, 2, 2, 2
@@ -295,13 +296,13 @@ public class SimdKernelExecutorTests
         // Act
         _executor.ExecuteFma(input1, input2, input3, output, elementCount);
 
-        // Assert - result should be ((i+1) * 2) + 1
-        fixed (byte* pOut = output)
+        // Assert - result should be((i+1) * 2) + 1
+        fixed(byte* pOut = output)
         {
-            var fOut = (float*)pOut;
-            for (int i = 0; i < elementCount; i++)
+            var fOut =(float*)pOut;
+            for(int i = 0; i < elementCount; i++)
             {
-                var expected = ((i + 1.0f) * 2.0f) + 1.0f;
+                var expected =((i + 1.0f) * 2.0f) + 1.0f;
                 fOut[i].Should().BeApproximately(expected, 0.001f);
             }
         }
@@ -360,18 +361,18 @@ public class SimdKernelExecutorTests
         var input = new byte[elementCount * sizeof(float)];
         var output = new byte[elementCount * sizeof(float)];
 
-        fixed (byte* pIn = input)
+        fixed(byte* pIn = input)
         {
-            var fIn = (float*)pIn;
-            for (int i = 0; i < elementCount; i++)
+            var fIn =(float*)pIn;
+            for(int i = 0; i < elementCount; i++)
             {
-                fIn[i] = (i + 1) * (operation == UnaryOperation.Sqrt ? 4.0f : 1.0f);
+                fIn[i] =(i + 1) *(operation == UnaryOperation.Sqrt ? 4.0f : 1.0f);
             }
         }
 
         // Act & Assert
         _executor.Invoking(e => e.ExecuteUnary(input, output, elementCount, operation))
-            .NotThrow();
+            .Should().NotThrow();
     }
 
     [Fact]
@@ -451,7 +452,7 @@ public class CpuThreadPoolTests
         using var threadPool = new CpuThreadPool(_optionsWrapper);
         var executionCount = 0;
         var actions = Enumerable.Range(0, 10)
-            .Select(_ => new Action(() => Interlocked.Increment(ref executionCount)
+            .Select(_ => new Action(() => Interlocked.Increment(ref executionCount)))
             .ToArray();
 
         // Act
@@ -475,8 +476,8 @@ public class CpuThreadPoolTests
         // Assert
         Assert.NotNull(stats);
         stats.ThreadCount.Should().Be(_options.WorkerThreads);
-        stats.LocalQueueCounts.Count.Should().Be(_options.WorkerThreads));
-        stats.TotalQueuedItems >= 0.Should().BeTrue();
+        stats.LocalQueueCounts.Count.Should().Be(_options.WorkerThreads);
+        stats.TotalQueuedItems .Should().BeGreaterThanOrEqualTo(0,);
     }
 
     [Fact]
@@ -499,7 +500,7 @@ public class CpuThreadPoolTests
 
         // Act & Assert
         await threadPool.Invoking(tp => tp.DisposeAsync().AsTask())
-            .NotThrowAsync();
+            .NotThrowAsync;
     }
 
     [Fact]

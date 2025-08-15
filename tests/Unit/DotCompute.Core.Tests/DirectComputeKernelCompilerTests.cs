@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -42,7 +42,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act = () => new DirectComputeKernelCompiler(null!);
+        Action act =() => new DirectComputeKernelCompiler(null!);
         act.Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
@@ -262,7 +262,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         
         // Act & Assert
         _compiler.Invoking(c => c.Validate(CreateValidHLSLKernelDefinition("Test")
-            .NotThrow();
+            .Should().NotThrow();
     }
 
     #endregion
@@ -289,7 +289,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
     [InlineData("void CSMain() { malloc(100); }", "Dynamic memory allocation")]
     [InlineData("void CSMain() { free(ptr); }", "Dynamic memory allocation")]
     [InlineData("[numthreads(8, 8, 1)]\nvoid CSMain() { { { } }", "Unbalanced braces")]
-    [InlineData("[numthreads(8, 8, 1)]\nvoid CSMain() { (( } }", "Unbalanced parentheses")]
+    [InlineData("[numthreads(8, 8, 1)]\nvoid CSMain() {(( } }", "Unbalanced parentheses")]
     public void Validate_WithInvalidHLSLSyntax_ShouldDetectErrors(string hlslCode, string expectedError)
     {
         // Arrange
@@ -299,7 +299,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var result = _compiler.Validate(definition);
 
         // Assert
-        if (expectedError == "Dynamic memory allocation")
+        if(expectedError == "Dynamic memory allocation")
         {
             // This should be detected during validation
             Assert.NotNull(result);
@@ -420,12 +420,12 @@ public class DirectComputeKernelCompilerTests : IDisposable
         var managedKernel = result as ManagedCompiledKernel;
         managedKernel!.Name.Should().Be("StubKernel");
         managedKernel.Binary.Should().NotBeNull();
-((managedKernel.(Binary.Length > 0).Should().BeTrue();
+(managedKernel.Binary.Length > 0).Should().BeTrue();
         managedKernel.Assert.Contains("Stub compilation for StubKernel", CompilationLog);
         managedKernel.PerformanceMetadata.Should().ContainKey("CompilationTime");
         managedKernel.PerformanceMetadata.Should().ContainKey("IsStubImplementation");
         managedKernel.PerformanceMetadata.Should().ContainKey("Platform");
-        managedKernel.PerformanceMetadata["Platform"].Should().Be("DirectCompute (Stub)");
+        managedKernel.PerformanceMetadata["Platform"].Should().Be("DirectComputeStub)");
     }
 
     [Fact]
@@ -440,7 +440,7 @@ public class DirectComputeKernelCompilerTests : IDisposable
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds >= 25.Should().BeTrue(); // Should take at least ~30ms
+        stopwatch.ElapsedMilliseconds .Should().BeGreaterThanOrEqualTo(25,); // Should take at least ~30ms
     }
 
     #endregion
@@ -511,7 +511,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             // DirectComputeKernelCompiler doesn't implement IDisposable, so nothing to dispose
             _disposed = true;
@@ -608,8 +608,8 @@ void CSMain()
     }
 
     [Theory]
-    [InlineData("if (SV_DispatchThreadID.x > 0) { }")]
-    [InlineData("if (SV_GroupThreadID.y > 0) { }")]
+    [InlineData("ifSV_DispatchThreadID.x > 0) { }")]
+    [InlineData("ifSV_GroupThreadID.y > 0) { }")]
     public void Validate_WithThreadDependentBranching_ShouldWarnAboutDivergence(string branchingCode)
     {
         // Arrange

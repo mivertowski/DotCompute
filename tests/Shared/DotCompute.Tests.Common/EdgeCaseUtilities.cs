@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -34,7 +34,7 @@ public static class EdgeCaseUtilities
         yield return int.MaxValue - 1;
         
             // Powers of 2
-            for (int i = 0; i < 31; i++)
+            for(int i = 0; i < 31; i++)
             {
                 var value = 1 << i;
                 yield return value;
@@ -61,7 +61,7 @@ public static class EdgeCaseUtilities
             yield return long.MaxValue - 1;
             
             // Powers of 2
-            for (int i = 0; i < 63; i++)
+            for(int i = 0; i < 63; i++)
             {
                 var value = 1L << i;
                 yield return value;
@@ -140,12 +140,12 @@ public static class EdgeCaseUtilities
     {
         var data = new byte[size];
         
-        switch (pattern)
+        switch(pattern)
         {
             case TestPattern.Sequential:
-                for (int i = 0; i < size; i++)
+                for(int i = 0; i < size; i++)
                 {
-                    data[i] = (byte)(i % 256);
+                    data[i] =(byte)(i % 256);
                 }
                 break;
                 
@@ -158,23 +158,23 @@ public static class EdgeCaseUtilities
                 break;
                 
             case TestPattern.Alternating:
-                for (int i = 0; i < size; i++)
+                for(int i = 0; i < size; i++)
                 {
-                    data[i] = (byte)(i % 2 == 0 ? 0xAA : 0x55);
+                    data[i] =(byte)(i % 2 == 0 ? 0xAA : 0x55);
                 }
                 break;
                 
             case TestPattern.Random:
-                using (var rng = RandomNumberGenerator.Create())
+                using(var rng = RandomNumberGenerator.Create())
                 {
                     rng.GetBytes(data);
                 }
                 break;
                 
             case TestPattern.Checksum:
-                for (int i = 0; i < size; i++)
+                for(int i = 0; i < size; i++)
                 {
-                    data[i] = (byte)(i ^ (i >> 8) ^ (i >> 16) ^ (i >> 24));
+                    data[i] = (byte)((i ^ (i >> 8)) ^ (i >> 16) ^ (i >> 24));
                 }
                 break;
         }
@@ -187,12 +187,12 @@ public static class EdgeCaseUtilities
     /// </summary>
     public static bool VerifyMemoryTestPattern(ReadOnlySpan<byte> data, TestPattern pattern)
     {
-        switch (pattern)
+        switch(pattern)
         {
             case TestPattern.Sequential:
-                for (int i = 0; i < data.Length; i++)
+                for(int i = 0; i < data.Length; i++)
                 {
-                    if (data[i] != (byte)(i % 256))
+                    if(data[i] != (byte)(i % 256))
                     {
                         return false;
                     }
@@ -200,9 +200,9 @@ public static class EdgeCaseUtilities
                 break;
                 
             case TestPattern.AllZeros:
-                for (int i = 0; i < data.Length; i++)
+                for(int i = 0; i < data.Length; i++)
                 {
-                    if (data[i] != 0)
+                    if(data[i] != 0)
                     {
                         return false;
                     }
@@ -210,9 +210,9 @@ public static class EdgeCaseUtilities
                 break;
                 
             case TestPattern.AllOnes:
-                for (int i = 0; i < data.Length; i++)
+                for(int i = 0; i < data.Length; i++)
                 {
-                    if (data[i] != 0xFF)
+                    if(data[i] != 0xFF)
                     {
                         return false;
                     }
@@ -220,10 +220,10 @@ public static class EdgeCaseUtilities
                 break;
                 
             case TestPattern.Alternating:
-                for (int i = 0; i < data.Length; i++)
+                for(int i = 0; i < data.Length; i++)
                 {
-                    var expected = (byte)(i % 2 == 0 ? 0xAA : 0x55);
-                    if (data[i] != expected)
+                    var expected =(byte)(i % 2 == 0 ? 0xAA : 0x55);
+                    if(data[i] != expected)
                     {
                         return false;
                     }
@@ -231,10 +231,10 @@ public static class EdgeCaseUtilities
                 break;
                 
             case TestPattern.Checksum:
-                for (int i = 0; i < data.Length; i++)
+                for(int i = 0; i < data.Length; i++)
                 {
-                    var expected = (byte)(i ^ (i >> 8) ^ (i >> 16) ^ (i >> 24));
-                    if (data[i] != expected)
+                    var expected = (byte)((i ^ (i >> 8)) ^ (i >> 16) ^ (i >> 24));
+                    if(data[i] != expected)
                     {
                         return false;
                     }
@@ -272,13 +272,13 @@ public static class EdgeCaseUtilities
             {
                 try
                 {
-                    for (int i = 0; i < operationsPerThread; i++)
+                    for(int i = 0; i < operationsPerThread; i++)
                     {
                         await action(threadId * operationsPerThread + i);
                         completedOperations.Add(threadId * operationsPerThread + i);
                     }
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -317,14 +317,14 @@ public static class EdgeCaseUtilities
             {
                 try
                 {
-                    for (int i = 0; i < testData.Length; i++)
+                    for(int i = 0; i < testData.Length; i++)
                     {
-                        var dataIndex = (threadId * testData.Length + i) % testData.Length;
+                        var dataIndex =(threadId * testData.Length + i) % testData.Length;
                         await action(testData[dataIndex], threadId);
                         completedOperations.Add(threadId * testData.Length + i);
                     }
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -405,7 +405,7 @@ public static class EdgeCaseUtilities
         var files = new List<string>();
         using var rng = RandomNumberGenerator.Create();
 
-        for (int i = 0; i < count; i++)
+        for(int i = 0; i < count; i++)
         {
             var fileName = Path.GetTempFileName();
             files.Add(fileName);
@@ -448,21 +448,21 @@ public static class EdgeCaseUtilities
     {
         try
         {
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // Use performance counters or WMI on Windows
                 return 8L * 1024 * 1024 * 1024; // Default to 8GB
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 // Parse /proc/meminfo on Linux
                 var memInfo = File.ReadAllText("/proc/meminfo");
                 var lines = memInfo.Split('\n');
                 var memTotal = lines.FirstOrDefault(l => l.StartsWith("MemAvailable:", StringComparison.Ordinal));
-                if (memTotal != null)
+                if(memTotal != null)
                 {
                     var parts = memTotal.Split(Separators, StringSplitOptions.RemoveEmptyEntries);
-                    if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
+                    if(parts.Length >= 2 && long.TryParse(parts[1], out var kb))
                     {
                         return kb * 1024; // Convert KB to bytes
                     }
@@ -556,7 +556,7 @@ public sealed class TempFileCollection : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
+        if(_disposed)
         {
             return;
         }
@@ -565,7 +565,7 @@ public sealed class TempFileCollection : IDisposable
         {
             try
             {
-                if (File.Exists(file))
+                if(File.Exists(file))
                 {
                     File.Delete(file);
                 }

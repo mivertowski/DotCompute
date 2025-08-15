@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -42,7 +42,7 @@ public class OpenCLKernelCompilerTests : IDisposable
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act = () => new OpenCLKernelCompiler(null!);
+        Action act =() => new OpenCLKernelCompiler(null!);
         act.Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
@@ -179,7 +179,7 @@ public class OpenCLKernelCompilerTests : IDisposable
         managedKernel.CompilationLog.Should().Be("Mock OpenCL compilation log");
         managedKernel.PerformanceMetadata.Should().ContainKey("CompilationTime");
         managedKernel.PerformanceMetadata.Should().ContainKey("Platform");
-        managedKernel.PerformanceMetadata["Platform"].Should().Be("OpenCL (Mock)");
+        managedKernel.PerformanceMetadata["Platform"].Should().Be("OpenCLMock)");
         managedKernel.PerformanceMetadata["CompilationTime"].Should().Be(10.0);
     }
 
@@ -195,7 +195,7 @@ public class OpenCLKernelCompilerTests : IDisposable
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds >= 8.Should().BeTrue(); // Should take at least ~10ms
+        stopwatch.ElapsedMilliseconds .Should().BeGreaterThanOrEqualTo(8,); // Should take at least ~10ms
     }
 
     #endregion
@@ -279,7 +279,7 @@ public class OpenCLKernelCompilerTests : IDisposable
 
     [Theory]
     [InlineData("__kernel void test() { { { } } }")]
-    [InlineData("__kernel void test() { (( ) }")]
+    [InlineData("__kernel void test() {(( ) }")]
     [InlineData("__kernel void test() { [[[ ]]] }")]
     public void ValidateOpenCLSyntax_WithBalancedBrackets_ShouldReturnNoErrors(string openclCode)
     {
@@ -296,7 +296,7 @@ public class OpenCLKernelCompilerTests : IDisposable
 
     [Theory]
     [InlineData("__kernel void test() { { { }")]
-    [InlineData("__kernel void test() { (( )")]
+    [InlineData("__kernel void test() {(( )")]
     [InlineData("__kernel void test() { [[[ ]")]
     public void ValidateOpenCLSyntax_WithUnbalancedBrackets_ShouldReturnErrors(string openclCode)
     {
@@ -336,7 +336,7 @@ public class OpenCLKernelCompilerTests : IDisposable
         var complexOpenCLCode = @"
 __kernel void vectorAdd(__global const float* a, __global const float* b, __global float* c, const unsigned int n) {
     int id = get_global_id(0);
-    if (id < n) {
+    if(id < n) {
         c[id] = a[id] + b[id];
     }
 }";
@@ -394,7 +394,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
 
         // Assert
         Assert.NotNull(result);
-        // Default options are applied internally (tested through successful compilation)
+        // Default options are applied internally(tested through successful compilation)
     }
 
     #endregion
@@ -419,7 +419,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var kernel1 = result1 as ManagedCompiledKernel;
         var kernel2 = result2 as ManagedCompiledKernel;
         
-        kernel1!.Binary.BeEquivalentTo(kernel2!.Binary);
+        kernel1!.Binary.Should().BeEquivalentTo(kernel2!.Binary);
     }
 
     [Fact]
@@ -608,7 +608,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             // OpenCLKernelCompiler doesn't implement IDisposable, so nothing to dispose
             _disposed = true;

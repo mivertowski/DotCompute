@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -116,7 +116,7 @@ public class BaseBackendPluginTests
         var namedAccelerator = serviceProvider.GetService<IAccelerator>();
         Assert.NotNull(namedAccelerator);
         Assert.IsType<NamedAcceleratorWrapper>(namedAccelerator);
-        var wrapper = (NamedAcceleratorWrapper)namedAccelerator;
+        var wrapper =(NamedAcceleratorWrapper)namedAccelerator;
         Assert.Equal("test", wrapper.Name);
     }
 
@@ -272,8 +272,8 @@ public class NamedAcceleratorWrapperTests
         var kernelDefinition = Mock.Of<KernelDefinition>();
         
         mockAccelerator
-            .Setup(x => x.CompileKernelAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockCompiledKernel)));
+            .Setup(x => x.CompileKernelAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockCompiledKernel);
 
         var wrapper = new NamedAcceleratorWrapper("test", mockAccelerator.Object);
 

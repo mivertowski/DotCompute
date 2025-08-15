@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Text;
@@ -31,7 +31,7 @@ public class CudaRealHardwareFullSystemTests : IDisposable
         _logger = loggerFactory.CreateLogger<CudaRealHardwareFullSystemTests>();
 
         // Only run tests if CUDA is available
-        if (CudaBackend.IsAvailable())
+        if(CudaBackend.IsAvailable())
         {
             _backend = new CudaBackend(loggerFactory.CreateLogger<CudaBackend>());
             _accelerator = _backend.GetDefaultAccelerator();
@@ -54,23 +54,23 @@ public class CudaRealHardwareFullSystemTests : IDisposable
         
         _logger.LogInformation("Detected CUDA device: {DeviceName}", info.Name);
         _logger.LogInformation("Compute capability: {ComputeCapability}", info.ComputeCapability);
-        _logger.LogInformation("Total memory: {TotalMemory:N0} bytes ({MemoryGB:F2} GB)", 
-            info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024));
+        _logger.LogInformation("Total memory: {TotalMemory:N0} bytes{MemoryGB:F2} GB)", 
+            info.TotalMemory, info.TotalMemory /(1024.0 * 1024 * 1024));
 
         // Verify compute capability is 8.9 for RTX 2000 Ada Gen
         Assert.NotNull(info.ComputeCapability);
-        Assert.True(info.ComputeCapability.Major >= 8, 
+        info.ComputeCapability.Major .Should().BeGreaterThanOrEqualTo(8, 
             $"Expected compute capability 8.x or higher, got {info.ComputeCapability}");
         
         // RTX 2000 Ada Gen should have compute capability 8.9
-        if (info.Name.Contains("RTX 2000 Ada", StringComparison.OrdinalIgnoreCase))
+        if(info.Name.Contains("RTX 2000 Ada", StringComparison.OrdinalIgnoreCase))
         {
             Assert.Equal(8, info.ComputeCapability.Major);
             Assert.Equal(9, info.ComputeCapability.Minor);
         }
 
-        Assert.True(info.TotalMemory > 0, "Device should have memory");
-        Assert.True(info.ComputeUnits > 0, "Device should have compute units");
+        info.TotalMemory.Should().BeGreaterThan(0, "Device should have memory");
+        info.ComputeUnits.Should().BeGreaterThan(0, "Device should have compute units");
     }
 
     [SkippableFact]
@@ -101,19 +101,19 @@ public class CudaRealHardwareFullSystemTests : IDisposable
 extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         c[idx] = a[idx] + b[idx];
     }
 }";
-
-            var kernelSourceObj = new TextKernelSource(kernelSource, "vectorAdd", KernelLanguage.Cuda, "vectorAdd");
-            var kernelDefinition = new KernelDefinition("vectorAdd", kernelSourceObj, options);
 
             var options = new CompilationOptions
             {
                 OptimizationLevel = OptimizationLevel.Maximum,
                 EnableDebugInfo = false
             };
+
+            var kernelSourceObj = new TextKernelSource(kernelSource, "vectorAdd", DotCompute.Abstractions.KernelLanguage.Cuda, "vectorAdd");
+            var kernelDefinition = new KernelDefinition("vectorAdd", kernelSourceObj, options);
 
             // Compile kernel
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
@@ -126,7 +126,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             await bufferC.CopyToHostAsync<float>(c);
 
             // Verify results
-            for (int i = 0; i < N; i++)
+            for(int i = 0; i < N; i++)
             {
                 var expected = a[i] + b[i];
                 Assert.True(Math.Abs(c[i] - expected) < 0.001f, 
@@ -173,23 +173,23 @@ extern ""C"" __global__ void matrixMul(float* A, float* B, float* C, int size)
     int row = blockIdx.y * blockDim.y + threadIdx.y;
     int col = blockIdx.x * blockDim.x + threadIdx.x;
     
-    if (row < size && col < size) {
+    if(row < size && col < size) {
         float sum = 0.0f;
-        for (int k = 0; k < size; k++) {
+        for(int k = 0; k < size; k++) {
             sum += A[row * size + k] * B[k * size + col];
         }
         C[row * size + col] = sum;
     }
 }";
 
-            var kernelSourceObj = new TextKernelSource(kernelSource, "matrixMul", KernelLanguage.Cuda, "matrixMul");
-            var kernelDefinition = new KernelDefinition("matrixMul", kernelSourceObj, options);
-
             var options = new CompilationOptions
             {
                 OptimizationLevel = OptimizationLevel.Maximum,
                 EnableDebugInfo = false
             };
+
+            var kernelSourceObj = new TextKernelSource(kernelSource, "matrixMul", DotCompute.Abstractions.KernelLanguage.Cuda, "matrixMul");
+            var kernelDefinition = new KernelDefinition("matrixMul", kernelSourceObj, options);
 
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
 
@@ -206,10 +206,10 @@ extern ""C"" __global__ void matrixMul(float* A, float* B, float* C, int size)
             // Copy result back
             await bufferC.CopyToHostAsync<float>(matrixC);
 
-            // Verify a few key results (full verification would be too slow)
-            for (int i = 0; i < Math.Min(10, SIZE); i++)
+            // Verify a few key results(full verification would be too slow)
+            for(int i = 0; i < Math.Min(10, SIZE); i++)
             {
-                for (int j = 0; j < Math.Min(10, SIZE); j++)
+                for(int j = 0; j < Math.Min(10, SIZE); j++)
                 {
                     var expected = SIZE * 1.0f * 2.0f; // Each cell should be sum of 1*2 for SIZE terms
                     var actual = matrixC[i * SIZE + j];
@@ -252,9 +252,9 @@ extern ""C"" __global__ void matrixMul(float* A, float* B, float* C, int size)
 
             // Test partial copy operations
             var testData = new byte[1024];
-            for (int i = 0; i < testData.Length; i++)
+            for(int i = 0; i < testData.Length; i++)
             {
-                testData[i] = (byte)(i % 256);
+                testData[i] =(byte)(i % 256);
             }
 
             // Copy test pattern to different offsets
@@ -272,7 +272,7 @@ extern ""C"" __global__ void matrixMul(float* A, float* B, float* C, int size)
             Assert.Equal(testData, readBack2);
 
             _logger.LogInformation("Large memory allocation test passed: {AllocationMB:F1} MB", 
-                allocationSize / (1024.0 * 1024));
+                allocationSize /(1024.0 * 1024));
         }
         finally
         {
@@ -300,18 +300,18 @@ extern ""C"" __global__ void matrixMul(float* A, float* B, float* C, int size)
 extern ""C"" __global__ void simpleAdd(float* data, float value, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         data[idx] += value;
     }
 }";
 
-            var kernelSourceObj = new TextKernelSource(kernelSource, "simpleAdd", KernelLanguage.Cuda, "simpleAdd");
+            var kernelSourceObj = new TextKernelSource(kernelSource, "simpleAdd", DotCompute.Abstractions.KernelLanguage.Cuda, "simpleAdd");
             var kernelDefinition = new KernelDefinition("simpleAdd", kernelSourceObj, new CompilationOptions());
 
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
 
             // Launch multiple concurrent kernels
-            for (int i = 0; i < KERNEL_COUNT; i++)
+            for(int i = 0; i < KERNEL_COUNT; i++)
             {
                 var kernelIndex = i;
                 var task = Task.Run(async () =>
@@ -329,9 +329,9 @@ extern ""C"" __global__ void simpleAdd(float* data, float value, int n)
                     await buffer.CopyToHostAsync<float>(result);
 
                     // Verify results
-                    for (int j = 0; j < ELEMENTS_PER_KERNEL; j++)
+                    for(int j = 0; j < ELEMENTS_PER_KERNEL; j++)
                     {
-                        var expected = data[j] + (kernelIndex + 1);
+                        var expected = data[j] +(kernelIndex + 1);
                         Assert.True(Math.Abs(result[j] - expected) < 0.001f,
                             $"Kernel {kernelIndex}, element {j}: expected {expected}, got {result[j]}");
                     }
@@ -378,10 +378,10 @@ extern ""C"" __global__ void simpleAdd(float* data, float value, int n)
 extern ""C"" __global__ void computeIntensive(float* input, float* output, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         float val = input[idx];
         // Compute-intensive operations
-        for (int i = 0; i < 100; i++) {
+        for(int i = 0; i < 100; i++) {
             val = sinf(val) + cosf(val * 2.0f) + expf(val * 0.1f);
         }
         output[idx] = val;
@@ -398,14 +398,14 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
 
             foreach (var optLevel in optimizationLevels)
             {
-                var kernelSourceObj = new TextKernelSource(kernelSource, "computeIntensive", KernelLanguage.Cuda, "computeIntensive");
-                var kernelDefinition = new KernelDefinition($"computeIntensive_{optLevel}", kernelSourceObj, options);
-
+                var kernelSourceObj = new TextKernelSource(kernelSource, "computeIntensive", DotCompute.Abstractions.KernelLanguage.Cuda, "computeIntensive");
                 var options = new CompilationOptions
                 {
                     OptimizationLevel = optLevel,
                     EnableDebugInfo = false
                 };
+                
+                var kernelDefinition = new KernelDefinition($"computeIntensive_{optLevel}", kernelSourceObj, options);
 
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
@@ -419,7 +419,7 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
                 _logger.LogInformation("Optimization {Level}: Compile={CompileMs}ms, Execute={ExecuteMs}ms",
                     optLevel, compileTime, executeTime);
 
-                // Verify kernel actually executed (results should be different from input)
+                // Verify kernel actually executed(results should be different from input)
                 var outputData = new float[Math.Min(100, N)];
                 await bufferOutput.CopyToHostAsync<float>(outputData, 0);
                 
@@ -443,25 +443,25 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
         var info = _accelerator.Info;
 
         // RTX 2000 Ada Gen expected specifications
-        Assert.True(info.TotalMemory >= 6L * 1024 * 1024 * 1024, // At least 6GB
-            $"Expected at least 6GB memory, got {info.TotalMemory / (1024.0 * 1024 * 1024):F1}GB");
+        (info.TotalMemory >= 6L * 1024 * 1024 * 1024).Should().BeTrue( // At least 6GB
+            $"Expected at least 6GB memory, got {info.TotalMemory /(1024.0 * 1024 * 1024):F1}GB");
 
-        Assert.True(info.ComputeUnits >= 20, // At least 20 SMs
+        info.ComputeUnits .Should().BeGreaterThanOrEqualTo(20, // At least 20 SMs
             $"Expected at least 20 compute units, got {info.ComputeUnits}");
 
-        Assert.True(info.MaxClockFrequency > 1000, // > 1GHz
+        info.MaxClockFrequency.Should().BeGreaterThan(1000, // > 1GHz
             $"Expected clock > 1GHz, got {info.MaxClockFrequency}MHz");
 
         // Verify CUDA capabilities are available
         var capabilities = info.Capabilities;
         Assert.NotNull(capabilities);
 
-        if (capabilities.TryGetValue("WarpSize", out var warpSize))
+        if(capabilities.TryGetValue("WarpSize", out var warpSize))
         {
             Assert.Equal(32, warpSize); // CUDA warp size is always 32
         }
 
-        if (capabilities.TryGetValue("MaxThreadsPerBlock", out var maxThreads))
+        if(capabilities.TryGetValue("MaxThreadsPerBlock", out var maxThreads))
         {
             Assert.True((int)maxThreads >= 1024, "Should support at least 1024 threads per block");
         }
@@ -472,7 +472,7 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
     private static float[] CreateSequentialArray(int count, float start = 0.0f)
     {
         var array = new float[count];
-        for (int i = 0; i < count; i++)
+        for(int i = 0; i < count; i++)
         {
             array[i] = start + i;
         }
@@ -488,7 +488,7 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if(_disposed) return;
 
         _accelerator?.Dispose();
         _backend?.Dispose();

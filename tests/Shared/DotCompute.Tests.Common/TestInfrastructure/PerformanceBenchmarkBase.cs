@@ -32,11 +32,11 @@ public abstract class PerformanceBenchmarkBase : CoverageTestBase
         var results = await Benchmark.MeasureAsync(operation, iterations, operationName);
         
         Logger.LogInformation(
-            "Performance test '{Operation}': Avg {AvgTime}ms, Min {MinTime}ms, Max {MaxTime}ms ({Iterations} iterations)",
+            "Performance test '{Operation}': Avg {AvgTime}ms, Min {MinTime}ms, Max {MaxTime}ms({Iterations} iterations)",
             operationName, results.AverageTime.TotalMilliseconds, results.MinTime.TotalMilliseconds,
             results.MaxTime.TotalMilliseconds, iterations);
 
-        if (results.AverageTime > expectedMaxTime)
+        if(results.AverageTime > expectedMaxTime)
         {
             throw new InvalidOperationException(
                 $"Performance test '{operationName}' failed. " +
@@ -60,7 +60,7 @@ public abstract class PerformanceBenchmarkBase : CoverageTestBase
             var allocTimes = new List<TimeSpan>();
             long memoryBefore = GC.GetTotalMemory(true);
 
-            for (int i = 0; i < iterationsPerSize; i++)
+            for(int i = 0; i < iterationsPerSize; i++)
             {
                 var stopwatch = Stopwatch.StartNew();
                 using var allocated = await allocator(size);
@@ -97,7 +97,7 @@ public abstract class PerformanceBenchmarkBase : CoverageTestBase
             result1, result2, operation1Name, operation2Name);
 
         Logger.LogInformation(
-            "Performance comparison: {Op1} avg {Time1}ms vs {Op2} avg {Time2}ms (speedup: {Speedup:F2}x)",
+            "Performance comparison: {Op1} avg {Time1}ms vs {Op2} avg {Time2}ms(speedup: {Speedup:F2}x)",
             operation1Name, result1.AverageTime.TotalMilliseconds,
             operation2Name, result2.AverageTime.TotalMilliseconds,
             comparison.SpeedupRatio);
@@ -141,7 +141,7 @@ public class PerformanceBenchmark
         }
 
         // Measure iterations
-        for (int i = 0; i < iterations; i++)
+        for(int i = 0; i < iterations; i++)
         {
             var stopwatch = Stopwatch.StartNew();
             try
@@ -149,7 +149,7 @@ public class PerformanceBenchmark
                 var result = await operation();
                 results.Add(result);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _logger.LogWarning(ex, "Benchmark iteration {Iteration} failed for {Operation}", i, operationName);
                 throw;
@@ -186,7 +186,7 @@ public class PerformanceBenchmark
         }
 
         // Measure iterations
-        for (int i = 0; i < iterations; i++)
+        for(int i = 0; i < iterations; i++)
         {
             var stopwatch = Stopwatch.StartNew();
             try
@@ -194,7 +194,7 @@ public class PerformanceBenchmark
                 var result = operation();
                 results.Add(result);
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 _logger.LogWarning(ex, "Benchmark iteration {Iteration} failed for {Operation}", i, operationName);
                 throw;
@@ -259,5 +259,5 @@ public record PerformanceComparisonResult(
     public double SpeedupRatio => Result2.AverageTime.TotalMilliseconds / Result1.AverageTime.TotalMilliseconds;
     public bool IsFirstFaster => SpeedupRatio > 1.0;
     public TimeSpan TimeDifference => Result1.AverageTime - Result2.AverageTime;
-    public double PercentageImprovement => (SpeedupRatio - 1.0) * 100.0;
+    public double PercentageImprovement =>(SpeedupRatio - 1.0) * 100.0;
 }

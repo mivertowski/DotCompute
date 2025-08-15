@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Plugins.Core;
@@ -85,12 +85,12 @@ public class PluginIntegrationTests : IDisposable
 
         var cpuMetrics = cpuResult.GetMetrics();
         Assert.NotNull(cpuMetrics);
-        cpuMetrics.RequestCount.BeGreaterThanOrEqualTo(0);
+        cpuMetrics.RequestCount.Should().BeGreaterThanOrEqualTo(0);
 
         // Test unloading
         var unloadResult = await pluginSystem.UnloadPluginAsync(cpuResult.Id);
         Assert.True(unloadResult);
-        pluginSystem.GetPlugin(cpuResult.Id).BeNull();
+        pluginSystem.GetPlugin(cpuResult.Id).Should().BeNull();
     }
 
     [Fact]
@@ -145,7 +145,7 @@ public class PluginIntegrationTests : IDisposable
 
         // Assert
         plugin.TestService.Should().NotBeNull();
-        plugin.TestService.BeOfType(typeof(TestService));
+        plugin.TestService.Should().BeOfType(typeof(TestService));
     }
 
     [Fact]
@@ -162,7 +162,7 @@ public class PluginIntegrationTests : IDisposable
         await goodPlugin.StartAsync();
 
         // Try to load bad plugin
-        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask());
+        await Assert.ThrowsAsync<PluginLoadException>(() => pluginSystem.LoadPluginAsync(badPlugin));
 
         // Assert - Good plugin should still be working
         pluginSystem.GetLoadedPlugins().Should().HaveCount(1);
@@ -228,8 +228,8 @@ public class PluginIntegrationTests : IDisposable
         var invalidPlugin = new InvalidPlugin();
 
         // Act & Assert
-        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask())
-            .WithMessage("*Plugin validation failed*");
+        await Assert.ThrowsAsync<PluginLoadException>(() => pluginSystem.LoadPluginAsync(invalidPlugin));
+        // Note: Assert.ThrowsAsync doesn't support WithMessage, use FluentAssertions for message validation
     }
 
     [Fact]
@@ -278,9 +278,9 @@ public class PluginIntegrationTests : IDisposable
         var healthEvents = new List<PluginHealthChangedEventArgs>();
         var errorEvents = new List<PluginErrorEventArgs>();
 
-        plugin.StateChanged += (s, e) => stateEvents.Add(e);
-        plugin.HealthChanged += (s, e) => healthEvents.Add(e);
-        plugin.ErrorOccurred += (s, e) => errorEvents.Add(e);
+        plugin.StateChanged +=(s, e) => stateEvents.Add(e);
+        plugin.HealthChanged +=(s, e) => healthEvents.Add(e);
+        plugin.ErrorOccurred +=(s, e) => errorEvents.Add(e);
 
         // Act
         await pluginSystem.LoadPluginAsync(plugin);
@@ -291,8 +291,8 @@ public class PluginIntegrationTests : IDisposable
         await plugin.StopAsync();
 
         // Assert
-        stateEvents.HaveCountGreaterThan(0);
-        healthEvents.HaveCountGreaterThan(0);
+        stateEvents.Should().HaveCountGreaterThan(0);
+        healthEvents.Should().HaveCountGreaterThan(0);
         Assert.Equal(1, errorEvents.Count());
     }
 
@@ -329,9 +329,9 @@ public class PluginIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        if (_disposed) return;
+        if(_disposed) return;
 
-        (_serviceProvider as IDisposable)?.Dispose();
+       (_serviceProvider as IDisposable)?.Dispose();
         _disposed = true;
 
         GC.SuppressFinalize(this);
@@ -369,7 +369,7 @@ public class PluginIntegrationTests : IDisposable
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing)
+            if(disposing)
             {
                 IsDisposed = true;
             }

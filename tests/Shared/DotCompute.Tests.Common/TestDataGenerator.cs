@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using FluentAssertions;
@@ -19,7 +19,7 @@ public static class TestDataGenerator
     public static int[] GenerateIntArray(int length, int minValue = int.MinValue, int maxValue = int.MaxValue)
     {
         var data = new int[length];
-        for (var i = 0; i < length; i++)
+        for(var i = 0; i < length; i++)
         {
             data[i] = Random.Next(minValue, maxValue);
         }
@@ -32,9 +32,9 @@ public static class TestDataGenerator
     public static float[] GenerateFloatArray(int length, float minValue = -1000f, float maxValue = 1000f)
     {
         var data = new float[length];
-        for (var i = 0; i < length; i++)
+        for(var i = 0; i < length; i++)
         {
-            data[i] = minValue + (float)(Random.NextDouble() * (maxValue - minValue));
+            data[i] = minValue +(float)(Random.NextDouble() *(maxValue - minValue));
         }
         return data;
     }
@@ -45,9 +45,9 @@ public static class TestDataGenerator
     public static double[] GenerateDoubleArray(int length, double minValue = -1000.0, double maxValue = 1000.0)
     {
         var data = new double[length];
-        for (var i = 0; i < length; i++)
+        for(var i = 0; i < length; i++)
         {
-            data[i] = minValue + Random.NextDouble() * (maxValue - minValue);
+            data[i] = minValue + Random.NextDouble() *(maxValue - minValue);
         }
         return data;
     }
@@ -93,9 +93,9 @@ public static class TestDataGenerator
     public static T[,] Generate2DArray<T>(int rows, int cols, Func<T> generator)
     {
         var array = new T[rows, cols];
-        for (var i = 0; i < rows; i++)
+        for(var i = 0; i < rows; i++)
         {
-            for (var j = 0; j < cols; j++)
+            for(var j = 0; j < cols; j++)
             {
                 array[i, j] = generator();
             }
@@ -108,19 +108,19 @@ public static class TestDataGenerator
     /// Generates test matrices for multiplication.
     /// </summary>
 #pragma warning disable CA1814 // Prefer jagged arrays over multidimensional - Multidimensional arrays are required for matrix operations
-    public static (float[,] a, float[,] b, float[,] expected) GenerateMatrixMultiplicationTestCase(int m, int n, int k)
+    public static(float[,] a, float[,] b, float[,] expected) GenerateMatrixMultiplicationTestCase(int m, int n, int k)
     {
         var a = Generate2DArray(m, n, () => (float)Random.Next(-10, 10));
         var b = Generate2DArray(n, k, () => (float)Random.Next(-10, 10));
         var expected = new float[m, k];
 
         // Calculate expected result
-        for (var i = 0; i < m; i++)
+        for(var i = 0; i < m; i++)
         {
-            for (var j = 0; j < k; j++)
+            for(var j = 0; j < k; j++)
             {
                 float sum = 0;
-                for (var l = 0; l < n; l++)
+                for(var l = 0; l < n; l++)
                 {
                     sum += a[i, l] * b[l, j];
                 }
@@ -128,14 +128,14 @@ public static class TestDataGenerator
             }
         }
 
-        return (a, b, expected);
+        return(a, b, expected);
     }
 #pragma warning restore CA1814
 
     /// <summary>
     /// Generates sparse array data.
     /// </summary>
-    public static (int[] indices, T[] values, int length) GenerateSparseArray<T>(int length, double sparsity, Func<T> generator)
+    public static(int[] indices, T[] values, int length) GenerateSparseArray<T>(int length, double sparsity, Func<T> generator)
     {
         var nonZeroCount = (int)(length * (1 - sparsity));
         var indices = Enumerable.Range(0, length)
@@ -145,12 +145,12 @@ public static class TestDataGenerator
             .ToArray();
 
         var values = new T[nonZeroCount];
-        for (var i = 0; i < nonZeroCount; i++)
+        for(var i = 0; i < nonZeroCount; i++)
         {
             values[i] = generator();
         }
 
-        return (indices, values, length);
+        return(indices, values, length);
     }
 
     /// <summary>
@@ -159,7 +159,7 @@ public static class TestDataGenerator
     public static T[] GenerateArray<T>(int length, Func<int, T> generator)
     {
         var result = new T[length];
-        for (var i = 0; i < length; i++)
+        for(var i = 0; i < length; i++)
         {
             result[i] = generator(i);
         }
@@ -193,7 +193,7 @@ public static class TestDataGenerator
     {
         var result = new T[length];
         var current = start;
-        for (var i = 0; i < length; i++)
+        for(var i = 0; i < length; i++)
         {
             result[i] = current;
             current = increment(current);
@@ -208,11 +208,11 @@ public static class TestDataGenerator
     public static float[,] GenerateFloatMatrix(int rows, int cols)
     {
         var matrix = new float[rows, cols];
-        for (var i = 0; i < rows; i++)
+        for(var i = 0; i < rows; i++)
         {
-            for (var j = 0; j < cols; j++)
+            for(var j = 0; j < cols; j++)
             {
-                matrix[i, j] = (float)Random.NextDouble() * 2.0f - 1.0f; // Range: -1.0 to 1.0
+                matrix[i, j] =(float)Random.NextDouble() * 2.0f - 1.0f; // Range: -1.0 to 1.0
             }
         }
         return matrix;

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -55,7 +55,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
 
         // Create mock plugins
         var pluginMocks = new List<Mock<IBackendPlugin>>();
-        for (int i = 0; i < threadCount * pluginsPerThread; i++)
+        for(int i = 0; i < threadCount * pluginsPerThread; i++)
         {
             var mock = new Mock<IBackendPlugin>();
             mock.Setup(p => p.Id).Returns($"TestPlugin_{i}");
@@ -69,8 +69,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
             mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
             mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
             mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-                .Returns(Task.CompletedTask)));
+            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
             pluginMocks.Add(mock);
         }
 
@@ -80,7 +80,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
             {
                 try
                 {
-                    for (int i = 0; i < pluginsPerThread; i++)
+                    for(int i = 0; i < pluginsPerThread; i++)
                     {
                         var pluginIndex = threadId * pluginsPerThread + i;
                         var plugin = pluginMocks[pluginIndex].Object;
@@ -92,7 +92,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
                         await Task.Delay(1);
                     }
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -116,7 +116,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         var plugins = new List<IBackendPlugin>();
 
         // Load plugins first
-        for (int i = 0; i < pluginCount; i++)
+        for(int i = 0; i < pluginCount; i++)
         {
             var mock = new Mock<IBackendPlugin>();
             mock.Setup(p => p.Id).Returns($"TestPlugin_{i}");
@@ -130,8 +130,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
             mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
             mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
             mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-                .Returns(Task.CompletedTask)));
+            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
             
             var plugin = mock.Object;
             plugins.Add(plugin);
@@ -150,7 +150,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
                     await _pluginSystem.UnloadPluginAsync(plugin.Id);
                     unloadedPlugins.Add(plugin.Id);
                 }
-                catch (Exception ex)
+                catch(Exception ex)
                 {
                     exceptions.Add(ex);
                 }
@@ -179,7 +179,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         var exceptions = new List<Exception>();
 
         // Act - Try to load many plugins
-        for (int i = 0; i < maxPlugins; i++)
+        for(int i = 0; i < maxPlugins; i++)
         {
             try
             {
@@ -195,13 +195,13 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
                 mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
                 mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
                 mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-                mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-                    .Returns(Task.CompletedTask)));
+                mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+                    .Returns(Task.CompletedTask);
                 
                 await _pluginSystem.LoadPluginAsync(mock.Object);
                 loadedCount++;
             }
-            catch (Exception ex)
+            catch(Exception ex)
             {
                 exceptions.Add(ex);
                 // Stop if we hit resource limits
@@ -210,12 +210,12 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         }
 
         // Assert
-        Assert.True(loadedCount > 0, "Should load some plugins before hitting limits");
+        loadedCount.Should().BeGreaterThan(0, "Should load some plugins before hitting limits");
         
-        if (exceptions.Any())
+        if(exceptions.Any())
         {
             // If we hit exceptions, they should be resource-related
-            exceptions.OnlyContain(ex => 
+            exceptions.Should().OnlyContain(ex => 
                 ex is OutOfMemoryException || 
                 ex is InvalidOperationException || 
                 ex is PluginLoadException);
@@ -238,18 +238,18 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
         mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
         mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
+        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .Returns(async (IServiceProvider sp, CancellationToken ct) =>
             {
                 // Simulate memory-intensive initialization
                 var memoryHog = new List<byte[]>();
-                for (int i = 0; i < 100; i++)
+                for(int i = 0; i < 100; i++)
                 {
                     memoryHog.Add(new byte[1024 * 1024]); // 1MB chunks
                     await Task.Delay(1, ct); // Allow cancellation
                 }
                 // Memory should be released when method exits
-            })));
+            });
 
         // Act & Assert
         try
@@ -258,13 +258,13 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
             
             // If successful, plugin should be loaded
             var plugins = _pluginSystem.GetLoadedPlugins();
-            Assert.Contains(p => p.Name == "MemoryIntensivePlugin", plugins);
+            Assert.Contains(plugins, p => p.Name == "MemoryIntensivePlugin");
         }
-        catch (OutOfMemoryException)
+        catch(OutOfMemoryException)
         {
             // Expected if system doesn't have enough memory
         }
-        catch (PluginLoadException ex) when (ex.InnerException is OutOfMemoryException)
+        catch(PluginLoadException ex) when(ex.InnerException is OutOfMemoryException)
         {
             // Also expected - wrapped OutOfMemoryException
         }
@@ -290,8 +290,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         goodPlugin.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
         goodPlugin.Setup(p => p.GetConfigurationSchema()).Returns("{}");
         goodPlugin.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        goodPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-            .Returns(Task.CompletedTask)));
+        goodPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         var badPlugin = new Mock<IBackendPlugin>();
         badPlugin.Setup(p => p.Id).Returns("BadPlugin");
@@ -305,15 +305,15 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         badPlugin.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = false, Errors = { "Validation failed" } });
         badPlugin.Setup(p => p.GetConfigurationSchema()).Returns("{}");
         badPlugin.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        badPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-            .ThrowsAsync(new InvalidOperationException("Plugin initialization failed"))));
+        badPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new InvalidOperationException("Plugin initialization failed"));
 
         // Act - Load good plugin first
         await _pluginSystem.LoadPluginAsync(goodPlugin.Object);
 
         // Try to load bad plugin
-        var loadBadPluginAct = async () => await _pluginSystem.LoadPluginAsync(badPlugin.Object);
-        await await Assert.ThrowsAsync<PluginLoadException>(async () => await loadBadPluginAct());
+        var loadBadPluginAct = async() => await _pluginSystem.LoadPluginAsync(badPlugin.Object);
+        await Assert.ThrowsAsync<PluginLoadException>(async () => await loadBadPluginAct());
 
         // Load another good plugin
         var anotherGoodPlugin = new Mock<IBackendPlugin>();
@@ -328,16 +328,16 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         anotherGoodPlugin.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
         anotherGoodPlugin.Setup(p => p.GetConfigurationSchema()).Returns("{}");
         anotherGoodPlugin.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        anotherGoodPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-            .Returns(Task.CompletedTask)));
+        anotherGoodPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         await _pluginSystem.LoadPluginAsync(anotherGoodPlugin.Object);
 
         // Assert
         var loadedPlugins = _pluginSystem.GetLoadedPlugins().ToList();
         loadedPlugins.Count.Should().Be(2);
-        Assert.Contains(p => p.Name == "GoodPlugin", loadedPlugins);
-        Assert.Contains(p => p.Name == "AnotherGoodPlugin", loadedPlugins);
+        Assert.Contains(loadedPlugins, p => p.Name == "GoodPlugin");
+        Assert.Contains(loadedPlugins, p => p.Name == "AnotherGoodPlugin");
         loadedPlugins.Should().NotContain(p => p.Name == "BadPlugin");
     }
 
@@ -357,8 +357,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
         mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
         mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-            .Returns(Task.CompletedTask)));
+        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         mock.Setup(p => p.Dispose())
             .Throws(new InvalidOperationException("Disposal failed"));
 
@@ -381,8 +381,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     public async Task LoadPluginAsync_WithNullPlugin_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        var act = async () => await _pluginSystem.LoadPluginAsync((IBackendPlugin)null!);
-        await await Assert.ThrowsAsync<ArgumentNullException>(async () => await act());
+        var act = async() => await _pluginSystem.LoadPluginAsync((IBackendPlugin)null!);
+        await Assert.ThrowsAsync<ArgumentNullException>(async () => await act());
     }
 
     [Fact]
@@ -403,8 +403,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
 
         // Act & Assert
-        var act = async () => await _pluginSystem.LoadPluginAsync(mock.Object);
-        await await Assert.ThrowsAsync<PluginLoadException>(async () => await act());
+        var act = async() => await _pluginSystem.LoadPluginAsync(mock.Object);
+        await Assert.ThrowsAsync<PluginLoadException>(async () => await act());
     }
 
     [Fact]
@@ -425,8 +425,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
 
         // Act & Assert
-        var act = async () => await _pluginSystem.LoadPluginAsync(mock.Object);
-        await await Assert.ThrowsAsync<PluginLoadException>(async () => await act());
+        var act = async() => await _pluginSystem.LoadPluginAsync(mock.Object);
+        await Assert.ThrowsAsync<PluginLoadException>(async () => await act());
     }
 
     [Fact]
@@ -447,8 +447,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
 
         // Act & Assert
-        var act = async () => await _pluginSystem.LoadPluginAsync(mock.Object);
-        await await Assert.ThrowsAsync<PluginLoadException>(async () => await act());
+        var act = async() => await _pluginSystem.LoadPluginAsync(mock.Object);
+        await Assert.ThrowsAsync<PluginLoadException>(async () => await act());
     }
 
     [Fact]
@@ -468,15 +468,15 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
         mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
         mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-            .Returns(Task.CompletedTask)));
+        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         // Act
         await _pluginSystem.LoadPluginAsync(mock.Object);
 
         // Assert
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
-        Assert.Contains(p => p.Name == longName, loadedPlugins);
+        Assert.Contains(loadedPlugins, p => p.Name == longName);
     }
 
     [Fact]
@@ -510,8 +510,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
             mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
             mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
             mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-                .Returns(Task.CompletedTask)));
+            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             await _pluginSystem.LoadPluginAsync(mock.Object);
         }
@@ -521,7 +521,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         
         foreach (var name in specialNames)
         {
-            Assert.Contains(p => p.Name == name, loadedPlugins);
+            Assert.Contains(loadedPlugins, p => p.Name == name);
         }
     }
 
@@ -542,8 +542,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     public async Task UnloadPluginAsync_WithInvalidName_ShouldThrowArgumentException(string invalidName)
     {
         // Act & Assert
-        var act = async () => await _pluginSystem.UnloadPluginAsync(invalidName!);
-        await await Assert.ThrowsAsync<ArgumentException>(async () => await act());
+        var act = async() => await _pluginSystem.UnloadPluginAsync(invalidName!);
+        await Assert.ThrowsAsync<ArgumentException>(async () => await act());
     }
 
     #endregion
@@ -566,8 +566,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
         mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
         mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-            .Returns(Task.CompletedTask)));
+        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
 
         // Act - Load plugin first time
         await _pluginSystem.LoadPluginAsync(mock.Object);
@@ -583,12 +583,12 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         duplicateMock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
         duplicateMock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
         duplicateMock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        var act = async () => await _pluginSystem.LoadPluginAsync(duplicateMock.Object);
+        var act = async() => await _pluginSystem.LoadPluginAsync(duplicateMock.Object);
 
         // Assert - The current implementation would overwrite, but we expect it to behave correctly
         // Since there's no PluginAlreadyLoadedException, we check if it succeeds or fails appropriately
         var result = await _pluginSystem.LoadPluginAsync(duplicateMock.Object);
-        result.NotBeNull("Plugin system should handle duplicate loading gracefully");
+        result.Should().NotBeNull("Plugin system should handle duplicate loading gracefully");
     }
 
     [Fact]
@@ -607,17 +607,17 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
         mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
         mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
+        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .Returns(async (IServiceProvider sp, CancellationToken ct) =>
             {
                 // Simulate long initialization
                 await Task.Delay(TimeSpan.FromSeconds(10), ct);
-            })));
+            });
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         // Act & Assert
-        var act = async () => await _pluginSystem.LoadPluginAsync(mock.Object, cts.Token);
+        var act = async() => await _pluginSystem.LoadPluginAsync(mock.Object, cts.Token);
         await Assert.ThrowsAsync<OperationCanceledException>(async () => await act());
 
         // Plugin should not be loaded
@@ -634,7 +634,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Arrange
         var plugins = new List<Mock<IBackendPlugin>>();
-        for (int i = 0; i < 10; i++)
+        for(int i = 0; i < 10; i++)
         {
             var mock = new Mock<IBackendPlugin>();
             mock.Setup(p => p.Id).Returns($"DisposeTestPlugin_{i}");
@@ -648,8 +648,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
             mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
             mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
             mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()
-                .Returns(Task.CompletedTask)));
+            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
             
             plugins.Add(mock);
             await _pluginSystem.LoadPluginAsync(mock.Object);
@@ -687,13 +687,13 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
         mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
 
-        var loadAct = async () => await _pluginSystem.LoadPluginAsync(mock.Object);
-        await await Assert.ThrowsAsync<ObjectDisposedException>(async () => await loadAct());
+        var loadAct = async() => await _pluginSystem.LoadPluginAsync(mock.Object);
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await loadAct());
 
-        var unloadAct = async () => await _pluginSystem.UnloadPluginAsync("TestPlugin");
-        await await Assert.ThrowsAsync<ObjectDisposedException>(async () => await unloadAct());
+        var unloadAct = async() => await _pluginSystem.UnloadPluginAsync("TestPlugin");
+        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await unloadAct());
 
-        var getPluginsAct = () => _pluginSystem.GetLoadedPlugins();
+        var getPluginsAct =() => _pluginSystem.GetLoadedPlugins();
         Assert.Throws<ObjectDisposedException>(() => getPluginsAct());
     }
 

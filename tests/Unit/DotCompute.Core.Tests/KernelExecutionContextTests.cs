@@ -28,9 +28,9 @@ public class KernelExecutionContextTests
 
         // Assert
         context.Name.Should().Be(name);
-        context.Arguments.BeSameAs(args);
-        context.WorkDimensions.BeEquivalentTo(workDims);
-        context.LocalWorkSize.BeEquivalentTo(localWorkSize);
+        context.Arguments.Should().BeSameAs(args);
+        context.WorkDimensions.Should().BeEquivalentTo(workDims);
+        context.LocalWorkSize.Should().BeEquivalentTo(localWorkSize);
         context.CancellationToken.Should().Be(cancellationToken);
     }
 
@@ -38,7 +38,7 @@ public class KernelExecutionContextTests
     public void Constructor_WithRequiredName_ShouldInitialize()
     {
         // Act & Assert
-        var act = () => new KernelExecutionContext { Name = "TestKernel" };
+        var act =() => new KernelExecutionContext { Name = "TestKernel" };
         act(); // Should not throw
     }
 
@@ -65,7 +65,7 @@ public class KernelExecutionContextTests
         };
 
         // Assert
-        context.WorkDimensions.BeEquivalentTo(workDims);
+        context.WorkDimensions.Should().BeEquivalentTo(workDims);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public class KernelExecutionContextTests
         };
 
         // Assert
-        context.Assert.Null(LocalWorkSize);
+        context.LocalWorkSize.Should().BeNull();
     }
 
     [Fact]
@@ -96,21 +96,21 @@ public class KernelExecutionContextTests
             Name = "TestKernel",
             LocalWorkSize = sizes1D
         };
-        context1D.LocalWorkSize.BeEquivalentTo(sizes1D);
+        context1D.LocalWorkSize.Should().BeEquivalentTo(sizes1D);
 
         var context2D = new KernelExecutionContext
         {
             Name = "TestKernel",
             LocalWorkSize = sizes2D
         };
-        context2D.LocalWorkSize.BeEquivalentTo(sizes2D);
+        context2D.LocalWorkSize.Should().BeEquivalentTo(sizes2D);
 
         var context3D = new KernelExecutionContext
         {
             Name = "TestKernel",
             LocalWorkSize = sizes3D
         };
-        context3D.LocalWorkSize.BeEquivalentTo(sizes3D);
+        context3D.LocalWorkSize.Should().BeEquivalentTo(sizes3D);
     }
 
     [Fact]

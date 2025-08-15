@@ -31,7 +31,7 @@ public class AcceleratorTestFixture : IAsyncLifetime
     public IReadOnlyList<IAccelerator> Accelerators => _accelerators.AsReadOnly();
     
     /// <summary>
-    /// Gets the default accelerator (first available).
+    /// Gets the default accelerator(first available).
     /// </summary>
     public IAccelerator? DefaultAccelerator => _accelerators.FirstOrDefault();
     
@@ -48,13 +48,13 @@ public class AcceleratorTestFixture : IAsyncLifetime
         try
         {
             // Check for CUDA runtime library
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return NativeLibrary.TryLoad("cudart64_12.dll", out _) ||
                        NativeLibrary.TryLoad("cudart64_11.dll", out _) ||
                        NativeLibrary.TryLoad("cudart64_10.dll", out _);
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 return NativeLibrary.TryLoad("libcudart.so.12", out _) ||
                        NativeLibrary.TryLoad("libcudart.so.11", out _) ||
@@ -77,16 +77,16 @@ public class AcceleratorTestFixture : IAsyncLifetime
         try
         {
             // Check for OpenCL runtime library
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return NativeLibrary.TryLoad("OpenCL.dll", out _);
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            else if(RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {
                 return NativeLibrary.TryLoad("libOpenCL.so.1", out _) ||
                        NativeLibrary.TryLoad("libOpenCL.so", out _);
             }
-            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            else if(RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 return NativeLibrary.TryLoad("/System/Library/Frameworks/OpenCL.framework/OpenCL", out _);
             }
@@ -99,11 +99,11 @@ public class AcceleratorTestFixture : IAsyncLifetime
     }
     
     /// <summary>
-    /// Checks if DirectCompute is available (Windows only).
+    /// Checks if DirectCompute is available(Windows only).
     /// </summary>
     public static bool IsDirectComputeAvailable()
     {
-        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        if(!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return false;
             
         try
@@ -124,13 +124,13 @@ public class AcceleratorTestFixture : IAsyncLifetime
     {
         var types = new List<AcceleratorType> { AcceleratorType.CPU };
         
-        if (IsCudaAvailable())
+        if(IsCudaAvailable())
             types.Add(AcceleratorType.CUDA);
             
-        if (IsOpenCLAvailable())
+        if(IsOpenCLAvailable())
             types.Add(AcceleratorType.OpenCL);
             
-        if (IsDirectComputeAvailable())
+        if(IsDirectComputeAvailable())
             types.Add(AcceleratorType.DirectML);
             
         return types;
@@ -155,7 +155,7 @@ public class AcceleratorTestFixture : IAsyncLifetime
         }
         _accelerators.Clear();
         
-        if (_acceleratorManager != null)
+        if(_acceleratorManager != null)
         {
             await _acceleratorManager.DisposeAsync();
         }
@@ -200,7 +200,7 @@ public class HardwareTheoryAttribute : TheoryAttribute
         _requiredType = requiredType;
         
         var hardware = new RequiresHardwareAttribute(requiredType);
-        if (!hardware.IsAvailable())
+        if(!hardware.IsAvailable())
         {
             Skip = $"Test requires {requiredType} hardware which is not available";
         }
@@ -215,7 +215,7 @@ public class HardwareFactAttribute : FactAttribute
     public HardwareFactAttribute(AcceleratorType requiredType)
     {
         var hardware = new RequiresHardwareAttribute(requiredType);
-        if (!hardware.IsAvailable())
+        if(!hardware.IsAvailable())
         {
             Skip = $"Test requires {requiredType} hardware which is not available";
         }

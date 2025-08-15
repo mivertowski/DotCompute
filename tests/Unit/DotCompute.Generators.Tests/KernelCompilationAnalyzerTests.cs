@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Immutable;
@@ -44,7 +44,7 @@ public unsafe class ValidKernels
     [Kernel]
     public static void AddArrays(float[] a, float[] b, float[] result, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             result[i] = a[i] + b[i];
         }
@@ -231,9 +231,9 @@ public unsafe class PerformanceKernels
     [Kernel]
     public static void NestedLoopKernel(float[] input, float[] output, int width, int height)
     {
-        for (int i = 0; i < height; i++)
+        for(int i = 0; i < height; i++)
         {
-            for (int j = 0; j < width; j++)
+            for(int j = 0; j < width; j++)
             {
                 output[i * width + j] = input[i * width + j] * 2.0f;
             }
@@ -262,7 +262,7 @@ public unsafe class PerformanceKernels
     [Kernel]
     public static void AllocationInLoopKernel(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
             var temp = new float[10];  // Allocation in loop
             output[i] = input[i] + temp[0];
@@ -290,10 +290,10 @@ public unsafe class PerformanceKernels
     [Kernel]
     public static void BoxingKernel(float[] input, float[] output, int length)
     {
-        for (int i = 0; i < length; i++)
+        for(int i = 0; i < length; i++)
         {
-            object boxed = (object)input[i];  // Boxing operation
-            output[i] = (float)boxed;
+            object boxed =(object)input[i];  // Boxing operation
+            output[i] =(float)boxed;
         }
     }
 }";
@@ -352,9 +352,9 @@ public class MultipleIssueKernels
     [Kernel(VectorSize = 12)]
     public static void ProblematicKernel(string text, int value)
     {
-        for (int i = 0; i < 100; i++)
+        for(int i = 0; i < 100; i++)
         {
-            for (int j = 0; j < 100; j++)
+            for(int j = 0; j < 100; j++)
             {
                 var temp = new object();
             }
@@ -396,9 +396,9 @@ public class NonKernelClass
 {
     public static void RegularMethod(string text, object obj)
     {
-        for (int i = 0; i < 100; i++)
+        for(int i = 0; i < 100; i++)
         {
-            for (int j = 0; j < 100; j++)
+            for(int j = 0; j < 100; j++)
             {
                 var temp = new object();
             }

@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -68,7 +68,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
     public void Constructor_WithNullOptions_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act = () => new CpuAccelerator(
+        Action act =() => new CpuAccelerator(
             null!,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -79,7 +79,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
     public void Constructor_WithNullThreadPoolOptions_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act = () => new CpuAccelerator(
+        Action act =() => new CpuAccelerator(
             _mockOptions.Object,
             null!,
             _mockLogger.Object);
@@ -90,7 +90,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act = () => new CpuAccelerator(
+        Action act =() => new CpuAccelerator(
             _mockOptions.Object,
             _mockThreadPoolOptions.Object,
             null!);
@@ -121,10 +121,10 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         Assert.NotNull(info);
         info.Type.Should().Be(AcceleratorType.CPU);
         info.Name.Should().NotBeNullOrEmpty();
-        info.Assert.Contains("CPU", Name);
-        info.Assert.Contains("cores", Name);
-((info.DeviceMemory > 0).Should().BeTrue();
-((info.ComputeUnits > 0).Should().BeTrue();
+        info.Name.Should().Contain("CPU");
+        info.Name.Should().Contain("cores");
+       info.DeviceMemory > 0.Should().BeTrue();
+       info.ComputeUnits > 0.Should().BeTrue();
         info.ComputeUnits.Should().Be(Environment.ProcessorCount);
         info.IsUnified.Should().BeTrue();
         info.Capabilities.Should().NotBeNull();
@@ -143,9 +143,9 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         capabilities.Should().ContainKey("NumaNodes");
         capabilities.Should().ContainKey("CacheLineSize");
 
-        capabilities["SimdWidth"].BeOfType<int>();
-        capabilities["ThreadCount"].BeOfType<int>();
-        capabilities["NumaNodes"].BeOfType<int>();
+        capabilities["SimdWidth"].Should().BeOfType<int>();
+        capabilities["ThreadCount"].Should().BeOfType<int>();
+        capabilities["NumaNodes"].Should().BeOfType<int>();
         capabilities["CacheLineSize"].Should().Be(64);
     }
 
@@ -211,7 +211,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
             PreferPerformanceOverPower = true
         });
 
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             options.Object,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -237,7 +237,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
             PreferPerformanceOverPower = false
         });
 
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             options.Object,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -338,7 +338,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
     public async Task DisposeAsync_ShouldCompleteSuccessfully()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             _mockOptions.Object,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -352,10 +352,10 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
     }
 
     [Fact]
-    public async Task DisposeAsync_CalledMultipleTimes_ShouldShould().NotThrow()
+    public async Task DisposeAsync_CalledMultipleTimes_ShouldNotThrow()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             _mockOptions.Object,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -371,7 +371,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
     public async Task DisposeAsync_ShouldDisposeThreadPoolAndMemoryManager()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             _mockOptions.Object,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -396,7 +396,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
         var info = _accelerator.Info;
 
         // Assert
-        info.DeviceMemory >= minExpected.Should().BeTrue();
+        (info.DeviceMemory >= minExpected).Should().BeTrue();
     }
 
     [Fact]
@@ -407,8 +407,8 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
 
         // Assert
         info.Name.Should().NotBeNullOrEmpty();
-        info.Assert.Contains("CPU", Name);
-        info.Assert.Contains("cores", Name);
+        info.Name.Should().Contain("CPU");
+        info.Name.Should().Contain("cores");
         info.Name.Should().MatchRegex(@"\d+\s+cores");
     }
 
@@ -420,8 +420,8 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
 
         // Assert
         capabilities.Should().ContainKey("NumaNodes");
-        capabilities["NumaNodes"].BeOfType<int>();
-        ((int)capabilities["NumaNodes"]).Should().BeGreaterThan(0);
+        capabilities["NumaNodes"].Should().BeOfType<int>();
+       ((int)capabilities["NumaNodes"]).Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -526,7 +526,7 @@ public class CpuAcceleratorComprehensiveTests : IDisposable
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _accelerator?.DisposeAsync().AsTask().Wait();
             _disposed = true;

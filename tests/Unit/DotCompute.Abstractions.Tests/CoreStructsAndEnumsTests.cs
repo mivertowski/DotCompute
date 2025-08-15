@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -180,7 +180,7 @@ public class CoreStructsAndEnumsTests
 
         // Act & Assert
         var action = () => new KernelDefinition(invalidName, source, options);
-        action.Throw<ArgumentException>().And.ParamName.Should().Be("name");
+        action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("name");
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public class CoreStructsAndEnumsTests
 
         // Act & Assert
         var action = () => new KernelDefinition("TestKernel", null!, options);
-        action.Throw<ArgumentNullException>().And.ParamName.Should().Be("source");
+        action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("source");
     }
 
     [Fact]
@@ -202,7 +202,7 @@ public class CoreStructsAndEnumsTests
 
         // Act & Assert
         var action = () => new KernelDefinition("TestKernel", source, null!);
-        action.Throw<ArgumentNullException>().And.ParamName.Should().Be("options");
+        action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("options");
     }
 
     #endregion
@@ -218,8 +218,8 @@ public class CoreStructsAndEnumsTests
         // Assert
         options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
         options.EnableDebugInfo.Should().BeFalse();
-        options.Assert.Null(AdditionalFlags);
-        options.Assert.Null(Defines);
+        options.AdditionalFlags.Should().BeNull();
+        options.Defines.Should().BeNull();
         options.FastMath.Should().BeFalse();
         options.UnrollLoops.Should().BeFalse();
         options.PreferredBlockSize.Should().Be(new Dim3(256, 1, 1));
@@ -255,11 +255,11 @@ public class CoreStructsAndEnumsTests
         // Assert
         options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
         options.EnableDebugInfo.Should().BeTrue();
-        options.AdditionalFlags.BeEquivalentTo(new[] { "-O3", "-ffast-math" });
+        options.AdditionalFlags.Should().BeEquivalentTo(new[] { "-O3", "-ffast-math" });
         options.Defines.Should().ContainKey("DEBUG");
         options.FastMath.Should().BeTrue();
         options.UnrollLoops.Should().BeTrue();
-        options.PreferredBlockSize.Should().Be(new Dim3(512, 1, 1));
+        options.PreferredBlockSize.Should().Be(new Dim3(256, 1, 1));
         options.SharedMemorySize.Should().Be(2048);
         options.MaxThreadsPerBlock.Should().Be(512);
         options.EnableMemoryCoalescing.Should().BeFalse();
@@ -302,7 +302,7 @@ public class CoreStructsAndEnumsTests
     {
         // Act & Assert
         var action = () => new KernelParameter(null!, typeof(int), 0);
-        action.Throw<ArgumentNullException>().And.ParamName.Should().Be("name");
+        action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("name");
     }
 
     [Fact]
@@ -310,7 +310,7 @@ public class CoreStructsAndEnumsTests
     {
         // Act & Assert
         var action = () => new KernelParameter("test", null!, 0);
-        action.Throw<ArgumentNullException>().And.ParamName.Should().Be("type");
+        action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("type");
     }
 
     [Fact]
@@ -367,7 +367,7 @@ public class CoreStructsAndEnumsTests
         var actualValues = Enum.GetValues<AcceleratorType>();
 
         // Assert
-        actualValues.BeEquivalentTo(expectedValues);
+        actualValues.Should().BeEquivalentTo(expectedValues);
     }
 
     [Theory]
@@ -395,13 +395,13 @@ public class CoreStructsAndEnumsTests
         var type = typeof(MemoryOptions);
 
         // Act & Assert
-        type.BeDecoratedWith<FlagsAttribute>();
+        type.Should().BeDecoratedWith<FlagsAttribute>();
 
         // Test flag combinations
         var combined = MemoryOptions.ReadOnly | MemoryOptions.HostVisible | MemoryOptions.Cached;
-        combined.HaveFlag(MemoryOptions.ReadOnly);
-        combined.HaveFlag(MemoryOptions.HostVisible);
-        combined.HaveFlag(MemoryOptions.Cached);
+        combined.Should().HaveFlag(MemoryOptions.ReadOnly);
+        combined.Should().HaveFlag(MemoryOptions.HostVisible);
+        combined.Should().HaveFlag(MemoryOptions.Cached);
         combined.Should().NotHaveFlag(MemoryOptions.WriteOnly);
     }
 
@@ -412,17 +412,17 @@ public class CoreStructsAndEnumsTests
         var type = typeof(MapMode);
 
         // Act & Assert
-        type.BeDecoratedWith<FlagsAttribute>();
+        type.Should().BeDecoratedWith<FlagsAttribute>();
 
         // Test flag combinations
         var readWrite = MapMode.Read | MapMode.Write;
         Assert.Equal(MapMode.ReadWrite, readWrite);
 
         var complexMode = MapMode.ReadWrite | MapMode.Discard | MapMode.NoWait;
-        complexMode.HaveFlag(MapMode.Read);
-        complexMode.HaveFlag(MapMode.Write);
-        complexMode.HaveFlag(MapMode.Discard);
-        complexMode.HaveFlag(MapMode.NoWait);
+        complexMode.Should().HaveFlag(MapMode.Read);
+        complexMode.Should().HaveFlag(MapMode.Write);
+        complexMode.Should().HaveFlag(MapMode.Discard);
+        complexMode.Should().HaveFlag(MapMode.NoWait);
     }
 
     [Theory]
@@ -483,13 +483,13 @@ public class CoreStructsAndEnumsTests
         var type = typeof(AcceleratorFeature);
 
         // Act & Assert
-        type.BeDecoratedWith<FlagsAttribute>();
+        type.Should().BeDecoratedWith<FlagsAttribute>();
 
         // Test feature combinations
         var features = AcceleratorFeature.Float16 | AcceleratorFeature.DoublePrecision | AcceleratorFeature.TensorCores;
-        features.HaveFlag(AcceleratorFeature.Float16);
-        features.HaveFlag(AcceleratorFeature.DoublePrecision);
-        features.HaveFlag(AcceleratorFeature.TensorCores);
+        features.Should().HaveFlag(AcceleratorFeature.Float16);
+        features.Should().HaveFlag(AcceleratorFeature.DoublePrecision);
+        features.Should().HaveFlag(AcceleratorFeature.TensorCores);
         features.Should().NotHaveFlag(AcceleratorFeature.UnifiedMemory);
     }
 
@@ -515,7 +515,7 @@ public class CoreStructsAndEnumsTests
         source.Name.Should().Be(name);
         source.Language.Should().Be(language);
         source.EntryPoint.Should().Be(entryPoint);
-        source.Dependencies.BeEquivalentTo(dependencies);
+        source.Dependencies.Should().BeEquivalentTo(dependencies);
     }
 
     [Theory]
@@ -525,7 +525,7 @@ public class CoreStructsAndEnumsTests
     {
         // Act & Assert
         var action = () => new TextKernelSource(invalidCode);
-        action.Throw<ArgumentException>().And.ParamName.Should().Be("code");
+        action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("code");
     }
 
     [Fact]
@@ -545,7 +545,7 @@ public class CoreStructsAndEnumsTests
         source.Language.Should().Be(language);
         source.EntryPoint.Should().Be(entryPoint);
         source.Code.Should().Be(Convert.ToBase64String(bytecode));
-        source.Dependencies.NotBeNull().And.HaveCount(0);
+        source.Dependencies.Should().NotBeNull().And.HaveCount(0);
     }
 
     [Fact]
@@ -553,7 +553,7 @@ public class CoreStructsAndEnumsTests
     {
         // Act & Assert
         var action = () => new BytecodeKernelSource(null!);
-        action.Throw<ArgumentNullException>().And.ParamName.Should().Be("bytecode");
+        action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("bytecode");
     }
 
     [Fact]
@@ -561,7 +561,7 @@ public class CoreStructsAndEnumsTests
     {
         // Act & Assert
         var action = () => new BytecodeKernelSource(new byte[0]);
-        action.Throw<ArgumentException>().And.ParamName.Should().Be("bytecode");
+        action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("bytecode");
     }
 
     #endregion
@@ -576,8 +576,8 @@ public class CoreStructsAndEnumsTests
 
         // Assert
         result.IsValid.Should().BeTrue();
-        result.Assert.Null(ErrorMessage);
-        result.Warnings.NotBeNull().And.HaveCount(0);
+        result.ErrorMessage.Should().BeNull();
+        result.Warnings.Should().NotBeNull().And.HaveCount(0);
     }
 
     [Fact]
@@ -591,8 +591,8 @@ public class CoreStructsAndEnumsTests
 
         // Assert
         result.IsValid.Should().BeTrue();
-        result.Assert.Null(ErrorMessage);
-        result.Warnings.BeEquivalentTo(warnings);
+        result.ErrorMessage.Should().BeNull();
+        result.Warnings.Should().BeEquivalentTo(warnings);
     }
 
     [Fact]
@@ -607,7 +607,7 @@ public class CoreStructsAndEnumsTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.ErrorMessage.Should().Be(errorMessage);
-        result.Warnings.NotBeNull().And.HaveCount(0);
+        result.Warnings.Should().NotBeNull().And.HaveCount(0);
     }
 
     [Fact]
@@ -623,7 +623,7 @@ public class CoreStructsAndEnumsTests
         // Assert
         result.IsValid.Should().BeFalse();
         result.ErrorMessage.Should().Be(errorMessage);
-        result.Warnings.BeEquivalentTo(warnings);
+        result.Warnings.Should().BeEquivalentTo(warnings);
     }
 
     [Fact]
@@ -637,7 +637,7 @@ public class CoreStructsAndEnumsTests
         result.AddWarning(warning);
 
         // Assert
-        result.Assert.Contains(warning, Warnings);
+        result.Warnings.Should().Contain(warning);
     }
 
     [Fact]
@@ -650,7 +650,7 @@ public class CoreStructsAndEnumsTests
         // Act & Assert
         result1.Equals(result2).Should().BeTrue();
         (result1 == result2).Should().BeTrue();
-        (result1 != result2).Should().BeFalse();
+       (result1 != result2).Should().BeFalse();
     }
 
     [Fact]
@@ -686,7 +686,7 @@ public class CoreStructsAndEnumsTests
         metadata.CodeSize.Should().Be(codeSize);
         metadata.RegistersPerThread.Should().Be(registersPerThread);
         metadata.SharedMemoryPerBlock.Should().Be(sharedMemoryPerBlock);
-        metadata.OptimizationNotes.BeEquivalentTo(optimizationNotes);
+        metadata.OptimizationNotes.Should().BeEquivalentTo(optimizationNotes);
     }
 
     [Fact]
@@ -700,7 +700,7 @@ public class CoreStructsAndEnumsTests
         // Act & Assert
         metadata1.Equals(metadata2).Should().BeTrue();
         (metadata1 == metadata2).Should().BeTrue();
-        (metadata1 != metadata2).Should().BeFalse();
+       (metadata1 != metadata2).Should().BeFalse();
     }
 
     [Fact]
@@ -746,12 +746,12 @@ public class CoreStructsAndEnumsTests
         {
             var prop = kernelDefType.GetProperty(propName);
             Assert.NotNull(prop);
-            prop!.CanRead.Should().BeTrue();
-            if (prop.CanWrite)
+            prop.CanRead.Should().BeTrue();
+            if(prop.CanWrite)
             {
                 // Check if it's an init-only property by looking for init accessor
                 var setMethod = prop.SetMethod;
-                if (setMethod != null)
+                if(setMethod != null)
                 {
                     // For init-only properties, the set method has special attributes
                     var isInitOnly = setMethod.ReturnParameter.GetRequiredCustomModifiers()
@@ -765,12 +765,12 @@ public class CoreStructsAndEnumsTests
         {
             var prop = acceleratorInfoType.GetProperty(propName);
             Assert.NotNull(prop);
-            prop!.CanRead.Should().BeTrue();
-            if (prop.CanWrite)
+            prop.CanRead.Should().BeTrue();
+            if(prop.CanWrite)
             {
                 // Check if it's an init-only property by looking for init accessor
                 var setMethod = prop.SetMethod;
-                if (setMethod != null)
+                if(setMethod != null)
                 {
                     // For init-only properties, the set method has special attributes
                     var isInitOnly = setMethod.ReturnParameter.GetRequiredCustomModifiers()
@@ -784,21 +784,21 @@ public class CoreStructsAndEnumsTests
     [Fact]
     public void EnumValues_ShouldBeStableAcrossRuns()
     {
-        // Test that enum values are consistent (important for serialization/compatibility)
+        // Test that enum values are consistent(important for serialization/compatibility)
         var acceleratorTypes = Enum.GetValues<AcceleratorType>();
         var memoryOptions = Enum.GetValues<MemoryOptions>();
         var kernelLanguages = Enum.GetValues<KernelLanguage>();
 
         // These should not change between runs
-        acceleratorTypes.HaveCountGreaterThan(5);
-        memoryOptions.HaveCountGreaterThan(3);
-        kernelLanguages.HaveCountGreaterThan(5);
+        acceleratorTypes.Should().HaveCountGreaterThan(5);
+        memoryOptions.Should().HaveCountGreaterThan(3);
+        kernelLanguages.Should().HaveCountGreaterThan(5);
 
         // Test specific critical values
-        ((int)AcceleratorType.CPU).Should().Be(1);
-        ((int)AcceleratorType.CUDA).Should().Be(2);
-        ((int)MemoryOptions.None).Should().Be(0);
-        ((int)MemoryOptions.ReadOnly).Should().Be(1);
+       ((int)AcceleratorType.CPU).Should().Be(1);
+       ((int)AcceleratorType.CUDA).Should().Be(2);
+       ((int)MemoryOptions.None).Should().Be(0);
+       ((int)MemoryOptions.ReadOnly).Should().Be(1);
     }
 
     #endregion

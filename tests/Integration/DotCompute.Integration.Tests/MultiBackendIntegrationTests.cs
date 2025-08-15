@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -37,7 +37,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         var cpuResult = await ExecuteComputeWorkflowAsync("CPU_VectorAdd", cpuWorkflow);
         
         // Switch to CUDA and use CPU results as input
-        cudaWorkflow.Inputs[0].Data = (float[])cpuResult.Results["result"];
+        cudaWorkflow.Inputs[0].Data =(float[])cpuResult.Results["result"];
         var cudaResult = await ExecuteComputeWorkflowAsync("CUDA_VectorMultiply", cudaWorkflow);
 
         // Assert
@@ -85,7 +85,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Sequential time: {Sequential}ms, Parallel time: {Parallel}ms, " +
                              "Efficiency: {Efficiency:P1}",
             totalSequentialTime, actualParallelTime, 
-            (totalSequentialTime - actualParallelTime) / totalSequentialTime);
+           (totalSequentialTime - actualParallelTime) / totalSequentialTime);
 
         Assert.True(actualParallelTime < totalSequentialTime * 0.8); // At least 20% improvement
     }
@@ -161,17 +161,17 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         var stage1Result = await ExecuteComputeWorkflowAsync("Stage1_CPU_Preprocess", stage1Workflow);
         stage1Result.Success.Should().BeTrue();
 
-        stage2Workflow.Inputs[0].Data = (float[])stage1Result.Results["result"];
+        stage2Workflow.Inputs[0].Data =(float[])stage1Result.Results["result"];
         var stage2Result = await ExecuteComputeWorkflowAsync("Stage2_CUDA_Process", stage2Workflow);
         stage2Result.Success.Should().BeTrue();
 
-        stage3Workflow.Inputs[0].Data = (float[])stage2Result.Results["result"];
+        stage3Workflow.Inputs[0].Data =(float[])stage2Result.Results["result"];
         var stage3Result = await ExecuteComputeWorkflowAsync("Stage3_Metal_Postprocess", stage3Workflow);
 
         // Assert
         stage3Result.Success.Should().BeTrue();
         
-        var finalResult = (float[])stage3Result.Results["result"];
+        var finalResult =(float[])stage3Result.Results["result"];
         finalResult.Length.Should().Be(dataSize);
         
         // Verify data integrity through the pipeline
@@ -181,7 +181,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
 
         // Calculate total pipeline throughput
         var totalTime = stage1Result.Duration + stage2Result.Duration + stage3Result.Duration;
-        var totalDataMB = (dataSize * sizeof(float) * 4) / 1024.0 / 1024.0; // 4 transfers
+        var totalDataMB =(dataSize * sizeof(float) * 4) / 1024.0 / 1024.0; // 4 transfers
         var throughputMBps = totalDataMB / totalTime.TotalSeconds;
         
         Logger.LogInformation("Cross-backend pipeline throughput: {Throughput:F2} MB/s", throughputMBps);
@@ -258,9 +258,9 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
             var workflow = CreateCompatibilityTestWorkflow(backend, inputData);
             var result = await ExecuteComputeWorkflowAsync($"Compatibility_{backend}", workflow);
             
-            if (result.Success)
+            if(result.Success)
             {
-                results[backend] = (float[])result.Results["result"];
+                results[backend] =(float[])result.Results["result"];
             }
             else
             {
@@ -271,7 +271,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         // Assert
         Assert.NotEmpty(results);
         
-        if (results.Count > 1)
+        if(results.Count > 1)
         {
             // Compare results across backends - they should be very similar
             var referenceResult = results.Values.First();
@@ -280,12 +280,12 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
             {
                 Logger.LogInformation("Comparing {Backend} results with reference", backend);
                 
-                for (int i = 0; i < Math.Min(100, referenceResult.Length); i++)
+                for(int i = 0; i < Math.Min(100, referenceResult.Length); i++)
                 {
                     var difference = Math.Abs(referenceResult[i] - backendResult[i]);
                     var tolerance = Math.Max(Math.Abs(referenceResult[i]) * 0.001f, 1e-5f);
                     
-                    Assert.True(difference < tolerance,
+                    (difference < tolerance).Should().BeTrue(
                         $"Results should be similar across backends at index {i}. " +
                         $"Reference: {referenceResult[i]}, {backend}: {backendResult[i]}");
                 }
@@ -329,7 +329,7 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         results.Should().AllSatisfy(r => r.Performance.Should().BeGreaterThan(0));
         
         // Verify that the selection made reasonable choices
-        // (In a real implementation, this would validate against actual performance characteristics)
+        //(In a real implementation, this would validate against actual performance characteristics)
         var avgPerformance = results.Average(r => r.Performance);
         Assert.True(avgPerformance > 10); // Minimum acceptable performance score
     }
@@ -555,14 +555,14 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
         // performance metrics, or execution logs to determine which backend was actually used
         
         // For testing, we'll use performance characteristics as hints
-        if (result.Metrics != null)
+        if(result.Metrics != null)
         {
             var throughput = result.Metrics.ThroughputMBps;
             var executionTime = result.Metrics.ExecutionTime;
             
             // Simulate backend detection based on performance characteristics
-            if (throughput > 100 && executionTime < 10) return ComputeBackendType.CUDA;
-            if (throughput > 50 && executionTime < 20) return ComputeBackendType.Metal;
+            if(throughput > 100 && executionTime < 10) return ComputeBackendType.CUDA;
+            if(throughput > 50 && executionTime < 20) return ComputeBackendType.Metal;
             return ComputeBackendType.CPU;
         }
         
@@ -572,39 +572,39 @@ public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
     private void ValidateBackendPerformanceCharacteristics(ComputeBackendType backend, 
         PerformanceMetrics metrics, int dataSize)
     {
-        switch (backend)
+        switch(backend)
         {
             case ComputeBackendType.CPU:
                 // CPU should have consistent performance with good memory efficiency
-                metrics.ResourceUtilization.CpuUsagePercent > 10.Should().BeTrue();
+                metrics.ResourceUtilization.CpuUsagePercent.Should().BeGreaterThan(10);
                 break;
                 
             case ComputeBackendType.CUDA:
                 // CUDA should show high throughput for large workloads
-                if (dataSize > 1024)
+                if(dataSize > 1024)
                 {
-                    metrics.ThroughputMBps > 20.Should().BeTrue();
+                    metrics.ThroughputMBps.Should().BeGreaterThan(20);
                 }
                 break;
                 
             case ComputeBackendType.Metal:
                 // Metal should show good performance with balanced resource usage
-                metrics.ResourceUtilization.GpuUsagePercent > 5.Should().BeTrue();
+                metrics.ResourceUtilization.GpuUsagePercent.Should().BeGreaterThan(5);
                 break;
         }
     }
 
     private static double CalculatePerformanceScore(WorkflowExecutionResult result, int dataSize)
     {
-        if (result.Metrics == null) return 0;
+        if(result.Metrics == null) return 0;
         
         // Simple performance scoring based on throughput and efficiency
         var throughputScore = Math.Min(result.Metrics.ThroughputMBps, 100);
         var efficiencyScore = Math.Max(0, 100 - result.Metrics.ExecutionTime);
-        var utilizationScore = (result.Metrics.ResourceUtilization.CpuUsagePercent + 
+        var utilizationScore =(result.Metrics.ResourceUtilization.CpuUsagePercent + 
                                result.Metrics.ResourceUtilization.GpuUsagePercent) / 2;
         
-        return (throughputScore + efficiencyScore + utilizationScore) / 3;
+        return(throughputScore + efficiencyScore + utilizationScore) / 3;
     }
 }
 
@@ -630,7 +630,7 @@ __kernel void data_preprocessing(__global const float* input, __global float* ou
 __kernel void data_processing(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
     // Apply sigmoid activation
-    output[gid] = 1.0f / (1.0f + exp(-input[gid]));
+    output[gid] = 1.0f /(1.0f + exp(-input[gid]));
 }";
 
     public const string DataPostprocessing = @"
@@ -643,9 +643,9 @@ __kernel void data_postprocessing(__global const float* input, __global float* o
     public const string CPUOptimizedKernel = @"
 __kernel void cpu_optimized(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
-    float4 data = vload4(gid / 4, (__global float4*)input);
+    float4 data = vload4(gid / 4,__global float4*)input);
     data = data * data + 1.0f;
-    vstore4(data, gid / 4, (__global float4*)output);
+    vstore4(data, gid / 4,__global float4*)output);
 }";
 
     public const string CUDAOptimizedKernel = @"
@@ -658,8 +658,8 @@ __kernel void cuda_optimized(__global const float* input, __global float* output
     barrier(CLK_LOCAL_MEM_FENCE);
     
     float result = shared[lid];
-    for (int i = 1; i < 4; i++) {
-        if (lid + i < get_local_size(0)) {
+    for(int i = 1; i < 4; i++) {
+        if(lid + i < get_local_size(0)) {
             result += shared[lid + i];
         }
     }
@@ -679,7 +679,7 @@ __kernel void compatibility_test(__global const float* input, __global float* ou
     int gid = get_global_id(0);
     // Standard mathematical operations that should work across all backends
     float x = input[gid];
-    output[gid] = x * x + 2.0f * x + 1.0f; // (x + 1)^2
+    output[gid] = x * x + 2.0f * x + 1.0f; //(x + 1)^2
 }";
 
     public const string SimpleVectorOperation = @"
@@ -692,8 +692,8 @@ __kernel void simple_vector(__global const float* input, __global float* output)
 __kernel void complex_matrix(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
     float sum = 0.0f;
-    for (int i = 0; i < 16; i++) {
-        sum += input[(gid * 16 + i) % get_global_size(0)] * (i + 1);
+    for(int i = 0; i < 16; i++) {
+        sum += input[(gid * 16 + i) % get_global_size(0)] *(i + 1);
     }
     output[gid] = sum;
 }";
@@ -701,7 +701,7 @@ __kernel void complex_matrix(__global const float* input, __global float* output
     public const string ImageProcessingKernel = @"
 __kernel void image_processing(__global const float* input, __global float* output) {
     int gid = get_global_id(0);
-    int size = (int)sqrt((float)get_global_size(0));
+    int size =(int)sqrt((float)get_global_size(0));
     int x = gid % size;
     int y = gid / size;
     
@@ -709,8 +709,8 @@ __kernel void image_processing(__global const float* input, __global float* outp
     int count = 0;
     
     // 3x3 averaging filter
-    for (int dy = -1; dy <= 1; dy++) {
-        for (int dx = -1; dx <= 1; dx++) {
+    for(int dy = -1; dy <= 1; dy++) {
+        for(int dx = -1; dx <= 1; dx++) {
             int nx = clamp(x + dx, 0, size - 1);
             int ny = clamp(y + dy, 0, size - 1);
             sum += input[ny * size + nx];

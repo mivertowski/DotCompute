@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System;
@@ -110,7 +110,7 @@ __global__ void buffer_overflow_kernel(float* data, int size) {
         var maliciousCode = @"
 __global__ void infinite_loop_kernel(float* data, int size) {
     int id = blockIdx.x * blockDim.x + threadIdx.x;
-    if (id == 0) {
+    if(id == 0) {
         while(true) {
             // Infinite loop - potential DoS
             data[0] += 1.0f;
@@ -140,7 +140,7 @@ __global__ void memory_bomb_kernel(float* data, int size) {
     __shared__ float yet_another_array[65536];
     
     int id = threadIdx.x;
-    if (id < 65536) {
+    if(id < 65536) {
         huge_array[id] = 1.0f;
         another_huge_array[id] = 2.0f;
         yet_another_array[id] = 3.0f;
@@ -302,7 +302,7 @@ __global__ void kernel(char* command, char* user_input) {
         var weakCryptoCode = @"
 __global__ void weak_crypto_kernel(int* data, int size) {
     int id = blockIdx.x * blockDim.x + threadIdx.x;
-    if (id < size) {
+    if(id < size) {
         // Weak pseudorandom number generation
         data[id] = rand() % 256; // Weak PRNG
         
@@ -477,10 +477,10 @@ __global__ void complex_security_test_kernel(float* input, float* output,
     int tid = threadIdx.x;
     
     // Safe bounds checking
-    if (id >= size) return;
+    if(id >= size) return;
     
     // Safe shared memory access
-    if (tid < 1024) {
+    if(tid < 1024) {
         shared_data[tid] = input[id];
     }
     
@@ -488,13 +488,13 @@ __global__ void complex_security_test_kernel(float* input, float* output,
     
     // Safe computation
     float result = 0.0f;
-    if (tid < 1024 && tid > 0) {
-        result = (shared_data[tid-1] + shared_data[tid] + 
-                 (tid+1 < 1024 ? shared_data[tid+1] : 0.0f)) / 3.0f;
+    if(tid < 1024 && tid > 0) {
+        result =(shared_data[tid-1] + shared_data[tid] + 
+                (tid+1 < 1024 ? shared_data[tid+1] : 0.0f)) / 3.0f;
     }
     
     // Safe output
-    if (id < size) {
+    if(id < size) {
         output[id] = result;
     }
 }";
@@ -532,7 +532,7 @@ public class SecurityValidator
         var violations = new List<SecurityViolation>();
 
         // Simulate security checks
-        if (kernel.SourceCode.Contains("system(") || kernel.SourceCode.Contains("exec(") || 
+        if(kernel.SourceCode.Contains("system(") || kernel.SourceCode.Contains("exec(") || 
             kernel.SourceCode.Contains("fopen(") || kernel.SourceCode.Contains("DeleteFile("))
         {
             violations.Add(new SecurityViolation
@@ -544,7 +544,7 @@ public class SecurityValidator
             });
         }
 
-        if (kernel.SourceCode.Contains("while(true)") || kernel.SourceCode.Contains("for(;;)"))
+        if(kernel.SourceCode.Contains("while(true)") || kernel.SourceCode.Contains("for(;;)"))
         {
             violations.Add(new SecurityViolation
             {
@@ -555,7 +555,7 @@ public class SecurityValidator
             });
         }
 
-        if (kernel.SourceCode.Contains("999999") || kernel.SourceCode.Contains("+ 1000000"))
+        if(kernel.SourceCode.Contains("999999") || kernel.SourceCode.Contains("+ 1000000"))
         {
             violations.Add(new SecurityViolation
             {
@@ -566,7 +566,7 @@ public class SecurityValidator
             });
         }
 
-        if (kernel.SourceCode.Contains("huge_array[65536]"))
+        if(kernel.SourceCode.Contains("huge_array[65536]"))
         {
             violations.Add(new SecurityViolation
             {
@@ -580,7 +580,7 @@ public class SecurityValidator
         // Check custom rules
         foreach (var rule in options.CustomSecurityRules)
         {
-            if (System.Text.RegularExpressions.Regex.IsMatch(kernel.SourceCode, rule.Pattern))
+            if(System.Text.RegularExpressions.Regex.IsMatch(kernel.SourceCode, rule.Pattern))
             {
                 violations.Add(new SecurityViolation
                 {
@@ -615,7 +615,7 @@ public class SecurityValidator
 
         foreach (var access in memoryAccesses)
         {
-            if (!access.IsWithinBounds)
+            if(!access.IsWithinBounds)
             {
                 violations.Add(new SecurityViolation
                 {
@@ -642,10 +642,10 @@ public class SecurityValidator
         var requiredPrivileges = new List<KernelPrivilege>();
         var violatedRestrictions = new List<string>();
 
-        if (kernel.SourceCode.Contains("__threadfence_system()"))
+        if(kernel.SourceCode.Contains("__threadfence_system()"))
         {
             requiredPrivileges.Add(KernelPrivilege.SystemBarrier);
-            if (privilegeLevel < KernelPrivilegeLevel.Elevated)
+            if(privilegeLevel < KernelPrivilegeLevel.Elevated)
             {
                 violatedRestrictions.Add("System-wide synchronization not allowed");
             }
@@ -665,7 +665,7 @@ public class SecurityValidator
 
         var injectionVectors = new List<InjectionVector>();
 
-        if (kernel.SourceCode.Contains("sprintf") && kernel.SourceCode.Contains("SELECT"))
+        if(kernel.SourceCode.Contains("sprintf") && kernel.SourceCode.Contains("SELECT"))
         {
             injectionVectors.Add(new InjectionVector
             {
@@ -676,7 +676,7 @@ public class SecurityValidator
             });
         }
 
-        if (kernel.SourceCode.Contains("system(") && kernel.SourceCode.Contains("strcat"))
+        if(kernel.SourceCode.Contains("system(") && kernel.SourceCode.Contains("strcat"))
         {
             injectionVectors.Add(new InjectionVector
             {
@@ -700,18 +700,18 @@ public class SecurityValidator
 
         var issues = new List<CryptographicIssue>();
 
-        if (kernel.SourceCode.Contains("rand()"))
+        if(kernel.SourceCode.Contains("rand()"))
         {
             issues.Add(new CryptographicIssue
             {
                 Type = CryptographicIssueType.WeakRandomNumberGeneration,
                 Severity = SecurityThreatLevel.Medium,
-                Description = "Use of weak pseudorandom number generator (rand)",
+                Description = "Use of weak pseudorandom number generator(rand)",
                 Recommendation = "Use cryptographically secure random number generator"
             });
         }
 
-        if (kernel.SourceCode.Contains("^= 0x42"))
+        if(kernel.SourceCode.Contains("^= 0x42"))
         {
             issues.Add(new CryptographicIssue
             {
@@ -735,18 +735,18 @@ public class SecurityValidator
 
         var risks = new List<DataLeakageRisk>();
 
-        if (kernel.SourceCode.Contains("strcpy") && kernel.SourceCode.Contains("password"))
+        if(kernel.SourceCode.Contains("strcpy") && kernel.SourceCode.Contains("password"))
         {
             risks.Add(new DataLeakageRisk
             {
                 Type = DataLeakageType.SensitiveDataExposure,
                 Severity = SecurityThreatLevel.High,
-                Description = "Potential exposure of sensitive data (password)",
+                Description = "Potential exposure of sensitive data(password)",
                 AffectedDataType = "Authentication credentials"
             });
         }
 
-        if (kernel.SourceCode.Contains("printf") && kernel.SourceCode.Contains("password"))
+        if(kernel.SourceCode.Contains("printf") && kernel.SourceCode.Contains("password"))
         {
             risks.Add(new DataLeakageRisk
             {

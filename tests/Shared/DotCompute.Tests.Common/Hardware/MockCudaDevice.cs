@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics.CodeAnalysis;
@@ -196,7 +196,7 @@ public sealed class MockCudaDevice : MockHardwareDevice
             108, // SMs
             6912, // CUDA cores
             1555.0, // GB/s
-            5120, // bit bus (HBM2e)
+            5120, // bit bus(HBM2e)
             765, // Base MHz
             1410, // Boost MHz
             logger);
@@ -215,7 +215,7 @@ public sealed class MockCudaDevice : MockHardwareDevice
             80, // SMs
             5120, // CUDA cores
             900.0, // GB/s
-            4096, // bit bus (HBM2)
+            4096, // bit bus(HBM2)
             1245, // Base MHz
             1530, // Boost MHz
             logger);
@@ -234,7 +234,7 @@ public sealed class MockCudaDevice : MockHardwareDevice
             132, // SMs
             16896, // CUDA cores
             3350.0, // GB/s
-            5120, // bit bus (HBM3)
+            5120, // bit bus(HBM3)
             1095, // Base MHz
             1980, // Boost MHz
             logger);
@@ -282,18 +282,18 @@ public sealed class MockCudaDevice : MockHardwareDevice
     /// <inheritdoc/>
     public override bool HealthCheck()
     {
-        if (!base.HealthCheck())
+        if(!base.HealthCheck())
             return false;
 
         // CUDA-specific health checks
-        if (ComputeCapability.Major < 3)
+        if(ComputeCapability.Major < 3)
         {
             Logger?.LogWarning("CUDA device {DeviceId} has unsupported compute capability {ComputeCapability}", 
                 Id, ComputeCapability);
             return false;
         }
 
-        if (StreamingMultiprocessors == 0 || CudaCores == 0)
+        if(StreamingMultiprocessors == 0 || CudaCores == 0)
         {
             Logger?.LogWarning("CUDA device {DeviceId} has invalid core configuration", Id);
             return false;

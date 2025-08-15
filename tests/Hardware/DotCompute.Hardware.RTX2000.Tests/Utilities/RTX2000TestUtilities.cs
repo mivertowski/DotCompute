@@ -37,29 +37,29 @@ public static class RTX2000TestUtilities
         var isValid = true;
 
         // Validate compute capability
-        if (deviceInfo.ComputeCapabilityMajor != RTX2000Specifications.ComputeCapabilityMajor ||
+        if(deviceInfo.ComputeCapabilityMajor != RTX2000Specifications.ComputeCapabilityMajor ||
             deviceInfo.ComputeCapabilityMinor < RTX2000Specifications.ComputeCapabilityMinor)
         {
             output.WriteLine($"⚠ Compute capability mismatch: Expected {RTX2000Specifications.ComputeCapabilityMajor}.{RTX2000Specifications.ComputeCapabilityMinor}, found {deviceInfo.ComputeCapabilityMajor}.{deviceInfo.ComputeCapabilityMinor}");
             isValid = false;
         }
 
-        // Validate memory size (allow some tolerance for system reserved memory)
-        var memoryGB = deviceInfo.TotalMemoryBytes / (1024.0 * 1024.0 * 1024.0);
-        if (memoryGB < RTX2000Specifications.ExpectedMemoryGB * 0.9)
+        // Validate memory size(allow some tolerance for system reserved memory)
+        var memoryGB = deviceInfo.TotalMemoryBytes /(1024.0 * 1024.0 * 1024.0);
+        if(memoryGB < RTX2000Specifications.ExpectedMemoryGB * 0.9)
         {
             output.WriteLine($"⚠ Memory size lower than expected: Expected ~{RTX2000Specifications.ExpectedMemoryGB}GB, found {memoryGB:F1}GB");
             isValid = false;
         }
 
-        // Validate SM count (allow some tolerance for different variants)
-        if (deviceInfo.MultiProcessorCount < RTX2000Specifications.ExpectedSMCount * 0.8)
+        // Validate SM count(allow some tolerance for different variants)
+        if(deviceInfo.MultiProcessorCount < RTX2000Specifications.ExpectedSMCount * 0.8)
         {
             output.WriteLine($"⚠ SM count lower than expected: Expected ~{RTX2000Specifications.ExpectedSMCount}, found {deviceInfo.MultiProcessorCount}");
             isValid = false;
         }
 
-        if (isValid)
+        if(isValid)
         {
             output.WriteLine("✓ Hardware validated as RTX 2000 Ada Generation compatible");
         }
@@ -70,7 +70,7 @@ public static class RTX2000TestUtilities
     /// <summary>
     /// Loads and compiles a CUDA kernel from the embedded test kernels.
     /// </summary>
-    public static async Task<CompiledKernel> CompileTestKernel(string kernelName, string[] compilationOptions = null)
+    public static async Task<CompiledKernel> CompileTestKernel(string kernelName, string[]? compilationOptions = null)
     {
         var kernelSource = await LoadTestKernelSource();
         return await CompileKernel(kernelSource, kernelName, compilationOptions ?? GetDefaultCompilationOptions());
@@ -109,14 +109,14 @@ public static class RTX2000TestUtilities
         try
         {
             // Warm-up runs
-            for (int i = 0; i < warmupRuns; i++)
+            for(int i = 0; i < warmupRuns; i++)
             {
                 await ExecuteKernel(kernel, launchParams, parameters);
                 CudaContextSynchronize();
             }
 
             // Measurement runs
-            for (int i = 0; i < measurementRuns; i++)
+            for(int i = 0; i < measurementRuns; i++)
             {
                 var sw = Stopwatch.StartNew();
                 await ExecuteKernel(kernel, launchParams, parameters);
@@ -135,7 +135,7 @@ public static class RTX2000TestUtilities
                 AllTimes = times.ToArray()
             };
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
             throw new InvalidOperationException($"Kernel execution measurement failed: {ex.Message}", ex);
         }
@@ -149,16 +149,16 @@ public static class RTX2000TestUtilities
         int maxThreadsPerBlock = 256,
         int preferredBlockSize = 256)
     {
-        // Ensure block size is a multiple of warp size (32)
+        // Ensure block size is a multiple of warp size(32)
         var blockSize = Math.Min(maxThreadsPerBlock, ((preferredBlockSize + 31) / 32) * 32);
-        var gridSize = (problemSize + blockSize - 1) / blockSize;
+        var gridSize =(problemSize + blockSize - 1) / blockSize;
 
         return new KernelLaunchParameters
         {
-            GridDimX = (uint)gridSize,
+            GridDimX =(uint)gridSize,
             GridDimY = 1,
             GridDimZ = 1,
-            BlockDimX = (uint)blockSize,
+            BlockDimX =(uint)blockSize,
             BlockDimY = 1,
             BlockDimZ = 1,
             SharedMemoryBytes = 0
@@ -173,16 +173,16 @@ public static class RTX2000TestUtilities
         int height, 
         int tileSize = 16)
     {
-        var gridX = (width + tileSize - 1) / tileSize;
-        var gridY = (height + tileSize - 1) / tileSize;
+        var gridX =(width + tileSize - 1) / tileSize;
+        var gridY =(height + tileSize - 1) / tileSize;
 
         return new KernelLaunchParameters
         {
-            GridDimX = (uint)gridX,
-            GridDimY = (uint)gridY,
+            GridDimX =(uint)gridX,
+            GridDimY =(uint)gridY,
             GridDimZ = 1,
-            BlockDimX = (uint)tileSize,
-            BlockDimY = (uint)tileSize,
+            BlockDimX =(uint)tileSize,
+            BlockDimY =(uint)tileSize,
             BlockDimZ = 1,
             SharedMemoryBytes = 0
         };
@@ -197,14 +197,14 @@ public static class RTX2000TestUtilities
     {
         var result = new BandwidthValidationResult();
 
-        // H2D/D2H bandwidth validation (PCIe constraints)
+        // H2D/D2H bandwidth validation(PCIe constraints)
         const double MinPCIeBandwidth = 12.0; // GB/s for PCIe 4.0 x16
         const double MaxPCIeBandwidth = 32.0; // GB/s theoretical maximum
 
         result.H2DValid = measurement.H2D >= MinPCIeBandwidth && measurement.H2D <= MaxPCIeBandwidth;
         result.D2HValid = measurement.D2H >= MinPCIeBandwidth && measurement.D2H <= MaxPCIeBandwidth;
 
-        // D2D bandwidth validation (GDDR6 memory)
+        // D2D bandwidth validation(GDDR6 memory)
         const double MinGDDR6Bandwidth = 150.0; // GB/s conservative minimum
         const double MaxGDDR6Bandwidth = 300.0; // GB/s theoretical maximum
 
@@ -236,15 +236,15 @@ public static class RTX2000TestUtilities
         var random = new Random(seed);
         var data = new float[size];
 
-        switch (dataType)
+        switch(dataType)
         {
             case TestDataType.Random:
-                for (int i = 0; i < size; i++)
-                    data[i] = (float)(random.NextDouble() * 2.0 - 1.0);
+                for(int i = 0; i < size; i++)
+                    data[i] =(float)(random.NextDouble() * 2.0 - 1.0);
                 break;
 
             case TestDataType.Sequential:
-                for (int i = 0; i < size; i++)
+                for(int i = 0; i < size; i++)
                     data[i] = i;
                 break;
 
@@ -253,13 +253,13 @@ public static class RTX2000TestUtilities
                 break;
 
             case TestDataType.Sinusoidal:
-                for (int i = 0; i < size; i++)
-                    data[i] = (float)Math.Sin(i * 0.01);
+                for(int i = 0; i < size; i++)
+                    data[i] =(float)Math.Sin(i * 0.01);
                 break;
 
             case TestDataType.Gaussian:
-                for (int i = 0; i < size; i++)
-                    data[i] = (float)GenerateGaussian(random);
+                for(int i = 0; i < size; i++)
+                    data[i] =(float)GenerateGaussian(random);
                 break;
 
             default:
@@ -278,7 +278,7 @@ public static class RTX2000TestUtilities
         double tolerance = 1e-6,
         int maxSamples = 1000) where T : IComparable<T>
     {
-        if (expected.Length != actual.Length)
+        if(expected.Length != actual.Length)
         {
             return new ValidationResult 
             { 
@@ -290,14 +290,14 @@ public static class RTX2000TestUtilities
         var errors = new List<double>();
         var sampleStep = Math.Max(1, expected.Length / maxSamples);
 
-        for (int i = 0; i < expected.Length; i += sampleStep)
+        for(int i = 0; i < expected.Length; i += sampleStep)
         {
-            if (expected[i] is float expectedFloat && actual[i] is float actualFloat)
+            if(expected[i] is float expectedFloat && actual[i] is float actualFloat)
             {
                 var error = Math.Abs(expectedFloat - actualFloat);
                 errors.Add(error);
 
-                if (error > tolerance)
+                if(error > tolerance)
                 {
                     return new ValidationResult
                     {
@@ -323,7 +323,7 @@ public static class RTX2000TestUtilities
     private static async Task<string> LoadTestKernelSource()
     {
         var kernelPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Kernels", "TestKernels.cu");
-        if (File.Exists(kernelPath))
+        if(File.Exists(kernelPath))
         {
             return await File.ReadAllTextAsync(kernelPath);
         }
@@ -333,7 +333,7 @@ public static class RTX2000TestUtilities
 extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 {
     int idx = blockDim.x * blockIdx.x + threadIdx.x;
-    if (idx < n) {
+    if(idx < n) {
         c[idx] = a[idx] + b[idx];
     }
 }";

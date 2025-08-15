@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Runtime.CompilerServices;
@@ -44,11 +44,11 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
 
             var result = await _transferEngine.TransferLargeDatasetAsync(data, accelerator, options, cancellationToken);
             
-            return (result.Success, result.Error, result.TransferredBuffer, result.ThroughputMBps);
+            return(result.Success, result.Error, result.TransferredBuffer, result.ThroughputMBps);
         }
-        catch (Exception ex)
+        catch(Exception ex)
         {
-            return (false, ex.Message, null, 0.0);
+            return(false, ex.Message, null, 0.0);
         }
     }
 
@@ -94,33 +94,33 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
             var speedupRatio = sequentialTimeMs > 0 ? sequentialTimeMs / concurrentTimeMs : 1.0;
 
             // Clean up buffers
-            if (concurrentResult.Success)
+            if(concurrentResult.Success)
             {
                 foreach (var result in concurrentResult.Results)
                 {
-                    if (result.TransferredBuffer != null)
+                    if(result.TransferredBuffer != null)
                     {
                         await result.TransferredBuffer.DisposeAsync();
                     }
                 }
             }
 
-            if (sequentialResult.Success)
+            if(sequentialResult.Success)
             {
                 foreach (var result in sequentialResult.Results)
                 {
-                    if (result.TransferredBuffer != null)
+                    if(result.TransferredBuffer != null)
                     {
                         await result.TransferredBuffer.DisposeAsync();
                     }
                 }
             }
 
-            return (concurrentResult.Success, concurrentTimeMs, sequentialTimeMs, speedupRatio);
+            return(concurrentResult.Success, concurrentTimeMs, sequentialTimeMs, speedupRatio);
         }
-        catch (Exception)
+        catch(Exception)
         {
-            return (false, 0.0, 0.0, 1.0);
+            return(false, 0.0, 0.0, 1.0);
         }
     }
 
@@ -132,23 +132,23 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
         var data = new T[elementCount];
         var random = new Random(42); // Deterministic for consistent testing
         
-        if (typeof(T) == typeof(float))
+        if(typeof(T) == typeof(float))
         {
             var floatData = data as float[];
-            for (int i = 0; i < elementCount; i++)
+            for(int i = 0; i < elementCount; i++)
             {
                 floatData![i] = random.NextSingle();
             }
         }
-        else if (typeof(T) == typeof(int))
+        else if(typeof(T) == typeof(int))
         {
             var intData = data as int[];
-            for (int i = 0; i < elementCount; i++)
+            for(int i = 0; i < elementCount; i++)
             {
                 intData![i] = random.Next();
             }
         }
-        else if (typeof(T) == typeof(byte))
+        else if(typeof(T) == typeof(byte))
         {
             var byteData = data as byte[];
             random.NextBytes(byteData!);
@@ -157,9 +157,9 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
         {
             // Fill with pattern data for other types
             var bytes = MemoryMarshal.AsBytes(data.AsSpan());
-            for (int i = 0; i < bytes.Length; i++)
+            for(int i = 0; i < bytes.Length; i++)
             {
-                bytes[i] = (byte)(i % 256);
+                bytes[i] =(byte)(i % 256);
             }
         }
         
@@ -172,7 +172,7 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
     public T[][] CreateMultipleTestDatasets<T>(int datasetCount, int elementsPerDataset) where T : unmanaged
     {
         var datasets = new T[datasetCount][];
-        for (int i = 0; i < datasetCount; i++)
+        for(int i = 0; i < datasetCount; i++)
         {
             datasets[i] = CreateLargeTestData<T>(elementsPerDataset);
         }
@@ -184,21 +184,21 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
     /// </summary>
     public bool VerifyDataIntegrityWithSafeIndexing<T>(T[] original, T[] transferred, int[]? sampleIndices = null) where T : unmanaged
     {
-        if (original.Length != transferred.Length)
+        if(original.Length != transferred.Length)
             return false;
 
-        if (sampleIndices != null)
+        if(sampleIndices != null)
         {
             // Ensure all sample indices are within valid bounds
             var maxValidIndex = Math.Min(original.Length, transferred.Length) - 1;
             var validIndices = sampleIndices.Where(i => i >= 0 && i <= maxValidIndex).ToArray();
             
-            if (validIndices.Length == 0)
+            if(validIndices.Length == 0)
                 return true; // No valid indices to check
 
             foreach (var index in validIndices)
             {
-                if (!original[index].Equals(transferred[index]))
+                if(!original[index].Equals(transferred[index]))
                     return false;
             }
             return true;
@@ -217,7 +217,7 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
-        if (_disposed) return;
+        if(_disposed) return;
         _disposed = true;
         
         await _transferEngine.DisposeAsync();

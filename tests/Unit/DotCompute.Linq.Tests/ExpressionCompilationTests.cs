@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Linq.Expressions;
@@ -261,7 +261,7 @@ public class ExpressionCompilationTests
 
     private static Expression CreateUnsupportedExpression()
     {
-        // Create an expression that uses unsupported operations (like file I/O)
+        // Create an expression that uses unsupported operations(like file I/O)
         var fileReadMethod = typeof(File).GetMethod("ReadAllText", new[] { typeof(string) })!;
         return Expression.Call(fileReadMethod, Expression.Constant("test.txt"));
     }

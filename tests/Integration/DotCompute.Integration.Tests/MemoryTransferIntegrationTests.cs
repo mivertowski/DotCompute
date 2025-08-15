@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
@@ -50,15 +50,15 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         transferStopwatch.Stop();
 
         // Assert
-        retrievedData.BeEquivalentTo(originalData, options => options.WithStrictOrdering());
+        retrievedData.Should().BeEquivalentTo(originalData, options => options.WithStrictOrdering());
         
-        var transferredMB = (size * sizeof(float) * 2) / 1024.0 / 1024.0; // Round trip
+        var transferredMB =(size * sizeof(float) * 2) / 1024.0 / 1024.0; // Round trip
         var bandwidthMBps = transferredMB / transferStopwatch.Elapsed.TotalSeconds;
         
         Logger.LogInformation("Host-Device transfer: {Size} elements, {Bandwidth:F2} MB/s, Options: {Options}",
             size, bandwidthMBps, options);
         
-        Assert.True(bandwidthMBps > 10, "Transfer bandwidth should be reasonable");
+        bandwidthMBps.Should().BeGreaterThan(10, "Transfer bandwidth should be reasonable");
     }
 
     [Fact]
@@ -122,17 +122,17 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         result.Success.Should().BeTrue();
-        var copiedData = (float[])result.Results["destination"];
+        var copiedData =(float[])result.Results["destination"];
         
-        copiedData.BeEquivalentTo(sourceData, options => options.WithStrictOrdering());
+        copiedData.Should().BeEquivalentTo(sourceData, options => options.WithStrictOrdering());
         
-        var transferredMB = (dataSize * sizeof(float)) / 1024.0 / 1024.0;
+        var transferredMB =(dataSize * sizeof(float)) / 1024.0 / 1024.0;
         var bandwidthMBps = transferredMB / transferStopwatch.Elapsed.TotalSeconds;
         
         Logger.LogInformation("Device-to-device transfer: {Size} elements, {Bandwidth:F2} MB/s",
             dataSize, bandwidthMBps);
         
-        Assert.True(bandwidthMBps > 50, "Device-to-device transfers should be faster than host transfers");
+        bandwidthMBps.Should().BeGreaterThan(50, "Device-to-device transfers should be faster than host transfers");
     }
 
     [Fact]
@@ -172,12 +172,12 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
                 new WorkflowIntermediateBuffer
                 {
                     Name = "device0_chunk",
-                    SizeInBytes = (dataSize / 2) * sizeof(float)
+                    SizeInBytes =(dataSize / 2) * sizeof(float)
                 },
                 new WorkflowIntermediateBuffer
                 {
                     Name = "device1_chunk",
-                    SizeInBytes = (dataSize / 2) * sizeof(float)
+                    SizeInBytes =(dataSize / 2) * sizeof(float)
                 }
             },
             ExecutionStages = new()
@@ -209,8 +209,8 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         result.ExecutionResults.Count.Should().Be(2);
         result.ExecutionResults.Values.Should().AllSatisfy(r => r.Success.Should().BeTrue());
         
-        var finalResult = (float[])result.Results["result"];
-        finalResult.BeEquivalentTo(originalData, options => options.WithStrictOrdering());
+        var finalResult =(float[])result.Results["result"];
+        finalResult.Should().BeEquivalentTo(originalData, options => options.WithStrictOrdering());
         
         LogPerformanceMetrics("P2PTransfer", result.Duration, dataSize);
     }
@@ -283,17 +283,17 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         // Assert
         result.Success.Should().BeTrue();
         
-        var finalResult = (float[])result.Results["final_result"];
-        var validation = (float[])result.Results["validation"];
+        var finalResult =(float[])result.Results["final_result"];
+        var validation =(float[])result.Results["validation"];
         
-        // Verify mathematical correctness: (initial + 1) * 2
-        for (int i = 0; i < Math.Min(100, dataSize); i++)
+        // Verify mathematical correctness:(initial + 1) * 2
+        for(int i = 0; i < Math.Min(100, dataSize); i++)
         {
-            var expected = (initialData[i] + 1.0f) * 2.0f;
+            var expected =(initialData[i] + 1.0f) * 2.0f;
             finalResult[i].Should().BeApproximately(expected, 0.001f);
         }
         
-        validation[0].Should().Be(1.0f, "Validation should pass");
+        validation[0].Should().Be(1.0f); // Validation should pass
         
         LogPerformanceMetrics("MemoryCoherency", result.Duration, dataSize * 3);
     }
@@ -316,7 +316,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         try
         {
             // Act - Start multiple async transfers
-            for (int i = 0; i < datasets.Length; i++)
+            for(int i = 0; i < datasets.Length; i++)
             {
                 var buffer = await _memoryManager.AllocateAsync(
                     dataSize * sizeof(float), MemoryOptions.None);
@@ -345,13 +345,13 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             // Assert
             Assert.Equal(datasets.Length, results.Count());
             
-            for (int i = 0; i < datasets.Length; i++)
+            for(int i = 0; i < datasets.Length; i++)
             {
-                results[i].BeEquivalentTo(datasets[i], 
+                results[i].Should().BeEquivalentTo(datasets[i], 
                     options => options.WithStrictOrdering());
             }
             
-            var totalDataMB = (datasets.Length * dataSize * sizeof(float) * 2) / 1024.0 / 1024.0;
+            var totalDataMB =(datasets.Length * dataSize * sizeof(float) * 2) / 1024.0 / 1024.0;
             var effectiveBandwidthMBps = totalDataMB / transferStopwatch.Elapsed.TotalSeconds;
             
             Logger.LogInformation("Async parallel transfers: {Count} x {Size} elements, " +
@@ -380,7 +380,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         var data = TestDataGenerators.GenerateFloatArray(allocationSize);
 
         // Act - Perform repeated allocations and deallocations
-        for (int i = 0; i < numAllocations; i++)
+        for(int i = 0; i < numAllocations; i++)
         {
             var stopwatch = Stopwatch.StartNew();
             
@@ -395,7 +395,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             stopwatch.Stop();
             allocationTimes.Add(stopwatch.Elapsed.TotalMilliseconds);
             
-            retrieved.BeEquivalentTo(data, options => options.WithStrictOrdering());
+            retrieved.Should().BeEquivalentTo(data, options => options.WithStrictOrdering());
             
             // Small delay to allow memory pooling to take effect
             await Task.Delay(1);
@@ -409,8 +409,8 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             avgEarlyAllocations, avgLaterAllocations);
         
         // Later allocations should be faster due to memory pooling
-        // (In a real implementation with actual memory pooling)
-        Assert.True(avgLaterAllocations < avgEarlyAllocations * 1.5,
+        //(In a real implementation with actual memory pooling)
+        (avgLaterAllocations < avgEarlyAllocations * 1.5).Should().BeTrue(
             "Memory pooling should improve allocation performance");
     }
 
@@ -423,7 +423,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         
         // Create multiple smaller buffers first to fragment memory
         var fragmentBuffers = new List<IMemoryBuffer>();
-        for (int i = 0; i < 10; i++)
+        for(int i = 0; i < 10; i++)
         {
             var buffer = await _memoryManager.AllocateAsync(1024 * sizeof(float));
             fragmentBuffers.Add(buffer);
@@ -445,15 +445,15 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             transferStopwatch.Stop();
 
             // Assert
-            retrieved.BeEquivalentTo(largeData, options => options.WithStrictOrdering());
+            retrieved.Should().BeEquivalentTo(largeData, options => options.WithStrictOrdering());
             
-            var transferredMB = (largeSize * sizeof(float) * 2) / 1024.0 / 1024.0;
+            var transferredMB =(largeSize * sizeof(float) * 2) / 1024.0 / 1024.0;
             var bandwidthMBps = transferredMB / transferStopwatch.Elapsed.TotalSeconds;
             
             Logger.LogInformation("Large fragmented transfer: {Size} elements, {Bandwidth:F2} MB/s",
                 largeSize, bandwidthMBps);
             
-            Assert.True(bandwidthMBps > 5, "Should handle fragmented large transfers");
+            bandwidthMBps.Should().BeGreaterThan(5, "Should handle fragmented large transfers");
         }
         finally
         {
@@ -519,7 +519,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         // Assert
         result.Success.Should().BeTrue();
         
-        var output = (float[])result.Results["output"];
+        var output =(float[])result.Results["output"];
         output.Length.Should().Be(dataSize);
         
         // Verify aligned memory access produced correct results
@@ -528,9 +528,9 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         output.Should().NotContain(float.NegativeInfinity);
         
         // Performance should be good due to memory alignment
-        if (result.Metrics != null)
+        if(result.Metrics != null)
         {
-            result.Metrics.Assert.True(ThroughputMBps > 30,
+            result.Metrics.ThroughputMBps.Should().BeGreaterThan(30,
                 "Aligned memory access should show good performance");
         }
         
@@ -555,7 +555,7 @@ __kernel void p2p_scatter(__global const float* data,
                          __global float* device1_chunk,
                          int chunk_size) {
     int gid = get_global_id(0);
-    if (gid < chunk_size) {
+    if(gid < chunk_size) {
         device0_chunk[gid] = data[gid];
         device1_chunk[gid] = data[gid + chunk_size];
     }
@@ -567,7 +567,7 @@ __kernel void p2p_gather(__global const float* device0_chunk,
                         __global float* result,
                         int chunk_size) {
     int gid = get_global_id(0);
-    if (gid < chunk_size) {
+    if(gid < chunk_size) {
         result[gid] = device0_chunk[gid];
         result[gid + chunk_size] = device1_chunk[gid];
     }
@@ -593,8 +593,8 @@ __kernel void validate(__global const float* input,
     output[gid] = input[gid];
     
     // Simple validation: check if values are reasonable
-    if (gid == 0) {
-        validation[0] = (input[0] > 0.0f && input[0] < 1000.0f) ? 1.0f : 0.0f;
+    if(gid == 0) {
+        validation[0] =(input[0] > 0.0f && input[0] < 1000.0f) ? 1.0f : 0.0f;
     }
 }";
 

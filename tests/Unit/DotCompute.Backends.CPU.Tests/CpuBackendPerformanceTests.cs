@@ -1,4 +1,4 @@
-// Copyright (c) 2025 Michael Ivertowski
+// Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -67,7 +67,7 @@ public class CpuBackendPerformanceTests : IDisposable
         // Assert
         Assert.NotNull(buffer);
         buffer.ElementCount.Should().Be(elementCount);
-        stopwatch.ElapsedMilliseconds < 1000.Should().BeTrue(); // Should complete within 1 second
+        stopwatch.ElapsedMilliseconds .Should().BeLessThan(1000,); // Should complete within 1 second
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class CpuBackendPerformanceTests : IDisposable
         try
         {
             // Act
-            for (int i = 0; i < allocationCount; i++)
+            for(int i = 0; i < allocationCount; i++)
             {
                 var buffer = await memoryManager.CreateBufferAsync<int>(
                     elementCount, MemoryLocation.Host, MemoryAccess.ReadWrite);
@@ -94,8 +94,8 @@ public class CpuBackendPerformanceTests : IDisposable
 
             // Assert
             Assert.Equal(allocationCount, buffers.Count());
-            stopwatch.ElapsedMilliseconds < 5000.Should().BeTrue(); // Should complete within 5 seconds
-            (stopwatch.ElapsedMilliseconds / (double)allocationCount).Should().BeLessThan(10); // Average <10ms per allocation
+            stopwatch.ElapsedMilliseconds .Should().BeLessThan(5000,); // Should complete within 5 seconds
+           (stopwatch.ElapsedMilliseconds /double)allocationCount).Should().BeLessThan(10); // Average <10ms per allocation
         }
         finally
         {
@@ -129,8 +129,8 @@ public class CpuBackendPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        var dataSizeMB = (elementCount * sizeof(float)) / (1024.0 * 1024.0);
-        var throughputMBps = dataSizeMB / (stopwatch.ElapsedMilliseconds / 1000.0);
+        var dataSizeMB =(elementCount * sizeof(float)) /(1024.0 * 1024.0);
+        var throughputMBps = dataSizeMB /(stopwatch.ElapsedMilliseconds / 1000.0);
         
         Assert.True(throughputMBps > 100); // Should achieve >100 MB/s
     }
@@ -147,7 +147,7 @@ public class CpuBackendPerformanceTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
         // Act
-        for (int i = 0; i < concurrentTasks; i++)
+        for(int i = 0; i < concurrentTasks; i++)
         {
             tasks.Add(memoryManager.CreateBufferAsync<float>(
                 elementCount, MemoryLocation.Host, MemoryAccess.ReadWrite).AsTask());
@@ -161,7 +161,7 @@ public class CpuBackendPerformanceTests : IDisposable
         {
             Assert.Equal(concurrentTasks, buffers.Count());
             buffers.Should().AllSatisfy(b => b.NotBeNull());
-            stopwatch.ElapsedMilliseconds < 10000.Should().BeTrue(); // Should complete within 10 seconds
+            stopwatch.ElapsedMilliseconds .Should().BeLessThan(10000,); // Should complete within 10 seconds
         }
         finally
         {
@@ -181,7 +181,7 @@ public class CpuBackendPerformanceTests : IDisposable
     public async Task Accelerator_KernelCompilation_ShouldCompleteWithinReasonableTime()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             _mockOptions.Object,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -196,7 +196,7 @@ public class CpuBackendPerformanceTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        stopwatch.ElapsedMilliseconds < 5000.Should().BeTrue(); // Should compile within 5 seconds
+        stopwatch.ElapsedMilliseconds .Should().BeLessThan(5000,); // Should compile within 5 seconds
     }
 
     [Theory]
@@ -206,7 +206,7 @@ public class CpuBackendPerformanceTests : IDisposable
     public async Task Accelerator_ConcurrentKernelCompilation_ShouldScaleEffectively(int concurrentCompilations)
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             _mockOptions.Object,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -215,7 +215,7 @@ public class CpuBackendPerformanceTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
         // Act
-        for (int i = 0; i < concurrentCompilations; i++)
+        for(int i = 0; i < concurrentCompilations; i++)
         {
             var definition = CreateComplexKernelDefinition($"ConcurrentKernel{i}");
             compilationTasks.Add(accelerator.CompileKernelAsync(definition).AsTask());
@@ -229,7 +229,7 @@ public class CpuBackendPerformanceTests : IDisposable
         compiledKernels.Should().AllSatisfy(k => k.NotBeNull());
         
         // Should scale reasonably - not linear due to CPU cores, but should be better than sequential
-        var averageTimePerKernel = stopwatch.ElapsedMilliseconds / (double)concurrentCompilations;
+        var averageTimePerKernel = stopwatch.ElapsedMilliseconds /(double)concurrentCompilations;
         Assert.True(averageTimePerKernel < 1000); // Average <1 second per kernel
     }
 
@@ -237,7 +237,7 @@ public class CpuBackendPerformanceTests : IDisposable
     public async Task Accelerator_RepeatedKernelCompilation_ShouldMaintainPerformance()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             _mockOptions.Object,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -247,7 +247,7 @@ public class CpuBackendPerformanceTests : IDisposable
         var compilationTimes = new List<double>();
 
         // Act
-        for (int i = 0; i < repetitions; i++)
+        for(int i = 0; i < repetitions; i++)
         {
             var stopwatch = Stopwatch.StartNew();
             var compiledKernel = await accelerator.CompileKernelAsync(definition);
@@ -265,7 +265,7 @@ public class CpuBackendPerformanceTests : IDisposable
         var minTime = compilationTimes.Min();
 
         Assert.True(averageTime < 1000); // Average <1 second
-        (maxTime - minTime).Should().BeLessThan(averageTime); // Variance should be reasonable
+       (maxTime - minTime).Should().BeLessThan(averageTime); // Variance should be reasonable
     }
 
     #endregion
@@ -276,7 +276,7 @@ public class CpuBackendPerformanceTests : IDisposable
     public async Task Accelerator_MemoryStressTest_ShouldHandleHighMemoryPressure()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             _mockOptions.Object,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -289,7 +289,7 @@ public class CpuBackendPerformanceTests : IDisposable
         try
         {
             // Act - Allocate many large buffers
-            for (int i = 0; i < largeBufferCount; i++)
+            for(int i = 0; i < largeBufferCount; i++)
             {
                 var buffer = await memoryManager.CreateBufferAsync<float>(
                     elementsPerBuffer, MemoryLocation.Host, MemoryAccess.ReadWrite);
@@ -301,8 +301,8 @@ public class CpuBackendPerformanceTests : IDisposable
             
             // Verify memory statistics are reasonable
             var statistics = memoryManager.GetStatistics();
-((statistics.TotalAllocatedBytes > 0).Should().BeTrue();
-            statistics.AllocationCount >= largeBufferCount.Should().BeTrue();
+            (statistics.TotalAllocatedBytes > 0).Should().BeTrue();
+            (statistics.AllocationCount >= largeBufferCount).Should().BeTrue();
         }
         finally
         {
@@ -318,7 +318,7 @@ public class CpuBackendPerformanceTests : IDisposable
     public async Task Accelerator_ConcurrentOperationsStressTest_ShouldMaintainStability()
     {
         // Arrange
-        using var accelerator = new CpuAccelerator(
+        await using var accelerator = new CpuAccelerator(
             _mockOptions.Object,
             _mockThreadPoolOptions.Object,
             _mockLogger.Object);
@@ -329,7 +329,7 @@ public class CpuBackendPerformanceTests : IDisposable
         // Act - Mix of concurrent operations
         
         // Memory allocations
-        for (int i = 0; i < operationsPerType; i++)
+        for(int i = 0; i < operationsPerType; i++)
         {
             allTasks.Add(Task.Run(async () =>
             {
@@ -339,7 +339,7 @@ public class CpuBackendPerformanceTests : IDisposable
         }
 
         // Kernel compilations
-        for (int i = 0; i < operationsPerType; i++)
+        for(int i = 0; i < operationsPerType; i++)
         {
             allTasks.Add(Task.Run(async () =>
             {
@@ -349,7 +349,7 @@ public class CpuBackendPerformanceTests : IDisposable
         }
 
         // Synchronization calls
-        for (int i = 0; i < operationsPerType; i++)
+        for(int i = 0; i < operationsPerType; i++)
         {
             allTasks.Add(Task.Run(async () =>
             {
@@ -358,7 +358,7 @@ public class CpuBackendPerformanceTests : IDisposable
         }
 
         // Memory copies
-        for (int i = 0; i < operationsPerType; i++)
+        for(int i = 0; i < operationsPerType; i++)
         {
             allTasks.Add(Task.Run(async () =>
             {
@@ -376,7 +376,7 @@ public class CpuBackendPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds < 30000.Should().BeTrue(); // Should complete within 30 seconds
+        stopwatch.ElapsedMilliseconds .Should().BeLessThan(30000,); // Should complete within 30 seconds
     }
 
     #endregion
@@ -396,7 +396,7 @@ public class CpuBackendPerformanceTests : IDisposable
         var kernels = new List<ICompiledKernel>();
 
         // Create some resources
-        for (int i = 0; i < 10; i++)
+        for(int i = 0; i < 10; i++)
         {
             var buffer = await accelerator.Memory.CreateBufferAsync<float>(
                 1024, MemoryLocation.Host, MemoryAccess.ReadWrite);
@@ -415,7 +415,7 @@ public class CpuBackendPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds < 10000.Should().BeTrue(); // Should dispose within 10 seconds
+        stopwatch.ElapsedMilliseconds .Should().BeLessThan(10000,); // Should dispose within 10 seconds
 
         // Clean up remaining resources
         foreach (var buffer in buffers)
@@ -441,10 +441,10 @@ public class CpuBackendPerformanceTests : IDisposable
         try
         {
             // Act - Create and destroy buffers in random patterns to test fragmentation handling
-            for (int i = 0; i < iterations; i++)
+            for(int i = 0; i < iterations; i++)
             {
                 // Allocate some buffers
-                for (int j = 0; j < 5; j++)
+                for(int j = 0; j < 5; j++)
                 {
                     var size = random.Next(1024, 1024 * 1024);
                     var buffer = await memoryManager.CreateBufferAsync<byte>(
@@ -453,7 +453,7 @@ public class CpuBackendPerformanceTests : IDisposable
                 }
 
                 // Randomly dispose some buffers
-                while (buffers.Count > 10 && random.NextDouble() < 0.3)
+                while(buffers.Count > 10 && random.NextDouble() < 0.3)
                 {
                     var index = random.Next(buffers.Count);
                     await buffers[index].DisposeAsync();
@@ -463,8 +463,8 @@ public class CpuBackendPerformanceTests : IDisposable
 
             // Assert
             var statistics = memoryManager.GetStatistics();
-            statistics.FragmentationPercentage < 50.Should().BeTrue(); // Should maintain reasonable fragmentation
-((statistics.TotalAllocatedBytes > 0).Should().BeTrue();
+            (statistics.FragmentationPercentage < 50).Should().BeTrue(); // Should maintain reasonable fragmentation
+            (statistics.TotalAllocatedBytes > 0).Should().BeTrue();
         }
         finally
         {
@@ -482,25 +482,25 @@ public class CpuBackendPerformanceTests : IDisposable
 
     private ReadOnlyMemory<T> GenerateTestData<T>(int count) where T : struct
     {
-        if (typeof(T) == typeof(float))
+        if(typeof(T) == typeof(float))
         {
             var data = new float[count];
             var random = new Random(42);
-            for (int i = 0; i < count; i++)
+            for(int i = 0; i < count; i++)
             {
-                data[i] = (float)random.NextDouble();
+                data[i] =(float)random.NextDouble();
             }
-            return (ReadOnlyMemory<T>)(object)new ReadOnlyMemory<float>(data);
+            return(ReadOnlyMemory<T>)(object)new ReadOnlyMemory<float>(data);
         }
-        else if (typeof(T) == typeof(int))
+        else if(typeof(T) == typeof(int))
         {
             var data = new int[count];
             var random = new Random(42);
-            for (int i = 0; i < count; i++)
+            for(int i = 0; i < count; i++)
             {
                 data[i] = random.Next();
             }
-            return (ReadOnlyMemory<T>)(object)new ReadOnlyMemory<int>(data);
+            return(ReadOnlyMemory<T>)(object)new ReadOnlyMemory<int>(data);
         }
         else
         {
@@ -513,11 +513,11 @@ public class CpuBackendPerformanceTests : IDisposable
         var complexCode = @"
 __kernel void complexComputation(__global const float* input, __global float* output, const int n) {
     int id = get_global_id(0);
-    if (id < n) {
+    if(id < n) {
         float value = input[id];
         
         // Complex mathematical operations
-        for (int i = 0; i < 10; i++) {
+        for(int i = 0; i < 10; i++) {
             value = sqrt(value * value + 1.0f);
             value = sin(value) * cos(value);
             value = exp(value * 0.1f);
@@ -544,7 +544,7 @@ __kernel void complexComputation(__global const float* input, __global float* ou
 
     public void Dispose()
     {
-        if (!_disposed)
+        if(!_disposed)
         {
             _disposed = true;
         }
