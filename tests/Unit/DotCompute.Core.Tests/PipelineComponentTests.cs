@@ -14,12 +14,12 @@ namespace DotCompute.Core.Tests.Pipelines;
 /// Comprehensive unit tests for pipeline components with 90% coverage target.
 /// Tests stage execution, optimization, and error handling.
 /// </summary>
-public class PipelineComponentTests : IDisposable
+public sealed class PipelineComponentTests : IDisposable
 {
     private readonly Mock<ILogger<KernelPipeline>> _mockLogger;
     private readonly Mock<IAccelerator> _mockAccelerator;
     private readonly Mock<IPipelineMemoryManager> _mockMemoryManager;
-    private bool _disposed;
+    private readonly bool _disposed;
 
     public PipelineComponentTests()
     {
@@ -620,6 +620,7 @@ public class PipelineComponentTests : IDisposable
         if(!_disposed)
         {
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }
@@ -627,7 +628,7 @@ public class PipelineComponentTests : IDisposable
 /// <summary>
 /// Tests for pipeline optimization and advanced features.
 /// </summary>
-public class PipelineOptimizationTests
+public sealed class PipelineOptimizationTests
 {
     private readonly Mock<ILogger<PipelineOptimizer>> _mockLogger;
     private readonly Mock<IAccelerator> _mockAccelerator;

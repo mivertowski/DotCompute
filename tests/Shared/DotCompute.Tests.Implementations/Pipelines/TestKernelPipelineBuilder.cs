@@ -1,12 +1,12 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Shared.Pipelines;
+namespace DotCompute.Tests.Utilities.Pipelines;
 
 /// <summary>
 /// Test implementation of a kernel pipeline builder.
 /// </summary>
-public class TestKernelPipelineBuilder : IKernelPipelineBuilder
+public sealed class TestKernelPipelineBuilder : IKernelPipelineBuilder
 {
     private readonly TestKernelPipeline _pipeline;
     private readonly List<string> _stageOrder;
@@ -228,10 +228,10 @@ public class TestKernelPipelineBuilder : IKernelPipelineBuilder
 /// <summary>
 /// Test implementation of pipeline metrics.
 /// </summary>
-public class TestPipelineMetrics : IPipelineMetrics
+public sealed class TestPipelineMetrics : IPipelineMetrics
 {
     private readonly string _pipelineId;
-    private readonly Lock _lock = new();
+    private readonly object _lock = new();
     private long _executionCount;
     private long _successCount;
     private TimeSpan _totalExecutionTime;
@@ -353,7 +353,7 @@ public class TestPipelineMetrics : IPipelineMetrics
 /// <summary>
 /// Test pipeline execution metrics.
 /// </summary>
-public class TestPipelineExecutionMetrics
+public sealed class TestPipelineExecutionMetrics
 {
     public required TimeSpan TotalDuration { get; init; }
     public required IReadOnlyDictionary<string, IStageMetrics> StageMetrics { get; init; }

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski  
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using DotCompute.Linq;
 using DotCompute.Linq.Compilation;
@@ -12,8 +13,31 @@ using Microsoft.Extensions.Logging;
 /// Example demonstrating dynamic kernel generation from LINQ expression trees.
 /// This shows how expressions are analyzed, optimized, fused, and compiled into GPU kernels.
 /// </summary>
-internal class Program
+internal sealed class Program
 {
+    private static readonly int[] SampleNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    private static readonly int[] IntTestData = [1, 2, 3];
+    private static readonly float[] FloatTestData = [1.0f, 2.0f, 3.0f];
+    private static readonly double[] DoubleTestData = [1.0, 2.0, 3.0];
+
+    // Logger message delegates for performance
+    private static readonly Action<ILogger, Exception> LogExpressionFusionError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(1001, "ExpressionFusionError"),
+            "Error in expression fusion demo");
+
+    private static readonly Action<ILogger, Exception> LogTypeInferenceError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(1002, "TypeInferenceError"),
+            "Error in type inference demo");
+
+    private static readonly Action<ILogger, Exception> LogResourceEstimationError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(1003, "ResourceEstimationError"),
+            "Error in resource estimation demo");
+
+    private static readonly Action<ILogger, Exception> LogDynamicCompilationError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(1004, "DynamicCompilationError"),
+            "Error in dynamic compilation demo");
+    [RequiresUnreferencedCode("This application demonstrates LINQ providers that may require unreferenced code")]
+    [RequiresDynamicCode("This application demonstrates dynamic LINQ compilation that requires dynamic code generation")]
     private static async Task Main(string[] args)
     {
         // Setup logging
@@ -25,7 +49,7 @@ internal class Program
         Console.WriteLine("=== DotCompute Dynamic Kernel Generation Demo ===\n");
 
         // Create a mock accelerator for demonstration
-        var accelerator = new MockAccelerator();
+        using var accelerator = new MockAccelerator();
 
         // Demonstrate different aspects of the dynamic kernel system
         await DemonstrateExpressionFusion(accelerator, loggerFactory, logger);
@@ -36,6 +60,8 @@ internal class Program
         Console.WriteLine("\n=== Demo Complete ===");
     }
 
+    [RequiresUnreferencedCode("This method uses Queryable.AsQueryable which may require unreferenced code")]
+    [RequiresDynamicCode("This method uses Queryable.AsQueryable which may require dynamic code generation")]
     private static async Task DemonstrateExpressionFusion(IAccelerator accelerator, ILoggerFactory loggerFactory, ILogger logger)
     {
         // Add minimal async operation to satisfy compiler
@@ -48,7 +74,7 @@ internal class Program
         var options = new DotCompute.Linq.Compilation.CompilationOptions { EnableOperatorFusion = true };
 
         // Create sample data
-        var numbers = new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 }.AsQueryable();
+        var numbers = SampleNumbers.AsQueryable();
 
         try
         {
@@ -65,8 +91,8 @@ internal class Program
             Console.WriteLine($"Original query: numbers.Where(x => x > 2).Select(x => x * 2).Where(x => x < 20).Select(x => x + 1)");
 
             // Get optimization suggestions
-            var suggestions = result.GetOptimizationSuggestions();
-            Console.WriteLine($"Optimization suggestions: {suggestions.Count()}");
+            var suggestions = result.GetOptimizationSuggestions().ToList();
+            Console.WriteLine($"Optimization suggestions: {suggestions.Count}");
 
             foreach (var suggestion in suggestions)
             {
@@ -79,13 +105,15 @@ internal class Program
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in expression fusion demo");
+            LogExpressionFusionError(logger, ex);
             Console.WriteLine($"Error: {ex.Message}");
         }
 
         Console.WriteLine();
     }
 
+    [RequiresUnreferencedCode("This method uses Queryable.AsQueryable which may require unreferenced code")]
+    [RequiresDynamicCode("This method uses Queryable.AsQueryable which may require dynamic code generation")]
     private static async Task DemonstrateTypeInference(IAccelerator accelerator, ILoggerFactory loggerFactory, ILogger logger)
     {
         // Add minimal async operation to satisfy compiler
@@ -99,9 +127,9 @@ internal class Program
         try
         {
             // Create expressions with different types
-            var intData = new[] { 1, 2, 3 }.AsQueryable();
-            var floatData = new[] { 1.0f, 2.0f, 3.0f }.AsQueryable();
-            var doubleData = new[] { 1.0, 2.0, 3.0 }.AsQueryable();
+            var intData = IntTestData.AsQueryable();
+            var floatData = FloatTestData.AsQueryable();
+            var doubleData = DoubleTestData.AsQueryable();
 
             var computeIntQuery = intData.AsComputeQueryable(accelerator);
             var computeFloatQuery = floatData.AsComputeQueryable(accelerator);
@@ -124,12 +152,12 @@ internal class Program
             PrintTypeAnalysis("Double operations", doubleTypeResult);
 
             // Get optimization suggestions
-            var intOptimizations = typeEngine.SuggestOptimizations(intExpression);
-            var doubleOptimizations = typeEngine.SuggestOptimizations(doubleExpression);
+            var intOptimizations = typeEngine.SuggestOptimizations(intExpression).ToList();
+            var doubleOptimizations = typeEngine.SuggestOptimizations(doubleExpression).ToList();
 
             Console.WriteLine("\nType Optimization Suggestions:");
-            Console.WriteLine($"Int operations: {intOptimizations.Count()} suggestions");
-            Console.WriteLine($"Double operations: {doubleOptimizations.Count()} suggestions");
+            Console.WriteLine($"Int operations: {intOptimizations.Count} suggestions");
+            Console.WriteLine($"Double operations: {doubleOptimizations.Count} suggestions");
 
             foreach (var opt in doubleOptimizations)
             {
@@ -138,13 +166,15 @@ internal class Program
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in type inference demo");
+            LogTypeInferenceError(logger, ex);
             Console.WriteLine($"Error: {ex.Message}");
         }
 
         Console.WriteLine();
     }
 
+    [RequiresUnreferencedCode("This method uses Queryable.AsQueryable which may require unreferenced code")]
+    [RequiresDynamicCode("This method uses Queryable.AsQueryable which may require dynamic code generation")]
     private static async Task DemonstrateResourceEstimation(IAccelerator accelerator, ILoggerFactory loggerFactory, ILogger logger)
     {
         // Add minimal async operation to satisfy compiler
@@ -157,7 +187,7 @@ internal class Program
         {
             var factory = new DefaultKernelFactory(loggerFactory.CreateLogger<DefaultKernelFactory>());
             var optimizer = new ExpressionOptimizer(loggerFactory.CreateLogger<ExpressionOptimizer>());
-            var compiler = new ExpressionToKernelCompiler(factory, optimizer,
+            using var compiler = new ExpressionToKernelCompiler(factory, optimizer,
                 loggerFactory.CreateLogger<ExpressionToKernelCompiler>());
 
             // Create queries of different complexity
@@ -190,13 +220,15 @@ internal class Program
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in resource estimation demo");
+            LogResourceEstimationError(logger, ex);
             Console.WriteLine($"Error: {ex.Message}");
         }
 
         Console.WriteLine();
     }
 
+    [RequiresUnreferencedCode("This method uses Queryable.AsQueryable which may require unreferenced code")]
+    [RequiresDynamicCode("This method uses Queryable.AsQueryable which may require dynamic code generation")]
     private static async Task DemonstrateDynamicCompilation(IAccelerator accelerator, ILoggerFactory loggerFactory, ILogger logger)
     {
         // Add minimal async operation to satisfy compiler
@@ -208,7 +240,7 @@ internal class Program
         try
         {
             // Create GPU LINQ provider with dynamic compilation
-            var gpuProvider = new GPULINQProvider(accelerator, loggerFactory.CreateLogger<GPULINQProvider>());
+            using var gpuProvider = new GPULINQProvider(accelerator, loggerFactory.CreateLogger<GPULINQProvider>());
 
             // Create sample data and queries
             var numbers = Enumerable.Range(1, 100).ToArray();
@@ -242,7 +274,7 @@ internal class Program
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Error in dynamic compilation demo");
+            LogDynamicCompilationError(logger, ex);
             Console.WriteLine($"Error: {ex.Message}");
         }
         finally
@@ -309,9 +341,9 @@ internal class Program
 /// <summary>
 /// Mock accelerator for demonstration purposes.
 /// </summary>
-internal class MockAccelerator : IAccelerator
+internal sealed class MockAccelerator : IAccelerator, IDisposable
 {
-    public AcceleratorInfo Info { get; } = new AcceleratorInfo(AcceleratorType.CUDA, "Demo GPU Accelerator", "1.0.0", 8L * 1024 * 1024 * 1024);
+    public AcceleratorInfo Info { get; } = new(AcceleratorType.CUDA, "Demo GPU Accelerator", "1.0.0", 8L * 1024 * 1024 * 1024);
 
     public AcceleratorType Type => AcceleratorType.CUDA;
 
@@ -338,18 +370,16 @@ internal class MockAccelerator : IAccelerator
         return new MockCompiledKernel(definition.Name);
     }
 
-    public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
-        // Simulate synchronization delay
-        => await Task.Delay(5, cancellationToken);
-
-    public static void Dispose() { }
+    public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await Task.Delay(5, cancellationToken); // Simulate synchronization delay
+    public void Dispose() { }
     public ValueTask DisposeAsync() => default;
 }
 
 /// <summary>
 /// Mock memory manager for demonstration.
 /// </summary>
-internal class MockMemoryManager : IMemoryManager
+[SuppressMessage("CodeQuality", "CA1812:Avoid uninstantiated internal classes", Justification = "Class is instantiated via dependency injection")]
+internal sealed class MockMemoryManager : IMemoryManager
 {
     public async ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
     {
@@ -418,15 +448,13 @@ internal class MockMemoryManager : IMemoryManager
         }
     }
 
-    public void Free(IMemoryBuffer buffer)
-        // Synchronously free the buffer
-        => buffer?.Dispose();
+    public void Free(IMemoryBuffer buffer) => buffer?.Dispose(); // Synchronously free the buffer
 }
 
 /// <summary>
 /// Mock memory buffer for demonstration.
 /// </summary>
-internal class MockMemoryBuffer : IMemoryBuffer
+internal sealed class MockMemoryBuffer : IMemoryBuffer
 {
     public MockMemoryBuffer(long size, MemoryOptions options = MemoryOptions.None)
     {
@@ -441,14 +469,8 @@ internal class MockMemoryBuffer : IMemoryBuffer
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
-        // Simulate copy from host operation
-        => default;
-
-
-    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged
-        // Simulate copy to host
-        => default;
+        CancellationToken cancellationToken = default) where T : unmanaged => default; // Simulate copy from host operation
+    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset = 0, CancellationToken cancellationToken = default) where T : unmanaged => default; // Simulate copy to host
 
     public void Dispose() { }
     public ValueTask DisposeAsync() => default;
@@ -457,7 +479,8 @@ internal class MockMemoryBuffer : IMemoryBuffer
 /// <summary>
 /// Mock memory buffer view for demonstration.
 /// </summary>
-internal class MockMemoryBufferView : IMemoryBuffer
+[SuppressMessage("CodeQuality", "CA1812:Avoid uninstantiated internal classes", Justification = "Class is instantiated via CreateView method")]
+internal sealed class MockMemoryBufferView : IMemoryBuffer
 {
     private readonly MockMemoryBuffer _parentBuffer;
     private readonly long _offset;
@@ -478,12 +501,10 @@ internal class MockMemoryBufferView : IMemoryBuffer
         ReadOnlyMemory<T> source,
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged => _parentBuffer.CopyFromHostAsync(source, _offset + offset, cancellationToken);
-
     public ValueTask CopyToHostAsync<T>(
         Memory<T> destination,
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged => _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
-
     public void Dispose() { }
     public ValueTask DisposeAsync() => default;
 }
@@ -491,7 +512,8 @@ internal class MockMemoryBufferView : IMemoryBuffer
 /// <summary>
 /// Mock compiled kernel for demonstration.
 /// </summary>
-internal class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
+[SuppressMessage("CodeQuality", "CA1812:Avoid uninstantiated internal classes", Justification = "Class is instantiated via CompileKernelAsync method")]
+internal sealed class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
 {
     public MockCompiledKernel(string name)
     {
@@ -503,8 +525,13 @@ internal class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
     public async ValueTask ExecuteAsync(
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
+    {
         // Simulate kernel execution
-        => await Task.Delay(20, cancellationToken);
+        await Task.Delay(20, cancellationToken);
+    }
 
-    public ValueTask DisposeAsync() => default;
+    public ValueTask DisposeAsync()
+    {
+        return default;
+    }
 }

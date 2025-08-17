@@ -16,12 +16,12 @@ namespace DotCompute.Backends.CPU.Tests.Simple;
 /// Simplified comprehensive unit tests for CpuAccelerator with 90% coverage target.
 /// Tests initialization, memory management, kernel compilation, and error handling.
 /// </summary>
-public class CpuAcceleratorSimpleTests : IDisposable
+public sealed class CpuAcceleratorSimpleTests : IDisposable
 {
     private readonly Mock<ILogger<CpuAccelerator>> _mockLogger;
     private readonly Mock<IOptions<CpuAcceleratorOptions>> _mockOptions;
     private readonly Mock<IOptions<CpuThreadPoolOptions>> _mockThreadPoolOptions;
-    private bool _disposed;
+    private readonly bool _disposed;
 
     public CpuAcceleratorSimpleTests()
     {

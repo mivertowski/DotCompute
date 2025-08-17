@@ -110,7 +110,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         Assert.Equal(BufferState.HostOnly, unifiedBuffer.State);
 
         // Synchronize buffer
-        unifiedBuffer.Synchronize();
+        await unifiedBuffer.SynchronizeAsync(default, CancellationToken.None);
 
         // Assert - Buffer should maintain valid state after synchronization
         Assert.True(unifiedBuffer.IsOnHost);
@@ -153,7 +153,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         Assert.True(unifiedBuffer.IsOnHost);
 
         // Ensure buffer is on device - this will trigger device allocation/transfer
-        unifiedBuffer.EnsureOnDevice();
+        await unifiedBuffer.EnsureOnDeviceAsync(default, CancellationToken.None);
 
         // Assert - Buffer should now be available on both host and device
         Assert.True(unifiedBuffer.IsOnDevice);
@@ -192,8 +192,8 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         const int length2 = 256;
 
         // Act
-        var buffer1 = await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(length1);
-        var buffer2 = await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(length2);
+        await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(length1);
+        await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(length2);
 
         var stats = _unifiedMemoryManager.GetStats();
 
@@ -294,6 +294,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         {
             _unifiedMemoryManager?.Dispose();
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }

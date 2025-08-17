@@ -2,13 +2,13 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Shared.TestInfrastructure;
+namespace DotCompute.Tests.Utilities.TestInfrastructure;
 
 /// <summary>
 /// Simulates hardware accelerators for testing purposes
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class HardwareSimulator : IDisposable
+public sealed class HardwareSimulator : IDisposable
 {
     private readonly ILogger<HardwareSimulator> _logger;
     private readonly Dictionary<AcceleratorType, List<SimulatedAccelerator>> _accelerators = [];
@@ -102,6 +102,7 @@ public class HardwareSimulator : IDisposable
 
         _accelerators.Clear();
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }
 
@@ -109,7 +110,7 @@ public class HardwareSimulator : IDisposable
 /// Simulated accelerator for testing
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class SimulatedAccelerator : IAccelerator
+public sealed class SimulatedAccelerator : IAccelerator
 {
     private readonly ILogger _logger;
     private readonly Dictionary<string, byte[]> _memory = [];
@@ -172,8 +173,7 @@ public class SimulatedAccelerator : IAccelerator
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SimulatedAccelerator));
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         if (!IsAvailable)
             throw new InvalidOperationException(_failureMessage ?? "Accelerator not available");
@@ -184,8 +184,7 @@ public class SimulatedAccelerator : IAccelerator
 
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SimulatedAccelerator));
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         // Simulate async synchronization
         return ValueTask.CompletedTask;
@@ -263,8 +262,7 @@ public class SimulatedAccelerator : IAccelerator
 
     private void ThrowIfFailed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SimulatedAccelerator));
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         if (_failureMessage != null)
             throw new InvalidOperationException(_failureMessage);
@@ -283,6 +281,7 @@ public class SimulatedAccelerator : IAccelerator
     public ValueTask DisposeAsync()
     {
         Dispose();
+        GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;
     }
 }

@@ -14,11 +14,11 @@ namespace DotCompute.Core.Tests.Kernels;
 /// Comprehensive unit tests for OpenCLKernelCompiler with 90% coverage target.
 /// Tests syntax validation, mock compilation, and different kernel types.
 /// </summary>
-public class OpenCLKernelCompilerTests : IDisposable
+public sealed class OpenCLKernelCompilerTests : IDisposable
 {
     private readonly Mock<ILogger<OpenCLKernelCompiler>> _mockLogger;
     private readonly OpenCLKernelCompiler _compiler;
-    private bool _disposed;
+    private readonly bool _disposed;
 
     public OpenCLKernelCompilerTests()
     {
@@ -612,6 +612,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         {
             // OpenCLKernelCompiler doesn't implement IDisposable, so nothing to dispose
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }

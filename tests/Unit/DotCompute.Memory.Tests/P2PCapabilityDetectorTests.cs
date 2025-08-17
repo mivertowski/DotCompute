@@ -3,7 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
@@ -25,8 +25,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task DetectP2PCapability_CudaDevices_ReturnsNVLinkCapability()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
-        var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
+        await using var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
 
         // Act
         var capability = await _detector.DetectP2PCapabilityAsync(device1, device2);
@@ -45,8 +45,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task DetectP2PCapability_RocmDevices_ReturnsXGMICapability()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("rocm-device-0", "ROCm", "MI210");
-        var device2 = CreateMockAccelerator("rocm-device-2", "ROCm", "MI210");
+        await using var device1 = CreateMockAccelerator("rocm-device-0", "ROCm", "MI210");
+        await using var device2 = CreateMockAccelerator("rocm-device-2", "ROCm", "MI210");
 
         // Act
         var capability = await _detector.DetectP2PCapabilityAsync(device1, device2);
@@ -62,8 +62,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task DetectP2PCapability_CpuDevices_ReturnsSharedMemoryCapability()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("cpu-device-0", "CPU", "Intel CPU");
-        var device2 = CreateMockAccelerator("cpu-device-1", "CPU", "Intel CPU");
+        await using var device1 = CreateMockAccelerator("cpu-device-0", "CPU", "Intel CPU");
+        await using var device2 = CreateMockAccelerator("cpu-device-1", "CPU", "Intel CPU");
 
         // Act
         var capability = await _detector.DetectP2PCapabilityAsync(device1, device2);
@@ -78,8 +78,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task DetectP2PCapability_DifferentDeviceTypes_ReturnsNotSupported()
     {
         // Arrange
-        var cudaDevice = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
-        var rocmDevice = CreateMockAccelerator("rocm-device-0", "ROCm", "MI210");
+        await using var cudaDevice = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var rocmDevice = CreateMockAccelerator("rocm-device-0", "ROCm", "MI210");
 
         // Act
         var capability = await _detector.DetectP2PCapabilityAsync(cudaDevice, rocmDevice);
@@ -88,14 +88,14 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         Assert.False(capability.IsSupported);
         Assert.Equal(P2PConnectionType.None, capability.ConnectionType);
         Assert.NotNull(capability.LimitationReason);
-        Assert.Contains("Different device types", capability.LimitationReason);
+        Assert.Contains("Different device types", capability.LimitationReason, StringComparison.Ordinal);
     }
 
     [Fact]
     public async Task DetectP2PCapability_SameDevice_ReturnsNotSupported()
     {
         // Arrange
-        var device = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
 
         // Act
         var capability = await _detector.DetectP2PCapabilityAsync(device, device);
@@ -103,15 +103,15 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         // Assert
         Assert.False(capability.IsSupported);
         Assert.Equal(P2PConnectionType.None, capability.ConnectionType);
-        Assert.Contains("Same device", capability.LimitationReason);
+        Assert.Contains("Same device", capability.LimitationReason, StringComparison.Ordinal);
     }
 
     [Fact]
     public async Task DetectP2PCapability_OpenCLDevices_ReturnsNotSupported()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("opencl-device-0", "OpenCL", "OpenCL GPU");
-        var device2 = CreateMockAccelerator("opencl-device-1", "OpenCL", "OpenCL GPU");
+        await using var device1 = CreateMockAccelerator("opencl-device-0", "OpenCL", "OpenCL GPU");
+        await using var device2 = CreateMockAccelerator("opencl-device-1", "OpenCL", "OpenCL GPU");
 
         // Act
         var capability = await _detector.DetectP2PCapabilityAsync(device1, device2);
@@ -119,15 +119,15 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         // Assert
         Assert.False(capability.IsSupported);
         Assert.Equal(P2PConnectionType.None, capability.ConnectionType);
-        Assert.Contains("OpenCL does not support", capability.LimitationReason);
+        Assert.Contains("OpenCL does not support", capability.LimitationReason, StringComparison.Ordinal);
     }
 
     [Fact]
     public async Task DetectP2PCapability_CacheResults_ReturnsCachedCapability()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
-        var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
+        await using var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
 
         // Act
         var capability1 = await _detector.DetectP2PCapabilityAsync(device1, device2);
@@ -144,7 +144,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task GetDeviceCapabilities_CudaDevice_ReturnsCorrectCapabilities()
     {
         // Arrange
-        var device = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
 
         // Act
         var capabilities = await _detector.GetDeviceCapabilitiesAsync(device);
@@ -161,7 +161,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task GetDeviceCapabilities_CacheResults_ReturnsCachedCapabilities()
     {
         // Arrange
-        var device = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
 
         // Act
         var capabilities1 = await _detector.GetDeviceCapabilitiesAsync(device);
@@ -178,8 +178,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task EnableP2PAccess_SupportedDevices_ReturnsSuccess()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
-        var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
+        await using var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
 
         // Act
         var result = await _detector.EnableP2PAccessAsync(device1, device2);
@@ -195,8 +195,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task EnableP2PAccess_UnsupportedDevices_ReturnsFailure()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("opencl-device-0", "OpenCL", "OpenCL GPU");
-        var device2 = CreateMockAccelerator("opencl-device-1", "OpenCL", "OpenCL GPU");
+        await using var device1 = CreateMockAccelerator("opencl-device-0", "OpenCL", "OpenCL GPU");
+        await using var device2 = CreateMockAccelerator("opencl-device-1", "OpenCL", "OpenCL GPU");
 
         // Act
         var result = await _detector.EnableP2PAccessAsync(device1, device2);
@@ -212,8 +212,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task DisableP2PAccess_SupportedDevices_ReturnsSuccess()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
-        var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
+        await using var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
 
         // Enable first
         await _detector.EnableP2PAccessAsync(device1, device2);
@@ -229,8 +229,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task GetOptimalTransferStrategy_P2PSupportedLargeData_ReturnsDirectP2P()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
-        var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
+        await using var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
         var dataSizeBytes = 64 * 1024 * 1024; // 64MB
 
         // Act
@@ -246,8 +246,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task GetOptimalTransferStrategy_P2PNotSupportedSmallData_ReturnsHostMediated()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("opencl-device-0", "OpenCL", "OpenCL GPU");
-        var device2 = CreateMockAccelerator("opencl-device-1", "OpenCL", "OpenCL GPU");
+        await using var device1 = CreateMockAccelerator("opencl-device-0", "OpenCL", "OpenCL GPU");
+        await using var device2 = CreateMockAccelerator("opencl-device-1", "OpenCL", "OpenCL GPU");
         var dataSizeBytes = 1024; // 1KB
 
         // Act
@@ -262,8 +262,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task GetOptimalTransferStrategy_P2PSupportedSmallData_ReturnsHostMediated()
     {
         // Arrange - even with P2P support, small data should use host-mediated
-        var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
-        var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
+        await using var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
         var dataSizeBytes = 512; // 512 bytes - below P2P threshold
 
         // Act
@@ -282,8 +282,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         int dataSizeBytes, int expectedMaxChunkSize)
     {
         // Arrange
-        var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
-        var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
+        await using var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
 
         // Act
         var strategy = await _detector.GetOptimalTransferStrategyAsync(device1, device2, dataSizeBytes);
@@ -298,8 +298,8 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task DetectP2PCapability_ConcurrentAccess_HandlesRaceConditions()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
-        var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
+        await using var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
 
         // Act - concurrent detection calls
         var tasks = new Task<P2PConnectionCapability>[10];
@@ -325,17 +325,17 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
     public async Task DetectP2PCapability_WithCancellation_ThrowsOperationCanceledException()
     {
         // Arrange
-        var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
-        var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
+        await using var device1 = CreateMockAccelerator("cuda-device-0", "CUDA", "RTX 4090");
+        await using var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
             _detector.DetectP2PCapabilityAsync(device1, device2, cts.Token).AsTask());
     }
 
-    private static IAccelerator CreateMockAccelerator(string id, string deviceType, string name)
+    private static MockAccelerator CreateMockAccelerator(string id, string deviceType, string name)
     {
         var deviceTypeEnum = deviceType switch
         {
@@ -349,5 +349,9 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         return new MockAccelerator(name: deviceTypeEnum.ToString(), type: deviceTypeEnum);
     }
 
-    public void Dispose() => _detector?.DisposeAsync().AsTask().Wait();
+    public void Dispose() 
+    {
+        _detector?.DisposeAsync().AsTask().Wait();
+        GC.SuppressFinalize(this);
+    }
 }

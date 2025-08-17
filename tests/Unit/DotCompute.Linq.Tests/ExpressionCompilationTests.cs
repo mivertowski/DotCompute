@@ -6,7 +6,7 @@ using DotCompute.Abstractions;
 using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;

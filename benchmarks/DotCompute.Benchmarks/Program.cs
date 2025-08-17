@@ -3,6 +3,8 @@ using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Toolchains.InProcess.Emit;
 using DotCompute.Benchmarks;
+using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 
 Console.WriteLine("=== DotCompute Performance Benchmarks ===");
 Console.WriteLine();
@@ -38,15 +40,7 @@ if (args.Length == 0)
 else if (args[0].Equals("list", StringComparison.OrdinalIgnoreCase))
 {
     // List available benchmarks
-    var types = typeof(Program).Assembly.GetTypes()
-        .Where(t => t.Name.EndsWith("Benchmarks") && !t.IsAbstract)
-        .OrderBy(t => t.Name);
-
-    Console.WriteLine("Available benchmark classes:");
-    foreach (var type in types)
-    {
-        Console.WriteLine($"  {type.Name}");
-    }
+    ListBenchmarks();
     return;
 }
 else if (args[0].Equals("interactive", StringComparison.OrdinalIgnoreCase))
@@ -68,7 +62,7 @@ else if (args[0].Equals("interactive", StringComparison.OrdinalIgnoreCase))
 
     var choice = Console.ReadLine();
 
-    switch (choice?.ToUpper())
+    switch (choice?.ToUpperInvariant())
     {
         case "1":
             BenchmarkRunner.Run<MemoryOperationsBenchmarks>(config);
@@ -123,3 +117,18 @@ Console.WriteLine();
 Console.WriteLine("Benchmarks completed. Results are available in the BenchmarkDotNet.Artifacts folder.");
 Console.WriteLine("Press any key to exit...");
 Console.ReadKey();
+
+[UnconditionalSuppressMessage("Trimming", "IL2026:Members annotated with 'RequiresUnreferencedCodeAttribute' require dynamic access otherwise can break functionality when trimming application code",
+    Justification = "BenchmarkDotNet requires reflection for benchmark discovery")]
+static void ListBenchmarks()
+{
+    var types = typeof(Program).Assembly.GetTypes()
+        .Where(t => t.Name.EndsWith("Benchmarks", StringComparison.Ordinal) && !t.IsAbstract)
+        .OrderBy(t => t.Name);
+
+    Console.WriteLine("Available benchmark classes:");
+    foreach (var type in types)
+    {
+        Console.WriteLine($"  {type.Name}");
+    }
+}

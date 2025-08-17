@@ -1,15 +1,16 @@
 using System.Xml.Linq;
 using System.Text.Json;
 using System.Text;
+using System.Globalization;
 
 namespace DotCompute.Tools.CoverageAnalysis;
 
 /// <summary>
 /// Analyzes code coverage reports and generates comprehensive analysis
 /// </summary>
-internal class CoverageAnalyzer
+internal sealed class CoverageAnalyzer
 {
-    internal record CoverageMetrics(
+    internal sealed record CoverageMetrics(
         double LineRate,
         double BranchRate,
         int LinesTotal,
@@ -18,12 +19,18 @@ internal class CoverageAnalyzer
         int BranchesCovered,
         string ProjectName);
 
-    internal record CoverageAnalysis(
+    internal sealed record CoverageAnalysis(
         CoverageMetrics Overall,
         Dictionary<string, CoverageMetrics> ByProject,
         List<string> LowCoverageAreas,
         List<string> UncoveredMethods,
         List<string> Recommendations);
+
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        WriteIndented = true,
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    };
 
     private readonly string _coverageDirectory;
     private readonly double _lineThreshold;
@@ -39,7 +46,7 @@ internal class CoverageAnalyzer
     public async Task<CoverageAnalysis> AnalyzeCoverageAsync()
     {
         var coverageFiles = Directory.GetFiles(_coverageDirectory, "coverage.cobertura.xml", SearchOption.AllDirectories)
-            .Where(f => !f.Contains("/bin/") && !f.Contains("/obj/"))
+            .Where(f => !f.Contains("/bin/", StringComparison.OrdinalIgnoreCase) && !f.Contains("/obj/", StringComparison.OrdinalIgnoreCase))
             .ToList();
 
         if (coverageFiles.Count == 0)
@@ -123,12 +130,12 @@ internal class CoverageAnalyzer
                 return null;
             }
 
-            var lineRate = double.Parse(coverage.Attribute("line-rate")?.Value ?? "0");
-            var branchRate = double.Parse(coverage.Attribute("branch-rate")?.Value ?? "0");
-            var linesTotal = int.Parse(coverage.Attribute("lines-valid")?.Value ?? "0");
-            var linesCovered = int.Parse(coverage.Attribute("lines-covered")?.Value ?? "0");
-            var branchesTotal = int.Parse(coverage.Attribute("branches-valid")?.Value ?? "0");
-            var branchesCovered = int.Parse(coverage.Attribute("branches-covered")?.Value ?? "0");
+            var lineRate = double.Parse(coverage.Attribute("line-rate")?.Value ?? "0", CultureInfo.InvariantCulture);
+            var branchRate = double.Parse(coverage.Attribute("branch-rate")?.Value ?? "0", CultureInfo.InvariantCulture);
+            var linesTotal = int.Parse(coverage.Attribute("lines-valid")?.Value ?? "0", CultureInfo.InvariantCulture);
+            var linesCovered = int.Parse(coverage.Attribute("lines-covered")?.Value ?? "0", CultureInfo.InvariantCulture);
+            var branchesTotal = int.Parse(coverage.Attribute("branches-valid")?.Value ?? "0", CultureInfo.InvariantCulture);
+            var branchesCovered = int.Parse(coverage.Attribute("branches-covered")?.Value ?? "0", CultureInfo.InvariantCulture);
 
             // Extract project name from file path
             var projectName = ExtractProjectName(filePath);
@@ -150,7 +157,7 @@ internal class CoverageAnalyzer
         {
             var doc = await Task.Run(() => XDocument.Load(filePath));
             var methods = doc.Descendants("method")
-                .Where(m => double.Parse(m.Attribute("line-rate")?.Value ?? "1") == 0)
+                .Where(m => double.Parse(m.Attribute("line-rate")?.Value ?? "1", CultureInfo.InvariantCulture) == 0)
                 .Select(m => $"{m.Parent?.Parent?.Attribute("name")?.Value}.{m.Attribute("name")?.Value}")
                 .Where(name => !string.IsNullOrEmpty(name))
                 .Take(20) // Limit to prevent overwhelming output
@@ -210,7 +217,7 @@ internal class CoverageAnalyzer
 
         // Project-specific recommendations
         var coreProjects = byProject.Where(p =>
-            p.Key.Contains("Core") || p.Key.Contains("Abstractions")).ToList();
+            p.Key.Contains("Core", StringComparison.OrdinalIgnoreCase) || p.Key.Contains("Abstractions", StringComparison.OrdinalIgnoreCase)).ToList();
 
         foreach (var project in coreProjects)
         {
@@ -221,14 +228,14 @@ internal class CoverageAnalyzer
         }
 
         // Hardware project recommendations
-        var hardwareProjects = byProject.Where(p => p.Key.Contains("Hardware")).ToList();
+        var hardwareProjects = byProject.Where(p => p.Key.Contains("Hardware", StringComparison.OrdinalIgnoreCase)).ToList();
         if (hardwareProjects.Count != 0 && hardwareProjects.Average(p => p.Value.LineRate) * 100 < 60)
         {
             recommendations.Add("Consider adding more mock-based tests for hardware components");
         }
 
         // Integration test recommendations
-        var integrationProjects = byProject.Where(p => p.Key.Contains("Integration")).ToList();
+        var integrationProjects = byProject.Where(p => p.Key.Contains("Integration", StringComparison.OrdinalIgnoreCase)).ToList();
         if (integrationProjects.Count != 0 && integrationProjects.Average(p => p.Value.LineRate) * 100 < 70)
         {
             recommendations.Add("Add more end-to-end integration test scenarios");
@@ -247,13 +254,13 @@ internal class CoverageAnalyzer
         var report = new StringBuilder();
 
         report.AppendLine("# DotCompute Code Coverage Analysis Report");
-        report.AppendLine($"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
+        report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}"));
         report.AppendLine();
 
         // Overall metrics
         report.AppendLine("## Overall Coverage Metrics");
-        report.AppendLine($"- Line Coverage: {analysis.Overall.LineRate:P2} ({analysis.Overall.LinesCovered:N0}/{analysis.Overall.LinesTotal:N0})");
-        report.AppendLine($"- Branch Coverage: {analysis.Overall.BranchRate:P2} ({analysis.Overall.BranchesCovered:N0}/{analysis.Overall.BranchesTotal:N0})");
+        report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- Line Coverage: {analysis.Overall.LineRate:P2} ({analysis.Overall.LinesCovered:N0}/{analysis.Overall.LinesTotal:N0})"));
+        report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- Branch Coverage: {analysis.Overall.BranchRate:P2} ({analysis.Overall.BranchesCovered:N0}/{analysis.Overall.BranchesTotal:N0})"));
         report.AppendLine();
 
         // By project
@@ -266,7 +273,7 @@ internal class CoverageAnalyzer
             foreach (var project in analysis.ByProject.OrderBy(p => p.Key))
             {
                 var p = project.Value;
-                report.AppendLine($"| {project.Key} | {p.LineRate:P1} | {p.BranchRate:P1} | {p.LinesCovered:N0}/{p.LinesTotal:N0} | {p.BranchesCovered:N0}/{p.BranchesTotal:N0} |");
+                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"| {project.Key} | {p.LineRate:P1} | {p.BranchRate:P1} | {p.LinesCovered:N0}/{p.LinesTotal:N0} | {p.BranchesCovered:N0}/{p.BranchesTotal:N0} |"));
             }
             report.AppendLine();
         }
@@ -277,7 +284,7 @@ internal class CoverageAnalyzer
             report.AppendLine("## Areas Needing Attention");
             foreach (var area in analysis.LowCoverageAreas)
             {
-                report.AppendLine($"- {area}");
+                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- {area}"));
             }
             report.AppendLine();
         }
@@ -288,11 +295,11 @@ internal class CoverageAnalyzer
             report.AppendLine("## Uncovered Methods (Sample)");
             foreach (var method in analysis.UncoveredMethods.Take(20))
             {
-                report.AppendLine($"- {method}");
+                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- {method}"));
             }
             if (analysis.UncoveredMethods.Count > 20)
             {
-                report.AppendLine($"... and {analysis.UncoveredMethods.Count - 20} more");
+                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"... and {analysis.UncoveredMethods.Count - 20} more"));
             }
             report.AppendLine();
         }
@@ -303,25 +310,21 @@ internal class CoverageAnalyzer
             report.AppendLine("## Recommendations");
             foreach (var recommendation in analysis.Recommendations)
             {
-                report.AppendLine($"- {recommendation}");
+                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- {recommendation}"));
             }
             report.AppendLine();
         }
 
         await File.WriteAllTextAsync(outputPath, report.ToString());
-        Console.WriteLine($"Coverage analysis report generated: {outputPath}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Coverage analysis report generated: {outputPath}"));
     }
 
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("JSON serialization may require types that cannot be statically analyzed.")]
+    [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("JSON serialization may require runtime code generation.")]
     public static async Task GenerateJsonReportAsync(CoverageAnalysis analysis, string outputPath)
     {
-        var options = new JsonSerializerOptions
-        {
-            WriteIndented = true,
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        };
-
-        var json = JsonSerializer.Serialize(analysis, options);
+        var json = JsonSerializer.Serialize(analysis, JsonOptions);
         await File.WriteAllTextAsync(outputPath, json);
-        Console.WriteLine($"Coverage JSON report generated: {outputPath}");
+        Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Coverage JSON report generated: {outputPath}"));
     }
 }

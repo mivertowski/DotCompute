@@ -14,7 +14,7 @@ namespace DotCompute.Core.Tests.Simple;
 /// Simplified comprehensive unit tests for kernel compilers with 90% coverage target.
 /// Tests compilation, validation, and error handling for DirectCompute and OpenCL compilers.
 /// </summary>
-public class KernelCompilerSimpleTests : IDisposable
+public sealed class KernelCompilerSimpleTests : IDisposable
 {
     private readonly Mock<ILogger<DirectComputeKernelCompiler>> _mockDirectComputeLogger;
     private readonly Mock<ILogger<OpenCLKernelCompiler>> _mockOpenCLLogger;
@@ -46,7 +46,7 @@ public class KernelCompilerSimpleTests : IDisposable
     public void DirectComputeCompiler_Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act = () => new DirectComputeKernelCompiler(null!);
+        Action act = () => _ = new DirectComputeKernelCompiler(null!);
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -131,7 +131,7 @@ public class KernelCompilerSimpleTests : IDisposable
     public void OpenCLCompiler_Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act = () => new OpenCLKernelCompiler(null!);
+        Action act = () => _ = new OpenCLKernelCompiler(null!);
         act.Should().Throw<ArgumentNullException>();
     }
 
@@ -244,7 +244,7 @@ public class KernelCompilerSimpleTests : IDisposable
         var openCLDefinition = CreateOpenCLKernelDefinition("CancelledOCL");
 
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act & Assert
         await _directComputeCompiler.Invoking(async c => await c.CompileAsync(directComputeDefinition, default, cts.Token))
@@ -359,6 +359,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         if (!_disposed)
         {
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }
@@ -366,7 +367,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
 /// <summary>
 /// Tests for memory interface contracts and usage patterns.
 /// </summary>
-public class CoreMemoryInterfaceTests
+public sealed class CoreMemoryInterfaceTests
 {
     #region Interface Contract Tests
 

@@ -16,16 +16,23 @@ namespace DotCompute.Tests.Hardware.Unit;
 /// Unit tests for CUDA accelerator lifecycle management and operations
 /// </summary>
 [Collection("CUDA Hardware Tests")]
-public class CudaAcceleratorTests : IDisposable
+public sealed class CudaAcceleratorTests : IDisposable
 {
     private readonly ILogger<CudaAcceleratorTests> _logger;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
 
+    // LoggerMessage delegate for performance
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(1, nameof(LogAcceleratorDisposeError)),
+            "Error disposing CUDA accelerator: {Exception}");
+
     public CudaAcceleratorTests(ITestOutputHelper output)
     {
         _output = output;
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         _logger = loggerFactory.CreateLogger<CudaAcceleratorTests>();
     }
 
@@ -38,7 +45,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -75,7 +83,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable() || !IsNvrtcAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -99,7 +108,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -117,7 +127,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable() || !IsNvrtcAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -145,7 +156,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -162,7 +174,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -183,7 +196,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -201,7 +215,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -229,7 +244,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -250,7 +266,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -280,7 +297,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -355,7 +373,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -390,7 +409,8 @@ public class CudaAcceleratorTests : IDisposable
             // Act - Create accelerators for different devices
             for (var deviceId = 0; deviceId < Math.Min(deviceCount, 3); deviceId++)
             {
-                var cudaLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<CudaAccelerator>();
+                using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+                var cudaLogger = loggerFactory.CreateLogger<CudaAccelerator>();
                 var accelerator = new CudaAccelerator(deviceId, cudaLogger);
                 accelerators.Add(accelerator);
                 _accelerators.Add(accelerator);
@@ -418,7 +438,8 @@ public class CudaAcceleratorTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -495,9 +516,10 @@ __global__ void test_kernel(float* input, float* output, int n)
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA accelerator");
+                LogAcceleratorDisposeError(_logger, ex, null);
             }
         }
         _accelerators.Clear();
+        GC.SuppressFinalize(this);
     }
 }

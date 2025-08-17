@@ -3,6 +3,7 @@ using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -10,9 +11,10 @@ namespace DotCompute.Benchmarks;
 [ThreadingDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
-internal class MemoryAllocationBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class MemoryAllocationBenchmarks : IDisposable
 {
-    private IAcceleratorManager _acceleratorManager = null!;
+    private DefaultAcceleratorManager? _acceleratorManager;
     private IAccelerator _accelerator = null!;
     private IMemoryManager _memoryManager = null!;
 
@@ -34,7 +36,13 @@ internal class MemoryAllocationBenchmarks
     }
 
     [GlobalCleanup]
-    public async Task Cleanup() => await _acceleratorManager.DisposeAsync();
+    public async Task Cleanup()
+    {
+        if (_acceleratorManager != null)
+        {
+            await _acceleratorManager.DisposeAsync();
+        }
+    }
 
     [Benchmark(Baseline = true)]
     public async Task<IMemoryBuffer> AllocateBuffer()
@@ -48,7 +56,9 @@ internal class MemoryAllocationBenchmarks
     public async Task<IMemoryBuffer> AllocateAndCopyBuffer()
     {
         var data = new byte[BufferSize];
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         Random.Shared.NextBytes(data);
+#pragma warning restore CA5394
 
         var buffer = await _memoryManager.AllocateAndCopyAsync<byte>(data);
         await buffer.DisposeAsync();
@@ -76,7 +86,9 @@ internal class MemoryAllocationBenchmarks
     public async Task AllocateCopyAndReadBack()
     {
         var data = new byte[BufferSize];
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         Random.Shared.NextBytes(data);
+#pragma warning restore CA5394
 
         var buffer = await _memoryManager.AllocateAndCopyAsync<byte>(data);
 
@@ -84,5 +96,30 @@ internal class MemoryAllocationBenchmarks
         await buffer.CopyToHostAsync<byte>(result);
 
         await buffer.DisposeAsync();
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            Cleanup().GetAwaiter().GetResult();
+            if (_accelerator != null)
+            {
+                var task = _accelerator.DisposeAsync();
+                if (task.IsCompleted)
+                {
+                    task.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    task.AsTask().Wait();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+        GC.SuppressFinalize(this);
     }
 }

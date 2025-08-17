@@ -18,8 +18,64 @@ namespace DotCompute.Samples.CpuKernelCompilationExample;
 /// This sample uses mock implementations to showcase the DotCompute.Abstractions API patterns
 /// without requiring the full backend infrastructure.
 /// </summary>
-internal class Program
+internal sealed class Program
 {
+    // Logger message delegates for performance and CA1848 compliance
+    private static readonly Action<ILogger, string, Exception?> LogCreatedAccelerator =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(1, nameof(LogCreatedAccelerator)),
+            "Created CPU accelerator: {Name}");
+
+    private static readonly Action<ILogger, Exception?> LogVectorAdditionHeader =
+        LoggerMessage.Define(LogLevel.Information, new EventId(2, nameof(LogVectorAdditionHeader)),
+            "\n=== Vector Addition Example ===");
+
+    private static readonly Action<ILogger, long, Exception?> LogKernelCompiled =
+        LoggerMessage.Define<long>(LogLevel.Information, new EventId(3, nameof(LogKernelCompiled)),
+            "Kernel compiled in {Time}ms");
+
+    private static readonly Action<ILogger, string, Exception?> LogKernelCompiledSuccessfully =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(4, nameof(LogKernelCompiledSuccessfully)),
+            "Kernel compiled successfully: {Name}");
+
+    private static readonly Action<ILogger, Exception?> LogKernelReady =
+        LoggerMessage.Define(LogLevel.Information, new EventId(5, nameof(LogKernelReady)),
+            "Kernel ready for execution");
+
+    private static readonly Action<ILogger, long, Exception?> LogKernelExecuted =
+        LoggerMessage.Define<long>(LogLevel.Information, new EventId(6, nameof(LogKernelExecuted)),
+            "Kernel executed in {Time}ms");
+
+    private static readonly Action<ILogger, double, Exception?> LogThroughput =
+        LoggerMessage.Define<double>(LogLevel.Information, new EventId(7, nameof(LogThroughput)),
+            "Throughput: {Throughput:F2} GB/s");
+
+    private static readonly Action<ILogger, int, float, float, Exception?> LogMismatch =
+        LoggerMessage.Define<int, float, float>(LogLevel.Error, new EventId(8, nameof(LogMismatch)),
+            "Mismatch at index {Index}: expected {Expected}, got {Actual}");
+
+    private static readonly Action<ILogger, Exception?> LogVerificationSuccess =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9, nameof(LogVerificationSuccess)),
+            "✓ Vector addition results verified successfully!");
+
+    private static readonly Action<ILogger, Exception?> LogMatrixMultiplicationHeader =
+        LoggerMessage.Define(LogLevel.Information, new EventId(10, nameof(LogMatrixMultiplicationHeader)),
+            "\n=== Matrix Multiplication Example ===");
+
+    private static readonly Action<ILogger, Exception?> LogMatrixKernelCompiled =
+        LoggerMessage.Define(LogLevel.Information, new EventId(11, nameof(LogMatrixKernelCompiled)),
+            "Matrix multiplication kernel compiled");
+
+    private static readonly Action<ILogger, Exception?> LogOptimizationHeader =
+        LoggerMessage.Define(LogLevel.Information, new EventId(12, nameof(LogOptimizationHeader)),
+            "\n=== Optimization Level Comparison ===");
+
+    private static readonly Action<ILogger, string, long, Exception?> LogOptimizationLevel =
+        LoggerMessage.Define<string, long>(LogLevel.Information, new EventId(13, nameof(LogOptimizationLevel)),
+            "Optimization {Level}: Compiled in {Time}ms");
+
+    private static readonly Action<ILogger, string, string, Exception?> LogKernelOptimization =
+        LoggerMessage.Define<string, string>(LogLevel.Information, new EventId(14, nameof(LogKernelOptimization)),
+            "  Kernel {Name} compiled with {Level} optimization");
     private static async Task Main(string[] args)
     {
         // Setup services
@@ -27,14 +83,14 @@ internal class Program
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
         services.AddSingleton<IAcceleratorProvider, MockCpuAcceleratorProvider>();
 
-        var serviceProvider = services.BuildServiceProvider();
+        using var serviceProvider = services.BuildServiceProvider();
         var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
         var acceleratorProvider = serviceProvider.GetRequiredService<IAcceleratorProvider>();
 
         // Discover and create CPU accelerator
         var accelerators = await acceleratorProvider.DiscoverAsync();
-        var accelerator = accelerators.First();
-        logger.LogInformation("Created CPU accelerator: {Name}", accelerator.Info.Name);
+        await using var accelerator = accelerators.First();
+        LogCreatedAccelerator(logger, accelerator.Info.Name, null);
 
         // Example 1: Simple vector addition kernel
         await RunVectorAdditionExample(accelerator, logger);
@@ -44,14 +100,11 @@ internal class Program
 
         // Example 3: Custom math kernel with optimization levels
         await RunOptimizationLevelComparison(accelerator, logger);
-
-        // Cleanup
-        await accelerator.DisposeAsync();
     }
 
     private static async Task RunVectorAdditionExample(IAccelerator accelerator, ILogger logger)
     {
-        logger.LogInformation("\n=== Vector Addition Example ===");
+        LogVectorAdditionHeader(logger, null);
 
         // Define kernel source
         var kernelSource = @"
@@ -77,12 +130,12 @@ internal class Program
         var kernelDefinition = new KernelDefinition("vector_add", textKernelSource, compilationOptions);
 
         var stopwatch = Stopwatch.StartNew();
-        var compiledKernel = await accelerator.CompileKernelAsync(kernelDefinition, compilationOptions);
+        await using var compiledKernel = await accelerator.CompileKernelAsync(kernelDefinition, compilationOptions);
         stopwatch.Stop();
 
-        logger.LogInformation("Kernel compiled in {Time}ms", stopwatch.ElapsedMilliseconds);
-        logger.LogInformation("Kernel compiled successfully: {Name}", compiledKernel.Name);
-        logger.LogInformation("Kernel ready for execution");
+        LogKernelCompiled(logger, stopwatch.ElapsedMilliseconds, null);
+        LogKernelCompiledSuccessfully(logger, compiledKernel.Name, null);
+        LogKernelReady(logger, null);
 
         // Prepare test data
         const int vectorSize = 1024 * 1024; // 1M elements
@@ -91,17 +144,20 @@ internal class Program
         var c = new float[vectorSize];
 
         // Initialize input data
+        // Random used for non-cryptographic test data generation
+#pragma warning disable CA5394 // Do not use insecure randomness
         var random = new Random(42);
         for (var i = 0; i < vectorSize; i++)
         {
             a[i] = (float)random.NextDouble();
             b[i] = (float)random.NextDouble();
         }
+#pragma warning restore CA5394 // Do not use insecure randomness
 
         // Allocate device memory
-        var bufferA = await accelerator.Memory.AllocateAsync(vectorSize * sizeof(float));
-        var bufferB = await accelerator.Memory.AllocateAsync(vectorSize * sizeof(float));
-        var bufferC = await accelerator.Memory.AllocateAsync(vectorSize * sizeof(float));
+        using var bufferA = await accelerator.Memory.AllocateAsync(vectorSize * sizeof(float));
+        using var bufferB = await accelerator.Memory.AllocateAsync(vectorSize * sizeof(float));
+        using var bufferC = await accelerator.Memory.AllocateAsync(vectorSize * sizeof(float));
 
         // Copy data to device
         await bufferA.CopyFromHostAsync<float>(a.AsMemory());
@@ -115,9 +171,8 @@ internal class Program
         await accelerator.SynchronizeAsync();
         stopwatch.Stop();
 
-        logger.LogInformation("Kernel executed in {Time}ms", stopwatch.ElapsedMilliseconds);
-        logger.LogInformation("Throughput: {Throughput:F2} GB/s",
-            (3.0 * vectorSize * sizeof(float)) / (stopwatch.Elapsed.TotalSeconds * 1e9));
+        LogKernelExecuted(logger, stopwatch.ElapsedMilliseconds, null);
+        LogThroughput(logger, (3.0 * vectorSize * sizeof(float)) / (stopwatch.Elapsed.TotalSeconds * 1e9), null);
 
         // Copy results back
         await bufferC.CopyToHostAsync<float>(c.AsMemory());
@@ -130,26 +185,19 @@ internal class Program
             if (Math.Abs(c[i] - expected) > 1e-6f)
             {
                 correct = false;
-                logger.LogError("Mismatch at index {Index}: expected {Expected}, got {Actual}",
-                    i, expected, c[i]);
+                LogMismatch(logger, i, expected, c[i], null);
             }
         }
 
         if (correct)
         {
-            logger.LogInformation("✓ Vector addition results verified successfully!");
+            LogVerificationSuccess(logger, null);
         }
-
-        // Cleanup
-        await bufferA.DisposeAsync();
-        await bufferB.DisposeAsync();
-        await bufferC.DisposeAsync();
-        await compiledKernel.DisposeAsync();
     }
 
     private static async Task RunMatrixMultiplicationExample(IAccelerator accelerator, ILogger logger)
     {
-        logger.LogInformation("\n=== Matrix Multiplication Example ===");
+        LogMatrixMultiplicationHeader(logger, null);
 
         // Define kernel for matrix multiplication
         var kernelSource = @"
@@ -172,16 +220,15 @@ internal class Program
 
         var kernelDefinition = new KernelDefinition("matrix_multiply", textKernelSource, new CompilationOptions());
 
-        var compiledKernel = await accelerator.CompileKernelAsync(kernelDefinition);
-        logger.LogInformation("Matrix multiplication kernel compiled");
+        await using var compiledKernel = await accelerator.CompileKernelAsync(kernelDefinition);
+        LogMatrixKernelCompiled(logger, null);
 
         // For brevity, actual execution is omitted
-        await compiledKernel.DisposeAsync();
     }
 
     private static async Task RunOptimizationLevelComparison(IAccelerator accelerator, ILogger logger)
     {
-        logger.LogInformation("\n=== Optimization Level Comparison ===");
+        LogOptimizationHeader(logger, null);
 
         var textKernelSource = new TextKernelSource(
             code: "c[i] = sqrt(a[i] * a[i] + b[i] * b[i]);",
@@ -209,16 +256,13 @@ internal class Program
             };
 
             var stopwatch = Stopwatch.StartNew();
-            var kernel = await accelerator.CompileKernelAsync(kernelDefinition, options);
+            await using var kernel = await accelerator.CompileKernelAsync(kernelDefinition, options);
             stopwatch.Stop();
 
-            logger.LogInformation("Optimization {Level}: Compiled in {Time}ms",
-                name, stopwatch.ElapsedMilliseconds);
+            LogOptimizationLevel(logger, name, stopwatch.ElapsedMilliseconds, null);
 
             // Log optimization information
-            logger.LogInformation("  Kernel {Name} compiled with {Level} optimization", kernel.Name, name);
-
-            await kernel.DisposeAsync();
+            LogKernelOptimization(logger, kernel.Name, name, null);
         }
     }
 }
@@ -226,24 +270,32 @@ internal class Program
 /// <summary>
 /// Simple mock implementation for demonstration purposes.
 /// </summary>
-internal class MockCpuAcceleratorProvider : IAcceleratorProvider
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", 
+    Justification = "This class is instantiated via dependency injection")]
+internal sealed class MockCpuAcceleratorProvider : IAcceleratorProvider
 {
     public string Name => "Mock CPU Provider";
     public AcceleratorType[] SupportedTypes => [AcceleratorType.CPU];
 
     public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken cancellationToken = default)
     {
-        var accelerator = new MockCpuAccelerator();
+        // CA2000: Ownership is transferred to caller - they are responsible for disposal
+#pragma warning disable CA2000 // Dispose objects before losing scope
+        IAccelerator accelerator = new MockCpuAccelerator();
+#pragma warning restore CA2000 // Dispose objects before losing scope
         return ValueTask.FromResult<IEnumerable<IAccelerator>>([accelerator]);
     }
 
+    // CA2000: Ownership is transferred to caller - they are responsible for disposal
+#pragma warning disable CA2000 // Dispose objects before losing scope
     public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default) => ValueTask.FromResult<IAccelerator>(new MockCpuAccelerator());
+#pragma warning restore CA2000 // Dispose objects before losing scope
 }
 
 /// <summary>
 /// Simple mock CPU accelerator for demonstration.
 /// </summary>
-internal class MockCpuAccelerator : IAccelerator
+internal sealed class MockCpuAccelerator : IAccelerator
 {
     private readonly AcceleratorInfo _info;
     private readonly MockMemoryManager _memory;
@@ -299,7 +351,7 @@ internal class MockCpuAccelerator : IAccelerator
 /// <summary>
 /// Simple mock memory manager.
 /// </summary>
-internal class MockMemoryManager : IMemoryManager, IDisposable
+internal sealed class MockMemoryManager : IMemoryManager, IDisposable
 {
     private readonly List<MockMemoryBuffer> _buffers = [];
 
@@ -382,7 +434,7 @@ internal class MockMemoryManager : IMemoryManager, IDisposable
 /// <summary>
 /// Simple mock memory buffer.
 /// </summary>
-internal class MockMemoryBuffer : IMemoryBuffer
+internal sealed class MockMemoryBuffer : IMemoryBuffer
 {
     private readonly byte[] _data;
     private bool _disposed;
@@ -438,7 +490,7 @@ internal class MockMemoryBuffer : IMemoryBuffer
 /// <summary>
 /// Mock memory buffer view.
 /// </summary>
-internal class MockMemoryBufferView : IMemoryBuffer
+internal sealed class MockMemoryBufferView : IMemoryBuffer
 {
     private readonly MockMemoryBuffer _parent;
     private readonly long _offset;
@@ -476,7 +528,7 @@ internal class MockMemoryBufferView : IMemoryBuffer
 /// <summary>
 /// Simple mock compiled kernel.
 /// </summary>
-internal class MockCompiledKernel : ICompiledKernel
+internal sealed class MockCompiledKernel : ICompiledKernel
 {
     public string Name { get; }
 
@@ -493,11 +545,9 @@ internal class MockCompiledKernel : ICompiledKernel
         // For demonstration, if this is a vector addition kernel, perform the operation
         if (Name == "vector_add" && arguments.Length >= 3)
         {
-            var bufferA = arguments.Get(0) as MockMemoryBuffer;
-            var bufferB = arguments.Get(1) as MockMemoryBuffer;
-            var bufferC = arguments.Get(2) as MockMemoryBuffer;
-
-            if (bufferA != null && bufferB != null && bufferC != null)
+            if (arguments.Get(0) is MockMemoryBuffer bufferA &&
+                arguments.Get(1) is MockMemoryBuffer &&
+                arguments.Get(2) is MockMemoryBuffer)
             {
                 // Simple mock vector addition simulation
                 // In a real implementation, this would perform actual computation

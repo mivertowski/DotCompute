@@ -87,6 +87,9 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(source);
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        
+        // Check for cancellation before proceeding
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (typeof(TData) != typeof(T))
         {
@@ -98,6 +101,10 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
             await _underlyingBuffer.CopyFromHostAsync<TData>(source, offset, cancellationToken);
             _logger.LogTrace("Host to P2P buffer copy completed: {Bytes} bytes to {Device}", 
                 source.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
+        }
+        catch (OperationCanceledException)
+        {
+            throw; // Re-throw cancellation exceptions
         }
         catch (Exception ex)
         {
@@ -140,6 +147,9 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(destination);
         ArgumentOutOfRangeException.ThrowIfNegative(offset);
+        
+        // Check for cancellation before proceeding
+        cancellationToken.ThrowIfCancellationRequested();
 
         if (typeof(TData) != typeof(T))
         {
@@ -151,6 +161,10 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
             await _underlyingBuffer.CopyToHostAsync<TData>(destination, offset, cancellationToken);
             _logger.LogTrace("P2P buffer to host copy completed: {Bytes} bytes from {Device}", 
                 destination.Length * Unsafe.SizeOf<TData>(), _accelerator.Info.Name);
+        }
+        catch (OperationCanceledException)
+        {
+            throw; // Re-throw cancellation exceptions
         }
         catch (Exception ex)
         {
@@ -369,7 +383,23 @@ public sealed class P2PBuffer<T> : IBuffer<T>, IAsyncDisposable where T : unmana
     {
         ThrowIfDisposed();
 
-        var newElementCount = (int)(SizeInBytes / Unsafe.SizeOf<TNew>());
+        // For same-size types, maintain the same element count
+        // For different-size types, calculate new element count based on total bytes
+        var oldElementSize = Unsafe.SizeOf<T>();
+        var newElementSize = Unsafe.SizeOf<TNew>();
+        
+        int newElementCount;
+        if (oldElementSize == newElementSize)
+        {
+            // Same size types - preserve element count
+            newElementCount = Length;
+        }
+        else
+        {
+            // Different size types - recalculate based on total bytes
+            newElementCount = (int)(SizeInBytes / newElementSize);
+        }
+        
         return new P2PBuffer<TNew>(_underlyingBuffer, _accelerator, newElementCount, _supportsDirectP2P, _logger);
     }
 

@@ -17,7 +17,7 @@ namespace DotCompute.Tests.Unit;
 /// <summary>
 /// Tests for plugin lifecycle management, including initialization, startup, shutdown, and error handling.
 /// </summary>
-public class PluginLifecycleTests : IDisposable
+public sealed class PluginLifecycleTests : IDisposable
 {
     private readonly ILogger<PluginSystem> _logger;
     private readonly PluginSystem _pluginSystem;
@@ -86,10 +86,11 @@ public class PluginLifecycleTests : IDisposable
     public async Task PluginLifecycle_WithFailure_HandlesGracefully()
     {
         // Arrange
-        var plugin = new FailingLifecycleTestPlugin();
+        using var plugin = new FailingLifecycleTestPlugin();
 
         // Act & Assert - Plugin fails during initialization
-        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask())
+        await FluentActions.Awaiting(() => plugin.InitializeAsync(_serviceProvider))
+            .Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("Initialization failed");
 
         plugin.State.Should().Be(PluginState.Failed);
@@ -100,11 +101,12 @@ public class PluginLifecycleTests : IDisposable
     public async Task PluginLifecycle_WithTimeout_HandlesCorrectly()
     {
         // Arrange
-        var plugin = new SlowLifecycleTestPlugin();
+        using var plugin = new SlowLifecycleTestPlugin();
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => FluentActions.MethodCall().AsTask());
+        await FluentActions.Awaiting(() => plugin.InitializeAsync(_serviceProvider, cts.Token))
+            .Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -114,14 +116,16 @@ public class PluginLifecycleTests : IDisposable
         var plugin = new LifecycleTestPlugin();
 
         // Act & Assert - Cannot start without initializing
-        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask())
+        await FluentActions.Awaiting(() => plugin.StartAsync())
+            .Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Cannot start plugin in state*");
 
         // Initialize first
         await plugin.InitializeAsync(_serviceProvider);
 
         // Cannot initialize twice
-        await Assert.ThrowsAsync<InvalidOperationException>(() => FluentActions.MethodCall().AsTask())
+        await FluentActions.Awaiting(() => plugin.InitializeAsync(_serviceProvider))
+            .Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Cannot initialize plugin in state*");
     }
 
@@ -146,12 +150,12 @@ public class PluginLifecycleTests : IDisposable
         await plugin.StopAsync();
 
         // Assert
-        stateChangedEvents.HaveCountGreaterThan(0);
-        healthChangedEvents.HaveCountGreaterThan(0);
-        Assert.Equal(1, errorEvents.Count());
+        stateChangedEvents.Should().HaveCountGreaterThan(0);
+        healthChangedEvents.Should().HaveCountGreaterThan(0);
+        Assert.Single(errorEvents);
 
         var errorEvent = errorEvents.First();
-        errorEvent.Assert.IsType<InvalidOperationException>(Exception);
+        errorEvent.Exception.Should().BeOfType<InvalidOperationException>();
         errorEvent.Context.Should().Be("Test context");
     }
 
@@ -168,11 +172,11 @@ public class PluginLifecycleTests : IDisposable
 
         // Assert
         validResult.IsValid.Should().BeTrue();
-        validResult.Assert.Empty(Errors);
+        validResult.Errors.Should().BeEmpty();
 
         invalidResult.IsValid.Should().BeFalse();
         invalidResult.Errors.Should().NotBeEmpty();
-        invalidResult.Assert.Contains("Plugin name is required", Errors);
+        invalidResult.Errors.Should().Contain("Plugin name is required");
     }
 
     [Fact]
@@ -214,8 +218,8 @@ public class PluginLifecycleTests : IDisposable
         }
 
         // Assert
-        await FluentActions.Invoking(() => Task.WhenAll(tasks))
-            .NotThrowAsync();
+        await FluentActions.Awaiting(() => Task.WhenAll(tasks))
+            .Should().NotThrowAsync();
     }
 
     [Fact]
@@ -236,8 +240,8 @@ public class PluginLifecycleTests : IDisposable
         plugin.Dispose();
 
         // Assert
-        await FluentActions.Invoking(() => longTask)
-            .NotThrowAsync();
+        await FluentActions.Awaiting(() => longTask)
+            .Should().NotThrowAsync();
 
         plugin.DisposeCalled.Should().BeTrue();
     }
@@ -255,8 +259,8 @@ public class PluginLifecycleTests : IDisposable
         schema.Should().NotBeNullOrEmpty();
 
         // Should be valid JSON (at least parseable)
-        Action parseJson = () => System.Text.Json.JsonDocument.Parse(schema);
-        parseJson(); // Should not throw
+        FluentActions.Invoking(() => System.Text.Json.JsonDocument.Parse(schema))
+            .Should().NotThrow();
     }
 
     public void Dispose()
@@ -265,7 +269,7 @@ public class PluginLifecycleTests : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    protected virtual void Dispose(bool disposing)
+    private void Dispose(bool disposing)
     {
         if (_disposed)
             return;
@@ -413,7 +417,7 @@ public class PluginLifecycleTests : IDisposable
 /// <summary>
 /// Tests for plugin security and isolation.
 /// </summary>
-public class PluginSecurityTests
+public sealed class PluginSecurityTests
 {
     [Fact]
     public void PluginSecurityException_WithSecurityViolation_ContainsDetails()
@@ -436,7 +440,7 @@ public class PluginSecurityTests
     public void Plugin_CannotAccessSystemResources_WithoutPermission()
     {
         // Arrange
-        var plugin = new RestrictedTestPlugin();
+        using var plugin = new RestrictedTestPlugin();
 
         // Act & Assert - Plugin should be designed to not access restricted resources
         plugin.Validate().IsValid.Should().BeTrue();
@@ -447,7 +451,7 @@ public class PluginSecurityTests
     public void Plugin_ConfigurationAccess_IsControlled()
     {
         // Arrange
-        var plugin = new RestrictedTestPlugin();
+        using var plugin = new RestrictedTestPlugin();
         var config = Substitute.For<IConfiguration>();
         config["AllowedSetting"].Returns("value");
 
@@ -456,14 +460,14 @@ public class PluginSecurityTests
 
         // Assert
         Assert.NotNull(task);
-        FluentActions.Invoking(() => task.Wait()).NotThrow();
+        FluentActions.Invoking(() => task.Wait()).Should().NotThrow();
     }
 
     [Fact]
     public void Plugin_ServiceRegistration_IsControlled()
     {
         // Arrange
-        var plugin = new RestrictedTestPlugin();
+        using var plugin = new RestrictedTestPlugin();
         var services = new ServiceCollection();
         var config = Substitute.For<IConfiguration>();
 
@@ -494,7 +498,7 @@ public class PluginSecurityTests
         protected override Task OnConfigurationUpdatedAsync(IConfiguration configuration, CancellationToken cancellationToken)
         {
             // Only access allowed configuration settings
-            var allowedSetting = configuration["AllowedSetting"];
+            _ = configuration["AllowedSetting"];
             return Task.CompletedTask;
         }
     }

@@ -1,11 +1,12 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -17,13 +18,32 @@ namespace DotCompute.Tests.Hardware.Integration;
 /// End-to-end integration tests for the complete CUDA pipeline
 /// </summary>
 [Collection("CUDA Hardware Tests")]
-public class CudaEndToEndTests : IDisposable
+public sealed class CudaEndToEndTests : IDisposable
 {
     private readonly ILogger<CudaEndToEndTests> _logger;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
     private readonly List<ISyncMemoryBuffer> _buffers = [];
     private readonly List<ICompiledKernel> _kernels = [];
+
+    // LoggerMessage delegates for performance
+    private static readonly Action<ILogger, Exception, Exception?> LogKernelDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(1, nameof(LogKernelDisposeError)),
+            "Error disposing compiled kernel: {Exception}");
+
+    private static readonly Action<ILogger, Exception, Exception?> LogBufferDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(2, nameof(LogBufferDisposeError)),
+            "Error disposing CUDA buffer: {Exception}");
+
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(3, nameof(LogAcceleratorDisposeError)),
+            "Error disposing CUDA accelerator: {Exception}");
 
     public CudaEndToEndTests(ITestOutputHelper output)
     {
@@ -254,7 +274,7 @@ public class CudaEndToEndTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        Assert.Equal(arraySize, outputData.Count());
+        Assert.Equal(arraySize, outputData.Length);
         outputData.Should().NotContainNulls();
 
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(30000,
@@ -435,7 +455,7 @@ public class CudaEndToEndTests : IDisposable
     // Helper Methods
     private CudaAccelerator CreateAccelerator()
     {
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         var cudaLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, cudaLogger);
         _accelerators.Add(accelerator);
@@ -556,7 +576,7 @@ __global__ void {name}(float* input, float* output, int n)
 {{
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx < n) {{
-        output[idx] = input[idx] + {name.GetHashCode() % 100};
+        output[idx] = input[idx] + {name.GetHashCode(StringComparison.Ordinal) % 100};
     }}
 }}";
         return new KernelDefinition
@@ -592,7 +612,7 @@ __global__ void {name}(float* input, float* output, int n)
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing compiled kernel");
+                LogKernelDisposeError(_logger, ex, null);
             }
         }
         _kernels.Clear();
@@ -609,7 +629,7 @@ __global__ void {name}(float* input, float* output, int n)
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA buffer");
+                LogBufferDisposeError(_logger, ex, null);
             }
         }
         _buffers.Clear();
@@ -622,9 +642,10 @@ __global__ void {name}(float* input, float* output, int n)
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA accelerator");
+                LogAcceleratorDisposeError(_logger, ex, null);
             }
         }
         _accelerators.Clear();
+        GC.SuppressFinalize(this);
     }
 }

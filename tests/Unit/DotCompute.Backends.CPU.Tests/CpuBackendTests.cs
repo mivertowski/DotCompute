@@ -11,7 +11,7 @@ using DotCompute.Backends.CPU;
 using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Kernels;
 using DotCompute.Backends.CPU.Threading;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -23,7 +23,7 @@ namespace DotCompute.Tests;
 /// Comprehensive backend tests for CPU accelerators focusing on SIMD optimization, 
 /// thread pool management, NUMA awareness, and performance validation.
 /// </summary>
-public class CpuBackendTests
+public sealed class CpuBackendTests
 {
     private readonly ITestOutputHelper _output;
 

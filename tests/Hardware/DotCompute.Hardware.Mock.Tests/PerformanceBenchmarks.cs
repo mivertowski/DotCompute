@@ -1,6 +1,6 @@
 using System.Diagnostics;
-using DotCompute.Tests.Shared;
-using DotCompute.Tests.Shared.TestFixtures;
+using DotCompute.Tests.Utilities;
+using DotCompute.Tests.Utilities.TestFixtures;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Hardware;
@@ -84,9 +84,10 @@ public class PerformanceBenchmarks : IClassFixture<AcceleratorTestFixture>
     {
         _output.WriteLine($"=== Matrix Multiplication Benchmark{matrixSize}x{matrixSize}) ===");
 
-        var a = TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
-        var b = TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
-        var c = new float[matrixSize, matrixSize];
+        // Convert multidimensional arrays to jagged arrays for CA1814
+        var a = TestDataGenerators.GenerateRandomJaggedMatrix(matrixSize, matrixSize);
+        var b = TestDataGenerators.GenerateRandomJaggedMatrix(matrixSize, matrixSize);
+        var c = TestDataGenerators.CreateJaggedArray(matrixSize, matrixSize);
 
         // Calculate FLOPs
         var flops = 2L * matrixSize * matrixSize * matrixSize; // 2N³ operations
@@ -168,8 +169,10 @@ public class PerformanceBenchmarks : IClassFixture<AcceleratorTestFixture>
         {
             var data = TestDataGenerators.GenerateRandomVector(size);
 
-            // Warmup
-            var sum = data.Sum();
+            // Warmup - ensure the value is used to avoid IDE0059
+            var warmupSum = data.Sum();
+            // Use the value to prevent optimization
+            GC.KeepAlive(warmupSum);
 
             // Benchmark
             const int iterations = 100;
@@ -177,7 +180,10 @@ public class PerformanceBenchmarks : IClassFixture<AcceleratorTestFixture>
 
             for (var i = 0; i < iterations; i++)
             {
-                sum = ParallelReduction(data);
+                // Use variable to avoid IDE0059
+                var iterationResult = ParallelReduction(data);
+                // Use the value to prevent optimization
+                GC.KeepAlive(iterationResult);
             }
 
             stopwatch.Stop();
@@ -280,9 +286,9 @@ public class PerformanceBenchmarks : IClassFixture<AcceleratorTestFixture>
         }
     }
 
-    private static void MatrixMultiplyCPU(float[,] a, float[,] b, float[,] c)
+    private static void MatrixMultiplyCPU(float[][] a, float[][] b, float[][] c)
     {
-        var n = a.GetLength(0);
+        var n = a.Length;
 
         // Simple triple-loop implementation
         for (var i = 0; i < n; i++)
@@ -292,9 +298,9 @@ public class PerformanceBenchmarks : IClassFixture<AcceleratorTestFixture>
                 float sum = 0;
                 for (var k = 0; k < n; k++)
                 {
-                    sum += a[i, k] * b[k, j];
+                    sum += a[i][k] * b[k][j];
                 }
-                c[i, j] = sum;
+                c[i][j] = sum;
             }
         }
     }

@@ -1,14 +1,14 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Shared.Memory;
+using DotCompute.Tests.Utilities.Memory;
 
-namespace DotCompute.Tests.Shared.Accelerators;
+namespace DotCompute.Tests.Utilities.Accelerators;
 
 /// <summary>
 /// Test CPU-based accelerator implementation for testing without GPU hardware.
 /// </summary>
-public class TestCpuAccelerator : IAccelerator
+public sealed class TestCpuAccelerator : IAccelerator
 {
     private readonly TestMemoryManager _memoryManager;
     private readonly ConcurrentDictionary<string, TestCompiledKernel> _compiledKernels;
@@ -47,10 +47,7 @@ public class TestCpuAccelerator : IAccelerator
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (definition == null)
-        {
-            throw new ArgumentNullException(nameof(definition));
-        }
+        ArgumentNullException.ThrowIfNull(definition);
 
         await Task.Delay(10, cancellationToken); // Simulate compilation time
 
@@ -72,6 +69,7 @@ public class TestCpuAccelerator : IAccelerator
             _disposed = true;
             await SynchronizeAsync();
             _memoryManager.Dispose();
+            GC.SuppressFinalize(this);
         }
     }
 
@@ -81,7 +79,7 @@ public class TestCpuAccelerator : IAccelerator
 /// <summary>
 /// Test implementation of a compiled kernel.
 /// </summary>
-public class TestCompiledKernel : ICompiledKernel
+public sealed class TestCompiledKernel : ICompiledKernel
 {
     private readonly byte[] _code;
     private readonly CompilationOptions _options;
@@ -103,10 +101,7 @@ public class TestCompiledKernel : ICompiledKernel
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(TestCompiledKernel));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         _executionTimer.Restart();
 
@@ -147,6 +142,7 @@ public class TestCompiledKernel : ICompiledKernel
         {
             _disposed = true;
             await Task.CompletedTask;
+            GC.SuppressFinalize(this);
         }
     }
 }

@@ -1,4 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
@@ -16,7 +18,7 @@ namespace DotCompute.Tests.Integration;
 /// Week 3 Working Integration Tests - Focused on testable APIs with solid Week 2 foundation.
 /// These tests use only the APIs that are confirmed to exist and work correctly.
 /// </summary>
-public class Week3WorkingIntegrationTests : IntegrationTestBase
+public sealed class Week3WorkingIntegrationTests : IntegrationTestBase
 {
     public Week3WorkingIntegrationTests(ITestOutputHelper output) : base(output)
     {
@@ -40,7 +42,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        Assert.Equal(dataSize, readData.Count());
+        Assert.Equal(dataSize, readData.Length);
         readData.Should().Equal(testData);
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(1000, "Memory operations should be fast");
 
@@ -66,7 +68,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        Assert.Equal(bufferSize, readData.Count());
+        Assert.Equal(bufferSize, readData.Length);
         var timePerElement = stopwatch.ElapsedTicks / (double)bufferSize;
         timePerElement.Should().BeLessThan(10000, "Time per element should scale reasonably");
 
@@ -97,7 +99,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
             stopwatch.Stop();
 
             // Assert
-            Assert.Equal(bufferCount, buffers.Count());
+            Assert.Equal(bufferCount, buffers.Count);
             stopwatch.ElapsedMilliseconds.Should().BeLessThan(3000, "Multiple allocations should be efficient");
 
             TestOutput.WriteLine($"Managed {bufferCount} buffers of size {bufferSize} in {stopwatch.ElapsedMilliseconds}ms");
@@ -360,7 +362,7 @@ public class Week3WorkingIntegrationTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        Assert.Equal(dataSize, processResult.Count()); // Processed data should maintain size
+        Assert.Equal(dataSize, processResult.Length); // Processed data should maintain size
         processResult.Should().OnlyContain(x => x >= 0, "Squared values should be non-negative");
         average.Should().BeGreaterThan(0, "Average of squared values should be positive");
 

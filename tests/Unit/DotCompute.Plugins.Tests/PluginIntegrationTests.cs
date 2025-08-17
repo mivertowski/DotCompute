@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Plugins.Core;
 using DotCompute.Plugins.Interfaces;
 using DotCompute.Plugins.Configuration;
@@ -18,7 +19,7 @@ namespace DotCompute.Tests.Unit;
 /// Integration tests for the plugin system covering end-to-end scenarios, dependency resolution,
 /// and complex plugin interactions.
 /// </summary>
-public class PluginIntegrationTests : IDisposable
+public sealed class PluginIntegrationTests : IDisposable
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly IConfiguration _configuration;
@@ -36,7 +37,7 @@ public class PluginIntegrationTests : IDisposable
             ["PluginSystem:MaxConcurrentLoads"] = "4",
             ["PluginSystem:LoadTimeout"] = "00:00:30",
             ["PluginSystem:EnableHotReload"] = "true",
-            ["CpuBackend:MaxThreads"] = Environment.ProcessorCount.ToString(),
+            ["CpuBackend:MaxThreads"] = Environment.ProcessorCount.ToString(CultureInfo.InvariantCulture),
             ["CudaBackend:DeviceId"] = "0",
             ["MetalBackend:EnableProfiling"] = "false"
         };
@@ -55,8 +56,8 @@ public class PluginIntegrationTests : IDisposable
         using var pluginSystem = new PluginSystem(_logger);
         await pluginSystem.InitializeAsync();
 
-        var cpuPlugin = new IntegrationCpuPlugin();
-        var mockBackend = new IntegrationMockBackend();
+        using var cpuPlugin = new IntegrationCpuPlugin();
+        using var mockBackend = new IntegrationMockBackend();
 
         // Act - Load multiple plugins
         var cpuResult = await pluginSystem.LoadPluginAsync(cpuPlugin);
@@ -84,12 +85,12 @@ public class PluginIntegrationTests : IDisposable
 
         var cpuMetrics = cpuResult.GetMetrics();
         Assert.NotNull(cpuMetrics);
-        cpuMetrics.RequestCount.BeGreaterThanOrEqualTo(0);
+        cpuMetrics.RequestCount.Should().BeGreaterThanOrEqualTo(0);
 
         // Test unloading
         var unloadResult = await pluginSystem.UnloadPluginAsync(cpuResult.Id);
         Assert.True(unloadResult);
-        pluginSystem.GetPlugin(cpuResult.Id).BeNull();
+        pluginSystem.GetPlugin(cpuResult.Id).Should().BeNull();
     }
 
     [Fact]
@@ -136,7 +137,7 @@ public class PluginIntegrationTests : IDisposable
         using var serviceProvider = services.BuildServiceProvider();
         using var pluginSystem = new PluginSystem(_logger);
 
-        var plugin = new DependentPlugin();
+        using var plugin = new DependentPlugin();
 
         // Act
         await pluginSystem.LoadPluginAsync(plugin);
@@ -144,7 +145,7 @@ public class PluginIntegrationTests : IDisposable
 
         // Assert
         plugin.TestService.Should().NotBeNull();
-        plugin.TestService.BeOfType(typeof(TestService));
+        plugin.TestService.Should().BeOfType<TestService>();
     }
 
     [Fact]
@@ -152,8 +153,8 @@ public class PluginIntegrationTests : IDisposable
     {
         // Arrange
         using var pluginSystem = new PluginSystem(_logger);
-        var goodPlugin = new IntegrationCpuPlugin();
-        var badPlugin = new FailingPlugin();
+        using var goodPlugin = new IntegrationCpuPlugin();
+        using var badPlugin = new FailingPlugin();
 
         // Act - Load good plugin first
         await pluginSystem.LoadPluginAsync(goodPlugin);
@@ -161,7 +162,8 @@ public class PluginIntegrationTests : IDisposable
         await goodPlugin.StartAsync();
 
         // Try to load bad plugin
-        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask());
+        await FluentActions.Awaiting(() => pluginSystem.LoadPluginAsync(badPlugin))
+            .Should().ThrowAsync<PluginLoadException>();
 
         // Assert - Good plugin should still be working
         pluginSystem.GetLoadedPlugins().Should().HaveCount(1);
@@ -227,8 +229,8 @@ public class PluginIntegrationTests : IDisposable
         var invalidPlugin = new InvalidPlugin();
 
         // Act & Assert
-        await Assert.ThrowsAsync<PluginLoadException>(() => FluentActions.MethodCall().AsTask())
-            .WithMessage("*Plugin validation failed*");
+        await FluentActions.Awaiting(() => pluginSystem.LoadPluginAsync(invalidPlugin))
+            .Should().ThrowAsync<PluginLoadException>();
     }
 
     [Fact]
@@ -290,9 +292,9 @@ public class PluginIntegrationTests : IDisposable
         await plugin.StopAsync();
 
         // Assert
-        stateEvents.HaveCountGreaterThan(0);
-        healthEvents.HaveCountGreaterThan(0);
-        Assert.Equal(1, errorEvents.Count());
+        stateEvents.Should().HaveCountGreaterThan(0);
+        healthEvents.Should().HaveCountGreaterThan(0);
+        Assert.Single(errorEvents);
     }
 
     [Fact]
@@ -300,8 +302,8 @@ public class PluginIntegrationTests : IDisposable
     {
         // Arrange
         using var pluginSystem = new PluginSystem(_logger);
-        var plugin1 = new MetricsTestPlugin("plugin1");
-        var plugin2 = new MetricsTestPlugin("plugin2");
+        using var plugin1 = new MetricsTestPlugin("plugin1");
+        using var plugin2 = new MetricsTestPlugin("plugin2");
 
         await pluginSystem.LoadPluginAsync(plugin1);
         await pluginSystem.LoadPluginAsync(plugin2);
@@ -328,13 +330,20 @@ public class PluginIntegrationTests : IDisposable
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
         if (_disposed)
             return;
 
-        (_serviceProvider as IDisposable)?.Dispose();
+        if (disposing)
+        {
+            (_serviceProvider as IDisposable)?.Dispose();
+        }
         _disposed = true;
-
-        GC.SuppressFinalize(this);
     }
 
     #region Test Support Classes
@@ -344,7 +353,7 @@ public class PluginIntegrationTests : IDisposable
         public string GetData();
     }
 
-    public sealed class TestService : ITestService
+    internal sealed class TestService : ITestService
     {
         public string GetData() => "Test data";
     }

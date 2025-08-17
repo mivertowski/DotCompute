@@ -1,4 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -19,7 +21,7 @@ namespace DotCompute.Tests.Integration;
 /// parallel execution, load balancing, synchronization, and resource coordination.
 /// </summary>
 [Collection("Integration")]
-public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBase
+public sealed class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBase
 {
     private readonly IAcceleratorManager _acceleratorManager;
 
@@ -59,17 +61,14 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         var parallelThroughput = (totalDataProcessed * sizeof(float)) / 1024.0 / 1024.0 /
                                 executionStopwatch.Elapsed.TotalSeconds;
 
-        Logger.LogInformation("Parallel multi-accelerator execution: {Count} workflows, " +
-                             "{Throughput:F2} MB/s total throughput, {Duration:F1}ms",
-            workflows.Length, parallelThroughput, executionStopwatch.ElapsedMilliseconds);
+        LoggerMessages.ParallelMultiAcceleratorExecution(Logger, workflows.Length, executionStopwatch.ElapsedMilliseconds, parallelThroughput);
 
         // Verify each accelerator type was utilized
         var backendUsage = results.GroupBy(r => DetectBackendFromResult(r))
-                                .ToDictionary(g => g.Key, g => g.Count());
+                                .ToDictionary(g => g.Key, g => g.Count(), EqualityComparer<ComputeBackendType>.Default);
 
         Assert.NotEmpty(backendUsage);
-        Logger.LogInformation("Backend usage: {Usage}",
-            string.Join(", ", backendUsage.Select(kvp => $"{kvp.Key}: {kvp.Value}")));
+        LoggerMessages.BackendUsage(Logger, string.Join(", ", backendUsage.Select(kvp => $"{kvp.Key}: {kvp.Value}")));
 
         parallelThroughput.Should().BeGreaterThan(50, "Parallel execution should achieve good throughput");
     }
@@ -116,7 +115,9 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         // Arrange
         const int sharedDataSize = 2048;
         var sharedData = TestDataGenerators.GenerateFloatArray(sharedDataSize);
+#pragma warning disable CA2000 // Dispose objects before losing scope - SemaphoreSlim used within test scope
         var synchronizationBarrier = new SemaphoreSlim(0);
+#pragma warning restore CA2000
         var results = new ConcurrentDictionary<string, float[]>();
 
         var workflows = Enumerable.Range(0, 4).Select(i =>
@@ -128,9 +129,9 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
         {
             var result = await ExecuteComputeWorkflowAsync($"SynchronizedExecution_{index}", workflow);
 
-            if (result.Success && result.Results.ContainsKey("output"))
+            if (result.Success && result.Results.TryGetValue("output", out var output))
             {
-                results[workflow.Name] = (float[])result.Results["output"];
+                results[workflow.Name] = (float[])output;
             }
 
             // Signal completion
@@ -143,7 +144,7 @@ public class ConcurrentMultiAcceleratorIntegrationTests : ComputeWorkflowTestBas
 
         // Assert
         tasks.Select(t => t.Result).Should().AllSatisfy(r => r.Success.Should().BeTrue());
-        Assert.Equal(4, results.Count());
+        Assert.Equal(4, results.Count);
 
         // Verify data consistency across all workers
         var referenceResult = results.Values.First();

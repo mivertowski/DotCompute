@@ -19,7 +19,7 @@ namespace DotCompute.Tests.Unit;
 /// <summary>
 /// Tests for the PluginSystem class covering plugin loading, unloading, and lifecycle management.
 /// </summary>
-public class PluginSystemTests : IDisposable
+public sealed class PluginSystemTests : IDisposable
 {
     private readonly ILogger<PluginSystem> _logger;
     private readonly PluginSystem _pluginSystem;
@@ -43,7 +43,7 @@ public class PluginSystemTests : IDisposable
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Action act = () => new PluginSystem((ILogger<PluginSystem>)null!);
+        Func<PluginSystem> act = () => new PluginSystem((ILogger<PluginSystem>)null!);
         act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
@@ -54,7 +54,7 @@ public class PluginSystemTests : IDisposable
         var options = new PluginOptions();
 
         // Act
-        var pluginSystem = new PluginSystem(options);
+        using var pluginSystem = new PluginSystem(options);
 
         // Assert
         Assert.NotNull(pluginSystem);
@@ -105,7 +105,7 @@ public class PluginSystemTests : IDisposable
     public async Task LoadPluginAsync_WithInvalidPlugin_ThrowsPluginLoadException()
     {
         // Arrange
-        var invalidPlugin = new InvalidTestPlugin();
+        using var invalidPlugin = new InvalidTestPlugin();
 
         // Act & Assert
         await Assert.ThrowsAsync<PluginLoadException>(() => _pluginSystem.LoadPluginAsync(invalidPlugin));
@@ -188,7 +188,7 @@ public class PluginSystemTests : IDisposable
         var result = _pluginSystem.GetLoadedPlugins();
 
         // Assert
-        Assert.Equal(1, result.Count());
+        Assert.Single(result);
         Assert.Contains(_testPlugin, result);
     }
 
@@ -241,7 +241,7 @@ public class PluginSystemTests : IDisposable
         var results = await Task.WhenAll(loadTasks);
 
         // Assert
-        Assert.Equal(10, results.Count());
+        Assert.Equal(10, results.Length);
         results.Should().OnlyContain(r => r != null);
         _pluginSystem.GetLoadedPlugins().Should().HaveCount(10);
     }
@@ -263,8 +263,8 @@ public class PluginSystemTests : IDisposable
     public void Dispose_WithLoadedPlugins_DisposesAllPlugins()
     {
         // Arrange
-        var plugin1 = new TestPlugin("plugin1");
-        var plugin2 = new TestPlugin("plugin2");
+        using var plugin1 = new TestPlugin("plugin1");
+        using var plugin2 = new TestPlugin("plugin2");
         _pluginSystem.LoadPluginAsync(plugin1).Wait();
         _pluginSystem.LoadPluginAsync(plugin2).Wait();
 
@@ -398,6 +398,9 @@ public class PluginSystemTests : IDisposable
         public string GetConfigurationSchema() => "{}";
         public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public PluginMetrics GetMetrics() => new();
-        public void Dispose() { }
+        public void Dispose() { 
+        
+        GC.SuppressFinalize(this);
+    }
     }
 }

@@ -3,7 +3,7 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Shared;
+namespace DotCompute.Tests.Utilities;
 /// <summary>
 /// Memory test utilities.
 /// </summary>
@@ -34,22 +34,26 @@ public static class MemoryTestUtilities
 /// </summary>
 public static class EdgeCaseUtilities
 {
-    public static IEnumerable<object[]> GetMemorySizes()
+    private static readonly object[][] s_memorySizes = 
     {
-        yield return new object[] { 0 };
-        yield return new object[] { 1 };
-        yield return new object[] { 1024 };
-        yield return new object[] { 1024 * 1024 };
-        yield return new object[] { int.MaxValue };
-    }
+        new object[] { 0 },
+        new object[] { 1 },
+        new object[] { 1024 },
+        new object[] { 1024 * 1024 },
+        new object[] { int.MaxValue }
+    };
 
-    public static IEnumerable<object[]> GetThreadCounts()
+    private static readonly object[][] s_threadCounts = 
     {
-        yield return new object[] { 1 };
-        yield return new object[] { 32 };
-        yield return new object[] { 256 };
-        yield return new object[] { 1024 };
-    }
+        new object[] { 1 },
+        new object[] { 32 },
+        new object[] { 256 },
+        new object[] { 1024 }
+    };
+
+    public static IEnumerable<object[]> MemorySizes => s_memorySizes;
+
+    public static IEnumerable<object[]> ThreadCounts => s_threadCounts;
 }
 
 /// <summary>
@@ -57,6 +61,8 @@ public static class EdgeCaseUtilities
 /// </summary>
 public static class KernelFactory
 {
+    private static readonly float[] s_testFloatArray = { 1.0f, 2.0f, 3.0f };
+
     /// <summary>
     /// Creates a simple CUDA kernel definition for testing.
     /// </summary>
@@ -88,7 +94,7 @@ public static class KernelFactory
     public static KernelArguments CreateTestArguments()
     {
         var args = KernelArguments.Create(3);
-        args.Set(0, new float[] { 1.0f, 2.0f, 3.0f });
+        args.Set(0, s_testFloatArray);
         args.Set(1, new float[3]);
         args.Set(2, 3);
         return args;

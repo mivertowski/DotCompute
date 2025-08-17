@@ -16,12 +16,313 @@ namespace DotCompute.Tests.Hardware;
 /// Comprehensive system diagnostics for CUDA backend
 /// </summary>
 [Collection("Hardware")]
-public class CudaSystemDiagnostics : IDisposable
+public sealed class CudaSystemDiagnostics : IDisposable
 {
     private readonly ILogger<CudaSystemDiagnostics> _logger;
     private readonly CudaBackend? _backend;
     private readonly CudaAccelerator? _accelerator;
     private bool _disposed;
+
+    // LoggerMessage delegates for performance
+    private static readonly Action<ILogger, Exception?> LogCudaRuntimeSystemDiagnostics = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(1, nameof(LogCudaRuntimeSystemDiagnostics)),
+            "=== CUDA Runtime System Diagnostics ===");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogCudaRuntimeVersion = 
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(2, nameof(LogCudaRuntimeVersion)),
+            "CUDA Runtime Version: {Major}.{Minor}");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogCudaDriverVersion = 
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(3, nameof(LogCudaDriverVersion)),
+            "CUDA Driver Version: {Major}.{Minor}");
+
+    private static readonly Action<ILogger, int, Exception?> LogCudaDevicesFound = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(4, nameof(LogCudaDevicesFound)),
+            "CUDA Devices Found: {DeviceCount}");
+
+    private static readonly Action<ILogger, int, string, Exception?> LogDeviceInfo = 
+        LoggerMessage.Define<int, string>(
+            LogLevel.Information,
+            new EventId(5, nameof(LogDeviceInfo)),
+            "Device {Id}: {Name}");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogComputeCapability = 
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(6, nameof(LogComputeCapability)),
+            "  Compute Capability: {Major}.{Minor}");
+
+    private static readonly Action<ILogger, ulong, double, Exception?> LogGlobalMemory = 
+        LoggerMessage.Define<ulong, double>(
+            LogLevel.Information,
+            new EventId(7, nameof(LogGlobalMemory)),
+            "  Global Memory: {Memory:N0} bytes ({MemoryGB:F1} GB)");
+
+    private static readonly Action<ILogger, int, Exception?> LogMultiprocessors = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(8, nameof(LogMultiprocessors)),
+            "  Multiprocessors: {SMs}");
+
+    private static readonly Action<ILogger, int, Exception?> LogMaxThreadsPerBlock = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(9, nameof(LogMaxThreadsPerBlock)),
+            "  Max Threads per Block: {MaxThreads}");
+
+    private static readonly Action<ILogger, ulong, Exception?> LogSharedMemoryPerBlock = 
+        LoggerMessage.Define<ulong>(
+            LogLevel.Information,
+            new EventId(10, nameof(LogSharedMemoryPerBlock)),
+            "  Shared Memory per Block: {SharedMem:N0} bytes");
+
+    private static readonly Action<ILogger, int, Exception?> LogWarpSize = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(11, nameof(LogWarpSize)),
+            "  Warp Size: {WarpSize}");
+
+    private static readonly Action<ILogger, int, Exception?> LogClockRate = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(12, nameof(LogClockRate)),
+            "  Clock Rate: {ClockRate} kHz");
+
+    private static readonly Action<ILogger, int, Exception?> LogMemoryClock = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(13, nameof(LogMemoryClock)),
+            "  Memory Clock: {MemoryClock} kHz");
+
+    private static readonly Action<ILogger, int, Exception?> LogMemoryBusWidth = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(14, nameof(LogMemoryBusWidth)),
+            "  Memory Bus Width: {BusWidth} bits");
+
+    private static readonly Action<ILogger, bool, Exception?> LogEccEnabled = 
+        LoggerMessage.Define<bool>(
+            LogLevel.Information,
+            new EventId(15, nameof(LogEccEnabled)),
+            "  ECC Enabled: {ECC}");
+
+    private static readonly Action<ILogger, bool, Exception?> LogUnifiedAddressing = 
+        LoggerMessage.Define<bool>(
+            LogLevel.Information,
+            new EventId(16, nameof(LogUnifiedAddressing)),
+            "  Unified Addressing: {UVA}");
+
+    private static readonly Action<ILogger, bool, Exception?> LogConcurrentKernels = 
+        LoggerMessage.Define<bool>(
+            LogLevel.Information,
+            new EventId(17, nameof(LogConcurrentKernels)),
+            "  Concurrent Kernels: {ConcurrentKernels}");
+
+    private static readonly Action<ILogger, int, int, Exception?> LogNvrtcAvailable = 
+        LoggerMessage.Define<int, int>(
+            LogLevel.Information,
+            new EventId(18, nameof(LogNvrtcAvailable)),
+            "NVRTC Available: Version {Major}.{Minor}");
+
+    private static readonly Action<ILogger, Exception?> LogNvrtcNotAvailable = 
+        LoggerMessage.Define(
+            LogLevel.Warning,
+            new EventId(19, nameof(LogNvrtcNotAvailable)),
+            "NVRTC Not Available - kernel compilation may not work");
+
+    private static readonly Action<ILogger, Exception?> LogAcceleratorInformation = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(20, nameof(LogAcceleratorInformation)),
+            "=== Accelerator Information ===");
+
+    private static readonly Action<ILogger, string, Exception?> LogAcceleratorType = 
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(21, nameof(LogAcceleratorType)),
+            "Accelerator Type: {Type}");
+
+    private static readonly Action<ILogger, string, Exception?> LogDeviceName = 
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(22, nameof(LogDeviceName)),
+            "Device Name: {Name}");
+
+    private static readonly Action<ILogger, string, Exception?> LogDriverVersion = 
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(23, nameof(LogDriverVersion)),
+            "Driver Version: {Version}");
+
+    private static readonly Action<ILogger, long, Exception?> LogTotalMemory = 
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(24, nameof(LogTotalMemory)),
+            "Total Memory: {Memory:N0} bytes");
+
+    private static readonly Action<ILogger, int, Exception?> LogComputeUnits = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(25, nameof(LogComputeUnits)),
+            "Compute Units: {Units}");
+
+    private static readonly Action<ILogger, int, Exception?> LogMaxClock = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(26, nameof(LogMaxClock)),
+            "Max Clock: {Clock} MHz");
+
+    private static readonly Action<ILogger, string, Exception?> LogComputeCapabilityInfo = 
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(27, nameof(LogComputeCapabilityInfo)),
+            "Compute Capability: {Capability}");
+
+    private static readonly Action<ILogger, bool, Exception?> LogUnifiedMemory = 
+        LoggerMessage.Define<bool>(
+            LogLevel.Information,
+            new EventId(28, nameof(LogUnifiedMemory)),
+            "Unified Memory: {Unified}");
+
+    private static readonly Action<ILogger, string, string, Exception?> LogCapability = 
+        LoggerMessage.Define<string, string>(
+            LogLevel.Information,
+            new EventId(29, nameof(LogCapability)),
+            "  {Capability}: {Value}");
+
+    private static readonly Action<ILogger, Exception?> LogMemoryManagerDiagnostics = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(30, nameof(LogMemoryManagerDiagnostics)),
+            "=== Memory Manager Diagnostics ===");
+
+    private static readonly Action<ILogger, Exception?> LogMemoryManagerTest = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(31, nameof(LogMemoryManagerTest)),
+            "Memory Manager Test - Testing various allocation sizes");
+
+    private static readonly Action<ILogger, long, Exception?> LogAllocatingSize = 
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(32, nameof(LogAllocatingSize)),
+            "Allocating {Size:N0} bytes");
+
+    private static readonly Action<ILogger, long, Exception?> LogCopyOperationsVerified = 
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(33, nameof(LogCopyOperationsVerified)),
+            "  Copy operations verified for {Size:N0} bytes");
+
+    private static readonly Action<ILogger, Exception?> LogFillOperationSkipped = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(34, nameof(LogFillOperationSkipped)),
+            "  Fill operation test skipped (not available in new API)");
+
+    private static readonly Action<ILogger, Exception?> LogSlicingVerified = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(35, nameof(LogSlicingVerified)),
+            "  Slicing verified");
+
+    private static readonly Action<ILogger, Exception?> LogMemoryAllocationTestsCompleted = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(36, nameof(LogMemoryAllocationTestsCompleted)),
+            "Memory allocation tests completed successfully");
+
+    private static readonly Action<ILogger, Exception?> LogKernelCompilerDiagnostics = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(37, nameof(LogKernelCompilerDiagnostics)),
+            "=== Kernel Compiler Diagnostics ===");
+
+    private static readonly Action<ILogger, string, Exception?> LogCompilingWithOptimization = 
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(38, nameof(LogCompilingWithOptimization)),
+            "Compiling with optimization level: {Level}");
+
+    private static readonly Action<ILogger, long, Exception?> LogCompilationSuccessful = 
+        LoggerMessage.Define<long>(
+            LogLevel.Information,
+            new EventId(39, nameof(LogCompilationSuccessful)),
+            "  Compilation successful in {Time}ms");
+
+    private static readonly Action<ILogger, Exception?> LogExecutionAndVerificationSuccessful = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(40, nameof(LogExecutionAndVerificationSuccessful)),
+            "  Execution and verification successful");
+
+    private static readonly Action<ILogger, Exception?> LogLaunchConfigurationDiagnostics = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(41, nameof(LogLaunchConfigurationDiagnostics)),
+            "=== Launch Configuration Diagnostics ===");
+
+    private static readonly Action<ILogger, int, Exception?> LogProblemSize = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(42, nameof(LogProblemSize)),
+            "Problem Size {Size:N0}:");
+
+    private static readonly Action<ILogger, uint, uint, uint, Exception?> LogGrid = 
+        LoggerMessage.Define<uint, uint, uint>(
+            LogLevel.Information,
+            new EventId(43, nameof(LogGrid)),
+            "  Grid: ({X}, {Y}, {Z})");
+
+    private static readonly Action<ILogger, uint, uint, uint, Exception?> LogBlock = 
+        LoggerMessage.Define<uint, uint, uint>(
+            LogLevel.Information,
+            new EventId(44, nameof(LogBlock)),
+            "  Block: ({X}, {Y}, {Z})");
+
+    private static readonly Action<ILogger, ulong, Exception?> LogTotalThreads = 
+        LoggerMessage.Define<ulong>(
+            LogLevel.Information,
+            new EventId(45, nameof(LogTotalThreads)),
+            "  Total Threads: {Threads:N0}");
+
+    private static readonly Action<ILogger, Exception?> LogExecutionSuccessfulAndVerified = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(46, nameof(LogExecutionSuccessfulAndVerified)),
+            "  Execution successful and verified");
+
+    private static readonly Action<ILogger, Exception?> LogErrorHandlingDiagnostics = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(47, nameof(LogErrorHandlingDiagnostics)),
+            "=== Error Handling Diagnostics ===");
+
+    private static readonly Action<ILogger, string, Exception?> LogCompilationErrorHandled = 
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(48, nameof(LogCompilationErrorHandled)),
+            "Compilation error handled correctly: {Message}");
+
+    private static readonly Action<ILogger, string, Exception?> LogMemoryAllocationErrorHandled = 
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(49, nameof(LogMemoryAllocationErrorHandled)),
+            "Memory allocation error handled correctly: {Message}");
+
+    private static readonly Action<ILogger, string, Exception?> LogExecutionErrorHandled = 
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(50, nameof(LogExecutionErrorHandled)),
+            "Execution error handled correctly: {Message}");
 
     public CudaSystemDiagnostics(ITestOutputHelper output)
     {
@@ -42,7 +343,7 @@ public class CudaSystemDiagnostics : IDisposable
     {
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
 
-        _logger.LogInformation("=== CUDA Runtime System Diagnostics ===");
+        LogCudaRuntimeSystemDiagnostics(_logger, null);
 
         // 1. Driver and Runtime Versions
         var runtimeResult = CudaRuntime.cudaRuntimeGetVersion(out var runtimeVersion);
@@ -52,20 +353,20 @@ public class CudaSystemDiagnostics : IDisposable
         {
             var runtimeMajor = runtimeVersion / 1000;
             var runtimeMinor = (runtimeVersion % 1000) / 10;
-            _logger.LogInformation("CUDA Runtime Version: {Major}.{Minor}", runtimeMajor, runtimeMinor);
+            LogCudaRuntimeVersion(_logger, runtimeMajor, runtimeMinor, null);
         }
 
         if (driverResult == CudaError.Success)
         {
             var driverMajor = driverVersion / 1000;
             var driverMinor = (driverVersion % 1000) / 10;
-            _logger.LogInformation("CUDA Driver Version: {Major}.{Minor}", driverMajor, driverMinor);
+            LogCudaDriverVersion(_logger, driverMajor, driverMinor, null);
         }
 
         // 2. Device Count and Properties
         var deviceCountResult = CudaRuntime.cudaGetDeviceCount(out var deviceCount);
         Assert.Equal(CudaError.Success, deviceCountResult);
-        _logger.LogInformation("CUDA Devices Found: {DeviceCount}", deviceCount);
+        LogCudaDevicesFound(_logger, deviceCount, null);
 
         for (var i = 0; i < deviceCount; i++)
         {
@@ -74,20 +375,19 @@ public class CudaSystemDiagnostics : IDisposable
 
             if (propResult == CudaError.Success)
             {
-                _logger.LogInformation("Device {Id}: {Name}", i, props.Name);
-                _logger.LogInformation("  Compute Capability: {Major}.{Minor}", props.Major, props.Minor);
-                _logger.LogInformation("  Global Memory: {Memory:N0} bytes{MemoryGB:F1} GB)",
-                    props.TotalGlobalMem, props.TotalGlobalMem / (1024.0 * 1024 * 1024));
-                _logger.LogInformation("  Multiprocessors: {SMs}", props.MultiProcessorCount);
-                _logger.LogInformation("  Max Threads per Block: {MaxThreads}", props.MaxThreadsPerBlock);
-                _logger.LogInformation("  Shared Memory per Block: {SharedMem:N0} bytes", props.SharedMemPerBlock);
-                _logger.LogInformation("  Warp Size: {WarpSize}", props.WarpSize);
-                _logger.LogInformation("  Clock Rate: {ClockRate} kHz", props.ClockRate);
-                _logger.LogInformation("  Memory Clock: {MemoryClock} kHz", props.MemoryClockRate);
-                _logger.LogInformation("  Memory Bus Width: {BusWidth} bits", props.MemoryBusWidth);
-                _logger.LogInformation("  ECC Enabled: {ECC}", props.ECCEnabled > 0);
-                _logger.LogInformation("  Unified Addressing: {UVA}", props.UnifiedAddressing > 0);
-                _logger.LogInformation("  Concurrent Kernels: {ConcurrentKernels}", props.ConcurrentKernels > 0);
+                LogDeviceInfo(_logger, i, props.Name, null);
+                LogComputeCapability(_logger, props.Major, props.Minor, null);
+                LogGlobalMemory(_logger, props.TotalGlobalMem, props.TotalGlobalMem / (1024.0 * 1024 * 1024), null);
+                LogMultiprocessors(_logger, props.MultiProcessorCount, null);
+                LogMaxThreadsPerBlock(_logger, props.MaxThreadsPerBlock, null);
+                LogSharedMemoryPerBlock(_logger, props.SharedMemPerBlock, null);
+                LogWarpSize(_logger, props.WarpSize, null);
+                LogClockRate(_logger, props.ClockRate, null);
+                LogMemoryClock(_logger, props.MemoryClockRate, null);
+                LogMemoryBusWidth(_logger, props.MemoryBusWidth, null);
+                LogEccEnabled(_logger, props.ECCEnabled > 0, null);
+                LogUnifiedAddressing(_logger, props.UnifiedAddressing > 0, null);
+                LogConcurrentKernels(_logger, props.ConcurrentKernels > 0, null);
             }
         }
 
@@ -95,11 +395,11 @@ public class CudaSystemDiagnostics : IDisposable
         if (CudaKernelCompiler.IsNvrtcAvailable())
         {
             var (nvrtcMajor, nvrtcMinor) = CudaKernelCompiler.GetNvrtcVersion();
-            _logger.LogInformation("NVRTC Available: Version {Major}.{Minor}", nvrtcMajor, nvrtcMinor);
+            LogNvrtcAvailable(_logger, nvrtcMajor, nvrtcMinor, null);
         }
         else
         {
-            _logger.LogWarning("NVRTC Not Available - kernel compilation may not work");
+            LogNvrtcNotAvailable(_logger, null);
         }
     }
 
@@ -109,7 +409,7 @@ public class CudaSystemDiagnostics : IDisposable
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
         Assert.NotNull(_accelerator);
 
-        _logger.LogInformation("=== Accelerator Information ===");
+        LogAcceleratorInformation(_logger, null);
 
         var info = _accelerator.Info;
 
@@ -121,14 +421,14 @@ public class CudaSystemDiagnostics : IDisposable
         Assert.NotNull(info.ComputeCapability);
         Assert.NotNull(info.Capabilities);
 
-        _logger.LogInformation("Accelerator Type: {Type}", info.Type);
-        _logger.LogInformation("Device Name: {Name}", info.Name);
-        _logger.LogInformation("Driver Version: {Version}", info.DriverVersion);
-        _logger.LogInformation("Total Memory: {Memory:N0} bytes", info.TotalMemory);
-        _logger.LogInformation("Compute Units: {Units}", info.ComputeUnits);
-        _logger.LogInformation("Max Clock: {Clock} MHz", info.MaxClockFrequency);
-        _logger.LogInformation("Compute Capability: {Capability}", info.ComputeCapability);
-        _logger.LogInformation("Unified Memory: {Unified}", info.IsUnifiedMemory);
+        LogAcceleratorType(_logger, info.Type, null);
+        LogDeviceName(_logger, info.Name, null);
+        LogDriverVersion(_logger, info.DriverVersion ?? "Unknown", null);
+        LogTotalMemory(_logger, info.TotalMemory, null);
+        LogComputeUnits(_logger, info.ComputeUnits, null);
+        LogMaxClock(_logger, info.MaxClockFrequency, null);
+        LogComputeCapabilityInfo(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
+        LogUnifiedMemory(_logger, info.IsUnifiedMemory, null);
 
         // Validate specific capabilities
         var caps = info.Capabilities;
@@ -142,7 +442,7 @@ public class CudaSystemDiagnostics : IDisposable
         foreach (var expectedCap in expectedCapabilities)
         {
             Assert.True(caps.ContainsKey(expectedCap), $"Missing capability: {expectedCap}");
-            _logger.LogInformation("  {Capability}: {Value}", expectedCap, caps[expectedCap]);
+            LogCapability(_logger, expectedCap, caps[expectedCap]?.ToString() ?? "Unknown", null);
         }
     }
 
@@ -152,12 +452,12 @@ public class CudaSystemDiagnostics : IDisposable
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
         Assert.NotNull(_accelerator);
 
-        _logger.LogInformation("=== Memory Manager Diagnostics ===");
+        LogMemoryManagerDiagnostics(_logger, null);
 
         var memory = _accelerator.Memory;
         // Note: GetStatistics() method doesn't exist in new IMemoryManager interface
 
-        _logger.LogInformation("Memory Manager Test - Testing various allocation sizes");
+        LogMemoryManagerTest(_logger, null);
 
         // Test various allocation sizes
         var testSizes = new[] { 1024, 1024 * 1024, 16 * 1024 * 1024, 64 * 1024 * 1024 };
@@ -167,7 +467,7 @@ public class CudaSystemDiagnostics : IDisposable
         {
             foreach (var size in testSizes)
             {
-                _logger.LogInformation("Allocating {Size:N0} bytes", size);
+                LogAllocatingSize(_logger, size, null);
                 var buffer = await memory.AllocateAsync(size);
                 buffers.Add(buffer);
 
@@ -180,22 +480,22 @@ public class CudaSystemDiagnostics : IDisposable
                 await buffer.CopyToHostAsync<byte>(readBack);
 
                 Assert.Equal(testData, readBack);
-                _logger.LogInformation("  Copy operations verified for {Size:N0} bytes", size);
+                LogCopyOperationsVerified(_logger, size, null);
 
                 // Test fill operation - this would need to be implemented differently
                 // Fill operation is not part of the new IMemoryBuffer interface
-                _logger.LogInformation("  Fill operation test skippednot available in new API)");
+                LogFillOperationSkipped(_logger, null);
 
                 // Test slicing
                 if (size > 2048)
                 {
                     var slice = memory.CreateView(buffer, 1024, 1024);
                     Assert.Equal(1024, slice.SizeInBytes);
-                    _logger.LogInformation("  Slicing verified");
+                    LogSlicingVerified(_logger, null);
                 }
             }
 
-            _logger.LogInformation("Memory allocation tests completed successfully");
+            LogMemoryAllocationTestsCompleted(_logger, null);
         }
         finally
         {
@@ -212,7 +512,7 @@ public class CudaSystemDiagnostics : IDisposable
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
         Assert.NotNull(_accelerator);
 
-        _logger.LogInformation("=== Kernel Compiler Diagnostics ===");
+        LogKernelCompilerDiagnostics(_logger, null);
 
         // Test CUDA source compilation
         var cudaSource = @"
@@ -238,14 +538,14 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
                 EnableDebugInfo = optLevel == OptimizationLevel.None
             };
 
-            _logger.LogInformation("Compiling with optimization level: {Level}", optLevel);
+            LogCompilingWithOptimization(_logger, optLevel.ToString(), null);
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
             stopwatch.Stop();
 
             Assert.NotNull(compiledKernel);
-            _logger.LogInformation("  Compilation successful in {Time}ms", stopwatch.ElapsedMilliseconds);
+            LogCompilationSuccessful(_logger, stopwatch.ElapsedMilliseconds, null);
 
             // Test execution
             const int N = 1000;
@@ -272,7 +572,7 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
                         $"Incorrect result at {i}: expected {expected}, got {output[i]}");
                 }
 
-                _logger.LogInformation("  Execution and verification successful");
+                LogExecutionAndVerificationSuccessful(_logger, null);
             }
             finally
             {
@@ -289,7 +589,7 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
         Assert.NotNull(_accelerator);
 
-        _logger.LogInformation("=== Launch Configuration Diagnostics ===");
+        LogLaunchConfigurationDiagnostics(_logger, null);
 
         var kernelSource = @"
 extern ""C"" __global__ void configTest(int* data, int n)
@@ -314,10 +614,10 @@ extern ""C"" __global__ void configTest(int* data, int n)
             {
                 var config = compiledKernel.GetOptimalLaunchConfig(problemSize);
 
-                _logger.LogInformation("Problem Size {Size:N0}:", problemSize);
-                _logger.LogInformation("  Grid:{X}, {Y}, {Z})", config.GridX, config.GridY, config.GridZ);
-                _logger.LogInformation("  Block:{X}, {Y}, {Z})", config.BlockX, config.BlockY, config.BlockZ);
-                _logger.LogInformation("  Total Threads: {Threads:N0}", config.GridX * config.GridY * config.GridZ * config.BlockX * config.BlockY * config.BlockZ);
+                LogProblemSize(_logger, problemSize, null);
+                LogGrid(_logger, config.GridX, config.GridY, config.GridZ, null);
+                LogBlock(_logger, config.BlockX, config.BlockY, config.BlockZ, null);
+                LogTotalThreads(_logger, (ulong)config.GridX * config.GridY * config.GridZ * config.BlockX * config.BlockY * config.BlockZ, null);
 
                 // Verify configuration covers the problem
                 var totalThreads = config.GridX * config.BlockX;
@@ -345,7 +645,7 @@ extern ""C"" __global__ void configTest(int* data, int n)
                         Assert.Equal(expected, data[i]);
                     }
 
-                    _logger.LogInformation("  Execution successful and verified");
+                    LogExecutionSuccessfulAndVerified(_logger, null);
                 }
                 finally
                 {
@@ -365,7 +665,7 @@ extern ""C"" __global__ void configTest(int* data, int n)
         Skip.IfNot(CudaBackend.IsAvailable(), "CUDA runtime not available");
         Assert.NotNull(_accelerator);
 
-        _logger.LogInformation("=== Error Handling Diagnostics ===");
+        LogErrorHandlingDiagnostics(_logger, null);
 
         // Test compilation error handling
         var invalidKernelSource = @"
@@ -381,8 +681,8 @@ extern ""C"" __global__ void invalidKernel(float* data)
             async () => await _accelerator.CompileKernelAsync(definition));
 
         Assert.NotNull(compilationException);
-        Assert.Contains("Failed to compile", compilationException.Message);
-        _logger.LogInformation("Compilation error handled correctly: {Message}", compilationException.Message);
+        Assert.Contains("Failed to compile", compilationException.Message, StringComparison.Ordinal);
+        LogCompilationErrorHandled(_logger, compilationException.Message, null);
 
         // Test memory allocation error handling(try to allocate very large amount)
         var oversizeAllocation = long.MaxValue / 2; // Very large allocation
@@ -391,7 +691,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
             async () => await _accelerator.Memory.AllocateAsync(oversizeAllocation));
 
         Assert.NotNull(memoryException);
-        _logger.LogInformation("Memory allocation error handled correctly: {Message}", memoryException.Message);
+        LogMemoryAllocationErrorHandled(_logger, memoryException.Message, null);
 
         // Test execution error handling(null arguments)
         var validSource = @"extern ""C"" __global__ void validKernel(float* data, int n) { }";
@@ -405,7 +705,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
                 async () => await validKernel.ExecuteAsync(new KernelArguments()));
 
             Assert.NotNull(executionException);
-            _logger.LogInformation("Execution error handled correctly: {Message}", executionException.Message);
+            LogExecutionErrorHandled(_logger, executionException.Message, null);
         }
         finally
         {

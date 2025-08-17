@@ -3,6 +3,7 @@ using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -15,9 +16,10 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-internal class ComputeKernelsBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class ComputeKernelsBenchmarks : IDisposable
 {
-    private IAcceleratorManager _acceleratorManager = null!;
+    private DefaultAcceleratorManager _acceleratorManager = null!;
     private IAccelerator _accelerator = null!;
     private IMemoryManager _memoryManager = null!;
     private readonly Dictionary<string, ICompiledKernel> _kernels = [];
@@ -56,12 +58,14 @@ internal class ComputeKernelsBenchmarks
         _inputB = new float[DataSize];
         _output = new float[DataSize];
 
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         var random = new Random(42); // Fixed seed for reproducibility
         for (var i = 0; i < DataSize; i++)
         {
             _inputA[i] = (float)(random.NextDouble() * 2.0 - 1.0); // [-1, 1]
             _inputB[i] = (float)(random.NextDouble() * 2.0 - 1.0);
         }
+#pragma warning restore CA5394
 
         // Fix CS1998: Add minimal await to satisfy async method requirement
         await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
@@ -215,7 +219,10 @@ internal class ComputeKernelsBenchmarks
         }
         _buffers.Clear();
 
-        await _acceleratorManager.DisposeAsync();
+        if (_acceleratorManager != null)
+        {
+            await _acceleratorManager.DisposeAsync();
+        }
     }
 
     [IterationCleanup]
@@ -427,5 +434,30 @@ internal class ComputeKernelsBenchmarks
         await bufferD.CopyFromHostAsync<float>(_output);
 
         _buffers.AddRange(new[] { bufferA, bufferB, bufferC, bufferD });
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            Cleanup().GetAwaiter().GetResult();
+            if (_accelerator != null)
+            {
+                var task = _accelerator.DisposeAsync();
+                if (task.IsCompleted)
+                {
+                    task.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    task.AsTask().Wait();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+        GC.SuppressFinalize(this);
     }
 }

@@ -13,6 +13,8 @@ namespace DotCompute.Tests.Unit;
 /// </summary>
 public sealed class PipelineTests
 {
+    private static readonly string[] ExpectedStages = { "Stage1", "Stage2" };
+
     [Fact]
     public void KernelPipelineBuilder_Create_CreatesPipelineBuilder()
     {
@@ -177,14 +179,14 @@ public sealed class PipelineTests
 
         // Assert
         Assert.True(result.Success);
-        Assert.Equal(new[] { "Stage1", "Stage2" }, executedStages);
+        Assert.Equal(ExpectedStages, executedStages);
     }
 
     [Fact]
     public async Task KernelPipeline_ExecuteAsync_WithCancellation_StopsExecution()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         var executedStages = new List<string>();
 
         var stage1 = new Mock<IPipelineStage>();
@@ -243,7 +245,7 @@ public sealed class PipelineTests
         // Assert
         Assert.False(result.Success);
         Assert.Single(result.Errors!);
-        Assert.Equal("EXECUTION_CANCELLED", result.Errors!.First().Code);
+        Assert.Equal("EXECUTION_CANCELLED", result.Errors![0].Code);
     }
 
     [Fact]
@@ -278,7 +280,7 @@ public sealed class PipelineTests
         var exception = await Assert.ThrowsAsync<PipelineExecutionException>(() =>
             pipeline.ExecuteAsync(context).AsTask());
 
-        Assert.Contains("Stage failed", exception.Message);
+        Assert.Contains("Stage failed", exception.Message, StringComparison.Ordinal);
         Assert.Same(expectedException, exception.InnerException);
     }
 
@@ -410,7 +412,7 @@ public sealed class PipelineTests
             MemoryManager = Mock.Of<IPipelineMemoryManager>(),
             Device = Mock.Of<IComputeDevice>()
         };
-        var testData = new { Value = 42, Name = "Test" };
+        var testData = new TestStateData { Value = 42, Name = "Test" };
 
         // Act
         context.State["test"] = testData;
@@ -418,8 +420,9 @@ public sealed class PipelineTests
 
         // Assert
         Assert.NotNull(retrieved);
-        Assert.Equal(42, ((dynamic)retrieved).Value);
-        Assert.Equal("Test", ((dynamic)retrieved).Name);
+        var retrievedData = Assert.IsType<TestStateData>(retrieved);
+        Assert.Equal(42, retrievedData.Value);
+        Assert.Equal("Test", retrievedData.Name);
     }
 
     [Fact]
@@ -457,4 +460,13 @@ public sealed class PipelineTests
         // Assert
         Assert.Same(device, context.Device);
     }
+}
+
+/// <summary>
+/// Test data class for state testing
+/// </summary>
+public sealed class TestStateData
+{
+    public int Value { get; set; }
+    public string Name { get; set; } = string.Empty;
 }

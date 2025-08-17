@@ -8,6 +8,7 @@
     <IsTestProject>true</IsTestProject>
     <RootNamespace>DotCompute.Hardware.OpenCL.Tests</RootNamespace>
     <AssemblyName>DotCompute.Hardware.OpenCL.Tests</AssemblyName>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>    
   </PropertyGroup>
 
   <ItemGroup>

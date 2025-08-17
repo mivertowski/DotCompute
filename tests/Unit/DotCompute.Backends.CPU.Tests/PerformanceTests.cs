@@ -6,7 +6,7 @@ using FluentAssertions;
 
 namespace DotCompute.Backends.CPU;
 
-public class KernelPerformanceMetricsTests
+public sealed class KernelPerformanceMetricsTests
 {
     [Fact]
     public void KernelPerformanceMetrics_WithValidData_ShouldCalculateCorrectly()
@@ -56,7 +56,7 @@ public class KernelPerformanceMetricsTests
     }
 }
 
-public class CpuKernelProfilerTests : IDisposable
+public sealed class CpuKernelProfilerTests : IDisposable
 {
     private readonly CpuKernelProfiler _profiler;
 
@@ -178,7 +178,7 @@ public class CpuKernelProfilerTests : IDisposable
     }
 }
 
-public class ProfilingSessionTests
+public sealed class ProfilingSessionTests
 {
     [Fact]
     public void ProfilingSession_Properties_ShouldBeSetCorrectly()
@@ -221,7 +221,7 @@ public class ProfilingSessionTests
     }
 }
 
-public class PerformanceAnalyzerTests
+public sealed class PerformanceAnalyzerTests
 {
     [Fact]
     public void AnalyzeKernel_WithGoodPerformance_ShouldReturnHighScore()
@@ -388,7 +388,7 @@ public class PerformanceAnalyzerTests
     }
 }
 
-public class PerformanceCounterManagerTests : IDisposable
+public sealed class PerformanceCounterManagerTests : IDisposable
 {
     private readonly PerformanceCounterManager _manager;
 
@@ -450,7 +450,7 @@ public class PerformanceCounterManagerTests : IDisposable
     }
 }
 
-public class NumaNodeMetricsTests
+public sealed class NumaNodeMetricsTests
 {
     [Fact]
     public void NumaNodeMetrics_WithValidData_ShouldInitializeCorrectly()

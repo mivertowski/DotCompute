@@ -10,7 +10,7 @@ namespace DotCompute.Abstractions.Tests;
 /// Comprehensive unit tests for the IKernel interface and related types.
 /// Note: Since IKernel uses static abstract members, we test with concrete implementations.
 /// </summary>
-public class IKernelTests
+public sealed class IKernelTests
 {
     #region Test Kernel Implementations
 
@@ -416,7 +416,7 @@ public class IKernelTests
         System.Threading.Tasks.Task.WaitAll(tasks.ToArray());
 
         // Assert - All results should be identical
-        Assert.Equal(10, results.Count());
+        Assert.Equal(10, results.Count);
         results.Distinct().Should().HaveCount(1); // All results should be the same
 
         var expectedResult = $"{TestKernel.Name}:{TestKernel.Source}:{TestKernel.EntryPoint}:{TestKernel.RequiredSharedMemory}";

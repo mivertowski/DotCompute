@@ -3,13 +3,14 @@
 
 using Xunit;
 using FluentAssertions;
+using System.Globalization;
 
 namespace DotCompute.Abstractions.Tests;
 
 /// <summary>
 /// Comprehensive unit tests for AcceleratorException and MemoryException classes.
 /// </summary>
-public class ExceptionTests
+public sealed class ExceptionTests
 {
     #region AcceleratorException Tests
 
@@ -163,7 +164,7 @@ public class ExceptionTests
     {
         // Arrange
         const string expectedMessage = "Memory allocation failed";
-        var innerException = new OutOfMemoryException("System out of memory");
+        var innerException = new InvalidOperationException("System memory issue");
 
         // Act
         var exception = new MemoryException(expectedMessage, innerException);
@@ -237,7 +238,7 @@ public class ExceptionTests
     public void MemoryException_WithNestedInnerExceptions_ShouldPreserveHierarchy()
     {
         // Arrange
-        var rootException = new OutOfMemoryException("System memory exhausted");
+        var rootException = new InvalidOperationException("System memory exhausted");
         var middleException = new InvalidOperationException("Memory pool allocation failed", rootException);
         var topException = new MemoryException("Device memory allocation failed", middleException);
 
@@ -301,7 +302,7 @@ public class ExceptionTests
     {
         // Arrange
         const string expectedMessage = "Test accelerator exception";
-        Exception? caughtException = null;
+        Exception? caughtException;
 
         // Act
         try
@@ -324,7 +325,7 @@ public class ExceptionTests
     {
         // Arrange
         const string expectedMessage = "Test memory exception";
-        Exception? caughtException = null;
+        Exception? caughtException;
 
         // Act
         try
@@ -347,7 +348,7 @@ public class ExceptionTests
     {
         // Arrange
         const string expectedMessage = "Specific accelerator error";
-        AcceleratorException? caughtException = null;
+        AcceleratorException? caughtException;
 
         // Act
         try
@@ -369,7 +370,7 @@ public class ExceptionTests
     {
         // Arrange
         const string expectedMessage = "Specific memory error";
-        MemoryException? caughtException = null;
+        MemoryException? caughtException;
 
         // Act
         try
@@ -457,10 +458,10 @@ public class ExceptionTests
 
         // Assert
         acceleratorString.Should().Contain(nameof(AcceleratorException));
-        Assert.Contains(message, acceleratorString);
+        Assert.Contains(message, acceleratorString, StringComparison.Ordinal);
 
         memoryString.Should().Contain(nameof(MemoryException));
-        Assert.Contains(message, memoryString);
+        Assert.Contains(message, memoryString, StringComparison.Ordinal);
     }
 
     [Fact]

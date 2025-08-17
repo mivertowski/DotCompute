@@ -10,7 +10,7 @@ namespace DotCompute.Abstractions.Tests;
 /// <summary>
 /// Comprehensive unit tests for the MappedMemory&lt;T&gt; struct.
 /// </summary>
-public class MappedMemoryTests
+public sealed class MappedMemoryTests
 {
     private readonly Mock<IBuffer<float>> _mockBuffer;
 

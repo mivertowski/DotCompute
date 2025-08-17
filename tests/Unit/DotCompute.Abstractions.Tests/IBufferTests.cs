@@ -10,7 +10,7 @@ namespace DotCompute.Abstractions.Tests;
 /// <summary>
 /// Comprehensive unit tests for the IBuffer&lt;T&gt; interface.
 /// </summary>
-public class IBufferTests
+public sealed class IBufferTests
 {
     private readonly Mock<IBuffer<float>> _mockFloatBuffer;
     private readonly Mock<IBuffer<int>> _mockIntBuffer;
@@ -181,12 +181,12 @@ public class IBufferTests
     {
         // Arrange
         _mockFloatBuffer.Setup(b => b.Slice(0, invalidLength))
-                       .Throws(new ArgumentException("Length must be positive", "length"));
+                       .Throws(new ArgumentException("Length must be positive", nameof(invalidLength)));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(
            () => _mockFloatBuffer.Object.Slice(0, invalidLength));
-        exception.ParamName.Should().Be("length");
+        exception.ParamName.Should().Be(nameof(invalidLength));
     }
 
     [Fact]
@@ -389,12 +389,12 @@ public class IBufferTests
         var mockDestination = new Mock<IBuffer<float>>();
 
         _mockFloatBuffer.Setup(b => b.CopyToAsync(0, mockDestination.Object, 0, invalidCount, CancellationToken.None))
-                       .ThrowsAsync(new ArgumentException("Count must be positive", "count"));
+                       .ThrowsAsync(new ArgumentException("Count must be positive", nameof(invalidCount)));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockFloatBuffer.Object.CopyToAsync(0, mockDestination.Object, 0, invalidCount).AsTask());
-        exception.ParamName.Should().Be("count");
+        exception.ParamName.Should().Be(nameof(invalidCount));
     }
 
     [Fact]
@@ -402,8 +402,8 @@ public class IBufferTests
     {
         // Arrange
         var mockDestination = new Mock<IBuffer<float>>();
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
 
         _mockFloatBuffer.Setup(b => b.CopyToAsync(mockDestination.Object, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
@@ -472,20 +472,20 @@ public class IBufferTests
     {
         // Arrange
         _mockFloatBuffer.Setup(b => b.FillAsync(1.0f, 0, invalidCount, CancellationToken.None))
-                       .ThrowsAsync(new ArgumentException("Count must be positive", "count"));
+                       .ThrowsAsync(new ArgumentException("Count must be positive", nameof(invalidCount)));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockFloatBuffer.Object.FillAsync(1.0f, 0, invalidCount).AsTask());
-        exception.ParamName.Should().Be("count");
+        exception.ParamName.Should().Be(nameof(invalidCount));
     }
 
     [Fact]
     public async Task FillAsync_WithCancellation_ShouldRespectCancellationToken()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
 
         _mockFloatBuffer.Setup(b => b.FillAsync(1.0f, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
@@ -604,12 +604,12 @@ public class IBufferTests
     {
         // Arrange
         _mockFloatBuffer.Setup(b => b.MapRange(0, invalidLength, MapMode.ReadWrite))
-                       .Throws(new ArgumentException("Length must be positive", "length"));
+                       .Throws(new ArgumentException("Length must be positive", nameof(invalidLength)));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(
            () => _mockFloatBuffer.Object.MapRange(0, invalidLength, MapMode.ReadWrite));
-        exception.ParamName.Should().Be("length");
+        exception.ParamName.Should().Be(nameof(invalidLength));
     }
 
     [Fact]
@@ -634,8 +634,8 @@ public class IBufferTests
     public async Task MapAsync_WithCancellation_ShouldRespectCancellationToken()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
 
         _mockFloatBuffer.Setup(b => b.MapAsync(MapMode.ReadWrite, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
@@ -722,7 +722,7 @@ public class IBufferTests
         var intBuffer = buffer.AsType<int>();
         await buffer.CopyToAsync(mockDestination.Object);
         await buffer.FillAsync(fillValue);
-        var mapping = buffer.Map();
+        var mapping = await buffer.MapAsync();
         await buffer.DisposeAsync();
 
         // Assert

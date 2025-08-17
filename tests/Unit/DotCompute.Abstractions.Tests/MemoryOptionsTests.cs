@@ -4,7 +4,7 @@ using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
-public class MemoryOptionsTests
+public sealed class MemoryOptionsTests
 {
     [Fact]
     public void None_ShouldHaveNoFlags()

@@ -1,5 +1,9 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+#pragma warning disable CA1851 // Multiple enumeration - acceptable for tests
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
@@ -15,7 +19,7 @@ namespace DotCompute.Tests.Integration;
 /// Integration tests for multi-accelerator scenarios.
 /// Tests workload distribution across multiple compute devices.
 /// </summary>
-public class MultiAcceleratorTests : IntegrationTestBase
+public sealed class MultiAcceleratorTests : IntegrationTestBase
 {
     public MultiAcceleratorTests(ITestOutputHelper output) : base(output)
     {
@@ -45,7 +49,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             inputData);
 
         // Assert
-        Assert.Equal(2, results.Count());
+        Assert.Collection(results, r => Assert.True(r.Success), r => Assert.True(r.Success));
         results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         var totalProcessed = results.Sum(r => r.ProcessedItems);
@@ -118,7 +122,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
 
         // All accelerators should see the same final data
         var finalStates = coherenceResults.Select(r => r.FinalChecksum).Distinct().ToList();
-        Assert.Equal(1, finalStates.Count()); // All accelerators should see consistent data
+        Assert.Single(finalStates); // All accelerators should see consistent data
     }
 
     [Fact]
@@ -147,7 +151,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        Assert.Equal(accelerators.Count, concurrentResults.Count());
+        concurrentResults.Should().HaveCount(accelerators.Count);
         concurrentResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         // Concurrent execution should be faster than sequential
@@ -209,7 +213,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
 
         if (accelerator1 == null || accelerator2 == null)
         {
-            Logger.LogInformation($"Skipping heterogeneous test - missing {backend1} or {backend2}");
+            LoggerMessages.SkippingHeterogeneousTest(Logger, backend1.ToString(), backend2.ToString());
             return;
         }
 
@@ -223,7 +227,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             workItemsPerDevice);
 
         // Assert
-        Assert.Equal(2, heterogeneousResults.Count());
+        Assert.Collection(heterogeneousResults, r => Assert.True(r.Success), r => Assert.True(r.Success));
         heterogeneousResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         // Results should be equivalent regardless of backend
@@ -297,7 +301,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"Failed to execute work on accelerator {accelerator.Info.Id}");
+                LoggerMessages.FailedToExecuteWork(Logger, ex, accelerator.Info.Id);
                 return new AcceleratorResult
                 {
                     AcceleratorId = accelerator.Info.Id,
@@ -343,7 +347,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"Failed to execute work on accelerator {accelerator.Info.Id}");
+                LoggerMessages.FailedToExecuteWork(Logger, ex, accelerator.Info.Id);
                 return new AcceleratorResult
                 {
                     AcceleratorId = accelerator.Info.Id,
@@ -370,7 +374,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             try
             {
                 // Each accelerator modifies the shared data
-                await ModifySharedData(accelerator, sharedBuffer, accelerator.Info.Id.GetHashCode());
+                await ModifySharedData(accelerator, sharedBuffer, accelerator.Info.Id.GetHashCode(StringComparison.Ordinal));
 
                 // Read back and verify
                 var readData = await ReadSharedData(accelerator, sharedBuffer);
@@ -385,7 +389,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"Memory coherence test failed for {accelerator.Info.Id}");
+                LoggerMessages.MemoryCoherenceTestFailed(Logger, ex, accelerator.Info.Id);
                 return new CoherenceResult
                 {
                     AcceleratorId = accelerator.Info.Id,
@@ -426,7 +430,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             catch (Exception ex)
             {
                 stopwatch.Stop();
-                Logger.LogError(ex, $"Concurrent execution failed for {accelerator.Info.Id}");
+                LoggerMessages.ConcurrentExecutionFailed(Logger, ex, accelerator.Info.Id);
                 return new AcceleratorResult
                 {
                     AcceleratorId = accelerator.Info.Id,
@@ -482,7 +486,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"Work execution failed for {accelerator.Info.Id}");
+                LoggerMessages.WorkExecutionFailed(Logger, ex, accelerator.Info.Id);
                 return new AcceleratorResult
                 {
                     AcceleratorId = accelerator.Info.Id,
@@ -520,7 +524,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, $"Heterogeneous execution failed for {accelerator.Info.Id} on {backend}");
+                LoggerMessages.HeterogeneousExecutionFailed(Logger, ex, accelerator.Info.Id, backend.ToString());
                 return new AcceleratorResult
                 {
                     AcceleratorId = accelerator.Info.Id,
@@ -699,7 +703,7 @@ public class MultiAcceleratorTests : IntegrationTestBase
         return sourceBuffer; // Simplified
     }
 
-    private async Task<float[]> ReadBufferFromAccelerator(IAccelerator accelerator, IMemoryBuffer buffer) => await ReadBufferAsync<float>(buffer);
+    private static async Task<float[]> ReadBufferFromAccelerator(IAccelerator accelerator, IMemoryBuffer buffer) => await ReadBufferAsync<float>(buffer);
 }
 
 /// <summary>

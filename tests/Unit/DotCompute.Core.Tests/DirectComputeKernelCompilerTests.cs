@@ -14,11 +14,11 @@ namespace DotCompute.Core.Tests.Kernels;
 /// Comprehensive unit tests for DirectComputeKernelCompiler with 90% coverage target.
 /// Tests compilation, validation, platform detection, and error handling.
 /// </summary>
-public class DirectComputeKernelCompilerTests : IDisposable
+public sealed class DirectComputeKernelCompilerTests : IDisposable
 {
     private readonly Mock<ILogger<DirectComputeKernelCompiler>> _mockLogger;
     private readonly DirectComputeKernelCompiler _compiler;
-    private bool _disposed;
+    private readonly bool _disposed;
 
     public DirectComputeKernelCompilerTests()
     {
@@ -515,6 +515,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
         {
             // DirectComputeKernelCompiler doesn't implement IDisposable, so nothing to dispose
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }
@@ -522,7 +523,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
 /// <summary>
 /// Additional tests for DirectCompute-specific functionality and edge cases.
 /// </summary>
-public class DirectComputeKernelCompilerAdvancedTests
+public sealed class DirectComputeKernelCompilerAdvancedTests
 {
     private readonly Mock<ILogger<DirectComputeKernelCompiler>> _mockLogger;
     private readonly DirectComputeKernelCompiler _compiler;

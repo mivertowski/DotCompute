@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace DotCompute.Tests.Shared;
+namespace DotCompute.Tests.Utilities;
 
 /// <summary>
 /// Utility class for generating test data.
@@ -23,6 +23,39 @@ public static class TestDataGenerators
             }
         }
 
+        return matrix;
+    }
+
+    /// <summary>
+    /// Generates a random jagged matrix (to avoid CA1814).
+    /// </summary>
+    public static float[][] GenerateRandomJaggedMatrix(int rows, int cols, float min = -1.0f, float max = 1.0f, int seed = 42)
+    {
+        var random = new Random(seed);
+        var matrix = new float[rows][];
+
+        for (var i = 0; i < rows; i++)
+        {
+            matrix[i] = new float[cols];
+            for (var j = 0; j < cols; j++)
+            {
+                matrix[i][j] = min + (float)(random.NextDouble() * (max - min));
+            }
+        }
+
+        return matrix;
+    }
+
+    /// <summary>
+    /// Creates a jagged array with specified dimensions (to avoid CA1814).
+    /// </summary>
+    public static float[][] CreateJaggedArray(int rows, int cols)
+    {
+        var matrix = new float[rows][];
+        for (var i = 0; i < rows; i++)
+        {
+            matrix[i] = new float[cols];
+        }
         return matrix;
     }
 

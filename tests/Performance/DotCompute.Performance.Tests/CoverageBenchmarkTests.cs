@@ -4,7 +4,7 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BdnLogger = BenchmarkDotNet.Loggers.ILogger;
 using BenchmarkDotNet.Running;
-using DotCompute.Tests.Shared.TestInfrastructure;
+using DotCompute.Tests.Utilities.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
 using Xunit;
@@ -17,8 +17,37 @@ namespace DotCompute.Tests.Performance;
 /// Performance benchmark tests for coverage analysis
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class CoverageBenchmarkTests : PerformanceBenchmarkBase
+public sealed class CoverageBenchmarkTests : PerformanceBenchmarkBase
 {
+    // LoggerMessage delegates for improved performance
+    private static readonly Action<Microsoft.Extensions.Logging.ILogger, Exception?> LogMemoryAllocationCompleted =
+        LoggerMessage.Define(LogLevel.Information, new EventId(1, "MemoryAllocationCompleted"),
+            "Memory allocation benchmark completed:");
+
+    private static readonly Action<Microsoft.Extensions.Logging.ILogger, double, Exception?> LogAverageAllocationTime =
+        LoggerMessage.Define<double>(LogLevel.Information, new EventId(2, "AverageAllocationTime"),
+            "  Average allocation time: {Time}ms");
+
+    private static readonly Action<Microsoft.Extensions.Logging.ILogger, long, Exception?> LogTotalMemoryAllocated =
+        LoggerMessage.Define<long>(LogLevel.Information, new EventId(3, "TotalMemoryAllocated"),
+            "  Total memory allocated: {Memory} bytes");
+
+    private static readonly Action<Microsoft.Extensions.Logging.ILogger, double, Exception?> LogAllocationEfficiency =
+        LoggerMessage.Define<double>(LogLevel.Information, new EventId(4, "AllocationEfficiency"),
+            "  Allocation efficiency: {Efficiency} bytes/ms");
+
+    private static readonly Action<Microsoft.Extensions.Logging.ILogger, int, double, Exception?> LogDataTransferBenchmark =
+        LoggerMessage.Define<int, double>(LogLevel.Information, new EventId(5, "DataTransferBenchmark"),
+            "Data transfer benchmark - Size: {Size} bytes, Bandwidth: {Bandwidth:F2} MB/s");
+
+    private static readonly Action<Microsoft.Extensions.Logging.ILogger, int, double, double, Exception?> LogConcurrencyBenchmark =
+        LoggerMessage.Define<int, double, double>(LogLevel.Information, new EventId(6, "ConcurrencyBenchmark"),
+            "Concurrency {Level}: {Time}ms avg, efficiency: {Efficiency:F2}");
+
+    private static readonly Action<Microsoft.Extensions.Logging.ILogger, double, Exception?> LogMemoryPressureImpact =
+        LoggerMessage.Define<double>(LogLevel.Information, new EventId(7, "MemoryPressureImpact"),
+            "Memory pressure impact: {Impact:F2}x slowdown");
+
     public CoverageBenchmarkTests(ITestOutputHelper output) : base(output)
     {
     }
@@ -34,10 +63,10 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
             sizes,
             iterationsPerSize: 100);
 
-        Logger.LogInformation("Memory allocation benchmark completed:");
-        Logger.LogInformation("  Average allocation time: {Time}ms", result.AverageAllocTimeMs);
-        Logger.LogInformation("  Total memory allocated: {Memory} bytes", result.TotalMemoryAllocated);
-        Logger.LogInformation("  Allocation efficiency: {Efficiency} bytes/ms", result.AllocationEfficiency);
+        LogMemoryAllocationCompleted(Logger, null);
+        LogAverageAllocationTime(Logger, result.AverageAllocTimeMs, null);
+        LogTotalMemoryAllocated(Logger, result.TotalMemoryAllocated, null);
+        LogAllocationEfficiency(Logger, result.AllocationEfficiency, null);
 
         // Assert performance requirements
         result.AverageAllocTimeMs.Should().BeLessThan(10.0, "Memory allocation should be under 10ms average");
@@ -82,8 +111,7 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
 
             var bandwidthMBps = (size / (1024.0 * 1024.0)) / result.AverageTime.TotalSeconds;
 
-            Logger.LogInformation("Data transfer benchmark - Size: {Size} bytes, Bandwidth: {Bandwidth:F2} MB/s",
-                size, bandwidthMBps);
+            LogDataTransferBenchmark(Logger, size, bandwidthMBps, null);
 
             // Assert minimum bandwidth requirements
             bandwidthMBps.Should().BeGreaterThan(10.0, $"Data transfer bandwidth should be > 10 MB/s, got {bandwidthMBps:F2}");
@@ -111,8 +139,7 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
 
             var efficiency = baselineTime.TotalMilliseconds / result.AverageTime.TotalMilliseconds * concurrency;
 
-            Logger.LogInformation("Concurrency {Level}: {Time}ms avg, efficiency: {Efficiency:F2}",
-                concurrency, result.AverageTime.TotalMilliseconds, efficiency);
+            LogConcurrencyBenchmark(Logger, concurrency, result.AverageTime.TotalMilliseconds, efficiency, null);
 
             // Assert reasonable scaling efficiency
             if (concurrency > 1)
@@ -157,7 +184,7 @@ public class CoverageBenchmarkTests : PerformanceBenchmarkBase
 
             var performanceImpact = pressureResult.AverageTime.TotalMilliseconds / baselineResult.AverageTime.TotalMilliseconds;
 
-            Logger.LogInformation("Memory pressure impact: {Impact:F2}x slowdown", performanceImpact);
+            LogMemoryPressureImpact(Logger, performanceImpact, null);
 
             // Assert reasonable performance degradation
             performanceImpact.Should().BeLessThan(3.0, $"Memory pressure impact should be < 3x, got {performanceImpact:F2}x");
@@ -245,7 +272,7 @@ kernel void matrixMultiply(
     /// <summary>
     /// Test memory buffer for benchmarking
     /// </summary>
-    private class TestMemoryBuffer : IDisposable
+    private sealed class TestMemoryBuffer : IDisposable
     {
         private readonly byte[] _buffer;
 
@@ -267,6 +294,7 @@ kernel void matrixMultiply(
 [ExcludeFromCodeCoverage]
 [MemoryDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90)]
+[SuppressMessage("Design", "CA1852:Seal internal types", Justification = "BenchmarkDotNet requires this class to be unsealed for proxy generation")]
 public class SimpleBenchmark
 {
     private readonly byte[] _data = new byte[1024];
@@ -286,7 +314,7 @@ public class SimpleBenchmark
 /// xUnit logger for BenchmarkDotNet
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class XunitLogger : BdnLogger
+public sealed class XunitLogger : BdnLogger
 {
     private readonly ITestOutputHelper _output;
 

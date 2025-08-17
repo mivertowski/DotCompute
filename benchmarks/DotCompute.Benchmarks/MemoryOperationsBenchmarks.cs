@@ -4,6 +4,7 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -16,9 +17,10 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-internal class MemoryOperationsBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class MemoryOperationsBenchmarks : IDisposable
 {
-    private IAcceleratorManager _acceleratorManager = null!;
+    private DefaultAcceleratorManager _acceleratorManager = null!;
     private IAccelerator _accelerator = null!;
     private IMemoryManager _memoryManager = null!;
     private readonly List<IMemoryBuffer> _buffers = [];
@@ -54,7 +56,10 @@ internal class MemoryOperationsBenchmarks
             }
         }
         _buffers.Clear();
-        await _acceleratorManager.DisposeAsync();
+        if (_acceleratorManager != null)
+        {
+            await _acceleratorManager.DisposeAsync();
+        }
     }
 
     [IterationCleanup]
@@ -105,7 +110,9 @@ internal class MemoryOperationsBenchmarks
     public async Task BufferWithDataAllocation()
     {
         var data = new byte[BufferSize];
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         Random.Shared.NextBytes(data);
+#pragma warning restore CA5394
 
         var buffer = await _memoryManager.AllocateAndCopyAsync<byte>(data);
         _buffers.Add(buffer);
@@ -225,5 +232,30 @@ internal class MemoryOperationsBenchmarks
 
         _buffers.Add(mainBuffer);
         _buffers.AddRange(views);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            Cleanup().GetAwaiter().GetResult();
+            if (_accelerator != null)
+            {
+                var task = _accelerator.DisposeAsync();
+                if (task.IsCompleted)
+                {
+                    task.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    task.AsTask().Wait();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+        GC.SuppressFinalize(this);
     }
 }

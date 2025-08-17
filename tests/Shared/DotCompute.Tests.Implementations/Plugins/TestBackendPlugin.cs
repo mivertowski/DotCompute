@@ -4,12 +4,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Shared.Plugins;
+namespace DotCompute.Tests.Utilities.Plugins;
 
 /// <summary>
 /// Test implementation of IBackendPlugin for testing plugin functionality.
 /// </summary>
-public class TestBackendPlugin : IBackendPlugin
+public sealed class TestBackendPlugin : IBackendPlugin
 {
     private readonly string _pluginType;
     private readonly Stopwatch _uptime;
@@ -24,10 +24,32 @@ public class TestBackendPlugin : IBackendPlugin
     private double _totalResponseTime;
     private bool _disposed;
 
+    // Logger message delegates for performance
+    private static readonly Action<ILogger, string, Exception?> LogPluginInitialized =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(1, "PluginInitialized"), "Plugin {PluginId} initialized successfully");
+
+    private static readonly Action<ILogger, string, Exception?> LogPluginStarted =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(2, "PluginStarted"), "Plugin {PluginId} started");
+
+    private static readonly Action<ILogger, string, Exception?> LogPluginStopped =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(3, "PluginStopped"), "Plugin {PluginId} stopped");
+
+    private static readonly Action<ILogger, string, Exception?> LogConfigurationChanged =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(4, "ConfigurationChanged"), "Configuration changed for plugin {PluginId}");
+
+    private static readonly Action<ILogger, string, Exception?> LogPluginInitializationFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(101, "PluginInitializationFailed"), "Failed to initialize plugin {PluginId}");
+
+    private static readonly Action<ILogger, string, Exception?> LogPluginStartFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(102, "PluginStartFailed"), "Failed to start plugin {PluginId}");
+
+    private static readonly Action<ILogger, string, Exception?> LogPluginStopError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(103, "PluginStopError"), "Error stopping plugin {PluginId}");
+
     public TestBackendPlugin(string pluginType = "TestBackend", PluginCapabilities capabilities = PluginCapabilities.ComputeBackend)
     {
         _pluginType = pluginType;
-        Id = $"test.backend.{pluginType.ToLower()}";
+        Id = $"test.backend.{pluginType.ToUpperInvariant()}";
         Name = $"Test {pluginType} Backend Plugin";
         Version = new Version(1, 0, 0);
         Description = $"Test implementation of {pluginType} backend plugin for testing";
@@ -110,11 +132,13 @@ public class TestBackendPlugin : IBackendPlugin
             ChangeState(PluginState.Initialized, "Initialization complete");
             ChangeHealth(PluginHealth.Healthy, "Plugin initialized successfully");
 
-            _logger?.LogInformation("Plugin {PluginId} initialized successfully", Id);
+            if (_logger != null)
+                LogPluginInitialized(_logger, Id, null);
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to initialize plugin {PluginId}", Id);
+            if (_logger != null)
+                LogPluginInitializationFailed(_logger, Id, ex);
             ChangeState(PluginState.Failed, $"Initialization failed: {ex.Message}");
             ChangeHealth(PluginHealth.Critical, "Initialization failure");
             OnErrorOccurred(ex, "InitializeAsync");
@@ -144,11 +168,13 @@ public class TestBackendPlugin : IBackendPlugin
             ChangeState(PluginState.Running, "Plugin started successfully");
             ChangeHealth(PluginHealth.Healthy, "Plugin is running");
 
-            _logger?.LogInformation("Plugin {PluginId} started", Id);
+            if (_logger != null)
+                LogPluginStarted(_logger, Id, null);
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Failed to start plugin {PluginId}", Id);
+            if (_logger != null)
+                LogPluginStartFailed(_logger, Id, ex);
             ChangeState(PluginState.Failed, $"Start failed: {ex.Message}");
             ChangeHealth(PluginHealth.Critical, "Start failure");
             OnErrorOccurred(ex, "StartAsync");
@@ -175,11 +201,13 @@ public class TestBackendPlugin : IBackendPlugin
             ChangeState(PluginState.Stopped, "Plugin stopped successfully");
             ChangeHealth(PluginHealth.Unknown, "Plugin is stopped");
 
-            _logger?.LogInformation("Plugin {PluginId} stopped", Id);
+            if (_logger != null)
+                LogPluginStopped(_logger, Id, null);
         }
         catch (Exception ex)
         {
-            _logger?.LogError(ex, "Error stopping plugin {PluginId}", Id);
+            if (_logger != null)
+                LogPluginStopError(_logger, Id, ex);
             OnErrorOccurred(ex, "StopAsync");
             throw;
         }
@@ -261,7 +289,8 @@ public class TestBackendPlugin : IBackendPlugin
     {
         _configuration = configuration;
 
-        _logger?.LogInformation("Configuration changed for plugin {PluginId}", Id);
+        if (_logger != null)
+            LogConfigurationChanged(_logger, Id, null);
 
         // Simulate configuration reload
         await Task.Delay(1, cancellationToken);
@@ -360,6 +389,7 @@ public class TestBackendPlugin : IBackendPlugin
 
         ChangeState(PluginState.Unloaded, "Plugin disposed");
         _uptime.Stop();
+        GC.SuppressFinalize(this);
     }
 }
 
@@ -369,7 +399,7 @@ public interface IComputeService
     public Task<double> ComputeAsync(double[] data);
 }
 
-public class TestComputeService : IComputeService
+public sealed class TestComputeService : IComputeService
 {
     public async Task<double> ComputeAsync(double[] data)
     {
@@ -384,7 +414,7 @@ public interface IStorageService
     public Task<byte[]?> RetrieveAsync(string key);
 }
 
-public class TestStorageService : IStorageService
+public sealed class TestStorageService : IStorageService
 {
     private readonly Dictionary<string, byte[]> _storage = [];
 
@@ -408,7 +438,7 @@ public interface IMetricsService
     public double GetMetric(string name);
 }
 
-public class TestMetricsService : IMetricsService
+public sealed class TestMetricsService : IMetricsService
 {
     private readonly Dictionary<string, double> _metrics = [];
 

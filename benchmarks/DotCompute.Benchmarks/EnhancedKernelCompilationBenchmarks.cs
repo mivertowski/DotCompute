@@ -3,6 +3,7 @@ using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -15,9 +16,10 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-internal class EnhancedKernelCompilationBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class EnhancedKernelCompilationBenchmarks : IDisposable
 {
-    private IAcceleratorManager _acceleratorManager = null!;
+    private DefaultAcceleratorManager _acceleratorManager = null!;
     private IAccelerator _accelerator = null!;
     private readonly Dictionary<string, KernelDefinition> _kernelDefinitions = [];
     private readonly Dictionary<string, ICompiledKernel> _compiledKernels = [];
@@ -152,7 +154,10 @@ internal class EnhancedKernelCompilationBenchmarks
             await kernel.DisposeAsync();
         }
         _compiledKernels.Clear();
-        await _acceleratorManager.DisposeAsync();
+        if (_acceleratorManager != null)
+        {
+            await _acceleratorManager.DisposeAsync();
+        }
     }
 
     [IterationCleanup]
@@ -294,5 +299,30 @@ internal class EnhancedKernelCompilationBenchmarks
         var kernelsCompiled = 1;
 
         return kernelsCompiled / compilationTime;
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            Cleanup().GetAwaiter().GetResult();
+            if (_accelerator != null)
+            {
+                var task = _accelerator.DisposeAsync();
+                if (task.IsCompleted)
+                {
+                    task.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    task.AsTask().Wait();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+        GC.SuppressFinalize(this);
     }
 }

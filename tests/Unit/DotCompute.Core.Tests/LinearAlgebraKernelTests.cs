@@ -14,7 +14,7 @@ namespace DotCompute.Tests.Unit;
 /// Comprehensive tests for linear algebra kernels and mathematical operations.
 /// Tests matrix operations, vector operations, and numerical computations without requiring GPU hardware.
 /// </summary>
-public class LinearAlgebraKernelTests : IDisposable
+public sealed class LinearAlgebraKernelTests : IDisposable
 {
     private readonly Mock<IAccelerator> _mockAccelerator;
     private readonly Mock<ILogger<LinearAlgebraKernels>> _mockLogger;
@@ -104,6 +104,9 @@ public class LinearAlgebraKernelTests : IDisposable
         // In a mock implementation, we simulate the correct result
         var mockResult = vectorA.Zip(vectorB, (a, b) => a * b).Sum();
         Assert.True(Math.Abs(result - mockResult) < 1e-6f);
+        // Also verify against expected value
+        Assert.True(Math.Abs(result - expectedDot) < 1e-6f, 
+            $"Expected dot product {expectedDot}, got {result}");
     }
 
     [Theory]
@@ -118,6 +121,9 @@ public class LinearAlgebraKernelTests : IDisposable
         // Assert
         var mockResult = (float)Math.Sqrt(vector.Sum(x => x * x));
         Assert.True(Math.Abs(result - mockResult) < 1e-6f);
+        // Also verify against expected value
+        Assert.True(Math.Abs(result - expectedNorm) < 1e-6f, 
+            $"Expected norm {expectedNorm}, got {result}");
     }
 
     [Theory]
@@ -344,7 +350,7 @@ public class LinearAlgebraKernelTests : IDisposable
     public async Task FindPolynomialRootsAsync_WithQuadratic_ShouldFindRoots(float[] coefficients, float expectedRoot)
     {
         // Act
-        var roots = await _kernels.FindPolynomialRootsAsync(coefficients);
+        var roots = await LinearAlgebraKernels.FindPolynomialRootsAsync(coefficients);
 
         // Assert
         Assert.NotEmpty(roots);
@@ -358,7 +364,7 @@ public class LinearAlgebraKernelTests : IDisposable
     public async Task FindPolynomialRootsAsync_WithCubic_ShouldFindMultipleRoots(float[] coefficients)
     {
         // Act
-        var roots = await _kernels.FindPolynomialRootsAsync(coefficients);
+        var roots = await LinearAlgebraKernels.FindPolynomialRootsAsync(coefficients);
 
         // Assert - for cubic, we expect up to 3 real roots
         Assert.NotEmpty(roots);
@@ -378,7 +384,7 @@ public class LinearAlgebraKernelTests : IDisposable
     public async Task FindPolynomialRootsAsync_WithLinear_ShouldFindExactRoot(float[] coefficients)
     {
         // Act
-        var roots = await _kernels.FindPolynomialRootsAsync(coefficients);
+        var roots = await LinearAlgebraKernels.FindPolynomialRootsAsync(coefficients);
 
         // Assert
         Assert.Single(roots);
@@ -394,7 +400,7 @@ public class LinearAlgebraKernelTests : IDisposable
         var expectedRoots = new[] { 1.0f, 2.0f, 3.0f, 4.0f };
 
         // Act
-        var roots = await _kernels.FindPolynomialRootsAsync(coefficients);
+        var roots = await LinearAlgebraKernels.FindPolynomialRootsAsync(coefficients);
 
         // Assert
         Assert.NotEmpty(roots);
@@ -425,12 +431,12 @@ public class LinearAlgebraKernelTests : IDisposable
         var functionValues = GenerateFunctionValues(x => x * x, a, b, 1000); // f(x) = x²
 
         // Act
-        var result = await _kernels.NumericalIntegrationAsync(functionValues, a, b);
+        var result = await LinearAlgebraKernels.NumericalIntegrationAsync(functionValues, a, b);
 
         // Assert
         var expected = (b * b * b - a * a * a) / 3.0f; // Analytical result for ∫ x² dx
-        Assert.True(Math.Abs(result - expected) < 0.01f, // Tighter tolerance for our advanced algorithm
-            $"Expected integral ≈ {expected}, got {result}");
+        Assert.True(Math.Abs(result - expected) < tolerance,
+            $"Expected integral ≈ {expected}, got {result}, tolerance: {tolerance}");
     }
 
     [Theory]
@@ -442,7 +448,7 @@ public class LinearAlgebraKernelTests : IDisposable
         var functionValues = GenerateFunctionValues(x => (float)Math.Sin(x), a, b, 2000);
 
         // Act  
-        var result = await _kernels.NumericalIntegrationAsync(functionValues, a, b);
+        var result = await LinearAlgebraKernels.NumericalIntegrationAsync(functionValues, a, b);
 
         // Assert
         Assert.True(Math.Abs(result - expected) < 0.05f,
@@ -455,7 +461,7 @@ public class LinearAlgebraKernelTests : IDisposable
         // Test that our Simpson's rules are being used for high sample counts
         var functionValues = GenerateFunctionValues(x => x * x * x * x, 0.0f, 2.0f, 1000); // x⁴
 
-        var result = await _kernels.NumericalIntegrationAsync(functionValues, 0.0f, 2.0f);
+        var result = await LinearAlgebraKernels.NumericalIntegrationAsync(functionValues, 0.0f, 2.0f);
 
         // ∫₀² x⁴ dx = x⁵/5 |₀² = 32/5 = 6.4
         var expected = 32.0f / 5.0f;
@@ -473,7 +479,7 @@ public class LinearAlgebraKernelTests : IDisposable
         var signal = GenerateSineWave(size, frequency: 5, sampleRate: 100);
 
         // Act
-        var (magnitudes, phases) = await _kernels.FFTAsync(signal);
+        var (magnitudes, phases) = await LinearAlgebraKernels.FFTAsync(signal);
 
         // Assert
         Assert.Equal(size, magnitudes.Length);
@@ -523,7 +529,7 @@ public class LinearAlgebraKernelTests : IDisposable
         var task3 = LinearAlgebraKernels.MatrixAddAsync(matrix1, matrix2, 100, 100);
         var task4 = LinearAlgebraKernels.VectorNormAsync(vector1);
 
-        var results = await Task.WhenAll(task1, task2.ContinueWith(t => new float[1] { t.Result }), task3, task4.ContinueWith(t => new float[1] { t.Result }));
+        var results = await Task.WhenAll(task1, task2.ContinueWith(t => new float[1] { t.Result }, TaskScheduler.Default), task3, task4.ContinueWith(t => new float[1] { t.Result }, TaskScheduler.Default));
 
         // Assert
         Assert.All(results, result => Assert.NotNull(result));
@@ -622,6 +628,7 @@ public class LinearAlgebraKernelTests : IDisposable
     {
         _kernels?.Dispose();
         GC.SuppressFinalize(this);
+        GC.SuppressFinalize(this);
     }
 }
 
@@ -631,7 +638,7 @@ public class LinearAlgebraKernelTests : IDisposable
 /// Mock linear algebra kernels for testing purposes.
 /// In a real implementation, this would use actual GPU compute shaders/kernels.
 /// </summary>
-public class LinearAlgebraKernels : IDisposable
+public sealed class LinearAlgebraKernels : IDisposable
 {
     private readonly IAccelerator _accelerator;
     private readonly ILogger<LinearAlgebraKernels> _logger;
@@ -889,7 +896,7 @@ public class LinearAlgebraKernels : IDisposable
     }
 
     // Numerical Methods
-    public async Task<float[]> FindPolynomialRootsAsync(float[] coefficients)
+    public static async Task<float[]> FindPolynomialRootsAsync(float[] coefficients)
     {
         ArgumentNullException.ThrowIfNull(coefficients);
 
@@ -959,7 +966,7 @@ public class LinearAlgebraKernels : IDisposable
         return roots.ToArray();
     }
 
-    private float[] SolveCubicPolynomial(float[] coefficients)
+    private static float[] SolveCubicPolynomial(float[] coefficients)
     {
         // Cardano's formula for ax³ + bx² + cx + d = 0
         var a = coefficients[0];
@@ -1013,7 +1020,7 @@ public class LinearAlgebraKernels : IDisposable
         return roots.ToArray();
     }
 
-    private float[] SolveQuarticPolynomial(float[] coefficients)
+    private static float[] SolveQuarticPolynomial(float[] coefficients)
     {
         // Ferrari's method for ax⁴ + bx³ + cx² + dx + e = 0
         var a = coefficients[0];
@@ -1021,10 +1028,10 @@ public class LinearAlgebraKernels : IDisposable
             return SolveCubicPolynomial([coefficients[1], coefficients[2], coefficients[3], coefficients[4]]);
 
         // Normalize and use depressed quartic
-        var b = coefficients[1] / a;
-        var c = coefficients[2] / a;
-        var d = coefficients[3] / a;
-        var e = coefficients[4] / a;
+        _ = coefficients[1] / a; // b not used in simplified implementation
+        _ = coefficients[2] / a; // c not used in simplified implementation
+        _ = coefficients[3] / a; // d not used in simplified implementation
+        _ = coefficients[4] / a; // e not used in simplified implementation
 
         // Simplified implementation - use numerical method for general case
         return SolveHighDegreePolynomial(coefficients);
@@ -1111,7 +1118,7 @@ public class LinearAlgebraKernels : IDisposable
         return result;
     }
 
-    public async Task<float> NumericalIntegrationAsync(float[] functionValues, float a, float b)
+    public static async Task<float> NumericalIntegrationAsync(float[] functionValues, float a, float b)
     {
         ArgumentNullException.ThrowIfNull(functionValues);
 
@@ -1202,7 +1209,7 @@ public class LinearAlgebraKernels : IDisposable
         return sum * 3.0f * h / 8.0f;
     }
 
-    public async Task<(float[] magnitudes, float[] phases)> FFTAsync(float[] signal)
+    public static async Task<(float[] magnitudes, float[] phases)> FFTAsync(float[] signal)
     {
         ArgumentNullException.ThrowIfNull(signal);
 
@@ -1291,8 +1298,10 @@ public class LinearAlgebraKernels : IDisposable
     }
 
     public void Dispose()
+    {
         // Clean up resources if needed
-        => GC.SuppressFinalize(this);
+        GC.SuppressFinalize(this);
+    }
 }
 
 #endregion

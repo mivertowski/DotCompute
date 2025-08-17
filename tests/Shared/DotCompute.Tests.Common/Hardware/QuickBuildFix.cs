@@ -11,7 +11,7 @@ namespace DotCompute.Tests.Common.Hardware;
 /// This file demonstrates the basic usage pattern.
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class QuickBuildTest
+public static class QuickBuildTest
 {
     /// <summary>
     /// Simple test showing the hardware abstraction layer works.

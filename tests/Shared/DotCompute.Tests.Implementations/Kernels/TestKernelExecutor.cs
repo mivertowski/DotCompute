@@ -2,12 +2,12 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Shared.Kernels;
+namespace DotCompute.Tests.Utilities.Kernels;
 
 /// <summary>
 /// Test kernel executor that simulates kernel execution.
 /// </summary>
-public class TestKernelExecutor
+public sealed class TestKernelExecutor
 {
     private readonly ConcurrentQueue<KernelExecution> _executionQueue;
     private readonly ConcurrentDictionary<string, KernelStatistics> _statistics;
@@ -34,10 +34,7 @@ public class TestKernelExecutor
         KernelConfiguration? configuration = null,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(TestKernelExecutor));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var config = configuration ?? new KernelConfiguration(new Dim3(256), new Dim3(1));
 
@@ -58,7 +55,7 @@ public class TestKernelExecutor
             if (!_executionQueue.TryDequeue(out var dequeuedExecution) || dequeuedExecution.Id != execution.Id)
             {
                 // Find our execution in the queue(shouldn't happen in normal flow)
-                _executionQueue.TryDequeue(out _);
+                _ = _executionQueue.TryDequeue(out _);
             }
 
             execution.StartedAt = DateTime.UtcNow;
@@ -147,6 +144,11 @@ public class TestKernelExecutor
         var threadsPerBlock = blockDim.X * blockDim.Y * blockDim.Z;
         var blockId = threadId / threadsPerBlock;
         var localThreadId = threadId % threadsPerBlock;
+        
+        // Use values to avoid IDE0059 warnings
+        _ = gridDim;
+        _ = blockId;
+        _ = localThreadId;
 
         // Simulate different workloads based on kernel name
         if (execution.KernelName.Contains("MatrixMultiply", StringComparison.OrdinalIgnoreCase))
@@ -292,7 +294,7 @@ public class TestKernelExecutor
 /// <summary>
 /// Represents a kernel execution.
 /// </summary>
-public class KernelExecution
+public sealed class KernelExecution
 {
     public Guid Id { get; set; }
     public string KernelName { get; set; } = "";
@@ -306,7 +308,7 @@ public class KernelExecution
 /// <summary>
 /// Result of kernel execution.
 /// </summary>
-public class KernelExecutionResult
+public sealed class KernelExecutionResult
 {
     public bool Success { get; set; }
     public double ExecutionTimeMs { get; set; }
@@ -320,7 +322,7 @@ public class KernelExecutionResult
 /// <summary>
 /// Statistics for kernel executions.
 /// </summary>
-public class KernelStatistics
+public sealed class KernelStatistics
 {
     public string KernelName { get; set; } = "";
     public long ExecutionCount { get; set; }

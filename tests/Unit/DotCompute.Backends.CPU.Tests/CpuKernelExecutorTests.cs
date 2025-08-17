@@ -11,7 +11,7 @@ using FluentAssertions;
 
 namespace DotCompute.Backends.CPU;
 
-public class CpuKernelExecutorTests
+public sealed class CpuKernelExecutorTests
 {
     private readonly FakeLogger<CpuKernelExecutor> _logger;
     private readonly CpuThreadPool _threadPool;
@@ -171,7 +171,7 @@ public class CpuKernelExecutorTests
     }
 }
 
-public class SimdKernelExecutorTests
+public sealed class SimdKernelExecutorTests
 {
     private readonly SimdKernelExecutor _executor;
 
@@ -389,7 +389,7 @@ public class SimdKernelExecutorTests
     }
 }
 
-public class CpuThreadPoolTests
+public sealed class CpuThreadPoolTests
 {
     private readonly CpuThreadPoolOptions _options;
     private readonly IOptions<CpuThreadPoolOptions> _optionsWrapper;

@@ -1,6 +1,7 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Compilation;
@@ -18,12 +19,67 @@ namespace DotCompute.Tests.Hardware;
 [Trait("Category", "CudaRequired")]
 [Trait("Category", "Hardware")]
 [Collection("Hardware")]
-public class CudaBasicTests : IDisposable
+public sealed class CudaBasicTests : IDisposable
 {
     private readonly ILogger<CudaBasicTests> _logger;
     private readonly CudaBackend? _backend;
     private readonly CudaAccelerator? _accelerator;
     private bool _disposed;
+
+    // LoggerMessage delegates for performance
+    private static readonly Action<ILogger, string, Exception?> LogDeviceInfo = 
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(1, nameof(LogDeviceInfo)),
+            "Device: {Name}");
+
+    private static readonly Action<ILogger, string, Exception?> LogComputeCapability = 
+        LoggerMessage.Define<string>(
+            LogLevel.Information,
+            new EventId(2, nameof(LogComputeCapability)),
+            "Compute Capability: {Capability}");
+
+    private static readonly Action<ILogger, double, Exception?> LogMemory = 
+        LoggerMessage.Define<double>(
+            LogLevel.Information,
+            new EventId(3, nameof(LogMemory)),
+            "Memory: {Memory:F2} GB");
+
+    private static readonly Action<ILogger, int, Exception?> LogComputeUnits = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(4, nameof(LogComputeUnits)),
+            "Compute Units: {Units}");
+
+    private static readonly Action<ILogger, int, Exception?> LogMemoryOperationsTest = 
+        LoggerMessage.Define<int>(
+            LogLevel.Information,
+            new EventId(5, nameof(LogMemoryOperationsTest)),
+            "Memory operations test passed for {Size} elements");
+
+    private static readonly Action<ILogger, Exception?> LogKernelCompilationSuccess = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(6, nameof(LogKernelCompilationSuccess)),
+            "Kernel compilation successful");
+
+    private static readonly Action<ILogger, Exception?> LogSimpleKernelExecutionTest = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(7, nameof(LogSimpleKernelExecutionTest)),
+            "Simple kernel execution test passed");
+
+    private static readonly Action<ILogger, int, uint, uint, uint, Exception?> LogOptimalConfig = 
+        LoggerMessage.Define<int, uint, uint, uint>(
+            LogLevel.Information,
+            new EventId(8, nameof(LogOptimalConfig)),
+            "Optimal config for {Elements} elements: Grid={Grid}, Block={Block}, Total Threads={Total}");
+
+    private static readonly Action<ILogger, Exception?> LogLaunchConfigurationTest = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(9, nameof(LogLaunchConfigurationTest)),
+            "Launch configuration test passed");
 
     public CudaBasicTests(ITestOutputHelper output)
     {
@@ -39,7 +95,7 @@ public class CudaBasicTests : IDisposable
         }
         else
         {
-            _logger.LogInformation("CUDA is not available - tests will be skipped");
+            // CUDA not available - tests will be skipped  
         }
     }
 
@@ -52,7 +108,7 @@ public class CudaBasicTests : IDisposable
         Assert.NotNull(_backend);
         Assert.NotNull(_accelerator);
 
-        _logger.LogInformation("CUDA backend and accelerator initialized successfully");
+        // CUDA backend and accelerator initialized successfully
     }
 
     [SkippableFact]
@@ -70,10 +126,10 @@ public class CudaBasicTests : IDisposable
         Assert.True(info.ComputeUnits > 0);
         Assert.NotNull(info.ComputeCapability);
 
-        _logger.LogInformation("Device: {Name}", info.Name);
-        _logger.LogInformation("Compute Capability: {Capability}", info.ComputeCapability);
-        _logger.LogInformation("Memory: {Memory:F2} GB", info.TotalMemory / (1024.0 * 1024 * 1024));
-        _logger.LogInformation("Compute Units: {Units}", info.ComputeUnits);
+        LogDeviceInfo(_logger, info.Name, null);
+        LogComputeCapability(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
+        LogMemory(_logger, info.TotalMemory / (1024.0 * 1024 * 1024), null);
+        LogComputeUnits(_logger, info.ComputeUnits, null);
     }
 
     [SkippableFact]
@@ -108,7 +164,7 @@ public class CudaBasicTests : IDisposable
                 Assert.Equal(testData[i], result[i]);
             }
 
-            _logger.LogInformation("Memory operations test passed for {Size} elements", SIZE);
+            LogMemoryOperationsTest(_logger, SIZE, null);
         }
         finally
         {
@@ -140,7 +196,7 @@ extern ""C"" __global__ void addOne(float* data, int n)
         var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
         Assert.NotNull(compiledKernel);
 
-        _logger.LogInformation("Kernel compilation successful");
+        LogKernelCompilationSuccess(_logger, null);
 
         await compiledKernel.DisposeAsync();
     }
@@ -195,7 +251,7 @@ extern ""C"" __global__ void multiply(float* data, float factor, int n)
                     $"Incorrect result at {i}: expected {expected}, got {result[i]}");
             }
 
-            _logger.LogInformation("Simple kernel execution test passed");
+            LogSimpleKernelExecutionTest(_logger, null);
 
             await compiledKernel.DisposeAsync();
         }
@@ -239,8 +295,7 @@ extern ""C"" __global__ void testConfig(int* data, int n)
             config.BlockX.Should().BeLessThanOrEqualTo(1024, "Block size should be reasonable"); // Max for most GPUs
             config.BlockX.Should().BeGreaterThanOrEqualTo(32, "Block size should be at least one warp");
 
-            _logger.LogInformation("Optimal config for {Elements} elements: Grid={Grid}, Block={Block}, Total Threads={Total}",
-                N, config.GridX, config.BlockX, totalThreads);
+            LogOptimalConfig(_logger, N, config.GridX, config.BlockX, totalThreads, null);
 
             // Test execution with custom config
             var data = new int[N];
@@ -260,7 +315,7 @@ extern ""C"" __global__ void testConfig(int* data, int n)
                     data[N - 1].Should().BeGreaterThanOrEqualTo(0, "Last element should have valid block ID");
                 }
 
-                _logger.LogInformation("Launch configuration test passed");
+                LogLaunchConfigurationTest(_logger, null);
             }
             finally
             {
@@ -281,5 +336,6 @@ extern ""C"" __global__ void testConfig(int* data, int n)
         _accelerator?.Dispose();
         _backend?.Dispose();
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }

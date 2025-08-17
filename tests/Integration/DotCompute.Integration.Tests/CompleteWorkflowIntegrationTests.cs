@@ -1,4 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -14,7 +16,7 @@ namespace DotCompute.Tests.Integration;
 /// Tests kernel compilation → execution → result validation with real-world scenarios.
 /// </summary>
 [Collection("Integration")]
-public class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
+public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
 {
     public CompleteWorkflowIntegrationTests(ITestOutputHelper output) : base(output)
     {

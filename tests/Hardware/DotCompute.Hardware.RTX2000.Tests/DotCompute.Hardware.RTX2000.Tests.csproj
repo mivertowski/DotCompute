@@ -1,4 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
+  
+  <PropertyGroup>
+    <!-- Hardware test specific suppressions -->
+    <NoWarn>$(NoWarn);CA1806;CA2101</NoWarn>
+  </PropertyGroup>
 
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
@@ -9,7 +14,7 @@
     <RootNamespace>DotCompute.Hardware.RTX2000.Tests</RootNamespace>
     <AssemblyName>DotCompute.Hardware.RTX2000.Tests</AssemblyName>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <EnableDynamicLoading>true</EnableDynamicLoading>    
   </PropertyGroup>
 
   <ItemGroup>

@@ -4,7 +4,7 @@ using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
-public class KernelArgumentsTests
+public sealed class KernelArgumentsTests
 {
     [Fact]
     public void Create_WithCapacity_ShouldInitializeWithCorrectLength()

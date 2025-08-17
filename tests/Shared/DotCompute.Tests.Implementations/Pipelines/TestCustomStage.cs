@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Shared.Pipelines;
+namespace DotCompute.Tests.Utilities.Pipelines;
 
 /// <summary>
 /// Test implementation of a custom pipeline stage.
 /// </summary>
-public class TestCustomStage : IPipelineStage
+public sealed class TestCustomStage : IPipelineStage
 {
     private readonly Func<PipelineExecutionContext, CancellationToken, ValueTask<StageExecutionResult>> _executeFunc;
     private readonly Dictionary<string, object> _metadata;
@@ -18,7 +18,8 @@ public class TestCustomStage : IPipelineStage
     {
         Id = $"custom_{name}_{Guid.NewGuid():N}";
         Name = name;
-        _executeFunc = executeFunc ?? throw new ArgumentNullException(nameof(executeFunc));
+        ArgumentNullException.ThrowIfNull(executeFunc);
+        _executeFunc = executeFunc;
         _metadata = [];
         _metrics = new TestStageMetrics(Name);
         Dependencies = Array.Empty<string>();
@@ -108,7 +109,7 @@ public class TestCustomStage : IPipelineStage
 /// <summary>
 /// Test implementation of a branch stage.
 /// </summary>
-public class TestBranchStage : IPipelineStage
+public sealed class TestBranchStage : IPipelineStage
 {
     private readonly Func<PipelineExecutionContext, bool> _condition;
     private readonly IPipelineStage? _trueBranch;
@@ -124,7 +125,8 @@ public class TestBranchStage : IPipelineStage
     {
         Id = $"branch_{name}_{Guid.NewGuid():N}";
         Name = name;
-        _condition = condition ?? throw new ArgumentNullException(nameof(condition));
+        ArgumentNullException.ThrowIfNull(condition);
+        _condition = condition;
         _trueBranch = trueBranch;
         _falseBranch = falseBranch;
         _metadata = [];
@@ -254,7 +256,7 @@ public class TestBranchStage : IPipelineStage
 /// <summary>
 /// Test implementation of a loop stage.
 /// </summary>
-public class TestLoopStage : IPipelineStage
+public sealed class TestLoopStage : IPipelineStage
 {
     private readonly Func<PipelineExecutionContext, int, bool> _condition;
     private readonly IPipelineStage _body;
@@ -270,8 +272,10 @@ public class TestLoopStage : IPipelineStage
     {
         Id = $"loop_{name}_{Guid.NewGuid():N}";
         Name = name;
-        _condition = condition ?? throw new ArgumentNullException(nameof(condition));
-        _body = body ?? throw new ArgumentNullException(nameof(body));
+        ArgumentNullException.ThrowIfNull(condition);
+        ArgumentNullException.ThrowIfNull(body);
+        _condition = condition;
+        _body = body;
         _metadata = [];
         _metrics = new TestStageMetrics(Name);
         Dependencies = Array.Empty<string>();

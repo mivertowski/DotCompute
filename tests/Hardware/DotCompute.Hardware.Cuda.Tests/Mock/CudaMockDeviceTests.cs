@@ -1,6 +1,7 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
@@ -15,7 +16,7 @@ namespace DotCompute.Tests.Hardware.Mock;
 /// Mock device tests for CI/CD environments without actual CUDA hardware
 /// </summary>
 [Collection("CUDA Mock Tests")]
-public class CudaMockDeviceTests
+public sealed class CudaMockDeviceTests
 {
     private readonly ILogger<CudaMockDeviceTests> _logger;
     private readonly ITestOutputHelper _output;
@@ -225,8 +226,8 @@ __global__ void mock_kernel(float* input, float* output, int n)
 
         // Simulate PTX output
         var ptxString = System.Text.Encoding.UTF8.GetString(mockCompilationResult.CompiledCode);
-        Assert.Contains(".version", ptxString); // "Mock PTX should contain version directive";
-        Assert.Contains(".entry", ptxString); // "Mock PTX should contain entry directive";
+        Assert.Contains(".version", ptxString, StringComparison.Ordinal); // "Mock PTX should contain version directive";
+        Assert.Contains(".entry", ptxString, StringComparison.Ordinal); // "Mock PTX should contain entry directive";
 
         _output.WriteLine($"Mock compilation completed in {mockCompilationResult.CompilationTime.TotalMilliseconds:F2}ms");
         _output.WriteLine($"PTX size: {mockCompilationResult.CompiledCode.Length} bytes");
@@ -297,7 +298,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
         stopwatch.Stop();
 
         // Assert
-        Assert.Equal(concurrentOperations, results.Count());
+        Assert.Equal(concurrentOperations, results.Count);
         results.Should().AllSatisfy(result => result.Result.Should().BeTrue());
 
         // Concurrent execution should be faster than sequential
@@ -385,7 +386,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
             CudaError.InvalidValue => "invalid argument",
             CudaError.LaunchFailure => "launch failure",
             CudaError.InvalidDevicePointer => "invalid device pointer",
-            _ => $"mock error: {error.ToString().ToLowerInvariant()}"
+            _ => $"mock error: {error.ToString().ToUpperInvariant()}"
         };
     }
 
@@ -524,8 +525,8 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
         ptxBuilder.AppendLine(".address_size 64");
         ptxBuilder.AppendLine();
 
-        ptxBuilder.AppendLine($"// Generated from source code{sourceCode.Length} chars)");
-        ptxBuilder.AppendLine($"// Optimization level: {optimization}");
+        ptxBuilder.AppendLine(CultureInfo.InvariantCulture, $"// Generated from source code{sourceCode.Length} chars)");
+        ptxBuilder.AppendLine(CultureInfo.InvariantCulture, $"// Optimization level: {optimization}");
         ptxBuilder.AppendLine();
 
         ptxBuilder.AppendLine(".visible .entry mock_kernel(");
@@ -565,20 +566,20 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
     }
 
     // Mock Data Structures
-    private class MockMemoryManager
+    private sealed class MockMemoryManager
     {
         public long TotalMemory { get; set; }
         public long AvailableMemory { get; set; }
     }
 
-    private class MockMemoryBuffer
+    private sealed class MockMemoryBuffer
     {
         public long SizeInBytes { get; set; }
         public bool IsDisposed { get; set; }
         public DateTime AllocationTime { get; set; }
     }
 
-    private class MockAllocationResult
+    private sealed class MockAllocationResult
     {
         public bool Success { get; set; }
         public long AllocatedSize { get; set; }
@@ -586,7 +587,7 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
         public string? ErrorMessage { get; set; }
     }
 
-    private class MockCompilationResult
+    private sealed class MockCompilationResult
     {
         public bool Success { get; set; }
         public byte[] CompiledCode { get; set; } = Array.Empty<byte>();
@@ -595,7 +596,7 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
         public string? ErrorMessage { get; set; }
     }
 
-    private class MockAsyncOperation
+    private sealed class MockAsyncOperation
     {
         public string Name { get; set; } = string.Empty;
         public int ExecutionTimeMs { get; set; }

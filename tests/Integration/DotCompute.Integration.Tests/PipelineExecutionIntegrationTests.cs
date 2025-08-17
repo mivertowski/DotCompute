@@ -1,8 +1,13 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
+
+#pragma warning disable IDE0059 // Unnecessary assignment - test scaffolding
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 using DotCompute.Tests.Integration.Infrastructure;
@@ -18,7 +23,7 @@ namespace DotCompute.Tests.Integration;
 /// including parallel execution, data dependencies, and pipeline optimization.
 /// </summary>
 [Collection("Integration")]
-public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
+public sealed class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 {
     public PipelineExecutionIntegrationTests(ITestOutputHelper output) : base(output)
     {
@@ -39,7 +44,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Verify stages executed in correct order
         var executionTimes = result.ExecutionResults
-            .OrderBy(r => int.Parse(r.Key.Split('_')[1])) // stage_1, stage_2, etc.
+            .OrderBy(r => int.Parse(r.Key.Split('_')[1], CultureInfo.InvariantCulture)) // stage_1, stage_2, etc.
             .Select(r => r.Value.Duration.TotalMilliseconds)
             .ToArray();
 
@@ -67,10 +72,10 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Verify parallel stages
         var parallelStages = result.ExecutionResults
-            .Where(r => r.Key.Contains("parallel"))
+            .Where(r => r.Key.Contains("parallel", StringComparison.Ordinal))
             .ToList();
 
-        Assert.Equal(3, parallelStages.Count());
+        Assert.Equal(3, parallelStages.Count);
         parallelStages.Should().AllSatisfy(stage =>
             stage.Value.Success.Should().BeTrue());
 
@@ -139,9 +144,9 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
                 var chunkResult = await ExecuteComputeWorkflowAsync(
                     $"StreamingChunk_{offset / chunkSize}", chunkPipeline);
 
-                if (chunkResult.Success && chunkResult.Results.ContainsKey("processed_chunk"))
+                if (chunkResult.Success && chunkResult.Results.TryGetValue("processed_chunk", out var processedChunk))
                 {
-                    results.Enqueue((float[])chunkResult.Results["processed_chunk"]);
+                    results.Enqueue((float[])processedChunk);
                 }
 
                 return chunkResult;
@@ -158,7 +163,7 @@ public class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
 
         // Assert
         chunkResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
-        Assert.Equal(totalDataSize / chunkSize, results.Count());
+        Assert.Equal(totalDataSize / chunkSize, results.Count);
 
         var totalProcessedElements = results.Sum(chunk => chunk.Length);
         Assert.Equal(totalDataSize, totalProcessedElements);

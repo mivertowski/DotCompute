@@ -3,7 +3,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
@@ -34,7 +34,7 @@ public sealed class P2PBufferTests : IDisposable
         const bool supportsP2P = true;
 
         // Act
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, length, supportsP2P, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, length, supportsP2P, _logger);
 
         // Assert
         Assert.Equal(length, buffer.Length);
@@ -75,7 +75,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyFromHostAsync_ValidArray_CompletesSuccessfully()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var sourceData = new float[256];
         for (var i = 0; i < sourceData.Length; i++)
         {
@@ -93,7 +93,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyFromHostAsync_NullArray_ThrowsArgumentNullException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -104,7 +104,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyFromHostAsync_WrongDataType_ThrowsArgumentException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var intData = new int[256];
 
         // Act & Assert
@@ -116,7 +116,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyFromHostAsync_NegativeOffset_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var sourceData = new float[256];
 
         // Act & Assert
@@ -128,7 +128,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyFromHostAsync_ReadOnlyMemory_CompletesSuccessfully()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var sourceData = new float[256];
         for (var i = 0; i < sourceData.Length; i++)
         {
@@ -147,7 +147,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyToHostAsync_ValidArray_CompletesSuccessfully()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var destinationData = new float[256];
 
         // Act
@@ -161,7 +161,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyToHostAsync_NullArray_ThrowsArgumentNullException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -172,7 +172,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyToHostAsync_WrongDataType_ThrowsArgumentException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var intData = new int[256];
 
         // Act & Assert
@@ -184,7 +184,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyToHostAsync_Memory_CompletesSuccessfully()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var destinationData = new float[256];
         var memory = new Memory<float>(destinationData);
 
@@ -199,10 +199,10 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyToAsync_P2PBuffer_UsesOptimizedPath()
     {
         // Arrange
-        var sourceBuffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
-        var targetAccelerator = new MockAccelerator(name: "test-device-1", type: AcceleratorType.CUDA);
-        var targetMemoryBuffer = new MockMemoryBuffer(1024 * sizeof(float), Abstractions.MemoryOptions.None);
-        var targetBuffer = new P2PBuffer<float>(targetMemoryBuffer, targetAccelerator, 256, true, _logger);
+        using var sourceBuffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        await using var targetAccelerator = new MockAccelerator(name: "test-device-1", type: AcceleratorType.CUDA);
+        using var targetMemoryBuffer = new MockMemoryBuffer(1024 * sizeof(float), Abstractions.MemoryOptions.None);
+        using var targetBuffer = new P2PBuffer<float>(targetMemoryBuffer, targetAccelerator, 256, true, _logger);
 
         // Act
         await sourceBuffer.CopyToAsync(targetBuffer);
@@ -216,7 +216,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyToAsync_NullDestination_ThrowsArgumentNullException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -227,10 +227,10 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyToAsync_RangeTransfer_ValidatesRanges()
     {
         // Arrange
-        var sourceBuffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
-        var targetAccelerator = new MockAccelerator(name: "test-device-1", type: AcceleratorType.CUDA);
-        var targetMemoryBuffer = new MockMemoryBuffer(1024 * sizeof(float), Abstractions.MemoryOptions.None);
-        var targetBuffer = new P2PBuffer<float>(targetMemoryBuffer, targetAccelerator, 256, true, _logger);
+        using var sourceBuffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        await using var targetAccelerator = new MockAccelerator(name: "test-device-1", type: AcceleratorType.CUDA);
+        using var targetMemoryBuffer = new MockMemoryBuffer(1024 * sizeof(float), Abstractions.MemoryOptions.None);
+        using var targetBuffer = new P2PBuffer<float>(targetMemoryBuffer, targetAccelerator, 256, true, _logger);
 
         // Act & Assert - valid range
         await sourceBuffer.CopyToAsync(0, targetBuffer, 0, 128);
@@ -256,7 +256,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task FillAsync_ValidValue_CompletesSuccessfully()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         const float fillValue = 3.14f;
 
         // Act
@@ -270,7 +270,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task FillAsync_WrongDataType_ThrowsArgumentException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         const int intValue = 42;
 
         // Act & Assert
@@ -282,7 +282,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task FillAsync_RangeFill_ValidatesRanges()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         const float fillValue = 2.718f;
 
         // Act & Assert - valid range
@@ -305,7 +305,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task ClearAsync_CompletesSuccessfully()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act
         await buffer.ClearAsync();
@@ -318,7 +318,7 @@ public sealed class P2PBufferTests : IDisposable
     public void Slice_ValidRange_CreatesCorrectSlice()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act
         var slice = buffer.Slice(64, 128);
@@ -333,7 +333,7 @@ public sealed class P2PBufferTests : IDisposable
     public void Slice_InvalidRange_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act & Assert - negative offset
         Assert.Throws<ArgumentOutOfRangeException>(() => buffer.Slice(-1, 10));
@@ -349,7 +349,7 @@ public sealed class P2PBufferTests : IDisposable
     public void AsType_ValidTypeConversion_CreatesTypedBuffer()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act
         var intBuffer = buffer.AsType<int>();
@@ -364,7 +364,7 @@ public sealed class P2PBufferTests : IDisposable
     public void Map_ReturnsDefaultMappedMemory()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act
         var mappedMemory = buffer.Map(MapMode.Read);
@@ -378,7 +378,7 @@ public sealed class P2PBufferTests : IDisposable
     public void MapRange_ValidRange_ReturnsDefaultMappedMemory()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act
         var mappedMemory = buffer.MapRange(64, 128, MapMode.Read);
@@ -391,7 +391,7 @@ public sealed class P2PBufferTests : IDisposable
     public void MapRange_InvalidRange_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act & Assert - negative offset
         Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -410,7 +410,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task MapAsync_ReturnsDefaultMappedMemory()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act
         var mappedMemory = await buffer.MapAsync(MapMode.Read);
@@ -423,7 +423,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task Operations_AfterDispose_ThrowObjectDisposedException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         await buffer.DisposeAsync();
 
         // Act & Assert
@@ -445,7 +445,7 @@ public sealed class P2PBufferTests : IDisposable
     public async Task ConcurrentOperations_HandlesConcurrency()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         var concurrentTasks = new Task[10];
 
         // Act - concurrent fill operations
@@ -466,9 +466,9 @@ public sealed class P2PBufferTests : IDisposable
     public async Task CopyOperations_WithCancellation_ThrowsOperationCanceledException()
     {
         // Arrange
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
@@ -484,7 +484,7 @@ public sealed class P2PBufferTests : IDisposable
         // Arrange
         const int length = 512;
         const bool supportsP2P = false;
-        var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, length, supportsP2P, _logger);
+        using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, length, supportsP2P, _logger);
 
         // Assert
         Assert.Equal(length, buffer.Length);
@@ -502,5 +502,6 @@ public sealed class P2PBufferTests : IDisposable
     {
         _mockMemoryBuffer?.Dispose();
         _mockAccelerator?.DisposeAsync().AsTask().Wait();
+        GC.SuppressFinalize(this);
     }
 }

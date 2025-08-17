@@ -1,4 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -15,7 +17,7 @@ namespace DotCompute.Tests.Integration;
 /// scientific computing, image processing, financial modeling, and data analytics.
 /// </summary>
 [Collection("Integration")]
-public class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
+public sealed class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
 {
     public RealWorldScenarioIntegrationTests(ITestOutputHelper output) : base(output)
     {

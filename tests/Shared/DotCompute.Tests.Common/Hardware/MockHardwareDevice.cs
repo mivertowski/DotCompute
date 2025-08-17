@@ -320,18 +320,31 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
     protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <inheritdoc/>
-    public virtual void Dispose()
+    public void Dispose()
+    {
+        Dispose(true);
+    }
+
+    /// <summary>
+    /// Disposes the device.
+    /// </summary>
+    /// <param name="disposing">Whether to dispose managed resources.</param>
+    protected virtual void Dispose(bool disposing)
     {
         if (_disposed)
             return;
 
-        lock (_lock)
+        if (disposing)
         {
-            _disposed = true;
-            _failureMessage = null;
+            lock (_lock)
+            {
+                _disposed = true;
+                _failureMessage = null;
+            }
+
+            Logger?.LogDebug("Disposed mock device {DeviceId}", Id);
         }
 
-        Logger?.LogDebug("Disposed mock device {DeviceId}", Id);
-        GC.SuppressFinalize(this);
+        _disposed = true;
     }
 }

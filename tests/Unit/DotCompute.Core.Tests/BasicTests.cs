@@ -3,14 +3,14 @@ using DotCompute.Abstractions;
 
 namespace DotCompute.Core.Tests
 {
-    public class BasicTests
+    public sealed class BasicTests
     {
         [Fact]
         public void Core_Assembly_Loads()
         {
             var assembly = typeof(IAccelerator).Assembly;
             Assert.NotNull(assembly);
-            Assert.Contains("DotCompute.Core", assembly.FullName);
+            Assert.Contains("DotCompute.Core", assembly.FullName, StringComparison.Ordinal);
         }
 
         [Theory]

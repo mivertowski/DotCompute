@@ -4,7 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Shared.TestInfrastructure;
+namespace DotCompute.Tests.Utilities.TestInfrastructure;
 
 /// <summary>
 /// Test implementation of compiled kernel for unit testing.
@@ -37,18 +37,22 @@ public sealed class TestCompiledKernel : ICompiledKernel
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        if (IsDisposed)
-            throw new ObjectDisposedException(nameof(TestCompiledKernel));
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         // Mock execution - just return completed task
         return ValueTask.CompletedTask;
     }
 
-    public void Dispose() => IsDisposed = true;
+    public void Dispose()
+    {
+        IsDisposed = true;
+        GC.SuppressFinalize(this);
+    }
 
     public ValueTask DisposeAsync()
     {
         Dispose();
+        GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;
     }
 }

@@ -21,6 +21,7 @@ public sealed class MemoryPoolTests : IDisposable
     {
         _pool.Dispose();
         GC.SuppressFinalize(this);
+        GC.SuppressFinalize(this);
     }
 
     [Fact]
@@ -81,10 +82,9 @@ public sealed class MemoryPoolTests : IDisposable
     public void RentDispose_Pattern_ShouldWork()
     {
         // Arrange & Act
-        IMemoryBuffer<int>? buffer = null;
         var act = () =>
         {
-            buffer = _pool.Rent(1024);
+            var buffer = _pool.Rent(1024);
             buffer.Dispose();
         };
 

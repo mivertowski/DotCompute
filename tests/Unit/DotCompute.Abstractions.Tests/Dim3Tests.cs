@@ -9,7 +9,7 @@ namespace DotCompute.Abstractions.Tests;
 /// <summary>
 /// Comprehensive unit tests for the Dim3 struct.
 /// </summary>
-public class Dim3Tests
+public sealed class Dim3Tests
 {
     #region Constructor Tests
 

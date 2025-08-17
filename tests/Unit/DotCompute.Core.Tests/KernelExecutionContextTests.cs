@@ -4,7 +4,7 @@ using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
-public class KernelExecutionContextTests
+public sealed class KernelExecutionContextTests
 {
     [Fact]
     public void Constructor_WithValidParameters_ShouldInitializeProperties()

@@ -204,8 +204,9 @@ public sealed class MemoryManagerTests : IDisposable
     {
         if (!_disposed)
         {
+            // No disposable resources to clean up
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
-        GC.SuppressFinalize(this);
     }
 }

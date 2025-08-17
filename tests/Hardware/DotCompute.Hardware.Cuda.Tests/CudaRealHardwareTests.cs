@@ -14,7 +14,7 @@ namespace DotCompute.Tests.Hardware;
 [Trait("Category", "CudaRequired")]
 [Trait("Category", "Hardware")]
 [Collection("Hardware")]
-public class CudaRealHardwareTests : IDisposable
+public sealed class CudaRealHardwareTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
     private IntPtr _cudaContext;
@@ -367,36 +367,47 @@ public class CudaRealHardwareTests : IDisposable
         // Windows CUDA methods
         public static class Windows
         {
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuInit")]
             public static extern int CudaInit(uint flags);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuDeviceGetCount")]
             public static extern int CudaGetDeviceCount(ref int count);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuDeviceGetName")]
             public static extern int CudaDeviceGetName(byte[] name, int len, int dev);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuCtxCreate_v2")]
             public static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuCtxDestroy_v2")]
             public static extern int CudaCtxDestroy(IntPtr ctx);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemGetInfo_v2")]
             public static extern int CudaMemGetInfo(ref ulong free, ref ulong total);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemAlloc_v2")]
             public static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemFree_v2")]
             public static extern int CudaFree(IntPtr dptr);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyHtoD_v2")]
             public static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoH_v2")]
             public static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoD_v2")]
             public static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
         }
@@ -404,36 +415,47 @@ public class CudaRealHardwareTests : IDisposable
         // Linux CUDA methods
         public static class Linux
         {
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuInit")]
             public static extern int CudaInit(uint flags);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetCount")]
             public static extern int CudaGetDeviceCount(ref int count);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetName")]
             public static extern int CudaDeviceGetName(byte[] name, int len, int dev);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuCtxCreate_v2")]
             public static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuCtxDestroy_v2")]
             public static extern int CudaCtxDestroy(IntPtr ctx);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemGetInfo_v2")]
             public static extern int CudaMemGetInfo(ref ulong free, ref ulong total);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemAlloc_v2")]
             public static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemFree_v2")]
             public static extern int CudaFree(IntPtr dptr);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoD_v2")]
             public static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoH_v2")]
             public static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoD_v2")]
             public static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
         }
@@ -554,7 +576,7 @@ public class CudaRealHardwareTests : IDisposable
 /// <summary>
 /// Helper attribute to skip tests when conditions aren't met.
 /// </summary>
-public class SkippableFactAttribute : FactAttribute
+public sealed class SkippableFactAttribute : FactAttribute
 {
     public override string? Skip { get; set; }
 }
@@ -576,7 +598,9 @@ public static class Skip
 /// <summary>
 /// Exception thrown to skip a test.
 /// </summary>
-public class SkipException : Exception
+public sealed class SkipException : Exception
 {
+    public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
+    public SkipException(string message, Exception innerException) : base(message, innerException) { }
 }

@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Shared.TestInfrastructure;
+namespace DotCompute.Tests.Utilities.TestInfrastructure;
 
 /// <summary>
 /// Base class for all tests that provides common infrastructure and coverage utilities
@@ -195,33 +195,47 @@ public abstract class CoverageTestBase : IDisposable
         }
     }
 
-    public virtual void Dispose()
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes resources.
+    /// </summary>
+    /// <param name="disposing">Whether to dispose managed resources.</param>
+    protected virtual void Dispose(bool disposing)
     {
         if (_disposed)
             return;
 
-        // Dispose in reverse order
-        for (var i = _disposables.Count - 1; i >= 0; i--)
+        if (disposing)
         {
-            try
+            // Dispose in reverse order
+            for (var i = _disposables.Count - 1; i >= 0; i--)
             {
-                _disposables[i]?.Dispose();
+                try
+                {
+                    _disposables[i]?.Dispose();
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Error disposing test resource {Index}", i);
+                }
             }
-            catch (Exception ex)
-            {
-                Logger.LogWarning(ex, "Error disposing test resource {Index}", i);
-            }
+
+            _disposables.Clear();
+            CancellationTokenSource?.Dispose();
         }
 
-        _disposables.Clear();
-        CancellationTokenSource?.Dispose();
         _disposed = true;
     }
 
     /// <summary>
     /// Wrapper for async disposable resources
     /// </summary>
-    private class AsyncDisposableWrapper : IDisposable
+    private sealed class AsyncDisposableWrapper : IDisposable
     {
         private readonly IAsyncDisposable _asyncDisposable;
 
@@ -230,7 +244,11 @@ public abstract class CoverageTestBase : IDisposable
             _asyncDisposable = asyncDisposable;
         }
 
-        public void Dispose() => _asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        public void Dispose()
+        {
+            _asyncDisposable.DisposeAsync().AsTask().GetAwaiter().GetResult();
+            GC.SuppressFinalize(this);
+        }
     }
 }
 
@@ -238,33 +256,33 @@ public abstract class CoverageTestBase : IDisposable
 /// xUnit logger provider for test output
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class XUnitLoggerProvider : ILoggerProvider
+public sealed class XUnitLoggerProvider : ILoggerProvider
 {
     private readonly ITestOutputHelper _output;
 
     public XUnitLoggerProvider(ITestOutputHelper output)
     {
-        _output = output;
+        _output = output ?? throw new ArgumentNullException(nameof(output));
     }
 
     public ILogger CreateLogger(string categoryName) => new XUnitLogger(_output, categoryName);
 
-    public void Dispose() { }
+    public void Dispose() { GC.SuppressFinalize(this); }
 }
 
 /// <summary>
 /// xUnit logger implementation
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class XUnitLogger : ILogger
+public sealed class XUnitLogger : ILogger
 {
     private readonly ITestOutputHelper _output;
     private readonly string _categoryName;
 
     public XUnitLogger(ITestOutputHelper output, string categoryName)
     {
-        _output = output;
-        _categoryName = categoryName;
+        _output = output ?? throw new ArgumentNullException(nameof(output));
+        _categoryName = categoryName ?? throw new ArgumentNullException(nameof(categoryName));
     }
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => NullDisposable.Instance;
@@ -289,9 +307,9 @@ public class XUnitLogger : ILogger
         }
     }
 
-    private class NullDisposable : IDisposable
+    private sealed class NullDisposable : IDisposable
     {
         public static readonly NullDisposable Instance = new();
-        public void Dispose() { }
+        public void Dispose() { GC.SuppressFinalize(this); }
     }
 }

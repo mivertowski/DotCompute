@@ -13,7 +13,7 @@ using Microsoft.Extensions.Options;
 
 namespace DotCompute.Backends.CPU;
 
-public class CpuAcceleratorTests
+public sealed class CpuAcceleratorTests
 {
     private readonly FakeLogger<CpuAccelerator> _logger;
     private readonly IOptions<CpuAcceleratorOptions> _options;
@@ -232,7 +232,7 @@ public class CpuAcceleratorTests
     }
 }
 
-public class CpuMemoryManagerTests
+public sealed class CpuMemoryManagerTests
 {
     private readonly FakeLogger<CpuMemoryManager> _logger;
     private readonly CpuMemoryManager _memoryManager;
@@ -350,7 +350,7 @@ public class CpuMemoryManagerTests
     }
 }
 
-public class CpuMemoryBufferTests
+public sealed class CpuMemoryBufferTests
 {
     [Theory]
     [InlineData(1024)]

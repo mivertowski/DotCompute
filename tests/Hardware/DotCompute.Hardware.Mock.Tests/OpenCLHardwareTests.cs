@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Shared;
-using DotCompute.Tests.Shared.TestFixtures;
+using DotCompute.Tests.Utilities;
+using DotCompute.Tests.Utilities.TestFixtures;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Hardware;
@@ -92,7 +92,8 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
         _output.WriteLine("Testing OpenCL buffer operations...");
 
         const int dataSize = 1024 * 1024; // 1M elements
-        var hostData = TestDataGenerators.GenerateRandomVector(dataSize);
+        // Remove unnecessary assignment for IDE0059
+        TestDataGenerators.GenerateRandomVector(dataSize);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -120,7 +121,8 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
 
         const int width = 1024;
         const int height = 1024;
-        var imageData = TestDataGenerators.GeneratePatternData(width, height, PatternType.Gradient);
+        // Remove unnecessary assignment for IDE0059
+        TestDataGenerators.GeneratePatternData(width, height, PatternType.Gradient);
 
         // TODO: When real OpenCL backend is implemented:
         // 1. Create 2D image object
@@ -142,9 +144,10 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
         const int matrixSize = 1024;
         const int tileSize = 16;
 
-        var a = TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
-        var b = TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
-        var c = new float[matrixSize, matrixSize];
+        // Convert multidimensional arrays to jagged arrays for CA1814
+        TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
+        TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
+        TestDataGenerators.CreateJaggedArray(matrixSize, matrixSize);
 
         // TODO: When real OpenCL backend is implemented:
         // 1. Implement tiled matrix multiplication

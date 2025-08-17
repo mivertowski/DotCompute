@@ -15,12 +15,12 @@ namespace DotCompute.Backends.CPU.Tests.Clean;
 /// <summary>
 /// Clean unit tests for CpuAccelerator focusing only on public API and working components.
 /// </summary>
-public class CpuAcceleratorTestsClean : IDisposable
+public sealed class CpuAcceleratorTestsClean : IDisposable
 {
     private readonly Mock<ILogger<CpuAccelerator>> _mockLogger;
     private readonly Mock<IOptions<CpuAcceleratorOptions>> _mockOptions;
     private readonly Mock<IOptions<CpuThreadPoolOptions>> _mockThreadPoolOptions;
-    private bool _disposed;
+    private readonly bool _disposed;
 
     public CpuAcceleratorTestsClean()
     {
@@ -246,7 +246,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
 /// <summary>
 /// Tests for CpuAcceleratorOptions configuration and validation.
 /// </summary>
-public class CpuAcceleratorOptionsTests
+public sealed class CpuAcceleratorOptionsTests
 {
     [Fact]
     public void DefaultOptions_ShouldHaveExpectedDefaults()

@@ -4,7 +4,7 @@ using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
-public class AcceleratorInfoTests
+public sealed class AcceleratorInfoTests
 {
     [Fact]
     public void LegacyConstructor_WithValidParameters_ShouldInitializeProperties()

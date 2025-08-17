@@ -248,6 +248,7 @@ public sealed class PerformanceMonitorTests : IDisposable
         {
             _performanceMonitor?.Dispose();
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 }

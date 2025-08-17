@@ -4,13 +4,13 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Shared.TestInfrastructure;
+namespace DotCompute.Tests.Utilities.TestInfrastructure;
 
 /// <summary>
 /// Test implementation of IMemoryManager for testing purposes
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class TestMemoryManager : IMemoryManager
+public sealed class TestMemoryManager : IMemoryManager
 {
     private readonly Dictionary<int, TestMemoryBuffer> _allocatedBuffers = [];
     private int _nextBufferId = 1;
@@ -70,11 +70,7 @@ public class TestMemoryManager : IMemoryManager
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
         ThrowIfDisposed();
-
-        if (buffer == null)
-        {
-            throw new ArgumentNullException(nameof(buffer));
-        }
+        ArgumentNullException.ThrowIfNull(buffer);
 
         if (buffer is not TestMemoryBuffer testBuffer)
         {
@@ -179,13 +175,7 @@ public class TestMemoryManager : IMemoryManager
         _allocatedBuffers.Clear();
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(TestMemoryManager));
-        }
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <summary>
     /// Disposes the memory manager and all allocated buffers
@@ -197,6 +187,7 @@ public class TestMemoryManager : IMemoryManager
 
         Clear();
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }
 
@@ -270,13 +261,7 @@ public class TestMemoryBuffer : IMemoryBuffer
         return ValueTask.CompletedTask;
     }
 
-    private void ThrowIfDisposed()
-    {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(TestMemoryBuffer));
-        }
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <inheritdoc/>
     public void Dispose()
@@ -284,7 +269,24 @@ public class TestMemoryBuffer : IMemoryBuffer
         if (_disposed)
             return;
 
-        _manager.ReleaseBuffer(_bufferId);
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    /// <summary>
+    /// Disposes the buffer.
+    /// </summary>
+    /// <param name="disposing">Whether to dispose managed resources.</param>
+    protected virtual void Dispose(bool disposing)
+    {
+        if (_disposed)
+            return;
+
+        if (disposing)
+        {
+            _manager.ReleaseBuffer(_bufferId);
+        }
+
         _disposed = true;
     }
 
@@ -300,7 +302,7 @@ public class TestMemoryBuffer : IMemoryBuffer
 /// Test implementation of a memory buffer view
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class TestMemoryBufferView : TestMemoryBuffer
+public sealed class TestMemoryBufferView : TestMemoryBuffer
 {
     private readonly TestMemoryBuffer _parentBuffer;
     private readonly long _offset;
@@ -335,10 +337,7 @@ public class TestMemoryBufferView : TestMemoryBuffer
         long offset = 0,
         CancellationToken cancellationToken = default)
     {
-        if (IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(TestMemoryBufferView));
-        }
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         // Adjust offset to parent buffer's coordinate system
         return _parentBuffer.CopyFromHostAsync(source, _offset + offset, cancellationToken);
@@ -350,10 +349,7 @@ public class TestMemoryBufferView : TestMemoryBuffer
         long offset = 0,
         CancellationToken cancellationToken = default)
     {
-        if (IsDisposed)
-        {
-            throw new ObjectDisposedException(nameof(TestMemoryBufferView));
-        }
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
 
         // Adjust offset to parent buffer's coordinate system
         return _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);

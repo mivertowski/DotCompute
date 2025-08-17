@@ -44,19 +44,19 @@ public class OpenCLHardwareTests
         Skip.IfNot(IsOpenCLAvailable(), "OpenCL runtime not available");
 
         uint platformCount = 0;
-        var result = clGetPlatformIDs(0, null, ref platformCount);
+        _ = clGetPlatformIDs(0, null, ref platformCount);
 
         if (platformCount > 0)
         {
             var platforms = new IntPtr[platformCount];
-            result = clGetPlatformIDs(platformCount, platforms, ref platformCount);
+            var getPlatformsResult = clGetPlatformIDs(platformCount, platforms, ref platformCount);
 
-            Assert.Equal(0, result); // CL_SUCCESS
+            Assert.Equal(0, getPlatformsResult); // CL_SUCCESS
 
             foreach (var platform in platforms)
             {
                 uint deviceCount = 0;
-                result = clGetDeviceIDs(platform, DeviceType.CL_DEVICE_TYPE_ALL, 0, null, ref deviceCount);
+                _ = clGetDeviceIDs(platform, DeviceType.CL_DEVICE_TYPE_ALL, 0, null, ref deviceCount);
 
                 _output.WriteLine($"Platform has {deviceCount} devices");
                 Assert.True(deviceCount >= 0);
@@ -71,20 +71,20 @@ public class OpenCLHardwareTests
         Skip.IfNot(IsOpenCLAvailable(), "OpenCL runtime not available");
 
         uint platformCount = 0;
-        var result = clGetPlatformIDs(0, null, ref platformCount);
+        _ = clGetPlatformIDs(0, null, ref platformCount);
 
         if (platformCount > 0)
         {
             var platforms = new IntPtr[1];
-            result = clGetPlatformIDs(1, platforms, ref platformCount);
+            _ = clGetPlatformIDs(1, platforms, ref platformCount);
 
             uint deviceCount = 0;
-            result = clGetDeviceIDs(platforms[0], DeviceType.CL_DEVICE_TYPE_DEFAULT, 0, null, ref deviceCount);
+            _ = clGetDeviceIDs(platforms[0], DeviceType.CL_DEVICE_TYPE_DEFAULT, 0, null, ref deviceCount);
 
             if (deviceCount > 0)
             {
                 var devices = new IntPtr[1];
-                result = clGetDeviceIDs(platforms[0], DeviceType.CL_DEVICE_TYPE_DEFAULT, 1, devices, ref deviceCount);
+                _ = clGetDeviceIDs(platforms[0], DeviceType.CL_DEVICE_TYPE_DEFAULT, 1, devices, ref deviceCount);
 
                 var errorCode = 0;
                 var context = clCreateContext(IntPtr.Zero, 1, devices, IntPtr.Zero, IntPtr.Zero, ref errorCode);
@@ -94,7 +94,8 @@ public class OpenCLHardwareTests
 
                 if (context != IntPtr.Zero)
                 {
-                    clReleaseContext(context);
+                    var releaseResult = clReleaseContext(context);
+                    _output.WriteLine($"Context release result: {releaseResult}");
                 }
             }
         }
@@ -118,15 +119,19 @@ public class OpenCLHardwareTests
     private const string OpenCLLibrary = "OpenCL";
 
     [DllImport(OpenCLLibrary)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int clGetPlatformIDs(uint numEntries, IntPtr[]? platforms, ref uint numPlatforms);
 
     [DllImport(OpenCLLibrary)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int clGetDeviceIDs(IntPtr platform, DeviceType deviceType, uint numEntries, IntPtr[]? devices, ref uint numDevices);
 
     [DllImport(OpenCLLibrary)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern IntPtr clCreateContext(IntPtr properties, uint numDevices, IntPtr[] devices, IntPtr pfnNotify, IntPtr userData, ref int errorCode);
 
     [DllImport(OpenCLLibrary)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     private static extern int clReleaseContext(IntPtr context);
 
     private enum DeviceType : ulong

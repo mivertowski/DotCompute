@@ -18,12 +18,55 @@ namespace DotCompute.Tests.Hardware;
 [Trait("Category", "CudaRequired")]
 [Trait("Category", "Performance")]
 [Collection("Hardware")]
-public class CudaPerformanceBenchmarks : IDisposable
+public sealed class CudaPerformanceBenchmarks : IDisposable
 {
     private readonly ILogger<CudaPerformanceBenchmarks> _logger;
     private readonly CudaBackend? _backend;
     private readonly CudaAccelerator? _accelerator;
     private bool _disposed;
+
+    // LoggerMessage delegates for performance
+    private static readonly Action<ILogger, Exception?> LogStartingMemoryBandwidthBenchmark = 
+        LoggerMessage.Define(
+            LogLevel.Information,
+            new EventId(1, nameof(LogStartingMemoryBandwidthBenchmark)),
+            "Starting memory bandwidth benchmark");
+
+    private static readonly Action<ILogger, double, double, double, Exception?> LogMemoryBandwidth = 
+        LoggerMessage.Define<double, double, double>(
+            LogLevel.Information,
+            new EventId(2, nameof(LogMemoryBandwidth)),
+            "Memory Bandwidth {SizeMB}MB: H2D={H2DBandwidth:F1} GB/s, D2H={D2HBandwidth:F1} GB/s");
+
+    private static readonly Action<ILogger, double, double, Exception?> LogSAXPYPerformance = 
+        LoggerMessage.Define<double, double>(
+            LogLevel.Information,
+            new EventId(3, nameof(LogSAXPYPerformance)),
+            "SAXPY Performance: {GFLOPS:F1} GFLOPS, {Bandwidth:F1} GB/s effective bandwidth");
+
+    private static readonly Action<ILogger, double, Exception?> LogAverageKernelLaunchTime = 
+        LoggerMessage.Define<double>(
+            LogLevel.Information,
+            new EventId(4, nameof(LogAverageKernelLaunchTime)),
+            "Average kernel launch time: {AvgTime:F3} ms");
+
+    private static readonly Action<ILogger, string, string, long, Exception?> LogCompilationTime = 
+        LoggerMessage.Define<string, string, long>(
+            LogLevel.Information,
+            new EventId(5, nameof(LogCompilationTime)),
+            "Compilation time for {KernelName} ({OptLevel}): {CompileTime}ms");
+
+    private static readonly Action<ILogger, long, long, Exception?> LogExecutionTimes = 
+        LoggerMessage.Define<long, long>(
+            LogLevel.Information,
+            new EventId(6, nameof(LogExecutionTimes)),
+            "Execution times - Sequential: {Sequential}ms, Concurrent: {Concurrent}ms");
+
+    private static readonly Action<ILogger, double, Exception?> LogSpeedupFromConcurrency = 
+        LoggerMessage.Define<double>(
+            LogLevel.Information,
+            new EventId(7, nameof(LogSpeedupFromConcurrency)),
+            "Speedup from concurrency: {Speedup:F2}x");
 
     public CudaPerformanceBenchmarks(ITestOutputHelper output)
     {
@@ -48,7 +91,7 @@ public class CudaPerformanceBenchmarks : IDisposable
         Assert.NotNull(_accelerator);
 
         // Note: GetStatistics() method doesn't exist in new IMemoryManager interface
-        _logger.LogInformation("Starting memory bandwidth benchmark");
+        LogStartingMemoryBandwidthBenchmark(_logger, null);
 
         // Test memory bandwidth with different sizes
         var sizes = new[] { 1, 4, 16, 64, 256, 1024 }; // MB
@@ -88,8 +131,7 @@ public class CudaPerformanceBenchmarks : IDisposable
 
                 var d2hBandwidth = (10.0 * sizeBytes / 1024 / 1024 / 1024) / (stopwatch.ElapsedMilliseconds / 1000.0);
 
-                _logger.LogInformation("Memory Bandwidth {SizeMB}MB: H2D={H2DBandwidth:F1} GB/s, D2H={D2HBandwidth:F1} GB/s",
-                    sizeMB, h2dBandwidth, d2hBandwidth);
+                LogMemoryBandwidth(_logger, sizeMB, h2dBandwidth, d2hBandwidth, null);
 
                 // RTX 2000 Ada Gen should achieve reasonable bandwidth >100 GB/s for large transfers
                 if (sizeMB >= 64)
@@ -170,8 +212,7 @@ extern ""C"" __global__ void saxpy(float* x, float* y, float alpha, int n)
             var gflops = (totalOps / 1e9) / (stopwatch.ElapsedMilliseconds / 1000.0);
             var bandwidth = ((long)RUNS * N * 3 * sizeof(float) / 1024.0 / 1024 / 1024) / (stopwatch.ElapsedMilliseconds / 1000.0); // 3 accesses per element
 
-            _logger.LogInformation("SAXPY Performance: {GFLOPS:F1} GFLOPS, {Bandwidth:F1} GB/s effective bandwidth",
-                gflops, bandwidth);
+            LogSAXPYPerformance(_logger, gflops, bandwidth, null);
 
             // RTX 2000 Ada Gen should achieve substantial performance
             gflops.Should().BeGreaterThan(100.0, $"Compute performance too low: {gflops:F1} GFLOPS");
@@ -235,7 +276,7 @@ extern ""C"" __global__ void emptyKernel()
 
         var avgLaunchTime = stopwatch.ElapsedMilliseconds / (double)LAUNCHES;
 
-        _logger.LogInformation("Average kernel launch time: {AvgTime:F3} ms", avgLaunchTime);
+        LogAverageKernelLaunchTime(_logger, avgLaunchTime, null);
 
         // Launch overhead should be reasonable < 1ms on modern GPUs
         avgLaunchTime.Should().BeLessThan(1.0, $"Kernel launch overhead too high: {avgLaunchTime:F3} ms");
@@ -302,8 +343,7 @@ extern ""C"" __global__ void emptyKernel()
                 var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
                 stopwatch.Stop();
 
-                _logger.LogInformation("Compilation time for {KernelName}{OptLevel}): {CompileTime}ms",
-                    kernelName, optLevel, stopwatch.ElapsedMilliseconds);
+                LogCompilationTime(_logger, kernelName, optLevel, stopwatch.ElapsedMilliseconds, null);
 
                 // Compilation should complete in reasonable time < 10 seconds for complex kernels
                 stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
@@ -393,12 +433,11 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
             }
         });
 
-        _logger.LogInformation("Execution times - Sequential: {Sequential}ms, Concurrent: {Concurrent}ms",
-            sequentialTime, concurrentTime);
+        LogExecutionTimes(_logger, sequentialTime, concurrentTime, null);
 
         // Concurrent execution should show some speedup(at least 20% faster)
         var speedup = sequentialTime / (double)concurrentTime;
-        _logger.LogInformation("Speedup from concurrency: {Speedup:F2}x", speedup);
+        LogSpeedupFromConcurrency(_logger, speedup, null);
 
         speedup.Should().BeGreaterThan(1.2, $"Insufficient speedup from concurrency: {speedup:F2}x");
 

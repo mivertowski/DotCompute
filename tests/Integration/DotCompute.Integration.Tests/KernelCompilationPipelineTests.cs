@@ -1,6 +1,10 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
+using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +19,7 @@ namespace DotCompute.Tests.Integration;
 /// Integration tests for kernel compilation and execution pipelines.
 /// Tests the complete workflow from source code to executable kernels.
 /// </summary>
-public class KernelCompilationPipelineTests : IntegrationTestBase
+public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 {
     public KernelCompilationPipelineTests(ITestOutputHelper output) : base(output)
     {
@@ -83,7 +87,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        Assert.Equal(kernelSources.Length, concurrentResults.Count());
+        Assert.Equal(kernelSources.Length, concurrentResults.Count);
         concurrentResults.Should().AllSatisfy(r => r.CompilationSuccess.Should().BeTrue());
 
         var totalCompilationTime = concurrentResults.Sum(r => r.CompilationTime.TotalMilliseconds);
@@ -218,7 +222,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
 
         if (!availableBackends.Contains(backendType))
         {
-            Logger.LogInformation($"Skipping backend test - {backendType} not available");
+            LoggerMessages.SkippingBackendTest(Logger, backendType.ToString());
             return;
         }
 
@@ -296,8 +300,8 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
 
         // Second compilation should be faster due to caching
         //(This is an assumption - actual behavior depends on implementation)
-        Logger.LogInformation($"First compilation: {firstCompilation.CompilationTime.TotalMilliseconds}ms");
-        Logger.LogInformation($"Second compilation: {secondCompilation.CompilationTime.TotalMilliseconds}ms");
+        LoggerMessages.FirstCompilationTime(Logger, firstCompilation.CompilationTime.TotalMilliseconds);
+        LoggerMessages.SecondCompilationTime(Logger, secondCompilation.CompilationTime.TotalMilliseconds);
     }
 
     [Fact]
@@ -575,7 +579,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
         // Generate many similar functions
         for (var i = 0; i < functionCount; i++)
         {
-            source.AppendLine($@"
+            source.AppendLine(CultureInfo.InvariantCulture, $@"
             float function_{i}(float x) {{
                 return x * {i + 1}.0f + {i * 2}.0f;
             }}");
@@ -590,7 +594,7 @@ public class KernelCompilationPipelineTests : IntegrationTestBase
 
         for (var i = 0; i < Math.Min(functionCount, 10); i++) // Use only first 10 to avoid too much computation
         {
-            source.AppendLine($"                value = function_{i}(value);");
+            source.AppendLine(CultureInfo.InvariantCulture, $"                value = function_{i}(value);");
         }
 
         source.AppendLine(@"

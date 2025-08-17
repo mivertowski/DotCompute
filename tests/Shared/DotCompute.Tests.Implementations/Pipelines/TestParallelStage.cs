@@ -2,12 +2,12 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Shared.Pipelines;
+namespace DotCompute.Tests.Utilities.Pipelines;
 
 /// <summary>
 /// Test implementation of a parallel pipeline stage.
 /// </summary>
-public class TestParallelStage : IPipelineStage
+public sealed class TestParallelStage : IPipelineStage
 {
     private readonly List<IPipelineStage> _stages;
     private readonly Dictionary<string, object> _metadata;
@@ -151,7 +151,7 @@ public class TestParallelStage : IPipelineStage
         var results = await Task.WhenAll(tasks);
         semaphore.Dispose();
 
-        return results.ToList();
+        return [.. results];
     }
 
     private async Task<List<StageExecutionResult>> ExecuteWaitAny(
@@ -291,7 +291,7 @@ public class TestParallelStage : IPipelineStage
 /// <summary>
 /// Builder for configuring parallel stages.
 /// </summary>
-public class TestParallelStageBuilder : IParallelStageBuilder
+public sealed class TestParallelStageBuilder : IParallelStageBuilder
 {
     private readonly TestParallelStage _stage;
 
@@ -339,7 +339,7 @@ public class TestParallelStageBuilder : IParallelStageBuilder
                     Success = result.Success,
                     Outputs = result.Outputs,
                     Duration = result.Metrics.Duration,
-                    Error = result.Errors?.FirstOrDefault()?.Exception
+                    Error = result.Errors?.Count > 0 ? result.Errors[0].Exception : null
                 };
             });
 

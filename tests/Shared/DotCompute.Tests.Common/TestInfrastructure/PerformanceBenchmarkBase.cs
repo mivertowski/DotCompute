@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Shared.TestInfrastructure;
+namespace DotCompute.Tests.Utilities.TestInfrastructure;
 
 /// <summary>
 /// Base class for performance benchmark tests

@@ -1,6 +1,7 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System;
 using DotCompute.Plugins.Security;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -12,15 +13,16 @@ namespace DotCompute.Plugins.Tests.Security
     /// <summary>
     /// Comprehensive security test suite for the plugin loading system.
     /// </summary>
-    public class SecurityTestSuite
+    public sealed class SecurityTestSuite
     {
+        private static readonly string[] SuspiciousFileNames = { "hack", "crack", "keygen" };
         private readonly ITestOutputHelper _output;
-        private readonly Mock<ILogger> _mockLogger;
+        private readonly Mock<ILogger<PluginSandbox>> _mockLogger;
 
         public SecurityTestSuite(ITestOutputHelper output)
         {
             _output = output;
-            _mockLogger = new Mock<ILogger>();
+            _mockLogger = new Mock<ILogger<PluginSandbox>>();
         }
 
         [Fact]
@@ -155,7 +157,7 @@ namespace DotCompute.Plugins.Tests.Security
         public async Task SecurityManager_ValidateAssemblyIntegrityAsync_RejectsNonExistentFile()
         {
             // Arrange
-            var securityManager = new SecurityManager(_mockLogger.Object);
+            using var securityManager = new SecurityManager(_mockLogger.Object);
 
             // Act
             var result = await securityManager.ValidateAssemblyIntegrityAsync("nonexistent.dll");
@@ -168,7 +170,7 @@ namespace DotCompute.Plugins.Tests.Security
         public async Task SecurityManager_AnalyzeAssemblyMetadataAsync_HandlesMissingFile()
         {
             // Arrange
-            var securityManager = new SecurityManager(_mockLogger.Object);
+            using var securityManager = new SecurityManager(_mockLogger.Object);
 
             // Act
             var analysis = await securityManager.AnalyzeAssemblyMetadataAsync("nonexistent.dll");
@@ -198,10 +200,10 @@ namespace DotCompute.Plugins.Tests.Security
 
             // Assert
             Assert.NotEmpty(errors);
-            Assert.Contains(errors, e => e.Contains("DefaultExecutionTimeout"));
-            Assert.Contains(errors, e => e.Contains("MaxConcurrentPlugins"));
-            Assert.Contains(errors, e => e.Contains("MaxMemoryMB"));
-            Assert.Contains(errors, e => e.Contains("MaxCpuUsagePercent"));
+            Assert.Contains(errors, e => e.Contains("DefaultExecutionTimeout", StringComparison.Ordinal));
+            Assert.Contains(errors, e => e.Contains("MaxConcurrentPlugins", StringComparison.Ordinal));
+            Assert.Contains(errors, e => e.Contains("MaxMemoryMB", StringComparison.Ordinal));
+            Assert.Contains(errors, e => e.Contains("MaxCpuUsagePercent", StringComparison.Ordinal));
         }
 
         [Fact]
@@ -268,7 +270,7 @@ namespace DotCompute.Plugins.Tests.Security
             // We expect certain patterns to be rejected
             var hasDirectoryTraversal = path.Contains("..") || path.Contains("~");
             var hasHiddenFile = Path.GetFileName(path).StartsWith(".");
-            var hasSuspiciousName = new[] { "hack", "crack", "keygen" }.Any(p =>
+            var hasSuspiciousName = SuspiciousFileNames.Any(p =>
                 Path.GetFileNameWithoutExtension(path).Contains(p, StringComparison.OrdinalIgnoreCase));
 
             var shouldBeUnsafe = hasDirectoryTraversal || hasHiddenFile || hasSuspiciousName;
@@ -380,7 +382,7 @@ namespace DotCompute.Plugins.Tests.Security
 
             // Assert
             Assert.True(allocation.IsDisposed);
-            Assert.Throws<ObjectDisposedException>(() => allocation.Span);
+            Assert.Throws<ObjectDisposedException>(() => _ = allocation.Span);
         }
 
         [Theory]
@@ -409,9 +411,9 @@ namespace DotCompute.Plugins.Tests.Security
             var span3 = new int[] { 1, 2, 3 }.AsSpan();
 
             // Act & Assert
-            Assert.True(SafeMemoryOperations.SafeEquals(span1, span2, 0));
-            Assert.True(SafeMemoryOperations.SafeEquals(span1, span3, 0));
-            Assert.False(SafeMemoryOperations.SafeEquals(span1, span3, 1));
+            Assert.True(SafeMemoryOperations.SafeEquals<int>(span1, span2, 0));
+            Assert.True(SafeMemoryOperations.SafeEquals<int>(span1, span3, 0));
+            Assert.False(SafeMemoryOperations.SafeEquals<int>(span1, span3, 1));
         }
 
         [Fact]
@@ -423,9 +425,9 @@ namespace DotCompute.Plugins.Tests.Security
             var data3 = new int[] { 1, 2, 3, 4, 6 }; // Different
 
             // Act
-            var hash1 = SafeMemoryOperations.SafeGetHashCode(data1.AsSpan());
-            var hash2 = SafeMemoryOperations.SafeGetHashCode(data2.AsSpan());
-            var hash3 = SafeMemoryOperations.SafeGetHashCode(data3.AsSpan());
+            var hash1 = SafeMemoryOperations.SafeGetHashCode<int>(data1.AsSpan());
+            var hash2 = SafeMemoryOperations.SafeGetHashCode<int>(data2.AsSpan());
+            var hash3 = SafeMemoryOperations.SafeGetHashCode<int>(data3.AsSpan());
 
             // Assert
             Assert.Equal(hash1, hash2); // Same data should have same hash

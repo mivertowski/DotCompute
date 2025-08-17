@@ -2,7 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
@@ -14,7 +14,7 @@ namespace DotCompute.Tests.Integration;
 /// Integration tests for memory transfer operations between devices and host.
 /// Tests memory management, transfer optimization, and data integrity.
 /// </summary>
-public class MemoryTransferTests : IntegrationTestBase
+public sealed class MemoryTransferTests : IntegrationTestBase
 {
     public MemoryTransferTests(ITestOutputHelper output) : base(output)
     {
@@ -39,7 +39,7 @@ public class MemoryTransferTests : IntegrationTestBase
         }
 
         var testData = TestDataGenerator.GenerateFloatArray(dataSize / sizeof(float));
-        var accelerator = accelerators.First();
+        var accelerator = accelerators[0];
 
         // Act
         var transferResult = await PerformHostToDeviceTransfer(
@@ -66,7 +66,6 @@ public class MemoryTransferTests : IntegrationTestBase
     public async Task MemoryTransfer_DeviceToHost_ShouldTransferCorrectly(int dataSize)
     {
         // Arrange
-        var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
         var acceleratorManager = ServiceProvider.GetRequiredService<IAcceleratorManager>();
         await acceleratorManager.InitializeAsync();
         var accelerators = acceleratorManager.AvailableAccelerators;
@@ -78,7 +77,7 @@ public class MemoryTransferTests : IntegrationTestBase
         }
 
         var testData = TestDataGenerator.GenerateFloatArray(dataSize / sizeof(float));
-        var accelerator = accelerators.First();
+        var accelerator = accelerators[0];
 
         // First upload data to device
         var deviceBuffer = await CreateBufferOnDevice(accelerator, testData);
@@ -163,7 +162,7 @@ public class MemoryTransferTests : IntegrationTestBase
             .Select(_ => GenerateTestData(dataSize / sizeof(float)))
             .ToArray();
 
-        var accelerator = accelerators.First();
+        var accelerator = accelerators[0];
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -174,7 +173,7 @@ public class MemoryTransferTests : IntegrationTestBase
         stopwatch.Stop();
 
         // Assert
-        Assert.Equal(transferCount, asyncResults.Count());
+        Assert.Equal(transferCount, asyncResults.Count);
         asyncResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
         asyncResults.Should().AllSatisfy(r => r.DataIntegrity.Should().BeTrue());
 
@@ -216,7 +215,7 @@ public class MemoryTransferTests : IntegrationTestBase
 
         const int dataSize = 8 * 1024 * 1024; // 8MB
         var testData = TestDataGenerator.GenerateFloatArray(dataSize / sizeof(float));
-        var accelerator = accelerators.First();
+        var accelerator = accelerators[0];
 
         // Act
         var regularResult = await PerformRegularMemoryTransfer(
@@ -288,7 +287,7 @@ public class MemoryTransferTests : IntegrationTestBase
             testDataSets);
 
         // Assert
-        Assert.Equal(2, multiDeviceResults.Count());
+        Assert.Equal(2, multiDeviceResults.Count);
         multiDeviceResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
         multiDeviceResults.Should().AllSatisfy(r => r.DataIntegrity.Should().BeTrue());
 
@@ -324,7 +323,7 @@ public class MemoryTransferTests : IntegrationTestBase
 
         const int dataSize = 1024;
         var testData = GenerateTestData(dataSize);
-        var accelerator = accelerators.First();
+        var accelerator = accelerators[0];
 
         // Act
         var memoryTypeResult = await TestMemoryTypeTransfer(
@@ -373,7 +372,7 @@ public class MemoryTransferTests : IntegrationTestBase
         }
 
         const int largeDataSize = 64 * 1024 * 1024; // 64MB
-        var accelerator = accelerators.First();
+        var accelerator = accelerators[0];
 
         // Check if device has enough memory
         if (accelerator.Info.AvailableMemory < largeDataSize * 2)
@@ -417,7 +416,7 @@ public class MemoryTransferTests : IntegrationTestBase
             return;
         }
 
-        var accelerator = accelerators.First();
+        var accelerator = accelerators[0];
 
         // Act & Assert - Test various error conditions
 

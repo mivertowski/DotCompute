@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using DotCompute.Core.Types;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
@@ -24,7 +24,7 @@ namespace DotCompute.Tests.Unit;
 /// Comprehensive tests for OpenCL kernel executor that can run on CI/CD without GPU hardware.
 /// Uses mocks and dependency injection to simulate OpenCL runtime behavior.
 /// </summary>
-public class OpenCLKernelExecutorTests : IDisposable
+public sealed class OpenCLKernelExecutorTests : IDisposable
 {
     private readonly Mock<IAccelerator> _mockAccelerator;
     private readonly Mock<ILogger<OpenCLKernelExecutor>> _mockLogger;
@@ -674,6 +674,7 @@ public class OpenCLKernelExecutorTests : IDisposable
     public void Dispose()
     {
         _executor?.Dispose();
+        GC.SuppressFinalize(this);
         GC.SuppressFinalize(this);
     }
 }

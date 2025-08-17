@@ -3,6 +3,7 @@ using BenchmarkDotNet.Jobs;
 using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -15,7 +16,8 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-internal class SimdOperationsBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class SimdOperationsBenchmarks
 {
     [Params(1024, 16384, 65536, 262144, 1048576)]
     public int DataSize { get; set; }
@@ -40,6 +42,7 @@ internal class SimdOperationsBenchmarks
         _intInputB = new int[DataSize];
         _intOutput = new int[DataSize];
 
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         var random = new Random(42);
         for (var i = 0; i < DataSize; i++)
         {
@@ -48,6 +51,7 @@ internal class SimdOperationsBenchmarks
             _intInputA[i] = random.Next(-1000, 1000);
             _intInputB[i] = random.Next(-1000, 1000);
         }
+#pragma warning restore CA5394
     }
 
     [Benchmark(Baseline = true)]

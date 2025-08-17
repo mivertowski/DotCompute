@@ -3,6 +3,7 @@ using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -15,10 +16,11 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-internal class MultiAcceleratorBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class MultiAcceleratorBenchmarks : IDisposable
 {
-    private IAcceleratorManager _acceleratorManager = null!;
-    private IList<IAccelerator> _accelerators = null!;
+    private DefaultAcceleratorManager _acceleratorManager = null!;
+    private List<IAccelerator> _accelerators = null!;
     private readonly List<IMemoryBuffer> _buffers = [];
 
     [Params(1, 2, 4, 8)]
@@ -55,11 +57,15 @@ internal class MultiAcceleratorBenchmarks
     private void SetupTestData()
     {
         _inputData = new float[DataSize];
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         var random = new Random(42);
+#pragma warning restore CA5394
 
         for (var i = 0; i < DataSize; i++)
         {
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
             _inputData[i] = (float)(random.NextDouble() * 2.0 - 1.0);
+#pragma warning restore CA5394
         }
 
         // Partition data for multi-accelerator processing
@@ -247,11 +253,12 @@ internal class MultiAcceleratorBenchmarks
     {
         // Pipeline processing across accelerators
         const int pipelineStages = 3;
+#pragma warning disable IDE0059 // currentData is used in loop iterations
         var currentData = _inputData;
+#pragma warning restore IDE0059
 
         for (var stage = 0; stage < pipelineStages; stage++)
         {
-            var stageResults = new List<float[]>();
             var tasks = new List<Task<float[]>>();
 
             // Process stage across multiple accelerators
@@ -399,12 +406,16 @@ internal class MultiAcceleratorBenchmarks
     {
         // Simulate uneven workload and test load balancing
         var workloads = new int[AcceleratorCount];
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         var random = new Random(42);
+#pragma warning restore CA5394
 
         // Create uneven workloads
         for (var i = 0; i < AcceleratorCount; i++)
         {
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
             workloads[i] = random.Next(50, 200); // 50-200ms of simulated work
+#pragma warning restore CA5394
         }
 
         var tasks = new List<Task>();
@@ -446,5 +457,18 @@ internal class MultiAcceleratorBenchmarks
         }
 
         await buffer.CopyFromHostAsync<float>(tempData.AsMemory(0, Math.Min(tempData.Length, (int)(buffer.SizeInBytes / sizeof(float)))));
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            Cleanup().GetAwaiter().GetResult();
+        }
+        catch
+        {
+            // Ignore disposal errors in finalizer
+        }
+        GC.SuppressFinalize(this);
     }
 }

@@ -1,19 +1,20 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Shared.Kernels;
+namespace DotCompute.Tests.Utilities.Kernels;
 
 /// <summary>
 /// Base test kernel compiler implementation for testing.
 /// </summary>
 public abstract class TestKernelCompilerBase
 {
-    protected readonly ConcurrentDictionary<string, CompiledKernelInfo> _compilationCache;
-    protected readonly List<CompilationDiagnostic> _diagnostics;
-    protected long _compilationCount;
-    protected TimeSpan _totalCompilationTime;
+    private readonly ConcurrentDictionary<string, CompiledKernelInfo> _compilationCache;
+    private readonly List<CompilationDiagnostic> _diagnostics;
+    private long _compilationCount;
+    private TimeSpan _totalCompilationTime;
 
     protected TestKernelCompilerBase()
     {
@@ -105,7 +106,7 @@ public abstract class TestKernelCompilerBase
 /// <summary>
 /// Test CUDA kernel compiler implementation.
 /// </summary>
-public class TestCudaKernelCompiler : TestKernelCompilerBase
+public sealed class TestCudaKernelCompiler : TestKernelCompilerBase
 {
     public override KernelLanguage SupportedLanguage => KernelLanguage.Cuda;
     public override string CompilerName => "Test CUDA Compiler(nvcc simulator)";
@@ -126,43 +127,43 @@ public class TestCudaKernelCompiler : TestKernelCompilerBase
     protected override string GeneratePseudoAssembly(IKernelSource source, CompilationOptions options)
     {
         var assembly = new StringBuilder();
-        assembly.AppendLine($"// PTX Assembly for {source.Name}");
-        assembly.AppendLine($"// Compiled with optimization level: {options.OptimizationLevel}");
-        assembly.AppendLine($".version 7.5");
-        assembly.AppendLine($".target sm_86");
-        assembly.AppendLine($".address_size 64");
+        assembly.AppendLine(string.Create(CultureInfo.InvariantCulture, $"// PTX Assembly for {source.Name}"));
+        assembly.AppendLine(string.Create(CultureInfo.InvariantCulture, $"// Compiled with optimization level: {options.OptimizationLevel}"));
+        assembly.AppendLine(".version 7.5");
+        assembly.AppendLine(".target sm_86");
+        assembly.AppendLine(".address_size 64");
         assembly.AppendLine();
-        assembly.AppendLine($".visible .entry {source.EntryPoint}(");
-        assembly.AppendLine($"    .param .u64 param_0,");
-        assembly.AppendLine($"    .param .u64 param_1,");
-        assembly.AppendLine($"    .param .u32 param_2");
-        assembly.AppendLine($")");
-        assembly.AppendLine($"{{");
-        assembly.AppendLine($"    .reg .pred %p<2>;");
-        assembly.AppendLine($"    .reg .b32 %r<8>;");
-        assembly.AppendLine($"    .reg .b64 %rd<8>;");
+        assembly.AppendLine(string.Create(CultureInfo.InvariantCulture, $".visible .entry {source.EntryPoint}("));
+        assembly.AppendLine("    .param .u64 param_0,");
+        assembly.AppendLine("    .param .u64 param_1,");
+        assembly.AppendLine("    .param .u32 param_2");
+        assembly.AppendLine(")");
+        assembly.AppendLine("{");
+        assembly.AppendLine("    .reg .pred %p<2>;");
+        assembly.AppendLine("    .reg .b32 %r<8>;");
+        assembly.AppendLine("    .reg .b64 %rd<8>;");
         assembly.AppendLine();
-        assembly.AppendLine($"    // Kernel implementation");
-        assembly.AppendLine($"    mov.u32 %r1, %tid.x;");
-        assembly.AppendLine($"    mov.u32 %r2, %ctaid.x;");
-        assembly.AppendLine($"    mov.u32 %r3, %ntid.x;");
-        assembly.AppendLine($"    mad.lo.s32 %r4, %r2, %r3, %r1;");
+        assembly.AppendLine("    // Kernel implementation");
+        assembly.AppendLine("    mov.u32 %r1, %tid.x;");
+        assembly.AppendLine("    mov.u32 %r2, %ctaid.x;");
+        assembly.AppendLine("    mov.u32 %r3, %ntid.x;");
+        assembly.AppendLine("    mad.lo.s32 %r4, %r2, %r3, %r1;");
         assembly.AppendLine();
 
         if (options.FastMath)
         {
-            assembly.AppendLine($"    // Fast math operations");
-            assembly.AppendLine($"    mul.ftz.f32 %r5, %r4, 0.5;");
+            assembly.AppendLine("    // Fast math operations");
+            assembly.AppendLine("    mul.ftz.f32 %r5, %r4, 0.5;");
         }
 
         if (options.UnrollLoops)
         {
-            assembly.AppendLine($"    // Unrolled loop");
-            assembly.AppendLine($"    #pragma unroll 4");
+            assembly.AppendLine("    // Unrolled loop");
+            assembly.AppendLine("    #pragma unroll 4");
         }
 
-        assembly.AppendLine($"    ret;");
-        assembly.AppendLine($"}}");
+        assembly.AppendLine("    ret;");
+        assembly.AppendLine("}");
 
         return assembly.ToString();
     }
@@ -171,7 +172,7 @@ public class TestCudaKernelCompiler : TestKernelCompilerBase
 /// <summary>
 /// Test OpenCL kernel compiler implementation.
 /// </summary>
-public class TestOpenCLKernelCompiler : TestKernelCompilerBase
+public sealed class TestOpenCLKernelCompiler : TestKernelCompilerBase
 {
     public override KernelLanguage SupportedLanguage => KernelLanguage.OpenCL;
     public override string CompilerName => "Test OpenCL Compiler";
@@ -192,38 +193,38 @@ public class TestOpenCLKernelCompiler : TestKernelCompilerBase
     protected override string GeneratePseudoAssembly(IKernelSource source, CompilationOptions options)
     {
         var assembly = new StringBuilder();
-        assembly.AppendLine($"; SPIR-V Assembly for {source.Name}");
-        assembly.AppendLine($"; Compiled with optimization level: {options.OptimizationLevel}");
-        assembly.AppendLine($"OpCapability Kernel");
-        assembly.AppendLine($"OpCapability Addresses");
-        assembly.AppendLine($"OpCapability Int64");
-        assembly.AppendLine($"OpMemoryModel Physical64 OpenCL");
-        assembly.AppendLine($"OpEntryPoint Kernel %{source.EntryPoint} \"{source.EntryPoint}\"");
-        assembly.AppendLine($"OpSource OpenCL_C 120");
+        assembly.AppendLine(string.Create(CultureInfo.InvariantCulture, $"; SPIR-V Assembly for {source.Name}"));
+        assembly.AppendLine(string.Create(CultureInfo.InvariantCulture, $"; Compiled with optimization level: {options.OptimizationLevel}"));
+        assembly.AppendLine("OpCapability Kernel");
+        assembly.AppendLine("OpCapability Addresses");
+        assembly.AppendLine("OpCapability Int64");
+        assembly.AppendLine("OpMemoryModel Physical64 OpenCL");
+        assembly.AppendLine(string.Create(CultureInfo.InvariantCulture, $"OpEntryPoint Kernel %{source.EntryPoint} \"{source.EntryPoint}\""));
+        assembly.AppendLine("OpSource OpenCL_C 120");
         assembly.AppendLine();
-        assembly.AppendLine($"; Decorations");
-        assembly.AppendLine($"OpDecorate %global_id BuiltIn GlobalInvocationId");
-        assembly.AppendLine($"OpDecorate %local_id BuiltIn LocalInvocationId");
+        assembly.AppendLine("; Decorations");
+        assembly.AppendLine("OpDecorate %global_id BuiltIn GlobalInvocationId");
+        assembly.AppendLine("OpDecorate %local_id BuiltIn LocalInvocationId");
         assembly.AppendLine();
-        assembly.AppendLine($"; Types");
-        assembly.AppendLine($"%void = OpTypeVoid");
-        assembly.AppendLine($"%uint = OpTypeInt 32 0");
-        assembly.AppendLine($"%float = OpTypeFloat 32");
-        assembly.AppendLine($"%v3uint = OpTypeVector %uint 3");
+        assembly.AppendLine("; Types");
+        assembly.AppendLine("%void = OpTypeVoid");
+        assembly.AppendLine("%uint = OpTypeInt 32 0");
+        assembly.AppendLine("%float = OpTypeFloat 32");
+        assembly.AppendLine("%v3uint = OpTypeVector %uint 3");
         assembly.AppendLine();
-        assembly.AppendLine($"; Function");
-        assembly.AppendLine($"%func_type = OpTypeFunction %void");
-        assembly.AppendLine($"%{source.EntryPoint} = OpFunction %void None %func_type");
-        assembly.AppendLine($"%entry = OpLabel");
+        assembly.AppendLine("; Function");
+        assembly.AppendLine("%func_type = OpTypeFunction %void");
+        assembly.AppendLine(string.Create(CultureInfo.InvariantCulture, $"%{source.EntryPoint} = OpFunction %void None %func_type"));
+        assembly.AppendLine("%entry = OpLabel");
 
         if (options.FastMath)
         {
-            assembly.AppendLine($"; Fast math enabled");
-            assembly.AppendLine($"OpDecorate %mul_result FPFastMathMode Fast");
+            assembly.AppendLine("; Fast math enabled");
+            assembly.AppendLine("OpDecorate %mul_result FPFastMathMode Fast");
         }
 
-        assembly.AppendLine($"OpReturn");
-        assembly.AppendLine($"OpFunctionEnd");
+        assembly.AppendLine("OpReturn");
+        assembly.AppendLine("OpFunctionEnd");
 
         return assembly.ToString();
     }
@@ -232,7 +233,7 @@ public class TestOpenCLKernelCompiler : TestKernelCompilerBase
 /// <summary>
 /// Test DirectCompute/HLSL kernel compiler implementation.
 /// </summary>
-public class TestDirectComputeCompiler : TestKernelCompilerBase
+public sealed class TestDirectComputeCompiler : TestKernelCompilerBase
 {
     public override KernelLanguage SupportedLanguage => KernelLanguage.HLSL;
     public override string CompilerName => "Test DirectCompute Compiler(dxc simulator)";
@@ -253,38 +254,38 @@ public class TestDirectComputeCompiler : TestKernelCompilerBase
     protected override string GeneratePseudoAssembly(IKernelSource source, CompilationOptions options)
     {
         var assembly = new StringBuilder();
-        assembly.AppendLine($"// DXIL Assembly for {source.Name}");
-        assembly.AppendLine($"// Compiled with optimization level: {options.OptimizationLevel}");
-        assembly.AppendLine($"// Target: cs_6_0");
+        assembly.AppendLine(string.Create(CultureInfo.InvariantCulture, $"// DXIL Assembly for {source.Name}"));
+        assembly.AppendLine(string.Create(CultureInfo.InvariantCulture, $"// Compiled with optimization level: {options.OptimizationLevel}"));
+        assembly.AppendLine("// Target: cs_6_0");
         assembly.AppendLine();
-        assembly.AppendLine($"dcl_globalFlags refactoringAllowed");
-        assembly.AppendLine($"dcl_compute_shader");
-        assembly.AppendLine($"dcl_thread_group 256, 1, 1");
+        assembly.AppendLine("dcl_globalFlags refactoringAllowed");
+        assembly.AppendLine("dcl_compute_shader");
+        assembly.AppendLine("dcl_thread_group 256, 1, 1");
         assembly.AppendLine();
-        assembly.AppendLine($"dcl_resource_structured t0, 4");
-        assembly.AppendLine($"dcl_resource_structured t1, 4");
-        assembly.AppendLine($"dcl_uav_structured u0, 4");
+        assembly.AppendLine("dcl_resource_structured t0, 4");
+        assembly.AppendLine("dcl_resource_structured t1, 4");
+        assembly.AppendLine("dcl_uav_structured u0, 4");
         assembly.AppendLine();
-        assembly.AppendLine($"dcl_input vThreadID.x");
-        assembly.AppendLine($"dcl_temps 4");
+        assembly.AppendLine("dcl_input vThreadID.x");
+        assembly.AppendLine("dcl_temps 4");
         assembly.AppendLine();
-        assembly.AppendLine($"// Main compute shader");
-        assembly.AppendLine($"mov r0.x, vThreadID.x");
-        assembly.AppendLine($"ld_structured r1.x, r0.x, 0, t0.x");
-        assembly.AppendLine($"ld_structured r2.x, r0.x, 0, t1.x");
+        assembly.AppendLine("// Main compute shader");
+        assembly.AppendLine("mov r0.x, vThreadID.x");
+        assembly.AppendLine("ld_structured r1.x, r0.x, 0, t0.x");
+        assembly.AppendLine("ld_structured r2.x, r0.x, 0, t1.x");
 
         if (options.FastMath)
         {
-            assembly.AppendLine($"// Fast math");
-            assembly.AppendLine($"mad r3.x, r1.x, r2.x, 0.5");
+            assembly.AppendLine("// Fast math");
+            assembly.AppendLine("mad r3.x, r1.x, r2.x, 0.5");
         }
         else
         {
-            assembly.AppendLine($"add r3.x, r1.x, r2.x");
+            assembly.AppendLine("add r3.x, r1.x, r2.x");
         }
 
-        assembly.AppendLine($"store_structured u0.x, r0.x, 0, r3.x");
-        assembly.AppendLine($"ret");
+        assembly.AppendLine("store_structured u0.x, r0.x, 0, r3.x");
+        assembly.AppendLine("ret");
 
         return assembly.ToString();
     }
@@ -293,20 +294,20 @@ public class TestDirectComputeCompiler : TestKernelCompilerBase
 /// <summary>
 /// Information about a compiled kernel.
 /// </summary>
-public class CompiledKernelInfo
+public sealed class CompiledKernelInfo
 {
     public string Name { get; set; } = "";
     public string EntryPoint { get; set; } = "";
     public string Assembly { get; set; } = "";
     public DateTime CompiledAt { get; set; }
     public CompilationOptions Options { get; set; } = new();
-    public Dictionary<string, object> Metadata { get; set; } = [];
+    public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
 /// <summary>
 /// Compilation diagnostic information.
 /// </summary>
-public class CompilationDiagnostic
+public sealed class CompilationDiagnostic
 {
     public DiagnosticLevel Level { get; set; }
     public string Message { get; set; } = "";

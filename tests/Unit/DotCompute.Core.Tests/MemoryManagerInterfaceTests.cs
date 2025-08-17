@@ -12,7 +12,7 @@ namespace DotCompute.Core.Tests.Memory;
 /// Comprehensive unit tests for IMemoryManager interface and related types.
 /// Tests buffer allocation, data transfer, memory statistics, and edge cases.
 /// </summary>
-public class MemoryManagerInterfaceTests
+public sealed class MemoryManagerInterfaceTests
 {
     #region Interface Contract Tests
 
@@ -348,7 +348,7 @@ public class MemoryManagerInterfaceTests
 /// <summary>
 /// Tests for memory interface usage patterns and common scenarios.
 /// </summary>
-public class MemoryInterfaceUsageTests
+public sealed class MemoryInterfaceUsageTests
 {
     [Fact]
     public void MemoryLocation_AllValues_ShouldHaveUniqueIndices()

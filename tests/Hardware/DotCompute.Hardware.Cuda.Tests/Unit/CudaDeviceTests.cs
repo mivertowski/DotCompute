@@ -14,11 +14,18 @@ namespace DotCompute.Tests.Hardware.Unit;
 /// Unit tests for CUDA device detection and properties validation
 /// </summary>
 [Collection("CUDA Hardware Tests")]
-public class CudaDeviceTests : IDisposable
+public sealed class CudaDeviceTests : IDisposable
 {
     private readonly ILogger<CudaDeviceTests> _logger;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
+
+    // LoggerMessage delegate for performance
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(1, nameof(LogAcceleratorDisposeError)),
+            "Error disposing CUDA accelerator: {Exception}");
 
     public CudaDeviceTests(ITestOutputHelper output)
     {
@@ -35,7 +42,8 @@ public class CudaDeviceTests : IDisposable
         // Arrange & Act
         Action createAccelerator = () =>
         {
-            var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+            using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+            var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
             var accelerator = new CudaAccelerator(0, acceleratorLogger);
             _accelerators.Add(accelerator);
         };
@@ -44,7 +52,7 @@ public class CudaDeviceTests : IDisposable
         if (IsCudaAvailable())
         {
             createAccelerator(); // Should not throw
-            Assert.Equal(1, _accelerators.Count());
+            Assert.Single(_accelerators);
             _accelerators[0].Info.Should().NotBeNull();
         }
         else
@@ -371,9 +379,10 @@ public class CudaDeviceTests : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA accelerator");
+                LogAcceleratorDisposeError(_logger, ex, null);
             }
         }
         _accelerators.Clear();
+        GC.SuppressFinalize(this);
     }
 }

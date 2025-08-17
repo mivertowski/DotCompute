@@ -8,6 +8,8 @@
     <IsTestProject>true</IsTestProject>
     <RootNamespace>DotCompute.Hardware.Cuda.Tests</RootNamespace>
     <AssemblyName>DotCompute.Hardware.Cuda.Tests</AssemblyName>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <EnableDynamicLoading>true</EnableDynamicLoading>    
   </PropertyGroup>
 
   <ItemGroup>

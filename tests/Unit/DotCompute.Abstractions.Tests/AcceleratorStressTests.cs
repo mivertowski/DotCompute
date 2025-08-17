@@ -97,7 +97,7 @@ public sealed class AcceleratorStressTests
     public void MemoryOptions_WithAllFlags_ShouldWork(MemoryOptions memoryOptions)
     {
         // Act & Assert - Test that enum values are defined and work correctly
-        Enum.IsDefined(typeof(MemoryOptions), memoryOptions).Should().BeTrue();
+        Enum.IsDefined<MemoryOptions>(memoryOptions).Should().BeTrue();
 
         // Test flag combinations
         var combined = MemoryOptions.ReadOnly | MemoryOptions.HostVisible;

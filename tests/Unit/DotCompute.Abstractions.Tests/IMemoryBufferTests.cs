@@ -10,7 +10,7 @@ namespace DotCompute.Abstractions.Tests;
 /// <summary>
 /// Comprehensive unit tests for the IMemoryBuffer interface.
 /// </summary>
-public class IMemoryBufferTests
+public sealed class IMemoryBufferTests
 {
     private readonly Mock<IMemoryBuffer> _mockBuffer;
 
@@ -159,8 +159,8 @@ public class IMemoryBufferTests
         // Arrange
         var sourceData = new int[] { 1, 2, 3 };
         var sourceMemory = new ReadOnlyMemory<int>(sourceData);
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
 
         _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, 0, cts.Token))
                   .ThrowsAsync(new OperationCanceledException());
@@ -296,8 +296,8 @@ public class IMemoryBufferTests
         // Arrange
         var destinationData = new int[3];
         var destinationMemory = new Memory<int>(destinationData);
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
 
         _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, 0, cts.Token))
                   .ThrowsAsync(new OperationCanceledException());

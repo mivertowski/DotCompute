@@ -1,8 +1,10 @@
 using System.CommandLine;
 using DotCompute.Tools.CoverageAnalysis;
 
-internal class Program
+internal sealed class Program
 {
+    [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("JSON serialization may require types that cannot be statically analyzed.")]
+    [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("JSON serialization may require runtime code generation.")]
     private static async Task<int> Main(string[] args)
     {
         var rootCommand = new RootCommand("DotCompute Coverage Analysis Tool");

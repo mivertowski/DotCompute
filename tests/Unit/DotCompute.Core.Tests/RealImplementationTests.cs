@@ -1,9 +1,9 @@
 using Xunit;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Shared.Kernels;
+using DotCompute.Tests.Utilities.Kernels;
 using Xunit.Abstractions;
-using DotCompute.Tests.Shared.Accelerators;
-using DotCompute.Tests.Shared.Memory;
+using DotCompute.Tests.Utilities.Accelerators;
+using DotCompute.Tests.Utilities.Memory;
 
 namespace DotCompute.Tests.Unit;
 
@@ -12,7 +12,7 @@ namespace DotCompute.Tests.Unit;
 /// These tests demonstrate actual memory operations and kernel execution
 /// without requiring GPU hardware.
 /// </summary>
-public class RealImplementationTests : IAsyncLifetime
+public sealed class RealImplementationTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     private TestCpuAccelerator _accelerator = default!;
@@ -119,7 +119,7 @@ public class RealImplementationTests : IAsyncLifetime
         // Arrange
         const int dataSize = 256;
         var inputData = new float[dataSize];
-        var outputData = new float[dataSize];
+        _ = new float[dataSize]; // outputData not used in current test
 
         for (var i = 0; i < dataSize; i++)
         {

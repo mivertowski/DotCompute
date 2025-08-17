@@ -9,7 +9,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <!-- Mock tests provide hardware simulation for CI/CD environments -->
-    <DefineConstants>$(DefineConstants);MOCK_HARDWARE</DefineConstants>
+    <DefineConstants>$(DefineConstants);MOCK_HARDWARE</DefineConstants>    
   </PropertyGroup>
 
   <ItemGroup>

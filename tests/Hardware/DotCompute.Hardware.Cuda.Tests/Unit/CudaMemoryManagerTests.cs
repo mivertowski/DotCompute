@@ -1,10 +1,11 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using FluentAssertions;
@@ -16,12 +17,25 @@ namespace DotCompute.Tests.Hardware.Unit;
 /// Unit tests for CUDA memory management operations
 /// </summary>
 [Collection("CUDA Hardware Tests")]
-public class CudaMemoryManagerTests : IDisposable
+public sealed class CudaMemoryManagerTests : IDisposable
 {
     private readonly ILogger<CudaMemoryManagerTests> _logger;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
     private readonly List<ISyncMemoryBuffer> _buffers = [];
+
+    // LoggerMessage delegates for performance
+    private static readonly Action<ILogger, Exception, Exception?> LogBufferDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(1, nameof(LogBufferDisposeError)),
+            "Error disposing CUDA buffer: {Exception}");
+
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(2, nameof(LogAcceleratorDisposeError)),
+            "Error disposing CUDA accelerator: {Exception}");
 
     public CudaMemoryManagerTests(ITestOutputHelper output)
     {
@@ -418,7 +432,6 @@ public class CudaMemoryManagerTests : IDisposable
     [Trait("Category", "EdgeCase")]
     [Trait("Hardware", "CUDA")]
     [InlineData(MemoryOptions.None)]
-    [InlineData(MemoryOptions.None)]
     [InlineData(MemoryOptions.HostVisible)]
     public void CudaMemoryManager_Allocate_WithMemoryOptions_ShouldRespectOptions(MemoryOptions options)
     {
@@ -468,7 +481,7 @@ public class CudaMemoryManagerTests : IDisposable
     // Helper Methods
     private CudaAccelerator CreateAccelerator()
     {
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         var cudaLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, cudaLogger);
         _accelerators.Add(accelerator);
@@ -502,7 +515,7 @@ public class CudaMemoryManagerTests : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA buffer");
+                LogBufferDisposeError(_logger, ex, null);
             }
         }
         _buffers.Clear();
@@ -515,7 +528,7 @@ public class CudaMemoryManagerTests : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA accelerator");
+                LogAcceleratorDisposeError(_logger, ex, null);
             }
         }
         _accelerators.Clear();

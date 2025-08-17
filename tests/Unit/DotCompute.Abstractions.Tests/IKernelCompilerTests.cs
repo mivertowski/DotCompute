@@ -4,13 +4,14 @@
 using Moq;
 using Xunit;
 using FluentAssertions;
+using System.Globalization;
 
 namespace DotCompute.Abstractions.Tests;
 
 /// <summary>
 /// Comprehensive unit tests for the IKernelCompiler interface and related types.
 /// </summary>
-public class IKernelCompilerTests
+public sealed class IKernelCompilerTests
 {
     private readonly Mock<IKernelCompiler> _mockCompiler;
     private readonly Mock<ICompiledKernel> _mockCompiledKernel;
@@ -102,7 +103,7 @@ public class IKernelCompilerTests
         var actualTypes = _mockCompiler.Object.SupportedSourceTypes;
 
         // Assert
-        Assert.Equal(allSourceTypes.Length, actualTypes.Count());
+        Assert.Equal(allSourceTypes.Length, actualTypes.Length);
         actualTypes.Should().BeEquivalentTo(allSourceTypes);
     }
 
@@ -162,7 +163,7 @@ public class IKernelCompilerTests
     {
         // Arrange
         using var cts = new CancellationTokenSource();
-        cts.Cancel();
+        await cts.CancelAsync();
         _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, cts.Token))
                     .ThrowsAsync(new OperationCanceledException());
 
@@ -195,7 +196,7 @@ public class IKernelCompilerTests
         // Act & Assert
         var action = () => _mockCompiler.Object.CompileAsync(_testKernelDefinition);
         var ex = await Assert.ThrowsAsync<AcceleratorException>(() => action().AsTask());
-        Assert.Contains("Compilation failed: syntax error", ex.Message);
+        Assert.Contains("Compilation failed: syntax error", ex.Message, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -386,7 +387,7 @@ public class IKernelCompilerTests
     /// <summary>
     /// Test implementation of CompilerSpecificOptions for testing.
     /// </summary>
-    private class TestCompilerOptions : CompilerSpecificOptions
+    private sealed class TestCompilerOptions : CompilerSpecificOptions
     {
         public override string CompilerName => "TestCompiler";
 
@@ -474,7 +475,7 @@ public class IKernelCompilerTests
         var results = await Task.WhenAll(tasks);
 
         // Assert
-        Assert.Equal(10, results.Count());
+        Assert.Equal(10, results.Length);
         results.Should().AllSatisfy(r => r.Should().BeSameAs(_mockCompiledKernel.Object));
         _mockCompiler.Verify(c => c.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(10));
     }
@@ -498,7 +499,7 @@ public class IKernelCompilerTests
         var results = tasks.Select(t => t.Result).ToArray();
 
         // Assert
-        Assert.Equal(10, results.Count());
+        Assert.Equal(10, results.Length);
         results.Should().AllSatisfy(r => r.IsValid.Should().BeTrue());
         _mockCompiler.Verify(c => c.Validate(It.IsAny<KernelDefinition>()), Times.Exactly(10));
     }

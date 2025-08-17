@@ -1,11 +1,15 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+#pragma warning disable CA1851 // Multiple enumeration - acceptable for tests
 
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using DotCompute.Plugins.Core;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -21,8 +25,8 @@ namespace DotCompute.Tests.Integration;
 /// </summary>
 public abstract class IntegrationTestBase : IAsyncLifetime
 {
-    protected readonly ITestOutputHelper TestOutput;
-    protected readonly ILogger Logger;
+    protected ITestOutputHelper TestOutput { get; }
+    protected ILogger Logger { get; }
     protected IServiceProvider ServiceProvider { get; private set; } = default!;
     private IHost? _host;
 
@@ -116,7 +120,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             var elementSize = System.Runtime.InteropServices.Marshal.SizeOf<T>();
             var sizeInBytes = data.Length * elementSize;
 
-            Logger.LogInformation($"CreateInputBuffer: Allocating {sizeInBytes} bytes for {data.Length} elements of type {typeof(T).Name}");
+            LoggerMessages.CreateInputBufferAllocating(Logger, sizeInBytes, data.Length, typeof(T).Name);
 
             if (sizeInBytes <= 0 || data.Length <= 0)
             {
@@ -124,20 +128,20 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             }
 
             var buffer = await memoryManager.AllocateAsync(sizeInBytes);
-            Logger.LogInformation("Buffer allocated successfully");
+            LoggerMessages.BufferAllocatedSuccessfully(Logger);
 
             // Convert to bytes more safely
             var byteData = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(data).ToArray();
-            Logger.LogInformation($"Data converted to {byteData.Length} bytes");
+            LoggerMessages.DataConvertedToBytes(Logger, byteData.Length);
 
             await buffer.CopyFromHostAsync<byte>(byteData.AsMemory());
-            Logger.LogInformation("Data copied to buffer successfully");
+            LoggerMessages.DataCopiedToBufferSuccessfully(Logger);
 
             return buffer;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Failed to create input buffer for {data?.Length ?? 0} elements of type {typeof(T).Name}");
+            LoggerMessages.FailedToCreateInputBuffer(Logger, ex, data?.Length ?? 0, typeof(T).Name);
             throw;
         }
     }
@@ -211,7 +215,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     /// Reads data from a typed buffer. Since IBuffer<T> inherits from IMemoryBuffer, 
     /// we can use the same implementation but need an overload for type safety.
     /// </summary>
-    protected async Task<T[]> ReadBufferAsync<T>(IBuffer<T> typedBuffer) where T : unmanaged
+    protected static async Task<T[]> ReadBufferAsync<T>(IBuffer<T> typedBuffer) where T : unmanaged
         // Since IBuffer<T> inherits from IMemoryBuffer, we can safely cast and use the base implementation
         => await ReadBufferAsync<T>((IMemoryBuffer)typedBuffer);
 
@@ -378,12 +382,16 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     {
         var throughput = itemsProcessed > 0 ? itemsProcessed / duration.TotalSeconds : 0;
 
-        Logger.LogInformation(
-            "Performance: {Operation} took {Duration:F2}ms" +
-           (itemsProcessed > 0 ? ", Throughput: {Throughput:N0} items/sec" : ""),
-            operation,
-            duration.TotalMilliseconds,
-            throughput);
+        if (itemsProcessed > 0)
+        {
+            Logger.LogInformation("Performance: {Operation} took {Duration:F2}ms, Throughput: {Throughput:N0} items/sec",
+                operation, duration.TotalMilliseconds, throughput);
+        }
+        else
+        {
+            Logger.LogInformation("Performance: {Operation} took {Duration:F2}ms",
+                operation, duration.TotalMilliseconds);
+        }
     }
 
     /// <summary>
@@ -442,7 +450,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
 /// <summary>
 /// Mock pipeline stage for testing purposes.
 /// </summary>
-public class MockPipelineStage : IPipelineStage
+public sealed class MockPipelineStage : IPipelineStage
 {
     private readonly TimeSpan _executionTime;
     private readonly MockStageMetrics _metrics;
@@ -506,7 +514,7 @@ public class MockPipelineStage : IPipelineStage
 /// <summary>
 /// Mock implementation of IStageMetrics for testing.
 /// </summary>
-public class MockStageMetrics : IStageMetrics
+public sealed class MockStageMetrics : IStageMetrics
 {
     private readonly TimeSpan _defaultExecutionTime;
     private long _executionCount;
@@ -531,9 +539,9 @@ public class MockStageMetrics : IStageMetrics
     public long ExecutionCount => _executionCount;
 
     public TimeSpan AverageExecutionTime
-        => _executionCount > 0 ?
-        TimeSpan.FromTicks(_totalExecutionTime.Ticks / _executionCount) :
-        _defaultExecutionTime;
+        => _executionCount > 0
+            ? TimeSpan.FromTicks(_totalExecutionTime.Ticks / _executionCount)
+            : _defaultExecutionTime;
 
     public TimeSpan MinExecutionTime => _minExecutionTime;
     public TimeSpan MaxExecutionTime => _maxExecutionTime;
@@ -541,9 +549,9 @@ public class MockStageMetrics : IStageMetrics
     public long ErrorCount => _errorCount;
 
     public double SuccessRate
-        => _executionCount > 0 ?
-       (double)(_executionCount - _errorCount) / _executionCount :
-        1.0;
+        => _executionCount > 0
+            ? (double)(_executionCount - _errorCount) / _executionCount
+            : 1.0;
 
     public long AverageMemoryUsage => 1024; // Mock value
     public IReadOnlyDictionary<string, double> CustomMetrics { get; }
@@ -566,7 +574,7 @@ public class MockStageMetrics : IStageMetrics
 /// <summary>
 /// Test output logger for integration with xUnit test output.
 /// </summary>
-public class TestOutputLogger : ILogger
+public sealed class TestOutputLogger : ILogger
 {
     private readonly ITestOutputHelper _output;
 
@@ -606,7 +614,7 @@ public class TestOutputLogger : ILogger
 /// <summary>
 /// Test output logger provider for dependency injection.
 /// </summary>
-public class TestOutputLoggerProvider : ILoggerProvider
+public sealed class TestOutputLoggerProvider : ILoggerProvider
 {
     private readonly ITestOutputHelper _output;
 
@@ -619,6 +627,7 @@ public class TestOutputLoggerProvider : ILoggerProvider
 
     public void Dispose()
     {
+        GC.SuppressFinalize(this);
         // Nothing to dispose
     }
 }
@@ -626,7 +635,7 @@ public class TestOutputLoggerProvider : ILoggerProvider
 /// <summary>
 /// Simple memory manager for testing purposes with thread-safe tracking.
 /// </summary>
-internal class SimpleMemoryManager : IMemoryManager
+internal sealed class SimpleMemoryManager : IMemoryManager
 {
     private readonly ILogger<IMemoryManager> _logger;
     private readonly ConcurrentBag<WeakReference<SimpleMemoryBuffer>> _allocatedBuffers = [];
@@ -642,7 +651,9 @@ internal class SimpleMemoryManager : IMemoryManager
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default)
     {
+#pragma warning disable CA2000 // Dispose objects before losing scope - buffer tracked in _allocatedBuffers
         var buffer = new SimpleMemoryBuffer(sizeInBytes, options);
+#pragma warning restore CA2000
         _allocatedBuffers.Add(new WeakReference<SimpleMemoryBuffer>(buffer));
         Interlocked.Add(ref _totalAllocated, sizeInBytes);
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
@@ -654,7 +665,9 @@ internal class SimpleMemoryManager : IMemoryManager
         CancellationToken cancellationToken = default) where T : unmanaged
     {
         var sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+#pragma warning disable CA2000 // Dispose objects before losing scope - buffer tracked in _allocatedBuffers
         var buffer = new SimpleMemoryBuffer(sizeInBytes, options);
+#pragma warning restore CA2000
         var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(source.Span);
         sourceBytes.CopyTo(buffer._data.AsSpan());
         _allocatedBuffers.Add(new WeakReference<SimpleMemoryBuffer>(buffer));
@@ -742,7 +755,7 @@ internal class SimpleMemoryManager : IMemoryManager
 /// Simple memory buffer implementation for testing.
 /// Thread-safe implementation for concurrent stress tests.
 /// </summary>
-internal class SimpleMemoryBuffer : IMemoryBuffer
+internal sealed class SimpleMemoryBuffer : IMemoryBuffer
 {
     internal readonly byte[] _data;
     private volatile bool _disposed;
@@ -764,7 +777,11 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
     public MemoryOptions Options { get; }
     public bool IsDisposed => _disposed;
 
-    public void Dispose() => _disposed = true;
+    public void Dispose()
+    {
+        _disposed = true;
+        GC.SuppressFinalize(this);
+    }
 
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
@@ -798,8 +815,7 @@ internal class SimpleMemoryBuffer : IMemoryBuffer
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-            throw new ObjectDisposedException(nameof(SimpleMemoryBuffer));
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 
     public ValueTask DisposeAsync()

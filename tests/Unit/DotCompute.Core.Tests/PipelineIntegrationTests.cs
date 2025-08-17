@@ -6,10 +6,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Aot;
-using DotCompute.Tests.Shared.Kernels.Accelerators;
-using DotCompute.Tests.Shared.Kernels;
-using DotCompute.Tests.Shared.Kernels.Memory;
-using DotCompute.Tests.Shared.Kernels.Pipelines;
+using DotCompute.Tests.Utilities.Kernels.Accelerators;
+using DotCompute.Tests.Utilities.Kernels;
+using DotCompute.Tests.Utilities.Kernels.Memory;
+using DotCompute.Tests.Utilities.Kernels.Pipelines;
 using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
@@ -19,7 +19,7 @@ namespace DotCompute.Tests.Unit;
 /// <summary>
 /// Integration tests for pipeline implementations.
 /// </summary>
-public class PipelineIntegrationTests : IAsyncLifetime
+public sealed class PipelineIntegrationTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
     private TestMemoryManager _memoryManager = default!;
@@ -429,6 +429,8 @@ public class PipelineIntegrationTests : IAsyncLifetime
             return ValueTask.FromResult<object>("Success");
         }
 
-        public void Dispose() { }
+        public void Dispose() {     GC.SuppressFinalize(this);
+ }
+        GC.SuppressFinalize(this);
     }
 }

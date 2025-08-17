@@ -4,6 +4,7 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Numerics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -16,9 +17,10 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-internal class RealWorldAlgorithmsBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
 {
-    private IAcceleratorManager _acceleratorManager = null!;
+    private DefaultAcceleratorManager? _acceleratorManager;
     private IAccelerator _accelerator = null!;
     private IMemoryManager _memoryManager = null!;
     private readonly List<IMemoryBuffer> _buffers = [];
@@ -33,7 +35,7 @@ internal class RealWorldAlgorithmsBenchmarks
     private Complex[] _complexInputData = null!;
     private float[] _outputData = null!;
     private int[] _integerData = null!;
-    private float[,] _imageData = null!;
+    private float[][] _imageData = null!;
 
     [GlobalSetup]
     public async Task Setup()
@@ -63,7 +65,9 @@ internal class RealWorldAlgorithmsBenchmarks
         {
             _inputData[i] = (float)(Math.Sin(2 * Math.PI * i / DataSize) +
                                    0.5 * Math.Sin(4 * Math.PI * i / DataSize) +
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
                                    0.1 * random.NextDouble());
+#pragma warning restore CA5394
         }
 
         // Complex data for FFT
@@ -77,19 +81,26 @@ internal class RealWorldAlgorithmsBenchmarks
         _integerData = new int[DataSize];
         for (var i = 0; i < DataSize; i++)
         {
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
             _integerData[i] = random.Next(0, DataSize);
+#pragma warning restore CA5394
         }
 
         // 2D image data
         var imageSize = (int)Math.Sqrt(DataSize);
-        _imageData = new float[imageSize, imageSize];
+#pragma warning disable CA1814 // Jagged arrays are preferred over multidimensional
+        _imageData = new float[imageSize][];
         for (var y = 0; y < imageSize; y++)
         {
+            _imageData[y] = new float[imageSize];
             for (var x = 0; x < imageSize; x++)
             {
-                _imageData[y, x] = (float)(random.NextDouble() * 255);
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
+                _imageData[y][x] = (float)(random.NextDouble() * 255);
+#pragma warning restore CA5394
             }
         }
+#pragma warning restore CA1814
     }
 
     [GlobalCleanup]
@@ -104,7 +115,10 @@ internal class RealWorldAlgorithmsBenchmarks
         }
         _buffers.Clear();
 
-        await _acceleratorManager.DisposeAsync();
+        if (_acceleratorManager != null)
+        {
+            await _acceleratorManager.DisposeAsync();
+        }
     }
 
     [IterationCleanup]
@@ -204,7 +218,11 @@ internal class RealWorldAlgorithmsBenchmarks
     {
         // 2D Convolution with separable filters
         var kernelSize = 5;
-        var kernel = new float[kernelSize, kernelSize];
+        var kernel = new float[kernelSize][];
+        for (var i = 0; i < kernelSize; i++)
+        {
+            kernel[i] = new float[kernelSize];
+        }
 
         // Gaussian blur kernel
         for (var y = 0; y < kernelSize; y++)
@@ -213,7 +231,7 @@ internal class RealWorldAlgorithmsBenchmarks
             {
                 var dx = x - kernelSize / 2;
                 var dy = y - kernelSize / 2;
-                kernel[y, x] = (float)Math.Exp(-(dx * dx + dy * dy) / (2.0 * 1.5 * 1.5));
+                kernel[y][x] = (float)Math.Exp(-(dx * dx + dy * dy) / (2.0 * 1.5 * 1.5));
             }
         }
 
@@ -223,7 +241,7 @@ internal class RealWorldAlgorithmsBenchmarks
         {
             for (var x = 0; x < kernelSize; x++)
             {
-                sum += kernel[y, x];
+                sum += kernel[y][x];
             }
         }
 
@@ -231,13 +249,13 @@ internal class RealWorldAlgorithmsBenchmarks
         {
             for (var x = 0; x < kernelSize; x++)
             {
-                kernel[y, x] /= sum;
+                kernel[y][x] /= sum;
             }
         }
 
         var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(_inputData);
         var kernelBuffer = await _memoryManager.AllocateAndCopyAsync<float>(
-            kernel.Cast<float>().ToArray());
+            kernel.SelectMany(row => row).ToArray());
         var outputBuffer = await _memoryManager.AllocateAsync(DataSize * sizeof(float));
 
         // Simulate 2D convolution
@@ -337,7 +355,7 @@ internal class RealWorldAlgorithmsBenchmarks
         {
             for (var x = 0; x < imageSize; x++)
             {
-                flatImageData[y * imageSize + x] = _imageData[y, x];
+                flatImageData[y * imageSize + x] = _imageData[y][x];
             }
         }
 
@@ -514,11 +532,13 @@ internal class RealWorldAlgorithmsBenchmarks
         const int iterations = 1000000;
 
         var randomData = new float[iterations];
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         var random = new Random(42);
         for (var i = 0; i < iterations; i++)
         {
             randomData[i] = (float)random.NextDouble();
         }
+#pragma warning restore CA5394
 
         var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(randomData);
         var outputBuffer = await _memoryManager.AllocateAsync(sizeof(float));
@@ -528,5 +548,30 @@ internal class RealWorldAlgorithmsBenchmarks
         await Task.Delay(Math.Max(1, executionTime));
 
         _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            Cleanup().GetAwaiter().GetResult();
+            if (_accelerator != null)
+            {
+                var task = _accelerator.DisposeAsync();
+                if (task.IsCompleted)
+                {
+                    task.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    task.AsTask().Wait();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors in finalizer
+        }
+        GC.SuppressFinalize(this);
     }
 }

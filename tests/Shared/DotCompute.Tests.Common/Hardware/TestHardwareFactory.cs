@@ -328,9 +328,9 @@ public sealed class TestDeviceConfiguration
     public long? MemoryOverride { get; set; }
 
     /// <summary>
-    /// Gets or sets custom capabilities to add to the device.
+    /// Gets custom capabilities to add to the device.
     /// </summary>
-    public Dictionary<string, object> CustomCapabilities { get; set; } = [];
+    public Dictionary<string, object> CustomCapabilities { get; } = [];
 
     /// <summary>
     /// Gets the default configuration.

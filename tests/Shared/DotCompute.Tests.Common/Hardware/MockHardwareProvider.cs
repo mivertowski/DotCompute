@@ -3,7 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using FluentAssertions;
@@ -150,8 +150,7 @@ public sealed class MockHardwareProvider : IHardwareProvider
     {
         ThrowIfDisposed();
 
-        var device = _devices.FirstOrDefault(d => d.Id == deviceId) as MockHardwareDevice;
-        if (device != null)
+        if (_devices.FirstOrDefault(d => d.Id == deviceId) is MockHardwareDevice device)
         {
             device.SimulateFailure(errorMessage ?? "Simulated device failure");
             _logger.LogWarning("Simulated failure for device {DeviceId}: {Error}", deviceId, errorMessage);

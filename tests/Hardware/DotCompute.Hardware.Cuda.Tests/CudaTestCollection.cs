@@ -1,6 +1,7 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using Xunit;
 
 namespace DotCompute.Tests.Hardware;
@@ -9,7 +10,7 @@ namespace DotCompute.Tests.Hardware;
 /// Test collection definition for CUDA hardware tests to ensure proper test isolation
 /// </summary>
 [CollectionDefinition("CUDA Hardware Tests")]
-public class CudaHardwareTestCollection : ICollectionFixture<CudaTestFixture>
+public class CudaHardwareTestGroup : ICollectionFixture<CudaTestFixture>
 {
     // This class has no code, and is never created. Its purpose is simply
     // to be the place to apply [CollectionDefinition] and all the
@@ -20,7 +21,7 @@ public class CudaHardwareTestCollection : ICollectionFixture<CudaTestFixture>
 /// Test collection definition for CUDA mock tests that don't require hardware
 /// </summary>
 [CollectionDefinition("CUDA Mock Tests")]
-public class CudaMockTestCollection
+public class CudaMockTestGroup
 {
     // Mock tests don't need fixtures since they don't use actual hardware
 }
@@ -28,7 +29,7 @@ public class CudaMockTestCollection
 /// <summary>
 /// Test fixture for CUDA hardware tests to manage shared test resources
 /// </summary>
-public class CudaTestFixture : IDisposable
+public sealed class CudaTestFixture : IDisposable
 {
     public CudaTestFixture()
     {
@@ -66,7 +67,7 @@ public class CudaTestFixture : IDisposable
             // Set test environment flags
             Environment.SetEnvironmentVariable("DOTCOMPUTE_CUDA_TESTS_AVAILABLE", IsCudaAvailable.ToString());
             Environment.SetEnvironmentVariable("DOTCOMPUTE_NVRTC_TESTS_AVAILABLE", IsNvrtcAvailable.ToString());
-            Environment.SetEnvironmentVariable("DOTCOMPUTE_DEVICE_COUNT", DeviceCount.ToString());
+            Environment.SetEnvironmentVariable("DOTCOMPUTE_DEVICE_COUNT", DeviceCount.ToString(CultureInfo.InvariantCulture));
 
             Console.WriteLine($"CUDA Test Environment Initialized:");
             Console.WriteLine($"  CUDA Available: {IsCudaAvailable}");
@@ -132,5 +133,6 @@ public class CudaTestFixture : IDisposable
         {
             Console.WriteLine($"Warning: Error during CUDA test cleanup: {ex.Message}");
         }
+        GC.SuppressFinalize(this);
     }
 }

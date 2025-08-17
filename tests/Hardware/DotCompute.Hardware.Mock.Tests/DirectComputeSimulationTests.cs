@@ -227,9 +227,9 @@ public class DirectComputeSimulationTests
         await Task.Delay(5); // Simulate compilation time
 
         // Simple validation - check for required elements
-        var hasNumThreads = hlslSource.Contains("[numthreads");
-        var hasMainFunction = hlslSource.Contains("void CSMain") || hlslSource.Contains("void main");
-        var hasValidSyntax = !hlslSource.Contains("invalidFunction");
+        var hasNumThreads = hlslSource.Contains("[numthreads", StringComparison.Ordinal);
+        var hasMainFunction = hlslSource.Contains("void CSMain", StringComparison.Ordinal) || hlslSource.Contains("void main", StringComparison.Ordinal);
+        var hasValidSyntax = !hlslSource.Contains("invalidFunction", StringComparison.Ordinal);
 
         if (hasNumThreads && hasMainFunction && hasValidSyntax)
         {
@@ -347,7 +347,7 @@ public class DirectComputeSimulationTests
         const int MAX_UAV_SLOTS = 8;
         const int MAX_SRV_SLOTS = 128;
 
-        var isUAV = resourceType.StartsWith("RW");
+        var isUAV = resourceType.StartsWith("RW", StringComparison.Ordinal);
 
         if (isUAV && slot >= MAX_UAV_SLOTS)
         {
@@ -411,7 +411,7 @@ public class DirectComputeSimulationTests
     private static (bool IsCompatible, string[] SupportedFeatures, string Reason)
         SimulatePlatformCheck(string os, string directXVersion)
     {
-        if (!os.StartsWith("Windows"))
+        if (!os.StartsWith("Windows", StringComparison.Ordinal))
         {
             return (false, Array.Empty<string>(), "DirectCompute requires Windows operating system");
         }
@@ -423,12 +423,12 @@ public class DirectComputeSimulationTests
 
         var features = new List<string> { "Compute Shaders", "Structured Buffers" };
 
-        if (directXVersion.CompareTo("11.1") >= 0)
+        if (string.Compare(directXVersion, "11.1", StringComparison.Ordinal) >= 0)
         {
             features.Add("Tiled Resources");
         }
 
-        if (directXVersion.CompareTo("12.0") >= 0)
+        if (string.Compare(directXVersion, "12.0", StringComparison.Ordinal) >= 0)
         {
             features.Add("Resource Binding Tier 2");
             features.Add("Conservative Rasterization");

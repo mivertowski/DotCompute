@@ -4,6 +4,7 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using DotCompute.Core.Pipelines;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -16,9 +17,10 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-internal class PipelineExecutionBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class PipelineExecutionBenchmarks : IDisposable
 {
-    private IAcceleratorManager _acceleratorManager = null!;
+    private DefaultAcceleratorManager _acceleratorManager = null!;
     private IAccelerator _accelerator = null!;
     private IMemoryManager _memoryManager = null!;
     private readonly List<IMemoryBuffer> _buffers = [];
@@ -55,10 +57,14 @@ internal class PipelineExecutionBenchmarks
         _inputData = new float[DataSize];
         _outputData = new float[DataSize];
 
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         var random = new Random(42);
+#pragma warning restore CA5394
         for (var i = 0; i < DataSize; i++)
         {
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
             _inputData[i] = (float)(random.NextDouble() * 2.0 - 1.0);
+#pragma warning restore CA5394
         }
     }
 
@@ -83,7 +89,7 @@ internal class PipelineExecutionBenchmarks
         await Task.Delay(1, CancellationToken.None).ConfigureAwait(false);
     }
 
-    private IPipelineStage CreateSimpleProcessingStage(int stageIndex)
+    private SimplePipelineStage CreateSimpleProcessingStage(int stageIndex)
     {
         return new SimplePipelineStage($"SimpleStage_{stageIndex}", async (input, output, context) =>
         {
@@ -119,7 +125,10 @@ internal class PipelineExecutionBenchmarks
         }
         _buffers.Clear();
 
-        await _acceleratorManager.DisposeAsync();
+        if (_acceleratorManager != null)
+        {
+            await _acceleratorManager.DisposeAsync();
+        }
     }
 
     [IterationCleanup]
@@ -206,7 +215,7 @@ internal class PipelineExecutionBenchmarks
         await pipeline.DisposeAsync();
     }
 
-    private IPipelineStage CreateOptimizedProcessingStage(int stageIndex)
+    private OptimizedPipelineStage CreateOptimizedProcessingStage(int stageIndex)
     {
         return new OptimizedPipelineStage($"OptimizedStage_{stageIndex}", async (input, output, context) =>
         {
@@ -298,7 +307,7 @@ internal class PipelineExecutionBenchmarks
         await pipeline.DisposeAsync();
     }
 
-    private IPipelineStage CreateErrorSafeProcessingStage(int stageIndex)
+    private ErrorSafePipelineStage CreateErrorSafeProcessingStage(int stageIndex)
     {
         return new ErrorSafePipelineStage($"ErrorSafeStage_{stageIndex}", async (input, output, context) =>
         {
@@ -308,7 +317,9 @@ internal class PipelineExecutionBenchmarks
                 await buffer.CopyFromHostAsync<float>(_inputData);
 
                 // Simulate processing that might fail
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
                 if (stageIndex == 2 && Random.Shared.NextDouble() < 0.1) // 10% chance of failure
+#pragma warning restore CA5394
                 {
                     throw new InvalidOperationException($"Simulated error in stage {stageIndex}");
                 }
@@ -377,7 +388,7 @@ internal class PipelineExecutionBenchmarks
         await pipeline.DisposeAsync();
     }
 
-    private IPipelineStage CreateStreamingProcessingStage()
+    private StreamingPipelineStage CreateStreamingProcessingStage()
     {
         return new StreamingPipelineStage("StreamingStage", async (input, output, context) =>
         {
@@ -441,10 +452,35 @@ internal class PipelineExecutionBenchmarks
 
         Console.WriteLine($"Pipeline throughput: {throughput:F2} executions/second");
     }
+
+    public void Dispose()
+    {
+        try
+        {
+            Cleanup().GetAwaiter().GetResult();
+            if (_accelerator != null)
+            {
+                var task = _accelerator.DisposeAsync();
+                if (task.IsCompleted)
+                {
+                    task.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    task.AsTask().Wait();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors in finalizer
+        }
+        GC.SuppressFinalize(this);
+    }
 }
 
 // Helper classes for pipeline stages
-internal class SimplePipelineStage : IPipelineStage
+internal sealed class SimplePipelineStage : IPipelineStage
 {
     private readonly Func<IMemoryBuffer, IMemoryBuffer, object, Task> _executeFunc;
     private readonly SimpleStageMetrics _metrics;
@@ -528,7 +564,7 @@ internal class SimplePipelineStage : IPipelineStage
     public static ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
-internal class OptimizedPipelineStage : IPipelineStage
+internal sealed class OptimizedPipelineStage : IPipelineStage
 {
     private readonly Func<IMemoryBuffer, IMemoryBuffer, PipelineContext, Task> _executeFunc;
     private readonly SimpleStageMetrics _metrics;
@@ -621,7 +657,7 @@ internal class OptimizedPipelineStage : IPipelineStage
     public static ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
-internal class ErrorSafePipelineStage : IPipelineStage
+internal sealed class ErrorSafePipelineStage : IPipelineStage
 {
     private readonly Func<IMemoryBuffer, IMemoryBuffer, object, Task> _executeFunc;
     private readonly SimpleStageMetrics _metrics;
@@ -710,7 +746,7 @@ internal class ErrorSafePipelineStage : IPipelineStage
     public static ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
-internal class StreamingPipelineStage : IPipelineStage
+internal sealed class StreamingPipelineStage : IPipelineStage
 {
     private readonly Func<IMemoryBuffer, IMemoryBuffer, object, Task> _executeFunc;
     private readonly SimpleStageMetrics _metrics;
@@ -802,7 +838,7 @@ internal class StreamingPipelineStage : IPipelineStage
     public static ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 
-internal class PipelineContext
+internal sealed class PipelineContext
 {
     private readonly Dictionary<string, IMemoryBuffer> _buffers = [];
 
@@ -814,7 +850,7 @@ internal class PipelineContext
 /// <summary>
 /// Simple implementation of IStageMetrics for benchmarking.
 /// </summary>
-internal class SimpleStageMetrics : IStageMetrics
+internal sealed class SimpleStageMetrics : IStageMetrics
 {
     private readonly Lock _lock = new();
     private long _executionCount;

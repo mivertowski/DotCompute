@@ -1,4 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -17,7 +19,7 @@ namespace DotCompute.Tests.Integration;
 /// cross-backend data transfer, and backend-specific optimizations.
 /// </summary>
 [Collection("Integration")]
-public class MultiBackendIntegrationTests : ComputeWorkflowTestBase
+public sealed class MultiBackendIntegrationTests : ComputeWorkflowTestBase
 {
     private readonly IAcceleratorManager _acceleratorManager;
 

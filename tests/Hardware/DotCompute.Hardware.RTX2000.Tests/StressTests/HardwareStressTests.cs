@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -14,9 +15,16 @@ namespace DotCompute.Tests.Hardware.StressTests;
 [Trait("Category", "StressTest")]
 [Trait("Category", "RequiresGPU")]
 [Collection("Hardware Stress Tests")] // Serialize stress tests
-public class HardwareStressTests : IDisposable
+public sealed class HardwareStressTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
+#pragma warning disable CA1823 // Unused field - Logger for future use
+    private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+    
+    // Logger messages
+    private static readonly Action<ILogger, string, Exception?> LogStressTest =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(7001), "Stress test: {TestName}");
+#pragma warning restore CA1823
     private IntPtr _cudaContext;
     private bool _cudaInitialized;
     private readonly CancellationTokenSource _cancellationTokenSource;
@@ -174,7 +182,7 @@ public class HardwareStressTests : IDisposable
             _output.WriteLine("Cleaning up remaining allocations...");
             foreach (var ptr in allocations)
             {
-                CudaFree(ptr);
+                _ = CudaFree(ptr);
             }
             _output.WriteLine($"Cleaned up {allocations.Count} allocations");
         }
@@ -376,12 +384,12 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             for (var i = 0; i < concurrentKernels; i++)
             {
                 if (deviceBuffers[i] != IntPtr.Zero)
-                    CudaFree(deviceBuffers[i]);
+                    _ = CudaFree(deviceBuffers[i]);
             }
             if (module != IntPtr.Zero)
-                CuModuleUnload(module);
+                _ = CuModuleUnload(module);
             if (program != IntPtr.Zero)
-                NvrtcDestroyProgram(ref program);
+                _ = NvrtcDestroyProgram(ref program);
         }
     }
 
@@ -537,12 +545,12 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                 // Free all buffers for this stream
                 foreach (var buffer in deviceBuffers[i])
                 {
-                    CudaFree(buffer);
+                    _ = CudaFree(buffer);
                 }
 
                 // Destroy stream
                 if (streams[i] != IntPtr.Zero)
-                    CudaStreamDestroy(streams[i]);
+                    _ = CudaStreamDestroy(streams[i]);
             }
             _output.WriteLine("Cleanup completed for concurrent stream stress test");
         }
@@ -684,7 +692,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             // Cleanup remaining allocations
             foreach (var ptr in largeAllocations)
             {
-                CudaFree(ptr);
+                _ = CudaFree(ptr);
             }
         }
 
@@ -709,86 +717,110 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
         if (_cudaContext != IntPtr.Zero)
         {
-            CudaCtxDestroy(_cudaContext);
+            _ = CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
         }
         _cudaInitialized = false;
 
         _cancellationTokenSource.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     #region Native Methods
 
-    [DllImport("nvcuda", EntryPoint = "cuInit")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuInit", ExactSpelling = true)]
     private static extern int CudaInit(uint flags);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
     private static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
     private static extern int CudaCtxDestroy(IntPtr ctx);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize", ExactSpelling = true)]
     private static extern int CudaCtxSynchronize();
 
-    [DllImport("nvcuda", EntryPoint = "cuMemGetInfo_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemGetInfo_v2", ExactSpelling = true)]
     private static extern int CudaMemGetInfo(ref ulong free, ref ulong total);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
     private static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemFree_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
     private static extern int CudaFree(IntPtr dptr);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
     private static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
     private static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoDAsync_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoDAsync_v2", ExactSpelling = true)]
     private static extern int CudaMemcpyHtoDAsync(IntPtr dstDevice, IntPtr srcHost, long byteCount, IntPtr stream);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoHAsync_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoHAsync_v2", ExactSpelling = true)]
     private static extern int CudaMemcpyDtoHAsync(IntPtr dstHost, IntPtr srcDevice, long byteCount, IntPtr stream);
 
-    [DllImport("nvcuda", EntryPoint = "cuStreamCreate")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuStreamCreate", ExactSpelling = true)]
     private static extern int CudaStreamCreate(ref IntPtr stream, uint flags);
 
-    [DllImport("nvcuda", EntryPoint = "cuStreamDestroy_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuStreamDestroy_v2", ExactSpelling = true)]
     private static extern int CudaStreamDestroy(IntPtr stream);
 
-    [DllImport("nvcuda", EntryPoint = "cuStreamSynchronize")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuStreamSynchronize", ExactSpelling = true)]
     private static extern int CudaStreamSynchronize(IntPtr stream);
 
-    [DllImport("nvcuda", EntryPoint = "cuLaunchKernel")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuLaunchKernel", ExactSpelling = true)]
     private static extern int CuLaunchKernel(IntPtr f, uint gridDimX, uint gridDimY, uint gridDimZ,
         uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, IntPtr hStream,
         IntPtr kernelParams, IntPtr extra);
 
-    [DllImport("nvcuda", EntryPoint = "cuModuleLoadData")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuModuleLoadData", ExactSpelling = true)]
     private static extern int CuModuleLoadData(ref IntPtr module, byte[] image);
 
-    [DllImport("nvcuda", EntryPoint = "cuModuleUnload")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuModuleUnload", ExactSpelling = true)]
     private static extern int CuModuleUnload(IntPtr module);
 
-    [DllImport("nvcuda", EntryPoint = "cuModuleGetFunction")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuModuleGetFunction", ExactSpelling = true)]
     private static extern int CuModuleGetFunction(ref IntPtr hfunc, IntPtr hmod, byte[] name);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCreateProgram")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCreateProgram", ExactSpelling = true)]
     private static extern int NvrtcCreateProgram(ref IntPtr prog, string src, string name,
         int numHeaders, string[] headers, string[] includeNames);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcDestroyProgram")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcDestroyProgram", ExactSpelling = true)]
     private static extern int NvrtcDestroyProgram(ref IntPtr prog);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCompileProgram")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCompileProgram", ExactSpelling = true)]
     private static extern int NvrtcCompileProgram(IntPtr prog, int numOptions, string[] options);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTXSize")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTXSize", ExactSpelling = true)]
     private static extern int NvrtcGetPTXSize(IntPtr prog, ref long ptxSizeRet);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTX")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTX", ExactSpelling = true)]
     private static extern int NvrtcGetPTX(IntPtr prog, byte[] ptx);
 
     #endregion
@@ -798,7 +830,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 /// Collection definition to serialize hardware stress tests.
 /// </summary>
 [CollectionDefinition("Hardware Stress Tests")]
-public class HardwareStressTestCollection
+public sealed class HardwareStressTestGroup
 {
     // This class has no code, and is never created. Its purpose is simply
     // to be the place to apply [CollectionDefinition] and all the
@@ -808,7 +840,7 @@ public class HardwareStressTestCollection
 /// <summary>
 /// Helper attribute to skip tests when conditions aren't met.
 /// </summary>
-public class SkippableFactAttribute : FactAttribute
+internal sealed class SkippableFactAttribute : FactAttribute
 {
     public override string? Skip { get; set; }
 }
@@ -816,7 +848,7 @@ public class SkippableFactAttribute : FactAttribute
 /// <summary>
 /// Helper class for skipping tests conditionally.
 /// </summary>
-public static class Skip
+internal static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
@@ -830,7 +862,9 @@ public static class Skip
 /// <summary>
 /// Exception thrown to skip a test.
 /// </summary>
-public class SkipException : Exception
+internal sealed class SkipException : Exception
 {
+    public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
+    public SkipException(string message, Exception innerException) : base(message, innerException) { }
 }

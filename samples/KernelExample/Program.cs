@@ -8,7 +8,7 @@ namespace DotCompute.Samples.KernelExample
     /// <summary>
     /// Example of DotCompute kernel source generation.
     /// </summary>
-    internal unsafe class Program
+    internal sealed unsafe class Program
     {
         private static void Main(string[] args)
         {
@@ -30,10 +30,7 @@ namespace DotCompute.Samples.KernelExample
             var sw = System.Diagnostics.Stopwatch.StartNew();
 
             // This demonstrates the kernel interface - in real scenarios this would work with GPU memory
-            fixed (float* aPtr = a, bPtr = b, resultPtr = result)
-            {
-                VectorMath.AddVectors(aPtr, bPtr, resultPtr, size);
-            }
+            VectorMath.AddVectors(a.AsSpan(), b.AsSpan(), result.AsSpan());
 
             sw.Stop();
             Console.WriteLine($"Completed in {sw.ElapsedMilliseconds}ms");
@@ -47,12 +44,14 @@ namespace DotCompute.Samples.KernelExample
 
         private static void InitializeData(Span<float> a, Span<float> b)
         {
+#pragma warning disable CA5394 // Do not use insecure randomness - This is for demo purposes only, not cryptographic use
             var random = new Random(42);
             for (var i = 0; i < a.Length; i++)
             {
                 a[i] = (float)random.NextDouble() * 100;
                 b[i] = (float)random.NextDouble() * 100;
             }
+#pragma warning restore CA5394
         }
 
         private static void VerifyResults(ReadOnlySpan<float> a, ReadOnlySpan<float> b, ReadOnlySpan<float> result)
@@ -95,9 +94,9 @@ namespace DotCompute.Samples.KernelExample
             VectorSize = 8,
             IsParallel = true,
             Optimizations = OptimizationHints.AggressiveInlining | OptimizationHints.Vectorize)]
-        public static void AddVectors(float* a, float* b, float* result, int length)
+        public static void AddVectors(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
         {
-            for (var i = 0; i < length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -111,9 +110,9 @@ namespace DotCompute.Samples.KernelExample
             VectorSize = 8,
             IsParallel = true,
             MemoryPattern = MemoryAccessPattern.Sequential)]
-        public static void MultiplyAdd(float* a, float* b, float* c, float* result, int length)
+        public static void MultiplyAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, ReadOnlySpan<float> c, Span<float> result)
         {
-            for (var i = 0; i < length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 result[i] = a[i] * b[i] + c[i];
             }
@@ -126,10 +125,10 @@ namespace DotCompute.Samples.KernelExample
             Backends = KernelBackends.CPU,
             VectorSize = 8,
             Optimizations = OptimizationHints.All)]
-        public static float DotProduct(float* a, float* b, int length)
+        public static float DotProduct(ReadOnlySpan<float> a, ReadOnlySpan<float> b)
         {
             var sum = 0.0f;
-            for (var i = 0; i < length; i++)
+            for (var i = 0; i < a.Length; i++)
             {
                 sum += a[i] * b[i];
             }
@@ -143,9 +142,9 @@ namespace DotCompute.Samples.KernelExample
             Backends = KernelBackends.CPU,
             VectorSize = 16,
             IsParallel = true)]
-        public static void ReLU(float* input, float* output, int length)
+        public static void ReLU(ReadOnlySpan<float> input, Span<float> output)
         {
-            for (var i = 0; i < length; i++)
+            for (var i = 0; i < input.Length; i++)
             {
                 output[i] = input[i] > 0 ? input[i] : 0;
             }

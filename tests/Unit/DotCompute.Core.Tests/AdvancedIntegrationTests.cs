@@ -1,9 +1,10 @@
 using Xunit;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Shared.Kernels;
+using DotCompute.Tests.Utilities.Kernels;
 using Xunit.Abstractions;
-using DotCompute.Tests.Shared.Accelerators;
+using DotCompute.Tests.Utilities.Accelerators;
 
 namespace DotCompute.Tests.Unit;
 
@@ -11,29 +12,32 @@ namespace DotCompute.Tests.Unit;
 /// Advanced integration tests demonstrating real implementations working together
 /// in complex scenarios without requiring GPU hardware.
 /// </summary>
-public class AdvancedIntegrationTests : IAsyncLifetime
+public sealed class AdvancedIntegrationTests : IAsyncLifetime
 {
     private readonly ITestOutputHelper _output;
-    private TestAcceleratorManager _acceleratorManager = default!;
-    private TestKernelExecutor _kernelExecutor = default!;
-    private TestCudaKernelCompiler _cudaCompiler = default!;
-    private TestOpenCLKernelCompiler _openClCompiler = default!;
-    private TestDirectComputeCompiler _directComputeCompiler = default!;
+    private readonly TestAcceleratorManager _acceleratorManager = default!;
+    private readonly TestKernelExecutor _kernelExecutor = default!;
+    private readonly TestCudaKernelCompiler _cudaCompiler = default!;
+    private readonly TestOpenCLKernelCompiler _openClCompiler = default!;
+    private readonly TestDirectComputeCompiler _directComputeCompiler = default!;
 
     public AdvancedIntegrationTests(ITestOutputHelper output)
     {
         _output = output;
     }
 
+#pragma warning disable CA2000 // Dispose objects before losing scope - test objects disposed in DisposeAsync
     public async Task InitializeAsync()
     {
-        _acceleratorManager = new TestAcceleratorManager();
+        var manager = new TestAcceleratorManager();
+        Unsafe.AsRef(in _acceleratorManager) = manager;
         await _acceleratorManager.InitializeAsync();
+#pragma warning restore CA2000
 
-        _kernelExecutor = new TestKernelExecutor();
-        _cudaCompiler = new TestCudaKernelCompiler();
-        _openClCompiler = new TestOpenCLKernelCompiler();
-        _directComputeCompiler = new TestDirectComputeCompiler();
+        Unsafe.AsRef(in _kernelExecutor) = new TestKernelExecutor();
+        Unsafe.AsRef(in _cudaCompiler) = new TestCudaKernelCompiler();
+        Unsafe.AsRef(in _openClCompiler) = new TestOpenCLKernelCompiler();
+        Unsafe.AsRef(in _directComputeCompiler) = new TestDirectComputeCompiler();
     }
 
     public async Task DisposeAsync()
@@ -120,7 +124,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         Assert.NotNull(compiledInfo1);
         Assert.NotNull(compiledInfo2);
         Assert.Equal(compiledInfo1.Name, compiledInfo2.Name);
-        Assert.Contains("PTX", compiledInfo1.Assembly);
+        Assert.Contains("PTX", compiledInfo1.Assembly, StringComparison.Ordinal);
 
         _output.WriteLine($"CUDA Compiler Results:");
         _output.WriteLine($"  First compile: {firstCompileTime}ms");
@@ -146,7 +150,7 @@ public class AdvancedIntegrationTests : IAsyncLifetime
 
         // Assert
         Assert.NotNull(compiledInfo);
-        Assert.Contains("SPIR-V", compiledInfo.Assembly);
+        Assert.Contains("SPIR-V", compiledInfo.Assembly, StringComparison.Ordinal);
         Assert.NotEmpty(_openClCompiler.Diagnostics);
 
         _output.WriteLine("OpenCL Compiler Diagnostics:");
@@ -160,8 +164,10 @@ public class AdvancedIntegrationTests : IAsyncLifetime
     public async Task KernelExecutor_SimulateExecution_WithStatistics()
     {
         // Arrange
-        var accelerator = _acceleratorManager.Default;
+        _ = _acceleratorManager.Default;
+#pragma warning disable CA2000 // Dispose objects before losing scope - test kernel used in test method
         var kernel = new TestCompiledKernel("TestKernel", new byte[100], new CompilationOptions());
+#pragma warning restore CA2000
         var args = new KernelArguments(new float[1024], new float[1024], new float[1024]);
         var config = new KernelConfiguration(new Dim3(32), new Dim3(32));
 
@@ -253,10 +259,12 @@ public class AdvancedIntegrationTests : IAsyncLifetime
         var compiledInfo = await _cudaCompiler.CompileAsync(kernelSource,
             new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum });
 
+#pragma warning disable CA2000 // Dispose objects before losing scope - test kernel used in test method
         var compiledKernel = new TestCompiledKernel(
             compiledInfo.Name,
             System.Text.Encoding.UTF8.GetBytes(compiledInfo.Assembly),
             compiledInfo.Options);
+#pragma warning restore CA2000
 
         _output.WriteLine($"Compiled kernel: {compiledInfo.Name}");
 

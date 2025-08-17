@@ -2,13 +2,18 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 using DotCompute.Tests.Common.Hardware;
+using DotCompute.Tests.Integration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - suppressed for test infrastructure
 
 namespace DotCompute.Tests.Integration.Infrastructure;
 
@@ -18,9 +23,9 @@ namespace DotCompute.Tests.Integration.Infrastructure;
 /// </summary>
 public abstract class ComputeWorkflowTestBase : IntegrationTestBase
 {
-    protected readonly HardwareSimulator HardwareSimulator;
-    protected readonly ConcurrentDictionary<string, PerformanceMetrics> PerformanceResults = new();
-    protected readonly TestResourceTracker ResourceTracker = new();
+    protected HardwareSimulator HardwareSimulator { get; }
+    protected ConcurrentDictionary<string, PerformanceMetrics> PerformanceResults { get; } = new();
+    protected TestResourceTracker ResourceTracker { get; } = new();
 
     protected ComputeWorkflowTestBase(ITestOutputHelper output) : base(output)
     {
@@ -34,7 +39,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
         // Start hardware simulation with mixed configuration for comprehensive testing
         HardwareSimulator.Start(HardwareConfiguration.Mixed, TimeSpan.FromMilliseconds(500));
 
-        Logger.LogInformation("ComputeWorkflowTestBase initialized with hardware simulation");
+        LoggerMessages.ComputeWorkflowTestBaseInitialized(Logger);
     }
 
     public override async Task DisposeAsync()
@@ -57,8 +62,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
         var stopwatch = Stopwatch.StartNew();
         var executionId = Guid.NewGuid().ToString();
 
-        Logger.LogInformation("Starting compute workflow '{WorkflowName}'ID: {ExecutionId})",
-            workflowName, executionId);
+        LoggerMessages.StartingComputeWorkflow(Logger, workflowName, executionId);
 
         try
         {
@@ -100,8 +104,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
 
             PerformanceResults[executionId] = performanceMetrics;
 
-            Logger.LogInformation("Completed compute workflow '{WorkflowName}' in {Duration}ms",
-                workflowName, stopwatch.ElapsedMilliseconds);
+            LoggerMessages.WorkflowExecutionCompleted(Logger);
 
             return new WorkflowExecutionResult
             {
@@ -121,8 +124,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
             stopwatch.Stop();
             ResourceTracker.EndTracking(executionId);
 
-            Logger.LogError(ex, "Compute workflow '{WorkflowName}' failed after {Duration}ms",
-                workflowName, stopwatch.ElapsedMilliseconds);
+            LoggerMessages.WorkflowExecutionFailed(Logger, ex);
 
             return new WorkflowExecutionResult
             {
@@ -343,7 +345,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
     /// <summary>
     /// Collects results from output buffers.
     /// </summary>
-    private async Task<Dictionary<string, object>> CollectWorkflowResultsAsync(
+    private static async Task<Dictionary<string, object>> CollectWorkflowResultsAsync(
         ComputeWorkflowDefinition workflow,
         WorkflowMemoryContext memoryContext,
         CancellationToken cancellationToken)
@@ -414,14 +416,14 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
     /// <summary>
     /// Creates test data generators for different data types and sizes.
     /// </summary>
-    public static class TestDataGenerators
+    internal static class TestDataGenerators
     {
         private static readonly Random Random = new(42); // Fixed seed for reproducibility
 
         public static float[] GenerateFloatArray(int size, float min = 0f, float max = 100f)
         {
             return Enumerable.Range(0, size)
-                            .Select(_ => min + (float)Random.NextDouble() * (max - min))
+                            .Select(_ => min + ((float)Random.NextDouble() * (max - min)))
                             .ToArray();
         }
 
@@ -471,12 +473,23 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
 public class ComputeWorkflowDefinition
 {
     public string Name { get; set; } = string.Empty;
-    public List<WorkflowKernel> Kernels { get; set; } = [];
-    public List<WorkflowInput> Inputs { get; set; } = [];
-    public List<WorkflowOutput> Outputs { get; set; } = [];
-    public List<WorkflowIntermediateBuffer> IntermediateBuffers { get; set; } = [];
-    public List<WorkflowExecutionStage> ExecutionStages { get; set; } = [];
-    public bool ContinueOnError { get; set; } = false;
+    
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+    public Collection<WorkflowKernel> Kernels { get; set; } = [];
+    
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+    public Collection<WorkflowInput> Inputs { get; set; } = [];
+    
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+    public Collection<WorkflowOutput> Outputs { get; set; } = [];
+    
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+    public Collection<WorkflowIntermediateBuffer> IntermediateBuffers { get; set; } = [];
+    
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+    public Collection<WorkflowExecutionStage> ExecutionStages { get; set; } = [];
+    
+    public bool ContinueOnError { get; set; }
 }
 
 public class WorkflowKernel
@@ -514,6 +527,7 @@ public class WorkflowExecutionStage
     public ComputeBackendType BackendType { get; set; } = ComputeBackendType.CPU;
     public ExecutionOptions ExecutionOptions { get; set; } = new();
     public string[] ArgumentNames { get; set; } = Array.Empty<string>();
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Dictionary<string, object> Parameters { get; set; } = [];
 }
 
@@ -530,8 +544,13 @@ public class WorkflowExecutionResult
     public string WorkflowName { get; set; } = string.Empty;
     public bool Success { get; set; }
     public TimeSpan Duration { get; set; }
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Dictionary<string, KernelCompilationResult> CompilationResults { get; set; } = [];
+    
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Dictionary<string, StageExecutionResult> ExecutionResults { get; set; } = [];
+    
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Dictionary<string, object> Results { get; set; } = [];
     public ValidationResult? Validation { get; set; }
     public PerformanceMetrics? Metrics { get; set; }
@@ -547,13 +566,13 @@ public class KernelCompilationResult
     public Exception? Error { get; set; }
 }
 
-public class ValidationResult
+public sealed class ValidationResult
 {
     public bool IsValid { get; set; }
-    public List<string> Issues { get; set; } = [];
+    public Collection<string> Issues { get; } = [];
 }
 
-public class PerformanceMetrics
+public sealed class PerformanceMetrics
 {
     public string WorkflowName { get; set; } = string.Empty;
     public string ExecutionId { get; set; } = string.Empty;
@@ -565,7 +584,7 @@ public class PerformanceMetrics
     public ResourceUtilization ResourceUtilization { get; set; } = new();
 }
 
-public class ResourceUtilization
+public sealed class ResourceUtilization
 {
     public double CpuUsagePercent { get; set; }
     public double MemoryUsagePercent { get; set; }
@@ -575,7 +594,7 @@ public class ResourceUtilization
 /// <summary>
 /// Tracks resource utilization during test execution.
 /// </summary>
-public class TestResourceTracker : IDisposable
+public sealed class TestResourceTracker : IDisposable
 {
     private readonly ConcurrentDictionary<string, ResourceTrackingSession> _sessions = new();
     private readonly Timer _monitoringTimer;
@@ -591,8 +610,7 @@ public class TestResourceTracker : IDisposable
         _sessions[sessionId] = new ResourceTrackingSession
         {
             SessionId = sessionId,
-            StartTime = DateTime.UtcNow,
-            Samples = []
+            StartTime = DateTime.UtcNow
         };
     }
 
@@ -655,12 +673,12 @@ public class TestResourceTracker : IDisposable
     }
 }
 
-public class ResourceTrackingSession
+public sealed class ResourceTrackingSession
 {
     public string SessionId { get; set; } = string.Empty;
     public DateTime StartTime { get; set; }
     public DateTime? EndTime { get; set; }
-    public List<ResourceSample> Samples { get; set; } = [];
+    public Collection<ResourceSample> Samples { get; } = [];
 }
 
 public class ResourceSample
@@ -685,7 +703,7 @@ public class ExecutionOptions
 {
     public int[] GlobalWorkSize { get; set; } = Array.Empty<int>();
     public int[] LocalWorkSize { get; set; } = Array.Empty<int>();
-    public bool EnableProfiling { get; set; } = false;
+    public bool EnableProfiling { get; set; }
 }
 
 // Mock interfaces for compatibility

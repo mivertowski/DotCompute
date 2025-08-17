@@ -7,7 +7,7 @@ using NSubstitute;
 
 namespace DotCompute.Tests.Unit;
 
-public class AcceleratorManagerTests
+public sealed class AcceleratorManagerTests
 {
     private readonly ILogger<DefaultAcceleratorManager> _logger;
 
@@ -159,9 +159,9 @@ public class AcceleratorManagerTests
         var gpus = manager.GetAcceleratorsByType(AcceleratorType.OpenCL).ToList();
 
         // Assert
-        Assert.Equal(1, cpus.Count());
+        Assert.Single(cpus);
         Assert.Contains(cpuAccel, cpus);
-        Assert.Equal(1, gpus.Count());
+        Assert.Single(gpus);
         Assert.Contains(gpuAccel, gpus);
     }
 
@@ -261,7 +261,7 @@ public class AcceleratorManagerTests
         var context = manager.CreateContext(accelerator);
 
         // Assert
-        Assert.NotNull(context);
+        // Context is a value type, so no null check needed
         context.DeviceId.Should().Be(0);
     }
 

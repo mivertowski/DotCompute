@@ -1,13 +1,15 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
 [MemoryDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
-internal class CudaBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class CudaBenchmarks : IDisposable
 {
     private IntPtr _cudaContext;
     private IntPtr _deviceMemory;
@@ -21,7 +23,9 @@ internal class CudaBenchmarks
     public void Setup()
     {
         _hostData = new byte[DataSize];
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         Random.Shared.NextBytes(_hostData);
+#pragma warning restore CA5394
 
         try
         {
@@ -58,12 +62,12 @@ internal class CudaBenchmarks
         {
             if (_deviceMemory != IntPtr.Zero)
             {
-                CudaFree(_deviceMemory);
+                _ = CudaFree(_deviceMemory);
             }
 
             if (_cudaContext != IntPtr.Zero)
             {
-                CudaCtxDestroy(_cudaContext);
+                _ = CudaCtxDestroy(_cudaContext);
             }
         }
     }
@@ -128,14 +132,14 @@ internal class CudaBenchmarks
             }
 
             result = CudaMemcpyDtoD(tempDevice, _deviceMemory, DataSize);
-            CudaFree(tempDevice);
+            _ = CudaFree(tempDevice);
             return result;
         }
         catch
         {
             if (tempDevice != IntPtr.Zero)
             {
-                CudaFree(tempDevice);
+                _ = CudaFree(tempDevice);
             }
 
             return -1;
@@ -152,35 +156,50 @@ internal class CudaBenchmarks
         }
 
         ulong free = 0, total = 0;
-        CudaMemGetInfo(ref free, ref total);
+        _ = CudaMemGetInfo(ref free, ref total);
         return (free, total);
     }
 
     // P/Invoke declarations
-    [DllImport("libcuda.so.1", EntryPoint = "cuInit")]
+    [DllImport("libcuda.so.1", EntryPoint = "cuInit", ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.UserDirectories | DllImportSearchPath.System32)]
     private static extern int CudaInit(uint flags);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuCtxCreate_v2")]
+    [DllImport("libcuda.so.1", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.UserDirectories | DllImportSearchPath.System32)]
     private static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuCtxDestroy_v2")]
+    [DllImport("libcuda.so.1", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.UserDirectories | DllImportSearchPath.System32)]
     private static extern int CudaCtxDestroy(IntPtr ctx);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemAlloc_v2")]
+    [DllImport("libcuda.so.1", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.UserDirectories | DllImportSearchPath.System32)]
     private static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemFree_v2")]
+    [DllImport("libcuda.so.1", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.UserDirectories | DllImportSearchPath.System32)]
     private static extern int CudaFree(IntPtr dptr);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoD_v2")]
+    [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.UserDirectories | DllImportSearchPath.System32)]
     private static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoH_v2")]
+    [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.UserDirectories | DllImportSearchPath.System32)]
     private static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoD_v2")]
+    [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoD_v2", ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.UserDirectories | DllImportSearchPath.System32)]
     private static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
 
-    [DllImport("libcuda.so.1", EntryPoint = "cuMemGetInfo_v2")]
+    [DllImport("libcuda.so.1", EntryPoint = "cuMemGetInfo_v2", ExactSpelling = true)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.UserDirectories | DllImportSearchPath.System32)]
     private static extern int CudaMemGetInfo(ref ulong free, ref ulong total);
+
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
 }

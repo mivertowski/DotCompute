@@ -10,7 +10,7 @@ namespace DotCompute.Tests.Unit;
 /// <summary>
 /// Tests for plugin exception classes covering serialization, inheritance, and specific properties.
 /// </summary>
-public class PluginExceptionTests
+public sealed class PluginExceptionTests
 {
     [Fact]
     public void PluginException_DefaultConstructor_CreatesInstance()
@@ -21,8 +21,8 @@ public class PluginExceptionTests
         // Assert
         Assert.NotNull(exception);
         exception.Message.Should().NotBeNullOrEmpty();
-        exception.Assert.Null(PluginId);
-        exception.Assert.Null(InnerException);
+        Assert.Null(exception.PluginId);
+        Assert.Null(exception.InnerException);
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class PluginExceptionTests
 
         // Assert
         exception.Message.Should().Be(message);
-        exception.Assert.Null(PluginId);
+        Assert.Null(exception.PluginId);
     }
 
     [Fact]
@@ -51,8 +51,8 @@ public class PluginExceptionTests
 
         // Assert
         exception.Message.Should().Be(message);
-        exception.InnerException.BeSameAs(innerException);
-        exception.Assert.Null(PluginId);
+        exception.InnerException.Should().BeSameAs(innerException);
+        Assert.Null(exception.PluginId);
     }
 
     [Fact]
@@ -84,7 +84,7 @@ public class PluginExceptionTests
         // Assert
         exception.Message.Should().Be(message);
         exception.PluginId.Should().Be(pluginId);
-        exception.InnerException.BeSameAs(innerException);
+        exception.InnerException.Should().BeSameAs(innerException);
     }
 
     [Fact]
@@ -120,7 +120,7 @@ public class PluginExceptionTests
         exception.Message.Should().Be(message);
         exception.PluginId.Should().Be(pluginId);
         exception.FilePath.Should().Be(filePath);
-        exception.InnerException.BeSameAs(innerException);
+        exception.InnerException.Should().BeSameAs(innerException);
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class PluginExceptionTests
         // Assert
         exception.Message.Should().Be(message);
         exception.PluginId.Should().Be(pluginId);
-        exception.ValidationErrors.BeEquivalentTo(errors);
+        exception.ValidationErrors.Should().BeEquivalentTo(errors);
     }
 
     [Fact]
@@ -274,7 +274,7 @@ public class PluginExceptionTests
     [InlineData(typeof(PluginNotFoundException))]
     public void AllPluginExceptions_AreSerializable(Type exceptionType)
         // Assert
-        => exceptionType.BeDecoratedWith<SerializableAttribute>();
+        => exceptionType.Should().BeDecoratedWith<SerializableAttribute>();
 
     [Fact]
     public void PluginException_ToString_IncludesPluginId()
@@ -289,7 +289,7 @@ public class PluginExceptionTests
 
         // Assert
         Assert.Contains(message, result);
-        result.Contain(typeof(PluginException).FullName!);
+        result.Should().Contain(typeof(PluginException).FullName!);
     }
 
     [Fact]
@@ -306,7 +306,7 @@ public class PluginExceptionTests
 
         // Assert
         Assert.Contains(message, result);
-        result.Contain(typeof(PluginLoadException).FullName!);
+        result.Should().Contain(typeof(PluginLoadException).FullName!);
     }
 
     [Fact]
@@ -323,7 +323,7 @@ public class PluginExceptionTests
 
         // Assert
         Assert.Contains(message, result);
-        result.Contain(typeof(PluginDependencyException).FullName!);
+        result.Should().Contain(typeof(PluginDependencyException).FullName!);
     }
 
     [Fact]
@@ -334,7 +334,7 @@ public class PluginExceptionTests
 
         // Assert
         exception.ValidationErrors.Should().NotBeNull();
-        exception.Assert.Empty(ValidationErrors);
+        exception.ValidationErrors.Should().BeEmpty();
     }
 
     [Fact]
@@ -356,7 +356,7 @@ public class PluginExceptionTests
 
         // Assert
         exception.ConfigurationKey.Should().Be("key");
-        exception.Assert.Null(InvalidValue);
+        Assert.Null(exception.InvalidValue);
     }
 
     [Theory]
@@ -380,8 +380,8 @@ public class PluginExceptionTests
         var pluginException = new PluginException("Plugin error", "test-plugin", intermediate);
 
         // Act & Assert
-        pluginException.InnerException.BeSameAs(intermediate);
-        pluginException.InnerException!.InnerException.BeSameAs(rootCause);
+        pluginException.InnerException.Should().BeSameAs(intermediate);
+        pluginException.InnerException!.InnerException.Should().BeSameAs(rootCause);
     }
 
     [Fact]

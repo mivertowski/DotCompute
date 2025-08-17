@@ -1,13 +1,14 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Tests.Hardware.Utilities;
@@ -125,7 +126,7 @@ public static class CudaTestUtilities
     {
         try
         {
-            CudaRuntime.cudaMemGetInfo(out var free, out var total);
+            _ = CudaRuntime.cudaMemGetInfo(out var free, out var total);
             return (free, total);
         }
         catch
@@ -270,7 +271,7 @@ public static class CudaTestData
     /// <summary>
     /// Generate test kernel definitions for various scenarios
     /// </summary>
-    public static class Kernels
+    internal static class TestKernels
     {
         public static KernelDefinition SimpleVectorAdd() => new()
         {
@@ -405,7 +406,7 @@ __global__ void tensor_core_gemm(half* a, half* b, float* c, int n)
     /// <summary>
     /// Generate test data for various numeric types
     /// </summary>
-    public static class Arrays
+    internal static class Arrays
     {
         public static float[] SmallFloat(int size = 1024) => TestDataGenerator.GenerateFloatArray(size);
         public static double[] SmallDouble(int size = 1024) => TestDataGenerator.GenerateDoubleArray(size);
@@ -416,7 +417,15 @@ __global__ void tensor_core_gemm(half* a, half* b, float* c, int n)
 
         public static float[] LargeFloat(int size = 1024 * 1024) => TestDataGenerator.GenerateFloatArray(size);
 
-        public static float[,] Matrix(int rows, int cols) => TestDataGenerator.GenerateFloatMatrix(rows, cols);
+        public static float[][] Matrix(int rows, int cols)
+        {
+            var matrix = new float[rows][];
+            for (int i = 0; i < rows; i++)
+            {
+                matrix[i] = TestDataGenerator.GenerateFloatArray(cols);
+            }
+            return matrix;
+        }
 
         public static byte[] RandomBytes(int size)
         {
@@ -460,26 +469,26 @@ public class TestEnvironmentValidation
     public override string ToString()
     {
         var sb = new StringBuilder();
-        sb.AppendLine("CUDA Test Environment Validation:");
-        sb.AppendLine($"  CUDA Available: {CudaAvailable}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"CUDA Test Environment Validation:");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  CUDA Available: {CudaAvailable}");
 
         if (CudaAvailable)
         {
-            sb.AppendLine($"  Device Count: {DeviceCount}");
-            sb.AppendLine($"  Primary Device: {PrimaryDeviceName}");
-            sb.AppendLine($"  Compute Capability: {ComputeCapability}");
-            sb.AppendLine($"  Device Memory: {DeviceMemoryGB:F1} GB");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  Device Count: {DeviceCount}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  Primary Device: {PrimaryDeviceName}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  Compute Capability: {ComputeCapability}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  Device Memory: {DeviceMemoryGB:F1} GB");
         }
 
-        sb.AppendLine($"  NVRTC Available: {NvrtcAvailable}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  NVRTC Available: {NvrtcAvailable}");
         if (NvrtcAvailable)
         {
-            sb.AppendLine($"  NVRTC Version: {NvrtcVersion}");
+            sb.AppendLine(CultureInfo.InvariantCulture, $"  NVRTC Version: {NvrtcVersion}");
         }
 
-        sb.AppendLine($"  Platform: {PlatformInfo.OperatingSystem} {PlatformInfo.Architecture}");
-        sb.AppendLine($"  .NET: {PlatformInfo.FrameworkVersion}");
-        sb.AppendLine($"  Fully Functional: {IsFullyFunctional}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  Platform: {PlatformInfo.OperatingSystem} {PlatformInfo.Architecture}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  .NET: {PlatformInfo.FrameworkVersion}");
+        sb.AppendLine(CultureInfo.InvariantCulture, $"  Fully Functional: {IsFullyFunctional}");
 
         return sb.ToString();
     }
@@ -488,7 +497,9 @@ public class TestEnvironmentValidation
 /// <summary>
 /// Custom exception for skipping tests
 /// </summary>
-public class SkipException : Exception
+public sealed class SkipException : Exception
 {
+    public SkipException() : base() { }
     public SkipException(string message) : base(message) { }
+    public SkipException(string message, Exception innerException) : base(message, innerException) { }
 }

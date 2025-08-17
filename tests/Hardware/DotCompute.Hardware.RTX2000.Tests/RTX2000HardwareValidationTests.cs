@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -16,9 +17,20 @@ namespace DotCompute.Tests.Hardware;
 [Trait("Category", "HardwareValidation")]
 [Trait("Category", "Hardware")]
 [Collection("Hardware")]
-public class RTX2000HardwareValidationTests : IDisposable
+public sealed class RTX2000HardwareValidationTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
+    private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+    
+    // Logger messages
+    private static readonly Action<ILogger, int, Exception?> LogCudaInitializationFailed =
+        LoggerMessage.Define<int>(LogLevel.Warning, new EventId(1001), "CUDA initialization failed with error code: {ErrorCode}");
+    
+    private static readonly Action<ILogger, string, Exception?> LogDeviceFound =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(1002), "Found device: {DeviceName}");
+    
+    private static readonly Action<ILogger, int, Exception?> LogCudaContextCreated =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(1003), "CUDA context created successfully on device {DeviceId}");
     private IntPtr _cudaContext;
     private bool _cudaInitialized;
     private int _deviceId;
@@ -39,6 +51,7 @@ public class RTX2000HardwareValidationTests : IDisposable
             var result = CudaInit(0);
             if (result != 0)
             {
+                LogCudaInitializationFailed(Logger, result, null);
                 _output.WriteLine($"CUDA initialization failed with error code: {result}");
                 return;
             }
@@ -57,13 +70,14 @@ public class RTX2000HardwareValidationTests : IDisposable
             for (var i = 0; i < deviceCount; i++)
             {
                 var deviceName = new byte[256];
-                result = CudaDeviceGetName(deviceName, 256, i);
+                _ = CudaDeviceGetName(deviceName, 256, i);
                 if (result == 0)
                 {
                     var name = System.Text.Encoding.ASCII.GetString(deviceName).TrimEnd('\0');
+                    LogDeviceFound(Logger, $"{i}: {name}", null);
                     _output.WriteLine($"Found device {i}: {name}");
 
-                    if (name.Contains("RTX 2000 Ada") || name.Contains("Ada Generation"))
+                    if (name.Contains("RTX 2000 Ada", StringComparison.Ordinal) || name.Contains("Ada Generation", StringComparison.Ordinal))
                     {
                         _deviceId = i;
                         foundRTX2000 = true;
@@ -85,10 +99,11 @@ public class RTX2000HardwareValidationTests : IDisposable
             }
 
             // Create context on selected device
-            result = CudaCtxCreate(ref _cudaContext, 0, _deviceId);
+            _ = CudaCtxCreate(ref _cudaContext, 0, _deviceId);
             if (result == 0)
             {
                 _cudaInitialized = true;
+                LogCudaContextCreated(Logger, _deviceId, null);
                 _output.WriteLine($"CUDA context created successfully on device {_deviceId}");
             }
             else
@@ -150,7 +165,7 @@ public class RTX2000HardwareValidationTests : IDisposable
         ulong free = 0, total = 0;
         var result = CudaMemGetInfo(ref free, ref total);
 
-        Assert.Equal(0, result); // Memory info query should succeed;
+        Assert.Equal(0, result); // Memory info query should succeed
         total.Should().BeGreaterThan(4UL * 1024 * 1024 * 1024, "RTX 2000 Ada Gen should have more than 4GB memory");
 
         // RTX 2000 Ada Gen has 8GB GDDR6 memory
@@ -230,7 +245,7 @@ public class RTX2000HardwareValidationTests : IDisposable
             // Clean up all allocations
             foreach (var ptr in allocations)
             {
-                CudaFree(ptr);
+                _ = CudaFree(ptr);
             }
         }
 
@@ -323,7 +338,7 @@ public class RTX2000HardwareValidationTests : IDisposable
                 }
                 finally
                 {
-                    CudaFree(devicePtr2);
+                    _ = CudaFree(devicePtr2);
                 }
             }
             finally
@@ -335,7 +350,7 @@ public class RTX2000HardwareValidationTests : IDisposable
         {
             if (devicePtr != IntPtr.Zero)
             {
-                CudaFree(devicePtr);
+                _ = CudaFree(devicePtr);
             }
         }
 
@@ -444,9 +459,9 @@ public class RTX2000HardwareValidationTests : IDisposable
             for (var i = 0; i < streamCount; i++)
             {
                 if (streams[i] != IntPtr.Zero)
-                    CudaStreamDestroy(streams[i]);
+                    _ = CudaStreamDestroy(streams[i]);
                 if (deviceBuffers[i] != IntPtr.Zero)
-                    CudaFree(deviceBuffers[i]);
+                    _ = CudaFree(deviceBuffers[i]);
             }
         }
 
@@ -467,13 +482,13 @@ public class RTX2000HardwareValidationTests : IDisposable
         _output.WriteLine($"Large allocation failed as expected with error code: {result}");
 
         // Test 2: Invalid memory operations
-        result = CudaFree(IntPtr.Zero);
+        _ = CudaFree(IntPtr.Zero);
         result.Should().NotBe(0, "Freeing null pointer should fail");
         _output.WriteLine($"Null pointer free failed as expected with error code: {result}");
 
         // Test 3: Memory access validation
         const int testSize = 1024 * sizeof(float);
-        result = CudaMalloc(ref devicePtr, testSize);
+        _ = CudaMalloc(ref devicePtr, testSize);
         Assert.Equal(0, result); // Valid allocation should succeed;
 
         try
@@ -484,12 +499,12 @@ public class RTX2000HardwareValidationTests : IDisposable
             try
             {
                 // This should work
-                result = CudaMemcpyHtoD(devicePtr, hostHandle.AddrOfPinnedObject(), testSize);
+                _ = CudaMemcpyHtoD(devicePtr, hostHandle.AddrOfPinnedObject(), testSize);
                 Assert.Equal(0, result); // Valid memory copy should succeed;
 
                 // Test successful error recovery - context should still be valid
                 ulong free = 0, total = 0;
-                result = CudaMemGetInfo(ref free, ref total);
+                _ = CudaMemGetInfo(ref free, ref total);
                 Assert.Equal(0, result); // Context should still be valid after error recovery;
                 _output.WriteLine("Error recovery validation successful");
             }
@@ -500,7 +515,7 @@ public class RTX2000HardwareValidationTests : IDisposable
         }
         finally
         {
-            CudaFree(devicePtr);
+            _ = CudaFree(devicePtr);
         }
 
         await Task.CompletedTask;
@@ -510,16 +525,17 @@ public class RTX2000HardwareValidationTests : IDisposable
     {
         if (_cudaContext != IntPtr.Zero)
         {
-            CudaCtxDestroy(_cudaContext);
+            _ = CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
         }
         _cudaInitialized = false;
+        GC.SuppressFinalize(this);
     }
 
     #region CUDA Native Methods and Structures
 
     [StructLayout(LayoutKind.Sequential)]
-    private struct CudaDeviceProperties
+    internal struct CudaDeviceProperties : IEquatable<CudaDeviceProperties>
     {
         public int Major;
         public int Minor;
@@ -531,109 +547,160 @@ public class RTX2000HardwareValidationTests : IDisposable
         public int MemoryClockRate;
         public int MemoryBusWidth;
         public int L2CacheSize;
+        
+        public readonly bool Equals(CudaDeviceProperties other) => Major == other.Major &&
+            Minor == other.Minor &&
+            TotalGlobalMem == other.TotalGlobalMem &&
+            SharedMemPerBlock == other.SharedMemPerBlock &&
+            MaxThreadsPerBlock == other.MaxThreadsPerBlock &&
+            MultiProcessorCount == other.MultiProcessorCount &&
+            MaxThreadsPerMultiProcessor == other.MaxThreadsPerMultiProcessor &&
+            MemoryClockRate == other.MemoryClockRate &&
+            MemoryBusWidth == other.MemoryBusWidth &&
+            L2CacheSize == other.L2CacheSize;
+            
+        public override readonly bool Equals(object? obj) => obj is CudaDeviceProperties other && Equals(other);
+        
+        public override readonly int GetHashCode() => HashCode.Combine(Major, Minor, TotalGlobalMem, SharedMemPerBlock, MaxThreadsPerBlock, MultiProcessorCount, MaxThreadsPerMultiProcessor, HashCode.Combine(MemoryClockRate, MemoryBusWidth, L2CacheSize));
+        
+        public static bool operator ==(CudaDeviceProperties left, CudaDeviceProperties right) => left.Equals(right);
+        
+        public static bool operator !=(CudaDeviceProperties left, CudaDeviceProperties right) => !left.Equals(right);
     }
 
     // P/Invoke declarations for CUDA Driver API
-    private static class CudaNative
+    internal static class CudaNative
     {
-        public static class Windows
+        internal static class Windows
         {
-            [DllImport("nvcuda.dll", EntryPoint = "cuInit")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuInit", ExactSpelling = true)]
             public static extern int CudaInit(uint flags);
 
-            [DllImport("nvcuda.dll", EntryPoint = "cuDeviceGetCount")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuDeviceGetCount", ExactSpelling = true)]
             public static extern int CudaGetDeviceCount(ref int count);
 
-            [DllImport("nvcuda.dll", EntryPoint = "cuDeviceGetName")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuDeviceGetName", ExactSpelling = true)]
             public static extern int CudaDeviceGetName(byte[] name, int len, int dev);
 
-            [DllImport("nvcuda.dll", EntryPoint = "cuDeviceGetAttribute")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuDeviceGetAttribute", ExactSpelling = true)]
             public static extern int CudaDeviceGetAttribute(ref int value, int attrib, int dev);
 
-            [DllImport("nvcuda.dll", EntryPoint = "cuCtxCreate_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
             public static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
 
-            [DllImport("nvcuda.dll", EntryPoint = "cuCtxDestroy_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
             public static extern int CudaCtxDestroy(IntPtr ctx);
 
-            [DllImport("nvcuda.dll", EntryPoint = "cuMemGetInfo_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemGetInfo_v2", ExactSpelling = true)]
             public static extern int CudaMemGetInfo(ref ulong free, ref ulong total);
 
-            [DllImport("nvcuda.dll", EntryPoint = "cuMemAlloc_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
             public static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
 
-            [DllImport("nvcuda.dll", EntryPoint = "cuMemFree_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
             public static extern int CudaFree(IntPtr dptr);
 
-            [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyHtoD_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
             public static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
 
-            [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoH_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
             public static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoD_v2")]
             public static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyHtoDAsync_v2")]
             public static extern int CudaMemcpyHtoDAsync(IntPtr dstDevice, IntPtr srcHost, long byteCount, IntPtr stream);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuStreamCreate")]
             public static extern int CudaStreamCreate(ref IntPtr stream, uint flags);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuStreamDestroy_v2")]
             public static extern int CudaStreamDestroy(IntPtr stream);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuStreamSynchronize")]
             public static extern int CudaStreamSynchronize(IntPtr stream);
         }
 
-        public static class Linux
+        internal static class Linux
         {
-            [DllImport("libcuda.so.1", EntryPoint = "cuInit")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuInit", ExactSpelling = true)]
             public static extern int CudaInit(uint flags);
 
-            [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetCount")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetCount", ExactSpelling = true)]
             public static extern int CudaGetDeviceCount(ref int count);
 
-            [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetName")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetName", ExactSpelling = true)]
             public static extern int CudaDeviceGetName(byte[] name, int len, int dev);
 
-            [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetAttribute")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuDeviceGetAttribute", ExactSpelling = true)]
             public static extern int CudaDeviceGetAttribute(ref int value, int attrib, int dev);
 
-            [DllImport("libcuda.so.1", EntryPoint = "cuCtxCreate_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
             public static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
 
-            [DllImport("libcuda.so.1", EntryPoint = "cuCtxDestroy_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
             public static extern int CudaCtxDestroy(IntPtr ctx);
 
-            [DllImport("libcuda.so.1", EntryPoint = "cuMemGetInfo_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemGetInfo_v2", ExactSpelling = true)]
             public static extern int CudaMemGetInfo(ref ulong free, ref ulong total);
 
-            [DllImport("libcuda.so.1", EntryPoint = "cuMemAlloc_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
             public static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
 
-            [DllImport("libcuda.so.1", EntryPoint = "cuMemFree_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
             public static extern int CudaFree(IntPtr dptr);
 
-            [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoD_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
             public static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
 
-            [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoH_v2")]
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+            [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
             public static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoD_v2")]
             public static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoDAsync_v2")]
             public static extern int CudaMemcpyHtoDAsync(IntPtr dstDevice, IntPtr srcHost, long byteCount, IntPtr stream);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuStreamCreate")]
             public static extern int CudaStreamCreate(ref IntPtr stream, uint flags);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuStreamDestroy_v2")]
             public static extern int CudaStreamDestroy(IntPtr stream);
 
+            [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuStreamSynchronize")]
             public static extern int CudaStreamSynchronize(IntPtr stream);
         }
@@ -735,36 +802,46 @@ public class RTX2000HardwareValidationTests : IDisposable
 
         var value = 0;
 
-        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, deviceId) == 0)
+        var result = CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, deviceId);
+        if (result == 0)
             props.Major = value;
 
-        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, deviceId) == 0)
+        result = CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, deviceId);
+        if (result == 0)
             props.Minor = value;
 
-        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK, deviceId) == 0)
+        result = CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_SHARED_MEMORY_PER_BLOCK, deviceId);
+        if (result == 0)
             props.SharedMemPerBlock = value;
 
-        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, deviceId) == 0)
+        result = CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_BLOCK, deviceId);
+        if (result == 0)
             props.MaxThreadsPerBlock = value;
 
-        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, deviceId) == 0)
+        result = CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MULTIPROCESSOR_COUNT, deviceId);
+        if (result == 0)
             props.MultiProcessorCount = value;
 
-        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, deviceId) == 0)
+        result = CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MAX_THREADS_PER_MULTIPROCESSOR, deviceId);
+        if (result == 0)
             props.MaxThreadsPerMultiProcessor = value;
 
-        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, deviceId) == 0)
+        result = CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_MEMORY_CLOCK_RATE, deviceId);
+        if (result == 0)
             props.MemoryClockRate = value;
 
-        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH, deviceId) == 0)
+        result = CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_GLOBAL_MEMORY_BUS_WIDTH, deviceId);
+        if (result == 0)
             props.MemoryBusWidth = value;
 
-        if (CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE, deviceId) == 0)
+        result = CudaDeviceGetAttribute(ref value, CU_DEVICE_ATTRIBUTE_L2_CACHE_SIZE, deviceId);
+        if (result == 0)
             props.L2CacheSize = value;
 
         // Get total memory from memory info
         ulong free = 0, total = 0;
-        if (CudaMemGetInfo(ref free, ref total) == 0)
+        var memInfoResult = CudaMemGetInfo(ref free, ref total);
+        if (memInfoResult == 0)
         {
             props.TotalGlobalMem = total;
         }
@@ -776,7 +853,7 @@ public class RTX2000HardwareValidationTests : IDisposable
 /// <summary>
 /// Helper attribute to skip tests when conditions aren't met.
 /// </summary>
-public class SkippableFactAttribute : FactAttribute
+internal sealed class SkippableFactAttribute : FactAttribute
 {
     public override string? Skip { get; set; }
 }
@@ -784,7 +861,7 @@ public class SkippableFactAttribute : FactAttribute
 /// <summary>
 /// Helper class for skipping tests conditionally.
 /// </summary>
-public static class Skip
+internal static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
@@ -798,7 +875,9 @@ public static class Skip
 /// <summary>
 /// Exception thrown to skip a test.
 /// </summary>
-public class SkipException : Exception
+internal sealed class SkipException : Exception
 {
+    public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
+    public SkipException(string message, Exception innerException) : base(message, innerException) { }
 }

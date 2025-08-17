@@ -12,12 +12,12 @@ namespace DotCompute.Backends.CPU.Tests.Constructor;
 /// Simple tests to verify that CpuAccelerator constructor calls work correctly.
 /// This tests the main issue of constructor parameter requirements.
 /// </summary>
-public class CpuAcceleratorConstructorTests : IDisposable
+public sealed class CpuAcceleratorConstructorTests : IDisposable
 {
     private readonly FakeLogger<CpuAccelerator> _logger;
     private readonly IOptions<CpuAcceleratorOptions> _options;
     private readonly IOptions<CpuThreadPoolOptions> _threadPoolOptions;
-    private bool _disposed;
+    private readonly bool _disposed;
 
     public CpuAcceleratorConstructorTests()
     {
@@ -50,24 +50,21 @@ public class CpuAcceleratorConstructorTests : IDisposable
     public void Constructor_WithNullOptions_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Action act = () => new CpuAccelerator(null!, _threadPoolOptions, _logger);
-        act.Should().Throw<Exception>(); // May throw NullReferenceException or ArgumentNullException
+        var _ = Assert.Throws<Exception>(() => new CpuAccelerator(null!, _threadPoolOptions, _logger));
     }
 
     [Fact]
     public void Constructor_WithNullThreadPoolOptions_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Action act = () => new CpuAccelerator(_options, null!, _logger);
-        act.Should().Throw<Exception>(); // May throw NullReferenceException or ArgumentNullException
+        var _ = Assert.Throws<Exception>(() => new CpuAccelerator(_options, null!, _logger));
     }
 
     [Fact]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        Action act = () => new CpuAccelerator(_options, _threadPoolOptions, null!);
-        act.Should().Throw<Exception>(); // May throw NullReferenceException or ArgumentNullException
+        var _ = Assert.Throws<Exception>(() => new CpuAccelerator(_options, _threadPoolOptions, null!));
     }
 
     [Fact]
@@ -95,8 +92,18 @@ public class CpuAcceleratorConstructorTests : IDisposable
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
         if (!_disposed)
         {
+            if (disposing)
+            {
+                // Clean up managed resources if any
+            }
             _disposed = true;
         }
     }

@@ -1,14 +1,14 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Shared.Memory;
+using DotCompute.Tests.Utilities.Memory;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Shared.Accelerators;
+namespace DotCompute.Tests.Utilities.Accelerators;
 
 /// <summary>
 /// Test implementation of IAcceleratorManager for testing without GPU hardware.
 /// </summary>
-public class TestAcceleratorManager : IAcceleratorManager
+public sealed class TestAcceleratorManager : IAcceleratorManager
 {
     private readonly List<IAccelerator> _accelerators;
     private readonly List<IAcceleratorProvider> _providers;
@@ -128,8 +128,8 @@ public class TestAcceleratorManager : IAcceleratorManager
         // Filter by preferred type
         if (criteria.PreferredType.HasValue)
         {
-            var preferredTypeStr = criteria.PreferredType.Value.ToString();
-            candidates = candidates.Where(a => a.Info.DeviceType == preferredTypeStr);
+            var preferredTypeStr = criteria.PreferredType.Value.ToString().ToUpperInvariant();
+            candidates = candidates.Where(a => string.Equals(a.Info.DeviceType, preferredTypeStr, StringComparison.OrdinalIgnoreCase));
         }
 
         // Filter by compute capability
@@ -177,10 +177,7 @@ public class TestAcceleratorManager : IAcceleratorManager
 
     public void RegisterProvider(IAcceleratorProvider provider)
     {
-        if (provider == null)
-        {
-            throw new ArgumentNullException(nameof(provider));
-        }
+        ArgumentNullException.ThrowIfNull(provider);
 
         if (_initialized)
         {
@@ -225,7 +222,7 @@ public class TestAcceleratorManager : IAcceleratorManager
         return Task.FromResult<IEnumerable<IAccelerator>>(filtered);
     }
 
-    public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? preferredType = null, CancellationToken cancellationToken = default)
+    public Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default)
     {
         if (!_initialized)
         {
@@ -233,9 +230,9 @@ public class TestAcceleratorManager : IAcceleratorManager
         }
 
         IAccelerator? best = null;
-        if (preferredType.HasValue)
+        if (type.HasValue)
         {
-            best = _accelerators.FirstOrDefault(a => a.Type == preferredType.Value);
+            best = _accelerators.FirstOrDefault(a => a.Type == type.Value);
         }
 
         // Fallback to any accelerator if no preferred type match or no preferred type specified
@@ -252,10 +249,6 @@ public class TestAcceleratorManager : IAcceleratorManager
         }
 
         // Dispose all contexts
-        foreach (var context in _contexts.Values)
-        {
-            // AcceleratorContext is a struct, no disposal needed
-        }
         _contexts.Clear();
 
         // Dispose all accelerators
@@ -265,14 +258,22 @@ public class TestAcceleratorManager : IAcceleratorManager
         }
         _accelerators.Clear();
 
+        // Dispose _defaultAccelerator if it's not null and not in _accelerators
+        if (_defaultAccelerator != null && !_accelerators.Contains(_defaultAccelerator))
+        {
+            await _defaultAccelerator.DisposeAsync();
+        }
+        _defaultAccelerator = null;
+
         _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }
 
 /// <summary>
 /// Test CPU accelerator provider for testing.
 /// </summary>
-public class TestCpuAcceleratorProvider : IAcceleratorProvider
+public sealed class TestCpuAcceleratorProvider : IAcceleratorProvider
 {
     public string Name => "Test CPU Provider";
 
@@ -299,7 +300,10 @@ public class TestCpuAcceleratorProvider : IAcceleratorProvider
 
     public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(info);
+#pragma warning disable CA2000 // Dispose objects before losing scope - caller is responsible for disposal
         var accelerator = new TestCpuAccelerator(info.Name);
+#pragma warning restore CA2000
         return ValueTask.FromResult<IAccelerator>(accelerator);
     }
 }
@@ -307,7 +311,7 @@ public class TestCpuAcceleratorProvider : IAcceleratorProvider
 /// <summary>
 /// Test GPU accelerator provider for simulating GPU devices.
 /// </summary>
-public class TestGpuAcceleratorProvider : IAcceleratorProvider
+public sealed class TestGpuAcceleratorProvider : IAcceleratorProvider
 {
     private readonly int _deviceCount;
 
@@ -336,7 +340,10 @@ public class TestGpuAcceleratorProvider : IAcceleratorProvider
 
     public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(info);
+#pragma warning disable CA2000 // Dispose objects before losing scope - caller is responsible for disposal
         var accelerator = new TestGpuAccelerator(info.Name, 0);
+#pragma warning restore CA2000
         return ValueTask.FromResult<IAccelerator>(accelerator);
     }
 }
@@ -344,7 +351,7 @@ public class TestGpuAcceleratorProvider : IAcceleratorProvider
 /// <summary>
 /// Test GPU accelerator implementation for simulating GPU behavior.
 /// </summary>
-public class TestGpuAccelerator : IAccelerator
+public sealed class TestGpuAccelerator : IAccelerator
 {
     public AcceleratorType Type => AcceleratorType.CUDA;
     public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
@@ -390,10 +397,7 @@ public class TestGpuAccelerator : IAccelerator
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        if (definition == null)
-        {
-            throw new ArgumentNullException(nameof(definition));
-        }
+        ArgumentNullException.ThrowIfNull(definition);
 
         await Task.Delay(5, cancellationToken); // Simulate faster GPU compilation
 
@@ -418,6 +422,7 @@ public class TestGpuAccelerator : IAccelerator
             {
                 disposable.Dispose();
             }
+            GC.SuppressFinalize(this);
         }
     }
 }

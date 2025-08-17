@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -12,10 +13,17 @@ namespace DotCompute.Tests.Hardware.Integration;
 [Trait("Category", "Integration")]
 [Trait("Category", "EndToEnd")]
 [Trait("Category", "RequiresGPU")]
-public class EndToEndWorkflowTests : IDisposable
+public sealed class EndToEndWorkflowTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
-    private bool _cudaAvailable;
+#pragma warning disable CA1823 // Unused field - Logger for future use
+    private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+    
+    // Logger messages
+    private static readonly Action<ILogger, string, Exception?> LogWorkflowStep =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(2001), "Workflow step: {Step}");
+#pragma warning restore CA1823
+    private readonly bool _cudaAvailable;
 
     public EndToEndWorkflowTests(ITestOutputHelper output)
     {
@@ -58,7 +66,7 @@ public class EndToEndWorkflowTests : IDisposable
             // Step 2: Initialize DotCompute engine
             // Note: This is a conceptual test - actual implementation may vary
             var computeEngine = new MockComputeEngine();
-            var memoryManager = new MockUnifiedMemoryManager();
+            using var memoryManager = new MockUnifiedMemoryManager();
 
             _output.WriteLine("✓ Compute engine initialized");
 
@@ -132,7 +140,7 @@ public class EndToEndWorkflowTests : IDisposable
 
             // Step 2: Initialize compute resources
             var computeEngine = new MockComputeEngine();
-            var memoryManager = new MockUnifiedMemoryManager();
+            using var memoryManager = new MockUnifiedMemoryManager();
 
             // Step 3: Allocate GPU memory
             var totalElements = matrixSize * matrixSize;
@@ -198,7 +206,7 @@ public class EndToEndWorkflowTests : IDisposable
             _output.WriteLine("✓ Synthetic dataset generated");
 
             var computeEngine = new MockComputeEngine();
-            var memoryManager = new MockUnifiedMemoryManager();
+            using var memoryManager = new MockUnifiedMemoryManager();
 
             // Step 2: Multi-stage processing pipeline
             var stageBuffers = new MockUnifiedBuffer<float>[4];
@@ -367,12 +375,12 @@ public class EndToEndWorkflowTests : IDisposable
 
     #region Mock Classes
 
-    private class MockComputeEngine
+    internal sealed class MockComputeEngine
     {
         public static bool IsInitialized => true;
     }
 
-    private class MockUnifiedMemoryManager : IDisposable
+    internal sealed class MockUnifiedMemoryManager : IDisposable
     {
         public static async Task<MockUnifiedBuffer<T>> AllocateAsync<T>(int elementCount) where T : struct
         {
@@ -380,13 +388,13 @@ public class EndToEndWorkflowTests : IDisposable
             return new MockUnifiedBuffer<T>(elementCount);
         }
 
-        public void Dispose() { }
+        public void Dispose() { GC.SuppressFinalize(this); }
     }
 
-    private class MockUnifiedBuffer<T> : IDisposable where T : struct
+    internal sealed class MockUnifiedBuffer<T> : IDisposable where T : struct
     {
         public int Size { get; }
-        private T[] _data;
+        private readonly T[] _data;
 
         public MockUnifiedBuffer(int size)
         {
@@ -406,7 +414,7 @@ public class EndToEndWorkflowTests : IDisposable
             Array.Copy(_data, destination, Math.Min(_data.Length, destination.Length));
         }
 
-        public void Dispose() { }
+        public void Dispose() { GC.SuppressFinalize(this); }
     }
 
     #endregion
@@ -414,13 +422,14 @@ public class EndToEndWorkflowTests : IDisposable
     public void Dispose()
     {
         // Cleanup resources
+        GC.SuppressFinalize(this);
     }
 }
 
 /// <summary>
 /// Helper extensions for random number generation
 /// </summary>
-public static class RandomExtensions
+internal static class RandomExtensions
 {
     public static double NextGaussian(this Random random, double mean = 0, double stdDev = 1)
     {
@@ -435,7 +444,7 @@ public static class RandomExtensions
 /// <summary>
 /// Helper attribute to skip tests when conditions aren't met.
 /// </summary>
-public class SkippableFactAttribute : FactAttribute
+internal sealed class SkippableFactAttribute : FactAttribute
 {
     public override string? Skip { get; set; }
 }
@@ -443,7 +452,7 @@ public class SkippableFactAttribute : FactAttribute
 /// <summary>
 /// Helper class for skipping tests conditionally.
 /// </summary>
-public static class Skip
+internal static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
@@ -457,7 +466,9 @@ public static class Skip
 /// <summary>
 /// Exception thrown to skip a test.
 /// </summary>
-public class SkipException : Exception
+internal sealed class SkipException : Exception
 {
+    public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
+    public SkipException(string message, Exception innerException) : base(message, innerException) { }
 }

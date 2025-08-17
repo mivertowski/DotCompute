@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Shared;
-using DotCompute.Tests.Shared.TestFixtures;
+using DotCompute.Tests.Utilities;
+using DotCompute.Tests.Utilities.TestFixtures;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Hardware;
@@ -105,9 +105,11 @@ public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
         _output.WriteLine("Testing CUDA matrix multiplication kernel...");
 
         const int matrixSize = 512;
-        var a = TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
-        var b = TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
-        var c = new float[matrixSize, matrixSize];
+        // Convert multidimensional arrays to jagged arrays for CA1814
+        // Remove unnecessary assignments for IDE0059 by not storing unused values
+        TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
+        TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
+        TestDataGenerators.CreateJaggedArray(matrixSize, matrixSize);
 
         var stopwatch = Stopwatch.StartNew();
 

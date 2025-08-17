@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
 namespace DotCompute.Tests.Hardware.Utilities;
@@ -11,7 +12,7 @@ public static class RTX2000TestUtilities
     /// <summary>
     /// RTX 2000 Ada Gen specifications for validation.
     /// </summary>
-    public static class RTX2000Specifications
+    internal static class RTX2000Specifications
     {
         public const int ComputeCapabilityMajor = 8;
         public const int ComputeCapabilityMinor = 9;
@@ -25,7 +26,7 @@ public static class RTX2000TestUtilities
     /// <summary>
     /// Validates if the detected GPU matches RTX 2000 Ada Gen specifications.
     /// </summary>
-    public static bool ValidateRTX2000Hardware(DeviceInfo deviceInfo, ITestOutputHelper output)
+    internal static bool ValidateRTX2000Hardware(DeviceInfo deviceInfo, ITestOutputHelper output)
     {
         var isValid = true;
 
@@ -63,7 +64,7 @@ public static class RTX2000TestUtilities
     /// <summary>
     /// Loads and compiles a CUDA kernel from the embedded test kernels.
     /// </summary>
-    public static async Task<CompiledKernel> CompileTestKernel(string kernelName, string[]? compilationOptions = null)
+    internal static async Task<CompiledKernel> CompileTestKernel(string kernelName, string[]? compilationOptions = null)
     {
         var kernelSource = await LoadTestKernelSource();
         return await CompileKernel(kernelSource, kernelName, compilationOptions ?? GetDefaultCompilationOptions());
@@ -90,7 +91,7 @@ public static class RTX2000TestUtilities
     /// <summary>
     /// Measures kernel execution time with high precision.
     /// </summary>
-    public static async Task<KernelExecutionResult> MeasureKernelExecution(
+    internal static async Task<KernelExecutionResult> MeasureKernelExecution(
         CompiledKernel kernel,
         KernelLaunchParameters launchParams,
         IntPtr[] parameters,
@@ -137,7 +138,7 @@ public static class RTX2000TestUtilities
     /// <summary>
     /// Creates optimized grid and block dimensions for the given problem size.
     /// </summary>
-    public static KernelLaunchParameters CalculateOptimalLaunchParameters(
+    internal static KernelLaunchParameters CalculateOptimalLaunchParameters(
         int problemSize,
         int maxThreadsPerBlock = 256,
         int preferredBlockSize = 256)
@@ -161,7 +162,7 @@ public static class RTX2000TestUtilities
     /// <summary>
     /// Creates 2D launch parameters for matrix operations.
     /// </summary>
-    public static KernelLaunchParameters Calculate2DLaunchParameters(
+    internal static KernelLaunchParameters Calculate2DLaunchParameters(
         int width,
         int height,
         int tileSize = 16)
@@ -184,7 +185,7 @@ public static class RTX2000TestUtilities
     /// <summary>
     /// Validates memory bandwidth against RTX 2000 Ada Gen specifications.
     /// </summary>
-    public static BandwidthValidationResult ValidateBandwidthResults(
+    internal static BandwidthValidationResult ValidateBandwidthResults(
         BandwidthMeasurement measurement,
         ITestOutputHelper output)
     {
@@ -265,7 +266,7 @@ public static class RTX2000TestUtilities
     /// <summary>
     /// Validates computational results with specified tolerance.
     /// </summary>
-    public static ValidationResult ValidateResults<T>(
+    internal static ValidationResult ValidateResults<T>(
         T[] expected,
         T[] actual,
         double tolerance = 1e-6,
@@ -375,18 +376,18 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 
     #region Supporting Classes and Enums
 
-    public class DeviceInfo
-    {
-        public int ComputeCapabilityMajor { get; set; }
-        public int ComputeCapabilityMinor { get; set; }
-        public long TotalMemoryBytes { get; set; }
-        public int MultiProcessorCount { get; set; }
-        public string DeviceName { get; set; } = string.Empty;
-        public int MemoryClockRate { get; set; }
-        public int MemoryBusWidth { get; set; }
-    }
+#pragma warning disable CA1812 // DeviceInfo appears to be uninstantiated - used for configuration
+    internal sealed record DeviceInfo(
+#pragma warning restore CA1812
+        int ComputeCapabilityMajor,
+        int ComputeCapabilityMinor,
+        long TotalMemoryBytes,
+        int MultiProcessorCount,
+        string DeviceName = "",
+        int MemoryClockRate = 0,
+        int MemoryBusWidth = 0);
 
-    public class CompiledKernel
+    internal sealed class CompiledKernel : IEquatable<CompiledKernel>
     {
         public string Name { get; set; } = string.Empty;
         public string Source { get; set; } = string.Empty;
@@ -394,9 +395,27 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public bool IsCompiled { get; set; }
         public IntPtr ModuleHandle { get; set; }
         public IntPtr FunctionHandle { get; set; }
+        
+        public bool Equals(CompiledKernel? other)
+        {
+            if (other is null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+            return string.Equals(Name, other.Name, StringComparison.Ordinal) &&
+                   string.Equals(Source, other.Source, StringComparison.Ordinal) &&
+                   CompilationOptions.SequenceEqual(other.CompilationOptions) &&
+                   IsCompiled == other.IsCompiled &&
+                   ModuleHandle.Equals(other.ModuleHandle) &&
+                   FunctionHandle.Equals(other.FunctionHandle);
+        }
+        
+        public override bool Equals(object? obj) => Equals(obj as CompiledKernel);
+        
+        public override int GetHashCode() => HashCode.Combine(Name, Source, IsCompiled, ModuleHandle, FunctionHandle);
     }
 
-    public class KernelLaunchParameters
+    internal sealed class KernelLaunchParameters : IEquatable<KernelLaunchParameters>
     {
         public uint GridDimX { get; set; }
         public uint GridDimY { get; set; }
@@ -405,25 +424,71 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public uint BlockDimY { get; set; }
         public uint BlockDimZ { get; set; }
         public uint SharedMemoryBytes { get; set; }
+        
+        public bool Equals(KernelLaunchParameters? other)
+        {
+            if (other is null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+            return GridDimX == other.GridDimX &&
+                   GridDimY == other.GridDimY &&
+                   GridDimZ == other.GridDimZ &&
+                   BlockDimX == other.BlockDimX &&
+                   BlockDimY == other.BlockDimY &&
+                   BlockDimZ == other.BlockDimZ &&
+                   SharedMemoryBytes == other.SharedMemoryBytes;
+        }
+        
+        public override bool Equals(object? obj) => Equals(obj as KernelLaunchParameters);
+        
+        public override int GetHashCode() => HashCode.Combine(GridDimX, GridDimY, GridDimZ, BlockDimX, BlockDimY, BlockDimZ, SharedMemoryBytes);
     }
 
-    public class KernelExecutionResult
+    internal sealed class KernelExecutionResult : IEquatable<KernelExecutionResult>
     {
         public double AverageTimeMicroseconds { get; set; }
         public double MinTimeMicroseconds { get; set; }
         public double MaxTimeMicroseconds { get; set; }
         public double StandardDeviation { get; set; }
         public double[] AllTimes { get; set; } = Array.Empty<double>();
+        
+        public bool Equals(KernelExecutionResult? other)
+        {
+            if (other is null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+            return AverageTimeMicroseconds.Equals(other.AverageTimeMicroseconds) &&
+                   MinTimeMicroseconds.Equals(other.MinTimeMicroseconds) &&
+                   MaxTimeMicroseconds.Equals(other.MaxTimeMicroseconds) &&
+                   StandardDeviation.Equals(other.StandardDeviation) &&
+                   AllTimes.SequenceEqual(other.AllTimes);
+        }
+        
+        public override bool Equals(object? obj) => Equals(obj as KernelExecutionResult);
+        
+        public override int GetHashCode() => HashCode.Combine(AverageTimeMicroseconds, MinTimeMicroseconds, MaxTimeMicroseconds, StandardDeviation);
     }
 
-    public struct BandwidthMeasurement
+    internal struct BandwidthMeasurement : IEquatable<BandwidthMeasurement>
     {
         public double H2D { get; set; }
         public double D2H { get; set; }
         public double D2D { get; set; }
+        
+        public readonly bool Equals(BandwidthMeasurement other) => H2D.Equals(other.H2D) && D2H.Equals(other.D2H) && D2D.Equals(other.D2D);
+            
+        public override readonly bool Equals(object? obj) => obj is BandwidthMeasurement other && Equals(other);
+        
+        public override readonly int GetHashCode() => HashCode.Combine(H2D, D2H, D2D);
+        
+        public static bool operator ==(BandwidthMeasurement left, BandwidthMeasurement right) => left.Equals(right);
+        
+        public static bool operator !=(BandwidthMeasurement left, BandwidthMeasurement right) => !left.Equals(right);
     }
 
-    public class BandwidthValidationResult
+    internal sealed class BandwidthValidationResult : IEquatable<BandwidthValidationResult>
     {
         public bool H2DValid { get; set; }
         public bool D2HValid { get; set; }
@@ -431,15 +496,50 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public bool IsValid { get; set; }
         public double PCIeEfficiency { get; set; }
         public double MemoryEfficiency { get; set; }
+        
+        public bool Equals(BandwidthValidationResult? other)
+        {
+            if (other is null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+            return H2DValid == other.H2DValid &&
+                   D2HValid == other.D2HValid &&
+                   D2DValid == other.D2DValid &&
+                   IsValid == other.IsValid &&
+                   PCIeEfficiency.Equals(other.PCIeEfficiency) &&
+                   MemoryEfficiency.Equals(other.MemoryEfficiency);
+        }
+        
+        public override bool Equals(object? obj) => Equals(obj as BandwidthValidationResult);
+        
+        public override int GetHashCode() => HashCode.Combine(H2DValid, D2HValid, D2DValid, IsValid, PCIeEfficiency, MemoryEfficiency);
     }
 
-    public class ValidationResult
+    internal sealed class ValidationResult : IEquatable<ValidationResult>
     {
         public bool IsValid { get; set; }
         public string ErrorMessage { get; set; } = string.Empty;
         public double MaxError { get; set; }
         public double AverageError { get; set; }
         public int SamplesValidated { get; set; }
+        
+        public bool Equals(ValidationResult? other)
+        {
+            if (other is null)
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+            return IsValid == other.IsValid &&
+                   string.Equals(ErrorMessage, other.ErrorMessage, StringComparison.Ordinal) &&
+                   MaxError.Equals(other.MaxError) &&
+                   AverageError.Equals(other.AverageError) &&
+                   SamplesValidated == other.SamplesValidated;
+        }
+        
+        public override bool Equals(object? obj) => Equals(obj as ValidationResult);
+        
+        public override int GetHashCode() => HashCode.Combine(IsValid, ErrorMessage, MaxError, AverageError, SamplesValidated);
     }
 
     public enum TestDataType

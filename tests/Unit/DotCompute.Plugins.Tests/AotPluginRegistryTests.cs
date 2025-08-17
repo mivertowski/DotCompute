@@ -16,7 +16,7 @@ namespace DotCompute.Tests.Unit;
 /// <summary>
 /// Tests for the AotPluginRegistry and AotPluginSystem classes covering AOT-compatible plugin management.
 /// </summary>
-public class AotPluginRegistryTests : IDisposable
+public sealed class AotPluginRegistryTests : IDisposable
 {
     private readonly ILogger<AotPluginRegistry> _logger;
     private readonly AotPluginRegistry _registry;
@@ -32,8 +32,8 @@ public class AotPluginRegistryTests : IDisposable
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Action act = () => new AotPluginRegistry(null!);
-        act.Throw<ArgumentNullException>().WithParameterName("logger");
+        Func<AotPluginRegistry> act = () => new AotPluginRegistry(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public class AotPluginRegistryTests : IDisposable
         Assert.NotNull(plugin);
         plugin!.Id.Should().Be("DotCompute.Backends.CPU");
         plugin.Name.Should().Be("CPU Backend");
-        plugin.Capabilities.HaveFlag(PluginCapabilities.ComputeBackend);
+        plugin.Capabilities.Should().HaveFlag(PluginCapabilities.ComputeBackend);
     }
 
     [Fact]
@@ -85,7 +85,7 @@ public class AotPluginRegistryTests : IDisposable
         {
             // On unsupported platforms, should return null or throw
             var plugin = _registry.CreatePlugin("DotCompute.Backends.CUDA");
-            plugin?.BeNull();
+            plugin.Should().BeNull();
         }
     }
 
@@ -104,7 +104,7 @@ public class AotPluginRegistryTests : IDisposable
         {
             // On non-Apple platforms, should throw PlatformNotSupportedException
             Action act = () => _registry.CreatePlugin("DotCompute.Backends.Metal");
-            act.Throw<PlatformNotSupportedException>()
+            act.Should().Throw<PlatformNotSupportedException>()
                 .WithMessage("*Metal backend is only available on macOS and iOS*");
         }
     }
@@ -151,7 +151,7 @@ public class AotPluginRegistryTests : IDisposable
         var retrieved = _registry.GetPlugin(created!.Id);
 
         // Assert
-        retrieved.BeSameAs(created);
+        retrieved.Should().BeSameAs(created);
     }
 
     [Fact]
@@ -174,7 +174,7 @@ public class AotPluginRegistryTests : IDisposable
         var loaded = _registry.GetLoadedPlugins();
 
         // Assert
-        Assert.Equal(1, loaded.Count());
+        Assert.Single(loaded);
         Assert.Contains(plugin1!, loaded);
     }
 
@@ -200,7 +200,7 @@ public class AotPluginRegistryTests : IDisposable
 
         // Assert
         Assert.True(result);
-        _registry.GetPlugin(pluginId).BeNull();
+        _registry.GetPlugin(pluginId).Should().BeNull();
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public class AotPluginRegistryTests : IDisposable
     public void RegisterPluginFactory_WithCustomFactory_RegistersSuccessfully()
     {
         // Arrange
-        var customPlugin = new CustomTestPlugin();
+        using var customPlugin = new CustomTestPlugin();
         Func<IBackendPlugin> factory = () => customPlugin;
 
         // Act
@@ -239,7 +239,7 @@ public class AotPluginRegistryTests : IDisposable
         Assert.Contains("Custom.Plugin", availableTypes);
 
         var created = _registry.CreatePlugin("Custom.Plugin");
-        created.BeSameAs(customPlugin);
+        created.Should().BeSameAs(customPlugin);
     }
 
     [Fact]
@@ -247,7 +247,7 @@ public class AotPluginRegistryTests : IDisposable
     {
         // Act & Assert
         Action act = () => _registry.RegisterPluginFactory("test", null!);
-        act.Throw<ArgumentNullException>().WithParameterName("factory");
+        act.Should().Throw<ArgumentNullException>().WithParameterName("factory");
     }
 
     [Fact]
@@ -296,13 +296,20 @@ public class AotPluginRegistryTests : IDisposable
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
         if (_disposed)
             return;
 
-        _registry?.Dispose();
+        if (disposing)
+        {
+            _registry?.Dispose();
+        }
         _disposed = true;
-
-        GC.SuppressFinalize(this);
     }
 
     /// <summary>
@@ -333,14 +340,17 @@ public class AotPluginRegistryTests : IDisposable
         public string GetConfigurationSchema() => "{}";
         public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public PluginMetrics GetMetrics() => new();
-        public void Dispose() { }
+        public void Dispose() { 
+        
+        GC.SuppressFinalize(this);
+    }
     }
 }
 
 /// <summary>
 /// Tests for the AotPluginSystem class.
 /// </summary>
-public class AotPluginSystemTests : IDisposable
+public sealed class AotPluginSystemTests : IDisposable
 {
     private readonly ILogger<AotPluginSystem> _logger;
     private readonly AotPluginSystem _system;
@@ -356,8 +366,8 @@ public class AotPluginSystemTests : IDisposable
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Action act = () => new AotPluginSystem(null!);
-        act.Throw<ArgumentNullException>().WithParameterName("logger");
+        Func<AotPluginSystem> act = () => new AotPluginSystem(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -393,7 +403,7 @@ public class AotPluginSystemTests : IDisposable
 
         // Assert
         Assert.True(result);
-        _system.GetPlugin(pluginId).BeNull();
+        _system.GetPlugin(pluginId).Should().BeNull();
     }
 
     [Fact]
@@ -413,7 +423,7 @@ public class AotPluginSystemTests : IDisposable
     public void RegisterPluginFactory_DelegatesToRegistry()
     {
         // Arrange
-        var customPlugin = new CustomTestPlugin();
+        using var customPlugin = new CustomTestPlugin();
         Func<IBackendPlugin> factory = () => customPlugin;
 
         // Act
@@ -426,13 +436,20 @@ public class AotPluginSystemTests : IDisposable
 
     public void Dispose()
     {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    private void Dispose(bool disposing)
+    {
         if (_disposed)
             return;
 
-        _system?.Dispose();
+        if (disposing)
+        {
+            _system?.Dispose();
+        }
         _disposed = true;
-
-        GC.SuppressFinalize(this);
     }
 
     private sealed class CustomTestPlugin : IBackendPlugin
@@ -460,14 +477,17 @@ public class AotPluginSystemTests : IDisposable
         public string GetConfigurationSchema() => "{}";
         public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public PluginMetrics GetMetrics() => new();
-        public void Dispose() { }
+        public void Dispose() { 
+        
+        GC.SuppressFinalize(this);
+    }
     }
 }
 
 /// <summary>
 /// Tests for AOT plugin helper functions.
 /// </summary>
-public class AotPluginHelpersTests
+public sealed class AotPluginHelpersTests
 {
     [Fact]
     public void IsAotCompatible_ReturnsExpectedValue()

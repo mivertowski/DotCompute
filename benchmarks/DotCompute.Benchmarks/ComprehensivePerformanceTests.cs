@@ -4,6 +4,7 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -12,10 +13,11 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90, warmupCount: 3, iterationCount: 10)]
 [RPlotExporter]
 [HtmlExporter]
-internal class ComprehensivePerformanceTests
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class ComprehensivePerformanceTests : IDisposable
 {
-    private IAcceleratorManager _acceleratorManager = null!;
-    private IComputeEngine _computeEngine = null!;
+    private DefaultAcceleratorManager? _acceleratorManager;
+    private DefaultComputeEngine? _computeEngine;
     private IMemoryManager _memoryManager = null!;
 
     [Params(1000, 10000, 100000)]
@@ -38,8 +40,14 @@ internal class ComprehensivePerformanceTests
     [GlobalCleanup]
     public async Task Cleanup()
     {
-        await _computeEngine.DisposeAsync();
-        await _acceleratorManager.DisposeAsync();
+        if (_computeEngine != null)
+        {
+            await _computeEngine.DisposeAsync();
+        }
+        if (_acceleratorManager != null)
+        {
+            await _acceleratorManager.DisposeAsync();
+        }
     }
 
     [Benchmark]
@@ -61,7 +69,7 @@ internal class ComprehensivePerformanceTests
         var bufferResult = await _memoryManager.AllocateAsync(WorkloadSize * sizeof(float));
 
         // Compile kernel
-        var kernel = await _computeEngine.CompileKernelAsync(@"
+        var kernel = await _computeEngine!.CompileKernelAsync(@"
             __kernel void vector_add(__global float* a, __global float* b, __global float* result) {
                 int i = get_global_id(0);
                 result[i] = a[i] + b[i];
@@ -144,7 +152,9 @@ internal class ComprehensivePerformanceTests
 
         for (var i = 0; i < operations; i++)
         {
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
             var size = Random.Shared.Next(1024, 10240);
+#pragma warning restore CA5394
             var data = new byte[size];
 
             var buffer = await _memoryManager.AllocateAndCopyAsync<byte>(data);
@@ -178,5 +188,11 @@ internal class ComprehensivePerformanceTests
 
         latencies.Sort();
         return latencies[latencies.Count / 2]; // Return median latency in microseconds
+    }
+
+    public void Dispose()
+    {
+        Cleanup().GetAwaiter().GetResult();
+        GC.SuppressFinalize(this);
     }
 }

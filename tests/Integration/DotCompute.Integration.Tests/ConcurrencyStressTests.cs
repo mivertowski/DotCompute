@@ -1,4 +1,8 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
+
+#pragma warning disable IDE0059 // Unnecessary assignment - test scaffolding
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
@@ -27,7 +31,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         // Don't access ServiceProvider in constructor - it's not initialized yet
     }
 
-    public new async Task InitializeAsync()
+    private new async Task InitializeAsync()
     {
         await base.InitializeAsync();
         _logger = ServiceProvider.GetRequiredService<ILogger<ConcurrencyStressTests>>();
@@ -168,7 +172,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         // Assert
         allocations.Should().NotBeEmpty("Some allocations should succeed");
 
-        if (exceptions.Any())
+        if (!exceptions.IsEmpty)
         {
             // Under memory pressure, we expect specific exception types
             foreach (var ex in exceptions)
@@ -423,7 +427,7 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
             }
             catch (Exception ex)
             {
-                _logger?.LogWarning(ex, "Unexpected exception during allocation {i}", i);
+                _logger?.LogWarning(ex, "Unexpected exception during allocation {Index}", i);
                 failureCount++;
                 break;
             }

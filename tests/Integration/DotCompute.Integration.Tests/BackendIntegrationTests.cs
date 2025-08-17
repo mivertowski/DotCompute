@@ -1,5 +1,5 @@
 using DotCompute.Abstractions;
-using DotCompute.Tests.Shared.TestInfrastructure;
+using DotCompute.Tests.Utilities.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -10,13 +10,17 @@ namespace DotCompute.Tests.Integration;
 /// Integration tests for backend implementations
 /// </summary>
 [Collection("Hardware Integration Tests")]
-public class BackendIntegrationTests : CoverageTestBase
+public sealed class BackendIntegrationTests : CoverageTestBase
 {
+#pragma warning disable CA2213 // RegisterDisposable handles disposal
     private readonly HardwareSimulator _hardwareSimulator;
+#pragma warning restore CA2213
 
     public BackendIntegrationTests(ITestOutputHelper output) : base(output)
     {
+#pragma warning disable CA2000 // RegisterDisposable handles disposal
         _hardwareSimulator = RegisterDisposable(new HardwareSimulator());
+#pragma warning restore CA2000
     }
 
     [Fact]
@@ -58,7 +62,7 @@ public class BackendIntegrationTests : CoverageTestBase
         // Assert
         Assert.True(executionTime > TimeSpan.Zero);
         Assert.True(executionTime < TimeSpan.FromSeconds(1));
-        Logger.LogInformation("{Type} backend execution completed in {Time}ms", type, executionTime.TotalMilliseconds);
+        LoggerMessages.StartingBackendIntegrationTest(Logger, type.ToString());
     }
 
     [Fact]
@@ -134,8 +138,8 @@ public class BackendIntegrationTests : CoverageTestBase
         var context = accelerator.Context;
         await accelerator.SynchronizeAsync(CancellationToken);
 
-        // Assert
-        Assert.NotNull(context);
+        // Assert - AcceleratorContext is a value type, verify it's valid
+        Assert.True(context.IsValid, "Accelerator context should be valid");
 
         // Context should be disposed automatically
     }
@@ -251,14 +255,14 @@ public class BackendIntegrationTests : CoverageTestBase
 /// Collection definition for hardware integration tests
 /// </summary>
 [CollectionDefinition("Hardware Integration Tests")]
-public class HardwareIntegrationTestsCollection : ICollectionFixture<HardwareIntegrationTestsFixture>
+public sealed class HardwareIntegrationTests : ICollectionFixture<HardwareIntegrationTestsFixture>
 {
 }
 
 /// <summary>
 /// Fixture for hardware integration tests
 /// </summary>
-public class HardwareIntegrationTestsFixture : IDisposable
+public sealed class HardwareIntegrationTestsFixture : IDisposable
 {
     public HardwareIntegrationTestsFixture()
     {

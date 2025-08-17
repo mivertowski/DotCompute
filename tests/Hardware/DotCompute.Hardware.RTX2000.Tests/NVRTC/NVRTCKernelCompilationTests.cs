@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -14,9 +15,16 @@ namespace DotCompute.Tests.Hardware.NVRTC;
 [Trait("Category", "RTX2000")]
 [Trait("Category", "NVRTC")]
 [Trait("Category", "RequiresGPU")]
-public class NVRTCKernelCompilationTests : IDisposable
+public sealed class NVRTCKernelCompilationTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
+#pragma warning disable CA1823 // Unused field - Logger for future use
+    private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+    
+    // Logger messages
+    private static readonly Action<ILogger, string, Exception?> LogNvrtcOperation =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(5001), "NVRTC operation: {Operation}");
+#pragma warning restore CA1823
     private IntPtr _cudaContext;
     private bool _cudaInitialized;
     private bool _nvrtcAvailable;
@@ -113,11 +121,11 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             {
                 // Get compilation log
                 long logSize = 0;
-                NvrtcGetProgramLogSize(program, ref logSize);
+                _ = NvrtcGetProgramLogSize(program, ref logSize);
                 if (logSize > 0)
                 {
                     var log = new byte[logSize];
-                    NvrtcGetProgramLog(program, log);
+                    _ = NvrtcGetProgramLog(program, log);
                     var logString = Encoding.ASCII.GetString(log).TrimEnd('\0');
                     _output.WriteLine($"Compilation log:\n{logString}");
                 }
@@ -141,14 +149,14 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             _output.WriteLine($"PTX preview: {ptxString.Substring(0, Math.Min(200, ptxString.Length))}...");
 
             // Validate PTX contains expected elements
-            Assert.Contains("vectorAdd", ptxString); // "PTX should contain the kernel name";
-            Assert.Contains("sm_89", ptxString); // "PTX should be compiled for compute capability 8.9";
+            Assert.Contains("vectorAdd", ptxString, StringComparison.Ordinal); // "PTX should contain the kernel name";
+            Assert.Contains("sm_89", ptxString, StringComparison.Ordinal); // "PTX should be compiled for compute capability 8.9";
         }
         finally
         {
             if (program != IntPtr.Zero)
             {
-                NvrtcDestroyProgram(ref program);
+                _ = NvrtcDestroyProgram(ref program);
             }
         }
 
@@ -189,9 +197,9 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 
             // Get PTX
             long ptxSize = 0;
-            NvrtcGetPTXSize(program, ref ptxSize);
+            _ = NvrtcGetPTXSize(program, ref ptxSize);
             var ptx = new byte[ptxSize];
-            NvrtcGetPTX(program, ptx);
+            _ = NvrtcGetPTX(program, ptx);
 
             // Load module from PTX
             result = CuModuleLoadData(ref module, ptx);
@@ -324,15 +332,15 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         {
             // Cleanup
             if (d_a != IntPtr.Zero)
-                CudaFree(d_a);
+                _ = CudaFree(d_a);
             if (d_b != IntPtr.Zero)
-                CudaFree(d_b);
+                _ = CudaFree(d_b);
             if (d_c != IntPtr.Zero)
-                CudaFree(d_c);
+                _ = CudaFree(d_c);
             if (module != IntPtr.Zero)
-                CuModuleUnload(module);
+                _ = CuModuleUnload(module);
             if (program != IntPtr.Zero)
-                NvrtcDestroyProgram(ref program);
+                _ = NvrtcDestroyProgram(ref program);
         }
 
         await Task.CompletedTask;
@@ -441,11 +449,11 @@ extern ""C"" __global__ void fastMatrixMul(
             if (result != 0)
             {
                 long logSize = 0;
-                NvrtcGetProgramLogSize(program, ref logSize);
+                _ = NvrtcGetProgramLogSize(program, ref logSize);
                 if (logSize > 0)
                 {
                     var log = new byte[logSize];
-                    NvrtcGetProgramLog(program, log);
+                    _ = NvrtcGetProgramLog(program, log);
                     var logString = Encoding.ASCII.GetString(log).TrimEnd('\0');
                     _output.WriteLine($"Compilation log:\n{logString}");
                 }
@@ -456,23 +464,23 @@ extern ""C"" __global__ void fastMatrixMul(
 
             // Get PTX and validate optimization
             long ptxSize = 0;
-            NvrtcGetPTXSize(program, ref ptxSize);
+            _ = NvrtcGetPTXSize(program, ref ptxSize);
             var ptx = new byte[ptxSize];
-            NvrtcGetPTX(program, ptx);
+            _ = NvrtcGetPTX(program, ptx);
 
             var ptxString = Encoding.ASCII.GetString(ptx).TrimEnd('\0');
             _output.WriteLine($"Generated optimized PTX{ptxSize} bytes)");
 
             // Check for optimization indicators
-            Assert.Contains("matrixMul", ptxString); // "PTX should contain matrix multiplication kernel";
-            Assert.Contains("fastMatrixMul", ptxString); // "PTX should contain optimized matrix multiplication kernel";
-            Assert.Contains("shared", ptxString); // "PTX should indicate shared memory usage";
+            Assert.Contains("matrixMul", ptxString, StringComparison.Ordinal); // "PTX should contain matrix multiplication kernel";
+            Assert.Contains("fastMatrixMul", ptxString, StringComparison.Ordinal); // "PTX should contain optimized matrix multiplication kernel";
+            Assert.Contains("shared", ptxString, StringComparison.Ordinal); // "PTX should indicate shared memory usage";
         }
         finally
         {
             if (program != IntPtr.Zero)
             {
-                NvrtcDestroyProgram(ref program);
+                _ = NvrtcDestroyProgram(ref program);
             }
         }
 
@@ -518,7 +526,7 @@ extern ""C"" __global__ void benchmark(float* data, int n)
             {
                 if (program != IntPtr.Zero)
                 {
-                    NvrtcDestroyProgram(ref program);
+                    _ = NvrtcDestroyProgram(ref program);
                 }
             }
         }
@@ -543,49 +551,62 @@ extern ""C"" __global__ void benchmark(float* data, int n)
     {
         if (_cudaContext != IntPtr.Zero)
         {
-            CudaCtxDestroy(_cudaContext);
+            _ = CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
         }
         _cudaInitialized = false;
+        GC.SuppressFinalize(this);
     }
 
     #region Native Methods
 
     // CUDA Driver API
-    [DllImport("nvcuda", EntryPoint = "cuInit")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuInit", ExactSpelling = true)]
     private static extern int CudaInit(uint flags);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
     private static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
     private static extern int CudaCtxDestroy(IntPtr ctx);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize", ExactSpelling = true)]
     private static extern int CudaCtxSynchronize();
 
-    [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
     private static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemFree_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
     private static extern int CudaFree(IntPtr dptr);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
     private static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
     private static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
 
-    [DllImport("nvcuda", EntryPoint = "cuModuleLoadData")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuModuleLoadData", ExactSpelling = true)]
     private static extern int CuModuleLoadData(ref IntPtr module, byte[] image);
 
-    [DllImport("nvcuda", EntryPoint = "cuModuleUnload")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuModuleUnload", ExactSpelling = true)]
     private static extern int CuModuleUnload(IntPtr module);
 
-    [DllImport("nvcuda", EntryPoint = "cuModuleGetFunction")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuModuleGetFunction", ExactSpelling = true)]
     private static extern int CuModuleGetFunction(ref IntPtr hfunc, IntPtr hmod, byte[] name);
 
-    [DllImport("nvcuda", EntryPoint = "cuLaunchKernel")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuLaunchKernel", ExactSpelling = true)]
     private static extern int CuLaunchKernel(
         IntPtr f,
         uint gridDimX, uint gridDimY, uint gridDimZ,
@@ -596,34 +617,42 @@ extern ""C"" __global__ void benchmark(float* data, int n)
         IntPtr extra);
 
     // NVRTC API
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcVersion")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcVersion", ExactSpelling = true)]
     private static extern int NvrtcVersion(ref int major, ref int minor);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCreateProgram")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCreateProgram", ExactSpelling = true, CharSet = CharSet.Ansi)]
     private static extern int NvrtcCreateProgram(
         ref IntPtr prog,
         [MarshalAs(UnmanagedType.LPStr)] string src,
         [MarshalAs(UnmanagedType.LPStr)] string name,
         int numHeaders,
-        string[] headers,
-        string[] includeNames);
+        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[] headers,
+        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[] includeNames);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcDestroyProgram")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcDestroyProgram", ExactSpelling = true)]
     private static extern int NvrtcDestroyProgram(ref IntPtr prog);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCompileProgram")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCompileProgram", ExactSpelling = true)]
     private static extern int NvrtcCompileProgram(IntPtr prog, int numOptions, string[] options);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTXSize")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTXSize", ExactSpelling = true)]
     private static extern int NvrtcGetPTXSize(IntPtr prog, ref long ptxSizeRet);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTX")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTX", ExactSpelling = true)]
     private static extern int NvrtcGetPTX(IntPtr prog, [Out] byte[] ptx);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetProgramLogSize")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetProgramLogSize", ExactSpelling = true)]
     private static extern int NvrtcGetProgramLogSize(IntPtr prog, ref long logSizeRet);
 
-    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetProgramLog")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetProgramLog", ExactSpelling = true)]
     private static extern int NvrtcGetProgramLog(IntPtr prog, [Out] byte[] log);
 
     #endregion
@@ -632,7 +661,7 @@ extern ""C"" __global__ void benchmark(float* data, int n)
 /// <summary>
 /// Helper attribute to skip tests when conditions aren't met.
 /// </summary>
-public class SkippableFactAttribute : FactAttribute
+internal sealed class SkippableFactAttribute : FactAttribute
 {
     public override string? Skip { get; set; }
 }
@@ -640,7 +669,7 @@ public class SkippableFactAttribute : FactAttribute
 /// <summary>
 /// Helper class for skipping tests conditionally.
 /// </summary>
-public static class Skip
+internal static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
@@ -654,7 +683,9 @@ public static class Skip
 /// <summary>
 /// Exception thrown to skip a test.
 /// </summary>
-public class SkipException : Exception
+internal sealed class SkipException : Exception
 {
+    public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
+    public SkipException(string message, Exception innerException) : base(message, innerException) { }
 }

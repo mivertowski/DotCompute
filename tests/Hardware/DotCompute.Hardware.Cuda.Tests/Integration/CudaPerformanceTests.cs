@@ -2,12 +2,13 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using System.Text;
 using BenchmarkDotNet.Attributes;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -19,12 +20,25 @@ namespace DotCompute.Tests.Hardware.Integration;
 /// Performance benchmarks and tests for CUDA backend operations
 /// </summary>
 [Collection("CUDA Hardware Tests")]
-public class CudaPerformanceTests : IDisposable
+public sealed class CudaPerformanceTests : IDisposable
 {
     private readonly ILogger<CudaPerformanceTests> _logger;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
     private readonly List<ISyncMemoryBuffer> _buffers = [];
+
+    // LoggerMessage delegates for performance
+    private static readonly Action<ILogger, string, Exception?> LogBufferDisposeError = 
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(1, nameof(LogBufferDisposeError)),
+            "Error disposing CUDA buffer: {Message}");
+
+    private static readonly Action<ILogger, string, Exception?> LogAcceleratorDisposeError = 
+        LoggerMessage.Define<string>(
+            LogLevel.Warning,
+            new EventId(2, nameof(LogAcceleratorDisposeError)),
+            "Error disposing CUDA accelerator: {Message}");
 
     public CudaPerformanceTests(ITestOutputHelper output)
     {
@@ -45,7 +59,8 @@ public class CudaPerformanceTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
         // Act
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
         stopwatch.Stop();
@@ -302,7 +317,7 @@ public class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        Assert.Equal(concurrentKernels, compiledKernels.Count());
+        Assert.Equal(concurrentKernels, compiledKernels.Length);
         compiledKernels.Should().AllSatisfy((k => k.Should().NotBeNull()));
 
         var avgTimePerKernel = stopwatch.ElapsedMilliseconds / (double)concurrentKernels;
@@ -483,7 +498,8 @@ public class CudaPerformanceTests : IDisposable
     // Helper Methods
     private CudaAccelerator CreateAccelerator()
     {
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
         return accelerator;
@@ -549,7 +565,7 @@ __global__ void {name}(float* input, float* output, int n)
 {{
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx < n) {{
-        output[idx] = input[idx] + {name.GetHashCode() % 100}.0f;
+        output[idx] = input[idx] + {name.GetHashCode(StringComparison.Ordinal) % 100}.0f;
     }}
 }}";
         return new KernelDefinition
@@ -589,7 +605,7 @@ __global__ void {name}(float* input, float* output, int n)
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA buffer");
+                LogBufferDisposeError(_logger, ex.Message, null);
             }
         }
         _buffers.Clear();
@@ -602,10 +618,11 @@ __global__ void {name}(float* input, float* output, int n)
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA accelerator");
+                LogAcceleratorDisposeError(_logger, ex.Message, null);
             }
         }
         _accelerators.Clear();
+        GC.SuppressFinalize(this);
     }
 }
 
@@ -622,7 +639,7 @@ public class CudaBenchmarkSuite
 
     public CudaBenchmarkSuite()
     {
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
         _logger = loggerFactory.CreateLogger<CudaBenchmarkSuite>();
     }
 
@@ -631,7 +648,8 @@ public class CudaBenchmarkSuite
     {
         if (IsCudaAvailable())
         {
-            var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+            using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+            var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
             _accelerator = new CudaAccelerator(0, acceleratorLogger);
             _memoryManager = _accelerator.Memory as ISyncMemoryManager;
         }

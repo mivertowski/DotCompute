@@ -1,6 +1,6 @@
 using Xunit;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Shared.TestInfrastructure;
+using DotCompute.Tests.Utilities.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
@@ -11,16 +11,20 @@ namespace DotCompute.Tests.Unit.Compute;
 /// <summary>
 /// Comprehensive unit tests for ComputeEngine
 /// </summary>
-public class ComputeEngineUnitTests : CoverageTestBase
+public sealed class ComputeEngineUnitTests : CoverageTestBase
 {
     private readonly IServiceProvider _serviceProvider;
+#pragma warning disable CA2213 // Disposable fields should be disposed - _hardwareSimulator disposed via RegisterDisposable
     private readonly HardwareSimulator _hardwareSimulator;
+#pragma warning restore CA2213
 
+#pragma warning disable CA2000 // Dispose objects before losing scope - objects managed by test framework
     public ComputeEngineUnitTests(ITestOutputHelper output) : base(output)
     {
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new XUnitLoggerProvider(output)));
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(new XUnitLoggerProvider(output)));
         var typedLogger = loggerFactory.CreateLogger<HardwareSimulator>();
         _hardwareSimulator = RegisterDisposable(new HardwareSimulator(typedLogger));
+#pragma warning restore CA2000
 
         var services = new ServiceCollection();
         services.AddLogging(builder => builder.AddProvider(new XUnitLoggerProvider(output)));
@@ -38,7 +42,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
         var logger = _serviceProvider.GetRequiredService<ILogger<DefaultComputeEngine>>();
 
         // Act
-        var engine = new DefaultComputeEngine(acceleratorManager, logger);
+        using var engine = new DefaultComputeEngine(acceleratorManager, logger);
 
         // Assert
         Assert.NotNull(engine);
@@ -143,7 +147,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
         _hardwareSimulator.CreateCpuOnlySetup();
         var engine = _serviceProvider.GetRequiredService<IComputeEngine>();
         var kernelSource = "kernel void longRunningTest() { }";
-        var parameters = new object[] { };
+        var parameters = Array.Empty<object>();
 
         using var cts = new CancellationTokenSource();
         cts.CancelAfter(TimeSpan.FromMilliseconds(10));
@@ -281,7 +285,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
     /// <summary>
     /// Test accelerator manager implementation
     /// </summary>
-    private class TestAcceleratorManager : IAcceleratorManager
+    private sealed class TestAcceleratorManager : IAcceleratorManager
     {
         private readonly HardwareSimulator _simulator;
         private readonly List<IAccelerator> _accelerators;
@@ -348,7 +352,10 @@ public class ComputeEngineUnitTests : CoverageTestBase
             return ValueTask.CompletedTask;
         }
 
-        public void Dispose() => _simulator.Dispose();
+        public void Dispose()
+        {
+            _simulator.Dispose();
+        }
     }
 
 
@@ -369,7 +376,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
     /// <summary>
     /// Default implementation for testing
     /// </summary>
-    private class DefaultComputeEngine : IComputeEngine
+    private sealed class DefaultComputeEngine : IComputeEngine
     {
         private readonly IAcceleratorManager _acceleratorManager;
         private readonly ILogger<DefaultComputeEngine> _logger;
@@ -383,31 +390,30 @@ public class ComputeEngineUnitTests : CoverageTestBase
 
         public async Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(CancellationToken cancellationToken = default)
         {
-            ThrowIfDisposed();
+            ObjectDisposedException.ThrowIf(_disposed, this);
             return await _acceleratorManager.GetAcceleratorsAsync(cancellationToken);
         }
 
         public async Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(AcceleratorType type, CancellationToken cancellationToken = default)
         {
-            ThrowIfDisposed();
+            ObjectDisposedException.ThrowIf(_disposed, this);
             return await _acceleratorManager.GetAcceleratorsAsync(type, cancellationToken);
         }
 
         public async Task<IAccelerator?> GetBestAcceleratorAsync(AcceleratorType? type = null, CancellationToken cancellationToken = default)
         {
-            ThrowIfDisposed();
+            ObjectDisposedException.ThrowIf(_disposed, this);
             return await _acceleratorManager.GetBestAcceleratorAsync(type, cancellationToken);
         }
 
         public async Task<object> ExecuteKernelAsync(string kernelSource, object[] parameters, CancellationToken cancellationToken = default)
         {
-            ThrowIfDisposed();
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             if (string.IsNullOrWhiteSpace(kernelSource))
                 throw new ArgumentException("Kernel source cannot be empty", nameof(kernelSource));
 
-            if (parameters == null)
-                throw new ArgumentNullException(nameof(parameters));
+            ArgumentNullException.ThrowIfNull(parameters);
 
             var accelerator = await GetBestAcceleratorAsync(cancellationToken: cancellationToken);
             if (accelerator is SimulatedAccelerator simAccelerator)
@@ -420,7 +426,7 @@ public class ComputeEngineUnitTests : CoverageTestBase
 
         public async Task<IEnumerable<object>> ExecuteParallelAsync(IEnumerable<(string kernel, object[] parameters)> operations, CancellationToken cancellationToken = default)
         {
-            ThrowIfDisposed();
+            ObjectDisposedException.ThrowIf(_disposed, this);
 
             var tasks = operations.Select(async op =>
                 await ExecuteKernelAsync(op.kernel, op.parameters, cancellationToken));
@@ -428,24 +434,21 @@ public class ComputeEngineUnitTests : CoverageTestBase
             return await Task.WhenAll(tasks);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Object is returned to caller for disposal")]
         public async Task<IDisposable> CreateExecutionContextAsync(CancellationToken cancellationToken = default)
         {
-            ThrowIfDisposed();
+            ObjectDisposedException.ThrowIf(_disposed, this);
             var accelerator = await GetBestAcceleratorAsync(cancellationToken: cancellationToken);
             return accelerator as IDisposable ?? new TestExecutionContext();
         }
 
         public Task<object> GetPerformanceMetricsAsync()
         {
-            ThrowIfDisposed();
+            ObjectDisposedException.ThrowIf(_disposed, this);
             return Task.FromResult<object>(new { TotalExecutions = 1, AverageTime = TimeSpan.FromMilliseconds(10) });
         }
 
-        private void ThrowIfDisposed()
-        {
-            if (_disposed)
-                throw new ObjectDisposedException(nameof(DefaultComputeEngine));
-        }
+        // Replaced ThrowIfDisposed with ObjectDisposedException.ThrowIf calls
 
         public void Dispose()
         {
@@ -455,11 +458,16 @@ public class ComputeEngineUnitTests : CoverageTestBase
             if (_acceleratorManager is IDisposable disposable)
                 disposable.Dispose();
             _disposed = true;
+            GC.SuppressFinalize(this);
         }
     }
 
-    private class TestExecutionContext : IDisposable
+
+    private sealed class TestExecutionContext : IDisposable
     {
-        public void Dispose() { }
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+        }
     }
 }

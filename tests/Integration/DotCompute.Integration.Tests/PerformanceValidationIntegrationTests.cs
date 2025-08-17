@@ -1,4 +1,8 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
+
+#pragma warning disable IDE0059 // Unnecessary assignment - test scaffolding
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
@@ -16,7 +20,7 @@ namespace DotCompute.Tests.Integration;
 /// throughput measurement, latency analysis, and resource utilization monitoring.
 /// </summary>
 [Collection("Integration")]
-public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
+public sealed class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
 {
     private readonly PerformanceBenchmarkSuite _benchmarkSuite;
 
@@ -398,10 +402,10 @@ public class PerformanceValidationIntegrationTests : ComputeWorkflowTestBase
     private static double CalculateScalingEfficiency(int concurrency, double totalThroughput,
         Dictionary<int, ConcurrencyBenchmarkResult> previousResults)
     {
-        if (concurrency <= 1 || !previousResults.ContainsKey(1))
+        if (concurrency <= 1 || !previousResults.TryGetValue(1, out var baselineResult))
             return 1.0;
 
-        var baselineThroughput = previousResults[1].AggregatedThroughput;
+        var baselineThroughput = baselineResult.AggregatedThroughput;
         var expectedThroughput = baselineThroughput * concurrency;
         return totalThroughput / expectedThroughput;
     }
@@ -758,7 +762,7 @@ public class PerformanceBenchmarkSuite
             [
                 new WorkflowKernel
                 {
-                    Name = algorithmType.ToLower(),
+                    Name = algorithmType.ToUpperInvariant(),
                     SourceCode = kernelSource,
                     CompilationOptions = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum }
                 }
@@ -777,7 +781,7 @@ public class PerformanceBenchmarkSuite
                 {
                     Name = "algorithm_stage",
                     Order = 1,
-                    KernelName = algorithmType.ToLower(),
+                    KernelName = algorithmType.ToUpperInvariant(),
                     ArgumentNames = ["input", "output"]
                 }
             ]

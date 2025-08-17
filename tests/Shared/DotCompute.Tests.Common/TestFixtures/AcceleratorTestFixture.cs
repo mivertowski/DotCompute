@@ -2,15 +2,15 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests.Shared.TestFixtures;
+namespace DotCompute.Tests.Utilities.TestFixtures;
 
 /// <summary>
 /// Shared test fixture for accelerator-based tests.
 /// </summary>
-public class AcceleratorTestFixture : IAsyncLifetime
+public sealed class AcceleratorTestFixture : IAsyncLifetime
 {
     private readonly List<IAccelerator> _accelerators = [];
-    private IAcceleratorManager? _acceleratorManager = null;
+    private readonly IAcceleratorManager? _acceleratorManager = null;
 
     public AcceleratorTestFixture()
     {
@@ -159,7 +159,7 @@ public class AcceleratorTestFixture : IAsyncLifetime
 /// Attribute to skip tests when specific hardware is not available.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
-public class RequiresHardwareAttribute : Attribute
+public sealed class RequiresHardwareAttribute : Attribute
 {
     public RequiresHardwareAttribute(AcceleratorType requiredType)
     {
@@ -184,13 +184,19 @@ public class RequiresHardwareAttribute : Attribute
 /// <summary>
 /// Theory attribute that skips test if required hardware is not available.
 /// </summary>
-public class HardwareTheoryAttribute : TheoryAttribute
+public sealed class HardwareTheoryAttribute : TheoryAttribute
 {
     private readonly AcceleratorType _requiredType;
+    
+    /// <summary>
+    /// Gets the required accelerator type.
+    /// </summary>
+    public AcceleratorType RequiredType { get; }
 
     public HardwareTheoryAttribute(AcceleratorType requiredType)
     {
         _requiredType = requiredType;
+        RequiredType = requiredType;
 
         var hardware = new RequiresHardwareAttribute(requiredType);
         if (!hardware.IsAvailable())
@@ -203,10 +209,15 @@ public class HardwareTheoryAttribute : TheoryAttribute
 /// <summary>
 /// Fact attribute that skips test if required hardware is not available.
 /// </summary>
-public class HardwareFactAttribute : FactAttribute
+public sealed class HardwareFactAttribute : FactAttribute
 {
+    /// <summary>
+    /// Gets the required accelerator type.
+    /// </summary>
+    public AcceleratorType RequiredType { get; }
     public HardwareFactAttribute(AcceleratorType requiredType)
     {
+        RequiredType = requiredType;
         var hardware = new RequiresHardwareAttribute(requiredType);
         if (!hardware.IsAvailable())
         {

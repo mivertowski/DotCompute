@@ -18,6 +18,7 @@ public sealed class MemoryAllocatorTests : IDisposable
     {
         _allocator.Dispose();
         GC.SuppressFinalize(this);
+        GC.SuppressFinalize(this);
     }
 
     [Fact]

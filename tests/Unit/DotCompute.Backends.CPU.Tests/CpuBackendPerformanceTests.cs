@@ -19,12 +19,12 @@ namespace DotCompute.Backends.CPU.Tests.Performance;
 /// Performance and stress tests for CPU backend components.
 /// Tests memory operations, kernel compilation performance, and concurrent access patterns.
 /// </summary>
-public class CpuBackendPerformanceTests : IDisposable
+public sealed class CpuBackendPerformanceTests : IDisposable
 {
     private readonly Mock<ILogger<CpuAccelerator>> _mockLogger;
     private readonly Mock<IOptions<CpuAcceleratorOptions>> _mockOptions;
     private readonly Mock<IOptions<CpuThreadPoolOptions>> _mockThreadPoolOptions;
-    private bool _disposed;
+    private readonly bool _disposed;
 
     public CpuBackendPerformanceTests()
     {

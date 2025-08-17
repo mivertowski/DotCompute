@@ -1,5 +1,9 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
+
+#pragma warning disable CA1851 // Multiple enumeration - acceptable for tests
 
 using DotCompute.Abstractions;
 using DotCompute.Plugins.Core;
@@ -17,7 +21,7 @@ namespace DotCompute.Tests.Integration;
 /// execution, security validation, and lifecycle management.
 /// </summary>
 [Collection("Integration")]
-public class PluginSystemIntegrationTests : ComputeWorkflowTestBase
+public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
 {
     private readonly PluginSystem _pluginSystem;
     private readonly string _tempPluginDirectory;

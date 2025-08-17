@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
@@ -14,9 +15,16 @@ namespace DotCompute.Tests.Hardware.P2P;
 [Trait("Category", "P2P")]
 [Trait("Category", "MultiGPU")]
 [Trait("Category", "RequiresMultipleGPUs")]
-public class MultiGPUP2PTests : IDisposable
+public sealed class MultiGPUP2PTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
+#pragma warning disable CA1823 // Unused field - Logger for future use
+    private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+    
+    // Logger messages
+    private static readonly Action<ILogger, string, Exception?> LogP2POperation =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(6001), "P2P operation: {Operation}");
+#pragma warning restore CA1823
     private readonly List<IntPtr> _cudaContexts;
     private readonly List<int> _deviceIds;
     private bool _p2pCapable;
@@ -64,7 +72,7 @@ public class MultiGPUP2PTests : IDisposable
                     _deviceIds.Add(i);
 
                     var deviceName = new byte[256];
-                    CudaDeviceGetName(deviceName, 256, i);
+                    _ = CudaDeviceGetName(deviceName, 256, i);
                     var name = System.Text.Encoding.ASCII.GetString(deviceName).TrimEnd('\0');
                     _output.WriteLine($"Device {i}: {name}");
                 }
@@ -284,13 +292,13 @@ public class MultiGPUP2PTests : IDisposable
         {
             if (device0Buffer != IntPtr.Zero)
             {
-                CudaCtxSetCurrent(_cudaContexts[0]);
-                CudaFree(device0Buffer);
+                _ = CudaCtxSetCurrent(_cudaContexts[0]);
+                _ = CudaFree(device0Buffer);
             }
             if (device1Buffer != IntPtr.Zero)
             {
-                CudaCtxSetCurrent(_cudaContexts[1]);
-                CudaFree(device1Buffer);
+                _ = CudaCtxSetCurrent(_cudaContexts[1]);
+                _ = CudaFree(device1Buffer);
             }
         }
 
@@ -400,8 +408,8 @@ public class MultiGPUP2PTests : IDisposable
             {
                 if (gpuBuffers[gpu] != IntPtr.Zero)
                 {
-                    CudaCtxSetCurrent(_cudaContexts[gpu]);
-                    CudaFree(gpuBuffers[gpu]);
+                    _ = CudaCtxSetCurrent(_cudaContexts[gpu]);
+                    _ = CudaFree(gpuBuffers[gpu]);
                 }
             }
         }
@@ -509,8 +517,8 @@ public class MultiGPUP2PTests : IDisposable
             {
                 if (gpuBuffers[gpu] != IntPtr.Zero)
                 {
-                    CudaCtxSetCurrent(_cudaContexts[gpu]);
-                    CudaFree(gpuBuffers[gpu]);
+                    _ = CudaCtxSetCurrent(_cudaContexts[gpu]);
+                    _ = CudaFree(gpuBuffers[gpu]);
                 }
             }
         }
@@ -539,13 +547,13 @@ public class MultiGPUP2PTests : IDisposable
         {
             for (var i = 0; i < _cudaContexts.Count; i++)
             {
-                CudaCtxSetCurrent(_cudaContexts[i]);
+                _ = CudaCtxSetCurrent(_cudaContexts[i]);
 
                 for (var j = 0; j < _cudaContexts.Count; j++)
                 {
                     if (i != j)
                     {
-                        CudaCtxDisablePeerAccess(_cudaContexts[j]);
+                        _ = CudaCtxDisablePeerAccess(_cudaContexts[j]);
                     }
                 }
             }
@@ -560,59 +568,75 @@ public class MultiGPUP2PTests : IDisposable
         {
             if (context != IntPtr.Zero)
             {
-                CudaCtxDestroy(context);
+                _ = CudaCtxDestroy(context);
             }
         }
 
         _cudaContexts.Clear();
         _deviceIds.Clear();
+        GC.SuppressFinalize(this);
     }
 
     #region Native Methods
 
-    [DllImport("nvcuda", EntryPoint = "cuInit")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuInit", ExactSpelling = true)]
     private static extern int CudaInit(uint flags);
 
-    [DllImport("nvcuda", EntryPoint = "cuDeviceGetCount")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuDeviceGetCount", ExactSpelling = true)]
     private static extern int CudaGetDeviceCount(ref int count);
 
-    [DllImport("nvcuda", EntryPoint = "cuDeviceGetName")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuDeviceGetName", ExactSpelling = true)]
     private static extern int CudaDeviceGetName(byte[] name, int len, int dev);
 
-    [DllImport("nvcuda", EntryPoint = "cuDeviceCanAccessPeer")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuDeviceCanAccessPeer", ExactSpelling = true)]
     private static extern int CudaDeviceCanAccessPeer(ref int canAccessPeer, int dev, int peerDev);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
     private static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
     private static extern int CudaCtxDestroy(IntPtr ctx);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxSetCurrent")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxSetCurrent", ExactSpelling = true)]
     private static extern int CudaCtxSetCurrent(IntPtr ctx);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize", ExactSpelling = true)]
     private static extern int CudaCtxSynchronize();
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxEnablePeerAccess")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxEnablePeerAccess", ExactSpelling = true)]
     private static extern int CudaCtxEnablePeerAccess(IntPtr peerContext, uint flags);
 
-    [DllImport("nvcuda", EntryPoint = "cuCtxDisablePeerAccess")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuCtxDisablePeerAccess", ExactSpelling = true)]
     private static extern int CudaCtxDisablePeerAccess(IntPtr peerContext);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
     private static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemFree_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
     private static extern int CudaFree(IntPtr dptr);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
     private static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
     private static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
 
-    [DllImport("nvcuda", EntryPoint = "cuMemcpyPeer")]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    [DllImport("nvcuda", EntryPoint = "cuMemcpyPeer", ExactSpelling = true)]
     private static extern int CudaMemcpyPeer(IntPtr dstDevice, IntPtr dstContext, IntPtr srcDevice, IntPtr srcContext, long byteCount);
 
     #endregion
@@ -621,7 +645,7 @@ public class MultiGPUP2PTests : IDisposable
 /// <summary>
 /// Helper attribute to skip tests when conditions aren't met.
 /// </summary>
-public class SkippableFactAttribute : FactAttribute
+internal sealed class SkippableFactAttribute : FactAttribute
 {
     public override string? Skip { get; set; }
 }
@@ -629,7 +653,7 @@ public class SkippableFactAttribute : FactAttribute
 /// <summary>
 /// Helper class for skipping tests conditionally.
 /// </summary>
-public static class Skip
+internal static class Skip
 {
     public static void IfNot(bool condition, string reason)
     {
@@ -643,7 +667,9 @@ public static class Skip
 /// <summary>
 /// Exception thrown to skip a test.
 /// </summary>
-public class SkipException : Exception
+internal sealed class SkipException : Exception
 {
+    public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
+    public SkipException(string message, Exception innerException) : base(message, innerException) { }
 }

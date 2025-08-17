@@ -295,14 +295,14 @@ public sealed class MockCpuDevice : MockHardwareDevice
     {
         var vectorWidth = precision switch
         {
-            FloatingPointPrecision.Single when SimdCapabilities.HasFlag(SimdCapabilities.AVX512) => 16,
-            FloatingPointPrecision.Single when SimdCapabilities.HasFlag(SimdCapabilities.AVX2) => 8,
-            FloatingPointPrecision.Single when SimdCapabilities.HasFlag(SimdCapabilities.AVX) => 8,
-            FloatingPointPrecision.Single when SimdCapabilities.HasFlag(SimdCapabilities.SSE) => 4,
-            FloatingPointPrecision.Double when SimdCapabilities.HasFlag(SimdCapabilities.AVX512) => 8,
-            FloatingPointPrecision.Double when SimdCapabilities.HasFlag(SimdCapabilities.AVX2) => 4,
-            FloatingPointPrecision.Double when SimdCapabilities.HasFlag(SimdCapabilities.AVX) => 4,
-            FloatingPointPrecision.Double when SimdCapabilities.HasFlag(SimdCapabilities.SSE2) => 2,
+            FloatingPointPrecision.SinglePrecision when SimdCapabilities.HasFlag(SimdCapabilities.AVX512) => 16,
+            FloatingPointPrecision.SinglePrecision when SimdCapabilities.HasFlag(SimdCapabilities.AVX2) => 8,
+            FloatingPointPrecision.SinglePrecision when SimdCapabilities.HasFlag(SimdCapabilities.AVX) => 8,
+            FloatingPointPrecision.SinglePrecision when SimdCapabilities.HasFlag(SimdCapabilities.SSE) => 4,
+            FloatingPointPrecision.DoublePrecision when SimdCapabilities.HasFlag(SimdCapabilities.AVX512) => 8,
+            FloatingPointPrecision.DoublePrecision when SimdCapabilities.HasFlag(SimdCapabilities.AVX2) => 4,
+            FloatingPointPrecision.DoublePrecision when SimdCapabilities.HasFlag(SimdCapabilities.AVX) => 4,
+            FloatingPointPrecision.DoublePrecision when SimdCapabilities.HasFlag(SimdCapabilities.SSE2) => 2,
             _ => 1
         };
 
@@ -352,6 +352,6 @@ public enum CpuIssueType
 public enum FloatingPointPrecision
 {
     Half,
-    Single,
-    Double
+    SinglePrecision,
+    DoublePrecision
 }

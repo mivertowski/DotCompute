@@ -4,7 +4,7 @@ using DotCompute.Core;
 
 namespace DotCompute.Tests.Unit;
 
-public class CommandQueueOptionsTests
+public sealed class CommandQueueOptionsTests
 {
     [Fact]
     public void Default_ShouldHaveExpectedValues()

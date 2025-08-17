@@ -187,6 +187,7 @@ public sealed class HardwareSimulator : IDisposable
     /// </summary>
     /// <param name="failureProbability">Probability of failure per device (0.0 to 1.0).</param>
     /// <param name="deviceTypes">Device types to consider for failures.</param>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5394:Do not use insecure randomness", Justification = "Used for test simulation only")]
     public void SimulateRandomFailures(double failureProbability = 0.1, params AcceleratorType[] deviceTypes)
     {
         ThrowIfDisposed();
@@ -353,21 +354,21 @@ public sealed class HardwareSimulator : IDisposable
                     case SimulationActionType.MemoryPressure:
                         if (action.Parameters.TryGetValue("Percentage", out var memPercent))
                         {
-                            SimulateMemoryPressure(action.TargetDeviceType, Convert.ToDouble(memPercent));
+                            SimulateMemoryPressure(action.TargetDeviceType, Convert.ToDouble(memPercent, System.Globalization.CultureInfo.InvariantCulture));
                         }
                         break;
 
                     case SimulationActionType.ThermalThrottling:
                         if (action.Parameters.TryGetValue("Percentage", out var thermalPercent))
                         {
-                            SimulateThermalThrottling(action.TargetDeviceType, Convert.ToDouble(thermalPercent));
+                            SimulateThermalThrottling(action.TargetDeviceType, Convert.ToDouble(thermalPercent, System.Globalization.CultureInfo.InvariantCulture));
                         }
                         break;
 
                     case SimulationActionType.RandomFailures:
                         if (action.Parameters.TryGetValue("Probability", out var probability))
                         {
-                            SimulateRandomFailures(Convert.ToDouble(probability), action.TargetDeviceType);
+                            SimulateRandomFailures(Convert.ToDouble(probability, System.Globalization.CultureInfo.InvariantCulture), action.TargetDeviceType);
                         }
                         break;
                 }
@@ -396,6 +397,7 @@ public sealed class HardwareSimulator : IDisposable
 
         _disposed = true;
         _logger.LogDebug("Hardware simulator disposed");
+        GC.SuppressFinalize(this);
     }
 }
 

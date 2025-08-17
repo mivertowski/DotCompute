@@ -1,7 +1,9 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Common.Hardware;
 using DotCompute.Tests.Integration.Infrastructure;
@@ -17,7 +19,7 @@ namespace DotCompute.Tests.Integration;
 /// memory exhaustion, timeout handling, and graceful degradation.
 /// </summary>
 [Collection("Integration")]
-public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
+public sealed class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
 {
     public ErrorRecoveryIntegrationTests(ITestOutputHelper output) : base(output)
     {
@@ -49,11 +51,11 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         {
             result.Error.Should().NotBeNull();
             result.Error!.Message.Should().NotBeEmpty();
-            Logger.LogInformation("Hardware failure handled gracefully: {Error}", result.Error.Message);
+            LoggerMessages.HardwareFailureHandled(Logger, result.Error.Message);
         }
         else
         {
-            Logger.LogInformation("System recovered from hardware failure and completed successfully");
+            LoggerMessages.SystemRecoveredFromFailure(Logger);
         }
 
         // System should still be operational
@@ -81,8 +83,8 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         {
             // Should fail with memory-related error
             result.Error.Should().NotBeNull();
-            var message = result.Error!.Message.ToLower();
-            Assert.True(message.Contains("memory") || message.Contains("allocation") || message.Contains("exhausted"));
+            var message = result.Error!.Message.ToUpperInvariant();
+            Assert.True(message.Contains("memory", StringComparison.OrdinalIgnoreCase) || message.Contains("allocation", StringComparison.OrdinalIgnoreCase) || message.Contains("exhausted", StringComparison.OrdinalIgnoreCase));
         }
         else
         {
@@ -90,8 +92,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             (result.Metrics?.ResourceUtilization.MemoryUsagePercent < 100).Should().BeTrue();
         }
 
-        Logger.LogInformation("Memory exhaustion scenario handled: Success={Success}, Error={Error}",
-            result.Success, result.Error?.Message ?? "None");
+        LoggerMessages.MemoryExhaustionHandled(Logger, result.Success, result.Error?.Message);
 
         // Reset memory pressure
         HardwareSimulator.ResetAllConditions();
@@ -131,11 +132,11 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         if (caughtException != null)
         {
             Assert.IsAssignableFrom<OperationCanceledException>(caughtException);
-            Logger.LogInformation("Operation cancelled gracefully after {Duration}ms", stopwatch.ElapsedMilliseconds);
+            LoggerMessages.OperationCancelledGracefully(Logger, stopwatch.ElapsedMilliseconds);
         }
         else if (result != null && !result.Success)
         {
-            Logger.LogInformation("Operation failed gracefully: {Error}", result.Error?.Message);
+            LoggerMessages.OperationFailedGracefully(Logger, result.Error?.Message);
         }
 
         // System should remain responsive
@@ -199,7 +200,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var compilationError = result.CompilationResults["invalid_kernel"].Error!;
         compilationError.Message.Should().NotBeEmpty();
 
-        Logger.LogInformation("Kernel compilation failure handled: {Error}", compilationError.Message);
+        LoggerMessages.OperationFailedGracefully(Logger, compilationError.Message);
     }
 
     [Fact]
@@ -271,7 +272,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         if (!errorStageSuccess)
         {
             recoveryStageSuccess.Should().BeTrue();
-            Logger.LogInformation("Runtime error recovered successfully");
+            LoggerMessages.SystemRecoveredFromFailure(Logger);
         }
 
         // Should have final output
@@ -295,12 +296,12 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         // Assert
         if (result.Success)
         {
-            Logger.LogInformation("Distributed compute fell back to local execution successfully");
+            LoggerMessages.SystemRecoveredFromFailure(Logger);
         }
         else
         {
             result.Error.Should().NotBeNull();
-            Logger.LogInformation("Network failure handled: {Error}", result.Error!.Message);
+            LoggerMessages.HardwareFailureHandled(Logger, result.Error!.Message);
         }
 
         // Verify system can still perform local computation
@@ -371,7 +372,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         sanitizedOutput[20].Should().NotBe(float.PositiveInfinity);
         sanitizedOutput[30].Should().NotBe(float.NegativeInfinity);
 
-        Logger.LogInformation("Data corruption successfully detected and sanitized");
+        LoggerMessages.SystemRecoveredFromFailure(Logger);
     }
 
     [Fact]
@@ -394,8 +395,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var successCount = results.Count(r => r.Success);
         var failureCount = results.Length - successCount;
 
-        Logger.LogInformation("Resource exhaustion test: {Success} successes, {Failures} failures out of {Total}",
-            successCount, failureCount, results.Length);
+        LoggerMessages.ResourceExhaustionTestResult(Logger, successCount, failureCount, results.Length);
 
         // At least 50% should succeed even under resource pressure
         (successCount >= concurrentWorkflows / 2).Should().BeTrue(
@@ -433,13 +433,14 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             [
                 new WorkflowOutput { Name = "final_output", Size = 256 }
             ],
-            IntermediateBuffers = Enumerable.Range(1, 4)
+            IntermediateBuffers = new Collection<WorkflowIntermediateBuffer>(
+                Enumerable.Range(1, 4)
                 .Select(i => new WorkflowIntermediateBuffer
                 {
                     Name = $"buffer_{i}",
                     SizeInBytes = 256 * sizeof(float)
                 })
-                .ToList(),
+                .ToList()),
             ExecutionStages =
             [
                 new WorkflowExecutionStage { Name = "exec_stage1", Order = 1, KernelName = "stage1", ArgumentNames = ["input", "buffer_1"] },
@@ -460,8 +461,7 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
         var successfulStages = result.ExecutionResults.Values.Count(r => r.Success);
         var failedStages = result.ExecutionResults.Values.Count(r => !r.Success);
 
-        Logger.LogInformation("Cascading failure test: {Successful} successful, {Failed} failed stages",
-            successfulStages, failedStages);
+        LoggerMessages.CascadingFailureTestResult(Logger, successfulStages, failedStages);
 
         // Should have contained the failure and recovered
         successfulStages.Should().BeGreaterThanOrEqualTo(3, "Most stages should complete successfully");
@@ -499,14 +499,12 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
 
         if (result.Success)
         {
-            Logger.LogInformation("Successfully recovered from {ErrorType} in {Duration}ms",
-                errorType, recoveryTime.TotalMilliseconds);
+            LoggerMessages.SuccessfullyRecoveredFromError(Logger, errorType.ToString(), (long)recoveryTime.TotalMilliseconds);
         }
         else
         {
             result.Error.Should().NotBeNull();
-            Logger.LogInformation("Error {ErrorType} handled gracefully: {Error}",
-                errorType, result.Error?.Message ?? "Unknown error");
+            LoggerMessages.ErrorHandledGracefully(Logger, errorType.ToString(), result.Error?.Message ?? "Unknown error");
         }
 
         // Recovery should be reasonably fast
@@ -740,16 +738,16 @@ public class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
             case ErrorType.OutOfMemory:
                 if (!result.Success)
                 {
-                    var lowerMessage = result.Error!.Message.ToLower();
-                    (lowerMessage.Contains("memory") || lowerMessage.Contains("allocation")).Should().BeTrue();
+                    var lowerMessage = result.Error!.Message.ToUpperInvariant();
+                    (lowerMessage.Contains("memory", StringComparison.OrdinalIgnoreCase) || lowerMessage.Contains("allocation", StringComparison.OrdinalIgnoreCase)).Should().BeTrue();
                 }
                 break;
 
             case ErrorType.DeviceReset:
                 if (!result.Success)
                 {
-                    var lowerMessage = result.Error!.Message.ToLower();
-                    (lowerMessage.Contains("device") || lowerMessage.Contains("hardware") || lowerMessage.Contains("failure")).Should().BeTrue();
+                    var lowerMessage = result.Error!.Message.ToUpperInvariant();
+                    (lowerMessage.Contains("device", StringComparison.OrdinalIgnoreCase) || lowerMessage.Contains("hardware", StringComparison.OrdinalIgnoreCase) || lowerMessage.Contains("failure", StringComparison.OrdinalIgnoreCase)).Should().BeTrue();
                 }
                 break;
 

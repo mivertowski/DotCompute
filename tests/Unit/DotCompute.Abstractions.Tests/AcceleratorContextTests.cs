@@ -9,7 +9,7 @@ namespace DotCompute.Abstractions.Tests;
 /// <summary>
 /// Comprehensive unit tests for the AcceleratorContext struct.
 /// </summary>
-public class AcceleratorContextTests
+public sealed class AcceleratorContextTests
 {
     #region Constructor Tests
 

@@ -2,12 +2,12 @@ using System.Diagnostics;
 using DotCompute.Core.Pipelines;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Shared.Pipelines;
+namespace DotCompute.Tests.Utilities.Pipelines;
 
 /// <summary>
 /// Test implementation of a kernel pipeline.
 /// </summary>
-public class TestKernelPipeline : IKernelPipeline
+public sealed class TestKernelPipeline : IKernelPipeline
 {
     private readonly List<IPipelineStage> _stages;
     private readonly Dictionary<string, object> _metadata;
@@ -36,10 +36,7 @@ public class TestKernelPipeline : IKernelPipeline
         PipelineExecutionContext context,
         CancellationToken cancellationToken = default)
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(TestKernelPipeline));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
 
         var stopwatch = Stopwatch.StartNew();
         var errors = new List<Core.Pipelines.PipelineError>();
@@ -462,5 +459,6 @@ public class TestKernelPipeline : IKernelPipeline
         }
 
         _stages.Clear();
+        GC.SuppressFinalize(this);
     }
 }

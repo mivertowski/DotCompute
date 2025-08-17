@@ -2,12 +2,12 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Shared.Pipelines;
+namespace DotCompute.Tests.Utilities.Pipelines;
 
 /// <summary>
 /// Test implementation of a kernel pipeline stage.
 /// </summary>
-public class TestKernelStage : IPipelineStage
+public sealed class TestKernelStage : IPipelineStage
 {
     private readonly ICompiledKernel _kernel;
     private readonly Dictionary<string, object> _metadata;
@@ -22,7 +22,8 @@ public class TestKernelStage : IPipelineStage
     {
         Id = $"kernel_{name}_{Guid.NewGuid():N}";
         Name = name;
-        _kernel = kernel ?? throw new ArgumentNullException(nameof(kernel));
+        ArgumentNullException.ThrowIfNull(kernel);
+        _kernel = kernel;
         _metadata = [];
         _inputMappings = [];
         _outputMappings = [];
@@ -203,7 +204,7 @@ public class TestKernelStage : IPipelineStage
 /// <summary>
 /// Builder for configuring kernel stages.
 /// </summary>
-public class TestKernelStageBuilder : IKernelStageBuilder
+public sealed class TestKernelStageBuilder : IKernelStageBuilder
 {
     private readonly TestKernelStage _stage;
     private readonly List<string> _dependencies;
@@ -299,10 +300,10 @@ public class TestKernelStageBuilder : IKernelStageBuilder
 /// <summary>
 /// Test implementation of stage metrics.
 /// </summary>
-public class TestStageMetrics : IStageMetrics
+public sealed class TestStageMetrics : IStageMetrics
 {
     private readonly string _stageName;
-    private readonly Lock _lock = new();
+    private readonly object _lock = new();
     private long _executionCount;
     private long _errorCount;
     private TimeSpan _totalExecutionTime;

@@ -14,12 +14,12 @@ namespace DotCompute.Plugins.Tests;
 /// <summary>
 /// Tests for the BaseBackendPlugin abstract class.
 /// </summary>
-public class BaseBackendPluginTests
+public sealed class BaseBackendPluginTests
 {
     /// <summary>
     /// Test accelerator implementation for testing purposes.
     /// </summary>
-    private class TestAccelerator : IAccelerator
+    private sealed class TestAccelerator : IAccelerator
     {
         public static string Name => "TestAccelerator";
         public AcceleratorType Type => AcceleratorType.CPU;
@@ -37,7 +37,7 @@ public class BaseBackendPluginTests
     /// <summary>
     /// Test implementation of BaseBackendPlugin for testing purposes.
     /// </summary>
-    private class TestBackendPlugin : BaseBackendPlugin<TestAccelerator, TestBackendOptions>
+    private sealed class TestBackendPlugin : BaseBackendPlugin<TestAccelerator, TestBackendOptions>
     {
         public override string Id => "test.backend";
         public override string Name => "Test Backend";
@@ -57,7 +57,7 @@ public class BaseBackendPluginTests
     /// <summary>
     /// Test configuration options class.
     /// </summary>
-    private class TestBackendOptions
+    private sealed class TestBackendOptions
     {
         public bool EnableTestFeature { get; set; } = true;
         public int MaxTestItems { get; set; } = 100;
@@ -67,7 +67,7 @@ public class BaseBackendPluginTests
     public void Constructor_ShouldSetPropertiesCorrectly()
     {
         // Arrange & Act
-        var plugin = new TestBackendPlugin();
+        using var plugin = new TestBackendPlugin();
 
         // Assert
         Assert.Equal("test.backend", plugin.Id);
@@ -82,7 +82,7 @@ public class BaseBackendPluginTests
     public void ConfigureServices_ShouldRegisterAcceleratorAndWrapper()
     {
         // Arrange
-        var plugin = new TestBackendPlugin();
+        using var plugin = new TestBackendPlugin();
         var services = new ServiceCollection();
         var configuration = new ConfigurationBuilder().Build();
 
@@ -108,7 +108,7 @@ public class BaseBackendPluginTests
     public void ConfigureBackendOptions_ShouldBindConfigurationCorrectly()
     {
         // Arrange
-        var plugin = new TestBackendPlugin();
+        using var plugin = new TestBackendPlugin();
         var services = new ServiceCollection();
         var configData = new Dictionary<string, string>
         {
@@ -134,7 +134,7 @@ public class BaseBackendPluginTests
     public async Task InitializeAsync_ShouldCallOnBackendInitializeAsync()
     {
         // Arrange
-        var plugin = new TestBackendPlugin();
+        using var plugin = new TestBackendPlugin();
         var services = new ServiceCollection();
         services.AddLogging();
         var configuration = new ConfigurationBuilder().Build();
@@ -154,7 +154,7 @@ public class BaseBackendPluginTests
     public async Task StartAsync_ShouldUpdateStateToRunning()
     {
         // Arrange
-        var plugin = new TestBackendPlugin();
+        using var plugin = new TestBackendPlugin();
         var services = new ServiceCollection();
         services.AddLogging();
         var configuration = new ConfigurationBuilder().Build();
@@ -175,7 +175,7 @@ public class BaseBackendPluginTests
     public async Task StopAsync_ShouldUpdateStateToStopped()
     {
         // Arrange
-        var plugin = new TestBackendPlugin();
+        using var plugin = new TestBackendPlugin();
         var services = new ServiceCollection();
         services.AddLogging();
         var configuration = new ConfigurationBuilder().Build();
@@ -197,7 +197,7 @@ public class BaseBackendPluginTests
     public void Validate_ShouldReturnValidResult()
     {
         // Arrange
-        var plugin = new TestBackendPlugin();
+        using var plugin = new TestBackendPlugin();
 
         // Act
         var result = plugin.Validate();
@@ -211,7 +211,7 @@ public class BaseBackendPluginTests
 /// <summary>
 /// Tests for the NamedAcceleratorWrapper class.
 /// </summary>
-public class NamedAcceleratorWrapperTests
+public sealed class NamedAcceleratorWrapperTests
 {
     [Fact]
     public void Constructor_ShouldSetNameAndDelegate()
@@ -254,8 +254,8 @@ public class NamedAcceleratorWrapperTests
         var kernelDefinition = Mock.Of<KernelDefinition>();
 
         mockAccelerator
-            .Setup(x => x.CompileKernelAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()
-            .ReturnsAsync(mockCompiledKernel)));
+            .Setup(x => x.CompileKernelAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(mockCompiledKernel);
 
         var wrapper = new NamedAcceleratorWrapper("test", mockAccelerator.Object);
 

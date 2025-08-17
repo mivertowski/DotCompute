@@ -1,6 +1,11 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
+#pragma warning disable CA1851 // Multiple enumeration - acceptable for tests
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Collections.ObjectModel;
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using DotCompute.Plugins.Core;
@@ -17,7 +22,7 @@ namespace DotCompute.Tests.Integration;
 /// Integration tests for plugin system integration with core DotCompute functionality.
 /// Tests plugin loading, execution, and interaction with the core system.
 /// </summary>
-public class PluginIntegrationSystemTests : IntegrationTestBase
+public sealed class PluginIntegrationSystemTests : IntegrationTestBase
 {
     public PluginIntegrationSystemTests(ITestOutputHelper output) : base(output)
     {
@@ -42,12 +47,12 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         // Verify plugin-accelerator relationship
         foreach (var plugin in loadedPlugins)
         {
-            Logger.LogInformation($"Loaded plugin: {plugin.Name} v{plugin.Version}");
+            LoggerMessages.LoadedPlugin(Logger, plugin.Name, plugin.Version.ToString());
             var pluginAccelerators = availableAccelerators
                 .Where(a => a.Info.DeviceType.Contains(plugin.Name, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
-            Logger.LogInformation($"Plugin {plugin.Name} provides {pluginAccelerators.Count} accelerators");
+            LoggerMessages.PluginProvidesAccelerators(Logger, plugin.Name, pluginAccelerators.Count);
         }
     }
 
@@ -201,7 +206,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
             return new ConcurrentClientResult
             {
                 ClientId = clientId,
-                Operations = clientResults,
+                Operations = new Collection<ClientOperationResult>(clientResults),
                 AllOperationsSuccessful = clientResults.All(r => r.Success)
             };
         });
@@ -209,7 +214,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var results = await Task.WhenAll(concurrentTasks);
 
         // Assert
-        Assert.Equal(clientCount, results.Count());
+        Assert.Equal(clientCount, results.Length);
         results.Should().AllSatisfy(result =>
         {
             result.AllOperationsSuccessful.Should().BeTrue();
@@ -260,7 +265,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
             return new ScalabilityResult
             {
                 ThreadId = threadId,
-                OperationTimes = threadResults,
+                OperationTimes = new Collection<TimeSpan>(threadResults),
                 AverageTime = TimeSpan.FromMilliseconds(threadResults.Average(t => t.TotalMilliseconds)),
                 TotalTime = TimeSpan.FromMilliseconds(threadResults.Sum(t => t.TotalMilliseconds))
             };
@@ -269,7 +274,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         var results = await Task.WhenAll(scalabilityTasks);
 
         // Assert
-        Assert.Equal(concurrencyLevel, results.Count());
+        Assert.Equal(concurrencyLevel, results.Length);
         results.Should().AllSatisfy(result =>
         {
             result.OperationTimes.Count.Should().Be(workItemsPerThread);
@@ -283,7 +288,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
             var minAvg = avgTimes.Min();
             var maxAvg = avgTimes.Max();
 
-            Logger.LogInformation($"Performance range: {minAvg:F2}ms - {maxAvg:F2}ms");
+            LoggerMessages.PerformanceRange(Logger, minAvg, maxAvg);
             (maxAvg / minAvg).Should().BeLessThan(5.0,
                  "Performance should not degrade drastically with concurrency");
         }
@@ -345,7 +350,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Backend factory test failed for plugin {plugin.Name}");
+            LoggerMessages.BackendFactoryTestFailed(Logger, ex, plugin.Name);
             return new BackendFactoryResult
             {
                 PluginName = plugin.Name,
@@ -398,7 +403,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, $"Kernel execution failed for backend {backend}");
+            LoggerMessages.KernelExecutionFailed(Logger, ex, backend.ToString());
 
             return new PluginExecutionResult
             {
@@ -457,7 +462,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            Logger.LogError(ex, $"Memory management test failed for accelerator {accelerator.Info.Id}");
+            LoggerMessages.MemoryManagementTestFailed(Logger, ex, accelerator.Info.Id);
 
             // Cleanup on failure
             foreach (var buffer in allocatedBuffers)
@@ -532,7 +537,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Client {clientId} operation {operationId} failed");
+            LoggerMessages.ClientOperationFailed(Logger, ex, clientId, operationId);
 
             return new ClientOperationResult
             {
@@ -619,7 +624,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, $"Resource cleanup test failed for {accelerator.Info.Id}");
+            LoggerMessages.ResourceCleanupTestFailed(Logger, ex, accelerator.Info.Id);
 
             return new ResourceCleanupResult
             {
@@ -695,7 +700,7 @@ public class PluginIntegrationSystemTests : IntegrationTestBase
 }
 
 // Result classes for plugin integration tests
-public class BackendFactoryResult
+public sealed class BackendFactoryResult
 {
     public string PluginName { get; set; } = string.Empty;
     public bool FactoryCreated { get; set; }
@@ -704,7 +709,7 @@ public class BackendFactoryResult
     public string? Error { get; set; }
 }
 
-public class PluginExecutionResult
+public sealed class PluginExecutionResult
 {
     public ComputeBackendType Backend { get; set; }
     public bool Success { get; set; }
@@ -713,7 +718,7 @@ public class PluginExecutionResult
     public string? Error { get; set; }
 }
 
-public class MemoryManagementResult
+public sealed class MemoryManagementResult
 {
     public string AcceleratorId { get; set; } = string.Empty;
     public int BuffersAllocated { get; set; }
@@ -725,7 +730,7 @@ public class MemoryManagementResult
     public string? Error { get; set; }
 }
 
-public class ErrorHandlingResult
+public sealed class ErrorHandlingResult
 {
     public string Scenario { get; set; } = string.Empty;
     public bool ErrorHandled { get; set; }
@@ -733,7 +738,7 @@ public class ErrorHandlingResult
     public string Description { get; set; } = string.Empty;
 }
 
-public class ClientOperationResult
+public sealed class ClientOperationResult
 {
     public int ClientId { get; set; }
     public int OperationId { get; set; }
@@ -741,22 +746,24 @@ public class ClientOperationResult
     public string? Error { get; set; }
 }
 
-public class ConcurrentClientResult
+public sealed class ConcurrentClientResult
 {
     public int ClientId { get; set; }
-    public List<ClientOperationResult> Operations { get; set; } = [];
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+    public Collection<ClientOperationResult> Operations { get; set; } = [];
     public bool AllOperationsSuccessful { get; set; }
 }
 
-public class ScalabilityResult
+public sealed class ScalabilityResult
 {
     public int ThreadId { get; set; }
-    public List<TimeSpan> OperationTimes { get; set; } = [];
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
+    public Collection<TimeSpan> OperationTimes { get; set; } = [];
     public TimeSpan AverageTime { get; set; }
     public TimeSpan TotalTime { get; set; }
 }
 
-public class PluginLifecycleResult
+public sealed class PluginLifecycleResult
 {
     public bool LoadPhaseSuccess { get; set; }
     public bool InitializePhaseSuccess { get; set; }
@@ -765,7 +772,7 @@ public class PluginLifecycleResult
     public string? Error { get; set; }
 }
 
-public class ResourceCleanupResult
+public sealed class ResourceCleanupResult
 {
     public string AcceleratorId { get; set; } = string.Empty;
     public int ResourcesAllocated { get; set; }

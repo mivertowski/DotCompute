@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using AbstractionsMemory = DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Shared;
+namespace DotCompute.Tests.Utilities;
 
 /// <summary>
 /// Monitors memory usage during test execution.
@@ -139,7 +139,7 @@ public sealed class MemoryMonitor : IDisposable
 /// <summary>
 /// Represents a memory snapshot at a point in time.
 /// </summary>
-public class MemorySnapshot
+public sealed class MemorySnapshot
 {
     public string Label { get; set; } = string.Empty;
     public long ElapsedMs { get; set; }
@@ -154,7 +154,7 @@ public class MemorySnapshot
 /// <summary>
 /// Represents a complete memory report for a test.
 /// </summary>
-public class MemoryReport
+public sealed class MemoryReport
 {
     public string TestName { get; set; } = string.Empty;
     public MemorySnapshot[] Snapshots { get; set; } = [];
@@ -166,7 +166,7 @@ public class MemoryReport
 /// <summary>
 /// Performance benchmark for memory operations.
 /// </summary>
-public class MemoryPerformanceBenchmark
+public sealed class MemoryPerformanceBenchmark
 {
     private readonly List<BenchmarkResult> _results;
 
@@ -297,7 +297,7 @@ public class MemoryPerformanceBenchmark
 /// <summary>
 /// Represents a single benchmark result.
 /// </summary>
-public class BenchmarkResult
+public sealed class BenchmarkResult
 {
     public string OperationType { get; set; } = string.Empty;
     public long BufferSize { get; set; }
@@ -310,7 +310,7 @@ public class BenchmarkResult
 /// <summary>
 /// Summary of all benchmark results.
 /// </summary>
-public class BenchmarkSummary
+public sealed class BenchmarkSummary
 {
     public BenchmarkResult[] Results { get; set; } = [];
     public int TotalOperations { get; set; }

@@ -10,6 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
+
 namespace DotCompute.Tests.Integration;
 
 /// <summary>
@@ -17,7 +19,7 @@ namespace DotCompute.Tests.Integration;
 /// device-to-device, P2P transfers, and memory coherency validation.
 /// </summary>
 [Collection("Integration")]
-public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
+public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
 {
     private readonly IMemoryManager _memoryManager;
 
@@ -343,7 +345,7 @@ public class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             transferStopwatch.Stop();
 
             // Assert
-            Assert.Equal(datasets.Length, results.Count());
+            Assert.Equal(datasets.Length, results.Length);
 
             for (var i = 0; i < datasets.Length; i++)
             {

@@ -3,16 +3,19 @@ using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Globalization;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
 [MemoryDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
-internal class KernelCompilationBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class KernelCompilationBenchmarks : IDisposable
 {
-    private IComputeEngine _computeEngine = null!;
-    private IAcceleratorManager _acceleratorManager = null!;
+    private DefaultComputeEngine? _computeEngine;
+    private DefaultAcceleratorManager? _acceleratorManager;
 
     private const string SimpleKernel = @"
         __kernel void simple_add(__global float* a, __global float* b, __global float* c) {
@@ -83,16 +86,22 @@ internal class KernelCompilationBenchmarks
     [GlobalCleanup]
     public async Task Cleanup()
     {
-        await _computeEngine.DisposeAsync();
-        await _acceleratorManager.DisposeAsync();
+        if (_computeEngine != null)
+        {
+            await _computeEngine.DisposeAsync();
+        }
+        if (_acceleratorManager != null)
+        {
+            await _acceleratorManager.DisposeAsync();
+        }
     }
 
     [Benchmark]
     public async Task<ICompiledKernel> CompileKernel()
     {
-        var kernel = await _computeEngine.CompileKernelAsync(
+        var kernel = await _computeEngine!.CompileKernelAsync(
             GetKernelSource(),
-            "kernel_" + KernelComplexity.ToLower());
+            "kernel_" + KernelComplexity.ToUpperInvariant());
 
         await kernel.DisposeAsync();
         return kernel;
@@ -107,9 +116,9 @@ internal class KernelCompilationBenchmarks
             FastMath = true
         };
 
-        var kernel = await _computeEngine.CompileKernelAsync(
+        var kernel = await _computeEngine!.CompileKernelAsync(
             GetKernelSource(),
-            "kernel_optimized_" + KernelComplexity.ToLower(),
+            "kernel_optimized_" + KernelComplexity.ToUpperInvariant(),
             options);
 
         await kernel.DisposeAsync();
@@ -124,7 +133,7 @@ internal class KernelCompilationBenchmarks
 
         for (var i = 0; i < kernelCount; i++)
         {
-            kernels[i] = await _computeEngine.CompileKernelAsync(
+            kernels[i] = await _computeEngine!.CompileKernelAsync(
                 GetKernelSource(),
                 $"kernel_{i}");
         }
@@ -133,5 +142,11 @@ internal class KernelCompilationBenchmarks
         {
             await kernel.DisposeAsync();
         }
+    }
+
+    public void Dispose()
+    {
+        Cleanup().GetAwaiter().GetResult();
+        GC.SuppressFinalize(this);
     }
 }

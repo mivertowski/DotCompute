@@ -3,14 +3,14 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Tests.Shared;
+namespace DotCompute.Tests.Utilities;
 
 /// <summary>
 /// Mock accelerator implementation for testing without hardware dependencies.
 /// Provides comprehensive IAccelerator implementation with configurable behavior for testing scenarios.
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class MockAccelerator : IAccelerator
+public sealed partial class MockAccelerator : IAccelerator
 {
     private bool _isDisposed;
     private readonly Dictionary<string, object> _properties = [];
@@ -37,8 +37,7 @@ public class MockAccelerator : IAccelerator
         Features = AcceleratorFeature.DoublePrecision | AcceleratorFeature.UnifiedMemory;
         IsAvailable = true;
 
-        _logger.LogDebug("Created MockAccelerator {DeviceId} ({DeviceName}) with {TotalMemory} bytes memory",
-            DeviceId, name, totalMemory);
+        LogCreatedMockAccelerator(_logger, DeviceId, name, totalMemory);
 
         // Initialize AcceleratorInfo with required properties
         _info = new AcceleratorInfo
@@ -124,7 +123,7 @@ public class MockAccelerator : IAccelerator
     {
         IsAvailable = false;
         _failureMessage = errorMessage;
-        _logger.LogWarning("Simulated device failure: {ErrorMessage}", errorMessage);
+        LogSimulatedDeviceFailure(_logger, errorMessage);
     }
 
     /// <summary>
@@ -134,27 +133,36 @@ public class MockAccelerator : IAccelerator
     {
         IsAvailable = true;
         _failureMessage = null;
-        _logger.LogInformation("Reset device failure simulation");
+        LogResetDeviceFailureSimulation(_logger);
     }
 
     private void ThrowIfDisposed()
     {
-        if (_isDisposed)
-            throw new ObjectDisposedException(nameof(MockAccelerator));
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
     }
+
+    [LoggerMessage(Level = LogLevel.Debug, Message = "Created MockAccelerator {deviceId} ({deviceName}) with {totalMemory} bytes memory")]
+    private static partial void LogCreatedMockAccelerator(ILogger logger, string deviceId, string deviceName, long totalMemory);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Simulated device failure: {errorMessage}")]
+    private static partial void LogSimulatedDeviceFailure(ILogger logger, string errorMessage);
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Reset device failure simulation")]
+    private static partial void LogResetDeviceFailureSimulation(ILogger logger);
 }
 
 /// <summary>
 /// Mock compiled kernel implementation for testing.
 /// </summary>
-public class MockCompiledKernel : ICompiledKernel
+public sealed class MockCompiledKernel : ICompiledKernel
 {
     private readonly ILogger _logger;
     private bool _isDisposed;
 
     public MockCompiledKernel(string name, ILogger? logger = null)
     {
-        Name = name ?? throw new ArgumentNullException(nameof(name));
+        ArgumentNullException.ThrowIfNull(name);
+        Name = name;
         _logger = logger ?? NullLogger.Instance;
     }
 
@@ -164,8 +172,7 @@ public class MockCompiledKernel : ICompiledKernel
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
     {
-        if (_isDisposed)
-            throw new ObjectDisposedException(nameof(MockCompiledKernel));
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
 
         // Simulate kernel execution
         return ValueTask.CompletedTask;
@@ -184,7 +191,7 @@ public class MockCompiledKernel : ICompiledKernel
 /// <summary>
 /// Mock memory manager implementation for testing.
 /// </summary>
-public class MockMemoryManager : IMemoryManager
+public sealed class MockMemoryManager : IMemoryManager, IDisposable
 {
     private readonly IAccelerator _accelerator;
     private readonly ILogger _logger;
@@ -192,7 +199,8 @@ public class MockMemoryManager : IMemoryManager
 
     public MockMemoryManager(IAccelerator accelerator, ILogger? logger = null)
     {
-        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
+        ArgumentNullException.ThrowIfNull(accelerator);
+        _accelerator = accelerator;
         _logger = logger ?? NullLogger.Instance;
     }
 
@@ -201,8 +209,7 @@ public class MockMemoryManager : IMemoryManager
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default)
     {
-        if (_isDisposed)
-            throw new ObjectDisposedException(nameof(MockMemoryManager));
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
 
         await Task.Yield(); // Simulate async operation
         return new MockMemoryBuffer(sizeInBytes, options);
@@ -213,22 +220,19 @@ public class MockMemoryManager : IMemoryManager
         MemoryOptions options = MemoryOptions.None,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_isDisposed)
-            throw new ObjectDisposedException(nameof(MockMemoryManager));
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
 
-        var sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
-        var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken);
+        int sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        IMemoryBuffer buffer = await AllocateAsync(sizeInBytes, options, cancellationToken);
         await buffer.CopyFromHostAsync(source, 0, cancellationToken);
         return buffer;
     }
 
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
-        if (_isDisposed)
-            throw new ObjectDisposedException(nameof(MockMemoryManager));
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
 
-        if (buffer == null)
-            throw new ArgumentNullException(nameof(buffer));
+        ArgumentNullException.ThrowIfNull(buffer);
         if (offset < 0 || offset >= buffer.SizeInBytes)
             throw new ArgumentOutOfRangeException(nameof(offset));
         if (length < 0 || offset + length > buffer.SizeInBytes)
@@ -240,7 +244,7 @@ public class MockMemoryManager : IMemoryManager
 
     public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
     {
-        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        int sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         return AllocateAsync(sizeInBytes);
     }
 
@@ -249,7 +253,7 @@ public class MockMemoryManager : IMemoryManager
         if (buffer is MockMemoryBuffer mockBuffer)
         {
             // Simulate copying data to the mock buffer
-            var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
+            ReadOnlySpan<byte> bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
             bytes.CopyTo(mockBuffer.GetData().AsSpan());
         }
     }
@@ -259,19 +263,24 @@ public class MockMemoryManager : IMemoryManager
         if (buffer is MockMemoryBuffer mockBuffer)
         {
             // Simulate copying data from the mock buffer
-            var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
+            Span<byte> bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
             mockBuffer.GetData().AsSpan()[..bytes.Length].CopyTo(bytes);
         }
     }
 
-    public void Free(IMemoryBuffer buffer) => buffer?.Dispose();
+    public void Free(IMemoryBuffer? buffer) => buffer?.Dispose();
+
+    public void Dispose()
+    {
+        if (_isDisposed)
+            return;
+        _isDisposed = true;
+        GC.SuppressFinalize(this);
+    }
 
     public ValueTask DisposeAsync()
     {
-        if (_isDisposed)
-            return ValueTask.CompletedTask;
-        _isDisposed = true;
-        GC.SuppressFinalize(this);
+        Dispose();
         return ValueTask.CompletedTask;
     }
 }
@@ -279,7 +288,7 @@ public class MockMemoryManager : IMemoryManager
 /// <summary>
 /// Mock memory buffer implementation for testing.
 /// </summary>
-public class MockMemoryBuffer : IMemoryBuffer, IDisposable
+public sealed class MockMemoryBuffer : IMemoryBuffer, IDisposable
 {
     private readonly byte[] _data;
     private bool _isDisposed;
@@ -305,7 +314,7 @@ public class MockMemoryBuffer : IMemoryBuffer, IDisposable
     {
         ThrowIfDisposed();
 
-        var sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        int sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
         if (offset < 0 || offset + sizeInBytes > SizeInBytes)
             throw new ArgumentOutOfRangeException(nameof(offset));
 
@@ -320,7 +329,7 @@ public class MockMemoryBuffer : IMemoryBuffer, IDisposable
     {
         ThrowIfDisposed();
 
-        var sizeInBytes = destination.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        int sizeInBytes = destination.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
         if (offset < 0 || offset + sizeInBytes > SizeInBytes)
             throw new ArgumentOutOfRangeException(nameof(offset));
 
@@ -347,8 +356,7 @@ public class MockMemoryBuffer : IMemoryBuffer, IDisposable
 
     private void ThrowIfDisposed()
     {
-        if (_isDisposed)
-            throw new ObjectDisposedException(nameof(MockMemoryBuffer));
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
     }
 
     // For testing purposes - direct access to data
@@ -358,7 +366,7 @@ public class MockMemoryBuffer : IMemoryBuffer, IDisposable
 /// <summary>
 /// Mock memory buffer view implementation for testing.
 /// </summary>
-public class MockMemoryBufferView : IMemoryBuffer, IDisposable
+public sealed class MockMemoryBufferView : IMemoryBuffer, IDisposable
 {
     private readonly MockMemoryBuffer _parentBuffer;
     private readonly long _offset;
@@ -367,7 +375,8 @@ public class MockMemoryBufferView : IMemoryBuffer, IDisposable
 
     public MockMemoryBufferView(MockMemoryBuffer parentBuffer, long offset, long length)
     {
-        _parentBuffer = parentBuffer ?? throw new ArgumentNullException(nameof(parentBuffer));
+        ArgumentNullException.ThrowIfNull(parentBuffer);
+        _parentBuffer = parentBuffer;
         _offset = offset;
         _length = length;
     }
@@ -381,8 +390,7 @@ public class MockMemoryBufferView : IMemoryBuffer, IDisposable
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_isDisposed)
-            throw new ObjectDisposedException(nameof(MockMemoryBufferView));
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
 
         return _parentBuffer.CopyFromHostAsync(source, _offset + offset, cancellationToken);
     }
@@ -392,8 +400,7 @@ public class MockMemoryBufferView : IMemoryBuffer, IDisposable
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged
     {
-        if (_isDisposed)
-            throw new ObjectDisposedException(nameof(MockMemoryBufferView));
+        ObjectDisposedException.ThrowIf(_isDisposed, this);
 
         return _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
     }

@@ -19,14 +19,14 @@ namespace DotCompute.Tests.Unit;
 /// Comprehensive tests for parallel execution strategies with mock GPUs that can run on CI/CD.
 /// Tests data parallel, model parallel, pipeline parallel, and work-stealing execution patterns.
 /// </summary>
-public class ParallelExecutionStrategyTests : IAsyncDisposable
+public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
 {
     private readonly Mock<IAcceleratorManager> _mockAcceleratorManager;
     private readonly Mock<IKernelManager> _mockKernelManager;
     private readonly NullLoggerFactory _loggerFactory;
     private readonly NullLogger<ParallelExecutionStrategy> _logger;
     private readonly List<Mock<IAccelerator>> _mockAccelerators;
-    private ParallelExecutionStrategy _strategy;
+    private readonly ParallelExecutionStrategy _strategy;
 
     public ParallelExecutionStrategyTests()
     {
@@ -228,7 +228,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
         // Assert
         Assert.NotNull(analysis);
         Assert.True(analysis.OverallRating >= 0 && analysis.OverallRating <= 10);
-        Assert.NotNull(analysis.RecommendedStrategy);
+        // RecommendedStrategy is value type, no null check needed
         Assert.NotNull(analysis.Bottlenecks);
         Assert.NotNull(analysis.OptimizationRecommendations);
         Assert.NotNull(analysis.DeviceUtilizationAnalysis);
@@ -247,7 +247,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
 
         // Assert
         Assert.NotNull(recommendation);
-        Assert.True(Enum.IsDefined(typeof(ExecutionStrategyType), recommendation.Strategy));
+        Assert.True(Enum.IsDefined(recommendation.Strategy));
         Assert.True(recommendation.ConfidenceScore >= 0 && recommendation.ConfidenceScore <= 1);
         Assert.True(recommendation.ExpectedImprovementPercentage >= 0);
         Assert.NotNull(recommendation.Reasoning);
@@ -283,8 +283,8 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
         var inputBuffers = CreateMockBuffers<float>(1024, 2);
         var outputBuffers = CreateMockBuffers<float>(1024, 1);
         var options = new TestDataParallelismOptions();
-        var cts = new CancellationTokenSource();
-        cts.Cancel(); // Cancel immediately
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync(); // Cancel immediately
 
         // Act & Assert
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
@@ -634,6 +634,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
         {
             await _strategy.DisposeAsync();
         }
+        _loggerFactory?.Dispose();
         GC.SuppressFinalize(this);
     }
 }
@@ -641,7 +642,7 @@ public class ParallelExecutionStrategyTests : IAsyncDisposable
 #region Mock Parallel Execution Types
 
 // These would normally be defined in the actual implementation
-public class TestDataParallelismOptions
+public sealed class TestDataParallelismOptions
 {
     public int? MaxDevices { get; set; }
     public string[]? TargetDevices { get; set; }
@@ -690,7 +691,7 @@ public class TestDataParallelismOptions
     }
 }
 
-public class ModelParallelismOptions
+public sealed class ModelParallelismOptions
 {
     public CommunicationBackend CommunicationBackend { get; set; } = CommunicationBackend.P2P;
     public MemoryOptimizationLevel MemoryOptimization { get; set; } = MemoryOptimizationLevel.Balanced;
@@ -707,7 +708,7 @@ public class ModelParallelismOptions
     }
 }
 
-public class PipelineParallelismOptions
+public sealed class PipelineParallelismOptions
 {
     public int MicrobatchSize { get; set; } = 32;
     public bool OverlapCommunication { get; set; } = true;
@@ -723,7 +724,7 @@ public class PipelineParallelismOptions
     }
 }
 
-public class WorkStealingOptions
+public sealed class WorkStealingOptions
 {
     public StealingStrategy StealingStrategy { get; set; } = StealingStrategy.RandomVictim;
     public int WorkItemGranularity { get; set; } = 64;

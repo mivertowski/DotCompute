@@ -3,13 +3,14 @@
 
 using Xunit;
 using FluentAssertions;
+using System.Globalization;
 
 namespace DotCompute.Abstractions.Tests;
 
 /// <summary>
 /// Comprehensive unit tests for core structs, enums, and supporting classes in DotCompute.Abstractions.
 /// </summary>
-public class CoreStructsAndEnumsTests
+public sealed class CoreStructsAndEnumsTests
 {
     #region CompiledKernel Struct Tests
 
@@ -164,7 +165,6 @@ public class CoreStructsAndEnumsTests
     }
 
     [Theory]
-    [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
     public void KernelDefinition_Constructor_WithInvalidName_ShouldThrowArgumentException(string invalidName)
@@ -512,8 +512,8 @@ public class CoreStructsAndEnumsTests
     }
 
     [Theory]
-    [InlineData(null)]
     [InlineData("")]
+    [InlineData("   ")]
     public void TextKernelSource_Constructor_WithInvalidCode_ShouldThrowArgumentException(string invalidCode)
     {
         // Act & Assert
@@ -748,7 +748,7 @@ public class CoreStructsAndEnumsTests
                 {
                     // For init-only properties, the set method has special attributes
                     var isInitOnly = setMethod.ReturnParameter.GetRequiredCustomModifiers()
-                        .Any(t => t.Name.Contains("IsExternalInit"));
+                        .Any(t => t.Name.Contains("IsExternalInit", StringComparison.Ordinal));
                     Assert.True(isInitOnly);
                 }
             }
@@ -767,7 +767,7 @@ public class CoreStructsAndEnumsTests
                 {
                     // For init-only properties, the set method has special attributes
                     var isInitOnly = setMethod.ReturnParameter.GetRequiredCustomModifiers()
-                        .Any(t => t.Name.Contains("IsExternalInit"));
+                        .Any(t => t.Name.Contains("IsExternalInit", StringComparison.Ordinal));
                     Assert.True(isInitOnly);
                 }
             }

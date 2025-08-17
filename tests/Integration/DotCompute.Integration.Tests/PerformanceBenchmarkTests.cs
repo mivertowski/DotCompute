@@ -1,4 +1,8 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
+
+#pragma warning disable IDE0059 // Unnecessary assignment - test scaffolding
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -15,7 +19,7 @@ namespace DotCompute.Tests.Integration;
 /// Integration tests for performance benchmarking scenarios.
 /// Tests real-world use cases and performance validation.
 /// </summary>
-public class PerformanceBenchmarkTests : IntegrationTestBase
+public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 {
     public PerformanceBenchmarkTests(ITestOutputHelper output) : base(output)
     {
@@ -975,6 +979,8 @@ public class ThreadBenchmarkResult
 public class ParallelBenchmarkResult
 {
     public bool Success { get; set; }
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Design", "CA1002:DoNotExposeGenericLists")]
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public List<ThreadBenchmarkResult> ThreadResults { get; set; } = [];
     public double SingleThreadThroughput { get; set; }
     public double ParallelEfficiency { get; set; }

@@ -3,6 +3,7 @@ using BenchmarkDotNet.Jobs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -16,7 +17,8 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-internal class PluginSystemBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class PluginSystemBenchmarks : IDisposable
 {
     private ServiceCollection _services = null!;
     private IServiceProvider _serviceProvider = null!;
@@ -224,6 +226,12 @@ internal class PluginSystemBenchmarks
         return throughput; // Plugins loaded per second
     }
 
+    public void Dispose()
+    {
+        Cleanup();
+        GC.SuppressFinalize(this);
+    }
+
     private static TestPluginInterface CreatePlugin(string type, int index)
     {
         return type switch
@@ -235,7 +243,7 @@ internal class PluginSystemBenchmarks
         };
     }
 
-    private static TestPluginInterface CreatePluginWithDependencies(int index)
+    private static DependentTestPlugin CreatePluginWithDependencies(int index)
     {
         return new DependentTestPlugin($"DependentPlugin_{index}", $"Plugin with dependencies {index}")
         {
@@ -255,7 +263,7 @@ internal class PluginSystemBenchmarks
             {
                 if (p is DependentTestPlugin dep)
                 {
-                    return dep.Dependencies.All(d => resolved.Any(r => r.Name.Contains(d.Split('_')[0])) || d == "CommonDependency");
+                    return dep.Dependencies.All(d => resolved.Any(r => r.Name.Contains(d.Split('_')[0], StringComparison.OrdinalIgnoreCase)) || d == "CommonDependency");
                 }
                 return true;
             }).ToList();
@@ -303,7 +311,7 @@ internal abstract class TestPluginBase : TestPluginInterface
     public virtual void Dispose() => IsInitialized = false;
 }
 
-internal class SimpleTestPlugin : TestPluginBase
+internal sealed class SimpleTestPlugin : TestPluginBase
 {
     public SimpleTestPlugin(string name, string description)
     {
@@ -320,7 +328,7 @@ internal class SimpleTestPlugin : TestPluginBase
     }
 }
 
-internal class ComplexTestPlugin : TestPluginBase
+internal sealed class ComplexTestPlugin : TestPluginBase
 {
     private readonly Dictionary<string, object> _configuration = [];
     private readonly List<object> _resources = [];
@@ -359,7 +367,7 @@ internal class ComplexTestPlugin : TestPluginBase
     }
 }
 
-internal class DependentTestPlugin : TestPluginBase
+internal sealed class DependentTestPlugin : TestPluginBase
 {
     public string[] Dependencies { get; set; } = Array.Empty<string>();
 
@@ -373,7 +381,7 @@ internal class DependentTestPlugin : TestPluginBase
     public override void Initialize()
     {
         // Check dependencies before initialization
-        foreach (var dependency in Dependencies)
+        foreach (var _ in Dependencies)
         {
             // Simulate dependency checking
             Thread.Sleep(1);

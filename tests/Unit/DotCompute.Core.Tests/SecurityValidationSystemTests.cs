@@ -5,6 +5,7 @@ using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using System.Collections.ObjectModel;
 
 namespace DotCompute.Tests.Unit;
 
@@ -12,7 +13,7 @@ namespace DotCompute.Tests.Unit;
 /// Comprehensive tests for the kernel security validation system.
 /// Tests various security mechanisms including code analysis, buffer validation, and privilege checks.
 /// </summary>
-public class SecurityValidationSystemTests : IDisposable
+public sealed class SecurityValidationSystemTests : IDisposable
 {
     private readonly Mock<ILogger<SecurityValidator>> _mockLogger;
     private readonly SecurityValidator _securityValidator;
@@ -63,7 +64,7 @@ public class SecurityValidationSystemTests : IDisposable
 
         // Assert
         Assert.True(result.IsSecure);
-        Assert.Empty(result.SecurityViolations.FindAll(v => v.Severity >= SecurityThreatLevel.High));
+        Assert.DoesNotContain(result.SecurityViolations, v => v.Severity >= SecurityThreatLevel.High);
     }
 
     [Fact]
@@ -494,8 +495,10 @@ __global__ void complex_security_test_kernel(float* input, float* output,
     #endregion
 
     public void Dispose()
+    {
         // Clean up any resources if needed
-        => GC.SuppressFinalize(this);
+        GC.SuppressFinalize(this);
+    }
 }
 
 #region Mock Security Classes
@@ -503,7 +506,7 @@ __global__ void complex_security_test_kernel(float* input, float* output,
 /// <summary>
 /// Mock security validator for testing purposes.
 /// </summary>
-public class SecurityValidator
+public sealed class SecurityValidator
 {
     private readonly ILogger<SecurityValidator> _logger;
 
@@ -520,8 +523,8 @@ public class SecurityValidator
         var violations = new List<SecurityViolation>();
 
         // Simulate security checks
-        if (kernel.SourceCode.Contains("system(") || kernel.SourceCode.Contains("exec(") ||
-            kernel.SourceCode.Contains("fopen(") || kernel.SourceCode.Contains("DeleteFile("))
+        if (kernel.SourceCode.Contains("system(", StringComparison.Ordinal) || kernel.SourceCode.Contains("exec(", StringComparison.Ordinal) ||
+            kernel.SourceCode.Contains("fopen(", StringComparison.Ordinal) || kernel.SourceCode.Contains("DeleteFile(", StringComparison.Ordinal))
         {
             violations.Add(new SecurityViolation
             {
@@ -532,7 +535,7 @@ public class SecurityValidator
             });
         }
 
-        if (kernel.SourceCode.Contains("while(true)") || kernel.SourceCode.Contains("for(;;)"))
+        if (kernel.SourceCode.Contains("while(true)", StringComparison.Ordinal) || kernel.SourceCode.Contains("for(;;)", StringComparison.Ordinal))
         {
             violations.Add(new SecurityViolation
             {
@@ -543,7 +546,7 @@ public class SecurityValidator
             });
         }
 
-        if (kernel.SourceCode.Contains("999999") || kernel.SourceCode.Contains("+ 1000000"))
+        if (kernel.SourceCode.Contains("999999", StringComparison.Ordinal) || kernel.SourceCode.Contains("+ 1000000", StringComparison.Ordinal))
         {
             violations.Add(new SecurityViolation
             {
@@ -554,7 +557,7 @@ public class SecurityValidator
             });
         }
 
-        if (kernel.SourceCode.Contains("huge_array[65536]"))
+        if (kernel.SourceCode.Contains("huge_array[65536]", StringComparison.Ordinal))
         {
             violations.Add(new SecurityViolation
             {
@@ -583,7 +586,7 @@ public class SecurityValidator
         return new SecurityValidationResult
         {
             IsSecure = violations.FindAll(v => v.Severity >= SecurityThreatLevel.High).Count == 0,
-            SecurityViolations = violations,
+            SecurityViolations = new Collection<SecurityViolation>(violations),
             ValidationSummary = new SecurityValidationSummary
             {
                 TotalChecksPerformed = 6,
@@ -595,7 +598,7 @@ public class SecurityValidator
     }
 
     public static async Task<MemoryValidationResult> ValidateMemoryAccessPatternsAsync(
-        List<MemoryAccessPattern> memoryAccesses, Dictionary<string, long> bufferSizes)
+        IReadOnlyList<MemoryAccessPattern> memoryAccesses, Dictionary<string, long> bufferSizes)
     {
         await Task.Delay(5);
 
@@ -618,7 +621,7 @@ public class SecurityValidator
         return new MemoryValidationResult
         {
             IsValid = violations.Count == 0,
-            Violations = violations
+            Violations = new Collection<SecurityViolation>(violations)
         };
     }
 
@@ -630,7 +633,7 @@ public class SecurityValidator
         var requiredPrivileges = new List<KernelPrivilege>();
         var violatedRestrictions = new List<string>();
 
-        if (kernel.SourceCode.Contains("__threadfence_system()"))
+        if (kernel.SourceCode.Contains("__threadfence_system()", StringComparison.Ordinal))
         {
             requiredPrivileges.Add(KernelPrivilege.SystemBarrier);
             if (privilegeLevel < KernelPrivilegeLevel.Elevated)
@@ -642,8 +645,8 @@ public class SecurityValidator
         return new PrivilegeValidationResult
         {
             HasSufficientPrivileges = violatedRestrictions.Count == 0,
-            RequiredPrivileges = requiredPrivileges,
-            ViolatedRestrictions = violatedRestrictions
+            RequiredPrivileges = new Collection<KernelPrivilege>(requiredPrivileges),
+            ViolatedRestrictions = new Collection<string>(violatedRestrictions)
         };
     }
 
@@ -653,7 +656,7 @@ public class SecurityValidator
 
         var injectionVectors = new List<InjectionVector>();
 
-        if (kernel.SourceCode.Contains("sprintf") && kernel.SourceCode.Contains("SELECT"))
+        if (kernel.SourceCode.Contains("sprintf", StringComparison.Ordinal) && kernel.SourceCode.Contains("SELECT", StringComparison.Ordinal))
         {
             injectionVectors.Add(new InjectionVector
             {
@@ -664,7 +667,7 @@ public class SecurityValidator
             });
         }
 
-        if (kernel.SourceCode.Contains("system(") && kernel.SourceCode.Contains("strcat"))
+        if (kernel.SourceCode.Contains("system(", StringComparison.Ordinal) && kernel.SourceCode.Contains("strcat", StringComparison.Ordinal))
         {
             injectionVectors.Add(new InjectionVector
             {
@@ -678,7 +681,7 @@ public class SecurityValidator
         return new CodeInjectionValidationResult
         {
             IsSafe = injectionVectors.Count == 0,
-            InjectionVectors = injectionVectors
+            InjectionVectors = new Collection<InjectionVector>(injectionVectors)
         };
     }
 
@@ -688,7 +691,7 @@ public class SecurityValidator
 
         var issues = new List<CryptographicIssue>();
 
-        if (kernel.SourceCode.Contains("rand()"))
+        if (kernel.SourceCode.Contains("rand()", StringComparison.Ordinal))
         {
             issues.Add(new CryptographicIssue
             {
@@ -699,7 +702,7 @@ public class SecurityValidator
             });
         }
 
-        if (kernel.SourceCode.Contains("^= 0x42"))
+        if (kernel.SourceCode.Contains("^= 0x42", StringComparison.Ordinal))
         {
             issues.Add(new CryptographicIssue
             {
@@ -710,11 +713,17 @@ public class SecurityValidator
             });
         }
 
-        return new CryptographicValidationResult
+        var result = new CryptographicValidationResult
         {
-            IsSecure = issues.FindAll(i => i.Severity >= SecurityThreatLevel.High).Count == 0,
-            CryptographicIssues = issues
+            IsSecure = issues.FindAll(i => i.Severity >= SecurityThreatLevel.High).Count == 0
         };
+        
+        foreach (var issue in issues)
+        {
+            result.CryptographicIssues.Add(issue);
+        }
+        
+        return result;
     }
 
     public static async Task<DataLeakageValidationResult> ValidateDataLeakageAsync(GeneratedKernel kernel)
@@ -723,7 +732,7 @@ public class SecurityValidator
 
         var risks = new List<DataLeakageRisk>();
 
-        if (kernel.SourceCode.Contains("strcpy") && kernel.SourceCode.Contains("password"))
+        if (kernel.SourceCode.Contains("strcpy", StringComparison.Ordinal) && kernel.SourceCode.Contains("password", StringComparison.Ordinal))
         {
             risks.Add(new DataLeakageRisk
             {
@@ -734,7 +743,7 @@ public class SecurityValidator
             });
         }
 
-        if (kernel.SourceCode.Contains("printf") && kernel.SourceCode.Contains("password"))
+        if (kernel.SourceCode.Contains("printf", StringComparison.Ordinal) && kernel.SourceCode.Contains("password", StringComparison.Ordinal))
         {
             risks.Add(new DataLeakageRisk
             {
@@ -745,11 +754,17 @@ public class SecurityValidator
             });
         }
 
-        return new DataLeakageValidationResult
+        var result = new DataLeakageValidationResult
         {
-            IsSecure = risks.Count == 0,
-            DataLeakageRisks = risks
+            IsSecure = risks.Count == 0
         };
+        
+        foreach (var risk in risks)
+        {
+            result.DataLeakageRisks.Add(risk);
+        }
+        
+        return result;
     }
 }
 
@@ -757,7 +772,7 @@ public class SecurityValidator
 
 #region Mock Security Types
 
-public class SecurityValidationOptions
+public sealed class SecurityValidationOptions
 {
     public bool EnableBufferOverflowDetection { get; set; } = true;
     public bool EnableCodeInjectionDetection { get; set; } = true;
@@ -769,17 +784,17 @@ public class SecurityValidationOptions
     public int MaxRegistersPerThread { get; set; } = 32;
     public int MaxExecutionTimeMs { get; set; } = 10000;
     public KernelPrivilegeLevel RequiredPrivilegeLevel { get; set; } = KernelPrivilegeLevel.Standard;
-    public List<SecurityRule> CustomSecurityRules { get; set; } = [];
+    public Collection<SecurityRule> CustomSecurityRules { get; init; } = new();
 }
 
-public class SecurityValidationResult
+public sealed class SecurityValidationResult
 {
     public bool IsSecure { get; set; }
-    public List<SecurityViolation> SecurityViolations { get; set; } = [];
+    public Collection<SecurityViolation> SecurityViolations { get; init; } = new();
     public SecurityValidationSummary ValidationSummary { get; set; } = new();
 }
 
-public class SecurityViolation
+public sealed class SecurityViolation
 {
     public SecurityViolationType Type { get; set; }
     public SecurityThreatLevel Severity { get; set; }
@@ -787,7 +802,7 @@ public class SecurityViolation
     public string Location { get; set; } = "";
 }
 
-public class SecurityRule
+public sealed class SecurityRule
 {
     public string Name { get; set; } = "";
     public string Pattern { get; set; } = "";
@@ -796,7 +811,7 @@ public class SecurityRule
     public string Description { get; set; } = "";
 }
 
-public class SecurityValidationSummary
+public sealed class SecurityValidationSummary
 {
     public int TotalChecksPerformed { get; set; }
     public int PassedChecks { get; set; }
@@ -845,7 +860,7 @@ public enum KernelPrivilege
 
 // Additional mock types for comprehensive testing...
 
-public class MemoryAccessPattern
+public sealed class MemoryAccessPattern
 {
     public string BufferName { get; set; } = "";
     public MemoryAccessType AccessType { get; set; }
@@ -856,26 +871,26 @@ public class MemoryAccessPattern
 
 public enum MemoryAccessType { Read, Write, ReadWrite }
 
-public class MemoryValidationResult
+public sealed class MemoryValidationResult
 {
     public bool IsValid { get; set; }
-    public List<SecurityViolation> Violations { get; set; } = [];
+    public Collection<SecurityViolation> Violations { get; init; } = new();
 }
 
-public class PrivilegeValidationResult
+public sealed class PrivilegeValidationResult
 {
     public bool HasSufficientPrivileges { get; set; }
-    public List<KernelPrivilege> RequiredPrivileges { get; set; } = [];
-    public List<string> ViolatedRestrictions { get; set; } = [];
+    public Collection<KernelPrivilege> RequiredPrivileges { get; init; } = new();
+    public Collection<string> ViolatedRestrictions { get; init; } = new();
 }
 
-public class CodeInjectionValidationResult
+public sealed class CodeInjectionValidationResult
 {
     public bool IsSafe { get; set; }
-    public List<InjectionVector> InjectionVectors { get; set; } = [];
+    public Collection<InjectionVector> InjectionVectors { get; init; } = new();
 }
 
-public class InjectionVector
+public sealed class InjectionVector
 {
     public InjectionType Type { get; set; }
     public SecurityThreatLevel Severity { get; set; }
@@ -885,13 +900,13 @@ public class InjectionVector
 
 public enum InjectionType { SQL, Command, Script, Path }
 
-public class CryptographicValidationResult
+public sealed class CryptographicValidationResult
 {
     public bool IsSecure { get; set; }
-    public List<CryptographicIssue> CryptographicIssues { get; set; } = [];
+    public IList<CryptographicIssue> CryptographicIssues { get; } = new List<CryptographicIssue>();
 }
 
-public class CryptographicIssue
+public sealed class CryptographicIssue
 {
     public CryptographicIssueType Type { get; set; }
     public SecurityThreatLevel Severity { get; set; }
@@ -901,13 +916,13 @@ public class CryptographicIssue
 
 public enum CryptographicIssueType { WeakRandomNumberGeneration, WeakEncryption, WeakHashing }
 
-public class DataLeakageValidationResult
+public sealed class DataLeakageValidationResult
 {
     public bool IsSecure { get; set; }
-    public List<DataLeakageRisk> DataLeakageRisks { get; set; } = [];
+    public IList<DataLeakageRisk> DataLeakageRisks { get; } = new List<DataLeakageRisk>();
 }
 
-public class DataLeakageRisk
+public sealed class DataLeakageRisk
 {
     public DataLeakageType Type { get; set; }
     public SecurityThreatLevel Severity { get; set; }

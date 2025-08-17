@@ -213,7 +213,7 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
     /// <summary>
     /// Gets transfer engine statistics.
     /// </summary>
-    public TransferStatistics GetStatistics() => _transferEngine.Statistics;
+    public TransferStatistics Statistics => _transferEngine.Statistics;
 
     public async ValueTask DisposeAsync()
     {

@@ -3,10 +3,11 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Shared;
+using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
@@ -18,12 +19,25 @@ namespace DotCompute.Tests.Hardware.Integration;
 /// Integration tests for CUDA host-device memory transfer operations
 /// </summary>
 [Collection("CUDA Hardware Tests")]
-public class CudaMemoryTransferTests : IDisposable
+public sealed class CudaMemoryTransferTests : IDisposable
 {
     private readonly ILogger<CudaMemoryTransferTests> _logger;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
     private readonly List<ISyncMemoryBuffer> _buffers = [];
+
+    // LoggerMessage delegates for performance
+    private static readonly Action<ILogger, Exception, Exception?> LogBufferDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(1, nameof(LogBufferDisposeError)),
+            "Error disposing CUDA buffer: {Exception}");
+
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(2, nameof(LogAcceleratorDisposeError)),
+            "Error disposing CUDA accelerator: {Exception}");
 
     public CudaMemoryTransferTests(ITestOutputHelper output)
     {
@@ -527,7 +541,7 @@ public class CudaMemoryTransferTests : IDisposable
         Task.WaitAll(tasks);
 
         // Assert
-        Assert.Equal(threadCount, results.Count());
+        Assert.Equal(threadCount, results.Count);
         results.Should().AllSatisfy(result => result.Should().BeTrue("All concurrent transfers should succeed"));
     }
 
@@ -574,7 +588,8 @@ public class CudaMemoryTransferTests : IDisposable
 
     private CudaAccelerator CreateAccelerator()
     {
-        var cudaLogger = LoggerFactory.Create(builder => builder.AddConsole()).CreateLogger<CudaAccelerator>();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        var cudaLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, cudaLogger);
         _accelerators.Add(accelerator);
         return accelerator;
@@ -607,7 +622,7 @@ public class CudaMemoryTransferTests : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA buffer");
+                LogBufferDisposeError(_logger, ex, null);
             }
         }
         _buffers.Clear();
@@ -620,9 +635,10 @@ public class CudaMemoryTransferTests : IDisposable
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA accelerator");
+                LogAcceleratorDisposeError(_logger, ex, null);
             }
         }
         _accelerators.Clear();
+        GC.SuppressFinalize(this);
     }
 }

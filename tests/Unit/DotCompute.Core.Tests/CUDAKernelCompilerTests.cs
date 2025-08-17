@@ -6,6 +6,7 @@ using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
+using System.Globalization;
 using Xunit;
 using FluentAssertions;
 
@@ -15,7 +16,7 @@ namespace DotCompute.Tests.Unit;
 /// Comprehensive tests for CUDA kernel compiler that can run on CI/CD without GPU hardware.
 /// Uses mocks and dependency injection to simulate CUDA runtime behavior.
 /// </summary>
-public class CUDAKernelCompilerTests : IDisposable
+public sealed class CUDAKernelCompilerTests : IDisposable
 {
     private readonly Mock<ILogger<CUDAKernelCompiler>> _mockLogger;
     private readonly CUDAKernelCompiler _compiler;
@@ -207,8 +208,8 @@ public class CUDAKernelCompilerTests : IDisposable
         // Arrange
         var kernel = CreateValidCudaKernel();
         var options = CreateValidCompilationOptions();
-        var cts = new CancellationTokenSource();
-        cts.Cancel(); // Cancel immediately
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync(); // Cancel immediately
 
         // Act & Assert
         // TaskCanceledException inherits from OperationCanceledException
@@ -425,7 +426,7 @@ __global__ void complex_kernel(float* A, float* B, float* C, int N) {
             ],
             OptimizationMetadata = new Dictionary<string, object>
             {
-                ["shared_memory_size"] = (TILE_SIZE * TILE_SIZE * 2 * sizeof(float)).ToString(),
+                ["shared_memory_size"] = (TILE_SIZE * TILE_SIZE * 2 * sizeof(float)).ToString(CultureInfo.InvariantCulture),
                 ["registers_per_thread"] = "32",
                 ["max_threads_per_block"] = "256"
             }
@@ -590,6 +591,7 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
         return new Abstractions.KernelDefinition(kernel.Name, source, options);
     }
 
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope", Justification = "Object is returned to caller for disposal")]
     private static ValueTask<ICompiledKernel> CompileAsync(GeneratedKernel kernel, DotCompute.Core.Kernels.CompilationOptions options, CancellationToken cancellationToken = default)
     {
         // Mock implementation for testing
@@ -605,6 +607,9 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
     #endregion
 
     public void Dispose()
+    {
         // Clean up any resources if needed
-        => GC.SuppressFinalize(this);
+        _loggerFactory?.Dispose();
+        GC.SuppressFinalize(this);
+    }
 }

@@ -9,7 +9,7 @@ namespace DotCompute.Tests.Unit;
 /// Test runner that demonstrates real implementations working together
 /// without mocks - this is a simplified integration test approach
 /// </summary>
-public class TestRunner
+public sealed class TestRunner
 {
     private readonly ITestOutputHelper _output;
 

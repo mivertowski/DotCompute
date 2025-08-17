@@ -1,4 +1,6 @@
 // Copyright(c) 2025 Michael Ivertowski
+
+#pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
@@ -14,7 +16,7 @@ namespace DotCompute.Tests.Integration;
 /// Integration tests for real-world usage scenarios.
 /// Tests complete workflows that represent actual use cases.
 /// </summary>
-public class RealWorldScenarioTests : IntegrationTestBase
+public sealed class RealWorldScenarioTests : IntegrationTestBase
 {
     public RealWorldScenarioTests(ITestOutputHelper output) : base(output)
     {
@@ -765,7 +767,6 @@ public class RealWorldScenarioTests : IntegrationTestBase
             ExecutionTime = stopwatch.Elapsed
         };
     }
-
 }
 
 // Result classes for real-world scenarios

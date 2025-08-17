@@ -1,6 +1,7 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
@@ -16,11 +17,18 @@ namespace DotCompute.Tests.Hardware.Hardware;
 /// RTX 2000 series specific validation tests
 /// </summary>
 [Collection("CUDA Hardware Tests")]
-public class RTX2000ValidationTests : IDisposable
+public sealed class RTX2000ValidationTests : IDisposable
 {
     private readonly ILogger<RTX2000ValidationTests> _logger;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
+
+    // LoggerMessage delegate for performance
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(1, nameof(LogAcceleratorDisposeError)),
+            "Error disposing CUDA accelerator: {Exception}");
 
     public RTX2000ValidationTests(ITestOutputHelper output)
     {
@@ -422,10 +430,10 @@ public class RTX2000ValidationTests : IDisposable
     {
         return deviceName.ToUpperInvariant() switch
         {
-            var name when name.Contains("RTX 2060") => 6.0,
-            var name when name.Contains("RTX 2070") => 8.0,
-            var name when name.Contains("RTX 2080 TI") => 11.0,
-            var name when name.Contains("RTX 2080") => 8.0,
+            var name when name.Contains("RTX 2060", StringComparison.OrdinalIgnoreCase) => 6.0,
+            var name when name.Contains("RTX 2070", StringComparison.OrdinalIgnoreCase) => 8.0,
+            var name when name.Contains("RTX 2080 TI", StringComparison.OrdinalIgnoreCase) => 11.0,
+            var name when name.Contains("RTX 2080", StringComparison.OrdinalIgnoreCase) => 8.0,
             var name when name.Contains("QUADRO RTX 4000") => 8.0,
             var name when name.Contains("QUADRO RTX 5000") => 16.0,
             var name when name.Contains("QUADRO RTX 6000") => 24.0,
@@ -497,7 +505,7 @@ __global__ void turing_optimized(float* input, float* output, int n)
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA accelerator");
+                LogAcceleratorDisposeError(_logger, ex, null);
             }
         }
         _accelerators.Clear();

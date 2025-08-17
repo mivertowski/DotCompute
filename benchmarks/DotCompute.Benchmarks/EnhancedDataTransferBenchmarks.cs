@@ -3,6 +3,7 @@ using BenchmarkDotNet.Jobs;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -15,9 +16,10 @@ namespace DotCompute.Benchmarks;
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
 [MinColumn, MaxColumn, MeanColumn, MedianColumn]
-internal class EnhancedDataTransferBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class EnhancedDataTransferBenchmarks : IDisposable
 {
-    private IAcceleratorManager _acceleratorManager = null!;
+    private DefaultAcceleratorManager _acceleratorManager = null!;
     private IAccelerator _accelerator = null!;
     private IMemoryManager _memoryManager = null!;
     private readonly List<IMemoryBuffer> _buffers = [];
@@ -62,7 +64,9 @@ internal class EnhancedDataTransferBenchmarks
 
                 break;
             case "Random":
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
                 Random.Shared.NextBytes(_hostData);
+#pragma warning restore CA5394
                 break;
             case "Zeros":
                 Array.Fill(_hostData, (byte)0);
@@ -89,7 +93,10 @@ internal class EnhancedDataTransferBenchmarks
             }
         }
         _buffers.Clear();
-        await _acceleratorManager.DisposeAsync();
+        if (_acceleratorManager != null)
+        {
+            await _acceleratorManager.DisposeAsync();
+        }
     }
 
     [IterationCleanup]
@@ -251,7 +258,9 @@ internal class EnhancedDataTransferBenchmarks
             tasks.Add(Task.Run(async () =>
             {
                 var chunk = new byte[bufferSize];
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
                 Random.Shared.NextBytes(chunk);
+#pragma warning restore CA5394
                 var buffer = await _memoryManager.AllocateAndCopyAsync<byte>(chunk);
                 lock (_buffers)
                 {
@@ -261,5 +270,30 @@ internal class EnhancedDataTransferBenchmarks
         }
 
         await Task.WhenAll(tasks);
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            Cleanup().GetAwaiter().GetResult();
+            if (_accelerator != null)
+            {
+                var task = _accelerator.DisposeAsync();
+                if (task.IsCompleted)
+                {
+                    task.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    task.AsTask().Wait();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+        GC.SuppressFinalize(this);
     }
 }

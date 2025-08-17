@@ -10,7 +10,7 @@ namespace DotCompute.Abstractions.Tests;
 /// <summary>
 /// Comprehensive unit tests for the IMemoryManager interface.
 /// </summary>
-public class IMemoryManagerTests
+public sealed class IMemoryManagerTests
 {
     private readonly Mock<IMemoryManager> _mockMemoryManager;
     private readonly Mock<IMemoryBuffer> _mockBuffer;
@@ -75,8 +75,8 @@ public class IMemoryManagerTests
     public async Task AllocateAsync_WithCancellation_ShouldRespectCancellationToken()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
 
         _mockMemoryManager.Setup(m => m.AllocateAsync(1024, MemoryOptions.None, cts.Token))
                          .ThrowsAsync(new OperationCanceledException());
@@ -250,7 +250,7 @@ public class IMemoryManagerTests
     {
         // Arrange
         _mockMemoryManager.Setup(m => m.CreateView(_mockBuffer.Object, 0, 0))
-                         .Throws(new ArgumentException("Length must be positive", "length"));
+                         .Throws(new ArgumentException("Length must be positive", "count"));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(
@@ -290,12 +290,12 @@ public class IMemoryManagerTests
     {
         // Arrange
         _mockMemoryManager.Setup(m => m.Allocate<int>(invalidCount))
-                         .ThrowsAsync(new ArgumentException("Count must be positive", "count"));
+                         .ThrowsAsync(new ArgumentException("Count must be positive", nameof(invalidCount)));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockMemoryManager.Object.Allocate<int>(invalidCount).AsTask());
-        exception.ParamName.Should().Be("count");
+        exception.ParamName.Should().Be(nameof(invalidCount));
     }
 
     [Fact]

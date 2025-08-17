@@ -4,6 +4,7 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.InteropServices;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DotCompute.Benchmarks;
 
@@ -11,9 +12,10 @@ namespace DotCompute.Benchmarks;
 [ThreadingDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90)]
 [RPlotExporter]
-internal class DataTransferBenchmarks
+[SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", Justification = "Instantiated by BenchmarkDotNet framework")]
+internal sealed class DataTransferBenchmarks : IDisposable
 {
-    private IAcceleratorManager _acceleratorManager = null!;
+    private DefaultAcceleratorManager? _acceleratorManager;
     private IAccelerator _accelerator = null!;
     private IMemoryManager _memoryManager = null!;
     private byte[] _hostData = null!;
@@ -38,12 +40,16 @@ internal class DataTransferBenchmarks
 
         // Prepare test data
         _hostData = new byte[DataSize];
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
         Random.Shared.NextBytes(_hostData);
+#pragma warning restore CA5394
 
         _floatData = new float[DataSize / sizeof(float)];
         for (var i = 0; i < _floatData.Length; i++)
         {
+#pragma warning disable CA5394 // Random is acceptable for benchmark data generation
             _floatData[i] = Random.Shared.NextSingle() * 100;
+#pragma warning restore CA5394
         }
 
         _deviceBuffer = await _memoryManager.AllocateAsync(DataSize);
@@ -52,8 +58,14 @@ internal class DataTransferBenchmarks
     [GlobalCleanup]
     public async Task Cleanup()
     {
-        await _deviceBuffer.DisposeAsync();
-        await _acceleratorManager.DisposeAsync();
+        if (_deviceBuffer != null)
+        {
+            await _deviceBuffer.DisposeAsync();
+        }
+        if (_acceleratorManager != null)
+        {
+            await _acceleratorManager.DisposeAsync();
+        }
     }
 
     [Benchmark(Baseline = true)]
@@ -122,5 +134,30 @@ internal class DataTransferBenchmarks
         {
             pinnedData.Free();
         }
+    }
+
+    public void Dispose()
+    {
+        try
+        {
+            Cleanup().GetAwaiter().GetResult();
+            if (_accelerator != null)
+            {
+                var task = _accelerator.DisposeAsync();
+                if (task.IsCompleted)
+                {
+                    task.GetAwaiter().GetResult();
+                }
+                else
+                {
+                    task.AsTask().Wait();
+                }
+            }
+        }
+        catch
+        {
+            // Ignore disposal errors
+        }
+        GC.SuppressFinalize(this);
     }
 }

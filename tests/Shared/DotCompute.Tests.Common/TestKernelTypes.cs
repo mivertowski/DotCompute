@@ -3,7 +3,7 @@
 
 using DotCompute.Core.Types;
 
-namespace DotCompute.Tests.Shared;
+namespace DotCompute.Tests.Utilities;
 
 /// <summary>
 /// Test-specific CompiledKernel class with mutable properties for testing.
@@ -46,9 +46,9 @@ public class CompiledKernel
     public KernelLanguage Language { get; set; }
 
     /// <summary>
-    /// Gets or sets the kernel metadata.
+    /// Gets the kernel metadata.
     /// </summary>
-    public Dictionary<string, string> Metadata { get; set; } = [];
+    public Dictionary<string, string> Metadata { get; } = [];
 
     /// <summary>
     /// Gets or sets the kernel configuration.
@@ -73,8 +73,9 @@ public class CompiledKernel
         // Create kernel configuration
         var config = new DotCompute.Abstractions.KernelConfiguration(
             new DotCompute.Abstractions.Dim3(1), // Default grid dimensions
-            Configuration?.BlockDimensions != null ?
-                new DotCompute.Abstractions.Dim3(Configuration.BlockDimensions.X, Configuration.BlockDimensions.Y, Configuration.BlockDimensions.Z) :
+            Configuration?.BlockDimensions != null
+                ? new DotCompute.Abstractions.Dim3(Configuration.BlockDimensions.X, Configuration.BlockDimensions.Y, Configuration.BlockDimensions.Z)
+                :
                 new DotCompute.Abstractions.Dim3(256) // Default block size
         );
 
@@ -89,6 +90,13 @@ public class CompiledKernel
     /// Implicit conversion operator to DotCompute.Abstractions.CompiledKernel.
     /// </summary>
     public static implicit operator DotCompute.Abstractions.CompiledKernel(CompiledKernel testKernel)
+    {
+        return testKernel.ToAbstractionsCompiledKernel();
+    }
+    /// <summary>
+    /// Explicit conversion method for CA2225 compliance.
+    /// </summary>
+    public static DotCompute.Abstractions.CompiledKernel ToCompiledKernel(CompiledKernel testKernel)
     {
         return testKernel.ToAbstractionsCompiledKernel();
     }
@@ -210,6 +218,14 @@ public class KernelArgument
     /// Implicit conversion operator to DotCompute.Core.Kernels.KernelArgument.
     /// </summary>
     public static implicit operator DotCompute.Core.Kernels.KernelArgument(KernelArgument testArg)
+    {
+        return testArg.ToCoreKernelArgument();
+    }
+
+    /// <summary>
+    /// Explicit conversion method for CA2225 compliance.
+    /// </summary>
+    public static DotCompute.Core.Kernels.KernelArgument ToKernelArgument(KernelArgument testArg)
     {
         return testArg.ToCoreKernelArgument();
     }

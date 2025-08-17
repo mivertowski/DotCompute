@@ -17,12 +17,25 @@ namespace DotCompute.Tests.Hardware.Unit;
 /// Unit tests for CUDA kernel compilation functionality
 /// </summary>
 [Collection("CUDA Hardware Tests")]
-public class CudaKernelCompilerTests : IDisposable
+public sealed class CudaKernelCompilerTests : IDisposable
 {
     private readonly ILogger<CudaKernelCompilerTests> _logger;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
     private readonly List<ICompiledKernel> _compiledKernels = [];
+
+    // LoggerMessage delegates for performance
+    private static readonly Action<ILogger, Exception, Exception?> LogKernelDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(1, nameof(LogKernelDisposeError)),
+            "Error disposing compiled kernel: {Exception}");
+
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+        LoggerMessage.Define<Exception>(
+            LogLevel.Warning,
+            new EventId(2, nameof(LogAcceleratorDisposeError)),
+            "Error disposing CUDA accelerator: {Exception}");
 
     public CudaKernelCompilerTests(ITestOutputHelper output)
     {
@@ -376,7 +389,7 @@ public class CudaKernelCompilerTests : IDisposable
         _compiledKernels.AddRange(compiledKernels);
 
         // Assert
-        Assert.Equal(5, compiledKernels.Count());
+        Assert.Equal(5, compiledKernels.Length);
         compiledKernels.Should().AllSatisfy(k => k.Should().NotBeNull());
     }
 
@@ -458,7 +471,7 @@ __global__ void shared_memory_kernel(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "custom_kernel",
-            Code = Encoding.UTF8.GetBytes(GetSimpleKernelSource().Replace("vector_add", "custom_entry_point")),
+            Code = Encoding.UTF8.GetBytes(GetSimpleKernelSource().Replace("vector_add", "custom_entry_point", StringComparison.Ordinal)),
             EntryPoint = "custom_entry_point"
         };
     }
@@ -511,7 +524,7 @@ __global__ void matrix_multiply(float* A, float* B, float* C, int n)
 
     private static KernelDefinition CreateUniqueKernel(string name)
     {
-        var source = GetSimpleKernelSource().Replace("vector_add", name);
+        var source = GetSimpleKernelSource().Replace("vector_add", name, StringComparison.Ordinal);
         return new KernelDefinition
         {
             Name = name,
@@ -557,7 +570,7 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing compiled kernel");
+                LogKernelDisposeError(_logger, ex, null);
             }
         }
         _compiledKernels.Clear();
@@ -570,7 +583,7 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error disposing CUDA accelerator");
+                LogAcceleratorDisposeError(_logger, ex, null);
             }
         }
         _accelerators.Clear();

@@ -3,13 +3,13 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Shared.Memory;
+namespace DotCompute.Tests.Utilities.Memory;
 
 /// <summary>
 /// Test implementation of IMemoryManager for testing without GPU hardware.
 /// Uses pinned host memory to simulate device memory operations.
 /// </summary>
-public class TestMemoryManager : IMemoryManager, IDisposable
+public sealed class TestMemoryManager : IMemoryManager, IDisposable
 {
     private readonly ArrayPool<byte> _pool = ArrayPool<byte>.Shared;
     private readonly ConcurrentDictionary<IntPtr, TestMemoryBuffer> _allocations = new();
@@ -165,13 +165,14 @@ public class TestMemoryManager : IMemoryManager, IDisposable
             buffer.Dispose();
         }
         _allocations.Clear();
+        GC.SuppressFinalize(this);
     }
 }
 
 /// <summary>
 /// Test implementation of IMemoryBuffer using pinned host memory.
 /// </summary>
-public class TestMemoryBuffer : IMemoryBuffer, IDisposable
+public sealed class TestMemoryBuffer : IMemoryBuffer, IDisposable
 {
     private readonly TestMemoryManager _manager;
     private readonly GCHandle _handle;
@@ -267,22 +268,20 @@ public class TestMemoryBuffer : IMemoryBuffer, IDisposable
             _handle.Free();
             ArrayPool<byte>.Shared.Return(_buffer);
             _manager.ReleaseBuffer(this);
+            GC.SuppressFinalize(this);
         }
     }
 
     private void ThrowIfDisposed()
     {
-        if (_disposed)
-        {
-            throw new ObjectDisposedException(nameof(TestMemoryBuffer));
-        }
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
 }
 
 /// <summary>
 /// Test implementation of a memory view.
 /// </summary>
-public class TestMemoryView : IMemoryBuffer
+public sealed class TestMemoryView : IMemoryBuffer
 {
     private readonly TestMemoryBuffer _parent;
     private readonly long _offset;

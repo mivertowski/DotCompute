@@ -3,16 +3,16 @@ using DotCompute.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Shared.TestFixtures;
+namespace DotCompute.Tests.Utilities.TestFixtures;
 
 /// <summary>
 /// Shared test fixture for memory-related tests.
 /// </summary>
-public class MemoryTestFixture : IAsyncLifetime, IDisposable
+public sealed class MemoryTestFixture : IAsyncLifetime, IDisposable
 {
     private readonly List<IMemoryBuffer> _allocatedBuffers = [];
     private readonly ITestOutputHelper? _output;
-    private IMemoryManager? _memoryManager = null;
+    private readonly IMemoryManager? _memoryManager = null;
     private bool _disposed;
 
     public MemoryTestFixture(ITestOutputHelper? output = null)
@@ -38,8 +38,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
         Func<int, T> valueGenerator,
         MemoryOptions options = MemoryOptions.None) where T : unmanaged
     {
-        if (_memoryManager == null)
-            throw new InvalidOperationException("Memory manager not initialized");
+        ArgumentNullException.ThrowIfNull(_memoryManager, "Memory manager not initialized");
 
         var sizeInBytes = elementCount * Marshal.SizeOf<T>();
         var buffer = await _memoryManager.AllocateAsync(sizeInBytes, options);
@@ -59,10 +58,10 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
     /// <summary>
     /// Creates a random test buffer.
     /// </summary>
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("Security", "CA5394:Do not use insecure randomness", Justification = "Used for test data generation only")]
     public async Task<IMemoryBuffer> CreateRandomBufferAsync(long sizeInBytes, int seed = 42)
     {
-        if (_memoryManager == null)
-            throw new InvalidOperationException("Memory manager not initialized");
+        ArgumentNullException.ThrowIfNull(_memoryManager, "Memory manager not initialized");
 
         var buffer = await _memoryManager.AllocateAsync(sizeInBytes);
         _allocatedBuffers.Add(buffer);
@@ -127,8 +126,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
         long maxSize,
         int concurrency = 4)
     {
-        if (_memoryManager == null)
-            throw new InvalidOperationException("Memory manager not initialized");
+        ArgumentNullException.ThrowIfNull(_memoryManager, "Memory manager not initialized");
 
         var result = new MemoryStressTestResult
         {
@@ -138,7 +136,7 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
 
         var random = new Random();
         var tasks = new List<Task>();
-        var semaphore = new SemaphoreSlim(concurrency, concurrency);
+        using var semaphore = new SemaphoreSlim(concurrency, concurrency);
 
         for (var i = 0; i < iterations; i++)
         {
@@ -158,11 +156,13 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
 
                     await buffer.DisposeAsync();
 
-                    Interlocked.Increment(ref result.SuccessfulAllocations);
+                    var success = result.SuccessfulAllocations;
+                    result.SuccessfulAllocations = success + 1;
                 }
                 catch (Exception ex)
                 {
-                    Interlocked.Increment(ref result.FailedAllocations);
+                    var failed = result.FailedAllocations;
+                    result.FailedAllocations = failed + 1;
                     _output?.WriteLine($"Allocation failed: {ex.Message}");
                 }
                 finally
@@ -219,11 +219,11 @@ public class MemoryTestFixture : IAsyncLifetime, IDisposable
 /// <summary>
 /// Result of memory stress test.
 /// </summary>
-public class MemoryStressTestResult
+public sealed class MemoryStressTestResult
 {
     public int Iterations { get; set; }
-    public int SuccessfulAllocations;
-    public int FailedAllocations;
+    public int SuccessfulAllocations { get; set; }
+    public int FailedAllocations { get; set; }
     public DateTime StartTime { get; set; }
     public DateTime EndTime { get; set; }
     public TimeSpan Duration { get; set; }

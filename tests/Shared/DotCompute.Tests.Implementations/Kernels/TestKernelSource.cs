@@ -1,11 +1,11 @@
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Shared.Kernels;
+namespace DotCompute.Tests.Utilities.Kernels;
 
 /// <summary>
 /// Test implementation of IKernelSource for testing purposes.
 /// </summary>
-public class TestKernelSource : IKernelSource
+public sealed class TestKernelSource : IKernelSource
 {
     public string Name { get; set; } = "TestKernel";
     public string Code { get; set; } = "";

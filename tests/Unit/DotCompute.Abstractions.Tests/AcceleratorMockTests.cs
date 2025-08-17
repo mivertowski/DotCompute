@@ -7,7 +7,7 @@ using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
-public class AcceleratorMockTests
+public sealed class AcceleratorMockTests
 {
     [Fact]
     public async Task IAccelerator_Interface_ShouldWorkCorrectly()
@@ -63,7 +63,7 @@ public class AcceleratorMockTests
     }
 }
 
-public class BufferMockTests
+public sealed class BufferMockTests
 {
     [Fact]
     public void IBuffer_Interface_ShouldWorkCorrectly()
@@ -189,7 +189,7 @@ public class BufferMockTests
     }
 }
 
-public class CompiledKernelMockTests
+public sealed class CompiledKernelMockTests
 {
     [Fact]
     public void ICompiledKernel_Interface_ShouldWorkCorrectly()
@@ -234,7 +234,7 @@ public class CompiledKernelMockTests
     }
 }
 
-public class AcceleratorProviderMockTests
+public sealed class AcceleratorProviderMockTests
 {
     [Fact]
     public async Task IAcceleratorProvider_Interface_ShouldWorkCorrectly()
@@ -269,7 +269,7 @@ public class AcceleratorProviderMockTests
     }
 }
 
-public class MemoryManagerMockTests
+public sealed class MemoryManagerMockTests
 {
     [Fact]
     public async Task IMemoryManager_AllocateAsync_ShouldReturnBuffer()
@@ -323,7 +323,7 @@ public class MemoryManagerMockTests
     }
 }
 
-public class MemoryBufferMockTests
+public sealed class MemoryBufferMockTests
 {
     private static readonly int[] array = [1, 2, 3];
 

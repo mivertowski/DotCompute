@@ -10,7 +10,7 @@ namespace DotCompute.Abstractions.Tests;
 /// <summary>
 /// Comprehensive unit tests for the IAccelerator interface.
 /// </summary>
-public class IAcceleratorTests
+public sealed class IAcceleratorTests
 {
     private readonly Mock<IAccelerator> _mockAccelerator;
     private readonly Mock<IMemoryManager> _mockMemoryManager;
@@ -142,8 +142,8 @@ public class IAcceleratorTests
         // Arrange
         var kernelSource = new TextKernelSource("__global__ void test() { }", "test", KernelLanguage.Cuda);
         var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
 
         _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
@@ -203,8 +203,8 @@ public class IAcceleratorTests
     public async Task SynchronizeAsync_WithCancellationToken_ShouldRespectCancellation()
     {
         // Arrange
-        var cts = new CancellationTokenSource();
-        cts.Cancel();
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync();
 
         _mockAccelerator.Setup(a => a.SynchronizeAsync(cts.Token))
                        .ThrowsAsync(new OperationCanceledException());

@@ -4,7 +4,7 @@ using FluentAssertions;
 
 namespace DotCompute.Tests.Unit;
 
-public class CompilationOptionsTests
+public sealed class CompilationOptionsTests
 {
     [Fact]
     public void Default_Constructor_ShouldSetDefaultValues()
