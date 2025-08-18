@@ -1,6 +1,7 @@
 // Copyright(c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
+using System.Globalization;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
@@ -17,6 +18,7 @@ namespace DotCompute.Tests.Hardware.Unit;
 public sealed class CudaDeviceTests : IDisposable
 {
     private readonly ILogger<CudaDeviceTests> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
 
@@ -30,8 +32,8 @@ public sealed class CudaDeviceTests : IDisposable
     public CudaDeviceTests(ITestOutputHelper output)
     {
         _output = output;
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        _logger = loggerFactory.CreateLogger<CudaDeviceTests>();
+        _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        _logger = _loggerFactory.CreateLogger<CudaDeviceTests>();
     }
 
     [Fact]
@@ -71,7 +73,7 @@ public sealed class CudaDeviceTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -135,7 +137,7 @@ public sealed class CudaDeviceTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -162,7 +164,7 @@ public sealed class CudaDeviceTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -176,7 +178,7 @@ public sealed class CudaDeviceTests : IDisposable
         // Validate memory bandwidth calculation
         var capabilities = info.Capabilities;
         capabilities.Should().ContainKey("MemoryBandwidth");
-        var memoryBandwidth = Convert.ToDouble(capabilities!["MemoryBandwidth"]);
+        var memoryBandwidth = Convert.ToDouble(capabilities!["MemoryBandwidth"], CultureInfo.InvariantCulture);
         Assert.True(memoryBandwidth > 0);
     }
 
@@ -189,7 +191,7 @@ public sealed class CudaDeviceTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -209,12 +211,12 @@ public sealed class CudaDeviceTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
         // Act
-        var mpCount = Convert.ToInt32(accelerator.Info.Capabilities!["MultiprocessorCount"]);
+        var mpCount = Convert.ToInt32(accelerator.Info.Capabilities!["MultiprocessorCount"], CultureInfo.InvariantCulture);
         var computeUnits = accelerator.Info.ComputeUnits;
 
         // Assert
@@ -235,7 +237,7 @@ public sealed class CudaDeviceTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -244,7 +246,7 @@ public sealed class CudaDeviceTests : IDisposable
 
         // Assert
         capabilities.Should().ContainKey(capabilityName);
-        var value = Convert.ToInt32(capabilities![capabilityName]);
+        var value = Convert.ToInt32(capabilities![capabilityName], CultureInfo.InvariantCulture);
         value.Should().BeInRange(minValue, maxValue,
             $"{capabilityName} should be within reasonable bounds");
     }
@@ -258,7 +260,7 @@ public sealed class CudaDeviceTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -294,7 +296,7 @@ public sealed class CudaDeviceTests : IDisposable
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         // Act
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
         stopwatch.Stop();
@@ -315,7 +317,7 @@ public sealed class CudaDeviceTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -333,7 +335,7 @@ public sealed class CudaDeviceTests : IDisposable
         if (!IsCudaAvailable())
             return;
 
-        var acceleratorLogger = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug)).CreateLogger<CudaAccelerator>();
+        var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
 
@@ -383,6 +385,7 @@ public sealed class CudaDeviceTests : IDisposable
             }
         }
         _accelerators.Clear();
+        _loggerFactory?.Dispose();
         GC.SuppressFinalize(this);
     }
 }

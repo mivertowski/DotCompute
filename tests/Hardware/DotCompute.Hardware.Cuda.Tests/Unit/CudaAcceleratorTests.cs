@@ -180,7 +180,7 @@ public sealed class CudaAcceleratorTests : IDisposable
         _accelerators.Add(accelerator);
 
         using var cts = new CancellationTokenSource();
-        cts.Cancel(); // Cancel immediately
+        await cts.CancelAsync(); // Cancel immediately
 
         // Act & Assert
         var syncAction = async () => await accelerator.SynchronizeAsync(cts.Token);

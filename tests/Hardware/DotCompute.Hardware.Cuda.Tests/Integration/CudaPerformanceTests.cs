@@ -23,6 +23,7 @@ namespace DotCompute.Tests.Hardware.Integration;
 public sealed class CudaPerformanceTests : IDisposable
 {
     private readonly ILogger<CudaPerformanceTests> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
     private readonly List<ISyncMemoryBuffer> _buffers = [];
@@ -43,8 +44,8 @@ public sealed class CudaPerformanceTests : IDisposable
     public CudaPerformanceTests(ITestOutputHelper output)
     {
         _output = output;
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
-        _logger = loggerFactory.CreateLogger<CudaPerformanceTests>();
+        _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+        _logger = _loggerFactory.CreateLogger<CudaPerformanceTests>();
     }
 
     [Fact]
@@ -59,7 +60,7 @@ public sealed class CudaPerformanceTests : IDisposable
         var stopwatch = Stopwatch.StartNew();
 
         // Act
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var loggerFactory = _loggerFactory;
         var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
@@ -498,7 +499,7 @@ public sealed class CudaPerformanceTests : IDisposable
     // Helper Methods
     private CudaAccelerator CreateAccelerator()
     {
-        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        var loggerFactory = _loggerFactory;
         var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
         var accelerator = new CudaAccelerator(0, acceleratorLogger);
         _accelerators.Add(accelerator);
@@ -622,6 +623,7 @@ __global__ void {name}(float* input, float* output, int n)
             }
         }
         _accelerators.Clear();
+        _loggerFactory?.Dispose();
         GC.SuppressFinalize(this);
     }
 }
@@ -631,16 +633,17 @@ __global__ void {name}(float* input, float* output, int n)
 /// </summary>
 [MemoryDiagnoser]
 [SimpleJob]
-public class CudaBenchmarkSuite
+public sealed class CudaBenchmarkSuite : IDisposable
 {
     private CudaAccelerator? _accelerator;
     private ISyncMemoryManager? _memoryManager;
     private readonly ILogger<CudaBenchmarkSuite> _logger;
+    private readonly ILoggerFactory _loggerFactory;
 
     public CudaBenchmarkSuite()
     {
-        using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-        _logger = loggerFactory.CreateLogger<CudaBenchmarkSuite>();
+        _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
+        _logger = _loggerFactory.CreateLogger<CudaBenchmarkSuite>();
     }
 
     [GlobalSetup]
@@ -648,15 +651,25 @@ public class CudaBenchmarkSuite
     {
         if (IsCudaAvailable())
         {
-            using var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-            var acceleratorLogger = loggerFactory.CreateLogger<CudaAccelerator>();
+            var acceleratorLogger = _loggerFactory.CreateLogger<CudaAccelerator>();
             _accelerator = new CudaAccelerator(0, acceleratorLogger);
             _memoryManager = _accelerator.Memory as ISyncMemoryManager;
         }
     }
 
     [GlobalCleanup]
-    public void Cleanup() => _accelerator?.Dispose();
+    public void Cleanup()
+    {
+        _accelerator?.Dispose();
+        _loggerFactory?.Dispose();
+    }
+
+    public void Dispose()
+    {
+        _accelerator?.Dispose();
+        _loggerFactory?.Dispose();
+        GC.SuppressFinalize(this);
+    }
 
     [Benchmark]
     [Arguments(1024)]

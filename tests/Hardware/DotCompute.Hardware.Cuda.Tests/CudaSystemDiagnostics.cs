@@ -19,6 +19,7 @@ namespace DotCompute.Tests.Hardware;
 public sealed class CudaSystemDiagnostics : IDisposable
 {
     private readonly ILogger<CudaSystemDiagnostics> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly CudaBackend? _backend;
     private readonly CudaAccelerator? _accelerator;
     private bool _disposed;
@@ -326,14 +327,14 @@ public sealed class CudaSystemDiagnostics : IDisposable
 
     public CudaSystemDiagnostics(ITestOutputHelper output)
     {
-        var loggerFactory = LoggerFactory.Create(builder =>
+        _loggerFactory = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(LogLevel.Debug));
 
-        _logger = loggerFactory.CreateLogger<CudaSystemDiagnostics>();
+        _logger = _loggerFactory.CreateLogger<CudaSystemDiagnostics>();
 
         if (CudaBackend.IsAvailable())
         {
-            _backend = new CudaBackend(loggerFactory.CreateLogger<CudaBackend>());
+            _backend = new CudaBackend(_loggerFactory.CreateLogger<CudaBackend>());
             _accelerator = _backend.GetDefaultAccelerator();
         }
     }
@@ -720,6 +721,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
 
         _accelerator?.Dispose();
         _backend?.Dispose();
+        _loggerFactory?.Dispose();
         _disposed = true;
     }
 }

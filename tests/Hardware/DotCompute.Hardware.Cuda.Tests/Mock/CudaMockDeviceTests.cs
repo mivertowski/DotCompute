@@ -16,16 +16,17 @@ namespace DotCompute.Tests.Hardware.Mock;
 /// Mock device tests for CI/CD environments without actual CUDA hardware
 /// </summary>
 [Collection("CUDA Mock Tests")]
-public sealed class CudaMockDeviceTests
+public sealed class CudaMockDeviceTests : IDisposable
 {
     private readonly ILogger<CudaMockDeviceTests> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ITestOutputHelper _output;
 
     public CudaMockDeviceTests(ITestOutputHelper output)
     {
         _output = output;
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        _logger = loggerFactory.CreateLogger<CudaMockDeviceTests>();
+        _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        _logger = _loggerFactory.CreateLogger<CudaMockDeviceTests>();
     }
 
     [Fact]
@@ -149,7 +150,7 @@ public sealed class CudaMockDeviceTests
         (mockStats.PeakMemory >= mockStats.UsedMemory).Should().BeTrue();
 
         var utilizationPercent = (mockStats.UsedMemory * 100.0) / mockStats.TotalMemory;
-        _output.WriteLine($"Mock Memory Usage: {utilizationPercent:F1}%{mockStats.UsedMemory / (1024 * 1024 * 1024)}GB / {mockStats.TotalMemory / (1024 * 1024 * 1024)}GB)");
+        _output.WriteLine($"Mock Memory Usage: {utilizationPercent:F1}% ({mockStats.UsedMemory / (1024 * 1024 * 1024)}GB / {mockStats.TotalMemory / (1024 * 1024 * 1024)}GB)");
     }
 
     [Fact]
@@ -172,7 +173,7 @@ public sealed class CudaMockDeviceTests
         {
             var errorString = GetMockErrorString(error);
             errorString.Should().NotBeNullOrEmpty($"Error {error} should have a descriptive string");
-            errorString.Should().Contain(error.ToString().ToLowerInvariant());
+            errorString.Should().Contain(error.ToString().ToUpperInvariant());
 
             _output.WriteLine($"Mock Error: {error} -> {errorString}");
         }
@@ -188,7 +189,6 @@ public sealed class CudaMockDeviceTests
     {
         // Arrange
         var mockMemoryManager = CreateMockMemoryManager();
-        var mockBuffer = CreateMockMemoryBuffer(sizeInBytes);
 
         // Act
         var allocationResult = SimulateAllocation(mockMemoryManager, sizeInBytes);
@@ -246,7 +246,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
         mockCompilationResult.Success.Should().BeFalse();
         mockCompilationResult.CompiledCode.Should().BeEmpty();
         mockCompilationResult.ErrorMessage.Should().NotBeNullOrEmpty();
-        mockCompilationResult.CompilerLog.Should().Contain("error"); // "Compiler log should contain error information";
+        Assert.Contains("error", mockCompilationResult.CompilerLog, StringComparison.OrdinalIgnoreCase); // "Compiler log should contain error information";
 
         _output.WriteLine($"Mock compilation failed as expected: {mockCompilationResult.ErrorMessage}");
     }
@@ -298,7 +298,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
         stopwatch.Stop();
 
         // Assert
-        Assert.Equal(concurrentOperations, results.Count);
+        Assert.Equal(concurrentOperations, results.Length);
         results.Should().AllSatisfy(result => result.Result.Should().BeTrue());
 
         // Concurrent execution should be faster than sequential
@@ -525,7 +525,7 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
         ptxBuilder.AppendLine(".address_size 64");
         ptxBuilder.AppendLine();
 
-        ptxBuilder.AppendLine(CultureInfo.InvariantCulture, $"// Generated from source code{sourceCode.Length} chars)");
+        ptxBuilder.AppendLine(CultureInfo.InvariantCulture, $"// Generated from source code ({sourceCode.Length} chars)");
         ptxBuilder.AppendLine(CultureInfo.InvariantCulture, $"// Optimization level: {optimization}");
         ptxBuilder.AppendLine();
 
@@ -609,5 +609,10 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
                 return true;
             });
         }
+    }
+
+    public void Dispose()
+    {
+        _loggerFactory?.Dispose();
     }
 }

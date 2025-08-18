@@ -489,7 +489,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Compiling DirectCompute kernel '{kernelName}'")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Compiling DirectCompute kernel '{kernelName}'", StringComparison.Ordinal)),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -501,7 +501,7 @@ void CSMain(uint3 id : SV_DispatchThreadID)
             x => x.Log(
                 LogLevel.Error,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Failed to compile DirectCompute kernel '{kernelName}'")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Failed to compile DirectCompute kernel '{kernelName}'", StringComparison.Ordinal)),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);

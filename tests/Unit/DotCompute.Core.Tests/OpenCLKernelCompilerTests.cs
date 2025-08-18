@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 using FluentAssertions;
+using DotCompute.Tests;
 
 namespace DotCompute.Core.Tests.Kernels;
 
@@ -14,6 +15,9 @@ namespace DotCompute.Core.Tests.Kernels;
 /// Comprehensive unit tests for OpenCLKernelCompiler with 90% coverage target.
 /// Tests syntax validation, mock compilation, and different kernel types.
 /// </summary>
+[Trait("Category", TestCategories.Unit)]
+[Trait("Category", TestCategories.Compiler)]
+[Trait("Category", TestCategories.CI)]
 public sealed class OpenCLKernelCompilerTests : IDisposable
 {
     private readonly Mock<ILogger<OpenCLKernelCompiler>> _mockLogger;
@@ -34,16 +38,16 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
         // Assert
         Assert.NotNull(_compiler);
         _compiler.Name.Should().Be("OpenCL Kernel Compiler");
-        _compiler.Assert.Contains(KernelSourceType.OpenCL, SupportedSourceTypes);
-        _compiler.Assert.Contains(KernelSourceType.Binary, SupportedSourceTypes);
+        _compiler.SupportedSourceTypes.Should().Contain(KernelSourceType.OpenCL);
+        _compiler.SupportedSourceTypes.Should().Contain(KernelSourceType.Binary);
     }
 
     [Fact]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        Action act =() => new OpenCLKernelCompiler(null!);
-        act.Throw<ArgumentNullException>().WithParameterName("logger");
+        Action act = () => new OpenCLKernelCompiler(null!);
+        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     #endregion
@@ -69,8 +73,8 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
         // Assert
         Assert.NotNull(supportedTypes);
         Assert.Equal(2, supportedTypes.Count());
-        Assert.Contains(KernelSourceType.OpenCL, supportedTypes);
-        Assert.Contains(KernelSourceType.Binary, supportedTypes);
+        supportedTypes.Should().Contain(KernelSourceType.OpenCL);
+        supportedTypes.Should().Contain(KernelSourceType.Binary);
     }
 
     #endregion
@@ -97,8 +101,8 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
     public async Task CompileAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Arrange & Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => _compiler.MethodCall().AsTask())
-            .WithParameterName("definition");
+        Func<Task> act = async () => await _compiler.CompileAsync(null!);
+        await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("definition");
     }
 
     [Fact]
@@ -108,8 +112,8 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
         var definition = CreateKernelDefinitionWithLanguage("TestKernel", KernelLanguage.HLSL);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => _compiler.MethodCall().AsTask())
-            .WithMessage("*Expected OpenCL kernel but received HLSL*");
+        Func<Task> act = async () => await _compiler.CompileAsync(definition);
+        await act.Should().ThrowAsync<ArgumentException>().WithMessage("*Expected OpenCL kernel but received HLSL*");
     }
 
     [Fact]
@@ -156,7 +160,8 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
         cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => _compiler.MethodCall().AsTask());
+        Func<Task> act = async () => await _compiler.CompileAsync(definition, null, cts.Token);
+        await act.Should().ThrowAsync<OperationCanceledException>();
     }
 
     [Fact]
@@ -179,7 +184,7 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
         managedKernel.CompilationLog.Should().Be("Mock OpenCL compilation log");
         managedKernel.PerformanceMetadata.Should().ContainKey("CompilationTime");
         managedKernel.PerformanceMetadata.Should().ContainKey("Platform");
-        managedKernel.PerformanceMetadata["Platform"].Should().Be("OpenCLMock)");
+        managedKernel.PerformanceMetadata["Platform"].Should().Be("OpenCLMock");
         managedKernel.PerformanceMetadata["CompilationTime"].Should().Be(10.0);
     }
 
@@ -195,7 +200,7 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
 
         // Assert
         stopwatch.Stop();
-        stopwatch.ElapsedMilliseconds .Should().BeGreaterThanOrEqualTo(8,); // Should take at least ~10ms
+        stopwatch.ElapsedMilliseconds.Should().BeGreaterThanOrEqualTo(8); // Should take at least ~10ms
     }
 
     #endregion
@@ -221,7 +226,7 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
     {
         // Arrange & Act & Assert
         _compiler.Invoking(c => c.Validate(null!))
-            .Throw<ArgumentNullException>()
+            .Should().Throw<ArgumentNullException>()
             .WithParameterName("definition");
     }
 
@@ -237,7 +242,7 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
         // Assert
         Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Assert.Contains("Expected OpenCL kernel but received HLSL", Message);
+        result.Message.Should().Contain("Expected OpenCL kernel but received HLSL");
     }
 
     [Fact]
@@ -253,7 +258,7 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
         // Assert
         Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Assert.Contains("No __kernel function found", Message);
+        result.Message.Should().Contain("No __kernel function found");
     }
 
     [Theory]
@@ -309,7 +314,7 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
         // Assert
         Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Message.ContainAny("Unbalanced braces", "Unbalanced parentheses", "Unbalanced brackets");
+        result.Message.Should().ContainAny("Unbalanced braces", "Unbalanced parentheses", "Unbalanced brackets");
     }
 
     [Theory]
@@ -326,7 +331,7 @@ public sealed class OpenCLKernelCompilerTests : IDisposable
         // Assert
         Assert.NotNull(result);
         result.IsValid.Should().BeFalse();
-        result.Assert.Contains("Dynamic memory allocation not supported", Message);
+        result.Message.Should().Contain("Dynamic memory allocation not supported");
     }
 
     [Fact]
@@ -440,7 +445,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         var kernel1 = result1 as ManagedCompiledKernel;
         var kernel2 = result2 as ManagedCompiledKernel;
         
-        kernel1!.Binary.NotBeEquivalentTo(kernel2!.Binary);
+        kernel1!.Binary.Should().NotBeEquivalentTo(kernel2!.Binary);
     }
 
     #endregion
@@ -470,7 +475,8 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
         cts.Cancel();
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() => _compiler.MethodCall().AsTask());
+        Func<Task> act = async () => await _compiler.CompileAsync(definition, null, cts.Token);
+        await act.Should().ThrowAsync<OperationCanceledException>();
 
         // Verify cancellation was logged
         VerifyLoggerWasCalledForCancellation("CancelledKernel");
@@ -586,7 +592,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Compiling OpenCL kernel '{kernelName}'")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"Compiling OpenCL kernel '{kernelName}'", StringComparison.Ordinal)),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);
@@ -598,7 +604,7 @@ __kernel void vectorAdd(__global const float* a, __global const float* b, __glob
             x => x.Log(
                 LogLevel.Information,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"OpenCL kernel compilation for '{kernelName}' was cancelled")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains($"OpenCL kernel compilation for '{kernelName}' was cancelled", StringComparison.Ordinal)),
                 It.IsAny<Exception?>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.Once);

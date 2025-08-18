@@ -20,6 +20,7 @@ namespace DotCompute.Tests.Hardware.Unit;
 public sealed class CudaKernelCompilerTests : IDisposable
 {
     private readonly ILogger<CudaKernelCompilerTests> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
     private readonly List<ICompiledKernel> _compiledKernels = [];
@@ -40,8 +41,8 @@ public sealed class CudaKernelCompilerTests : IDisposable
     public CudaKernelCompilerTests(ITestOutputHelper output)
     {
         _output = output;
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        _logger = loggerFactory.CreateLogger<CudaKernelCompilerTests>();
+        _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        _logger = _loggerFactory.CreateLogger<CudaKernelCompilerTests>();
     }
 
     [Fact]
@@ -587,5 +588,6 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
             }
         }
         _accelerators.Clear();
+        _loggerFactory?.Dispose();
     }
 }

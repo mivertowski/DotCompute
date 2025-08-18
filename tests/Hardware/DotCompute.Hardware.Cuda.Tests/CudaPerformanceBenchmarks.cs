@@ -2,6 +2,7 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Diagnostics;
+using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using Microsoft.Extensions.Logging;
@@ -21,6 +22,7 @@ namespace DotCompute.Tests.Hardware;
 public sealed class CudaPerformanceBenchmarks : IDisposable
 {
     private readonly ILogger<CudaPerformanceBenchmarks> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly CudaBackend? _backend;
     private readonly CudaAccelerator? _accelerator;
     private bool _disposed;
@@ -70,14 +72,14 @@ public sealed class CudaPerformanceBenchmarks : IDisposable
 
     public CudaPerformanceBenchmarks(ITestOutputHelper output)
     {
-        var loggerFactory = LoggerFactory.Create(builder =>
+        _loggerFactory = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(LogLevel.Information));
 
-        _logger = loggerFactory.CreateLogger<CudaPerformanceBenchmarks>();
+        _logger = _loggerFactory.CreateLogger<CudaPerformanceBenchmarks>();
 
         if (CudaBackend.IsAvailable())
         {
-            _backend = new CudaBackend(loggerFactory.CreateLogger<CudaBackend>());
+            _backend = new CudaBackend(_loggerFactory.CreateLogger<CudaBackend>());
             _accelerator = _backend.GetDefaultAccelerator();
         }
     }
@@ -343,7 +345,7 @@ extern ""C"" __global__ void emptyKernel()
                 var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
                 stopwatch.Stop();
 
-                LogCompilationTime(_logger, kernelName, optLevel, stopwatch.ElapsedMilliseconds, null);
+                LogCompilationTime(_logger, kernelName, optLevel.ToString(), stopwatch.ElapsedMilliseconds, null);
 
                 // Compilation should complete in reasonable time < 10 seconds for complex kernels
                 stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
@@ -459,6 +461,7 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
 
         _accelerator?.Dispose();
         _backend?.Dispose();
+        _loggerFactory?.Dispose();
         _disposed = true;
     }
 }

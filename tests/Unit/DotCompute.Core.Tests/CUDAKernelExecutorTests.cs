@@ -9,14 +9,16 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using DotCompute.Core.Types;
 using DotCompute.Tests.Utilities;
+using DotCompute.Tests;
+using DotCompute.Tests.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 using FluentAssertions;
-using CompiledKernel = DotCompute.Tests.Common.CompiledKernel;
-using KernelArgument = DotCompute.Tests.Common.KernelArgument;
-using KernelConfiguration = DotCompute.Tests.Common.KernelConfiguration;
+using CompiledKernel = DotCompute.Tests.Utilities.CompiledKernel;
+using KernelArgument = DotCompute.Tests.Utilities.KernelArgument;
+using KernelConfiguration = DotCompute.Tests.Utilities.KernelConfiguration;
 
 namespace DotCompute.Tests.Unit;
 
@@ -24,8 +26,14 @@ namespace DotCompute.Tests.Unit;
 /// Comprehensive tests for CUDA kernel executor that can run on CI/CD without GPU hardware.
 /// Uses mocks and dependency injection to simulate CUDA runtime behavior.
 /// </summary>
+[Trait("Category", TestCategories.Unit)]
+[Trait("Category", TestCategories.Mock)]
+[Trait("Category", TestCategories.CI)]
 public sealed class CUDAKernelExecutorTests : IDisposable
 {
+    private static readonly int[] TestProblemSizes = { 256, 512, 1024, 2048 };
+    private static readonly int[] CudaBlockSizes = { 128, 256, 512 };
+    
     private readonly Mock<IAccelerator> _mockAccelerator;
     private readonly Mock<ILogger<CUDAKernelExecutor>> _mockLogger;
     private readonly CUDAKernelExecutor _executor;
@@ -38,6 +46,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public void Constructor_WithNullAccelerator_ShouldThrowArgumentNullException()
     {
         // Act & Assert
@@ -45,6 +54,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Act & Assert
@@ -52,6 +62,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public void Constructor_WithNonCudaAccelerator_ShouldThrowArgumentException()
     {
         // Arrange
@@ -60,10 +71,11 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => 
             new CUDAKernelExecutor(nonCudaAccelerator.Object, _mockLogger.Object));
-        Assert.Contains("Expected CUDA accelerator but received OpenCL", exception.Message);
+        Assert.Contains("Expected CUDA accelerator but received OpenCL", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public void Accelerator_ShouldReturnProvidedAccelerator()
     {
         // Act
@@ -74,6 +86,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_WithNullKernel_ShouldThrowArgumentNullException()
     {
         // Arrange
@@ -83,11 +96,12 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () => 
         {
-            await _executor.ExecuteAsync(default(DotCompute.Abstractions.CompiledKernel), arguments.ToCoreKernelArguments(), config);
+            await _executor.ExecuteAsync(default, arguments.ToCoreKernelArguments(), config);
         });
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_WithNullArguments_ShouldThrowArgumentNullException()
     {
         // Arrange
@@ -100,6 +114,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_WithNullConfig_ShouldThrowArgumentNullException()
     {
         // Arrange
@@ -112,6 +127,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithValidParameters_ShouldExecuteSuccessfully()
     {
         // Arrange
@@ -130,6 +146,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAndWaitAsync_WithValidParameters_ShouldExecuteAndWait()
     {
         // Arrange
@@ -149,6 +166,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public void EnqueueExecution_WithValidParameters_ShouldReturnHandle()
     {
         // Arrange
@@ -167,6 +185,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task WaitForCompletionAsync_WithValidHandle_ShouldComplete()
     {
         // Arrange
@@ -187,6 +206,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task WaitForCompletionAsync_WithCancellation_ShouldRespectCancellation()
     {
         // Arrange
@@ -195,8 +215,8 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         var config = CreateValidExecutionConfig();
         var handle = _executor.EnqueueExecution(kernel, arguments.ToCoreKernelArguments(), config);
         
-        var cts = new CancellationTokenSource();
-        cts.Cancel(); // Cancel immediately
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync(); // Cancel immediately
 
         // Act
         var result = await _executor.WaitForCompletionAsync(handle, cts.Token);
@@ -204,10 +224,11 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         // Assert
         Assert.NotNull(result);
         Assert.False(result.Success);
-        Assert.Contains("cancelled", result.ErrorMessage);
+        Assert.Contains("cancelled", result.ErrorMessage, StringComparison.Ordinal);
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public void GetOptimalExecutionConfig_WithValidKernel_ShouldReturnOptimalConfig()
     {
         // Arrange
@@ -226,12 +247,17 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         Assert.True(config.CaptureTimings);
     }
 
-    [Theory]
-    [InlineData(256)]
-    [InlineData(512)]
-    [InlineData(1024)]
-    [InlineData(2048)]
-    public void GetOptimalExecutionConfig_WithDifferentProblemSizes_ShouldAdaptConfiguration(int size)
+    [Fact]
+    [Trait("Category", TestCategories.Unit)]
+    public void GetOptimalExecutionConfig_WithDifferentProblemSizes_ShouldAdaptConfiguration()
+    {
+        foreach (var size in TestProblemSizes)
+        {
+            GetOptimalExecutionConfig_WithProblemSize_ShouldAdaptConfiguration(size);
+        }
+    }
+    
+    private void GetOptimalExecutionConfig_WithProblemSize_ShouldAdaptConfiguration(int size)
     {
         // Arrange
         var kernel = CreateValidCompiledKernel();
@@ -245,10 +271,11 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         Assert.True(config.GlobalWorkSize![0] >= size);
         
         // Should use reasonable block sizes for CUDA(typically 128, 256 or 512)
-        Assert.Contains(config.LocalWorkSize![0], 512 }); // new[] { 128;
+        Assert.Contains(config.LocalWorkSize![0], CudaBlockSizes);
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Performance)]
     public async Task ProfileAsync_WithValidParameters_ShouldReturnProfilingResults()
     {
         // Arrange
@@ -275,6 +302,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ProfileAsync_WithZeroIterations_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
@@ -288,6 +316,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ProfileAsync_WithNegativeIterations_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
@@ -301,6 +330,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithLargeSharedMemory_ShouldHandleResourceAllocation()
     {
         // Arrange
@@ -318,6 +348,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_ConcurrentExecutions_ShouldHandleMultipleStreams()
     {
         // Arrange
@@ -343,6 +374,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_WithLargeKernel_ShouldHandleResourceLimits()
     {
         // Arrange
@@ -364,6 +396,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_AfterDispose_ShouldThrowObjectDisposedException()
     {
         // Arrange
@@ -384,6 +417,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     [InlineData(256, 256, 1)]
     [InlineData(16, 16, 4)]
     [InlineData(32, 32, 1)]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithDifferentGridDimensions_ShouldExecuteCorrectly(int dimX, int dimY, int dimZ)
     {
         // Arrange
@@ -406,7 +440,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
 
     #region Helper Methods
 
-    private Mock<IAccelerator> CreateMockCudaAccelerator()
+    private static Mock<IAccelerator> CreateMockCudaAccelerator()
     {
         var mock = new Mock<IAccelerator>();
         mock.Setup(a => a.Info).Returns(new AcceleratorInfo
@@ -426,13 +460,13 @@ public sealed class CUDAKernelExecutorTests : IDisposable
             MaxThreadsPerBlock = 1024
         });
 
-        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()
+        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
         return mock;
     }
 
-    private Mock<IAccelerator> CreateMockAcceleratorOfType(string deviceType)
+    private static Mock<IAccelerator> CreateMockAcceleratorOfType(string deviceType)
     {
         var mock = new Mock<IAccelerator>();
         mock.Setup(a => a.Info).Returns(new AcceleratorInfo
@@ -455,9 +489,9 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         return mock;
     }
 
-    private CompiledKernel CreateValidCompiledKernel(string name = "test_kernel")
+    private static CompiledKernel CreateValidCompiledKernel(string name = "test_kernel")
     {
-        return new CompiledKernel
+        var kernel = new CompiledKernel
         {
             Id = Guid.NewGuid(),
             KernelId = Guid.NewGuid(),
@@ -465,14 +499,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
             EntryPoint = name,
             NativeHandle = new IntPtr(0x12345678), // Mock handle
             IsCompiled = true,
-            Language = DotCompute.Tests.Common.KernelLanguage.Cuda,
-            Metadata = new Dictionary<string, string>
-            {
-                ["compute_capability"] = "75",
-                ["registers_per_thread"] = "32",
-                ["shared_memory_bytes"] = "0",
-                ["max_threads_per_block"] = "1024"
-            },
+            Language = DotCompute.Tests.Utilities.KernelLanguage.Cuda,
             Configuration = new KernelConfiguration
             {
                 BlockDimensions = new Dimensions3D(256, 1, 1),
@@ -481,9 +508,17 @@ public sealed class CUDAKernelExecutorTests : IDisposable
             SharedMemorySize = 0,
             CompilationTimestamp = DateTimeOffset.UtcNow
         };
+        
+        // Add metadata to the read-only dictionary
+        kernel.Metadata["compute_capability"] = "75";
+        kernel.Metadata["registers_per_thread"] = "32";
+        kernel.Metadata["shared_memory_bytes"] = "0";
+        kernel.Metadata["max_threads_per_block"] = "1024";
+        
+        return kernel;
     }
 
-    private CompiledKernel CreateKernelWithSharedMemory()
+    private static CompiledKernel CreateKernelWithSharedMemory()
     {
         var kernel = CreateValidCompiledKernel("shared_memory_kernel");
         kernel.SharedMemorySize = 4096; // 4KB shared memory
@@ -492,7 +527,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         return kernel;
     }
 
-    private CompiledKernel CreateLargeCompiledKernel()
+    private static CompiledKernel CreateLargeCompiledKernel()
     {
         var kernel = CreateValidCompiledKernel("large_kernel");
         kernel.SharedMemorySize = 32768; // 32KB shared memory
@@ -501,7 +536,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         return kernel;
     }
 
-    private KernelArgument[] CreateValidKernelArguments()
+    private static KernelArgument[] CreateValidKernelArguments()
     {
         return new[]
         {
@@ -532,7 +567,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelArgument[] CreateLargeKernelArguments()
+    private static KernelArgument[] CreateLargeKernelArguments()
     {
         return new[]
         {
@@ -563,7 +598,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelExecutionConfig CreateValidExecutionConfig()
+    private static KernelExecutionConfig CreateValidExecutionConfig()
     {
         return new KernelExecutionConfig
         {
@@ -575,7 +610,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelExecutionConfig CreateExecutionConfigWithSharedMemory()
+    private static KernelExecutionConfig CreateExecutionConfigWithSharedMemory()
     {
         return new KernelExecutionConfig
         {
@@ -587,7 +622,7 @@ public sealed class CUDAKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelExecutionConfig CreateLargeExecutionConfig()
+    private static KernelExecutionConfig CreateLargeExecutionConfig()
     {
         return new KernelExecutionConfig
         {
@@ -604,7 +639,6 @@ public sealed class CUDAKernelExecutorTests : IDisposable
     public void Dispose()
     {
         _executor?.Dispose();
-        GC.SuppressFinalize(this);
         GC.SuppressFinalize(this);
     }
 }
