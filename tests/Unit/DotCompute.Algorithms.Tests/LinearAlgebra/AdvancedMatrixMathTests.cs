@@ -128,10 +128,10 @@ public class AdvancedMatrixMathTests
         // Verify singular values are non-negative and sorted
         for(int i = 0; i < s.Rows; i++)
         {
-            s[i, i].BeGreaterOrEqualTo(0);
+            s[i, i].BeGreaterThanOrEqualTo(0);
             if(i > 0)
             {
-                s[i - 1, i - 1].BeGreaterOrEqualTo(s[i, i]);
+                s[i - 1, i - 1].BeGreaterThanOrEqualTo(s[i, i]);
             }
         }
     }

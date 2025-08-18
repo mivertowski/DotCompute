@@ -239,7 +239,7 @@ public sealed class PipelineExecutionIntegrationTests : ComputeWorkflowTestBase
         var iterationsCount = (float[])result.Results["iterations_count"];
         var convergenceAchieved = (float[])result.Results["convergence_achieved"];
 
-        iterationsCount[0].Should().BeLessOrEqualTo(maxIterations);
+        iterationsCount[0].Should().BeLessThanOrEqualTo(maxIterations);
         convergenceAchieved[0].Should().Be(1.0f); // Algorithm should converge
 
         Logger.LogInformation("Feedback pipeline converged in {Iterations} iterations", iterationsCount[0]);

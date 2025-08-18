@@ -401,7 +401,7 @@ public sealed class RuntimeAcceleratorManagerTests : IDisposable
 
         // Assert
         accelerator.Should().NotBeNull();
-        accelerator!.Info.TotalMemory.Should().BeGreaterOrEqualTo(1024 * 1024);
+        accelerator!.Info.TotalMemory.Should().BeGreaterThanOrEqualTo(1024 * 1024);
     }
 
     [Fact]
@@ -438,7 +438,7 @@ public sealed class RuntimeAcceleratorManagerTests : IDisposable
 
         // Assert
         accelerator.Should().NotBeNull();
-        accelerator!.Info.ComputeCapability.Should().BeGreaterOrEqualTo(new Version(1, 0));
+        accelerator!.Info.ComputeCapability.Should().BeGreaterThanOrEqualTo(new Version(1, 0));
     }
 
     [Fact]

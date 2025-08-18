@@ -142,7 +142,7 @@ public sealed class RealWorldScenarioIntegrationTests : ComputeWorkflowTestBase
         featureMaps.Should().NotContain(float.NegativeInfinity);
 
         // Verify activation outputs are reasonable(ReLU should produce non-negative values)
-        featureMaps.Should().AllSatisfy(value => value.Should().BeGreaterOrEqualTo(0f));
+        featureMaps.Should().AllSatisfy(value => value.Should().BeGreaterThanOrEqualTo(0f));
 
         // Performance validation
         var totalDataMB = (trainingBatch.Length + weights.Length) * sizeof(float) / 1024.0 / 1024.0;

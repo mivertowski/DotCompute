@@ -414,8 +414,8 @@ public sealed class PerformanceCounterManagerTests : IDisposable
         sample.Timestamp.Should().BeCloseTo(DateTimeOffset.UtcNow, TimeSpan.FromSeconds(5));
         sample.CpuUsagePercent.Should().BeGreaterThanOrEqualTo(0);
         sample.AvailableMemoryMB.Should().BeGreaterThanOrEqualTo(0);
-        sample.CacheHitRatio.Should().BeGreaterOrEqualTo(0).And.BeLessOrEqualTo(1);
-        sample.MemoryBandwidthUtilization.Should().BeGreaterOrEqualTo(0).And.BeLessOrEqualTo(1);
+        sample.CacheHitRatio.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(1);
+        sample.MemoryBandwidthUtilization.Should().BeGreaterThanOrEqualTo(0).And.BeLessThanOrEqualTo(1);
     }
 
     [Fact]

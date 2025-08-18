@@ -26,7 +26,7 @@ internal sealed class CoverageAnalyzer
         List<string> UncoveredMethods,
         List<string> Recommendations);
 
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    public static readonly JsonSerializerOptions JsonOptions = new()
     {
         WriteIndented = true,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase

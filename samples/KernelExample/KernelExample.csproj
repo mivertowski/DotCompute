@@ -11,9 +11,10 @@
     <ProjectReference Include="..\..\src\Core\DotCompute.Abstractions\DotCompute.Abstractions.csproj" />
     <ProjectReference Include="..\..\src\Core\DotCompute.Core\DotCompute.Core.csproj" />
     <ProjectReference Include="..\..\src\Core\DotCompute.Memory\DotCompute.Memory.csproj" />
-    <ProjectReference Include="..\..\src\Runtime\DotCompute.Generators\DotCompute.Generators.csproj" 
+    <!-- Temporarily removed due to version compatibility issues -->
+    <!-- <ProjectReference Include="..\..\src\Runtime\DotCompute.Generators\DotCompute.Generators.csproj" 
                       OutputItemType="Analyzer" 
-                      ReferenceOutputAssembly="true" />
+                      ReferenceOutputAssembly="true" /> -->
   </ItemGroup>
 
 </Project>

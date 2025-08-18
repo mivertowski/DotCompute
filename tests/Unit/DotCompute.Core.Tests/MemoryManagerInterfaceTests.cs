@@ -223,7 +223,7 @@ public sealed class MemoryManagerInterfaceTests
         foreach (var location in allLocations)
         {
             location.BeDefined();
-           ((int)location).BeGreaterOrEqualTo(0);
+           ((int)location).BeGreaterThanOrEqualTo(0);
         }
     }
 
@@ -359,7 +359,7 @@ public sealed class MemoryInterfaceUsageTests
 
         // Act & Assert
         indices.OnlyHaveUniqueItems();
-        indices.Should().AllSatisfy(i => i.BeGreaterOrEqualTo(0));
+        indices.Should().AllSatisfy(i => i.BeGreaterThanOrEqualTo(0));
     }
 
     [Theory]

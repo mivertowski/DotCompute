@@ -150,7 +150,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
 
         // RTX 2000 Ada Gen should have compute capability 8.9
         _deviceProperties.Major.Should().Be(8, "RTX 2000 Ada Gen should have major compute capability 8");
-        _deviceProperties.Minor.Should().BeGreaterOrEqualTo(9, "RTX 2000 Ada Gen should have minor compute capability 9 or higher");
+        _deviceProperties.Minor.Should().BeGreaterThanOrEqualTo(9, "RTX 2000 Ada Gen should have minor compute capability 9 or higher");
 
         _output.WriteLine($"✓ Validated compute capability {_deviceProperties.Major}.{_deviceProperties.Minor}");
     }

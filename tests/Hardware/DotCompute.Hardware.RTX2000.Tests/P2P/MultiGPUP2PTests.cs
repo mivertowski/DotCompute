@@ -134,7 +134,7 @@ public sealed class MultiGPUP2PTests : IDisposable
         Skip.IfNot(_deviceCount >= 2, "Multi-GPU configuration not available");
 
         _deviceCount.Should().BeGreaterThanOrEqualTo(2, "Should detect at least 2 GPU devices");
-        _cudaContexts.Count.Should().BeGreaterOrEqualTo(2, "Should create contexts for multiple devices");
+        _cudaContexts.Count.Should().BeGreaterThanOrEqualTo(2, "Should create contexts for multiple devices");
 
         _output.WriteLine($"Multi-GPU configuration validated:");
         _output.WriteLine($"  Device count: {_deviceCount}");

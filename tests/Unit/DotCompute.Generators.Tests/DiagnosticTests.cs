@@ -276,7 +276,7 @@ public class OverloadedKernels
         
         // Should generate implementations for both overloads
         // The generator should handle this by including parameter types in file names or method names
-        result.GeneratedSources.Count(s => s.HintName.Contains("Process")).BeGreaterOrEqualTo(2);
+        result.GeneratedSources.Count(s => s.HintName.Contains("Process")).BeGreaterThanOrEqualTo(2);
     }
 
     [Fact]
