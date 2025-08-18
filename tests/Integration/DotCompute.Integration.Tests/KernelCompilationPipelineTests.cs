@@ -222,7 +222,7 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 
         if (!availableBackends.Contains(backendType))
         {
-            _ = LoggerMessages.SkippingBackendTest(Logger, backendType.ToString());
+            LoggerMessages.SkippingBackendTest(Logger, backendType.ToString());
             return;
         }
 

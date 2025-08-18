@@ -48,7 +48,7 @@ public sealed class BackendIntegrationTests : CoverageTestBase
     public async Task GpuBackend_BasicOperation_ExecutesSuccessfully(AcceleratorType type)
     {
         // Arrange
-        _ = Skip.IfNot(IsHardwareAvailable(type.ToString()), $"{type} hardware not available");
+        Skip.IfNot(IsHardwareAvailable(type.ToString()), $"{type} hardware not available");
 
         _hardwareSimulator.AddAccelerator(type, $"Test {type} Device");
         var accelerator = _hardwareSimulator.GetAccelerators(type).First();
@@ -62,7 +62,7 @@ public sealed class BackendIntegrationTests : CoverageTestBase
         // Assert
         Assert.True(executionTime > TimeSpan.Zero);
         Assert.True(executionTime < TimeSpan.FromSeconds(1));
-        _ = LoggerMessages.StartingBackendIntegrationTest(Logger, type.ToString());
+        LoggerMessages.StartingBackendIntegrationTest(Logger, type.ToString());
     }
 
     [Fact]

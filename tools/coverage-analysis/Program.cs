@@ -3,6 +3,12 @@ using CoverageAnalysis;
 
 internal sealed class Program
 {
+    private static readonly string[] DirectoryAliases = { "--directory", "-d" };
+    private static readonly string[] OutputAliases = { "--output", "-o" };
+    private static readonly string[] JsonAliases = { "--json", "-j" };
+    private static readonly string[] LineThresholdAliases = { "--line-threshold", "-l" };
+    private static readonly string[] BranchThresholdAliases = { "--branch-threshold", "-b" };
+    
     [System.Diagnostics.CodeAnalysis.RequiresUnreferencedCode("JSON serialization may require types that cannot be statically analyzed.")]
     [System.Diagnostics.CodeAnalysis.RequiresDynamicCode("JSON serialization may require runtime code generation.")]
     private static async Task<int> Main(string[] args)
@@ -10,29 +16,29 @@ internal sealed class Program
         var rootCommand = new RootCommand("DotCompute Coverage Analysis Tool");
 
         var directoryOption = new Option<DirectoryInfo>(
-            ["--directory", "-d"],
+            DirectoryAliases,
             "Directory containing coverage files")
         {
             IsRequired = true
         };
 
         var outputOption = new Option<FileInfo>(
-            ["--output", "-o"],
+            OutputAliases,
             () => new FileInfo("coverage-report.md"),
             "Output file path for the report");
 
         var jsonOutputOption = new Option<FileInfo>(
-            ["--json", "-j"],
+            JsonAliases,
             () => new FileInfo("coverage-report.json"),
             "JSON output file path for the report");
 
         var lineThresholdOption = new Option<double>(
-            ["--line-threshold", "-l"],
+            LineThresholdAliases,
             () => 80.0,
             "Line coverage threshold percentage");
 
         var branchThresholdOption = new Option<double>(
-            ["--branch-threshold", "-b"],
+            BranchThresholdAliases,
             () => 70.0,
             "Branch coverage threshold percentage");
 

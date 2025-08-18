@@ -128,7 +128,7 @@ public sealed class CudaBasicTests : IDisposable
         Assert.NotNull(info.ComputeCapability);
 
         LogDeviceInfo(_logger, info.Name, null);
-        _ = LogComputeCapability(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
+        LogComputeCapability(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
         LogMemory(_logger, info.TotalMemory / (1024.0 * 1024 * 1024), null);
         LogComputeUnits(_logger, info.ComputeUnits, null);
     }

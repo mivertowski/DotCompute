@@ -196,7 +196,7 @@ public sealed partial class CudaBackend : IDisposable
         var info = accelerator.Info;
         var capabilities = info.Capabilities;
 
-        _ = LogCudaDevice(_logger, info.Name, info.Id.ToString());
+        LogCudaDevice(_logger, info.Name, info.Id.ToString());
         LogComputeCapability(_logger, info.ComputeCapability!);
         LogTotalMemory(_logger, info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024));
         LogMultiprocessors(_logger, info.ComputeUnits);

@@ -403,7 +403,7 @@ public sealed partial class MetalBackend : IDisposable
 
         LogDeviceInfo(_logger, info.Name, info.Id);
         LogDeviceType(_logger, info.DeviceType);
-        _ = LogComputeCapability(_logger, info.ComputeCapability?.ToString() ?? "Unknown");
+        LogComputeCapability(_logger, info.ComputeCapability?.ToString() ?? "Unknown");
         LogTotalMemory(_logger, info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024));
         LogComputeUnits(_logger, info.ComputeUnits);
 

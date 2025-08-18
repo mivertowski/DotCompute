@@ -499,12 +499,12 @@ public sealed class ErrorRecoveryIntegrationTests : ComputeWorkflowTestBase
 
         if (result.Success)
         {
-            _ = LoggerMessages.SuccessfullyRecoveredFromError(Logger, errorType.ToString(), (long)recoveryTime.TotalMilliseconds);
+            LoggerMessages.SuccessfullyRecoveredFromError(Logger, errorType.ToString(), (long)recoveryTime.TotalMilliseconds);
         }
         else
         {
             result.Error.Should().NotBeNull();
-            _ = LoggerMessages.ErrorHandledGracefully(Logger, errorType.ToString(), result.Error?.Message ?? "Unknown error");
+            LoggerMessages.ErrorHandledGracefully(Logger, errorType.ToString(), result.Error?.Message ?? "Unknown error");
         }
 
         // Recovery should be reasonably fast

@@ -65,8 +65,8 @@ public sealed class CudaTestFixture : IDisposable
             IsNvrtcAvailable = DotCompute.Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
 
             // Set test environment flags
-            _ = Environment.SetEnvironmentVariable("DOTCOMPUTE_CUDA_TESTS_AVAILABLE", IsCudaAvailable.ToString());
-            _ = Environment.SetEnvironmentVariable("DOTCOMPUTE_NVRTC_TESTS_AVAILABLE", IsNvrtcAvailable.ToString());
+            Environment.SetEnvironmentVariable("DOTCOMPUTE_CUDA_TESTS_AVAILABLE", IsCudaAvailable.ToString());
+            Environment.SetEnvironmentVariable("DOTCOMPUTE_NVRTC_TESTS_AVAILABLE", IsNvrtcAvailable.ToString());
             Environment.SetEnvironmentVariable("DOTCOMPUTE_DEVICE_COUNT", DeviceCount.ToString(CultureInfo.InvariantCulture));
 
             Console.WriteLine($"CUDA Test Environment Initialized:");

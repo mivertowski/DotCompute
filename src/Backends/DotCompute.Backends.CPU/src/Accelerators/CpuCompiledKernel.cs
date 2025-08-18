@@ -669,7 +669,7 @@ internal sealed class CpuCompiledKernel : CoreICompiledKernel
                     return;
                 }
                     
-                    _ = CpuCompiledKernelLoggerMessages.LogUnsupportedKernelOperation(_logger, definition.Name, operationType.ToString());
+                    CpuCompiledKernelLoggerMessages.LogUnsupportedKernelOperation(_logger, definition.Name, operationType.ToString());
                     break;
             }
         }

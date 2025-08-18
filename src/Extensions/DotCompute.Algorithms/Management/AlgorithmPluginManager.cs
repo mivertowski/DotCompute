@@ -351,7 +351,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        _ = LogClearingNuGetCache(olderThan?.ToString() ?? "all");
+        LogClearingNuGetCache(olderThan?.ToString() ?? "all");
 
         try
         {

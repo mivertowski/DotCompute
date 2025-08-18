@@ -121,11 +121,11 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             {
                 // Get compilation log
                 long logSize = 0;
-                _ = NvrtcGetProgramLogSize(program, ref logSize);
+                NvrtcGetProgramLogSize(program, ref logSize);
                 if (logSize > 0)
                 {
                     var log = new byte[logSize];
-                    _ = NvrtcGetProgramLog(program, log);
+                    NvrtcGetProgramLog(program, log);
                     var logString = Encoding.ASCII.GetString(log).TrimEnd('\0');
                     _output.WriteLine($"Compilation log:\n{logString}");
                 }
@@ -449,11 +449,11 @@ extern ""C"" __global__ void fastMatrixMul(
             if (result != 0)
             {
                 long logSize = 0;
-                _ = NvrtcGetProgramLogSize(program, ref logSize);
+                NvrtcGetProgramLogSize(program, ref logSize);
                 if (logSize > 0)
                 {
                     var log = new byte[logSize];
-                    _ = NvrtcGetProgramLog(program, log);
+                    NvrtcGetProgramLog(program, log);
                     var logString = Encoding.ASCII.GetString(log).TrimEnd('\0');
                     _output.WriteLine($"Compilation log:\n{logString}");
                 }

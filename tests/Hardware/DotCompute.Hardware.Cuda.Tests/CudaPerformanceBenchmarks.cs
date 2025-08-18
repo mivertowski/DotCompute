@@ -345,7 +345,7 @@ extern ""C"" __global__ void emptyKernel()
                 var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
                 stopwatch.Stop();
 
-                _ = LogCompilationTime(_logger, kernelName, optLevel.ToString(), stopwatch.ElapsedMilliseconds, null);
+                LogCompilationTime(_logger, kernelName, optLevel.ToString(), stopwatch.ElapsedMilliseconds, null);
 
                 // Compilation should complete in reasonable time < 10 seconds for complex kernels
                 stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
