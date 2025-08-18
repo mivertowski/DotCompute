@@ -239,7 +239,8 @@ public class AdvancedMatrixMathTests
 
         public ValueTask<ICompiledKernel> CompileKernelAsync(KernelDefinition definition, CompilationOptions? options = null, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            // Return a mock compiled kernel for testing
+            return ValueTask.FromResult<ICompiledKernel>(new MockCompiledKernel(definition.Name));
         }
 
         public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
@@ -260,7 +261,8 @@ public class AdvancedMatrixMathTests
     {
         public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options, CancellationToken cancellationToken = default)
         {
-            throw new NotImplementedException();
+            // Return a mock memory buffer for testing
+            return ValueTask.FromResult<IMemoryBuffer>(new MockMemoryBuffer(sizeInBytes));
         }
 
         public ValueTask<MemoryStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
@@ -275,6 +277,111 @@ public class AdvancedMatrixMathTests
 
         public ValueTask DisposeAsync()
         {
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// Mock compiled kernel for testing.
+    /// </summary>
+    private class MockCompiledKernel : ICompiledKernel
+    {
+        public MockCompiledKernel(string name)
+        {
+            Name = name;
+        }
+
+        public string Name { get; }
+        public string EntryPoint => "main";
+
+        public ValueTask<KernelExecutionResult> ExecuteAsync(KernelArguments arguments, ExecutionConfiguration configuration, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new KernelExecutionResult
+            {
+                Success = true,
+                ExecutionTime = TimeSpan.FromMilliseconds(10)
+            });
+        }
+
+        public void Dispose()
+        {
+            // No-op for mock
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    /// <summary>
+    /// Mock memory buffer for testing.
+    /// </summary>
+    private class MockMemoryBuffer : IMemoryBuffer
+    {
+        private readonly byte[] _data;
+
+        public MockMemoryBuffer(long sizeInBytes)
+        {
+            SizeInBytes = sizeInBytes;
+            _data = new byte[sizeInBytes];
+        }
+
+        public long SizeInBytes { get; }
+        public bool IsDisposed { get; private set; }
+
+        public ValueTask CopyFromHostAsync<T>(T[] source, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            // Simple copy for testing
+            Buffer.BlockCopy(source, 0, _data, 0, Math.Min(_data.Length, source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>()));
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask CopyToHostAsync<T>(T[] destination, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            // Simple copy for testing
+            Buffer.BlockCopy(_data, 0, destination, 0, Math.Min(_data.Length, destination.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>()));
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask CopyFromAsync(IMemoryBuffer source, CancellationToken cancellationToken = default)
+        {
+            if (source is MockMemoryBuffer mockSource)
+            {
+                Buffer.BlockCopy(mockSource._data, 0, _data, 0, Math.Min(_data.Length, mockSource._data.Length));
+            }
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask CopyToAsync(IMemoryBuffer destination, CancellationToken cancellationToken = default)
+        {
+            if (destination is MockMemoryBuffer mockDest)
+            {
+                Buffer.BlockCopy(_data, 0, mockDest._data, 0, Math.Min(_data.Length, mockDest._data.Length));
+            }
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask FillAsync<T>(T value, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            // Simple fill for testing
+            var bytes = new byte[System.Runtime.InteropServices.Marshal.SizeOf<T>()];
+            System.Runtime.InteropServices.Marshal.StructureToPtr(value, System.Runtime.InteropServices.Marshal.AllocHGlobal(bytes.Length), false);
+            for (var i = 0; i < _data.Length; i += bytes.Length)
+            {
+                Buffer.BlockCopy(bytes, 0, _data, i, Math.Min(bytes.Length, _data.Length - i));
+            }
+            return ValueTask.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            IsDisposed = true;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            IsDisposed = true;
             return ValueTask.CompletedTask;
         }
     }

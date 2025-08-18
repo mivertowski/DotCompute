@@ -350,24 +350,24 @@ public sealed class CudaKernelLauncher
         }
         
         // Check individual block dimensions
-        if (config.BlockX > _deviceProps.MaxThreadsDim[0] ||
-            config.BlockY > _deviceProps.MaxThreadsDim[1] ||
-            config.BlockZ > _deviceProps.MaxThreadsDim[2])
+        if (config.BlockX > _deviceProps.MaxThreadsDimX ||
+            config.BlockY > _deviceProps.MaxThreadsDimY ||
+            config.BlockZ > _deviceProps.MaxThreadsDimZ)
         {
             _logger.LogWarning("Block dimensions ({BlockX},{BlockY},{BlockZ}) exceed device limits ({MaxX},{MaxY},{MaxZ})", 
                 config.BlockX, config.BlockY, config.BlockZ,
-                _deviceProps.MaxThreadsDim[0], _deviceProps.MaxThreadsDim[1], _deviceProps.MaxThreadsDim[2]);
+                _deviceProps.MaxThreadsDimX, _deviceProps.MaxThreadsDimY, _deviceProps.MaxThreadsDimZ);
             return false;
         }
         
         // Check grid dimensions
-        if (config.GridX > _deviceProps.MaxGridSize[0] ||
-            config.GridY > _deviceProps.MaxGridSize[1] ||
-            config.GridZ > _deviceProps.MaxGridSize[2])
+        if (config.GridX > _deviceProps.MaxGridSizeX ||
+            config.GridY > _deviceProps.MaxGridSizeY ||
+            config.GridZ > _deviceProps.MaxGridSizeZ)
         {
             _logger.LogWarning("Grid dimensions ({GridX},{GridY},{GridZ}) exceed device limits ({MaxX},{MaxY},{MaxZ})", 
                 config.GridX, config.GridY, config.GridZ,
-                _deviceProps.MaxGridSize[0], _deviceProps.MaxGridSize[1], _deviceProps.MaxGridSize[2]);
+                _deviceProps.MaxGridSizeX, _deviceProps.MaxGridSizeY, _deviceProps.MaxGridSizeZ);
             return false;
         }
         

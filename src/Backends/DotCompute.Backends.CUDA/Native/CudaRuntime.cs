@@ -604,9 +604,12 @@ public struct CudaDeviceProperties
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
     public string Name;
 
+    // UUID is 16 bytes, but we'll use a fixed buffer to avoid marshaling issues
     [FieldOffset(256)]
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
-    public byte[] Uuid; // cudaUUID_t - 16 bytes
+    public ulong UuidLow;  // First 8 bytes of UUID
+    
+    [FieldOffset(264)]
+    public ulong UuidHigh; // Last 8 bytes of UUID
 
     [FieldOffset(272)]
     public ulong TotalGlobalMem;
@@ -627,12 +630,22 @@ public struct CudaDeviceProperties
     public int MaxThreadsPerBlock;
 
     [FieldOffset(308)]
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxThreadsDim;
+    public int MaxThreadsDimX;
+    
+    [FieldOffset(312)]
+    public int MaxThreadsDimY;
+    
+    [FieldOffset(316)]
+    public int MaxThreadsDimZ;
 
     [FieldOffset(320)]
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxGridSize;
+    public int MaxGridSizeX;
+    
+    [FieldOffset(324)]
+    public int MaxGridSizeY;
+    
+    [FieldOffset(328)]
+    public int MaxGridSizeZ;
 
     [FieldOffset(332)]
     public int ClockRate;

@@ -751,7 +751,7 @@ public static class CudaContextExtensions
                 Name = $"CUDA Device {deviceId}",
                 DeviceType = "CUDA",
                 Vendor = "NVIDIA",
-                DriverVersion = "12.0", // TODO: Query actual driver version
+                DriverVersion = GetCudaDriverVersion(),
                 TotalMemory = QueryDeviceMemory(deviceId),
                 AvailableMemory = QueryAvailableMemory(deviceId),
                 MaxWorkGroupSize = QueryMaxWorkGroupSize(deviceId)
@@ -796,6 +796,25 @@ public static class CudaContextExtensions
                 // Fallback to default value on error
             }
             return 4L * 1024 * 1024 * 1024; // 4GB default
+        }
+        
+        private static string GetCudaDriverVersion()
+        {
+            try
+            {
+                var result = CudaRuntime.cudaDriverGetVersion(out var version);
+                if (result == CudaError.Success)
+                {
+                    var major = version / 1000;
+                    var minor = (version % 1000) / 10;
+                    return $"{major}.{minor}";
+                }
+            }
+            catch
+            {
+                // Fallback if unable to query
+            }
+            return "12.0"; // Default fallback version
         }
         
         private static int QueryMaxWorkGroupSize(int deviceId)

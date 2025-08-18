@@ -159,17 +159,17 @@ public static class CudaCompiledKernelExtensions
             }
 
             // Check individual dimension limits
-            if (config.BlockX > props.MaxThreadsDim[0] ||
-                config.BlockY > props.MaxThreadsDim[1] ||
-                config.BlockZ > props.MaxThreadsDim[2])
+            if (config.BlockX > props.MaxThreadsDimX ||
+                config.BlockY > props.MaxThreadsDimY ||
+                config.BlockZ > props.MaxThreadsDimZ)
             {
                 return false;
             }
 
             // Check grid size limits
-            if (config.GridX > props.MaxGridSize[0] ||
-                config.GridY > props.MaxGridSize[1] ||
-                config.GridZ > props.MaxGridSize[2])
+            if (config.GridX > props.MaxGridSizeX ||
+                config.GridY > props.MaxGridSizeY ||
+                config.GridZ > props.MaxGridSizeZ)
             {
                 return false;
             }

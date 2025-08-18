@@ -432,12 +432,12 @@ public sealed class CudaDevice : IDisposable
             ["EstimatedCudaCores"] = GetEstimatedCudaCores(),
 
             // Grid and block limits
-            ["MaxGridSizeX"] = _deviceProperties.MaxGridSize[0],
-            ["MaxGridSizeY"] = _deviceProperties.MaxGridSize[1],
-            ["MaxGridSizeZ"] = _deviceProperties.MaxGridSize[2],
-            ["MaxBlockDimX"] = _deviceProperties.MaxThreadsDim[0],
-            ["MaxBlockDimY"] = _deviceProperties.MaxThreadsDim[1],
-            ["MaxBlockDimZ"] = _deviceProperties.MaxThreadsDim[2],
+            ["MaxGridSizeX"] = _deviceProperties.MaxGridSizeX,
+            ["MaxGridSizeY"] = _deviceProperties.MaxGridSizeY,
+            ["MaxGridSizeZ"] = _deviceProperties.MaxGridSizeZ,
+            ["MaxBlockDimX"] = _deviceProperties.MaxThreadsDimX,
+            ["MaxBlockDimY"] = _deviceProperties.MaxThreadsDimY,
+            ["MaxBlockDimZ"] = _deviceProperties.MaxThreadsDimZ,
 
             // Advanced features (based on compute capability)
             ["SupportsTensorCores"] = ComputeCapabilityMajor >= 7,

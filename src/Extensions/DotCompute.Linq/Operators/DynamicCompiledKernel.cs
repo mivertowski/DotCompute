@@ -184,21 +184,9 @@ internal class DynamicCompiledKernel : IKernel, IAsyncDisposable
 
     private IKernelCompiler CreateCompiler()
     {
-        // Create appropriate compiler based on accelerator type using real implementations
-        // Create generic null loggers for the specific compiler types
-        var cudaLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<CUDAKernelCompiler>.Instance;
-        var openClLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<OpenCLKernelCompiler>.Instance;
-        var metalLogger = Microsoft.Extensions.Logging.Abstractions.NullLogger<MetalKernelCompiler>.Instance;
-        
-        return _accelerator.Type switch
-        {
-            AcceleratorType.CUDA => new KernelCompilerAdapter(new CUDAKernelCompiler(cudaLogger), _logger),
-            AcceleratorType.OpenCL => new KernelCompilerAdapter(new OpenCLKernelCompiler(openClLogger), _logger),
-            AcceleratorType.Metal => new KernelCompilerAdapter(new MetalKernelCompiler(metalLogger), _logger),
-            AcceleratorType.CPU => new KernelCompilerAdapter(new CUDAKernelCompiler(cudaLogger), _logger), // Fallback to CUDA compiler
-            AcceleratorType.GPU => new KernelCompilerAdapter(new CUDAKernelCompiler(cudaLogger), _logger), // Fallback to CUDA compiler
-            _ => throw new NotSupportedException($"Kernel compiler for {_accelerator.Type} is not supported")
-        };
+        // Compilers are now provided by the backend accelerators themselves
+        // The accelerator should have its own compiler implementation
+        throw new NotImplementedException("Kernel compilation should be handled by the backend-specific accelerator implementation");
     }
 
     private KernelProperties CreateKernelProperties()

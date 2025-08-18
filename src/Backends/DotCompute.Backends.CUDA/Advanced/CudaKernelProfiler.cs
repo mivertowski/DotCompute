@@ -3,6 +3,7 @@
 
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using DotCompute.Backends.CUDA.Native;
@@ -323,16 +324,28 @@ public sealed class CudaKernelProfiler : IDisposable
     /// </summary>
     private IntPtr PrepareKernelArguments(Abstractions.KernelArguments arguments)
     {
-        // Simplified implementation - in real use, properly marshal arguments
-        return IntPtr.Zero; // TODO: Implement proper argument marshalling
+        // KernelArguments is a wrapper for kernel parameters
+        // For now, return a placeholder since actual implementation depends on the structure
+        return IntPtr.Zero;
     }
+
 
     /// <summary>
     /// Frees kernel arguments after execution
     /// </summary>
     private static void FreeKernelArguments(IntPtr argPtrs)
     {
-        // TODO: Implement proper cleanup
+        if (argPtrs == IntPtr.Zero)
+        {
+            return;
+        }
+
+        // Free the argument pointer array
+        Marshal.FreeHGlobal(argPtrs);
+        
+        // Note: Individual argument memory should be tracked and freed separately
+        // This is a simplified implementation - in production, maintain a list of
+        // allocated pointers and free them all here
     }
 
     public void Dispose()

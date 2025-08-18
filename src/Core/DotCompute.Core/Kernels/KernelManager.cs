@@ -297,8 +297,8 @@ public sealed partial class KernelManager : IDisposable
 
     private void InitializeBuiltInGenerators()
     {
-        RegisterGenerator(AcceleratorType.OpenCL, new OpenCLKernelGenerator());
-        RegisterGenerator(AcceleratorType.CUDA, new CUDAKernelGenerator());
+        // Generators are now handled by the backend-specific implementations
+        // No need for separate kernel generators in Core
     }
 
     private async ValueTask<ManagedCompiledKernel> GenerateAndCompileKernelAsync(
