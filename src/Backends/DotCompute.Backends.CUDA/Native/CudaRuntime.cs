@@ -533,125 +533,179 @@ public enum CudaHostAllocFlags : uint
 }
 
 /// <summary>
-/// CUDA device properties
+/// CUDA device properties - matches cudaDeviceProp from CUDA 12.x
 /// </summary>
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+[StructLayout(LayoutKind.Explicit, Size = 1032, CharSet = CharSet.Ansi)]
 #pragma warning disable CA1815 // Override equals and operator equals on value types - P/Invoke struct doesn't need equality
 public struct CudaDeviceProperties
 #pragma warning restore CA1815
 {
+    [FieldOffset(0)]
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
     public string Name;
 
+    [FieldOffset(256)]
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+    public byte[] Uuid; // cudaUUID_t - 16 bytes
+
+    [FieldOffset(272)]
     public ulong TotalGlobalMem;
+    
+    [FieldOffset(280)]
     public ulong SharedMemPerBlock;
+    
+    [FieldOffset(288)]
     public int RegsPerBlock;
+    
+    [FieldOffset(292)]
     public int WarpSize;
+    
+    [FieldOffset(296)]
     public ulong MemPitch;
+    
+    [FieldOffset(304)]
     public int MaxThreadsPerBlock;
 
+    [FieldOffset(308)]
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxThreadsDim;
 
+    [FieldOffset(320)]
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxGridSize;
 
+    [FieldOffset(332)]
     public int ClockRate;
+    
+    [FieldOffset(336)]
     public ulong TotalConstMem;
+    
+    [FieldOffset(360)]
     public int Major;
+    
+    [FieldOffset(364)]
     public int Minor;
+    
+    [FieldOffset(368)]
     public ulong TextureAlignment;
+    
+    [FieldOffset(376)]
     public ulong TexturePitchAlignment;
+    
+    [FieldOffset(384)]
     public int DeviceOverlap;
+    
+    [FieldOffset(388)]
     public int MultiProcessorCount;
+    
+    [FieldOffset(392)]
     public int KernelExecTimeoutEnabled;
+    
+    [FieldOffset(396)]
     public int Integrated;
+    
+    [FieldOffset(400)]
     public int CanMapHostMemory;
+    
+    [FieldOffset(404)]
     public int ComputeMode;
-    public int MaxTexture1D;
-    public int MaxTexture1DMipmap;
-    public int MaxTexture1DLinear;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxTexture2D;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxTexture2DMipmap;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxTexture2DLinear;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxTexture2DGather;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxTexture3D;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxTexture3DAlt;
-
-    public int MaxTextureCubemap;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxTexture1DLayered;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxTexture2DLayered;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxTextureCubemapLayered;
-
-    public int MaxSurface1D;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxSurface2D;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxSurface3D;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxSurface1DLayered;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxSurface2DLayered;
-
-    public int MaxSurfaceCubemap;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxSurfaceCubemapLayered;
-
-    public ulong SurfaceAlignment;
+    
+    // Skip texture and surface fields (408-575)
+    // Add PCI and concurrent kernel fields
+    
+    [FieldOffset(576)]
     public int ConcurrentKernels;
+    
+    [FieldOffset(580)]
     public int ECCEnabled;
+    
+    [FieldOffset(584)]
     public int PciBusId;
+    
+    [FieldOffset(588)]
     public int PciDeviceId;
+    
+    [FieldOffset(592)]
     public int PciDomainId;
-    public int TccDriver;
+    
+    // Skip tccDriver field at 596
+    
+    [FieldOffset(600)]
     public int AsyncEngineCount;
+    
+    [FieldOffset(604)]
     public int UnifiedAddressing;
+    
+    [FieldOffset(608)]
     public int MemoryClockRate;
+    
+    [FieldOffset(612)]
     public int MemoryBusWidth;
+    
+    [FieldOffset(616)]
     public int L2CacheSize;
+    
+    [FieldOffset(620)]
+    public int PersistingL2CacheMaxSize;
+    
+    [FieldOffset(624)]
     public int MaxThreadsPerMultiProcessor;
+    
+    [FieldOffset(628)]
     public int StreamPrioritiesSupported;
+    
+    [FieldOffset(632)]
     public int GlobalL1CacheSupported;
+    
+    [FieldOffset(636)]
     public int LocalL1CacheSupported;
+    
+    [FieldOffset(640)]
     public ulong SharedMemPerMultiprocessor;
+    
+    [FieldOffset(648)]
     public int RegsPerMultiprocessor;
+    
+    [FieldOffset(652)]
     public int ManagedMemory;
+    
+    [FieldOffset(656)]
     public int IsMultiGpuBoard;
+    
+    [FieldOffset(660)]
     public int MultiGpuBoardGroupID;
-    public int HostNativeAtomicSupported;
+    
+    [FieldOffset(668)]
     public int SingleToDoublePrecisionPerfRatio;
+    
+    [FieldOffset(672)]
     public int PageableMemoryAccess;
+    
+    [FieldOffset(676)]
     public int ConcurrentManagedAccess;
+    
+    [FieldOffset(680)]
     public int ComputePreemptionSupported;
+    
+    [FieldOffset(684)]
     public int CanUseHostPointerForRegisteredMem;
+    
+    [FieldOffset(688)]
     public int CooperativeLaunch;
+    
+    [FieldOffset(692)]
     public int CooperativeMultiDeviceLaunch;
+    
+    [FieldOffset(696)]
     public ulong SharedMemPerBlockOptin;
+    
+    [FieldOffset(704)]
     public int PageableMemoryAccessUsesHostPageTables;
+    
+    [FieldOffset(708)]
     public int DirectManagedMemAccessFromHost;
+    
+    // Total struct size is 1032 bytes as of CUDA 12.x
 }
 
 /// <summary>
