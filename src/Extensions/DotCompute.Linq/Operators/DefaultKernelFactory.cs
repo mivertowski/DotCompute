@@ -188,27 +188,11 @@ public class DefaultKernelFactory : IKernelFactory
 
     private void RegisterBuiltInGenerators()
     {
-        try
-        {
-            // Register CUDA generator
-            _generators[AcceleratorType.CUDA] = new CUDAKernelGenerator();
-            _logger.LogDebug("Registered CUDA kernel generator");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to register CUDA kernel generator");
-        }
-
-        try
-        {
-            // Register OpenCL generator
-            _generators[AcceleratorType.OpenCL] = new OpenCLKernelGenerator();
-            _logger.LogDebug("Registered OpenCL kernel generator");
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to register OpenCL kernel generator");
-        }
+        // Built-in generators are now registered through the backend plugin system
+        // This method is kept for backwards compatibility but generators are loaded
+        // dynamically through the backend factory pattern when accelerators are created
+        
+        _logger.LogDebug("Built-in generators will be registered through backend plugins");
     }
 
     private static Dictionary<string, object>? ExtractFusionMetadata(KernelDefinition definition)
