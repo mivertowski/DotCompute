@@ -78,7 +78,7 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
             // Add sequential processing stages
             for (var stage = 0; stage < stages; stage++)
             {
-                pipelineBuilder.AddStage(CreateSimpleProcessingStage(stage));
+                _ = pipelineBuilder.AddStage(CreateSimpleProcessingStage(stage));
             }
 
             var pipeline = pipelineBuilder.Build();
@@ -853,20 +853,15 @@ internal sealed class PipelineContext
 internal sealed class SimpleStageMetrics : IStageMetrics
 {
     private readonly Lock _lock = new();
-    private long _executionCount;
-    private long _errorCount;
-    private TimeSpan _totalExecutionTime = TimeSpan.Zero;
-    private TimeSpan _minExecutionTime = TimeSpan.MaxValue;
-    private TimeSpan _maxExecutionTime = TimeSpan.Zero;
+    public long ExecutionCount { get; private set; }
+    public long ErrorCount { get; private set; }
+    public TimeSpan TotalExecutionTime { get; private set; } = TimeSpan.Zero;
+    public TimeSpan MinExecutionTime { get; private set; } = TimeSpan.MaxValue;
+    public TimeSpan MaxExecutionTime { get; private set; } = TimeSpan.Zero;
     private readonly Dictionary<string, double> _customMetrics = [];
 
-    public long ExecutionCount => _executionCount;
-    public TimeSpan AverageExecutionTime => _executionCount > 0 ? new TimeSpan(_totalExecutionTime.Ticks / _executionCount) : TimeSpan.Zero;
-    public TimeSpan MinExecutionTime => _minExecutionTime == TimeSpan.MaxValue ? TimeSpan.Zero : _minExecutionTime;
-    public TimeSpan MaxExecutionTime => _maxExecutionTime;
-    public TimeSpan TotalExecutionTime => _totalExecutionTime;
-    public long ErrorCount => _errorCount;
-    public double SuccessRate => _executionCount > 0 ? (double)(_executionCount - _errorCount) / _executionCount : 1.0;
+    public TimeSpan AverageExecutionTime => ExecutionCount > 0 ? new TimeSpan(TotalExecutionTime.Ticks / ExecutionCount) : TimeSpan.Zero;
+    public double SuccessRate => ExecutionCount > 0 ? (double)(ExecutionCount - ErrorCount) / ExecutionCount : 1.0;
     public long AverageMemoryUsage => 0; // Not tracked in this simple implementation
     public IReadOnlyDictionary<string, double> CustomMetrics => _customMetrics;
 
@@ -874,22 +869,22 @@ internal sealed class SimpleStageMetrics : IStageMetrics
     {
         lock (_lock)
         {
-            _executionCount++;
-            _totalExecutionTime = _totalExecutionTime.Add(executionTime);
+            ExecutionCount++;
+            TotalExecutionTime = TotalExecutionTime.Add(executionTime);
 
-            if (executionTime < _minExecutionTime)
+            if (executionTime < MinExecutionTime)
             {
-                _minExecutionTime = executionTime;
+                MinExecutionTime = executionTime;
             }
 
-            if (executionTime > _maxExecutionTime)
+            if (executionTime > MaxExecutionTime)
             {
-                _maxExecutionTime = executionTime;
+                MaxExecutionTime = executionTime;
             }
 
             if (!success)
             {
-                _errorCount++;
+                ErrorCount++;
             }
         }
     }

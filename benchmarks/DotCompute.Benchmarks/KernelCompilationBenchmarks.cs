@@ -51,7 +51,7 @@ internal sealed class KernelCompilationBenchmarks : IDisposable
             // Complex computation
             float result = 0.0f;
             for (int i = 0; i < 10; i++) {
-                result += (val1 * alpha + val2 * beta) * sin(val3 * i);
+                result += (val1 * alpha + (val2 * beta)) * sin(val3 * i);
                 result = sqrt(fabs(result)) + cos(val1 * val2);
                 result = fmax(result, val3) - fmin(val1, val2);
             }

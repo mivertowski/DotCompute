@@ -358,7 +358,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
     private async Task ExecuteConvolution()
     {
         const int filterSize = 5;
-        var filter = new float[] { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f }; // Simple average filter
+        var filter = new[] { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f }; // Simple average filter
 
         var bufferInput = await _memoryManager.AllocateAndCopyAsync<float>(_inputA);
         var bufferFilter = await _memoryManager.AllocateAndCopyAsync<float>(filter);

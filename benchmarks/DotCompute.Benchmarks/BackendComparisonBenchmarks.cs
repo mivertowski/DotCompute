@@ -54,7 +54,7 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
 
         await _acceleratorManager.InitializeAsync();
 
-        var accelerators = (await _acceleratorManager.GetAcceleratorsAsync()).ToList();
+        var accelerators = (await _acceleratorManager.GetAcceleratorsAsync());
         _cpuAccelerator = accelerators.First(a => a.Info.Name.Contains("CPU", StringComparison.Ordinal));
         _gpuAccelerator = accelerators.FirstOrDefault(a => a.Info.Name.Contains("SimulatedGPU", StringComparison.Ordinal));
 
@@ -236,7 +236,7 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
     private async Task ExecuteConvolution(IAccelerator accelerator, float[] output)
     {
         const int filterSize = 5;
-        var filter = new float[] { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f };
+        var filter = new[] { 0.2f, 0.2f, 0.2f, 0.2f, 0.2f };
 
         var bufferInput = await accelerator.Memory.AllocateAndCopyAsync<float>(_inputA);
         var bufferFilter = await accelerator.Memory.AllocateAndCopyAsync<float>(filter);
@@ -266,7 +266,7 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
             // GPU characteristics: higher setup overhead, better scaling
             var setupOverhead = 5; // ms
             var scalingFactor = Math.Log10(DataSize) / 10.0; // Better scaling with data size
-            executionTime = (int)(setupOverhead + baseExecutionTime * scalingFactor);
+            executionTime = (int)(setupOverhead + (baseExecutionTime * scalingFactor));
         }
         else
         {

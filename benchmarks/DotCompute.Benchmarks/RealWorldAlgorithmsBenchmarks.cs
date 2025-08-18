@@ -63,8 +63,8 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
 
         for (var i = 0; i < DataSize; i++)
         {
-            _inputData[i] = (float)(Math.Sin(2 * Math.PI * i / DataSize) +
-                                   0.5 * Math.Sin(4 * Math.PI * i / DataSize) +
+            _inputData[i] = (float)(Math.Sin((2 * Math.PI * i) / DataSize) +
+                                   0.5 * Math.Sin((4 * Math.PI * i) / DataSize) +
 #pragma warning disable CA5394 // Random is acceptable for benchmark data generation
                                    0.1 * random.NextDouble());
 #pragma warning restore CA5394
@@ -156,6 +156,8 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
             case "MatrixDecomposition":
                 await ExecuteMatrixDecomposition();
                 break;
+            default:
+                throw new NotImplementedException($"Algorithm {algorithm} not implemented");
         }
     }
 
@@ -163,7 +165,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
     {
         // Implement Cooley-Tukey FFT algorithm
         var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(
-            _complexInputData.Select(c => new float[] { (float)c.Real, (float)c.Imaginary }).SelectMany(f => f).ToArray());
+            _complexInputData.Select(c => new[] { (float)c.Real, (float)c.Imaginary }).SelectMany(f => f).ToArray());
         var outputBuffer = await _memoryManager.AllocateAsync(DataSize * 2 * sizeof(float));
 
         // Simulate FFT computation on accelerator
@@ -198,7 +200,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
                 for (var j = 0; j < stride / 2; j++)
                 {
                     var evenIdx = i + j;
-                    var oddIdx = i + j + stride / 2;
+                    var oddIdx = i + j + (stride / 2);
 
                     if (evenIdx < DataSize && oddIdx < DataSize)
                     {
@@ -229,9 +231,9 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         {
             for (var x = 0; x < kernelSize; x++)
             {
-                var dx = x - kernelSize / 2;
-                var dy = y - kernelSize / 2;
-                kernel[y][x] = (float)Math.Exp(-(dx * dx + dy * dy) / (2.0 * 1.5 * 1.5));
+                var dx = x - (kernelSize / 2);
+                var dy = y - (kernelSize / 2);
+                kernel[y][x] = (float)Math.Exp(-((dx * dx) + (dy * dy)) / (2.0 * 1.5 * 1.5));
             }
         }
 
@@ -285,19 +287,19 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         var imageSize = (int)Math.Sqrt(DataSize);
 
         // Perform convolution (simplified for 1D representation of 2D data)
-        for (var i = kernelSize / 2; i < imageSize - kernelSize / 2; i++)
+        for (var i = kernelSize / 2; i < imageSize - (kernelSize / 2); i++)
         {
-            for (var j = kernelSize / 2; j < imageSize - kernelSize / 2; j++)
+            for (var j = kernelSize / 2; j < imageSize - (kernelSize / 2); j++)
             {
                 float sum = 0;
                 for (var ky = 0; ky < kernelSize; ky++)
                 {
                     for (var kx = 0; kx < kernelSize; kx++)
                     {
-                        var imgY = i + ky - kernelSize / 2;
-                        var imgX = j + kx - kernelSize / 2;
-                        var imgIdx = imgY * imageSize + imgX;
-                        var kernelIdx = ky * kernelSize + kx;
+                        var imgY = i + ky - (kernelSize / 2);
+                        var imgX = j + kx - (kernelSize / 2);
+                        var imgIdx = (imgY * imageSize) + imgX;
+                        var kernelIdx = (ky * kernelSize) + kx;
 
                         if (imgIdx >= 0 && imgIdx < DataSize)
                         {
@@ -384,7 +386,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         await input.CopyToHostAsync<float>(inputData);
 
         // Horizontal blur pass
-        var kernel = new float[] { 0.06136f, 0.24477f, 0.38774f, 0.24477f, 0.06136f };
+        var kernel = [ 0.06136f, 0.24477f, 0.38774f, 0.24477f, 0.06136f };
         var radius = kernel.Length / 2;
 
         for (var y = 0; y < imageSize; y++)

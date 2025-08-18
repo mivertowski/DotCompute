@@ -49,7 +49,7 @@ internal sealed class MultiAcceleratorBenchmarks : IDisposable
         }
 
         await _acceleratorManager.InitializeAsync();
-        _accelerators = (await _acceleratorManager.GetAcceleratorsAsync()).Take(AcceleratorCount).ToList();
+        _accelerators = (await _acceleratorManager.GetAcceleratorsAsync()).Take(AcceleratorCount);
 
         SetupTestData();
     }

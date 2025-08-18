@@ -22,7 +22,6 @@ internal sealed class ConcurrentOperationsBenchmarks : IDisposable
 {
     private DefaultAcceleratorManager? _acceleratorManager;
     private IAccelerator _accelerator = null!;
-    private IMemoryManager _memoryManager = null!;
     private readonly ConcurrentBag<IMemoryBuffer> _buffers = [];
     // Removed unused _lockObject field
 
@@ -50,7 +49,6 @@ internal sealed class ConcurrentOperationsBenchmarks : IDisposable
         await _acceleratorManager.InitializeAsync();
 
         _accelerator = _acceleratorManager.Default;
-        _memoryManager = _accelerator.Memory;
 
         SetupTestData();
     }
