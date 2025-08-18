@@ -266,7 +266,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
                     return dep.Dependencies.All(d => resolved.Any(r => r.Name.Contains(d.Split('_')[0], StringComparison.OrdinalIgnoreCase)) || d == "CommonDependency");
                 }
                 return true;
-            });
+            }).ToList();
 
             if (canResolve.Count == 0)
             {

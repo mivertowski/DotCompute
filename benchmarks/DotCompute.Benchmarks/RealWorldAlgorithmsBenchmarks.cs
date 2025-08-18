@@ -386,7 +386,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         await input.CopyToHostAsync<float>(inputData);
 
         // Horizontal blur pass
-        var kernel = [ 0.06136f, 0.24477f, 0.38774f, 0.24477f, 0.06136f };
+        var kernel = new[] { 0.06136f, 0.24477f, 0.38774f, 0.24477f, 0.06136f };
         var radius = kernel.Length / 2;
 
         for (var y = 0; y < imageSize; y++)
