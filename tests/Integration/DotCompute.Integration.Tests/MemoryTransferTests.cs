@@ -317,7 +317,7 @@ public sealed class MemoryTransferTests : IntegrationTestBase
 
         if (!accelerators.Any())
         {
-            LoggerMessages.SkippingMemoryTypeTest(Logger, memoryType.ToString());
+            _ = LoggerMessages.SkippingMemoryTypeTest(Logger, memoryType.ToString());
             return;
         }
 
@@ -671,7 +671,7 @@ public sealed class MemoryTransferTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            LoggerMessages.MemoryTypeTestFailed(Logger, memoryType.ToString(), ex);
+            _ = LoggerMessages.MemoryTypeTestFailed(Logger, memoryType.ToString(), ex);
             return new MemoryTypeResult
             {
                 Success = false,

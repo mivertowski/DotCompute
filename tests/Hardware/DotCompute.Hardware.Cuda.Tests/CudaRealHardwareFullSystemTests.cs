@@ -118,7 +118,7 @@ public sealed class CudaRealHardwareFullSystemTests : IDisposable
         var info = _accelerator.Info;
 
         LogDetectedDevice(_logger, info.Name, null);
-        LogComputeCapability(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
+        _ = LogComputeCapability(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
         LogTotalMemory(_logger, info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024), null);
 
         // Verify compute capability is 8.9 for RTX 2000 Ada Gen
@@ -479,7 +479,7 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
                 await compiledKernel.ExecuteAsync(arguments);
                 var executeTime = stopwatch.ElapsedMilliseconds;
 
-                LogOptimizationLevel(_logger, optLevel.ToString(), compileTime, executeTime, null);
+                _ = LogOptimizationLevel(_logger, optLevel.ToString(), compileTime, executeTime, null);
 
                 // Verify kernel actually executed(results should be different from input)
                 var outputData = new float[Math.Min(100, N)];

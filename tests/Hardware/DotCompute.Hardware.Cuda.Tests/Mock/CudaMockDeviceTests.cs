@@ -58,7 +58,7 @@ public sealed class CudaMockDeviceTests : IDisposable
         var mockInfo = CreateAcceleratorInfoFromMockProperties(mockProperties);
 
         // Act & Assert
-        mockInfo.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
+        _ = mockInfo.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
         mockInfo.Name.Should().Be("Mock RTX 2070");
         mockInfo.TotalMemory.Should().Be(8L * 1024 * 1024 * 1024); // 8GB
         mockInfo.ComputeUnits.Should().Be(36);
@@ -173,7 +173,7 @@ public sealed class CudaMockDeviceTests : IDisposable
         {
             var errorString = GetMockErrorString(error);
             errorString.Should().NotBeNullOrEmpty($"Error {error} should have a descriptive string");
-            errorString.Should().Contain(error.ToString().ToUpperInvariant());
+            _ = errorString.Should().Contain(error.ToString().ToUpperInvariant());
 
             _output.WriteLine($"Mock Error: {error} -> {errorString}");
         }

@@ -157,7 +157,7 @@ public sealed class CudaGraphSupport : IDisposable
     /// <summary>
     /// Executes a graph instance
     /// </summary>
-    public async Task<CudaGraphExecutionResult> ExecuteGraphAsync(
+    public Task<CudaGraphExecutionResult> ExecuteGraphAsync(
         CudaGraphInstance instance,
         IntPtr stream = default,
         CancellationToken cancellationToken = default)
@@ -180,18 +180,18 @@ public sealed class CudaGraphSupport : IDisposable
             var executionStream = stream == IntPtr.Zero ? _streamManager.DefaultStream : stream;
             
             // Record start
-            _eventManager.RecordEvent(startEvent, executionStream);
+            _eventManager.RecordEventFast(startEvent, executionStream);
 
             // Launch graph
             var result = CudaRuntime.cuGraphLaunch(instance.Handle, executionStream);
             CudaRuntime.CheckError(result, "launching CUDA graph");
 
             // Record end
-            _eventManager.RecordEvent(endEvent, executionStream);
+            _eventManager.RecordEventFast(endEvent, executionStream);
 
             // Wait for completion
-            await _streamManager.SynchronizeStreamAsync(executionStream, cancellationToken)
-                .ConfigureAwait(false);
+            var syncResult = CudaRuntime.cudaStreamSynchronize(executionStream);
+            CudaRuntime.CheckError(syncResult, "stream synchronization");
 
             var endTime = DateTimeOffset.UtcNow;
             var gpuTime = _eventManager.ElapsedTime(startEvent, endEvent);
@@ -200,7 +200,7 @@ public sealed class CudaGraphSupport : IDisposable
             instance.LastExecutedAt = endTime;
             instance.TotalGpuTime += gpuTime;
 
-            return new CudaGraphExecutionResult
+            return Task.FromResult(new CudaGraphExecutionResult
             {
                 Success = true,
                 InstanceId = instance.Id,
@@ -208,19 +208,19 @@ public sealed class CudaGraphSupport : IDisposable
                 ExecutionTime = endTime - startTime,
                 GpuTimeMs = gpuTime,
                 ExecutionCount = instance.ExecutionCount
-            };
+            });
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to execute graph instance {InstanceId}", instance.Id);
             
-            return new CudaGraphExecutionResult
+            return Task.FromResult(new CudaGraphExecutionResult
             {
                 Success = false,
                 InstanceId = instance.Id,
                 GraphId = instance.GraphId,
                 ErrorMessage = ex.Message
-            };
+            });
         }
         finally
         {

@@ -74,9 +74,9 @@ public sealed class CudaMemoryPool : IDisposable
     /// <summary>
     /// Attempts to get a buffer from the pool
     /// </summary>
-    public bool TryGetFromPool(long sizeInBytes, MemoryOptions options, out CudaUnifiedMemoryBuffer buffer)
+    public bool TryGetFromPool(long sizeInBytes, MemoryOptions options, out PooledBufferInfo buffer)
     {
-        buffer = null!;
+        buffer = default;
         
         if (_disposed) return false;
 
@@ -97,7 +97,13 @@ public sealed class CudaMemoryPool : IDisposable
                 // Check if buffer is still valid and matches requirements
                 if (IsBufferValid(pooledBuffer, sizeInBytes, options))
                 {
-                    buffer = pooledBuffer.Buffer;
+                    buffer = new PooledBufferInfo
+                    {
+                        DevicePointer = pooledBuffer.DevicePointer,
+                        Size = pooledBuffer.Size,
+                        Options = pooledBuffer.Options
+                    };
+                    
                     Interlocked.Increment(ref _poolHits);
                     Interlocked.Add(ref _totalPooledMemory, -bucketSize);
                     
@@ -109,7 +115,7 @@ public sealed class CudaMemoryPool : IDisposable
                 else
                 {
                     // Buffer is invalid, dispose it
-                    pooledBuffer.Buffer.Dispose();
+                    DisposePooledBuffer(pooledBuffer);
                 }
             }
         }
@@ -125,7 +131,7 @@ public sealed class CudaMemoryPool : IDisposable
     /// <summary>
     /// Returns a buffer to the pool for reuse
     /// </summary>
-    public bool TryReturnToPool(CudaUnifiedMemoryBuffer buffer)
+    public bool TryReturnToPool(CudaMemoryBuffer buffer)
     {
         if (_disposed || buffer.IsDisposed) return false;
 
@@ -154,7 +160,14 @@ public sealed class CudaMemoryPool : IDisposable
                     return false;
                 }
 
-                var pooledBuffer = new PooledBuffer(buffer, DateTime.UtcNow);
+                var pooledBuffer = new PooledBuffer
+                {
+                    DevicePointer = buffer.DevicePointer,
+                    Size = sizeInBytes,
+                    Options = buffer.Options,
+                    CreatedTime = DateTime.UtcNow
+                };
+                
                 queue.Enqueue(pooledBuffer);
                 
                 Interlocked.Add(ref _totalPooledMemory, sizeInBytes);
@@ -251,22 +264,40 @@ public sealed class CudaMemoryPool : IDisposable
 
     private bool IsBufferValid(PooledBuffer pooledBuffer, long requestedSize, MemoryOptions options)
     {
-        var buffer = pooledBuffer.Buffer;
-        
-        // Check if buffer is still valid
-        if (buffer.IsDisposed) return false;
+        // Check if device pointer is still valid
+        if (pooledBuffer.DevicePointer == IntPtr.Zero) return false;
         
         // Check size compatibility
-        if (buffer.SizeInBytes < requestedSize) return false;
+        if (pooledBuffer.Size < requestedSize) return false;
         
         // Check options compatibility
-        if (buffer.Options != options) return false;
+        if (pooledBuffer.Options != options) return false;
         
         // Check age - don't reuse very old buffers
         var age = DateTime.UtcNow - pooledBuffer.CreatedTime;
         if (age > TimeSpan.FromMinutes(10)) return false;
         
         return true;
+    }
+    
+    private void DisposePooledBuffer(PooledBuffer pooledBuffer)
+    {
+        if (pooledBuffer.DevicePointer != IntPtr.Zero)
+        {
+            try
+            {
+                var result = CudaRuntime.cudaFree(pooledBuffer.DevicePointer);
+                if (result != CudaError.Success)
+                {
+                    _logger.LogWarning("Failed to free pooled device memory: {Error}", 
+                        CudaRuntime.GetErrorString(result));
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error freeing pooled device memory");
+            }
+        }
     }
 
     private long GetMaxPoolMemory()
@@ -301,7 +332,7 @@ public sealed class CudaMemoryPool : IDisposable
                 {
                     try
                     {
-                        pooledBuffer.Buffer.Dispose();
+                        DisposePooledBuffer(pooledBuffer);
                         releasedBuffers++;
                         releasedMemory += bucketSize;
                         Interlocked.Add(ref _totalPooledMemory, -bucketSize);
@@ -344,11 +375,11 @@ public sealed class CudaMemoryPool : IDisposable
                     // Drain queue and separate old from recent buffers
                     while (queue.TryDequeue(out var pooledBuffer))
                     {
-                        if (pooledBuffer.CreatedTime < cutoffTime || pooledBuffer.Buffer.IsDisposed)
+                        if (pooledBuffer.CreatedTime < cutoffTime || pooledBuffer.DevicePointer == IntPtr.Zero)
                         {
                             try
                             {
-                                pooledBuffer.Buffer.Dispose();
+                                DisposePooledBuffer(pooledBuffer);
                                 cleanedBuffers++;
                                 cleanedMemory += bucketSize;
                                 Interlocked.Add(ref _totalPooledMemory, -bucketSize);
@@ -411,7 +442,7 @@ public sealed class CudaMemoryPool : IDisposable
                     {
                         try
                         {
-                            pooledBuffer.Buffer.Dispose();
+                            DisposePooledBuffer(pooledBuffer);
                             totalBuffersDisposed++;
                             totalMemoryDisposed += bucketSize;
                         }
@@ -447,16 +478,22 @@ public sealed class CudaMemoryPool : IDisposable
         }
     }
 
-    private readonly struct PooledBuffer
+    private struct PooledBuffer
     {
-        public CudaUnifiedMemoryBuffer Buffer { get; }
-        public DateTime CreatedTime { get; }
-
-        public PooledBuffer(CudaUnifiedMemoryBuffer buffer, DateTime createdTime)
-        {
-            Buffer = buffer;
-            CreatedTime = createdTime;
-        }
+        public IntPtr DevicePointer { get; set; }
+        public long Size { get; set; }
+        public MemoryOptions Options { get; set; }
+        public DateTime CreatedTime { get; set; }
+    }
+    
+    /// <summary>
+    /// Information about a buffer retrieved from the pool
+    /// </summary>
+    public struct PooledBufferInfo
+    {
+        public IntPtr DevicePointer { get; set; }
+        public long Size { get; set; }
+        public MemoryOptions Options { get; set; }
     }
 }
 

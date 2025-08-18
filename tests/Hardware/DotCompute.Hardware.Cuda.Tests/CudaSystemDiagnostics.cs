@@ -428,7 +428,7 @@ public sealed class CudaSystemDiagnostics : IDisposable
         LogTotalMemory(_logger, info.TotalMemory, null);
         LogComputeUnits(_logger, info.ComputeUnits, null);
         LogMaxClock(_logger, info.MaxClockFrequency, null);
-        LogComputeCapabilityInfo(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
+        _ = LogComputeCapabilityInfo(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
         LogUnifiedMemory(_logger, info.IsUnifiedMemory, null);
 
         // Validate specific capabilities
@@ -443,7 +443,7 @@ public sealed class CudaSystemDiagnostics : IDisposable
         foreach (var expectedCap in expectedCapabilities)
         {
             Assert.True(caps.ContainsKey(expectedCap), $"Missing capability: {expectedCap}");
-            LogCapability(_logger, expectedCap, caps[expectedCap]?.ToString() ?? "Unknown", null);
+            _ = LogCapability(_logger, expectedCap, caps[expectedCap]?.ToString() ?? "Unknown", null);
         }
     }
 
@@ -539,7 +539,7 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
                 EnableDebugInfo = optLevel == OptimizationLevel.None
             };
 
-            LogCompilingWithOptimization(_logger, optLevel.ToString(), null);
+            _ = LogCompilingWithOptimization(_logger, optLevel.ToString(), null);
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);

@@ -382,7 +382,7 @@ public sealed class RuntimeAcceleratorManagerTests : IDisposable
 
         // Assert
         accelerator.Should().NotBeNull();
-        accelerator!.Info.DeviceType.Should().Be(AcceleratorType.CPU.ToString());
+        _ = accelerator!.Info.DeviceType.Should().Be(AcceleratorType.CPU.ToString());
     }
 
     [Fact]
@@ -698,7 +698,7 @@ public sealed class RuntimeAcceleratorManagerTests : IDisposable
 
         // Assert
         accelerator.Should().NotBeNull();
-        accelerator!.Info.DeviceType.Should().Be(AcceleratorType.CPU.ToString());
+        _ = accelerator!.Info.DeviceType.Should().Be(AcceleratorType.CPU.ToString());
     }
 
     [Fact]

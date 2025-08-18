@@ -40,14 +40,7 @@ internal sealed class ILCodeGenerator
             return _aotGenerator.GenerateKernel(definition, ast, analysis, options);
         }
 
-        if (analysis.CanVectorize && options.OptimizationLevel >= OptimizationLevel.Default)
-        {
-            return GenerateVectorizedKernel(definition, ast, analysis, options);
-        }
-        else
-        {
-            return GenerateScalarKernel(definition, ast, analysis, options);
-        }
+        return analysis.CanVectorize && options.OptimizationLevel >= OptimizationLevel.Default ? GenerateVectorizedKernel(definition, ast, analysis, options) : GenerateScalarKernel(definition, ast, analysis, options);
     }
 
     private static CompiledKernelCode GenerateVectorizedKernel(

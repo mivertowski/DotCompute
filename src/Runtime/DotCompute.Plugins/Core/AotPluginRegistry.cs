@@ -406,16 +406,9 @@ public static class AotPluginHelpers
     /// </summary>
     public static IDisposable CreatePluginSystem(ILogger logger)
     {
-        if (IsAotCompatible)
-        {
-            return new AotPluginSystem(logger as ILogger<AotPluginSystem> ??
-                Microsoft.Extensions.Logging.Abstractions.NullLogger<AotPluginSystem>.Instance);
-        }
-        else
-        {
-            return new PluginSystem(logger as ILogger<PluginSystem> ??
+        return IsAotCompatible ? new AotPluginSystem(logger as ILogger<AotPluginSystem> ??
+                Microsoft.Extensions.Logging.Abstractions.NullLogger<AotPluginSystem>.Instance) : new PluginSystem(logger as ILogger<PluginSystem> ??
                 Microsoft.Extensions.Logging.Abstractions.NullLogger<PluginSystem>.Instance);
-        }
     }
 }
 

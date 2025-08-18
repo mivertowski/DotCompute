@@ -3,11 +3,12 @@
 
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32.SafeHandles;
 
 namespace DotCompute.Backends.CUDA.Native;
 
 /// <summary>
-/// Enhanced P/Invoke wrapper for NVRTC (NVIDIA Runtime Compilation) API with modern features.
+/// P/Invoke wrapper for NVRTC (NVIDIA Runtime Compilation) API with proper memory safety.
 /// </summary>
 public static class NvrtcInterop
 {
@@ -20,28 +21,28 @@ public static class NvrtcInterop
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcVersion(out int major, out int minor);
+    internal static extern NvrtcResult nvrtcVersion(out int major, out int minor);
 
     /// <summary>
     /// Gets supported GPU architectures.
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetSupportedArchs(out int[] supportedArchs);
+    internal static extern NvrtcResult nvrtcGetSupportedArchs(out IntPtr supportedArchs);
 
     /// <summary>
     /// Gets the number of supported architectures.
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetNumSupportedArchs(out int numArchs);
+    internal static extern NvrtcResult nvrtcGetNumSupportedArchs(out int numArchs);
 
     /// <summary>
     /// Creates a compilation program from source code.
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcCreateProgram(
+    internal static extern NvrtcResult nvrtcCreateProgram(
         out IntPtr prog,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string src,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string? name,
@@ -54,14 +55,14 @@ public static class NvrtcInterop
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcDestroyProgram(ref IntPtr prog);
+    internal static extern NvrtcResult nvrtcDestroyProgram(ref IntPtr prog);
 
     /// <summary>
     /// Compiles the program with specified options.
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcCompileProgram(
+    internal static extern NvrtcResult nvrtcCompileProgram(
         IntPtr prog,
         int numOptions,
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPUTF8Str)] string[]? options);
@@ -75,15 +76,14 @@ public static class NvrtcInterop
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetPTXSize(IntPtr prog, out IntPtr ptxSizeRet);
+    internal static extern NvrtcResult nvrtcGetPTXSize(IntPtr prog, out IntPtr ptxSizeRet);
 
     /// <summary>
     /// Gets the generated PTX code.
     /// </summary>
-    [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetPTX(IntPtr prog, 
-        [Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder ptx);
+    internal static extern NvrtcResult nvrtcGetPTX(IntPtr prog, IntPtr ptx);
 
     #endregion
 
@@ -94,14 +94,14 @@ public static class NvrtcInterop
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetCUBINSize(IntPtr prog, out IntPtr cubinSizeRet);
+    internal static extern NvrtcResult nvrtcGetCUBINSize(IntPtr prog, out IntPtr cubinSizeRet);
 
     /// <summary>
     /// Gets the generated CUBIN binary.
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetCUBIN(IntPtr prog, [Out] byte[] cubin);
+    internal static extern NvrtcResult nvrtcGetCUBIN(IntPtr prog, IntPtr cubin);
 
     #endregion
 
@@ -112,14 +112,14 @@ public static class NvrtcInterop
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetLTOIRSize(IntPtr prog, out IntPtr ltoIRSizeRet);
+    internal static extern NvrtcResult nvrtcGetLTOIRSize(IntPtr prog, out IntPtr ltoIRSizeRet);
 
     /// <summary>
     /// Gets the LTO IR (Intermediate Representation).
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetLTOIR(IntPtr prog, [Out] byte[] ltoIR);
+    internal static extern NvrtcResult nvrtcGetLTOIR(IntPtr prog, IntPtr ltoIR);
 
     #endregion
 
@@ -130,14 +130,14 @@ public static class NvrtcInterop
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetOptiXIRSize(IntPtr prog, out IntPtr optixIRSizeRet);
+    internal static extern NvrtcResult nvrtcGetOptiXIRSize(IntPtr prog, out IntPtr optixIRSizeRet);
 
     /// <summary>
     /// Gets the OptiX IR.
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetOptiXIR(IntPtr prog, [Out] byte[] optixIR);
+    internal static extern NvrtcResult nvrtcGetOptiXIR(IntPtr prog, IntPtr optixIR);
 
     #endregion
 
@@ -148,15 +148,14 @@ public static class NvrtcInterop
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetProgramLogSize(IntPtr prog, out IntPtr logSizeRet);
+    internal static extern NvrtcResult nvrtcGetProgramLogSize(IntPtr prog, out IntPtr logSizeRet);
 
     /// <summary>
     /// Gets the compilation log.
     /// </summary>
-    [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
+    [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, 
-        [Out, MarshalAs(UnmanagedType.LPStr)] StringBuilder log);
+    internal static extern NvrtcResult nvrtcGetProgramLog(IntPtr prog, IntPtr log);
 
     #endregion
 
@@ -167,7 +166,7 @@ public static class NvrtcInterop
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcAddNameExpression(IntPtr prog, 
+    internal static extern NvrtcResult nvrtcAddNameExpression(IntPtr prog, 
         [MarshalAs(UnmanagedType.LPUTF8Str)] string name_expression);
 
     /// <summary>
@@ -175,7 +174,7 @@ public static class NvrtcInterop
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl, CharSet = CharSet.Ansi)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern NvrtcResult nvrtcGetLoweredName(IntPtr prog,
+    internal static extern NvrtcResult nvrtcGetLoweredName(IntPtr prog,
         [MarshalAs(UnmanagedType.LPUTF8Str)] string name_expression,
         out IntPtr lowered_name);
 
@@ -188,7 +187,7 @@ public static class NvrtcInterop
     /// </summary>
     [DllImport(NVRTC_LIBRARY, CallingConvention = CallingConvention.Cdecl)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
-    public static extern IntPtr nvrtcGetErrorString(NvrtcResult result);
+    internal static extern IntPtr nvrtcGetErrorString(NvrtcResult result);
 
     #endregion
 
@@ -262,10 +261,15 @@ public static class NvrtcInterop
                 return Array.Empty<int>();
             }
 
+            result = nvrtcGetSupportedArchs(out var archsPtr);
+            if (result != NvrtcResult.Success || archsPtr == IntPtr.Zero)
+            {
+                return Array.Empty<int>();
+            }
+
             var supportedArchs = new int[numArchs];
-            result = nvrtcGetSupportedArchs(out supportedArchs);
-            
-            return result == NvrtcResult.Success ? supportedArchs : Array.Empty<int>();
+            Marshal.Copy(archsPtr, supportedArchs, 0, numArchs);
+            return supportedArchs;
         }
         catch
         {
@@ -286,10 +290,21 @@ public static class NvrtcInterop
                 return string.Empty;
             }
 
-            var logBuilder = new StringBuilder((int)logSize.ToInt64());
-            result = nvrtcGetProgramLog(program, logBuilder);
-            
-            return result == NvrtcResult.Success ? logBuilder.ToString().Trim() : string.Empty;
+            var logBuffer = Marshal.AllocHGlobal(logSize);
+            try
+            {
+                result = nvrtcGetProgramLog(program, logBuffer);
+                if (result != NvrtcResult.Success)
+                {
+                    return string.Empty;
+                }
+
+                return Marshal.PtrToStringAnsi(logBuffer)?.Trim() ?? string.Empty;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(logBuffer);
+            }
         }
         catch
         {
@@ -307,11 +322,20 @@ public static class NvrtcInterop
             var result = nvrtcGetPTXSize(program, out var ptxSize);
             CheckResult(result, "getting PTX size");
 
-            var ptxBuilder = new StringBuilder((int)ptxSize.ToInt64());
-            result = nvrtcGetPTX(program, ptxBuilder);
-            CheckResult(result, "getting PTX code");
+            var ptxBuffer = Marshal.AllocHGlobal(ptxSize);
+            try
+            {
+                result = nvrtcGetPTX(program, ptxBuffer);
+                CheckResult(result, "getting PTX code");
 
-            return Encoding.UTF8.GetBytes(ptxBuilder.ToString());
+                var ptxBytes = new byte[ptxSize.ToInt64()];
+                Marshal.Copy(ptxBuffer, ptxBytes, 0, (int)ptxSize.ToInt64());
+                return ptxBytes;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(ptxBuffer);
+            }
         }
         catch (NvrtcException)
         {
@@ -333,11 +357,20 @@ public static class NvrtcInterop
             var result = nvrtcGetCUBINSize(program, out var cubinSize);
             CheckResult(result, "getting CUBIN size");
 
-            var cubinData = new byte[cubinSize.ToInt64()];
-            result = nvrtcGetCUBIN(program, cubinData);
-            CheckResult(result, "getting CUBIN code");
+            var cubinBuffer = Marshal.AllocHGlobal(cubinSize);
+            try
+            {
+                result = nvrtcGetCUBIN(program, cubinBuffer);
+                CheckResult(result, "getting CUBIN code");
 
-            return cubinData;
+                var cubinBytes = new byte[cubinSize.ToInt64()];
+                Marshal.Copy(cubinBuffer, cubinBytes, 0, (int)cubinSize.ToInt64());
+                return cubinBytes;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(cubinBuffer);
+            }
         }
         catch (NvrtcException)
         {
@@ -359,11 +392,20 @@ public static class NvrtcInterop
             var result = nvrtcGetLTOIRSize(program, out var ltoIRSize);
             CheckResult(result, "getting LTO IR size");
 
-            var ltoIRData = new byte[ltoIRSize.ToInt64()];
-            result = nvrtcGetLTOIR(program, ltoIRData);
-            CheckResult(result, "getting LTO IR");
+            var ltoIRBuffer = Marshal.AllocHGlobal(ltoIRSize);
+            try
+            {
+                result = nvrtcGetLTOIR(program, ltoIRBuffer);
+                CheckResult(result, "getting LTO IR");
 
-            return ltoIRData;
+                var ltoIRBytes = new byte[ltoIRSize.ToInt64()];
+                Marshal.Copy(ltoIRBuffer, ltoIRBytes, 0, (int)ltoIRSize.ToInt64());
+                return ltoIRBytes;
+            }
+            finally
+            {
+                Marshal.FreeHGlobal(ltoIRBuffer);
+            }
         }
         catch (NvrtcException)
         {
@@ -383,7 +425,7 @@ public static class NvrtcInterop
         try
         {
             var result = nvrtcGetLoweredName(program, nameExpression, out var loweredNamePtr);
-            if (result != NvrtcResult.Success)
+            if (result != NvrtcResult.Success || loweredNamePtr == IntPtr.Zero)
             {
                 return null;
             }
@@ -397,6 +439,33 @@ public static class NvrtcInterop
     }
 
     #endregion
+}
+
+/// <summary>
+/// Safe handle wrapper for NVRTC program handles to ensure proper resource cleanup.
+/// </summary>
+public sealed class SafeNvrtcProgramHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeNvrtcProgramHandle() : base(true)
+    {
+    }
+
+    public SafeNvrtcProgramHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var h = handle;
+            var result = NvrtcInterop.nvrtcDestroyProgram(ref h);
+            handle = IntPtr.Zero;
+            return result == NvrtcResult.Success;
+        }
+        return true;
+    }
 }
 
 /// <summary>

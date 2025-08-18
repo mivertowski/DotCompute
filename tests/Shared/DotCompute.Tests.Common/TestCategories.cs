@@ -1,10 +1,10 @@
-namespace DotCompute.Tests.Common
+namespace DotCompute.Tests.Common;
+
+/// <summary>
+/// Centralized test category constants for consistent test filtering.
+/// </summary>
+public static class TestCategories
 {
-    /// <summary>
-    /// Centralized test category constants for consistent test filtering.
-    /// </summary>
-    public static class TestCategories
-    {
         // Core categories
         public const string Unit = "Unit";
         public const string Integration = "Integration";
@@ -118,4 +118,3 @@ namespace DotCompute.Tests.Common
             TestCategories.Flaky
         };
     }
-}

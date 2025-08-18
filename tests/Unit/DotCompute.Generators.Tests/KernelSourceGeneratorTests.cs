@@ -57,8 +57,8 @@ public class TestKernels
         result.GeneratedSources.ContainSingle(s => s.HintName == "KernelRegistry.g.cs");
         
         var registrySource = result.GeneratedSources.First(s => s.HintName == "KernelRegistry.g.cs");
-        registrySource.SourceText.ToString().Contain("KernelRegistry");
-        registrySource.SourceText.ToString().Contain("TestKernels.AddArrays");
+        _ = registrySource.SourceText.ToString().Contain("KernelRegistry");
+        _ = registrySource.SourceText.ToString().Contain("TestKernels.AddArrays");
     }
 
     [Fact]
@@ -88,9 +88,9 @@ public class MathKernels
         result.GeneratedSources.Contain(s => s.HintName.Contains("MathKernels_MultiplyArrays_CPU.g.cs"));
         
         var cpuImpl = result.GeneratedSources.First(s => s.HintName.Contains("CPU.g.cs"));
-        cpuImpl.SourceText.ToString().Contain("MultiplyArraysCpuKernel");
-        cpuImpl.SourceText.ToString().Contain("ExecuteSIMD");
-        cpuImpl.SourceText.ToString().Contain("ExecuteScalar");
+        _ = cpuImpl.SourceText.ToString().Contain("MultiplyArraysCpuKernel");
+        _ = cpuImpl.SourceText.ToString().Contain("ExecuteSIMD");
+        _ = cpuImpl.SourceText.ToString().Contain("ExecuteScalar");
     }
 
     [Fact]
@@ -146,9 +146,9 @@ public class ComplexKernels
         result.Assert.Contains(s => s.HintName == "ComplexKernelsInvoker.g.cs", GeneratedSources);
         
         var invoker = result.GeneratedSources.First(s => s.HintName == "ComplexKernelsInvoker.g.cs");
-        invoker.SourceText.ToString().Contain("InvokeAdd");
-        invoker.SourceText.ToString().Contain("InvokeMultiply");
-        invoker.SourceText.ToString().Contain("InvokeKernel");
+        _ = invoker.SourceText.ToString().Contain("InvokeAdd");
+        _ = invoker.SourceText.ToString().Contain("InvokeMultiply");
+        _ = invoker.SourceText.ToString().Contain("InvokeKernel");
     }
 
     [Fact]
@@ -176,8 +176,8 @@ public class ParallelKernels
 
         // Assert
         var cpuImpl = result.GeneratedSources.First(s => s.HintName.Contains("CPU.g.cs"));
-        cpuImpl.SourceText.ToString().Contain("ExecuteParallel");
-        cpuImpl.SourceText.ToString().Contain("Parallel.ForEach");
+        _ = cpuImpl.SourceText.ToString().Contain("ExecuteParallel");
+        _ = cpuImpl.SourceText.ToString().Contain("Parallel.ForEach");
     }
 
     [Fact]
@@ -234,7 +234,7 @@ public class GpuKernels
         // Assert
         result.GeneratedSources.Contain(s => s.HintName.Contains("_CUDA.g.cs"));
         var cudaImpl = result.GeneratedSources.First(s => s.HintName.Contains("CUDA.g.cs"));
-        cudaImpl.SourceText.ToString().Contain("MatrixMultiply_cuda_kernel");
+        _ = cudaImpl.SourceText.ToString().Contain("MatrixMultiply_cuda_kernel");
     }
 
     [Fact]
@@ -323,7 +323,7 @@ public class ComplexKernels
         resultDiagnostics.Should().BeEmpty();
         result.GeneratedSources.Should().NotBeEmpty();
         var cpuImpl = result.GeneratedSources.First(s => s.HintName.Contains("CPU.g.cs"));
-        cpuImpl.SourceText.ToString().Contain("ComplexOperationCpuKernel");
+        _ = cpuImpl.SourceText.ToString().Contain("ComplexOperationCpuKernel");
     }
 
     [Fact]

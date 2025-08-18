@@ -21,8 +21,8 @@ public sealed class AcceleratorInfoTests
         // Assert
         info.Id.Should().Be($"{type}_{name}");
         info.Name.Should().Be(name);
-        info.DeviceType.Should().Be(type.ToString());
-        info.Type.Should().Be(type.ToString());
+        _ = info.DeviceType.Should().Be(type.ToString());
+        _ = info.Type.Should().Be(type.ToString());
         info.Vendor.Should().Be("Unknown");
         info.DriverVersion.Should().Be(driverVersion);
         info.TotalMemory.Should().Be(memorySize);
@@ -71,7 +71,7 @@ public sealed class AcceleratorInfoTests
         info.Name.Should().Be(name);
         info.Vendor.Should().Be(vendor);
         info.DriverVersion.Should().Be(driverVersion);
-        info.DeviceType.Should().Be(type.ToString());
+        _ = info.DeviceType.Should().Be(type.ToString());
         info.TotalMemory.Should().Be(totalMemory);
         info.AvailableMemory.Should().Be(availableMemory);
         info.MaxThreadsPerBlock.Should().Be(maxThreadsPerBlock);
@@ -194,7 +194,7 @@ public sealed class AcceleratorInfoTests
         var info = new AcceleratorInfo(type, "Device", "1.0", 1024);
 
         // Act & Assert
-        info.Type.Should().Be(type.ToString());
+        _ = info.Type.Should().Be(type.ToString());
         info.Type.Should().Be(info.DeviceType);
     }
 }

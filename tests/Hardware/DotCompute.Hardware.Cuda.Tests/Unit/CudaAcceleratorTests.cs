@@ -225,7 +225,7 @@ public sealed class CudaAcceleratorTests : IDisposable
 
         // Assert
         Assert.NotNull(info);
-        info.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
+        _ = info.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
         info.Name.Should().NotBeNullOrEmpty();
         (info.TotalMemory > 0).Should().BeTrue();
         (info.ComputeUnits > 0).Should().BeTrue();

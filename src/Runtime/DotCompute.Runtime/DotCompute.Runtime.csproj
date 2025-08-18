@@ -21,7 +21,6 @@
     <PackageTags>tensor;compute;gpu;cuda;runtime;accelerator;aot</PackageTags>
     
     <!-- Build Configuration -->
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
   </PropertyGroup>

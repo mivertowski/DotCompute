@@ -573,14 +573,7 @@ public sealed class ConvolutionOperations : IDisposable
         CancellationToken cancellationToken)
     {
         // Choose best strategy based on sizes
-        if (kernel.Length <= 64)
-        {
-            return await DirectConvolve1DAsync(signal, kernel, padding, cancellationToken);
-        }
-        else
-        {
-            return await FFTConvolve1DAsync(signal, kernel, padding, cancellationToken);
-        }
+        return kernel.Length <= 64 ? await DirectConvolve1DAsync(signal, kernel, padding, cancellationToken) : await FFTConvolve1DAsync(signal, kernel, padding, cancellationToken);
     }
 
     private async ValueTask<float[]> DirectConvolve2DAsync(

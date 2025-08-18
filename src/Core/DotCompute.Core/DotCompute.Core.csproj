@@ -6,7 +6,6 @@
     <Nullable>enable</Nullable>
     <EnableAOTAnalyzer>true</EnableAOTAnalyzer>
     <IsAotCompatible>true</IsAotCompatible>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 

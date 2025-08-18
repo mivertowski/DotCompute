@@ -39,6 +39,32 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
 
         AllocateDeviceMemory();
     }
+    
+    /// <summary>
+    /// Constructor for pooled buffers with existing device pointer
+    /// </summary>
+    public CudaMemoryBuffer(CudaContext context, IntPtr devicePointer, long sizeInBytes, MemoryOptions options, ILogger logger)
+    {
+        _context = context ?? throw new ArgumentNullException(nameof(context));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+
+        if (sizeInBytes <= 0)
+        {
+            throw new ArgumentException("Size must be greater than zero", nameof(sizeInBytes));
+        }
+        
+        if (devicePointer == IntPtr.Zero)
+        {
+            throw new ArgumentException("Device pointer cannot be null", nameof(devicePointer));
+        }
+
+        SizeInBytes = sizeInBytes;
+        Options = options;
+        _devicePointer = devicePointer;
+        
+        _logger.LogDebug("Created CUDA buffer from existing device pointer {Pointer:X} ({Size}MB)",
+            devicePointer.ToInt64(), sizeInBytes / (1024 * 1024));
+    }
 
     private void AllocateDeviceMemory()
     {
@@ -46,32 +72,47 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
         {
             _context.MakeCurrent();
 
-            var result = CudaRuntime.cudaMalloc(ref _devicePointer, (ulong)SizeInBytes);
+            // Use aligned allocation for optimal performance (RTX 2000 series)
+            var alignedSize = ((ulong)SizeInBytes + 255) & ~255UL; // 256-byte alignment
+            var result = CudaRuntime.cudaMalloc(ref _devicePointer, alignedSize);
 
             if (result != CudaError.Success)
             {
-                throw new MemoryException($"Failed to allocate CUDA memory: {CudaRuntime.GetErrorString(result)}");
-            }
-
-            _logger.LogDebug("Allocated {Size} bytes at device pointer {Pointer:X}",
-                SizeInBytes, _devicePointer.ToInt64());
-
-            // Initialize memory to zero by default
-            if (true) // Always zero-initialize for safety
-            {
-                result = CudaRuntime.cudaMemset(_devicePointer, 0, (ulong)SizeInBytes);
-
+                // Try standard allocation if aligned fails
+                result = CudaRuntime.cudaMalloc(ref _devicePointer, (ulong)SizeInBytes);
+                
                 if (result != CudaError.Success)
                 {
-                    // Clean up on failure
-                    CudaRuntime.cudaFree(_devicePointer);
-                    _devicePointer = IntPtr.Zero;
-                    throw new MemoryException($"Failed to zero-initialize CUDA memory: {CudaRuntime.GetErrorString(result)}");
+                    var errorMsg = CudaRuntime.GetErrorString(result);
+                    _logger.LogError("CUDA memory allocation failed: {Error}", errorMsg);
+                    throw new MemoryException($"Failed to allocate CUDA memory: {errorMsg}");
                 }
+            }
+
+            _logger.LogDebug("Allocated {Size}MB at device pointer {Pointer:X} (aligned: {AlignedSize}MB)",
+                SizeInBytes / (1024 * 1024), _devicePointer.ToInt64(), alignedSize / (1024 * 1024));
+
+            // Initialize memory to zero for safety and deterministic behavior
+            result = CudaRuntime.cudaMemset(_devicePointer, 0, (ulong)SizeInBytes);
+
+            if (result != CudaError.Success)
+            {
+                // Clean up on failure
+                var freeResult = CudaRuntime.cudaFree(_devicePointer);
+                _devicePointer = IntPtr.Zero;
+                
+                if (freeResult != CudaError.Success)
+                {
+                    _logger.LogWarning("Failed to clean up after allocation failure: {Error}", 
+                        CudaRuntime.GetErrorString(freeResult));
+                }
+                
+                throw new MemoryException($"Failed to zero-initialize CUDA memory: {CudaRuntime.GetErrorString(result)}");
             }
         }
         catch (Exception ex) when (ex is not MemoryException)
         {
+            _logger.LogError(ex, "Unexpected error during CUDA memory allocation");
             throw new MemoryException($"Failed to allocate {SizeInBytes} bytes of CUDA memory", ex);
         }
     }
@@ -132,10 +173,10 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
 
         if (offset + bytesToCopy > SizeInBytes)
         {
-            throw new ArgumentException("Copy would exceed buffer bounds");
+            throw new ArgumentException($"Copy would exceed buffer bounds: {offset + bytesToCopy} > {SizeInBytes}");
         }
 
-        // Pin source memory
+        // Pin source memory for optimal transfer
         using var handle = source.Pin();
         IntPtr srcPtr;
         IntPtr dstPtr;
@@ -148,8 +189,24 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
         await Task.Run(() =>
         {
             _context.MakeCurrent();
-            var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (ulong)bytesToCopy, CudaMemcpyKind.HostToDevice);
-            CudaRuntime.CheckError(result, "Memory copy from host");
+            
+            // Use async copy for better performance with larger transfers
+            if (bytesToCopy >= 64 * 1024) // Use async for transfers >= 64KB
+            {
+                var result = CudaRuntime.cudaMemcpyAsync(dstPtr, srcPtr, (ulong)bytesToCopy, 
+                    CudaMemcpyKind.HostToDevice, _context.Stream);
+                CudaRuntime.CheckError(result, "Async memory copy from host");
+                
+                // Synchronize to ensure completion
+                result = CudaRuntime.cudaStreamSynchronize(_context.Stream);
+                CudaRuntime.CheckError(result, "Stream synchronization after host copy");
+            }
+            else
+            {
+                // Use synchronous copy for small transfers
+                var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (ulong)bytesToCopy, CudaMemcpyKind.HostToDevice);
+                CudaRuntime.CheckError(result, "Synchronous memory copy from host");
+            }
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -170,10 +227,10 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
 
         if (offset + bytesToCopy > SizeInBytes)
         {
-            throw new ArgumentException("Copy would exceed buffer bounds");
+            throw new ArgumentException($"Copy would exceed buffer bounds: {offset + bytesToCopy} > {SizeInBytes}");
         }
 
-        // Pin destination memory
+        // Pin destination memory for optimal transfer
         using var handle = destination.Pin();
         IntPtr srcPtr;
         IntPtr dstPtr;
@@ -186,8 +243,24 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
         await Task.Run(() =>
         {
             _context.MakeCurrent();
-            var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (ulong)bytesToCopy, CudaMemcpyKind.DeviceToHost);
-            CudaRuntime.CheckError(result, "Memory copy to host");
+            
+            // Use async copy for better performance with larger transfers
+            if (bytesToCopy >= 64 * 1024) // Use async for transfers >= 64KB
+            {
+                var result = CudaRuntime.cudaMemcpyAsync(dstPtr, srcPtr, (ulong)bytesToCopy, 
+                    CudaMemcpyKind.DeviceToHost, _context.Stream);
+                CudaRuntime.CheckError(result, "Async memory copy to host");
+                
+                // Must synchronize for device-to-host to ensure data is available
+                result = CudaRuntime.cudaStreamSynchronize(_context.Stream);
+                CudaRuntime.CheckError(result, "Stream synchronization after host copy");
+            }
+            else
+            {
+                // Use synchronous copy for small transfers
+                var result = CudaRuntime.cudaMemcpy(dstPtr, srcPtr, (ulong)bytesToCopy, CudaMemcpyKind.DeviceToHost);
+                CudaRuntime.CheckError(result, "Synchronous memory copy to host");
+            }
         }, cancellationToken).ConfigureAwait(false);
     }
 
@@ -252,17 +325,26 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
                 if (_devicePointer != IntPtr.Zero)
                 {
                     _context.MakeCurrent();
+                    
+                    // Ensure any pending operations complete before freeing
+                    var syncResult = CudaRuntime.cudaDeviceSynchronize();
+                    if (syncResult != CudaError.Success)
+                    {
+                        _logger.LogWarning("Failed to synchronize device before freeing memory: {Error}",
+                            CudaRuntime.GetErrorString(syncResult));
+                    }
+                    
                     var result = CudaRuntime.cudaFree(_devicePointer);
 
                     if (result != CudaError.Success)
                     {
-                        _logger.LogWarning("Failed to free CUDA memory: {Error}",
+                        _logger.LogError("Failed to free CUDA memory: {Error}. Potential memory leak!",
                             CudaRuntime.GetErrorString(result));
                     }
                     else
                     {
-                        _logger.LogDebug("Freed {Size} bytes at device pointer {Pointer:X}",
-                            SizeInBytes, _devicePointer.ToInt64());
+                        _logger.LogDebug("Freed {Size}MB at device pointer {Pointer:X}",
+                            SizeInBytes / (1024 * 1024), _devicePointer.ToInt64());
                     }
 
                     _devicePointer = IntPtr.Zero;
@@ -270,26 +352,55 @@ public sealed class CudaMemoryBuffer : ISyncMemoryBuffer
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during CUDA buffer disposal");
+                _logger.LogError(ex, "Critical error during CUDA buffer disposal");
+                // Don't rethrow during disposal to prevent further issues
             }
         }
 
         _disposed = true;
     }
+    
+    /// <summary>
+    /// Finalizer to ensure memory is freed even if Dispose is not called
+    /// </summary>
+    ~CudaMemoryBuffer()
+    {
+        if (!_disposed && _devicePointer != IntPtr.Zero)
+        {
+            _logger.LogWarning("CUDA memory buffer finalized without explicit disposal. Size: {Size}MB. "
+                + "This indicates a potential resource leak.", SizeInBytes / (1024 * 1024));
+            Dispose(false);
+        }
+    }
 }
 
 /// <summary>
-/// A view into a CUDA memory buffer (for slicing)
+/// A view into a CUDA memory buffer (for slicing) with improved bounds checking
 /// </summary>
-internal sealed class CudaMemoryBufferView(CudaMemoryBuffer parent, long offset, long length, ILogger logger) : ISyncMemoryBuffer
+internal sealed class CudaMemoryBufferView : ISyncMemoryBuffer
 {
 #pragma warning disable CA2213 // Disposable fields should be disposed - View doesn't own the parent buffer, so it shouldn't dispose it
-    private readonly CudaMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+    private readonly CudaMemoryBuffer _parent;
 #pragma warning restore CA2213
-    private readonly long _offset = offset;
-    private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    private readonly long _offset;
+    private readonly ILogger _logger;
+    
+    public CudaMemoryBufferView(CudaMemoryBuffer parent, long offset, long length, ILogger logger)
+    {
+        _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+        _offset = offset;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        SizeInBytes = length;
+        
+        if (offset < 0)
+            throw new ArgumentException("Offset cannot be negative", nameof(offset));
+        if (length <= 0)
+            throw new ArgumentException("Length must be greater than zero", nameof(length));
+        if (offset + length > parent.SizeInBytes)
+            throw new ArgumentException("View would exceed parent buffer bounds");
+    }
 
-    public long SizeInBytes { get; } = length;
+    public long SizeInBytes { get; private set; }
     public MemoryOptions Options => _parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
 

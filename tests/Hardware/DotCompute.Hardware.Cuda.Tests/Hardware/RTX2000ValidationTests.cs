@@ -54,7 +54,7 @@ public sealed class RTX2000ValidationTests : IDisposable
         if (IsRTX2000Series(info.Name))
         {
             Assert.NotNull(info);
-            info.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
+            _ = info.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
             info.ComputeCapability.Should().NotBeNull();
             (info.ComputeCapability!.Major >= 7).Should().BeTrue(); // RTX 2000 series has compute capability 7.5
 

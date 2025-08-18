@@ -88,7 +88,7 @@ public sealed class CudaKernelLauncher
     /// </summary>
     public async Task LaunchKernelAsync(
         IntPtr function,
-        KernelArguments arguments,
+        Abstractions.KernelArguments arguments,
         CudaLaunchConfig? config = null,
         CancellationToken cancellationToken = default)
     {
@@ -103,9 +103,9 @@ public sealed class CudaKernelLauncher
         
         try
         {
-            foreach (var arg in arguments.Arguments)
+            for (int i = 0; i < arguments.Length; i++)
             {
-                IntPtr argPtr = PrepareKernelArgument(arg, handles);
+                IntPtr argPtr = PrepareKernelArgument(arguments.Get(i), handles);
                 argPointers.Add(argPtr);
             }
             
@@ -153,7 +153,7 @@ public sealed class CudaKernelLauncher
     /// <summary>
     /// Calculates optimal launch configuration based on device properties and workload
     /// </summary>
-    public CudaLaunchConfig CalculateOptimalLaunchConfig(KernelArguments arguments)
+    public CudaLaunchConfig CalculateOptimalLaunchConfig(Abstractions.KernelArguments arguments)
     {
         // Default to 1D configuration with optimal block size
         var optimalBlockSize = CalculateOptimalBlockSize();
@@ -171,7 +171,7 @@ public sealed class CudaKernelLauncher
     }
     
     /// <summary>
-    /// Calculates optimal block size based on device properties
+    /// Calculates optimal block size based on device properties with RTX 2000 Ada optimizations
     /// </summary>
     private int CalculateOptimalBlockSize()
     {
@@ -179,9 +179,26 @@ public sealed class CudaKernelLauncher
         var warpSize = _deviceProps.WarpSize;
         var maxThreadsPerBlock = _deviceProps.MaxThreadsPerBlock;
         var multiprocessorCount = _deviceProps.MultiProcessorCount;
+        var major = _deviceProps.Major;
+        var minor = _deviceProps.Minor;
+        
+        // RTX 2000 Ada specific optimizations (compute capability 8.9)
+        if (major == 8 && minor == 9)
+        {
+            // Ada has 24 SMs with 1536 threads each
+            // Optimal: 3 blocks of 512 threads per SM for max occupancy
+            var optimalBlockSize = 512;
+            
+            // Validate and align to warp size
+            optimalBlockSize = Math.Min(optimalBlockSize, maxThreadsPerBlock);
+            optimalBlockSize = (optimalBlockSize / warpSize) * warpSize;
+            
+            _logger.LogDebug("RTX 2000 Ada optimal block size: {BlockSize} threads", optimalBlockSize);
+            return optimalBlockSize;
+        }
         
         // Target 4-8 blocks per multiprocessor for good occupancy
-        var targetBlocksPerSM = 4;
+        var targetBlocksPerSM = major >= 8 ? 6 : 4; // Higher occupancy for Ampere+
         var targetBlockSize = (_deviceProps.MaxThreadsPerMultiProcessor / targetBlocksPerSM);
         
         // Round down to nearest multiple of warp size
@@ -196,29 +213,31 @@ public sealed class CudaKernelLauncher
     /// <summary>
     /// Estimates problem size from kernel arguments
     /// </summary>
-    private int EstimateProblemSize(KernelArguments arguments)
+    private int EstimateProblemSize(Abstractions.KernelArguments arguments)
     {
         // Look for buffer sizes or explicit size parameters
-        foreach (var arg in arguments.Arguments)
+        for (int i = 0; i < arguments.Length; i++)
         {
+            var argValue = arguments.Get(i);
+            
             // Check for memory buffers
-            if (arg is ISyncMemoryBuffer buffer)
+            if (argValue is ISyncMemoryBuffer memoryBuffer)
             {
                 // Estimate element count for common data types
-                var elementSize = EstimateElementSize(buffer);
+                var elementSize = EstimateElementSize(memoryBuffer);
                 if (elementSize > 0)
                 {
-                    return (int)(buffer.SizeInBytes / elementSize);
+                    return (int)(memoryBuffer.SizeInBytes / elementSize);
                 }
             }
             
             // Check for explicit size parameters (integers)
-            if (arg is int intSize && intSize > 0 && intSize < int.MaxValue / 4)
+            if (argValue is int intSize && intSize > 0 && intSize < int.MaxValue / 4)
             {
                 return intSize;
             }
             
-            if (arg is uint uintSize && uintSize > 0 && uintSize < uint.MaxValue / 4)
+            if (argValue is uint uintSize && uintSize > 0 && uintSize < uint.MaxValue / 4)
             {
                 return (int)uintSize;
             }
@@ -254,34 +273,25 @@ public sealed class CudaKernelLauncher
     /// <summary>
     /// Prepares a single kernel argument for launch
     /// </summary>
-    private static IntPtr PrepareKernelArgument(object arg, List<GCHandle> handles)
+    private static IntPtr PrepareKernelArgument(object argValue, List<GCHandle> handles)
     {
-        switch (arg)
+        // Check if it's a memory buffer type first
+        if (argValue is ISyncMemoryBuffer memoryBuffer)
         {
-            case Memory.CudaMemoryBuffer cudaBuffer:
-                {
-                    var devicePtr = cudaBuffer.DevicePointer;
-                    var handle = GCHandle.Alloc(devicePtr, GCHandleType.Pinned);
-                    handles.Add(handle);
-                    return handle.AddrOfPinnedObject();
-                }
-                
-            case Memory.CudaMemoryBufferView cudaView:
-                {
-                    var devicePtr = cudaView.DevicePointer;
-                    var handle = GCHandle.Alloc(devicePtr, GCHandleType.Pinned);
-                    handles.Add(handle);
-                    return handle.AddrOfPinnedObject();
-                }
-                
-            default:
-                {
-                    // Pin value types and references
-                    var handle = GCHandle.Alloc(arg, GCHandleType.Pinned);
-                    handles.Add(handle);
-                    return handle.AddrOfPinnedObject();
-                }
+            // For memory buffers, we need the device pointer
+            if (memoryBuffer is Memory.CudaMemoryBuffer cudaBuffer)
+            {
+                var devicePtr = cudaBuffer.DevicePointer;
+                var handle = GCHandle.Alloc(devicePtr, GCHandleType.Pinned);
+                handles.Add(handle);
+                return handle.AddrOfPinnedObject();
+            }
         }
+        
+        // For scalar values, pin the value directly
+        var scalarHandle = GCHandle.Alloc(argValue, GCHandleType.Pinned);
+        handles.Add(scalarHandle);
+        return scalarHandle.AddrOfPinnedObject();
     }
     
     /// <summary>
@@ -298,6 +308,13 @@ public sealed class CudaKernelLauncher
     /// </summary>
     public CudaLaunchConfig GetOptimalConfigFor2D(int width, int height)
     {
+        // RTX 2000 Ada optimization for 2D workloads
+        if (_deviceProps.Major == 8 && _deviceProps.Minor == 9)
+        {
+            // Use 16x32 blocks for optimal memory coalescing on Ada
+            return CudaLaunchConfig.Create2D(width, height, 16, 32);
+        }
+        
         // Use 16x16 blocks for good memory coalescing in 2D workloads
         return CudaLaunchConfig.Create2D(width, height, 16, 16);
     }
@@ -307,12 +324,19 @@ public sealed class CudaKernelLauncher
     /// </summary>
     public CudaLaunchConfig GetOptimalConfigFor3D(int width, int height, int depth)
     {
+        // RTX 2000 Ada optimization for 3D workloads
+        if (_deviceProps.Major == 8 && _deviceProps.Minor == 9)
+        {
+            // Use 8x8x8 blocks optimized for Ada's cache hierarchy
+            return CudaLaunchConfig.Create3D(width, height, depth, 8, 8, 8);
+        }
+        
         // Use 8x8x8 blocks for 3D workloads
         return CudaLaunchConfig.Create3D(width, height, depth, 8, 8, 8);
     }
     
     /// <summary>
-    /// Validates launch configuration against device limits
+    /// Validates launch configuration against device limits with Ada-specific checks
     /// </summary>
     public bool ValidateLaunchConfig(CudaLaunchConfig config)
     {
@@ -320,6 +344,8 @@ public sealed class CudaKernelLauncher
         var blockSize = config.BlockX * config.BlockY * config.BlockZ;
         if (blockSize > _deviceProps.MaxThreadsPerBlock)
         {
+            _logger.LogWarning("Block size {BlockSize} exceeds device limit {MaxThreadsPerBlock}", 
+                blockSize, _deviceProps.MaxThreadsPerBlock);
             return false;
         }
         
@@ -328,6 +354,9 @@ public sealed class CudaKernelLauncher
             config.BlockY > _deviceProps.MaxThreadsDim[1] ||
             config.BlockZ > _deviceProps.MaxThreadsDim[2])
         {
+            _logger.LogWarning("Block dimensions ({BlockX},{BlockY},{BlockZ}) exceed device limits ({MaxX},{MaxY},{MaxZ})", 
+                config.BlockX, config.BlockY, config.BlockZ,
+                _deviceProps.MaxThreadsDim[0], _deviceProps.MaxThreadsDim[1], _deviceProps.MaxThreadsDim[2]);
             return false;
         }
         
@@ -336,13 +365,36 @@ public sealed class CudaKernelLauncher
             config.GridY > _deviceProps.MaxGridSize[1] ||
             config.GridZ > _deviceProps.MaxGridSize[2])
         {
+            _logger.LogWarning("Grid dimensions ({GridX},{GridY},{GridZ}) exceed device limits ({MaxX},{MaxY},{MaxZ})", 
+                config.GridX, config.GridY, config.GridZ,
+                _deviceProps.MaxGridSize[0], _deviceProps.MaxGridSize[1], _deviceProps.MaxGridSize[2]);
             return false;
         }
         
-        // Check shared memory
-        if (config.SharedMemoryBytes > _deviceProps.SharedMemPerBlock)
+        // Check shared memory - RTX 2000 Ada has 100KB available
+        var maxSharedMem = _deviceProps.SharedMemPerBlock;
+        if (_deviceProps.Major == 8 && _deviceProps.Minor == 9)
         {
+            // Ada generation can use up to 100KB shared memory with opt-in
+            maxSharedMem = 102400; // 100KB
+        }
+        
+        if (config.SharedMemoryBytes > maxSharedMem)
+        {
+            _logger.LogWarning("Shared memory {SharedMemBytes} bytes exceeds device limit {MaxSharedMem} bytes", 
+                config.SharedMemoryBytes, maxSharedMem);
             return false;
+        }
+        
+        // RTX 2000 Ada specific validation
+        if (_deviceProps.Major == 8 && _deviceProps.Minor == 9)
+        {
+            // Optimal occupancy check for Ada
+            var blocksPerSM = _deviceProps.MaxThreadsPerMultiProcessor / (int)blockSize;
+            if (blocksPerSM < 2)
+            {
+                _logger.LogInformation("RTX 2000 Ada: Low occupancy detected. Consider reducing block size for better performance");
+            }
         }
         
         return true;

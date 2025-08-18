@@ -3,6 +3,7 @@
 
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32.SafeHandles;
 using DotCompute.Backends.CUDA.Native;
 
 namespace DotCompute.Backends.CUDA.Native;
@@ -40,6 +41,32 @@ public static class CudaRuntime
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cudaDeviceReset();
 
+    // Driver API Initialization
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuInit(uint flags);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuDeviceGet(out int device, int ordinal);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuDeviceGetCount(out int count);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is appropriate here
+    internal static extern CudaError cuDeviceGetName(
+        [MarshalAs(UnmanagedType.LPStr)] StringBuilder name, 
+        int len, 
+        int device);
+#pragma warning restore CA2101
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuDriverGetVersion(out int driverVersion);
+
     // Context Management (Driver API)
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -60,6 +87,15 @@ public static class CudaRuntime
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cuCtxSynchronize();
+
+    // Driver API Error Handling
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGetErrorString(CudaError error, out IntPtr pStr);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGetErrorName(CudaError error, out IntPtr pStr);
 
     // Memory Management
     [DllImport(CUDA_LIBRARY)]
@@ -131,6 +167,10 @@ public static class CudaRuntime
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaStreamCreateWithPriority(ref IntPtr pStream, uint flags, int priority);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cudaStreamDestroy(IntPtr stream);
 
     [DllImport(CUDA_LIBRARY)]
@@ -140,6 +180,26 @@ public static class CudaRuntime
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cudaStreamQuery(IntPtr stream);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaStreamWaitEvent(IntPtr stream, IntPtr eventHandle, uint flags);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaStreamAddCallback(IntPtr stream, IntPtr callback, IntPtr userData, uint flags);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaDeviceGetStreamPriorityRange(out int leastPriority, out int greatestPriority);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaStreamGetPriority(IntPtr stream, out int priority);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaStreamGetFlags(IntPtr stream, out uint flags);
 
     // Module Management (Driver API)
     [DllImport(CUDA_DRIVER_LIBRARY)]
@@ -769,5 +829,130 @@ public static class ComputeCapability
     }
 #pragma warning restore CA1034
 #pragma warning restore CA1724
+}
+
+/// <summary>
+/// Safe handle for CUDA device memory pointers to ensure proper cleanup.
+/// </summary>
+public sealed class SafeCudaDeviceMemoryHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeCudaDeviceMemoryHandle() : base(true)
+    {
+    }
+
+    public SafeCudaDeviceMemoryHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var result = CudaRuntime.cudaFree(handle);
+            return result == CudaError.Success;
+        }
+        return true;
+    }
+}
+
+/// <summary>
+/// Safe handle for CUDA host (pinned) memory pointers to ensure proper cleanup.
+/// </summary>
+public sealed class SafeCudaHostMemoryHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeCudaHostMemoryHandle() : base(true)
+    {
+    }
+
+    public SafeCudaHostMemoryHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var result = CudaRuntime.cudaFreeHost(handle);
+            return result == CudaError.Success;
+        }
+        return true;
+    }
+}
+
+/// <summary>
+/// Safe handle for CUDA streams to ensure proper cleanup.
+/// </summary>
+public sealed class SafeCudaStreamHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeCudaStreamHandle() : base(true)
+    {
+    }
+
+    public SafeCudaStreamHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var result = CudaRuntime.cudaStreamDestroy(handle);
+            return result == CudaError.Success;
+        }
+        return true;
+    }
+}
+
+/// <summary>
+/// Safe handle for CUDA events to ensure proper cleanup.
+/// </summary>
+public sealed class SafeCudaEventHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeCudaEventHandle() : base(true)
+    {
+    }
+
+    public SafeCudaEventHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var result = CudaRuntime.cudaEventDestroy(handle);
+            return result == CudaError.Success;
+        }
+        return true;
+    }
+}
+
+/// <summary>
+/// Safe handle for CUDA module handles to ensure proper cleanup.
+/// </summary>
+public sealed class SafeCudaModuleHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeCudaModuleHandle() : base(true)
+    {
+    }
+
+    public SafeCudaModuleHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var result = CudaRuntime.cuModuleUnload(handle);
+            return result == CudaError.Success;
+        }
+        return true;
+    }
 }
 

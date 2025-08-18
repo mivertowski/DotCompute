@@ -1,5 +1,5 @@
 using System.CommandLine;
-using DotCompute.Tools.CoverageAnalysis;
+using CoverageAnalysis;
 
 internal sealed class Program
 {

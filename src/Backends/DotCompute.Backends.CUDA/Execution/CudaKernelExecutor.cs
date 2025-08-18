@@ -92,7 +92,7 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
                 Id = Guid.NewGuid(),
                 KernelName = kernel.Id.ToString(),
                 SubmittedAt = DateTimeOffset.UtcNow,
-                Stream = _streamManager.GetOrCreateStream(executionConfig.Stream),
+                Stream = IntPtr.Zero, // Will use default stream for now
                 StartEvent = _eventManager.CreateEvent(),
                 EndEvent = _eventManager.CreateEvent()
             };
@@ -106,20 +106,21 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
                 var launchConfig = GetOptimalLaunchConfig(kernel, executionConfig);
                 
                 // Record start event
-                _eventManager.RecordEvent(execution.StartEvent, execution.Stream);
+                _eventManager.RecordEventFast(execution.StartEvent, execution.Stream);
                 
                 // Launch kernel
                 await LaunchKernelAsync(kernel, cudaArgs, launchConfig, execution.Stream, cancellationToken)
                     .ConfigureAwait(false);
                 
                 // Record end event
-                _eventManager.RecordEvent(execution.EndEvent, execution.Stream);
+                _eventManager.RecordEventFast(execution.EndEvent, execution.Stream);
                 
                 // Wait for completion if synchronous
                 if (!executionConfig.Flags.HasFlag(KernelExecutionFlags.None))
                 {
-                    await _streamManager.SynchronizeStreamAsync(execution.Stream, cancellationToken)
-                        .ConfigureAwait(false);
+                    // Synchronize with the stream
+                    var result = CudaRuntime.cudaStreamSynchronize(execution.Stream);
+                    CudaRuntime.CheckError(result, "stream synchronization");
                 }
 
                 execution.CompletedAt = DateTimeOffset.UtcNow;
@@ -176,7 +177,7 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
             Id = Guid.NewGuid(),
             KernelName = kernel.Id.ToString(),
             SubmittedAt = DateTimeOffset.UtcNow,
-            Stream = _streamManager.GetOrCreateStream(executionConfig.Stream),
+            Stream = IntPtr.Zero, // Will use default stream for now
             StartEvent = _eventManager.CreateEvent(),
             EndEvent = _eventManager.CreateEvent()
         };
@@ -196,10 +197,10 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
                     var cudaArgs = ConvertArgumentsToCuda(arguments);
                     var launchConfig = GetOptimalLaunchConfig(kernel, executionConfig);
                     
-                    _eventManager.RecordEvent(execution.StartEvent, execution.Stream);
+                    _eventManager.RecordEventFast(execution.StartEvent, execution.Stream);
                     await LaunchKernelAsync(kernel, cudaArgs, launchConfig, execution.Stream)
                         .ConfigureAwait(false);
-                    _eventManager.RecordEvent(execution.EndEvent, execution.Stream);
+                    _eventManager.RecordEventFast(execution.EndEvent, execution.Stream);
                     
                     execution.CompletedAt = DateTimeOffset.UtcNow;
                     execution.IsCompleted = true;
@@ -435,11 +436,30 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
         var warpSize = deviceProps.WarpSize;
         var maxThreadsPerBlock = deviceProps.MaxThreadsPerBlock;
         var maxThreadsPerSM = deviceProps.MaxThreadsPerMultiProcessor;
+        var major = deviceProps.Major;
+        var minor = deviceProps.Minor;
 
-        // Target 50% occupancy for good performance
-        var targetOccupancy = 0.5;
-        var maxBlocksPerSM = (int)(maxThreadsPerSM * targetOccupancy / warpSize);
-        var blockSize = maxThreadsPerSM / maxBlocksPerSM;
+        // RTX 2000 Ada specific optimizations (compute capability 8.9)
+        if (major == 8 && minor == 9)
+        {
+            // Ada architecture has 24 SMs, 1536 threads per SM
+            // Optimal configuration for RTX 2000: 512 threads per block
+            var optimalBlockSize = 512;
+            
+            // Validate against device limits
+            optimalBlockSize = Math.Min(optimalBlockSize, maxThreadsPerBlock);
+            
+            // Ensure it's a multiple of warp size
+            optimalBlockSize = (optimalBlockSize / warpSize) * warpSize;
+            
+            _logger.LogDebug("Using RTX 2000 Ada optimized block size: {BlockSize}", optimalBlockSize);
+            return optimalBlockSize;
+        }
+
+        // Target 75% occupancy for Ampere+ architectures
+        var targetOccupancy = major >= 8 ? 0.75 : 0.5;
+        var maxBlocksPerSM = Math.Max(1, (int)(maxThreadsPerSM * targetOccupancy / 256));
+        var blockSize = Math.Min(512, maxThreadsPerSM / maxBlocksPerSM);
 
         // Round to nearest multiple of warp size
         blockSize = (blockSize / warpSize) * warpSize;
@@ -448,28 +468,14 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
         return Math.Max(warpSize, Math.Min(blockSize, maxThreadsPerBlock));
     }
 
-    private KernelArguments ConvertArgumentsToCuda(KernelArgument[] arguments)
+    private Abstractions.KernelArguments ConvertArgumentsToCuda(KernelArgument[] arguments)
     {
-        var convertedArgs = new List<object>();
-        
-        foreach (var arg in arguments)
-        {
-            if (arg.IsDeviceMemory && arg.MemoryBuffer is CudaMemoryBuffer cudaBuffer)
-            {
-                convertedArgs.Add(cudaBuffer);
-            }
-            else
-            {
-                convertedArgs.Add(arg.Value);
-            }
-        }
-
-        return new KernelArguments(convertedArgs);
+        return new Abstractions.KernelArguments(arguments);
     }
 
     private async Task LaunchKernelAsync(
         CompiledKernel kernel,
-        KernelArguments arguments,
+        Abstractions.KernelArguments arguments,
         CudaLaunchConfig launchConfig,
         IntPtr stream,
         CancellationToken cancellationToken = default)
@@ -489,23 +495,24 @@ public sealed class CudaKernelExecutor : IKernelExecutor, IDisposable
             .ConfigureAwait(false);
     }
 
-    private async Task<KernelExecutionTimings> CaptureTimingsAsync(CudaKernelExecution execution)
+    private Task<KernelExecutionTimings> CaptureTimingsAsync(CudaKernelExecution execution)
     {
-        // Wait for events to complete
-        await _eventManager.SynchronizeEventAsync(execution.EndEvent).ConfigureAwait(false);
+        // Wait for events to complete  
+        var result = CudaRuntime.cudaEventSynchronize(execution.EndEvent);
+        CudaRuntime.CheckError(result, "event synchronization");
         
         // Calculate kernel execution time
         var kernelTimeMs = _eventManager.ElapsedTime(execution.StartEvent, execution.EndEvent);
         var totalTimeMs = (execution.CompletedAt!.Value - execution.SubmittedAt).TotalMilliseconds;
 
-        return new KernelExecutionTimings
+        return Task.FromResult(new KernelExecutionTimings
         {
             KernelTimeMs = kernelTimeMs,
             TotalTimeMs = totalTimeMs,
             QueueWaitTimeMs = Math.Max(0, totalTimeMs - kernelTimeMs),
             EffectiveMemoryBandwidthGBps = CalculateMemoryBandwidth(kernelTimeMs),
             EffectiveComputeThroughputGFLOPS = CalculateComputeThroughput(kernelTimeMs)
-        };
+        });
     }
 
     private double CalculateMemoryBandwidth(double kernelTimeMs)

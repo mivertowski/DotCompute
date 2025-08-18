@@ -26,7 +26,6 @@
     <PackageTags>metal;gpu;macos;ios;backend;compute;tensor;aot</PackageTags>
     
     <!-- Build Configuration -->
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
