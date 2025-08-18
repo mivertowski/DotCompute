@@ -222,7 +222,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
         if (_packageCache.TryGetValue(cacheKey, out var cachedPackage) && 
             IsCacheValid(cachedPackage))
         {
-            LogPackageLoadedFromCache(identity.Id, identity.Version.ToString());
+            _ = LogPackageLoadedFromCache(identity.Id, identity.Version.ToString());
             return CreateLoadResult(cachedPackage, stopwatch.Elapsed, true);
         }
 
@@ -237,7 +237,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
         // Cache the processed package
         _packageCache.TryAdd(cacheKey, processedPackage);
 
-        LogPackageLoadCompleted(identity.Id, identity.Version.ToString(), stopwatch.ElapsedMilliseconds);
+        _ = LogPackageLoadCompleted(identity.Id, identity.Version.ToString(), stopwatch.ElapsedMilliseconds);
         return CreateLoadResult(processedPackage, stopwatch.Elapsed, false);
     }
 
@@ -266,7 +266,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
         if (_packageCache.TryGetValue(cacheKey, out var cachedPackage) && 
             IsCacheValid(cachedPackage))
         {
-            LogPackageLoadedFromCache(identity.Id, identity.Version.ToString());
+            _ = LogPackageLoadedFromCache(identity.Id, identity.Version.ToString());
             return CreateLoadResult(cachedPackage, stopwatch.Elapsed, true);
         }
 
@@ -297,7 +297,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             // Cache the processed package
             _packageCache.TryAdd(cacheKey, processedPackage);
 
-            LogPackageLoadCompleted(identity.Id, identity.Version.ToString(), stopwatch.ElapsedMilliseconds);
+            _ = LogPackageLoadCompleted(identity.Id, identity.Version.ToString(), stopwatch.ElapsedMilliseconds);
             return CreateLoadResult(processedPackage, stopwatch.Elapsed, false);
         }
         finally
@@ -311,7 +311,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
     /// </summary>
     private async Task<string> DownloadPackageAsync(PackageIdentity identity, CancellationToken cancellationToken)
     {
-        LogDownloadingPackage(identity.Id, identity.Version.ToString());
+        _ = LogDownloadingPackage(identity.Id, identity.Version.ToString());
 
         var settings = Settings.LoadDefaultSettings(null);
         var sourceRepositoryProvider = new SourceRepositoryProvider(new PackageSourceProvider(settings), Repository.Provider.GetCoreV3());
@@ -340,7 +340,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
                     await downloadResult.PackageStream.CopyToAsync(fileStream, cancellationToken)
                         .ConfigureAwait(false);
                     
-                    LogPackageDownloaded(identity.Id, identity.Version.ToString(), new FileInfo(downloadPath).Length);
+                    _ = LogPackageDownloaded(identity.Id, identity.Version.ToString(), new FileInfo(downloadPath).Length);
                     return downloadPath;
                 }
             }
@@ -375,7 +375,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             
             if (extractTime >= packageTime)
             {
-                LogPackageAlreadyExtracted(identity.Id, identity.Version.ToString());
+                _ = LogPackageAlreadyExtracted(identity.Id, identity.Version.ToString());
                 return Task.FromResult(extractPath);
             }
             
@@ -385,7 +385,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
 
         Directory.CreateDirectory(extractPath);
 
-        LogExtractingPackage(identity.Id, identity.Version.ToString(), extractPath);
+        _ = LogExtractingPackage(identity.Id, identity.Version.ToString(), extractPath);
 
         try
         {
@@ -416,12 +416,12 @@ public sealed partial class NuGetPluginLoader : IDisposable
                 entry.ExtractToFile(entryPath, true);
             }
 
-            LogPackageExtracted(identity.Id, identity.Version.ToString(), archive.Entries.Count);
+            _ = LogPackageExtracted(identity.Id, identity.Version.ToString(), archive.Entries.Count);
             return Task.FromResult(extractPath);
         }
         catch (Exception ex)
         {
-            LogPackageExtractionFailed(identity.Id, identity.Version.ToString(), ex.Message);
+            _ = LogPackageExtractionFailed(identity.Id, identity.Version.ToString(), ex.Message);
             
             // Clean up on failure
             if (Directory.Exists(extractPath))
@@ -450,7 +450,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
         string originalPackagePath,
         CancellationToken cancellationToken)
     {
-        LogProcessingPackage(identity.Id, identity.Version.ToString());
+        _ = LogProcessingPackage(identity.Id, identity.Version.ToString());
 
         // Load package manifest
         var manifest = await LoadPackageManifestAsync(extractedPath).ConfigureAwait(false);
@@ -487,7 +487,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             PackageHash = packageHash
         };
 
-        LogPackageProcessed(identity.Id, identity.Version.ToString(), assemblyPaths.Length, dependencies.Length);
+        _ = LogPackageProcessed(identity.Id, identity.Version.ToString(), assemblyPaths.Length, dependencies.Length);
         return cachedPackage;
     }
 
@@ -767,7 +767,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
 
                 if (latestPackage != null)
                 {
-                    LogLatestVersionResolved(packageId, latestPackage.Identity.Version.ToString());
+                    _ = LogLatestVersionResolved(packageId, latestPackage.Identity.Version.ToString());
                     return latestPackage.Identity.Version;
                 }
             }
@@ -815,7 +815,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
         
         if (latestVersion <= currentCached.Identity.Version)
         {
-            LogPackageAlreadyLatest(packageId, currentCached.Identity.Version.ToString());
+            _ = LogPackageAlreadyLatest(packageId, currentCached.Identity.Version.ToString());
             return CreateLoadResult(currentCached, TimeSpan.Zero, true);
         }
 
@@ -836,7 +836,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             }
         }
 
-        LogUpdatingPackage(packageId, currentCached.Identity.Version.ToString(), latestVersion.ToString());
+        _ = LogUpdatingPackage(packageId, currentCached.Identity.Version.ToString(), latestVersion.ToString());
 
         // Load new version
         return await LoadPackageAsync($"{packageId}:{latestVersion}", targetFramework, cancellationToken)
@@ -878,7 +878,7 @@ public sealed partial class NuGetPluginLoader : IDisposable
             ? _packageCache.Where(kvp => DateTime.UtcNow - kvp.Value.CacheTime > olderThan.Value).ToList()
             : [.. _packageCache];
 
-        LogClearingCache(packagesToRemove.Count, olderThan?.ToString() ?? "all");
+        _ = LogClearingCache(packagesToRemove.Count, olderThan?.ToString() ?? "all");
 
         var cleanupTasks = packagesToRemove.Select(async kvp =>
         {

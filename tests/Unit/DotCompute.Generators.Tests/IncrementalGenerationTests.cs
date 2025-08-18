@@ -33,8 +33,8 @@ public class IncrementalGenerationTests
         
         for(int i = 0; i < result1.GeneratedSources.Length; i++)
         {
-            result1.GeneratedSources[i].SourceText.ToString()
-                .Should().Be(result2.GeneratedSources[i].SourceText.ToString());
+            _ = result1.GeneratedSources[i].SourceText.ToString()
+                _ = .Should().Be(result2.GeneratedSources[i].SourceText.ToString());
         }
     }
 
@@ -178,7 +178,7 @@ public class TestKernels
         var initialCpu = initialResult.GeneratedSources.First(s => s.HintName.Contains("CPU"));
         var updatedCpu = updatedResult.GeneratedSources.First(s => s.HintName.Contains("CPU"));
         
-        initialCpu.SourceText.ToString().Should().Not.Be(updatedCpu.SourceText.ToString());
+        _ = initialCpu.SourceText.ToString().Should().Not.Be(updatedCpu.SourceText.ToString());
     }
 
     [Fact]
@@ -242,8 +242,8 @@ public class TestKernels
         // Generated source should be identical
         for(int i = 0; i < initialResult.GeneratedSources.Length; i++)
         {
-            initialResult.GeneratedSources[i].SourceText.ToString()
-                .Should().Be(updatedResult.GeneratedSources[i].SourceText.ToString());
+            _ = initialResult.GeneratedSources[i].SourceText.ToString()
+                _ = .Should().Be(updatedResult.GeneratedSources[i].SourceText.ToString());
         }
     }
 

@@ -17,7 +17,7 @@ public sealed class CpuAcceleratorConstructorTests : IDisposable
     private readonly FakeLogger<CpuAccelerator> _logger;
     private readonly IOptions<CpuAcceleratorOptions> _options;
     private readonly IOptions<CpuThreadPoolOptions> _threadPoolOptions;
-    private readonly bool _disposed;
+    private bool _disposed;
 
     public CpuAcceleratorConstructorTests()
     {

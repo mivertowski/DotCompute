@@ -19,6 +19,7 @@ namespace DotCompute.Tests.Hardware;
 public sealed class CudaSystemDiagnostics : IDisposable
 {
     private readonly ILogger<CudaSystemDiagnostics> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly CudaBackend? _backend;
     private readonly CudaAccelerator? _accelerator;
     private bool _disposed;
@@ -326,14 +327,14 @@ public sealed class CudaSystemDiagnostics : IDisposable
 
     public CudaSystemDiagnostics(ITestOutputHelper output)
     {
-        var loggerFactory = LoggerFactory.Create(builder =>
+        _loggerFactory = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(LogLevel.Debug));
 
-        _logger = loggerFactory.CreateLogger<CudaSystemDiagnostics>();
+        _logger = _loggerFactory.CreateLogger<CudaSystemDiagnostics>();
 
         if (CudaBackend.IsAvailable())
         {
-            _backend = new CudaBackend(loggerFactory.CreateLogger<CudaBackend>());
+            _backend = new CudaBackend(_loggerFactory.CreateLogger<CudaBackend>());
             _accelerator = _backend.GetDefaultAccelerator();
         }
     }
@@ -427,7 +428,7 @@ public sealed class CudaSystemDiagnostics : IDisposable
         LogTotalMemory(_logger, info.TotalMemory, null);
         LogComputeUnits(_logger, info.ComputeUnits, null);
         LogMaxClock(_logger, info.MaxClockFrequency, null);
-        LogComputeCapabilityInfo(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
+        _ = LogComputeCapabilityInfo(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
         LogUnifiedMemory(_logger, info.IsUnifiedMemory, null);
 
         // Validate specific capabilities
@@ -442,7 +443,7 @@ public sealed class CudaSystemDiagnostics : IDisposable
         foreach (var expectedCap in expectedCapabilities)
         {
             Assert.True(caps.ContainsKey(expectedCap), $"Missing capability: {expectedCap}");
-            LogCapability(_logger, expectedCap, caps[expectedCap]?.ToString() ?? "Unknown", null);
+            _ = LogCapability(_logger, expectedCap, caps[expectedCap]?.ToString() ?? "Unknown", null);
         }
     }
 
@@ -538,7 +539,7 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
                 EnableDebugInfo = optLevel == OptimizationLevel.None
             };
 
-            LogCompilingWithOptimization(_logger, optLevel.ToString(), null);
+            _ = LogCompilingWithOptimization(_logger, optLevel.ToString(), null);
 
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
@@ -720,6 +721,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
 
         _accelerator?.Dispose();
         _backend?.Dispose();
+        _loggerFactory?.Dispose();
         _disposed = true;
     }
 }

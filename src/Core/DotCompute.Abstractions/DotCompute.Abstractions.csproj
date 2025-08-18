@@ -22,7 +22,6 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     
     <!-- Build Configuration -->
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
     
     <!-- Performance -->

@@ -273,14 +273,7 @@ internal static partial class CpuKernelCompiler
         {
             return MemoryAccessPattern.ReadOnly;
         }
-        else if (writeOnlyParams == bufferParams)
-        {
-            return MemoryAccessPattern.WriteOnly;
-        }
-        else
-        {
-            return MemoryAccessPattern.ReadWrite;
-        }
+        else return writeOnlyParams == bufferParams ? MemoryAccessPattern.WriteOnly : MemoryAccessPattern.ReadWrite;
     }
 
     private static ComputeIntensity EstimateComputeIntensity(KernelDefinition definition)

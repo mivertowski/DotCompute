@@ -47,7 +47,7 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
         // Verify plugin-accelerator relationship
         foreach (var plugin in loadedPlugins)
         {
-            LoggerMessages.LoadedPlugin(Logger, plugin.Name, plugin.Version.ToString());
+            _ = LoggerMessages.LoadedPlugin(Logger, plugin.Name, plugin.Version.ToString());
             var pluginAccelerators = availableAccelerators
                 .Where(a => a.Info.DeviceType.Contains(plugin.Name, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -403,7 +403,7 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
         catch (Exception ex)
         {
             stopwatch.Stop();
-            LoggerMessages.KernelExecutionFailed(Logger, ex, backend.ToString());
+            _ = LoggerMessages.KernelExecutionFailed(Logger, ex, backend.ToString());
 
             return new PluginExecutionResult
             {

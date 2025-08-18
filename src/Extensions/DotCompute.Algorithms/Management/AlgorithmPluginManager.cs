@@ -239,7 +239,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
 
             LogNuGetPackageLoaded(
                 loadResult.PackageIdentity.Id, 
-                loadResult.PackageIdentity.Version.ToString(),
+                _ = loadResult.PackageIdentity.Version.ToString(),
                 loadResult.LoadedAssemblyPaths.Length,
                 loadResult.ResolvedDependencies.Length);
 
@@ -286,7 +286,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
 
             LogNuGetPackageLoadCompleted(
                 loadResult.PackageIdentity.Id, 
-                loadResult.PackageIdentity.Version.ToString(),
+                _ = loadResult.PackageIdentity.Version.ToString(),
                 totalPluginsLoaded,
                 loadResult.LoadTime.TotalMilliseconds);
 
@@ -351,7 +351,7 @@ public sealed partial class AlgorithmPluginManager : IAsyncDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        LogClearingNuGetCache(olderThan?.ToString() ?? "all");
+        _ = LogClearingNuGetCache(olderThan?.ToString() ?? "all");
 
         try
         {

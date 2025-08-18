@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text;
 using System.Globalization;
 
-namespace DotCompute.Tools.CoverageAnalysis;
+namespace CoverageAnalysis;
 
 /// <summary>
 /// Analyzes code coverage reports and generates comprehensive analysis

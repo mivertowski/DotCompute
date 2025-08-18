@@ -19,16 +19,12 @@
   </ItemGroup>
   
   <ItemGroup>
-    <!-- Exclude problematic test files with compilation errors -->
-    <Compile Remove="CUDAKernelExecutorTests.cs" />
-    <Compile Remove="DirectComputeKernelExecutorTests.cs" />
-    <Compile Remove="OpenCLKernelExecutorTests.cs" />
-    <Compile Remove="MemoryManagerInterfaceTests.cs" />
-    <Compile Remove="DirectComputeKernelCompilerTests.cs" />
+    <!-- Temporarily exclude files with complex syntax issues that need manual fixes -->
     <Compile Remove="OpenCLKernelCompilerTests.cs" />
+    <Compile Remove="DirectComputeKernelCompilerTests.cs" />
     <Compile Remove="PipelineComponentTests.cs" />
     <Compile Remove="PipelineIntegrationTests.cs" />
-    <!-- Files are included automatically by SDK -->
+    <Compile Remove="MemoryManagerInterfaceTests.cs" />
   </ItemGroup>
   
   <ItemGroup>

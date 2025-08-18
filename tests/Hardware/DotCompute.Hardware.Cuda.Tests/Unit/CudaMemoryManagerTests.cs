@@ -20,6 +20,7 @@ namespace DotCompute.Tests.Hardware.Unit;
 public sealed class CudaMemoryManagerTests : IDisposable
 {
     private readonly ILogger<CudaMemoryManagerTests> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
     private readonly List<ISyncMemoryBuffer> _buffers = [];
@@ -40,8 +41,8 @@ public sealed class CudaMemoryManagerTests : IDisposable
     public CudaMemoryManagerTests(ITestOutputHelper output)
     {
         _output = output;
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        _logger = loggerFactory.CreateLogger<CudaMemoryManagerTests>();
+        _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        _logger = _loggerFactory.CreateLogger<CudaMemoryManagerTests>();
     }
 
     [Fact]
@@ -532,5 +533,6 @@ public sealed class CudaMemoryManagerTests : IDisposable
             }
         }
         _accelerators.Clear();
+        _loggerFactory?.Dispose();
     }
 }

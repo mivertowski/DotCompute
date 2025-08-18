@@ -6,181 +6,160 @@ using DotCompute.Abstractions;
 namespace DotCompute.Backends.CUDA.Types;
 
 /// <summary>
-/// CUDA-specific wrapper for KernelArguments to provide CUDA-specific functionality
+/// Extended memory statistics for CUDA memory management
+/// </summary>
+public sealed class CudaMemoryStatisticsExtended : MemoryStatistics
+{
+    public long PinnedMemoryBytes { get; set; }
+    public long UnifiedMemoryBytes { get; set; }
+    public long PooledMemoryBytes { get; set; }
+    public int PoolHits { get; set; }
+    public int PoolMisses { get; set; }
+    public double PoolEfficiency => PoolHits + PoolMisses > 0 ? 
+        (double)PoolHits / (PoolHits + PoolMisses) : 0.0;
+    public long HostToDeviceTransfers { get; set; }
+    public long DeviceToHostTransfers { get; set; }
+    public long TotalTransferredBytes { get; set; }
+    public double AverageBandwidth { get; set; } // MB/s
+    public double MemoryFragmentation { get; set; }
+    public DateTime LastUpdate { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// CUDA memory allocation flags and options
+/// </summary>
+[Flags]
+public enum CudaMemoryFlags : uint
+{
+    None = 0,
+    DeviceLocal = 1,
+    HostVisible = 2,
+    HostCoherent = 4,
+    HostCached = 8,
+    LazilyAllocated = 16,
+    Protected = 32,
+    Unified = 64,
+    Pinned = 128
+}
+
+/// <summary>
+/// CUDA memory type enumeration
+/// </summary>
+public enum CudaMemoryType
+{
+    Device,
+    Host,
+    Unified,
+    Pinned,
+    Mapped
+}
+
+/// <summary>
+/// CUDA memory alignment requirements
+/// </summary>
+public static class CudaMemoryAlignment
+{
+    public const int MinAlignment = 256; // 256 bytes minimum for coalesced access
+    public const int OptimalAlignment = 512; // 512 bytes optimal for RTX 2000 series
+    public const int TextureAlignment = 512; // Texture memory alignment
+    public const int SurfaceAlignment = 512; // Surface memory alignment
+    
+    public static long AlignUp(long size, int alignment = OptimalAlignment)
+    {
+        return ((size + alignment - 1) / alignment) * alignment;
+    }
+    
+    public static bool IsAligned(long size, int alignment = OptimalAlignment)
+    {
+        return size % alignment == 0;
+    }
+}
+
+/// <summary>
+/// Kernel arguments for CUDA execution
 /// </summary>
 public sealed class CudaKernelArguments
 {
-    private readonly object[] _arguments;
-
-    /// <summary>
-    /// Initializes a new instance of KernelArguments with the specified arguments.
-    /// </summary>
-    /// <param name="args">The kernel arguments.</param>
-    public CudaKernelArguments(params object[] args)
-    {
-        _arguments = args ?? throw new ArgumentNullException(nameof(args));
-    }
-
-    /// <summary>
-    /// Gets the argument at the specified index.
-    /// </summary>
-    /// <param name="index">The index of the argument.</param>
-    /// <returns>The argument value.</returns>
-    public object this[int index] => _arguments[index];
-
-    /// <summary>
-    /// Gets the number of arguments.
-    /// </summary>
-    public int Count => _arguments.Length;
-
-    /// <summary>
-    /// Gets all arguments as an array.
-    /// </summary>
-    public object[] ToArray() => _arguments.ToArray();
-
-    /// <summary>
-    /// Converts from core KernelArgument array to CUDA KernelArguments.
-    /// </summary>
-    /// <param name="arguments">The core kernel arguments.</param>
-    /// <returns>CUDA-specific kernel arguments.</returns>
-    public static CudaKernelArguments FromCore(DotCompute.Core.Kernels.KernelArgument[] arguments)
-    {
-        var args = arguments.Select(arg => arg.Value).ToArray();
-        return new CudaKernelArguments(args);
-    }
-
-    /// <summary>
-    /// Converts from core KernelArguments struct to CUDA KernelArguments class.
-    /// </summary>
-    /// <param name="arguments">The core kernel arguments.</param>
-    /// <returns>CUDA-specific kernel arguments.</returns>
-    public static CudaKernelArguments FromCore(DotCompute.Abstractions.KernelArguments arguments)
-    {
-        return new CudaKernelArguments(arguments.Arguments.ToArray());
-    }
-
-    /// <summary>
-    /// Converts to core KernelArguments struct.
-    /// </summary>
-    /// <returns>Core kernel arguments.</returns>
-    public DotCompute.Abstractions.KernelArguments ToCore()
-    {
-        return new DotCompute.Abstractions.KernelArguments(_arguments);
-    }
-}
-
-/// <summary>
-/// Compilation exception for kernel compilation failures
-/// </summary>
-public class KernelCompilationException : Exception
-{
-    /// <summary>
-    /// Gets the compiler log if available.
-    /// </summary>
-    public string? CompilerLog { get; }
-
-    public KernelCompilationException() : base() { }
-
-    public KernelCompilationException(string message) : base(message) { }
-
-    public KernelCompilationException(string message, Exception innerException) : base(message, innerException) { }
-
-    public KernelCompilationException(string message, string? compilerLog) : base(message)
-    {
-        CompilerLog = compilerLog;
-    }
-
-    public KernelCompilationException(string message, string? compilerLog, Exception innerException) : base(message, innerException)
-    {
-        CompilerLog = compilerLog;
-    }
-}
-
-
-/// <summary>
-/// CUDA memory statistics for tracking memory usage
-/// </summary>
-public sealed class CudaMemoryStatistics : IDisposable
-{
-    public long TotalMemoryBytes { get; set; }
-    public long UsedMemoryBytes { get; set; }
-    public long FreeMemoryBytes => TotalMemoryBytes - UsedMemoryBytes;
-    public int AllocationCount { get; set; }
-    public int DeallocationCount { get; set; }
-    public long PeakUsageBytes { get; set; }
-    public double FragmentationRatio { get; set; }
-    public TimeSpan TotalAllocationTime { get; set; }
-    public TimeSpan TotalDeallocationTime { get; set; }
-    private bool _disposed;
-
-    /// <summary>
-    /// Gets the current statistics snapshot
-    /// </summary>
-    public CudaMemoryStatistics GetCurrentStatistics()
-    {
-        return new CudaMemoryStatistics
-        {
-            TotalMemoryBytes = TotalMemoryBytes,
-            UsedMemoryBytes = UsedMemoryBytes,
-            AllocationCount = AllocationCount,
-            DeallocationCount = DeallocationCount,
-            PeakUsageBytes = PeakUsageBytes,
-            FragmentationRatio = FragmentationRatio,
-            TotalAllocationTime = TotalAllocationTime,
-            TotalDeallocationTime = TotalDeallocationTime
-        };
-    }
-
-    public void Dispose()
-    {
-        if (!_disposed)
-        {
-            _disposed = true;
-        }
-    }
-}
-
-/// <summary>
-/// CUDA-specific validation result
-/// </summary>
-internal sealed class ValidationResult
-{
-    public bool IsValid { get; set; }
-    public string? ErrorMessage { get; set; }
-    public List<string>? Warnings { get; set; }
-
-    private ValidationResult() { }
-
-    public static ValidationResult Success() => new() { IsValid = true };
-
-    public static ValidationResult SuccessWithWarnings(params string[] warnings) => new()
-    {
-        IsValid = true,
-        Warnings = warnings.ToList()
-    };
+    private readonly List<object> _arguments = new();
     
-    public static ValidationResult Success(string? warningMessage) => new()
+    public CudaKernelArguments() { }
+    
+    public CudaKernelArguments(params object[] arguments)
     {
-        IsValid = true,
-        Warnings = warningMessage != null ? new List<string> { warningMessage } : null
-    };
+        _arguments.AddRange(arguments);
+    }
+    
+    public void Add<T>(T argument) where T : unmanaged
+    {
+        _arguments.Add(argument);
+    }
+    
+    public void AddBuffer(IntPtr devicePointer)
+    {
+        _arguments.Add(devicePointer);
+    }
+    
+    public object[] ToArray() => _arguments.ToArray();
+    
+    public int Count => _arguments.Count;
+}
 
-    public static ValidationResult Failure(string errorMessage) => new()
-    {
-        IsValid = false,
-        ErrorMessage = errorMessage
-    };
+
+/// <summary>
+/// Validation result for CUDA operations
+/// </summary>
+public sealed class ValidationResult
+{
+    public bool IsValid { get; init; }
+    public string? ErrorMessage { get; init; }
+    public List<string> Warnings { get; init; } = new();
+    
+    public static ValidationResult Success() => new() { IsValid = true };
+    public static ValidationResult Success(string message) => new() { IsValid = true, ErrorMessage = message };
+    public static ValidationResult Error(string message) => new() { IsValid = false, ErrorMessage = message };
+    public static ValidationResult Failure(string message) => new() { IsValid = false, ErrorMessage = message };
+    public static ValidationResult SuccessWithWarnings(List<string> warnings) => new() { IsValid = true, Warnings = warnings };
+    public static ValidationResult SuccessWithWarnings(string[] warnings) => new() { IsValid = true, Warnings = new List<string>(warnings) };
 }
 
 /// <summary>
-/// Cache statistics for CUDA kernel compiler
+/// Cache statistics for CUDA operations
 /// </summary>
 public sealed class CacheStatistics
 {
+    public int HitCount { get; set; }
+    public int MissCount { get; set; }
+    public int TotalRequests => HitCount + MissCount;
     public int TotalEntries { get; set; }
     public long TotalSizeBytes { get; set; }
+    public double HitRate { get; set; } = 0.0;
     public double AverageAccessCount { get; set; }
-    public DateTime? OldestEntryTime { get; set; }
-    public DateTime? NewestEntryTime { get; set; }
-    public double HitRate { get; set; }
+    public DateTime? OldestEntryTime { get; set; } = DateTime.UtcNow;
+    public DateTime? NewestEntryTime { get; set; } = DateTime.UtcNow;
+    public long CacheSizeBytes { get; set; }
+    public DateTime LastAccess { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Exception thrown during kernel compilation
+/// </summary>
+public sealed class KernelCompilationException : Exception
+{
+    public string? CompilerOutput { get; }
+    public string? SourceCode { get; }
+    public int? ErrorCode { get; }
+    
+    public KernelCompilationException() : base() { }
+    
+    public KernelCompilationException(string message) : base(message) { }
+    
+    public KernelCompilationException(string message, Exception innerException) : base(message, innerException) { }
+    
+    public KernelCompilationException(string message, string? compilerOutput, string? sourceCode = null, int? errorCode = null) 
+        : base(message)
+    {
+        CompilerOutput = compilerOutput;
+        SourceCode = sourceCode;
+        ErrorCode = errorCode;
+    }
 }

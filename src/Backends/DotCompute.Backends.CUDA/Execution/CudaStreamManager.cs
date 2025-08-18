@@ -2,86 +2,176 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
 namespace DotCompute.Backends.CUDA.Execution;
 
 /// <summary>
-/// Advanced CUDA stream manager with multi-stream support, priority queues, and automatic optimization
+/// Advanced CUDA stream manager with RTX 2000 optimizations, priority scheduling, and graph-like execution patterns
 /// </summary>
 public sealed class CudaStreamManager : IDisposable
 {
     private readonly CudaContext _context;
     private readonly ILogger _logger;
-    private readonly ConcurrentDictionary<object, IntPtr> _streams;
-    private readonly ConcurrentQueue<IntPtr> _availableStreams;
-    private readonly SemaphoreSlim _streamSemaphore;
     private readonly CudaStreamPool _streamPool;
+    private readonly ConcurrentDictionary<StreamId, CudaStreamInfo> _activeStreams;
+    private readonly ConcurrentDictionary<string, CudaStreamGroup> _streamGroups;
+    private readonly SemaphoreSlim _streamCreationSemaphore;
     private readonly Timer _maintenanceTimer;
     private readonly object _lockObject = new();
-    private IntPtr _defaultStream;
-    private IntPtr _highPriorityStream;
-    private IntPtr _lowPriorityStream;
-    private bool _disposed;
+    
+    // RTX 2000 optimization constants
+    private const int RTX_2000_SM_COUNT = 24;
+    private const int STREAMS_PER_SM_GROUP = 6; // 24 SMs / 4 streams = 6 SMs per stream
+    private const int OPTIMAL_CONCURRENT_STREAMS = 4;
+    private const int MAX_CONCURRENT_STREAMS = 32;
+    private const int INITIAL_POOL_SIZE = 8;
+    
+    // Stream priority ranges
+    private int _leastPriority;
+    private int _greatestPriority;
+    
+    // Special streams
+    private IntPtr _defaultStream = IntPtr.Zero;
+    private readonly IntPtr[] _rtxOptimizedStreams = new IntPtr[OPTIMAL_CONCURRENT_STREAMS];
+    private readonly CudaStreamDependencyTracker _dependencyTracker;
+    
+    private volatile bool _disposed;
 
-    // Stream configuration
-    private const int MaxConcurrentStreams = 32;
-    private const int InitialStreamPoolSize = 8;
-    private const uint CudaStreamNonBlocking = 0x01;
-    private const uint CudaStreamDefault = 0x00;
-
-    public CudaStreamManager(CudaContext context, ILogger logger)
+    public CudaStreamManager(CudaContext context, ILogger<CudaStreamManager> logger)
     {
         _context = context ?? throw new ArgumentNullException(nameof(context));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _streams = new ConcurrentDictionary<object, IntPtr>();
-        _availableStreams = new ConcurrentQueue<IntPtr>();
-        _streamSemaphore = new SemaphoreSlim(MaxConcurrentStreams, MaxConcurrentStreams);
-        _streamPool = new CudaStreamPool(context, logger);
+        _activeStreams = new ConcurrentDictionary<StreamId, CudaStreamInfo>();
+        _streamGroups = new ConcurrentDictionary<string, CudaStreamGroup>();
+        _streamCreationSemaphore = new SemaphoreSlim(MAX_CONCURRENT_STREAMS, MAX_CONCURRENT_STREAMS);
+        _dependencyTracker = new CudaStreamDependencyTracker();
 
         Initialize();
 
-        // Set up maintenance timer to clean up unused streams
-        _maintenanceTimer = new Timer(PerformMaintenance, null, 
-            TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
+        _streamPool = new CudaStreamPool(context, logger, _leastPriority, _greatestPriority);
 
-        _logger.LogInformation("CUDA Stream Manager initialized with {MaxStreams} max concurrent streams", 
-            MaxConcurrentStreams);
+        // Setup maintenance timer for cleanup and optimization
+        _maintenanceTimer = new Timer(PerformMaintenance, null, 
+            TimeSpan.FromMinutes(2), TimeSpan.FromMinutes(2));
+
+        _logger.LogInformation(
+            "CUDA Stream Manager initialized for RTX optimization: {OptimalStreams} optimal streams, " +
+            "priority range [{Least}, {Greatest}], max concurrent: {MaxStreams}",
+            OPTIMAL_CONCURRENT_STREAMS, _leastPriority, _greatestPriority, MAX_CONCURRENT_STREAMS);
     }
 
     /// <summary>
-    /// Gets the default CUDA stream
+    /// Gets the default CUDA stream (stream 0)
     /// </summary>
     public IntPtr DefaultStream => _defaultStream;
 
     /// <summary>
-    /// Gets the high priority stream for critical operations
+    /// Gets RTX 2000 optimized streams for maximum performance
     /// </summary>
-    public IntPtr HighPriorityStream => _highPriorityStream;
+    public IReadOnlyList<IntPtr> RtxOptimizedStreams => _rtxOptimizedStreams.AsReadOnly();
 
     /// <summary>
-    /// Gets the low priority stream for background operations
+    /// Gets the high priority stream for critical operations (backward compatibility)
     /// </summary>
-    public IntPtr LowPriorityStream => _lowPriorityStream;
+    public IntPtr HighPriorityStream => _rtxOptimizedStreams.Length > 0 ? _rtxOptimizedStreams[0] : _defaultStream;
 
     /// <summary>
-    /// Gets or creates a stream for the specified identifier
+    /// Gets the low priority stream for background operations (backward compatibility)
     /// </summary>
-    public IntPtr GetOrCreateStream(object? identifier = null)
+    public IntPtr LowPriorityStream => _rtxOptimizedStreams.Length > 1 ? _rtxOptimizedStreams[1] : _defaultStream;
+
+    /// <summary>
+    /// Creates a high-performance stream group optimized for RTX 2000
+    /// </summary>
+    public async Task<CudaStreamGroup> CreateRtxOptimizedGroupAsync(
+        string groupName,
+        CudaStreamPriority priority = CudaStreamPriority.High,
+        CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
 
-        if (identifier == null)
+        var group = new CudaStreamGroup(groupName, OPTIMAL_CONCURRENT_STREAMS);
+        
+        for (int i = 0; i < OPTIMAL_CONCURRENT_STREAMS; i++)
         {
-            return _defaultStream;
+            var streamHandle = await CreateStreamAsync(
+                CudaStreamFlags.NonBlocking, 
+                priority, 
+                cancellationToken).ConfigureAwait(false);
+            
+            group.AddStream(streamHandle.StreamId, streamHandle.Stream);
         }
 
-        return _streams.GetOrAdd(identifier, _ => CreateNewStream());
+        _streamGroups[groupName] = group;
+        
+        _logger.LogDebug("Created RTX-optimized stream group '{GroupName}' with {StreamCount} streams", 
+            groupName, OPTIMAL_CONCURRENT_STREAMS);
+
+        return group;
     }
 
     /// <summary>
-    /// Gets a stream from the pool for temporary use
+    /// Creates a new CUDA stream with advanced options
+    /// </summary>
+    public async Task<CudaStreamHandle> CreateStreamAsync(
+        CudaStreamFlags flags = CudaStreamFlags.NonBlocking,
+        CudaStreamPriority priority = CudaStreamPriority.Normal,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+        
+        await _streamCreationSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+        
+        try
+        {
+            _context.MakeCurrent();
+
+            var stream = IntPtr.Zero;
+            var streamId = StreamId.New();
+            var cudaPriority = ConvertToCudaPriority(priority);
+            var cudaFlags = ConvertToCudaFlags(flags);
+
+            CudaError result;
+            if (priority != CudaStreamPriority.Normal)
+            {
+                result = Native.CudaRuntime.cudaStreamCreateWithPriority(ref stream, cudaFlags, cudaPriority);
+            }
+            else
+            {
+                result = Native.CudaRuntime.cudaStreamCreateWithFlags(ref stream, cudaFlags);
+            }
+
+            Native.CudaRuntime.CheckError(result, "creating CUDA stream");
+
+            var streamInfo = new CudaStreamInfo
+            {
+                StreamId = streamId,
+                Handle = stream,
+                Flags = flags,
+                Priority = priority,
+                CreatedAt = DateTimeOffset.UtcNow,
+                LastUsed = DateTimeOffset.UtcNow
+            };
+
+            _activeStreams[streamId] = streamInfo;
+            
+            _logger.LogDebug("Created CUDA stream {StreamId} (handle={Handle}) with priority={Priority}, flags={Flags}", 
+                streamId, stream, priority, flags);
+
+            return new CudaStreamHandle(streamId, stream, this);
+        }
+        catch
+        {
+            _streamCreationSemaphore.Release();
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets or creates a stream from the pool for temporary use
     /// </summary>
     public async Task<CudaStreamHandle> GetPooledStreamAsync(
         CudaStreamPriority priority = CudaStreamPriority.Normal,
@@ -89,182 +179,266 @@ public sealed class CudaStreamManager : IDisposable
     {
         ThrowIfDisposed();
 
-        await _streamSemaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-        
-        try
-        {
-            var stream = _streamPool.AcquireStream(priority);
-            return new CudaStreamHandle(stream, this);
-        }
-        catch
-        {
-            _streamSemaphore.Release();
-            throw;
-        }
+        var pooledStream = await _streamPool.AcquireAsync(priority, cancellationToken).ConfigureAwait(false);
+        return pooledStream;
     }
 
     /// <summary>
-    /// Creates a new CUDA stream with specified flags
+    /// Creates a batch of streams for parallel execution
     /// </summary>
-    public IntPtr CreateStream(CudaStreamFlags flags = CudaStreamFlags.NonBlocking)
-    {
-        ThrowIfDisposed();
-        _context.MakeCurrent();
-
-        var stream = IntPtr.Zero;
-        var cudaFlags = ConvertToCudaFlags(flags);
-        var result = Native.CudaRuntime.cudaStreamCreateWithFlags(ref stream, cudaFlags);
-        Native.CudaRuntime.CheckError(result, "creating CUDA stream");
-
-        _logger.LogDebug("Created new CUDA stream {Stream} with flags {Flags}", stream, flags);
-        return stream;
-    }
-
-    /// <summary>
-    /// Destroys a CUDA stream
-    /// </summary>
-    public void DestroyStream(IntPtr stream)
-    {
-        if (stream == IntPtr.Zero || stream == _defaultStream || 
-            stream == _highPriorityStream || stream == _lowPriorityStream)
-        {
-            return; // Don't destroy special streams
-        }
-
-        _context.MakeCurrent();
-        var result = Native.CudaRuntime.cudaStreamDestroy(stream);
-        if (result != CudaError.Success)
-        {
-            _logger.LogWarning("Failed to destroy CUDA stream {Stream}: {Error}", 
-                stream, Native.CudaRuntime.GetErrorString(result));
-        }
-        else
-        {
-            _logger.LogDebug("Destroyed CUDA stream {Stream}", stream);
-        }
-    }
-
-    /// <summary>
-    /// Synchronizes a stream asynchronously
-    /// </summary>
-    public async Task SynchronizeStreamAsync(IntPtr stream, CancellationToken cancellationToken = default)
-    {
-        ThrowIfDisposed();
-        _context.MakeCurrent();
-
-        await Task.Run(() =>
-        {
-            var result = Native.CudaRuntime.cudaStreamSynchronize(stream);
-            Native.CudaRuntime.CheckError(result, $"synchronizing stream {stream}");
-        }, cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <summary>
-    /// Checks if a stream has completed all operations
-    /// </summary>
-    public bool IsStreamReady(IntPtr stream)
-    {
-        ThrowIfDisposed();
-        _context.MakeCurrent();
-
-        var result = Native.CudaRuntime.cudaStreamQuery(stream);
-        return result == CudaError.Success;
-    }
-
-    /// <summary>
-    /// Waits for a stream to complete with timeout
-    /// </summary>
-    public async Task<bool> WaitForStreamAsync(IntPtr stream, TimeSpan timeout, 
+    public async Task<CudaStreamHandle[]> CreateStreamBatchAsync(
+        int count,
+        CudaStreamFlags flags = CudaStreamFlags.NonBlocking,
+        CudaStreamPriority priority = CudaStreamPriority.Normal,
         CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
 
-        using var timeoutCts = new CancellationTokenSource(timeout);
-        using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken, timeoutCts.Token);
+        var streams = new CudaStreamHandle[count];
+        var tasks = new Task<CudaStreamHandle>[count];
 
-        try
+        for (int i = 0; i < count; i++)
         {
-            while (!IsStreamReady(stream))
-            {
-                await Task.Delay(1, combinedCts.Token).ConfigureAwait(false);
-            }
-            return true;
+            tasks[i] = CreateStreamAsync(flags, priority, cancellationToken);
         }
-        catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
-        {
-            return false; // Timeout
-        }
+
+        var results = await Task.WhenAll(tasks).ConfigureAwait(false);
+        Array.Copy(results, streams, count);
+
+        _logger.LogDebug("Created batch of {Count} streams with priority={Priority}", count, priority);
+        return streams;
     }
 
     /// <summary>
-    /// Synchronizes all streams
+    /// Synchronizes a stream asynchronously with advanced options
     /// </summary>
-    public async Task SynchronizeAllStreamsAsync(CancellationToken cancellationToken = default)
+    public async Task SynchronizeStreamAsync(
+        StreamId streamId, 
+        TimeSpan? timeout = null,
+        CancellationToken cancellationToken = default)
     {
         ThrowIfDisposed();
-        _context.MakeCurrent();
 
-        var tasks = new List<Task>();
-
-        // Synchronize all managed streams
-        foreach (var stream in _streams.Values)
+        if (!_activeStreams.TryGetValue(streamId, out var streamInfo))
         {
-            tasks.Add(SynchronizeStreamAsync(stream, cancellationToken));
+            throw new ArgumentException($"Stream {streamId} not found", nameof(streamId));
         }
 
-        // Synchronize special streams
-        tasks.Add(SynchronizeStreamAsync(_defaultStream, cancellationToken));
-        tasks.Add(SynchronizeStreamAsync(_highPriorityStream, cancellationToken));
-        tasks.Add(SynchronizeStreamAsync(_lowPriorityStream, cancellationToken));
+        _context.MakeCurrent();
 
-        await Task.WhenAll(tasks).ConfigureAwait(false);
+        if (timeout.HasValue)
+        {
+            using var timeoutCts = new CancellationTokenSource(timeout.Value);
+            using var combinedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, timeoutCts.Token);
+
+            try
+            {
+                await Task.Run(() =>
+                {
+                    var result = Native.CudaRuntime.cudaStreamSynchronize(streamInfo.Handle);
+                    Native.CudaRuntime.CheckError(result, $"synchronizing stream {streamId}");
+                }, combinedCts.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested)
+            {
+                throw new TimeoutException($"Stream {streamId} synchronization timed out after {timeout}");
+            }
+        }
+        else
+        {
+            await Task.Run(() =>
+            {
+                var result = Native.CudaRuntime.cudaStreamSynchronize(streamInfo.Handle);
+                Native.CudaRuntime.CheckError(result, $"synchronizing stream {streamId}");
+            }, cancellationToken).ConfigureAwait(false);
+        }
+
+        streamInfo.LastUsed = DateTimeOffset.UtcNow;
     }
 
     /// <summary>
-    /// Gets stream statistics for monitoring
+    /// Implements event-based synchronization between streams
+    /// </summary>
+    public async Task SynchronizeStreamsAsync(
+        StreamId waitingStream, 
+        StreamId signalStream, 
+        IntPtr eventHandle,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        if (!_activeStreams.TryGetValue(waitingStream, out var waitingStreamInfo))
+            throw new ArgumentException($"Waiting stream {waitingStream} not found");
+
+        if (!_activeStreams.TryGetValue(signalStream, out var signalStreamInfo))
+            throw new ArgumentException($"Signal stream {signalStream} not found");
+
+        _context.MakeCurrent();
+
+        // Record event on signal stream
+        var recordResult = Native.CudaRuntime.cudaEventRecord(eventHandle, signalStreamInfo.Handle);
+        Native.CudaRuntime.CheckError(recordResult, $"recording event on stream {signalStream}");
+
+        // Make waiting stream wait for the event
+        var waitResult = Native.CudaRuntime.cudaStreamWaitEvent(waitingStreamInfo.Handle, eventHandle, 0);
+        Native.CudaRuntime.CheckError(waitResult, $"making stream {waitingStream} wait for event");
+
+        _dependencyTracker.AddDependency(waitingStream, signalStream);
+
+        _logger.LogTrace("Synchronized stream {WaitingStream} to wait for stream {SignalStream} via event {Event}",
+            waitingStream, signalStream, eventHandle);
+
+        await Task.CompletedTask;
+    }
+
+    /// <summary>
+    /// Implements graph-like execution pattern with dependencies
+    /// </summary>
+    public async Task ExecuteGraphAsync(
+        CudaExecutionGraph graph,
+        CancellationToken cancellationToken = default)
+    {
+        ThrowIfDisposed();
+
+        var executionPlan = graph.BuildExecutionPlan();
+        var completedNodes = new ConcurrentDictionary<string, bool>();
+        var nodeTasks = new ConcurrentDictionary<string, Task>();
+
+        foreach (var level in executionPlan.Levels)
+        {
+            var levelTasks = new List<Task>();
+
+            foreach (var node in level.Nodes)
+            {
+                var task = Task.Run(async () =>
+                {
+                    // Wait for dependencies
+                    foreach (var dependency in node.Dependencies)
+                    {
+                        if (nodeTasks.TryGetValue(dependency, out var depTask))
+                        {
+                            await depTask.ConfigureAwait(false);
+                        }
+                    }
+
+                    // Execute node operation
+                    var streamHandle = await GetPooledStreamAsync(node.Priority, cancellationToken).ConfigureAwait(false);
+                    
+                    try
+                    {
+                        await node.Operation(streamHandle.Stream).ConfigureAwait(false);
+                        await SynchronizeStreamAsync(streamHandle.StreamId, cancellationToken: cancellationToken).ConfigureAwait(false);
+                        
+                        completedNodes[node.Id] = true;
+                        
+                        _logger.LogTrace("Completed execution graph node {NodeId} on stream {StreamId}", 
+                            node.Id, streamHandle.StreamId);
+                    }
+                    finally
+                    {
+                        streamHandle.Dispose();
+                    }
+                }, cancellationToken);
+
+                nodeTasks[node.Id] = task;
+                levelTasks.Add(task);
+            }
+
+            // Wait for all nodes in this level to complete
+            await Task.WhenAll(levelTasks).ConfigureAwait(false);
+        }
+
+        _logger.LogDebug("Completed execution graph with {NodeCount} nodes in {LevelCount} levels",
+            executionPlan.TotalNodes, executionPlan.Levels.Count);
+    }
+
+    /// <summary>
+    /// Checks if a stream is ready (all operations completed)
+    /// </summary>
+    public bool IsStreamReady(StreamId streamId)
+    {
+        ThrowIfDisposed();
+
+        if (!_activeStreams.TryGetValue(streamId, out var streamInfo))
+            return false;
+
+        _context.MakeCurrent();
+        var result = Native.CudaRuntime.cudaStreamQuery(streamInfo.Handle);
+        return result == CudaError.Success;
+    }
+
+    /// <summary>
+    /// Gets comprehensive stream statistics for monitoring
     /// </summary>
     public CudaStreamStatistics GetStatistics()
     {
         ThrowIfDisposed();
 
+        var activeCount = 0;
+        var busyCount = 0;
+        var totalAge = 0.0;
+        var now = DateTimeOffset.UtcNow;
+
+        foreach (var streamInfo in _activeStreams.Values)
+        {
+            activeCount++;
+            totalAge += (now - streamInfo.CreatedAt).TotalSeconds;
+            
+            if (!IsStreamReady(streamInfo.StreamId))
+            {
+                busyCount++;
+            }
+        }
+
         return new CudaStreamStatistics
         {
-            TotalStreams = _streams.Count + 3, // Include special streams
-            ActiveStreams = _streams.Values.Count(stream => !IsStreamReady(stream)) + 
-                           (!IsStreamReady(_defaultStream) ? 1 : 0) +
-                           (!IsStreamReady(_highPriorityStream) ? 1 : 0) +
-                           (!IsStreamReady(_lowPriorityStream) ? 1 : 0),
-            AvailablePooledStreams = _availableStreams.Count,
-            MaxConcurrentStreams = MaxConcurrentStreams,
-            PoolStatistics = _streamPool.GetStatistics()
+            ActiveStreams = activeCount,
+            BusyStreams = busyCount,
+            IdleStreams = activeCount - busyCount,
+            StreamGroups = _streamGroups.Count,
+            AverageStreamAge = activeCount > 0 ? totalAge / activeCount : 0,
+            PoolStatistics = _streamPool.GetStatistics(),
+            DependencyCount = _dependencyTracker.GetDependencyCount(),
+            OptimalConcurrentStreams = OPTIMAL_CONCURRENT_STREAMS,
+            MaxConcurrentStreams = MAX_CONCURRENT_STREAMS
         };
     }
 
     /// <summary>
-    /// Adds a callback to be executed when the stream completes
+    /// Adds a callback to be executed when stream operations complete
     /// </summary>
-    public void AddStreamCallback(IntPtr stream, Action callback)
+    public void AddStreamCallback(StreamId streamId, Func<StreamId, Task> callback)
     {
         ThrowIfDisposed();
 
-        // CUDA doesn't have direct callback support, so we use async monitoring
+        if (!_activeStreams.TryGetValue(streamId, out var streamInfo))
+            throw new ArgumentException($"Stream {streamId} not found");
+
         _ = Task.Run(async () =>
         {
             try
             {
-                await SynchronizeStreamAsync(stream).ConfigureAwait(false);
-                callback();
+                await SynchronizeStreamAsync(streamId).ConfigureAwait(false);
+                await callback(streamId).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in stream callback for stream {Stream}", stream);
+                _logger.LogError(ex, "Error in stream callback for stream {StreamId}", streamId);
             }
         });
     }
 
     /// <summary>
-    /// Optimizes stream usage by rebalancing load
+    /// Optimizes stream usage for RTX 2000 architecture
+    /// </summary>
+    public void OptimizeForRtx2000()
+    {
+        OptimizeStreamUsage();
+    }
+
+    /// <summary>
+    /// Optimizes stream usage (backward compatibility)
     /// </summary>
     public void OptimizeStreamUsage()
     {
@@ -272,30 +446,30 @@ public sealed class CudaStreamManager : IDisposable
 
         lock (_lockObject)
         {
-            // Clean up unused streams
-            var unusedStreams = _streams
-                .Where(kvp => IsStreamReady(kvp.Value))
-                .Take(_streams.Count / 2) // Keep at least half
+            // Rebalance streams based on SM utilization
+            var activeStreamCount = _activeStreams.Values.Count(s => !IsStreamReady(s.StreamId));
+            var optimalCount = Math.Min(activeStreamCount, OPTIMAL_CONCURRENT_STREAMS);
+
+            // Prefer high-priority streams for active work
+            var highPriorityStreams = _activeStreams.Values
+                .Where(s => s.Priority == CudaStreamPriority.High && !IsStreamReady(s.StreamId))
+                .Take(optimalCount)
                 .ToList();
 
-            foreach (var (key, stream) in unusedStreams)
-            {
-                if (_streams.TryRemove(key, out var removedStream))
-                {
-                    _availableStreams.Enqueue(removedStream);
-                }
-            }
+            _logger.LogDebug("RTX 2000 optimization: {ActiveStreams} active streams, {HighPriorityActive} high-priority active",
+                activeStreamCount, highPriorityStreams.Count);
 
-            _logger.LogDebug("Optimized stream usage: moved {Count} streams to pool", unusedStreams.Count);
+            // Additional optimization: cleanup old idle streams
+            CleanupIdleStreams(TimeSpan.FromMinutes(5));
         }
     }
 
-    internal void ReturnPooledStream(IntPtr stream)
+    internal void ReturnStreamToPool(StreamId streamId)
     {
-        if (!_disposed)
+        if (_activeStreams.TryRemove(streamId, out var streamInfo))
         {
-            _streamPool.ReleaseStream(stream);
-            _streamSemaphore.Release();
+            _streamPool.Return(streamInfo.Handle, streamInfo.Priority);
+            _streamCreationSemaphore.Release();
         }
     }
 
@@ -303,53 +477,116 @@ public sealed class CudaStreamManager : IDisposable
     {
         _context.MakeCurrent();
 
-        // Create default stream (stream 0)
-        _defaultStream = IntPtr.Zero; // CUDA default stream
-
-        // Create priority streams
-        _highPriorityStream = CreateStream(CudaStreamFlags.NonBlocking);
-        _lowPriorityStream = CreateStream(CudaStreamFlags.NonBlocking);
-
-        // Pre-allocate stream pool
-        for (int i = 0; i < InitialStreamPoolSize; i++)
+        // Get priority ranges
+        var priorityResult = Native.CudaRuntime.cudaDeviceGetStreamPriorityRange(out _leastPriority, out _greatestPriority);
+        if (priorityResult != CudaError.Success)
         {
-            var stream = CreateNewStream();
-            _availableStreams.Enqueue(stream);
+            _logger.LogWarning("Failed to get stream priority range, using defaults: {Error}",
+                Native.CudaRuntime.GetErrorString(priorityResult));
+            _leastPriority = 0;
+            _greatestPriority = -1;
         }
 
-        _logger.LogDebug("Initialized CUDA streams: default={Default}, high={High}, low={Low}, pool={Pool}",
-            _defaultStream, _highPriorityStream, _lowPriorityStream, InitialStreamPoolSize);
-    }
+        // Default stream is always stream 0
+        _defaultStream = IntPtr.Zero;
 
-    private IntPtr CreateNewStream()
-    {
-        if (_availableStreams.TryDequeue(out var availableStream))
+        // Create RTX-optimized streams
+        for (int i = 0; i < OPTIMAL_CONCURRENT_STREAMS; i++)
         {
-            return availableStream;
+            var stream = IntPtr.Zero;
+            var result = Native.CudaRuntime.cudaStreamCreateWithPriority(
+                ref stream, 
+                ConvertToCudaFlags(CudaStreamFlags.NonBlocking),
+                ConvertToCudaPriority(CudaStreamPriority.High));
+
+            if (result == CudaError.Success)
+            {
+                _rtxOptimizedStreams[i] = stream;
+            }
+            else
+            {
+                _logger.LogWarning("Failed to create RTX-optimized stream {Index}: {Error}", 
+                    i, Native.CudaRuntime.GetErrorString(result));
+                break;
+            }
         }
 
-        return CreateStream(CudaStreamFlags.NonBlocking);
+        _logger.LogDebug("Initialized {Count} RTX-optimized streams with priority range [{Least}, {Greatest}]",
+            _rtxOptimizedStreams.Count(s => s != IntPtr.Zero), _leastPriority, _greatestPriority);
     }
 
-    private static uint ConvertToCudaFlags(CudaStreamFlags flags)
+    private void CleanupIdleStreams(TimeSpan maxIdleTime)
     {
-        return flags switch
+        var cutoffTime = DateTimeOffset.UtcNow - maxIdleTime;
+        var idleStreams = _activeStreams
+            .Where(kvp => IsStreamReady(kvp.Key) && kvp.Value.LastUsed < cutoffTime)
+            .Take(10) // Limit cleanup batch size
+            .ToList();
+
+        foreach (var (streamId, streamInfo) in idleStreams)
         {
-            CudaStreamFlags.Default => CudaStreamDefault,
-            CudaStreamFlags.NonBlocking => CudaStreamNonBlocking,
-            _ => CudaStreamDefault
-        };
+            if (_activeStreams.TryRemove(streamId, out _))
+            {
+                DestroyStream(streamInfo.Handle);
+                _streamCreationSemaphore.Release();
+                
+                _logger.LogTrace("Cleaned up idle stream {StreamId} (idle for {IdleTime})", 
+                    streamId, DateTimeOffset.UtcNow - streamInfo.LastUsed);
+            }
+        }
+
+        if (idleStreams.Count > 0)
+        {
+            _logger.LogDebug("Cleaned up {Count} idle streams", idleStreams.Count);
+        }
     }
 
-    private void PerformMaintenance(object? state)
+    private void DestroyStream(IntPtr stream)
     {
-        if (_disposed)
-            return;
+        if (stream == IntPtr.Zero || Array.IndexOf(_rtxOptimizedStreams, stream) >= 0)
+            return; // Don't destroy default or RTX-optimized streams
 
         try
         {
-            OptimizeStreamUsage();
+            _context.MakeCurrent();
+            var result = Native.CudaRuntime.cudaStreamDestroy(stream);
+            if (result != CudaError.Success)
+            {
+                _logger.LogWarning("Failed to destroy CUDA stream {Stream}: {Error}", 
+                    stream, Native.CudaRuntime.GetErrorString(result));
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Exception while destroying stream {Stream}", stream);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static uint ConvertToCudaFlags(CudaStreamFlags flags) => flags switch
+    {
+        CudaStreamFlags.Default => 0x00,
+        CudaStreamFlags.NonBlocking => 0x01,
+        _ => 0x00
+    };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private int ConvertToCudaPriority(CudaStreamPriority priority) => priority switch
+    {
+        CudaStreamPriority.High => _greatestPriority,
+        CudaStreamPriority.Low => _leastPriority,
+        _ => (_leastPriority + _greatestPriority) / 2
+    };
+
+    private void PerformMaintenance(object? state)
+    {
+        if (_disposed) return;
+
+        try
+        {
+            OptimizeForRtx2000();
             _streamPool.PerformMaintenance();
+            _dependencyTracker.Cleanup();
         }
         catch (Exception ex)
         {
@@ -360,51 +597,89 @@ public sealed class CudaStreamManager : IDisposable
     private void ThrowIfDisposed()
     {
         if (_disposed)
-        {
             throw new ObjectDisposedException(nameof(CudaStreamManager));
-        }
     }
 
     public void Dispose()
     {
         if (!_disposed)
         {
+            _disposed = true;
+
             _maintenanceTimer?.Dispose();
 
             try
             {
-                // Synchronize all streams before cleanup
-                SynchronizeAllStreamsAsync().Wait(TimeSpan.FromSeconds(10));
+                // Synchronize all active streams
+                var syncTasks = _activeStreams.Values
+                    .Select(s => SynchronizeStreamAsync(s.StreamId, TimeSpan.FromSeconds(5)))
+                    .ToArray();
+
+                Task.WaitAll(syncTasks, TimeSpan.FromSeconds(10));
             }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Error synchronizing streams during disposal");
             }
 
-            // Destroy managed streams
-            foreach (var stream in _streams.Values)
+            // Destroy all active streams
+            foreach (var streamInfo in _activeStreams.Values)
             {
-                DestroyStream(stream);
+                DestroyStream(streamInfo.Handle);
             }
 
-            // Destroy pooled streams
-            while (_availableStreams.TryDequeue(out var stream))
+            // Destroy RTX-optimized streams
+            foreach (var stream in _rtxOptimizedStreams)
             {
-                DestroyStream(stream);
+                if (stream != IntPtr.Zero)
+                {
+                    DestroyStream(stream);
+                }
             }
-
-            // Destroy special streams (except default which is null)
-            DestroyStream(_highPriorityStream);
-            DestroyStream(_lowPriorityStream);
 
             _streamPool?.Dispose();
-            _streamSemaphore?.Dispose();
+            _streamCreationSemaphore?.Dispose();
+            _dependencyTracker?.Dispose();
 
-            _disposed = true;
-            
             _logger.LogInformation("CUDA Stream Manager disposed");
         }
     }
+}
+
+// Supporting types and classes follow...
+
+/// <summary>
+/// Unique identifier for CUDA streams
+/// </summary>
+public readonly struct StreamId : IEquatable<StreamId>
+{
+    private readonly Guid _id;
+
+    private StreamId(Guid id) => _id = id;
+
+    public static StreamId New() => new(Guid.NewGuid());
+
+    public bool Equals(StreamId other) => _id.Equals(other._id);
+    public override bool Equals(object? obj) => obj is StreamId other && Equals(other);
+    public override int GetHashCode() => _id.GetHashCode();
+    public override string ToString() => _id.ToString("N")[..8];
+
+    public static bool operator ==(StreamId left, StreamId right) => left.Equals(right);
+    public static bool operator !=(StreamId left, StreamId right) => !left.Equals(right);
+}
+
+/// <summary>
+/// Information about an active CUDA stream
+/// </summary>
+internal sealed class CudaStreamInfo
+{
+    public StreamId StreamId { get; set; }
+    public IntPtr Handle { get; set; }
+    public CudaStreamFlags Flags { get; set; }
+    public CudaStreamPriority Priority { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
+    public DateTimeOffset LastUsed { get; set; }
+    public long OperationCount { get; set; }
 }
 
 /// <summary>
@@ -422,32 +697,133 @@ public enum CudaStreamFlags
 public enum CudaStreamPriority
 {
     Low,
-    Normal,
+    Normal, 
     High
 }
 
 /// <summary>
-/// Handle for pooled CUDA streams with automatic cleanup
+/// Handle for managed CUDA streams with automatic cleanup
 /// </summary>
-public sealed class CudaStreamHandle : IDisposable
+public class CudaStreamHandle : IDisposable
 {
-    private readonly CudaStreamManager _manager;
-    private bool _disposed;
+    private readonly object? _manager;
+    private volatile bool _disposed;
 
-    internal CudaStreamHandle(IntPtr stream, CudaStreamManager manager)
+    internal CudaStreamHandle(StreamId streamId, IntPtr stream, object manager)
     {
+        StreamId = streamId;
         Stream = stream;
         _manager = manager;
     }
 
+    public StreamId StreamId { get; }
     public IntPtr Stream { get; }
 
     public void Dispose()
     {
         if (!_disposed)
         {
-            _manager.ReturnPooledStream(Stream);
             _disposed = true;
+            ReturnToManager();
+        }
+    }
+
+    protected virtual void ReturnToManager()
+    {
+        if (_manager is CudaStreamManager streamManager)
+        {
+            streamManager.ReturnStreamToPool(StreamId);
+        }
+        else if (_manager is IStreamReturnManager returnManager)
+        {
+            returnManager.ReturnStreamToPool(StreamId);
+        }
+    }
+}
+
+/// <summary>
+/// Group of streams working together
+/// </summary>
+public sealed class CudaStreamGroup : IDisposable
+{
+    private readonly ConcurrentDictionary<StreamId, IntPtr> _streams;
+    private volatile bool _disposed;
+
+    public CudaStreamGroup(string name, int capacity = 4)
+    {
+        Name = name;
+        _streams = new ConcurrentDictionary<StreamId, IntPtr>();
+    }
+
+    public string Name { get; }
+    public IReadOnlyDictionary<StreamId, IntPtr> Streams => _streams;
+
+    internal void AddStream(StreamId streamId, IntPtr stream)
+    {
+        _streams[streamId] = stream;
+    }
+
+    public void Dispose()
+    {
+        if (!_disposed)
+        {
+            _disposed = true;
+            // Stream cleanup is handled by the manager
+        }
+    }
+}
+
+/// <summary>
+/// Tracks dependencies between streams
+/// </summary>
+internal sealed class CudaStreamDependencyTracker : IDisposable
+{
+    private readonly ConcurrentDictionary<StreamId, HashSet<StreamId>> _dependencies;
+    private readonly object _lockObject = new();
+
+    public CudaStreamDependencyTracker()
+    {
+        _dependencies = new ConcurrentDictionary<StreamId, HashSet<StreamId>>();
+    }
+
+    public void AddDependency(StreamId dependent, StreamId dependency)
+    {
+        lock (_lockObject)
+        {
+            _dependencies.GetOrAdd(dependent, _ => new HashSet<StreamId>()).Add(dependency);
+        }
+    }
+
+    public int GetDependencyCount()
+    {
+        lock (_lockObject)
+        {
+            return _dependencies.Values.Sum(deps => deps.Count);
+        }
+    }
+
+    public void Cleanup()
+    {
+        lock (_lockObject)
+        {
+            // Remove old dependency tracking (implementation depends on specific needs)
+            var keysToRemove = _dependencies
+                .Where(kvp => kvp.Value.Count == 0)
+                .Select(kvp => kvp.Key)
+                .ToList();
+
+            foreach (var key in keysToRemove)
+            {
+                _dependencies.TryRemove(key, out _);
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        lock (_lockObject)
+        {
+            _dependencies.Clear();
         }
     }
 }
@@ -457,155 +833,94 @@ public sealed class CudaStreamHandle : IDisposable
 /// </summary>
 public sealed class CudaStreamStatistics
 {
-    public int TotalStreams { get; set; }
     public int ActiveStreams { get; set; }
-    public int AvailablePooledStreams { get; set; }
-    public int MaxConcurrentStreams { get; set; }
+    public int BusyStreams { get; set; }
+    public int IdleStreams { get; set; }
+    public int StreamGroups { get; set; }
+    public double AverageStreamAge { get; set; }
     public CudaStreamPoolStatistics? PoolStatistics { get; set; }
+    public int DependencyCount { get; set; }
+    public int OptimalConcurrentStreams { get; set; }
+    public int MaxConcurrentStreams { get; set; }
 }
 
 /// <summary>
-/// Internal stream pool for efficient stream reuse
+/// Execution graph for coordinated stream operations
 /// </summary>
-internal sealed class CudaStreamPool : IDisposable
+public sealed class CudaExecutionGraph
 {
-    private readonly CudaContext _context;
-    private readonly ILogger _logger;
-    private readonly ConcurrentQueue<IntPtr> _normalPriorityStreams;
-    private readonly ConcurrentQueue<IntPtr> _highPriorityStreams;
-    private readonly ConcurrentQueue<IntPtr> _lowPriorityStreams;
-    private readonly object _lockObject = new();
-    private bool _disposed;
+    private readonly List<CudaExecutionNode> _nodes = new();
 
-    public CudaStreamPool(CudaContext context, ILogger logger)
+    public void AddNode(string id, Func<IntPtr, Task> operation, 
+                       CudaStreamPriority priority = CudaStreamPriority.Normal,
+                       params string[] dependencies)
     {
-        _context = context;
-        _logger = logger;
-        _normalPriorityStreams = new ConcurrentQueue<IntPtr>();
-        _highPriorityStreams = new ConcurrentQueue<IntPtr>();
-        _lowPriorityStreams = new ConcurrentQueue<IntPtr>();
+        _nodes.Add(new CudaExecutionNode
+        {
+            Id = id,
+            Operation = operation,
+            Priority = priority,
+            Dependencies = dependencies.ToList()
+        });
     }
 
-    public IntPtr AcquireStream(CudaStreamPriority priority)
+    internal CudaExecutionPlan BuildExecutionPlan()
     {
-        var queue = GetQueueForPriority(priority);
-        
-        if (queue.TryDequeue(out var stream))
+        // Topological sort to determine execution levels
+        var levels = new List<CudaExecutionLevel>();
+        var completed = new HashSet<string>();
+        var remaining = _nodes.ToList();
+
+        while (remaining.Count > 0)
         {
-            return stream;
+            var readyNodes = remaining
+                .Where(node => node.Dependencies.All(dep => completed.Contains(dep)))
+                .ToList();
+
+            if (readyNodes.Count == 0)
+                throw new InvalidOperationException("Circular dependency detected in execution graph");
+
+            levels.Add(new CudaExecutionLevel { Nodes = readyNodes });
+
+            foreach (var node in readyNodes)
+            {
+                completed.Add(node.Id);
+                remaining.Remove(node);
+            }
         }
 
-        // Create new stream if none available
-        return CreateStreamForPriority(priority);
-    }
-
-    public void ReleaseStream(IntPtr stream)
-    {
-        if (_disposed || stream == IntPtr.Zero)
-            return;
-
-        // Return to normal priority queue by default
-        _normalPriorityStreams.Enqueue(stream);
-    }
-
-    public void PerformMaintenance()
-    {
-        if (_disposed)
-            return;
-
-        lock (_lockObject)
+        return new CudaExecutionPlan
         {
-            // Clean up excess streams to prevent memory leaks
-            CleanupExcessStreams(_normalPriorityStreams, 8);
-            CleanupExcessStreams(_highPriorityStreams, 4);
-            CleanupExcessStreams(_lowPriorityStreams, 4);
-        }
-    }
-
-    public CudaStreamPoolStatistics GetStatistics()
-    {
-        return new CudaStreamPoolStatistics
-        {
-            NormalPriorityStreams = _normalPriorityStreams.Count,
-            HighPriorityStreams = _highPriorityStreams.Count,
-            LowPriorityStreams = _lowPriorityStreams.Count
+            Levels = levels,
+            TotalNodes = _nodes.Count
         };
-    }
-
-    private ConcurrentQueue<IntPtr> GetQueueForPriority(CudaStreamPriority priority)
-    {
-        return priority switch
-        {
-            CudaStreamPriority.High => _highPriorityStreams,
-            CudaStreamPriority.Low => _lowPriorityStreams,
-            _ => _normalPriorityStreams
-        };
-    }
-
-    private IntPtr CreateStreamForPriority(CudaStreamPriority priority)
-    {
-        _context.MakeCurrent();
-        
-        var stream = IntPtr.Zero;
-        var result = Native.CudaRuntime.cudaStreamCreateWithFlags(ref stream, 0x01); // NonBlocking
-        Native.CudaRuntime.CheckError(result, $"creating {priority} priority stream");
-        
-        return stream;
-    }
-
-    private void CleanupExcessStreams(ConcurrentQueue<IntPtr> queue, int maxCount)
-    {
-        while (queue.Count > maxCount && queue.TryDequeue(out var stream))
-        {
-            _context.MakeCurrent();
-            var result = Native.CudaRuntime.cudaStreamDestroy(stream);
-            if (result != CudaError.Success)
-            {
-                _logger.LogWarning("Failed to destroy excess stream: {Error}", 
-                    Native.CudaRuntime.GetErrorString(result));
-            }
-        }
-    }
-
-    public void Dispose()
-    {
-        if (!_disposed)
-        {
-            lock (_lockObject)
-            {
-                DestroyAllStreamsInQueue(_normalPriorityStreams);
-                DestroyAllStreamsInQueue(_highPriorityStreams);
-                DestroyAllStreamsInQueue(_lowPriorityStreams);
-            }
-            
-            _disposed = true;
-        }
-    }
-
-    private void DestroyAllStreamsInQueue(ConcurrentQueue<IntPtr> queue)
-    {
-        while (queue.TryDequeue(out var stream))
-        {
-            try
-            {
-                _context.MakeCurrent();
-                Native.CudaRuntime.cudaStreamDestroy(stream);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogWarning(ex, "Error destroying stream during pool cleanup");
-            }
-        }
     }
 }
 
 /// <summary>
-/// Statistics for the stream pool
+/// Node in the execution graph
 /// </summary>
-public sealed class CudaStreamPoolStatistics
+public sealed class CudaExecutionNode
 {
-    public int NormalPriorityStreams { get; set; }
-    public int HighPriorityStreams { get; set; }
-    public int LowPriorityStreams { get; set; }
-    public int TotalPooledStreams => NormalPriorityStreams + HighPriorityStreams + LowPriorityStreams;
+    public string Id { get; set; } = string.Empty;
+    public Func<IntPtr, Task> Operation { get; set; } = null!;
+    public CudaStreamPriority Priority { get; set; }
+    public List<string> Dependencies { get; set; } = new();
+}
+
+/// <summary>
+/// Level in the execution plan
+/// </summary>
+public sealed class CudaExecutionLevel
+{
+    public List<CudaExecutionNode> Nodes { get; set; } = new();
+}
+
+/// <summary>
+/// Complete execution plan
+/// </summary>
+public sealed class CudaExecutionPlan
+{
+    public List<CudaExecutionLevel> Levels { get; set; } = new();
+    public int TotalNodes { get; set; }
 }

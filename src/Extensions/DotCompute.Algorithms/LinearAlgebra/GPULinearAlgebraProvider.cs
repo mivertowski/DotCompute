@@ -583,14 +583,7 @@ public sealed class GPULinearAlgebraProvider : IDisposable
             // or BiCGSTAB for general matrices
             var matrixProperties = AnalyzeMatrixProperties(a);
             
-            if (matrixProperties.IsSymmetric && matrixProperties.IsPositiveDefinite)
-            {
-                return await ConjugateGradientSolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                return await BiCGSTABSolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false);
-            }
+            return matrixProperties.IsSymmetric && matrixProperties.IsPositiveDefinite ? await ConjugateGradientSolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false) : await BiCGSTABSolveAsync(a, b, accelerator, cancellationToken).ConfigureAwait(false);
         }
         catch
         {

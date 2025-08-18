@@ -154,7 +154,7 @@ public static class CudaTestUtilities
     /// </summary>
     public static ILogger<T> CreateTestLogger<T>()
     {
-        var loggerFactory = LoggerFactory.Create(builder =>
+        using var loggerFactory = LoggerFactory.Create(builder =>
             builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         return loggerFactory.CreateLogger<T>();
     }

@@ -224,14 +224,7 @@ public static class NativeAotOptimizations
         {
             return DotProductDoubleAvx2(a, b);
         }
-        else if (Vector128.IsHardwareAccelerated && a.Length >= 2)
-        {
-            return AdvSimd.IsSupported ? DotProductDoubleNeon(a, b) : DotProductDoubleSse(a, b);
-        }
-        else
-        {
-            return DotProductDoubleScalar(a, b);
-        }
+        else return Vector128.IsHardwareAccelerated && a.Length >= 2 ? AdvSimd.IsSupported ? DotProductDoubleNeon(a, b) : DotProductDoubleSse(a, b) : DotProductDoubleScalar(a, b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

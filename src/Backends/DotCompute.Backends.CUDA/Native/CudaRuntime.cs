@@ -3,6 +3,7 @@
 
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32.SafeHandles;
 using DotCompute.Backends.CUDA.Native;
 
 namespace DotCompute.Backends.CUDA.Native;
@@ -40,6 +41,32 @@ public static class CudaRuntime
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cudaDeviceReset();
 
+    // Driver API Initialization
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuInit(uint flags);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuDeviceGet(out int device, int ordinal);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuDeviceGetCount(out int count);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+#pragma warning disable CA2101 // Specify marshaling for P/Invoke string arguments - StringBuilder marshaling is appropriate here
+    internal static extern CudaError cuDeviceGetName(
+        [MarshalAs(UnmanagedType.LPStr)] StringBuilder name, 
+        int len, 
+        int device);
+#pragma warning restore CA2101
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuDriverGetVersion(out int driverVersion);
+
     // Context Management (Driver API)
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -60,6 +87,15 @@ public static class CudaRuntime
     [DllImport(CUDA_DRIVER_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cuCtxSynchronize();
+
+    // Driver API Error Handling
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGetErrorString(CudaError error, out IntPtr pStr);
+
+    [DllImport(CUDA_DRIVER_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cuGetErrorName(CudaError error, out IntPtr pStr);
 
     // Memory Management
     [DllImport(CUDA_LIBRARY)]
@@ -131,6 +167,10 @@ public static class CudaRuntime
 
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaStreamCreateWithPriority(ref IntPtr pStream, uint flags, int priority);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cudaStreamDestroy(IntPtr stream);
 
     [DllImport(CUDA_LIBRARY)]
@@ -140,6 +180,26 @@ public static class CudaRuntime
     [DllImport(CUDA_LIBRARY)]
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     internal static extern CudaError cudaStreamQuery(IntPtr stream);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaStreamWaitEvent(IntPtr stream, IntPtr eventHandle, uint flags);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaStreamAddCallback(IntPtr stream, IntPtr callback, IntPtr userData, uint flags);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaDeviceGetStreamPriorityRange(out int leastPriority, out int greatestPriority);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaStreamGetPriority(IntPtr stream, out int priority);
+
+    [DllImport(CUDA_LIBRARY)]
+    [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
+    internal static extern CudaError cudaStreamGetFlags(IntPtr stream, out uint flags);
 
     // Module Management (Driver API)
     [DllImport(CUDA_DRIVER_LIBRARY)]
@@ -533,125 +593,179 @@ public enum CudaHostAllocFlags : uint
 }
 
 /// <summary>
-/// CUDA device properties
+/// CUDA device properties - matches cudaDeviceProp from CUDA 12.x
 /// </summary>
-[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
+[StructLayout(LayoutKind.Explicit, Size = 1032, CharSet = CharSet.Ansi)]
 #pragma warning disable CA1815 // Override equals and operator equals on value types - P/Invoke struct doesn't need equality
 public struct CudaDeviceProperties
 #pragma warning restore CA1815
 {
+    [FieldOffset(0)]
     [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 256)]
     public string Name;
 
+    [FieldOffset(256)]
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 16)]
+    public byte[] Uuid; // cudaUUID_t - 16 bytes
+
+    [FieldOffset(272)]
     public ulong TotalGlobalMem;
+    
+    [FieldOffset(280)]
     public ulong SharedMemPerBlock;
+    
+    [FieldOffset(288)]
     public int RegsPerBlock;
+    
+    [FieldOffset(292)]
     public int WarpSize;
+    
+    [FieldOffset(296)]
     public ulong MemPitch;
+    
+    [FieldOffset(304)]
     public int MaxThreadsPerBlock;
 
+    [FieldOffset(308)]
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxThreadsDim;
 
+    [FieldOffset(320)]
     [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
     public int[] MaxGridSize;
 
+    [FieldOffset(332)]
     public int ClockRate;
+    
+    [FieldOffset(336)]
     public ulong TotalConstMem;
+    
+    [FieldOffset(360)]
     public int Major;
+    
+    [FieldOffset(364)]
     public int Minor;
+    
+    [FieldOffset(368)]
     public ulong TextureAlignment;
+    
+    [FieldOffset(376)]
     public ulong TexturePitchAlignment;
+    
+    [FieldOffset(384)]
     public int DeviceOverlap;
+    
+    [FieldOffset(388)]
     public int MultiProcessorCount;
+    
+    [FieldOffset(392)]
     public int KernelExecTimeoutEnabled;
+    
+    [FieldOffset(396)]
     public int Integrated;
+    
+    [FieldOffset(400)]
     public int CanMapHostMemory;
+    
+    [FieldOffset(404)]
     public int ComputeMode;
-    public int MaxTexture1D;
-    public int MaxTexture1DMipmap;
-    public int MaxTexture1DLinear;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxTexture2D;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxTexture2DMipmap;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxTexture2DLinear;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxTexture2DGather;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxTexture3D;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxTexture3DAlt;
-
-    public int MaxTextureCubemap;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxTexture1DLayered;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxTexture2DLayered;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxTextureCubemapLayered;
-
-    public int MaxSurface1D;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxSurface2D;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxSurface3D;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxSurface1DLayered;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 3)]
-    public int[] MaxSurface2DLayered;
-
-    public int MaxSurfaceCubemap;
-
-    [MarshalAs(UnmanagedType.ByValArray, SizeConst = 2)]
-    public int[] MaxSurfaceCubemapLayered;
-
-    public ulong SurfaceAlignment;
+    
+    // Skip texture and surface fields (408-575)
+    // Add PCI and concurrent kernel fields
+    
+    [FieldOffset(576)]
     public int ConcurrentKernels;
+    
+    [FieldOffset(580)]
     public int ECCEnabled;
+    
+    [FieldOffset(584)]
     public int PciBusId;
+    
+    [FieldOffset(588)]
     public int PciDeviceId;
+    
+    [FieldOffset(592)]
     public int PciDomainId;
-    public int TccDriver;
+    
+    // Skip tccDriver field at 596
+    
+    [FieldOffset(600)]
     public int AsyncEngineCount;
+    
+    [FieldOffset(604)]
     public int UnifiedAddressing;
+    
+    [FieldOffset(608)]
     public int MemoryClockRate;
+    
+    [FieldOffset(612)]
     public int MemoryBusWidth;
+    
+    [FieldOffset(616)]
     public int L2CacheSize;
+    
+    [FieldOffset(620)]
+    public int PersistingL2CacheMaxSize;
+    
+    [FieldOffset(624)]
     public int MaxThreadsPerMultiProcessor;
+    
+    [FieldOffset(628)]
     public int StreamPrioritiesSupported;
+    
+    [FieldOffset(632)]
     public int GlobalL1CacheSupported;
+    
+    [FieldOffset(636)]
     public int LocalL1CacheSupported;
+    
+    [FieldOffset(640)]
     public ulong SharedMemPerMultiprocessor;
+    
+    [FieldOffset(648)]
     public int RegsPerMultiprocessor;
+    
+    [FieldOffset(652)]
     public int ManagedMemory;
+    
+    [FieldOffset(656)]
     public int IsMultiGpuBoard;
+    
+    [FieldOffset(660)]
     public int MultiGpuBoardGroupID;
-    public int HostNativeAtomicSupported;
+    
+    [FieldOffset(668)]
     public int SingleToDoublePrecisionPerfRatio;
+    
+    [FieldOffset(672)]
     public int PageableMemoryAccess;
+    
+    [FieldOffset(676)]
     public int ConcurrentManagedAccess;
+    
+    [FieldOffset(680)]
     public int ComputePreemptionSupported;
+    
+    [FieldOffset(684)]
     public int CanUseHostPointerForRegisteredMem;
+    
+    [FieldOffset(688)]
     public int CooperativeLaunch;
+    
+    [FieldOffset(692)]
     public int CooperativeMultiDeviceLaunch;
+    
+    [FieldOffset(696)]
     public ulong SharedMemPerBlockOptin;
+    
+    [FieldOffset(704)]
     public int PageableMemoryAccessUsesHostPageTables;
+    
+    [FieldOffset(708)]
     public int DirectManagedMemAccessFromHost;
+    
+    // Total struct size is 1032 bytes as of CUDA 12.x
 }
 
 /// <summary>
@@ -715,5 +829,130 @@ public static class ComputeCapability
     }
 #pragma warning restore CA1034
 #pragma warning restore CA1724
+}
+
+/// <summary>
+/// Safe handle for CUDA device memory pointers to ensure proper cleanup.
+/// </summary>
+public sealed class SafeCudaDeviceMemoryHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeCudaDeviceMemoryHandle() : base(true)
+    {
+    }
+
+    public SafeCudaDeviceMemoryHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var result = CudaRuntime.cudaFree(handle);
+            return result == CudaError.Success;
+        }
+        return true;
+    }
+}
+
+/// <summary>
+/// Safe handle for CUDA host (pinned) memory pointers to ensure proper cleanup.
+/// </summary>
+public sealed class SafeCudaHostMemoryHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeCudaHostMemoryHandle() : base(true)
+    {
+    }
+
+    public SafeCudaHostMemoryHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var result = CudaRuntime.cudaFreeHost(handle);
+            return result == CudaError.Success;
+        }
+        return true;
+    }
+}
+
+/// <summary>
+/// Safe handle for CUDA streams to ensure proper cleanup.
+/// </summary>
+public sealed class SafeCudaStreamHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeCudaStreamHandle() : base(true)
+    {
+    }
+
+    public SafeCudaStreamHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var result = CudaRuntime.cudaStreamDestroy(handle);
+            return result == CudaError.Success;
+        }
+        return true;
+    }
+}
+
+/// <summary>
+/// Safe handle for CUDA events to ensure proper cleanup.
+/// </summary>
+public sealed class SafeCudaEventHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeCudaEventHandle() : base(true)
+    {
+    }
+
+    public SafeCudaEventHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var result = CudaRuntime.cudaEventDestroy(handle);
+            return result == CudaError.Success;
+        }
+        return true;
+    }
+}
+
+/// <summary>
+/// Safe handle for CUDA module handles to ensure proper cleanup.
+/// </summary>
+public sealed class SafeCudaModuleHandle : SafeHandleZeroOrMinusOneIsInvalid
+{
+    public SafeCudaModuleHandle() : base(true)
+    {
+    }
+
+    public SafeCudaModuleHandle(IntPtr handle) : base(true)
+    {
+        SetHandle(handle);
+    }
+
+    protected override bool ReleaseHandle()
+    {
+        if (!IsInvalid)
+        {
+            var result = CudaRuntime.cuModuleUnload(handle);
+            return result == CudaError.Success;
+        }
+        return true;
+    }
 }
 

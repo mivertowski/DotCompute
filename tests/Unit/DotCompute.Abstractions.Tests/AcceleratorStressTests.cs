@@ -81,8 +81,8 @@ public sealed class AcceleratorStressTests
         );
 
         // Assert
-        info.Type.Should().Be(type.ToString());
-        info.Name.Should().Contain(type.ToString());
+        _ = info.Type.Should().Be(type.ToString());
+        _ = info.Name.Should().Contain(type.ToString());
     }
 
     #endregion

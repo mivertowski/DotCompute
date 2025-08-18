@@ -66,14 +66,7 @@ public sealed class ExpressionToKernelCompiler : IExpressionToKernelCompiler, ID
             var fusionContext = ExtractFusionContext(optimizedExpression);
             
             // Step 4: Generate kernel based on analysis
-            if (fusionContext != null)
-            {
-                return await CompileFusedExpressionAsync(optimizedExpression, accelerator, fusionContext, options, cancellationToken).ConfigureAwait(false);
-            }
-            else
-            {
-                return await CompileSimpleExpressionAsync(optimizedExpression, accelerator, analysis, options, cancellationToken).ConfigureAwait(false);
-            }
+            return fusionContext != null ? await CompileFusedExpressionAsync(optimizedExpression, accelerator, fusionContext, options, cancellationToken).ConfigureAwait(false) : await CompileSimpleExpressionAsync(optimizedExpression, accelerator, analysis, options, cancellationToken).ConfigureAwait(false);
         }
         finally
         {

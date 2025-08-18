@@ -89,7 +89,7 @@ public class BasicApiTests
 
         // Assert
         result.Should().NotBeNullOrEmpty();
-        result.Should().Be(type.ToString());
+        _ = result.Should().Be(type.ToString());
     }
 
     [Fact]

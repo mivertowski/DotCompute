@@ -311,6 +311,15 @@ public sealed partial class CudaKernelCompiler : IDisposable
         if (major >= 8) // Ampere and newer
         {
             builder.AppendLine("#define AMPERE_OPTIMIZATIONS 1");
+            
+            if (minor >= 9) // Ada Lovelace (8.9)
+            {
+                builder.AppendLine("#define ADA_OPTIMIZATIONS 1");
+                builder.AppendLine("#define RTX_2000_OPTIMIZATIONS 1");
+                builder.AppendLine("#define SHARED_MEM_SIZE_100KB 1");
+                builder.AppendLine("#define FP8_TENSOR_CORES 1");
+                builder.AppendLine("#define OPTIMAL_BLOCK_SIZE_512 1");
+            }
         }
 
         builder.AppendLine();
@@ -413,17 +422,8 @@ public sealed partial class CudaKernelCompiler : IDisposable
                     compilerLog);
             }
 
-            // Get PTX size
-            result = NvrtcInterop.nvrtcGetPTXSize(program, out var ptxSize);
-            NvrtcInterop.CheckResult(result, "getting PTX size");
-
-            // Get PTX code
-            var ptxBuilder = new StringBuilder((int)ptxSize);
-            result = NvrtcInterop.nvrtcGetPTX(program, ptxBuilder);
-            NvrtcInterop.CheckResult(result, "getting PTX code");
-
-            var ptxString = ptxBuilder.ToString();
-            var ptxBytes = Encoding.UTF8.GetBytes(ptxString);
+            // Get PTX code using safe helper method
+            var ptxBytes = NvrtcInterop.GetPtxCode(program);
 
             stopwatch.Stop();
             LogNvrtcKernelCompilationSuccess(_logger, kernelName, stopwatch.ElapsedMilliseconds, ptxBytes.Length);
@@ -456,22 +456,9 @@ public sealed partial class CudaKernelCompiler : IDisposable
     {
         try
         {
-            // Get log size
-            var result = NvrtcInterop.nvrtcGetProgramLogSize(program, out var logSize);
-            if (result != NvrtcResult.Success || logSize <= 1)
-            {
-                return Task.FromResult(string.Empty);
-            }
-
-            // Get log content
-            var logBuilder = new StringBuilder((int)logSize);
-            result = NvrtcInterop.nvrtcGetProgramLog(program, logBuilder);
-            if (result != NvrtcResult.Success)
-            {
-                return Task.FromResult("Failed to retrieve compilation log");
-            }
-
-            return Task.FromResult(logBuilder.ToString().Trim());
+            // Get compilation log using safe helper method
+            var log = NvrtcInterop.GetCompilationLog(program);
+            return Task.FromResult(log);
         }
         catch (Exception ex)
         {
@@ -484,9 +471,17 @@ public sealed partial class CudaKernelCompiler : IDisposable
     {
         var optionsList = new List<string>();
 
-        // Get target GPU architecture
+        // Get target GPU architecture  
         var (major, minor) = GetTargetComputeCapability();
-        optionsList.Add($"--gpu-architecture={ComputeCapability.GetArchString(major, minor)}");
+        var archString = ComputeCapability.GetArchString(major, minor);
+        optionsList.Add($"--gpu-architecture={archString}");
+        
+        // For Ada generation (8.9), ensure we target the correct architecture
+        if (major == 8 && minor == 9)
+        {
+            optionsList.Add("--gpu-code=sm_89");
+            optionsList.Add("--generate-code=arch=compute_89,code=sm_89");
+        }
 
         // Add optimization level
         var optLevel = options?.OptimizationLevel ?? OptimizationLevel.Default;
@@ -518,6 +513,16 @@ public sealed partial class CudaKernelCompiler : IDisposable
             // Release optimizations
             optionsList.Add("--restrict");
             optionsList.Add("--extra-device-vectorization");
+            
+            // Ada-specific optimizations for RTX 2000
+            var (targetMajor, targetMinor) = GetTargetComputeCapability();
+            if (targetMajor == 8 && targetMinor == 9)
+            {
+                optionsList.Add("--ftz=true"); // Flush denormals to zero
+                optionsList.Add("--prec-div=false"); // Fast division
+                optionsList.Add("--prec-sqrt=false"); // Fast sqrt
+                optionsList.Add("--fmad=true"); // Fused multiply-add
+            }
         }
 
         // Standard includes and defines
@@ -550,8 +555,9 @@ public sealed partial class CudaKernelCompiler : IDisposable
             LogFailedToGetComputeCapability(_logger, ex);
         }
 
-        // Default to a widely supported compute capability (Maxwell generation)
-        return ComputeCapability.KnownCapabilities.Maxwell;
+        // For RTX 2000 Ada, default to compute capability 8.9
+        // This handles cases where device detection fails but we're on Ada hardware
+        return ComputeCapability.KnownCapabilities.Ada;
     }
 
     /// <summary>
@@ -611,14 +617,8 @@ public sealed partial class CudaKernelCompiler : IDisposable
                     compilerLog);
             }
 
-            // Get CUBIN size
-            result = NvrtcInterop.nvrtcGetCUBINSize(program, out var cubinSize);
-            NvrtcInterop.CheckResult(result, "getting CUBIN size");
-
-            // Get CUBIN code
-            var cubinData = new byte[(int)cubinSize];
-            result = NvrtcInterop.nvrtcGetCUBIN(program, cubinData);
-            NvrtcInterop.CheckResult(result, "getting CUBIN code");
+            // Get CUBIN code using safe helper method
+            var cubinData = NvrtcInterop.GetCubinCode(program);
 
             stopwatch.Stop();
             LogNvrtcCubinKernelCompilationSuccess(_logger, kernelName, stopwatch.ElapsedMilliseconds, cubinData.Length);
@@ -653,8 +653,20 @@ public sealed partial class CudaKernelCompiler : IDisposable
 
         // Get target GPU architecture for CUBIN generation
         var (major, minor) = GetTargetComputeCapability();
-        optionsList.Add($"--gpu-code={ComputeCapability.GetCodeString(major, minor)}");
-        optionsList.Add($"--gpu-architecture={ComputeCapability.GetArchString(major, minor)}");
+        var codeString = ComputeCapability.GetCodeString(major, minor);
+        var archString = ComputeCapability.GetArchString(major, minor);
+        
+        optionsList.Add($"--gpu-code={codeString}");
+        optionsList.Add($"--gpu-architecture={archString}");
+        
+        // For Ada generation (8.9), add specific optimizations
+        if (major == 8 && minor == 9)
+        {
+            optionsList.Add("--generate-code=arch=compute_89,code=sm_89");
+            optionsList.Add("--maxrregcount=255"); // Max registers for Ada
+            optionsList.Add("--opt-level=3");
+            optionsList.Add("--use-local-env");
+        }
 
         // Add optimization level
         var optLevel = options?.OptimizationLevel ?? OptimizationLevel.Default;
@@ -689,6 +701,17 @@ public sealed partial class CudaKernelCompiler : IDisposable
             optionsList.Add("--restrict");
             optionsList.Add("--extra-device-vectorization");
             optionsList.Add("--optimize-float-atomics");
+            
+            // Ada-specific CUBIN optimizations for RTX 2000
+            var (targetMajor, targetMinor) = GetTargetComputeCapability();
+            if (targetMajor == 8 && targetMinor == 9)
+            {
+                optionsList.Add("--ptxas-options=-v"); // Verbose PTX assembly
+                optionsList.Add("--ptxas-options=--opt-level=3");
+                optionsList.Add("--ptxas-options=--warn-on-spills");
+                optionsList.Add("--maxrregcount=255"); // Optimize register usage
+                optionsList.Add("--optimize-shared-memory");
+            }
         }
 
         // CUBIN-specific optimizations

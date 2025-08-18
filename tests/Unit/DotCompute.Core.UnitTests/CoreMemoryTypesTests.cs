@@ -57,9 +57,9 @@ public class CoreMemoryTypesTests
     [Fact]
     public void MemoryType_ToString_ShouldReturnCorrectStrings()
     {
-        Assert.Equal("DeviceLocal", MemoryType.DeviceLocal.ToString());
-        Assert.Equal("HostVisible", MemoryType.HostVisible.ToString());
-        Assert.Equal("Shared", MemoryType.Shared.ToString());
+        _ = Assert.Equal("DeviceLocal", MemoryType.DeviceLocal.ToString());
+        _ = Assert.Equal("HostVisible", MemoryType.HostVisible.ToString());
+        _ = Assert.Equal("Shared", MemoryType.Shared.ToString());
     }
 
     [Fact]

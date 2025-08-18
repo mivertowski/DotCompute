@@ -180,7 +180,7 @@ public sealed class CudaAcceleratorTests : IDisposable
         _accelerators.Add(accelerator);
 
         using var cts = new CancellationTokenSource();
-        cts.Cancel(); // Cancel immediately
+        await cts.CancelAsync(); // Cancel immediately
 
         // Act & Assert
         var syncAction = async () => await accelerator.SynchronizeAsync(cts.Token);
@@ -225,7 +225,7 @@ public sealed class CudaAcceleratorTests : IDisposable
 
         // Assert
         Assert.NotNull(info);
-        info.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
+        _ = info.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
         info.Name.Should().NotBeNullOrEmpty();
         (info.TotalMemory > 0).Should().BeTrue();
         (info.ComputeUnits > 0).Should().BeTrue();

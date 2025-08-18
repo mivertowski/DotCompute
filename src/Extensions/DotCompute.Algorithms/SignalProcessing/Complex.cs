@@ -250,14 +250,7 @@ public readonly struct Complex : IEquatable<Complex>
     /// <inheritdoc/>
     public override string ToString()
     {
-        if (Imaginary >= 0)
-        {
-            return $"{Real} + {Imaginary}i";
-        }
-        else
-        {
-            return $"{Real} - {-Imaginary}i";
-        }
+        return Imaginary >= 0 ? $"{Real} + {Imaginary}i" : $"{Real} - {-Imaginary}i";
     }
 
     /// <summary>

@@ -60,7 +60,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         // Assert
         Assert.NotNull(result);
         result.PackageIdentity.Id.Should().Be("TestPackage");
-        result.PackageIdentity.Version.ToString().Should().Be("1.0.0");
+        _ = result.PackageIdentity.Version.ToString().Should().Be("1.0.0");
         result.LoadedAssemblyPaths.Should().NotBeEmpty();
         result.FromCache.Should().BeFalse();
         (result.LoadTime > TimeSpan.Zero).Should().BeTrue();
@@ -177,7 +177,7 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         
         var cachedPackage = cachedPackages.First();
         cachedPackage.Identity.Id.Should().Be("TestPackage");
-        cachedPackage.Identity.Version.ToString().Should().Be("1.0.0");
+        _ = cachedPackage.Identity.Version.ToString().Should().Be("1.0.0");
         (cachedPackage.AssemblyCount > 0).Should().BeTrue();
         (cachedPackage.CacheAge > TimeSpan.Zero).Should().BeTrue();
         cachedPackage.IsSecurityValidated.Should().BeTrue(); // Since we disabled security validation, it should pass

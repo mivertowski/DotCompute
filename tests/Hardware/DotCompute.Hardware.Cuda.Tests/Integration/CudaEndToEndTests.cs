@@ -21,6 +21,7 @@ namespace DotCompute.Tests.Hardware.Integration;
 public sealed class CudaEndToEndTests : IDisposable
 {
     private readonly ILogger<CudaEndToEndTests> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
     private readonly List<ISyncMemoryBuffer> _buffers = [];
@@ -48,8 +49,8 @@ public sealed class CudaEndToEndTests : IDisposable
     public CudaEndToEndTests(ITestOutputHelper output)
     {
         _output = output;
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        _logger = loggerFactory.CreateLogger<CudaEndToEndTests>();
+        _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        _logger = _loggerFactory.CreateLogger<CudaEndToEndTests>();
     }
 
     [Fact]
@@ -646,6 +647,7 @@ __global__ void {name}(float* input, float* output, int n)
             }
         }
         _accelerators.Clear();
+        _loggerFactory?.Dispose();
         GC.SuppressFinalize(this);
     }
 }

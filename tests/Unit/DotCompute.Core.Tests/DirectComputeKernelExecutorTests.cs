@@ -9,14 +9,16 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using DotCompute.Core.Types;
 using DotCompute.Tests.Utilities;
+using DotCompute.Tests;
+using DotCompute.Tests.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 using FluentAssertions;
-using CompiledKernel = DotCompute.Tests.Common.CompiledKernel;
-using KernelArgument = DotCompute.Tests.Common.KernelArgument;
-using KernelConfiguration = DotCompute.Tests.Common.KernelConfiguration;
+using CompiledKernel = DotCompute.Tests.Utilities.CompiledKernel;
+using KernelArgument = DotCompute.Tests.Utilities.KernelArgument;
+using KernelConfiguration = DotCompute.Tests.Utilities.KernelConfiguration;
 
 namespace DotCompute.Tests.Unit;
 
@@ -24,8 +26,13 @@ namespace DotCompute.Tests.Unit;
 /// Comprehensive tests for DirectCompute kernel executor that can run on CI/CD without GPU hardware.
 /// Uses mocks and dependency injection to simulate DirectX 11 compute shader behavior.
 /// </summary>
+[Trait("Category", TestCategories.Unit)]
+[Trait("Category", TestCategories.Mock)]
+[Trait("Category", TestCategories.CI)]
 public sealed class DirectComputeKernelExecutorTests : IDisposable
 {
+    private static readonly int[] TestProblemSizes = { 256, 512, 1024, 2048 };
+    
     private readonly Mock<IAccelerator> _mockAccelerator;
     private readonly Mock<ILogger<DirectComputeKernelExecutor>> _mockLogger;
     private readonly DirectComputeKernelExecutor _executor;
@@ -38,6 +45,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public void Constructor_WithNullAccelerator_ShouldThrowArgumentNullException()
     {
         // Act & Assert
@@ -45,6 +53,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Act & Assert
@@ -52,6 +61,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public void Accelerator_ShouldReturnProvidedAccelerator()
     {
         // Act
@@ -62,6 +72,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithValidParameters_ShouldExecuteSuccessfully()
     {
         // Arrange
@@ -79,6 +90,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_WithNullKernel_ShouldThrowArgumentNullException()
     {
         // Arrange
@@ -88,11 +100,12 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () => 
         {
-            await _executor.ExecuteAsync(default(DotCompute.Abstractions.CompiledKernel), arguments.ToCoreKernelArguments(), config);
+            await _executor.ExecuteAsync(default, arguments.ToCoreKernelArguments(), config);
         });
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_WithNullArguments_ShouldThrowArgumentNullException()
     {
         // Arrange
@@ -105,6 +118,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_WithNullConfig_ShouldThrowArgumentNullException()
     {
         // Arrange
@@ -117,6 +131,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAndWaitAsync_WithValidParameters_ShouldExecuteAndWait()
     {
         // Arrange
@@ -134,6 +149,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public void EnqueueExecution_WithValidParameters_ShouldReturnHandle()
     {
         // Arrange
@@ -148,11 +164,12 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         Assert.NotNull(handle);
         Assert.NotEqual(Guid.Empty, handle.Id);
         Assert.NotNull(handle.KernelName);
-        Assert.Contains("DirectCompute", handle.KernelName);
+        Assert.Contains("DirectCompute", handle.KernelName, StringComparison.Ordinal);
         Assert.True(handle.SubmittedAt <= DateTimeOffset.UtcNow);
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task WaitForCompletionAsync_WithValidHandle_ShouldComplete()
     {
         // Arrange
@@ -171,6 +188,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task WaitForCompletionAsync_WithCancellation_ShouldRespectCancellation()
     {
         // Arrange
@@ -179,8 +197,8 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         var config = CreateValidExecutionConfig();
         var handle = _executor.EnqueueExecution(kernel, arguments.ToCoreKernelArguments(), config);
         
-        var cts = new CancellationTokenSource();
-        cts.Cancel(); // Cancel immediately
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync(); // Cancel immediately
 
         // Act
         var result = await _executor.WaitForCompletionAsync(handle, cts.Token);
@@ -188,10 +206,11 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         // Assert
         Assert.NotNull(result);
         Assert.False(result.Success);
-        Assert.Contains("cancelled", result.ErrorMessage);
+        Assert.Contains("cancelled", result.ErrorMessage, StringComparison.Ordinal);
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public void GetOptimalExecutionConfig_WithValidKernel_ShouldReturnOptimalConfig()
     {
         // Arrange
@@ -208,15 +227,21 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         Assert.True(config.GlobalWorkSize![0] >= problemSize[0]);
         Assert.True(config.LocalWorkSize![0] > 0);
         // DirectCompute typically uses higher thread counts
-        Assert.Contains(config.LocalWorkSize![0], 256 }); // new[] { 64;
+        var allowedSizes = new[] { 64, 128, 256 };
+        Assert.Contains(config.LocalWorkSize![0], allowedSizes);
     }
 
-    [Theory]
-    [InlineData(256)]
-    [InlineData(512)]
-    [InlineData(1024)]
-    [InlineData(2048)]
-    public void GetOptimalExecutionConfig_WithDifferentProblemSizes_ShouldAdaptConfiguration(int size)
+    [Fact]
+    [Trait("Category", TestCategories.Unit)]
+    public void GetOptimalExecutionConfig_WithDifferentProblemSizes_ShouldAdaptConfiguration()
+    {
+        foreach (var size in TestProblemSizes)
+        {
+            GetOptimalExecutionConfig_WithProblemSize_ShouldAdaptConfiguration(size);
+        }
+    }
+    
+    private void GetOptimalExecutionConfig_WithProblemSize_ShouldAdaptConfiguration(int size)
     {
         // Arrange
         var kernel = CreateValidCompiledKernel();
@@ -233,6 +258,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithComputeShaderKernel_ShouldHandleDirectXFeatures()
     {
         // Arrange
@@ -250,6 +276,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithGroupSharedMemory_ShouldHandleSharedMemory()
     {
         // Arrange
@@ -267,6 +294,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithUnorderedAccessViews_ShouldHandleUAVs()
     {
         // Arrange
@@ -284,6 +312,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Performance)]
     public async Task ProfileAsync_WithValidParameters_ShouldReturnProfilingResults()
     {
         // Arrange
@@ -307,10 +336,11 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         
         // DirectCompute-specific suggestions should be included
         Assert.Contains(result.OptimizationSuggestions, 
-            s => s.Contains("shared memory") || s.Contains("thread group") || s.Contains("coalescing"));
+            s => s.Contains("shared memory", StringComparison.Ordinal) || s.Contains("thread group", StringComparison.Ordinal) || s.Contains("coalescing", StringComparison.Ordinal));
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ProfileAsync_WithZeroIterations_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
@@ -324,6 +354,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_ConcurrentExecutions_ShouldHandleMultipleDispatches()
     {
         // Arrange
@@ -349,6 +380,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_AfterDispose_ShouldThrowObjectDisposedException()
     {
         // Arrange
@@ -369,6 +401,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     [InlineData(16, 16, 1)]
     [InlineData(8, 8, 8)]
     [InlineData(32, 32, 1)]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithDifferentThreadGroupDimensions_ShouldExecuteCorrectly(int dimX, int dimY, int dimZ)
     {
         // Arrange
@@ -390,6 +423,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_OnNonWindowsPlatform_ShouldHandleGracefully()
     {
         // Arrange
@@ -408,6 +442,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public void Constructor_ShouldLogInitializationStatus()
     {
         // Act - Constructor already called in setup
@@ -417,7 +452,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
             logger => logger.Log(
                 It.IsAny<LogLevel>(),
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("DirectCompute")),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("DirectCompute", StringComparison.Ordinal)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);
@@ -425,7 +460,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
 
     #region Helper Methods
 
-    private Mock<IAccelerator> CreateMockDirectComputeAccelerator()
+    private static Mock<IAccelerator> CreateMockDirectComputeAccelerator()
     {
         var mock = new Mock<IAccelerator>();
         mock.Setup(a => a.Info).Returns(new AcceleratorInfo
@@ -445,15 +480,15 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
             MaxThreadsPerBlock = 1024
         });
 
-        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()
+        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
         return mock;
     }
 
-    private CompiledKernel CreateValidCompiledKernel(string name = "test_kernel")
+    private static CompiledKernel CreateValidCompiledKernel(string name = "test_kernel")
     {
-        return new CompiledKernel
+        var kernel = new CompiledKernel
         {
             Id = Guid.NewGuid(),
             KernelId = Guid.NewGuid(),
@@ -461,14 +496,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
             EntryPoint = name,
             NativeHandle = new IntPtr(0x12345678), // Mock handle
             IsCompiled = true,
-            Language = DotCompute.Tests.Common.KernelLanguage.HLSL, // DirectCompute uses HLSL
-            Metadata = new Dictionary<string, string>
-            {
-                ["shader_model"] = "5.0",
-                ["thread_group_size"] = "256,1,1",
-                ["shared_memory_size"] = "0",
-                ["num_threads"] = "256"
-            },
+            Language = DotCompute.Tests.Utilities.KernelLanguage.HLSL, // DirectCompute uses HLSL
             Configuration = new KernelConfiguration
             {
                 BlockDimensions = new Dimensions3D(256, 1, 1),
@@ -477,9 +505,17 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
             SharedMemorySize = 0,
             CompilationTimestamp = DateTimeOffset.UtcNow
         };
+        
+        // Add metadata to the read-only dictionary
+        kernel.Metadata["shader_model"] = "5.0";
+        kernel.Metadata["thread_group_size"] = "256,1,1";
+        kernel.Metadata["shared_memory_size"] = "0";
+        kernel.Metadata["num_threads"] = "256";
+        
+        return kernel;
     }
 
-    private CompiledKernel CreateComputeShaderKernel()
+    private static CompiledKernel CreateComputeShaderKernel()
     {
         var kernel = CreateValidCompiledKernel("compute_shader_kernel");
         kernel.Metadata["uses_structured_buffers"] = "true";
@@ -488,7 +524,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         return kernel;
     }
 
-    private CompiledKernel CreateKernelWithGroupSharedMemory()
+    private static CompiledKernel CreateKernelWithGroupSharedMemory()
     {
         var kernel = CreateValidCompiledKernel("group_shared_kernel");
         kernel.SharedMemorySize = 4096; // 4KB group shared memory
@@ -498,7 +534,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         return kernel;
     }
 
-    private CompiledKernel CreateKernelWithUAVs()
+    private static CompiledKernel CreateKernelWithUAVs()
     {
         var kernel = CreateValidCompiledKernel("uav_kernel");
         kernel.Metadata["uses_uavs"] = "true";
@@ -507,7 +543,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         return kernel;
     }
 
-    private KernelArgument[] CreateValidKernelArguments()
+    private static KernelArgument[] CreateValidKernelArguments()
     {
         return new[]
         {
@@ -541,7 +577,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelArgument[] CreateStructuredBufferArguments()
+    private static KernelArgument[] CreateStructuredBufferArguments()
     {
         return new[]
         {
@@ -566,7 +602,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelArgument[] CreateUAVArguments()
+    private static KernelArgument[] CreateUAVArguments()
     {
         return new[]
         {
@@ -600,7 +636,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelExecutionConfig CreateValidExecutionConfig()
+    private static KernelExecutionConfig CreateValidExecutionConfig()
     {
         return new KernelExecutionConfig
         {
@@ -612,7 +648,7 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelExecutionConfig CreateExecutionConfigWithSharedMemory()
+    private static KernelExecutionConfig CreateExecutionConfigWithSharedMemory()
     {
         return new KernelExecutionConfig
         {
@@ -629,7 +665,6 @@ public sealed class DirectComputeKernelExecutorTests : IDisposable
     public void Dispose()
     {
         _executor?.Dispose();
-        GC.SuppressFinalize(this);
         GC.SuppressFinalize(this);
     }
 }

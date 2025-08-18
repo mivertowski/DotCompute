@@ -35,14 +35,7 @@ public static class AdvancedSimdPatterns
         {
             return DotProductAvx2(a, b);
         }
-        else if (Vector128.IsHardwareAccelerated && a.Length >= 4)
-        {
-            return AdvSimd.IsSupported ? DotProductNeon(a, b) : DotProductSse(a, b);
-        }
-        else
-        {
-            return DotProductScalar(a, b);
-        }
+        else return Vector128.IsHardwareAccelerated && a.Length >= 4 ? AdvSimd.IsSupported ? DotProductNeon(a, b) : DotProductSse(a, b) : DotProductScalar(a, b);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
@@ -238,14 +231,7 @@ public static class AdvancedSimdPatterns
         {
             return VectorSumAvx2(vector);
         }
-        else if (Vector128.IsHardwareAccelerated && vector.Length >= 4)
-        {
-            return AdvSimd.IsSupported ? VectorSumNeon(vector) : VectorSumSse(vector);
-        }
-        else
-        {
-            return VectorSumScalar(vector);
-        }
+        else return Vector128.IsHardwareAccelerated && vector.Length >= 4 ? AdvSimd.IsSupported ? VectorSumNeon(vector) : VectorSumSse(vector) : VectorSumScalar(vector);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]

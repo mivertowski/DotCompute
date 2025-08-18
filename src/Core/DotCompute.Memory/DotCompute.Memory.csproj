@@ -21,7 +21,6 @@
     <PackageTags>memory;buffer;zero-copy;pool;allocator;aot</PackageTags>
     
     <!-- Build Configuration -->
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 

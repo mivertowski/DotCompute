@@ -60,7 +60,7 @@ public sealed class PluginInterfaceTests
     {
         // Assert
         Enum.IsDefined(state).Should().BeTrue();
-        state.ToString().Should().NotBeNullOrEmpty();
+        _ = state.ToString().Should().NotBeNullOrEmpty();
     }
 
     [Theory]
@@ -73,7 +73,7 @@ public sealed class PluginInterfaceTests
     {
         // Assert
         Enum.IsDefined(health).Should().BeTrue();
-        health.ToString().Should().NotBeNullOrEmpty();
+        _ = health.ToString().Should().NotBeNullOrEmpty();
     }
 
     [Fact]

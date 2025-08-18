@@ -213,7 +213,7 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
 
         if (accelerator1 == null || accelerator2 == null)
         {
-            LoggerMessages.SkippingHeterogeneousTest(Logger, backend1.ToString(), backend2.ToString());
+            _ = LoggerMessages.SkippingHeterogeneousTest(Logger, backend1.ToString(), backend2.ToString());
             return;
         }
 
@@ -524,7 +524,7 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
             }
             catch (Exception ex)
             {
-                LoggerMessages.HeterogeneousExecutionFailed(Logger, ex, accelerator.Info.Id, backend.ToString());
+                _ = LoggerMessages.HeterogeneousExecutionFailed(Logger, ex, accelerator.Info.Id, backend.ToString());
                 return new AcceleratorResult
                 {
                     AcceleratorId = accelerator.Info.Id,

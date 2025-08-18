@@ -322,7 +322,7 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         var elementsPerSecond = dataSize / benchmarkResult.ExecutionTime.TotalSeconds;
 
-        LoggerMessages.OptimizationLevelPerformance(Logger, optimizationLevel.ToString(), elementsPerSecond);
+        _ = LoggerMessages.OptimizationLevelPerformance(Logger, optimizationLevel.ToString(), elementsPerSecond);
 
         // All optimization levels should work
         Assert.True(elementsPerSecond > 100_000);

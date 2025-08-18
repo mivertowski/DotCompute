@@ -85,8 +85,7 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
                 throw new MemoryException("Failed to track allocated buffer");
             }
 
-            _statistics.AllocationCount++;
-            _statistics.UsedMemoryBytes += sizeInBytes;
+            _statistics.RecordAllocation(sizeInBytes);
             
             _logger.LogDebug("Successfully allocated CUDA buffer of {Size}MB", 
                 sizeInBytes / (1024 * 1024));
@@ -239,11 +238,25 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
         {
             try
             {
-                cudaBuffer.Dispose();
-                _statistics.AllocationCount--;
-                _statistics.UsedMemoryBytes -= buffer.SizeInBytes;
+                // Try to return to pool first before disposing
+                var returnedToPool = false;
+                if (cudaBuffer is CudaUnifiedMemoryBuffer unifiedBuffer && !unifiedBuffer.IsUnifiedMemory)
+                {
+                    // Only non-unified memory can be pooled effectively
+                    var wrappedBuffer = new CudaMemoryBuffer(_context, unifiedBuffer.DevicePointer, 
+                        unifiedBuffer.SizeInBytes, unifiedBuffer.Options, _logger);
+                    returnedToPool = _memoryPool.TryReturnToPool(wrappedBuffer);
+                }
                 
-                _logger.LogDebug("Freed CUDA unified buffer of {Size}MB", 
+                if (!returnedToPool)
+                {
+                    cudaBuffer.Dispose();
+                }
+                
+                _statistics.RecordDeallocation(buffer.SizeInBytes);
+                
+                _logger.LogDebug("{Action} CUDA unified buffer of {Size}MB", 
+                    returnedToPool ? "Returned to pool" : "Freed",
                     buffer.SizeInBytes / (1024 * 1024));
             }
             catch (Exception ex)
@@ -260,10 +273,11 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
         CancellationToken cancellationToken)
     {
         // Try to get from pool first
-        if (_memoryPool.TryGetFromPool(sizeInBytes, options, out var pooledBuffer))
+        if (_memoryPool.TryGetFromPool(sizeInBytes, options, out var pooledInfo))
         {
             _logger.LogDebug("Retrieved {Size}MB buffer from pool", sizeInBytes / (1024 * 1024));
-            return pooledBuffer;
+            return new CudaUnifiedMemoryBuffer(_context, pooledInfo.DevicePointer, 
+                sizeInBytes, options, false, _logger);
         }
 
         return await Task.Run(() =>

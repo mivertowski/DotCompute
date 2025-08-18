@@ -60,7 +60,7 @@ public sealed class CpuAccelerator : IAccelerator
         _info = new CoreAcceleratorInfo(
             CoreAcceleratorType.CPU,
             GetProcessorName(),
-            Environment.Version.ToString(),
+            _ = Environment.Version.ToString(),
             GetTotalPhysicalMemory(),
             Environment.ProcessorCount,
             3000, // Default value for CPU

@@ -321,7 +321,7 @@ public sealed class PipelineIntegrationTests : IAsyncLifetime
         // Assert
         Assert.False(validationResult.IsValid);
         Assert.NotNull(validationResult.Errors);
-        Assert.Contains(validationResult.Errors, e => e.Message.Contains("circular"));
+        Assert.Contains(validationResult.Errors, e => e.Message.Contains("circular", StringComparison.Ordinal));
 
         _output.WriteLine($"Validation correctly detected circular dependency");
     }

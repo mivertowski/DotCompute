@@ -444,8 +444,34 @@ namespace DotCompute.Generators.Kernel
                     source.AppendLine($"            // Pointer parameter {param.Name} would be handled by actual implementation");
                     source.AppendLine($"            var {param.Name} = args[{i}]; // Placeholder for pointer casting");
                 }
+                // Handle Span and ReadOnlySpan types with safe casting to avoid ambiguous conversions
+                else if (param.Type.Contains("ReadOnlySpan<"))
+                {
+                    var elementType = ExtractSpanElementType(param.Type);
+                    source.AppendLine($"            // Safe casting to avoid CS0457 ambiguous conversion error for {param.Type}");
+                    source.AppendLine($"            {param.Type} {param.Name};");
+                    source.AppendLine($"            if (args[{i}] is {elementType}[] arr{i})");
+                    source.AppendLine($"                {param.Name} = new {param.Type}(arr{i});");
+                    source.AppendLine($"            else if (args[{i}] is ArraySegment<{elementType}> segment{i})");
+                    source.AppendLine($"                {param.Name} = new {param.Type}(segment{i}.Array, segment{i}.Offset, segment{i}.Count);");
+                    source.AppendLine("            else");
+                    source.AppendLine($"                throw new ArgumentException($\"Unsupported type for parameter {i}: {{args[{i}]?.GetType()}}\");");
+                }
+                else if (param.Type.Contains("Span<"))
+                {
+                    var elementType = ExtractSpanElementType(param.Type);
+                    source.AppendLine($"            // Safe casting to avoid CS0457 ambiguous conversion error for {param.Type}");
+                    source.AppendLine($"            {param.Type} {param.Name};");
+                    source.AppendLine($"            if (args[{i}] is {elementType}[] arr{i})");
+                    source.AppendLine($"                {param.Name} = new {param.Type}(arr{i});");
+                    source.AppendLine($"            else if (args[{i}] is ArraySegment<{elementType}> segment{i})");
+                    source.AppendLine($"                {param.Name} = new {param.Type}(segment{i}.Array, segment{i}.Offset, segment{i}.Count);");
+                    source.AppendLine("            else");
+                    source.AppendLine($"                throw new ArgumentException($\"Unsupported type for parameter {i}: {{args[{i}]?.GetType()}}\");");
+                }
                 else
                 {
+                    source.AppendLine($"            // Direct cast for {param.Type}");
                     source.AppendLine($"            var {param.Name} = ({param.Type})args[{i}];");
                 }
             }
@@ -812,6 +838,19 @@ namespace DotCompute.Generators.Kernel
             source.AppendLine("        , length);");
             source.AppendLine("    cudaDeviceSynchronize();");
             source.AppendLine("}");
+        }
+
+        // Helper method to extract element type from Span<T> or ReadOnlySpan<T>
+        private static string ExtractSpanElementType(string spanType)
+        {
+            // Extract element type from "Span<T>" or "ReadOnlySpan<T>"
+            var startIndex = spanType.IndexOf('<') + 1;
+            var endIndex = spanType.LastIndexOf('>');
+            if (startIndex > 0 && endIndex > startIndex)
+            {
+                return spanType.Substring(startIndex, endIndex - startIndex);
+            }
+            return "float"; // Fallback to float if parsing fails
         }
 
         // Type conversion helpers

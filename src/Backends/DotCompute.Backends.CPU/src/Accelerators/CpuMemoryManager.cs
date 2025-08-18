@@ -542,14 +542,7 @@ internal sealed class CpuMemoryBuffer : IMemoryBuffer
 
         // For smaller allocations, use regular pooled memory
         const int maxArrayLength = 1024 * 1024 * 1024; // 1GB limit
-        if (sizeInBytes <= maxArrayLength)
-        {
-            return MemoryPool<byte>.Shared.Rent((int)sizeInBytes);
-        }
-        else
-        {
-            return new NativeMemoryOwner(sizeInBytes);
-        }
+        return sizeInBytes <= maxArrayLength ? MemoryPool<byte>.Shared.Rent((int)sizeInBytes) : new NativeMemoryOwner(sizeInBytes);
     }
 
     /// <summary>

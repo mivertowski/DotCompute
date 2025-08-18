@@ -21,7 +21,6 @@
     <PackageTags>cpu;simd;avx;backend;compute;tensor;aot</PackageTags>
     
     <!-- Build Configuration -->
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     
     <!-- Enable hardware intrinsics -->
     <EnableHardwareIntrinsics>true</EnableHardwareIntrinsics>

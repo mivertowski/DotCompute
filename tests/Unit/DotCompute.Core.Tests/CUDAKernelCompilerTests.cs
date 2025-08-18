@@ -525,7 +525,7 @@ __global__ void shared_memory_kernel(float* input, float* output, int size) {
             logger => logger.Log(
                 level,
                 It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(message)),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(message, StringComparison.Ordinal)),
                 It.IsAny<Exception>(),
                 It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
             Times.AtLeastOnce);

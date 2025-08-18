@@ -884,10 +884,10 @@ public sealed class ProductionKernelCompiler : IKernelCompiler, IDisposable
         var keyComponents = new[]
         {
             definition.Name,
-            definition.Code?.GetHashCode().ToString() ?? "0",
+            _ = definition.Code?.GetHashCode().ToString() ?? "0",
             "default", // TODO: Add actual source type when available
-            options?.PreferredBlockSize.ToString() ?? "default",
-            options?.SharedMemorySize.ToString() ?? "0"
+            _ = options?.PreferredBlockSize.ToString() ?? "default",
+            _ = options?.SharedMemorySize.ToString() ?? "0"
         };
         
         return string.Join("|", keyComponents);

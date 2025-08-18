@@ -19,6 +19,7 @@ namespace DotCompute.Tests.Hardware;
 public sealed class CudaRealHardwareFullSystemTests : IDisposable
 {
     private readonly ILogger<CudaRealHardwareFullSystemTests> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly CudaBackend? _backend;
     private readonly CudaAccelerator? _accelerator;
     private bool _disposed;
@@ -92,15 +93,15 @@ public sealed class CudaRealHardwareFullSystemTests : IDisposable
 
     public CudaRealHardwareFullSystemTests(ITestOutputHelper output)
     {
-        var loggerFactory = LoggerFactory.Create(builder =>
+        _loggerFactory = LoggerFactory.Create(builder =>
             builder.SetMinimumLevel(LogLevel.Debug));
 
-        _logger = loggerFactory.CreateLogger<CudaRealHardwareFullSystemTests>();
+        _logger = _loggerFactory.CreateLogger<CudaRealHardwareFullSystemTests>();
 
         // Only run tests if CUDA is available
         if (CudaBackend.IsAvailable())
         {
-            _backend = new CudaBackend(loggerFactory.CreateLogger<CudaBackend>());
+            _backend = new CudaBackend(_loggerFactory.CreateLogger<CudaBackend>());
             _accelerator = _backend.GetDefaultAccelerator();
         }
         // CUDA not available - tests will be skipped
@@ -117,7 +118,7 @@ public sealed class CudaRealHardwareFullSystemTests : IDisposable
         var info = _accelerator.Info;
 
         LogDetectedDevice(_logger, info.Name, null);
-        LogComputeCapability(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
+        _ = LogComputeCapability(_logger, info.ComputeCapability?.ToString() ?? "Unknown", null);
         LogTotalMemory(_logger, info.TotalMemory, info.TotalMemory / (1024.0 * 1024 * 1024), null);
 
         // Verify compute capability is 8.9 for RTX 2000 Ada Gen
@@ -478,7 +479,7 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
                 await compiledKernel.ExecuteAsync(arguments);
                 var executeTime = stopwatch.ElapsedMilliseconds;
 
-                LogOptimizationLevel(_logger, optLevel, compileTime, executeTime, null);
+                _ = LogOptimizationLevel(_logger, optLevel.ToString(), compileTime, executeTime, null);
 
                 // Verify kernel actually executed(results should be different from input)
                 var outputData = new float[Math.Min(100, N)];
@@ -554,6 +555,7 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
 
         _accelerator?.Dispose();
         _backend?.Dispose();
+        _loggerFactory?.Dispose();
         _disposed = true;
     }
 }

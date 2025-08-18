@@ -3,20 +3,23 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using DotCompute.Core.Types;
 using DotCompute.Tests.Utilities;
+using DotCompute.Tests;
+using DotCompute.Tests.Common;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using Xunit;
 using FluentAssertions;
-using CompiledKernel = DotCompute.Tests.Common.CompiledKernel;
-using KernelArgument = DotCompute.Tests.Common.KernelArgument;
-using KernelConfiguration = DotCompute.Tests.Common.KernelConfiguration;
+using CompiledKernel = DotCompute.Tests.Utilities.CompiledKernel;
+using KernelArgument = DotCompute.Tests.Utilities.KernelArgument;
+using KernelConfiguration = DotCompute.Tests.Utilities.KernelConfiguration;
 
 namespace DotCompute.Tests.Unit;
 
@@ -24,6 +27,9 @@ namespace DotCompute.Tests.Unit;
 /// Comprehensive tests for OpenCL kernel executor that can run on CI/CD without GPU hardware.
 /// Uses mocks and dependency injection to simulate OpenCL runtime behavior.
 /// </summary>
+[Trait("Category", TestCategories.Unit)]
+[Trait("Category", TestCategories.Mock)]
+[Trait("Category", TestCategories.CI)]
 public sealed class OpenCLKernelExecutorTests : IDisposable
 {
     private readonly Mock<IAccelerator> _mockAccelerator;
@@ -38,6 +44,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public void Constructor_WithNullAccelerator_ShouldThrowArgumentNullException()
     {
         // Act & Assert
@@ -45,6 +52,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public void Constructor_WithNullLogger_ShouldThrowArgumentNullException()
     {
         // Act & Assert
@@ -52,6 +60,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public void Constructor_WithNonOpenCLAccelerator_ShouldThrowArgumentException()
     {
         // Arrange
@@ -60,10 +69,11 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(() => 
             new OpenCLKernelExecutor(nonOpenCLAccelerator.Object, _mockLogger.Object));
-        Assert.Contains("Expected OpenCL accelerator but received CUDA", exception.Message);
+        Assert.Contains("Expected OpenCL accelerator but received CUDA", exception.Message, StringComparison.Ordinal);
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public void Accelerator_ShouldReturnProvidedAccelerator()
     {
         // Act
@@ -74,6 +84,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithValidParameters_ShouldExecuteSuccessfully()
     {
         // Arrange
@@ -92,6 +103,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_WithNullKernel_ShouldThrowArgumentNullException()
     {
         // Arrange
@@ -101,11 +113,12 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(async () => 
         {
-            await _executor.ExecuteAsync(default(DotCompute.Abstractions.CompiledKernel), arguments.ToCoreKernelArguments(), config);
+            await _executor.ExecuteAsync(default, arguments.ToCoreKernelArguments(), config);
         });
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_WithNullArguments_ShouldThrowArgumentNullException()
     {
         // Arrange
@@ -118,6 +131,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_WithNullConfig_ShouldThrowArgumentNullException()
     {
         // Arrange
@@ -130,6 +144,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAndWaitAsync_WithValidParameters_ShouldExecuteAndWait()
     {
         // Arrange
@@ -149,6 +164,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public void EnqueueExecution_WithValidParameters_ShouldReturnHandle()
     {
         // Arrange
@@ -167,6 +183,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task WaitForCompletionAsync_WithValidHandle_ShouldComplete()
     {
         // Arrange
@@ -187,6 +204,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task WaitForCompletionAsync_WithCancellation_ShouldRespectCancellation()
     {
         // Arrange
@@ -195,8 +213,8 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         var config = CreateValidExecutionConfig();
         var handle = _executor.EnqueueExecution(kernel, arguments.ToCoreKernelArguments(), config);
         
-        var cts = new CancellationTokenSource();
-        cts.Cancel(); // Cancel immediately
+        using var cts = new CancellationTokenSource();
+        await cts.CancelAsync(); // Cancel immediately
 
         // Act
         var result = await _executor.WaitForCompletionAsync(handle, cts.Token);
@@ -204,10 +222,11 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         // Assert
         Assert.NotNull(result);
         Assert.False(result.Success);
-        Assert.Contains("cancelled", result.ErrorMessage);
+        Assert.Contains("cancelled", result.ErrorMessage, StringComparison.Ordinal);
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public void GetOptimalExecutionConfig_WithValidKernel_ShouldReturnOptimalConfig()
     {
         // Arrange
@@ -231,11 +250,12 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     [InlineData(256)]
     [InlineData(512)]
     [InlineData(1024)]
+    [Trait("Category", TestCategories.Unit)]
     public void GetOptimalExecutionConfig_WithDifferentWorkGroupSizes_ShouldAdaptConfiguration(int workGroupSize)
     {
         // Arrange
         var kernel = CreateValidCompiledKernel();
-        kernel.Metadata["preferred_work_group_size"] = workGroupSize.ToString();
+        kernel.Metadata["preferred_work_group_size"] = workGroupSize.ToString(CultureInfo.InvariantCulture);
         var problemSize = new[] { workGroupSize * 16 };
 
         // Act
@@ -246,10 +266,11 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         Assert.True(config.GlobalWorkSize![0] >= problemSize[0]);
         // Local work size should be reasonable for OpenCL(typically power of 2)
         Assert.True(config.LocalWorkSize![0] <= workGroupSize);
-        Assert.True((config.LocalWorkSize[0] &config.LocalWorkSize[0] - 1)) == 0 || config.LocalWorkSize[0] == 1);
+        Assert.True((config.LocalWorkSize[0] & (config.LocalWorkSize[0] - 1)) == 0 || config.LocalWorkSize[0] == 1);
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithLocalMemoryKernel_ShouldHandleLocalMemory()
     {
         // Arrange
@@ -267,6 +288,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithImageKernel_ShouldHandleImageArguments()
     {
         // Arrange
@@ -283,6 +305,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithVectorKernel_ShouldHandleVectorizedExecution()
     {
         // Arrange
@@ -299,6 +322,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Performance)]
     public async Task ProfileAsync_WithValidParameters_ShouldReturnProfilingResults()
     {
         // Arrange
@@ -325,6 +349,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_ConcurrentExecutions_ShouldHandleMultipleCommandQueues()
     {
         // Arrange
@@ -350,6 +375,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.EdgeCase)]
     public async Task ExecuteAsync_AfterDispose_ShouldThrowObjectDisposedException()
     {
         // Arrange
@@ -369,6 +395,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     [InlineData(1)]
     [InlineData(2)]
     [InlineData(3)]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithMultiDimensionalExecution_ShouldExecuteCorrectly(int dimensions)
     {
         // Arrange
@@ -386,6 +413,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     }
 
     [Fact]
+    [Trait("Category", TestCategories.Unit)]
     public async Task ExecuteAsync_WithAtomicOperations_ShouldHandleAtomics()
     {
         // Arrange
@@ -403,7 +431,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
 
     #region Helper Methods
 
-    private Mock<IAccelerator> CreateMockOpenCLAccelerator()
+    private static Mock<IAccelerator> CreateMockOpenCLAccelerator()
     {
         var mock = new Mock<IAccelerator>();
         mock.Setup(a => a.Info).Returns(new AcceleratorInfo
@@ -423,13 +451,13 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
             MaxThreadsPerBlock = 256
         });
 
-        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()
+        mock.Setup(a => a.SynchronizeAsync(It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
         return mock;
     }
 
-    private Mock<IAccelerator> CreateMockAcceleratorOfType(string deviceType)
+    private static Mock<IAccelerator> CreateMockAcceleratorOfType(string deviceType)
     {
         var mock = new Mock<IAccelerator>();
         mock.Setup(a => a.Info).Returns(new AcceleratorInfo
@@ -452,9 +480,9 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         return mock;
     }
 
-    private CompiledKernel CreateValidCompiledKernel(string name = "test_kernel")
+    private static CompiledKernel CreateValidCompiledKernel(string name = "test_kernel")
     {
-        return new CompiledKernel
+        var kernel = new CompiledKernel
         {
             Id = Guid.NewGuid(),
             KernelId = Guid.NewGuid(),
@@ -462,14 +490,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
             EntryPoint = name,
             NativeHandle = new IntPtr(0x12345678), // Mock handle
             IsCompiled = true,
-            Language = KernelLanguage.OpenCL,
-            Metadata = new Dictionary<string, string>
-            {
-                ["preferred_work_group_size"] = "256",
-                ["local_memory_size"] = "0",
-                ["work_group_size"] = "256,1,1",
-                ["uses_local_memory"] = "false"
-            },
+            Language = DotCompute.Tests.Utilities.KernelLanguage.OpenCL,
             Configuration = new KernelConfiguration
             {
                 BlockDimensions = new Dimensions3D(256, 1, 1),
@@ -478,18 +499,27 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
             SharedMemorySize = 0,
             CompilationTimestamp = DateTimeOffset.UtcNow
         };
+        
+        // Add metadata to the read-only dictionary
+        kernel.Metadata["preferred_work_group_size"] = "256";
+        kernel.Metadata["local_memory_size"] = "0";
+        kernel.Metadata["work_group_size"] = "256,1,1";
+        kernel.Metadata["uses_local_memory"] = "false";
+        
+        return kernel;
     }
 
-    private CompiledKernel CreateKernelWithLocalMemory()
+    private static CompiledKernel CreateKernelWithLocalMemory()
     {
         var kernel = CreateValidCompiledKernel("local_memory_kernel");
         kernel.Metadata["uses_local_memory"] = "true";
         kernel.Metadata["local_memory_size"] = "2048";
         kernel.Configuration!.SharedMemorySize = 2048;
+        kernel.SharedMemorySize = 2048;
         return kernel;
     }
 
-    private CompiledKernel CreateImageProcessingKernel()
+    private static CompiledKernel CreateImageProcessingKernel()
     {
         var kernel = CreateValidCompiledKernel("image_kernel");
         kernel.Metadata["uses_images"] = "true";
@@ -497,7 +527,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         return kernel;
     }
 
-    private CompiledKernel CreateVectorizedKernel()
+    private static CompiledKernel CreateVectorizedKernel()
     {
         var kernel = CreateValidCompiledKernel("vector_kernel");
         kernel.Metadata["uses_vector_types"] = "true";
@@ -505,7 +535,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         return kernel;
     }
 
-    private CompiledKernel CreateAtomicKernel()
+    private static CompiledKernel CreateAtomicKernel()
     {
         var kernel = CreateValidCompiledKernel("atomic_kernel");
         kernel.Metadata["uses_atomics"] = "true";
@@ -513,7 +543,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         return kernel;
     }
 
-    private KernelArgument[] CreateValidKernelArguments()
+    private static KernelArgument[] CreateValidKernelArguments()
     {
         return new[]
         {
@@ -544,7 +574,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelArgument[] CreateImageKernelArguments()
+    private static KernelArgument[] CreateImageKernelArguments()
     {
         return new[]
         {
@@ -569,7 +599,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelArgument[] CreateVectorKernelArguments()
+    private static KernelArgument[] CreateVectorKernelArguments()
     {
         return new[]
         {
@@ -592,7 +622,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelArgument[] CreateAtomicKernelArguments()
+    private static KernelArgument[] CreateAtomicKernelArguments()
     {
         return new[]
         {
@@ -615,7 +645,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelExecutionConfig CreateValidExecutionConfig()
+    private static KernelExecutionConfig CreateValidExecutionConfig()
     {
         return new KernelExecutionConfig
         {
@@ -627,7 +657,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelExecutionConfig CreateExecutionConfigWithLocalMemory()
+    private static KernelExecutionConfig CreateExecutionConfigWithLocalMemory()
     {
         return new KernelExecutionConfig
         {
@@ -639,7 +669,7 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
         };
     }
 
-    private KernelExecutionConfig CreateMultiDimensionalConfig(int dimensions)
+    private static KernelExecutionConfig CreateMultiDimensionalConfig(int dimensions)
     {
         switch(dimensions)
         {
@@ -674,7 +704,6 @@ public sealed class OpenCLKernelExecutorTests : IDisposable
     public void Dispose()
     {
         _executor?.Dispose();
-        GC.SuppressFinalize(this);
         GC.SuppressFinalize(this);
     }
 }

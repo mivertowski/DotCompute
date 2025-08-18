@@ -22,6 +22,7 @@ namespace DotCompute.Tests.Hardware.Integration;
 public sealed class CudaMemoryTransferTests : IDisposable
 {
     private readonly ILogger<CudaMemoryTransferTests> _logger;
+    private readonly ILoggerFactory _loggerFactory;
     private readonly ITestOutputHelper _output;
     private readonly List<CudaAccelerator> _accelerators = [];
     private readonly List<ISyncMemoryBuffer> _buffers = [];
@@ -42,8 +43,8 @@ public sealed class CudaMemoryTransferTests : IDisposable
     public CudaMemoryTransferTests(ITestOutputHelper output)
     {
         _output = output;
-        var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        _logger = loggerFactory.CreateLogger<CudaMemoryTransferTests>();
+        _loggerFactory = LoggerFactory.Create(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        _logger = _loggerFactory.CreateLogger<CudaMemoryTransferTests>();
     }
 
     [Theory]
@@ -86,12 +87,37 @@ public sealed class CudaMemoryTransferTests : IDisposable
     [InlineData(typeof(double))]
     [InlineData(typeof(int))]
     [InlineData(typeof(long))]
-    public unsafe void CudaMemoryTransfer_TypedData_ShouldPreserveValues<T>(Type dataType) where T : unmanaged, IEquatable<T>
+    public void CudaMemoryTransfer_TypedData_ShouldPreserveValues(Type dataType)
     {
         // Arrange
         if (!IsCudaAvailable())
             return;
 
+        // Dispatch to the appropriate generic method based on dataType
+        if (dataType == typeof(float))
+        {
+            CudaMemoryTransfer_TypedData_ShouldPreserveValues_Generic<float>();
+        }
+        else if (dataType == typeof(double))
+        {
+            CudaMemoryTransfer_TypedData_ShouldPreserveValues_Generic<double>();
+        }
+        else if (dataType == typeof(int))
+        {
+            CudaMemoryTransfer_TypedData_ShouldPreserveValues_Generic<int>();
+        }
+        else if (dataType == typeof(long))
+        {
+            CudaMemoryTransfer_TypedData_ShouldPreserveValues_Generic<long>();
+        }
+        else
+        {
+            throw new NotSupportedException($"Data type {dataType.Name} is not supported in this test");
+        }
+    }
+
+    private unsafe void CudaMemoryTransfer_TypedData_ShouldPreserveValues_Generic<T>() where T : unmanaged, IEquatable<T>
+    {
         var accelerator = CreateAccelerator();
         var memoryManager = accelerator.Memory as ISyncMemoryManager;
 
@@ -639,6 +665,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
             }
         }
         _accelerators.Clear();
+        _loggerFactory?.Dispose();
         GC.SuppressFinalize(this);
     }
 }
