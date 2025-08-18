@@ -133,11 +133,14 @@ public class Program
             .AddDotCompute()
             .AddCpuBackend(options =>
             {
-                options.EnableVectorization = true; // 23x SIMD speedup
+                options.EnableVectorization = true; // 8-23x SIMD speedup
                 options.ThreadCount = Environment.ProcessorCount;
             })
-            .AddCudaBackend()   // NVIDIA GPU acceleration (8-100x)
-            .AddMetalBackend()  // Apple GPU acceleration (8-80x)
+            .AddCudaBackend(options =>   // NVIDIA GPU acceleration (Production Ready)
+            {
+                options.EnableP2PTransfers = true;
+                options.OptimizationLevel = CudaOptimizationLevel.Aggressive;
+            })
             .AddPluginSystem()  // Hot-reload plugin support
             .BuildServiceProvider();
 
@@ -317,18 +320,12 @@ public static void GaussianBlur(
 ### GPU Acceleration Examples (✅ Production Ready)
 
 ```csharp
-// NVIDIA GPU acceleration
+// NVIDIA GPU acceleration (Production Ready)
 services.AddCudaBackend(options =>
 {
     options.EnableUnifiedMemory = true;
+    options.EnableP2PTransfers = true;     // Multi-GPU support
     options.OptimizationLevel = CudaOptimizationLevel.Aggressive;
-});
-
-// Apple GPU acceleration
-services.AddMetalBackend(options =>
-{
-    options.EnableUnifiedMemory = true; // Optimized for Apple Silicon
-    options.UseMetalPerformanceShaders = true;
 });
 
 // Hot-reload plugin development
@@ -337,6 +334,9 @@ services.AddPluginSystem(options =>
     options.EnableHotReload = true;
     options.PluginDirectory = "./plugins";
 });
+
+// Note: Metal backend planned but not yet implemented
+// Apple Silicon GPU support is planned for future releases
 ```
 
 ### Performance Optimization

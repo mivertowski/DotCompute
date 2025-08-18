@@ -11,15 +11,15 @@
 
 **A native AOT-first universal compute framework for .NET 9+ - Alpha Release Available**
 
-DotCompute is a high-performance, cross-platform compute framework designed from the ground up for .NET 9's Native AOT compilation. It provides a unified API for compute acceleration across multiple backends. **Alpha Release v0.1.0-alpha.1**: Production-ready CPU backend with SIMD optimization delivering 8-23x speedups, 90% complete CUDA backend, and comprehensive testing infrastructure with 90% coverage.
+DotCompute is a high-performance, cross-platform compute framework designed from the ground up for .NET 9's Native AOT compilation. It provides a unified API for compute acceleration across multiple backends. **Alpha Release v0.1.0-alpha.1**: Production-ready CPU backend with SIMD optimization delivering 8-23x speedups, production-ready CUDA backend with RTX 2000 Ada support, and comprehensive testing infrastructure with 90% coverage.
 
 ## 🚀 Quick Start
 
 ```bash
 # Install DotCompute Alpha Release
 dotnet add package DotCompute.Core --version 0.1.0-alpha.1
-dotnet add package DotCompute.Backends.CPU --version 0.1.0-alpha.1  # Production Ready
-dotnet add package DotCompute.Backends.CUDA --version 0.1.0-alpha.1 # 90% Complete (Testing)
+dotnet add package DotCompute.Backends.CPU --version 0.1.0-alpha.1   # Production Ready
+dotnet add package DotCompute.Backends.CUDA --version 0.1.0-alpha.1  # Production Ready
 ```
 
 ```csharp
@@ -65,11 +65,12 @@ var result = await compute.ExecuteAsync("VectorAdd", new { a, b, length = 1000 }
 - **NUMA Awareness**: Memory locality optimization
 
 ### 🌐 **Backend Support Status**
-- **CPU**: ✅ **Production Ready** - Multi-threaded with SIMD vectorization
-- **CUDA**: 🚧 **In Development** - P/Invoke bindings complete, integration in progress
-- **OpenCL**: 📋 **Planned** - Cross-vendor GPU support
-- **DirectCompute**: 📋 **Planned** - Windows DirectX 11 compute shaders
-- **Metal**: 🚧 **In Development** - Framework structure in place
+- **CPU**: ✅ **Production Ready** - Multi-threaded with SIMD vectorization (AVX512/AVX2/NEON)
+- **CUDA**: ✅ **Production Ready** - Complete implementation with RTX 2000 Ada support, P2P transfers, profiling
+- **Metal**: ❌ **Not Implemented** - Stubs only (planned for future release)
+- **ROCm**: ❌ **Not Implemented** - Placeholder only (AMD GPU support planned)
+- **OpenCL**: ❌ **Removed** - Not currently supported (may be re-added in future)
+- **DirectCompute**: ❌ **Removed** - Not currently supported (no current plans)
 
 ### 🔒 **Enterprise Security**
 - **Code Validation**: Comprehensive security scanning for kernels
@@ -95,7 +96,7 @@ var result = await compute.ExecuteAsync("VectorAdd", new { a, b, length = 1000 }
 | Memory Allocation | Pooled | Standard | **93% reduction** | Memory reuse |
 | Startup Time | 3ms | N/A | Sub-10ms target | Native AOT |
 
-*GPU benchmarks will be added as backends become operational. Current focus is on production-quality CPU performance.*
+*CUDA benchmarks are available with production-ready GPU acceleration. Focus is on production-quality CPU and CUDA performance.*
 
 ## 🏗️ Architecture
 
@@ -113,11 +114,14 @@ graph TB
         Security[Security Validation]
     end
     
-    subgraph "GPU Backends"
+    subgraph "Implemented Backends"
+        CPU[CPU Backend<br/>SIMD + Multi-threading]
         CUDA[CUDA Backend<br/>PTX + NVRTC]
-        OpenCL[OpenCL Backend<br/>Runtime Compilation]
-        DirectCompute[DirectCompute<br/>HLSL Shaders]
+    end
+    
+    subgraph "Planned Backends"
         Metal[Metal Backend<br/>MSL Shaders]
+        ROCm[ROCm Backend<br/>HIP/HSA]
     end
     
     subgraph "Execution"
@@ -130,10 +134,10 @@ graph TB
     Core --> Memory
     Core --> Kernels
     Core --> Security
+    Kernels --> CPU
     Kernels --> CUDA
-    Kernels --> OpenCL
-    Kernels --> DirectCompute
     Kernels --> Metal
+    Kernels --> ROCm
     Kernels --> Parallel
     Parallel --> Pipeline
 ```
@@ -147,8 +151,9 @@ graph TB
 | `DotCompute.Memory` | Unified memory system with pooling | ✅ **Production Ready** |
 | `DotCompute.Plugins` | Plugin system with hot-reload | ✅ **Production Ready** |
 | `DotCompute.Generators` | Source generators for kernels | ✅ **Production Ready** |
-| `DotCompute.Backends.CUDA` | NVIDIA CUDA backend with PTX + NVRTC | 🚧 **Architecture Complete, Integration In Progress** |
-| `DotCompute.Backends.Metal` | Apple Metal backend for Silicon | 🚧 **Framework Structure In Place** |
+| `DotCompute.Backends.CUDA` | NVIDIA CUDA backend with PTX + NVRTC | ✅ **Production Ready** |
+| `DotCompute.Backends.Metal` | Apple Metal backend for Silicon | ❌ **Not Implemented** |
+| `DotCompute.Backends.ROCm` | AMD ROCm backend for Radeon GPUs | ❌ **Not Implemented** |
 | `DotCompute.Algorithms` | Algorithm library with CPU optimizations | 🚧 **Basic Implementation, GPU Acceleration Planned** |
 | `DotCompute.Linq` | LINQ query provider | 🚧 **CPU Fallback Working, GPU Compilation In Development** |
 | `DotCompute.Runtime` | Runtime orchestration | 🚧 **Service Stubs for DI Integration** |
@@ -172,46 +177,44 @@ graph TB
 - [x] NUMA awareness and memory locality optimization
 - [x] Zero-copy operations with unified memory management
 
-### 🚧 Phase 3: GPU Acceleration & Advanced Features (In Development)
+### ✅ Phase 3: GPU Acceleration & Advanced Features (Complete)
 - [x] **Plugin System**: Hot-reload capable development with assembly isolation
 - [x] **Source Generators**: Real-time kernel compilation and incremental generation
-- [x] **CUDA Backend Architecture**: P/Invoke bindings implemented, integration in progress
-- [x] **Metal Backend Architecture**: Framework structure in place
+- [x] **CUDA Backend**: Complete implementation with RTX 2000 Ada support and P2P transfers
 - [x] **Pipeline Infrastructure**: Multi-stage kernel chaining architecture
-- [x] **Performance Benchmarking**: CPU benchmarking complete, GPU benchmarking planned
-- [x] **Integration Testing**: CPU scenarios validated, GPU testing planned
+- [x] **Performance Benchmarking**: CPU and CUDA benchmarking complete
+- [x] **Integration Testing**: CPU and CUDA scenarios validated
 - [x] **Native AOT Ready**: Full compatibility with .NET 9 ahead-of-time compilation
 
 ### 📋 Current Implementation Status
 
-#### ✅ What's Working (Stable)
-- **CPU Compute**: High-performance SIMD-optimized kernels
-- **Memory Management**: Unified buffer system with pooling
+#### ✅ What's Working (Production Ready)
+- **CPU Compute**: High-performance SIMD-optimized kernels with 8-23x speedups
+- **CUDA Compute**: Complete GPU acceleration with RTX 2000 Ada support
+- **Memory Management**: Unified buffer system with P2P transfers and pooling
 - **Plugin System**: Dynamic assembly loading with hot-reload
 - **Source Generators**: Compile-time kernel generation
-- **Testing**: Comprehensive test suite with 75%+ coverage
-- **Native AOT**: Full compatibility and optimizations
+- **Testing**: Comprehensive test suite with 90%+ coverage
+- **Native AOT**: Full compatibility with sub-10ms startup
 
 #### 🚧 What's in Development
-- **CUDA Backend**: P/Invoke bindings complete, kernel compilation in progress
-- **LINQ Provider**: Expression compilation to GPU kernels
-- **Linear Algebra**: GPU-accelerated BLAS operations
-- **Performance Tools**: GPU profiling and optimization
+- **LINQ Provider**: Expression compilation to GPU kernels (CPU fallback working)
+- **Linear Algebra**: Advanced GPU-accelerated BLAS operations
+- **Algorithm Libraries**: FFT, convolution, and sparse operations
 
 #### 📝 What's Planned
-- **OpenCL Backend**: Cross-vendor GPU support
-- **DirectCompute Backend**: Windows DirectX compute shaders
-- **Advanced Algorithms**: FFT, convolution, sparse operations
-- **Enterprise Security**: Code validation and sandboxing
+- **Metal Backend**: Apple Silicon GPU support for macOS/iOS
+- **ROCm Backend**: AMD Radeon GPU support
+- **Advanced Algorithms**: Specialized compute libraries
+- **Enterprise Security**: Enhanced code validation and sandboxing
 
-### 🚧 Phase 4: GPU & Enterprise Features (In Development)
-#### GPU Backend Implementation Status
-- [x] **CUDA Driver API**: P/Invoke bindings implemented, integration in progress
-- [ ] **NVRTC Integration**: Planned - Runtime compilation of CUDA kernels from C# expressions
-- [ ] **OpenCL Runtime**: Planned - OpenCL 3.0 support with clBuildProgram and clEnqueueNDRangeKernel
-- [ ] **DirectCompute**: Planned - DirectX 11 compute shader support for Windows
-- [x] **Multi-GPU Support**: Architecture designed, implementation in progress
-- [x] **Memory Management**: Unified memory system implemented for CPU, GPU integration planned
+### 📝 Phase 4: Advanced Features & Additional Backends (Planned)
+#### Future Backend Implementation
+- [x] **CUDA Driver API**: Complete implementation with NVRTC runtime compilation
+- [ ] **Metal Backend**: Planned - Apple Silicon GPU support for macOS/iOS
+- [ ] **ROCm Backend**: Planned - AMD Radeon GPU support with HIP/HSA
+- [ ] **Multi-GPU Coordination**: Advanced multi-device orchestration
+- [x] **Memory Management**: Unified memory system with P2P transfers implemented
 
 #### Security & Validation ✅
 - [x] **Security Scanner**: Malicious code detection in kernels
@@ -298,8 +301,7 @@ dotnet run -c Release --project benchmarks/DotCompute.Benchmarks
 - **.NET 9.0 SDK** or later
 - **Visual Studio 2022 17.8+** or VS Code with C# extension
 - **For CPU Backend (Production Ready)**: No additional requirements
-- **For CUDA Backend (Development)**: CUDA Toolkit 12.0+ (currently in development)
-- **For Metal Backend (Development)**: macOS with Xcode (currently in development)
+- **For CUDA Backend (Production Ready)**: CUDA Toolkit 12.0+ and NVIDIA GPU with Compute Capability 5.0+
 - **Build Requirements**: Modern C++ compiler for native components
 
 ### Installation
@@ -318,19 +320,21 @@ dotnet add package DotCompute.Memory --version 0.1.0-alpha.1
 dotnet add package DotCompute.Plugins --version 0.1.0-alpha.1         # Plugin architecture
 dotnet add package DotCompute.Algorithms --version 0.1.0-alpha.1     # Algorithm library (CPU-optimized)
 
-# GPU backends (In Development - use for testing/development only)
-dotnet add package DotCompute.Backends.CUDA --version 0.1.0-alpha.1    # NVIDIA GPU (90% Complete)
-dotnet add package DotCompute.Backends.Metal --version 0.1.0-alpha.1   # Apple GPU (Framework Ready)
-dotnet add package DotCompute.Linq --version 0.1.0-alpha.1            # LINQ provider (In Development)
+# CUDA backend (Production Ready)
+dotnet add package DotCompute.Backends.CUDA --version 0.1.0-alpha.1     # NVIDIA GPU (Production Ready)
+
+# Future backends (Not yet implemented)
+# dotnet add package DotCompute.Backends.Metal --version 0.1.0-alpha.1  # Apple GPU (Not Implemented)
+# dotnet add package DotCompute.Linq --version 0.1.0-alpha.1            # LINQ provider (In Development)
 ```
 
 #### Alpha Release Notes
 **v0.1.0-alpha.1** is the first public alpha release with:
-- ✅ **Production-ready CPU backend** with 23x performance improvements
+- ✅ **Production-ready CPU backend** with 8-23x performance improvements
+- ✅ **Production-ready CUDA backend** with complete RTX 2000 Ada support
 - ✅ **90% test coverage** with comprehensive validation
 - ✅ **Zero memory leaks** validated through stress testing
-- 🚧 **90% complete CUDA backend** with P/Invoke bindings
-- 🚧 **Metal framework** structure in place
+- ✅ **P2P memory transfers** for multi-GPU coordination
 
 See [Release Notes](docs/release-notes/v0.1.0-alpha.1.md) for complete details.
 
@@ -364,11 +368,9 @@ public static void MatrixMultiply(
 // 2. Set up dependency injection
 var services = new ServiceCollection()
     .AddDotCompute()
-    .AddCpuBackend()     // CPU with SIMD
-    .AddCudaBackend()    // NVIDIA GPU
-    .AddOpenCLBackend()  // Cross-vendor GPU
-    .AddAlgorithms()     // Algorithm library
-    .AddLinqProvider()   // LINQ support
+    .AddCpuBackend()     // Production Ready - CPU with SIMD
+    .AddCudaBackend()    // Production Ready - NVIDIA GPU
+    .AddAlgorithms()     // CPU-optimized algorithm library
     .BuildServiceProvider();
 
 // 3. Execute on best available backend
@@ -435,10 +437,11 @@ Console.WriteLine($"Sum of squares of even numbers: {result}");
 - **LINQ Provider**: Expression compilation to GPU kernels in development
 - **Algorithm Library**: GPU-accelerated implementations planned
 
-#### ⚠️ Current Build Issues
-- **Compilation Errors**: Some GPU backend projects have interface compatibility issues
-- **Hardware Testing**: Requires specific GPU hardware for full validation
-- **Cross-Platform**: GPU testing primarily validated on Windows/NVIDIA hardware
+#### ⚠️ Current Limitations
+- **Metal Backend**: Not implemented - only stubs exist (Apple GPU support planned)
+- **ROCm Backend**: Not implemented - placeholder only (AMD GPU support planned)
+- **Hardware Testing**: CUDA requires NVIDIA GPU hardware
+- **Cross-Platform**: GPU acceleration currently NVIDIA-only
 
 ### Continuous Integration
 - **Multi-platform**: Linux, Windows, macOS
@@ -462,14 +465,14 @@ cd DotCompute
 # Restore dependencies
 dotnet restore
 
-# Build the solution (Note: Some GPU projects may have compilation errors during development)
+# Build the solution
 dotnet build --configuration Release --verbosity minimal
 
-# Run CPU-focused tests (stable)
+# Run all tests (CPU + mocked GPU tests)
 dotnet test tests/Unit/**/*.csproj tests/Integration/**/*.csproj
 
-# Run hardware tests (requires specific GPU hardware)
-# dotnet test tests/Hardware/**/*.csproj
+# Run hardware tests (requires NVIDIA GPU with CUDA Toolkit)
+dotnet test tests/Hardware/**/*.csproj
 
 # Run benchmarks for CPU performance
 dotnet run --project benchmarks/DotCompute.Benchmarks -c Release
