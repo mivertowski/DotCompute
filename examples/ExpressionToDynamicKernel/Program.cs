@@ -476,7 +476,9 @@ internal sealed class MockMemoryBuffer(long size, MemoryOptions options = Memory
 [SuppressMessage("CodeQuality", "CA1812:Avoid uninstantiated internal classes", Justification = "Class is instantiated via CreateView method")]
 internal sealed class MockMemoryBufferView(MockMemoryBuffer parentBuffer, long offset, long length) : IMemoryBuffer
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - View doesn't own the parent buffer
     private readonly MockMemoryBuffer _parentBuffer = parentBuffer;
+#pragma warning restore CA2213
     private readonly long _offset = offset;
     private readonly long _length = length;
 

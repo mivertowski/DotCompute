@@ -408,9 +408,7 @@ public sealed class EndToEndWorkflowTests(ITestOutputHelper output) : IDisposabl
 
     #endregion
 
-    public void Dispose() =>
-        // Cleanup resources
-        GC.SuppressFinalize(this);
+    public void Dispose() => GC.SuppressFinalize(this);
 }
 
 /// <summary>

@@ -80,7 +80,9 @@ public sealed class TestCpuAccelerator : IAccelerator
 /// <summary>
 /// Test implementation of a compiled kernel.
 /// </summary>
+#pragma warning disable CS9113 // Parameter is unread
 public sealed class TestCompiledKernel(string name, byte[] code, CompilationOptions options) : ICompiledKernel
+#pragma warning restore CS9113
 {
     private readonly Stopwatch _executionTimer = new();
     private long _executionCount;

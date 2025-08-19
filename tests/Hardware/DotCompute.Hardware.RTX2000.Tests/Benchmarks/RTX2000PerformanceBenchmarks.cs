@@ -576,11 +576,12 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
         public double MemoryLatencyNs { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
-        public string ToJson() =>
+        public string ToJson()
+        {
 #pragma warning disable IL2026, IL3050 // JsonSerializer AOT warnings - test code only
-            JsonSerializer.Serialize(this, JsonOptions);
+            return JsonSerializer.Serialize(this, JsonOptions);
 #pragma warning restore IL2026, IL3050
-
+        }
     }
 
     internal sealed class MemoryBandwidthResults

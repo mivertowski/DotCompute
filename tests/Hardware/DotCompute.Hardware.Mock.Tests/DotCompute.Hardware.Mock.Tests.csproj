@@ -8,6 +8,7 @@
     <IsTestProject>true</IsTestProject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);CS9113</NoWarn>
     <!-- Mock tests provide hardware simulation for CI/CD environments -->
     <DefineConstants>$(DefineConstants);MOCK_HARDWARE</DefineConstants>    
   </PropertyGroup>

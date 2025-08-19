@@ -394,7 +394,9 @@ public sealed class TestKernelStageBuilder(TestKernelStage stage) : IKernelStage
 /// <summary>
 /// Test implementation of stage metrics.
 /// </summary>
+#pragma warning disable CS9113 // Parameter is unread
 public sealed class TestStageMetrics(string stageName) : IStageMetrics
+#pragma warning restore CS9113
 {
     private readonly Lock _lock = new();
     private long _executionCount;

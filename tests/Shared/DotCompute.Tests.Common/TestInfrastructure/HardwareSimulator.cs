@@ -286,7 +286,9 @@ public sealed class SimulatedAccelerator : IAccelerator
 /// Simulated accelerator context
 /// </summary>
 [ExcludeFromCodeCoverage]
+#pragma warning disable CS9113 // Parameter is unread
 public class SimulatedAcceleratorContext(SimulatedAccelerator accelerator)
+#pragma warning restore CS9113
 {
     public static void Synchronize()
         // Simulate synchronization

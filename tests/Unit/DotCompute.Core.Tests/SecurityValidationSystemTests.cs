@@ -492,9 +492,7 @@ __global__ void complex_security_test_kernel(float* input, float* output,
 
     #endregion
 
-    public void Dispose() =>
-        // Clean up any resources if needed
-        GC.SuppressFinalize(this);
+    public void Dispose() => GC.SuppressFinalize(this);
 }
 
 #region Mock Security Classes

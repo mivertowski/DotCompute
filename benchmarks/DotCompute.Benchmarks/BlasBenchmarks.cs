@@ -24,9 +24,9 @@ namespace DotCompute.Benchmarks;
 [Config(typeof(BlasConfig))]
 [MemoryDiagnoser]
 [ThreadingDiagnoser]
-internal sealed class BlasBenchmarks : IDisposable
+public sealed class BlasBenchmarks : IDisposable
 {
-    private sealed class BlasConfig : ManualConfig
+    public sealed class BlasConfig : ManualConfig
     {
         public BlasConfig()
         {
@@ -414,7 +414,7 @@ internal sealed class BlasBenchmarks : IDisposable
         const int iterations = 100;
         var size = VectorSize * sizeof(float);
         var hostData = new float[VectorSize];
-        var deviceBuffer = CudaDevice.Memory.AllocateAsync(size).Result as CudaMemoryBuffer;
+        var deviceBuffer = CudaDevice?.Memory.AllocateAsync(size).Result as CudaMemoryBuffer;
 
         var stopwatch = Stopwatch.StartNew();
         for (var i = 0; i < iterations; i++)

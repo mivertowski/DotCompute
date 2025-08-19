@@ -8,6 +8,7 @@
     <IsPackable>false</IsPackable>
     <IsTestProject>false</IsTestProject>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS9113</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

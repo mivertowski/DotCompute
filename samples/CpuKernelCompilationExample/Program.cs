@@ -493,7 +493,9 @@ internal sealed class MockMemoryBuffer : IMemoryBuffer
 /// </summary>
 internal sealed class MockMemoryBufferView(MockMemoryBuffer parent, long offset, long length) : IMemoryBuffer
 {
+#pragma warning disable CA2213 // Disposable fields should be disposed - View doesn't own the parent buffer
     private readonly MockMemoryBuffer _parent = parent;
+#pragma warning restore CA2213
     private readonly long _offset = offset;
 
     public long SizeInBytes { get; } = length;

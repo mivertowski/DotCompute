@@ -639,9 +639,10 @@ public sealed class LinearAlgebraKernelTests : IDisposable
 /// Mock linear algebra kernels for testing purposes.
 /// In a real implementation, this would use actual GPU compute shaders/kernels.
 /// </summary>
+#pragma warning disable CS9113 // Parameter is unread
 public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<LinearAlgebraKernels> logger) : IDisposable
+#pragma warning restore CS9113
 {
-    private readonly ILogger<LinearAlgebraKernels> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     // Vector Operations
     public static async Task<float[]> VectorAddAsync(float[] a, float[] b)
@@ -1291,9 +1292,7 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
         return result;
     }
 
-    public void Dispose() =>
-        // Clean up resources if needed
-        GC.SuppressFinalize(this);
+    public void Dispose() => GC.SuppressFinalize(this);
 }
 
 #endregion
