@@ -14,7 +14,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Integration;
+namespace DotCompute.Tests.Hardware.Integration
+{
 
 /// <summary>
 /// Performance benchmarks and tests for CUDA backend operations
@@ -701,4 +702,5 @@ public sealed class CudaBenchmarkSuite : IDisposable
             return false;
         }
     }
+}
 }

@@ -13,7 +13,8 @@ using Xunit;
 using System.Diagnostics;
 using FluentAssertions;
 
-namespace DotCompute.Backends.CPU.Tests.Performance;
+namespace DotCompute.Backends.CPU.Tests.Performance
+{
 
 /// <summary>
 /// Performance and stress tests for CPU backend components.
@@ -549,4 +550,5 @@ __kernel void complexComputation(__global const float* input, __global float* ou
             _disposed = true;
         }
     }
+}
 }

@@ -3,7 +3,8 @@ using FluentAssertions;
 using DotCompute.Memory;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class MemoryAllocatorTests : IDisposable
 {
@@ -169,4 +170,5 @@ public sealed class MemoryAllocatorTests : IDisposable
         var act = () => allocator.Allocate<int>(256);
         Assert.Throws<ObjectDisposedException>(() => act());
     }
+}
 }

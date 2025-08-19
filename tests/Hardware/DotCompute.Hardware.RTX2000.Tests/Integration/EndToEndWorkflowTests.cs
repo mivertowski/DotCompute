@@ -3,7 +3,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Integration;
+namespace DotCompute.Tests.Hardware.Integration
+{
 
 /// <summary>
 /// End-to-end integration tests for RTX 2000 Ada Generation GPU.
@@ -471,4 +472,5 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
+}
 }

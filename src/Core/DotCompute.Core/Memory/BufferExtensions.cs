@@ -4,7 +4,8 @@
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Core.Memory;
+namespace DotCompute.Core.Memory
+{
 
 /// <summary>
 /// Extension methods to provide compatibility with IBuffer interface changes.
@@ -59,4 +60,4 @@ public static class BufferExtensions
             disposable.Dispose();
         }
     }
-}
+}}

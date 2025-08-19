@@ -5,7 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Common.Hardware;
+namespace DotCompute.Tests.Common.Hardware
+{
 
 /// <summary>
 /// Mock CPU device implementation for testing CPU-based compute scenarios.
@@ -354,4 +355,5 @@ public enum FloatingPointPrecision
     Half,
     SinglePrecision,
     DoublePrecision
+}
 }

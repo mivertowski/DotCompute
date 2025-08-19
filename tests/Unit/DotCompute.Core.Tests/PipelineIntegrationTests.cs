@@ -14,7 +14,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Integration tests for pipeline implementations.
@@ -433,4 +434,5 @@ public sealed class PipelineIntegrationTests : IAsyncLifetime
  }
         GC.SuppressFinalize(this);
     }
+}
 }

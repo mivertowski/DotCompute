@@ -8,7 +8,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests;
+namespace DotCompute.Tests
+{
 
 /// <summary>
 /// Comprehensive tests for P2P buffer functionality including type-aware transfers.
@@ -504,4 +505,5 @@ public sealed class P2PBufferTests : IDisposable
         _mockAccelerator?.DisposeAsync().AsTask().Wait();
         GC.SuppressFinalize(this);
     }
+}
 }

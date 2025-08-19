@@ -4,7 +4,8 @@
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Mock CUDA tests that simulate hardware operations without requiring actual CUDA hardware.
@@ -252,4 +253,5 @@ public class CudaSimulationTests
             _ => false // Unknown errors
         };
     }
+}
 }

@@ -8,7 +8,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CUDA.Memory;
+namespace DotCompute.Backends.CUDA.Memory
+{
 
 /// <summary>
 /// Memory pool for CUDA unified memory management with size-based bucket allocation.
@@ -514,4 +515,4 @@ public readonly struct CudaMemoryPoolStatistics
     public double PoolEfficiency => TotalAllocations > 0 ? HitRate : 0.0;
     public long TotalPooledMemoryMB => TotalPooledMemoryBytes / (1024 * 1024);
     public long PeakPooledMemoryMB => PeakPooledMemoryBytes / (1024 * 1024);
-}
+}}

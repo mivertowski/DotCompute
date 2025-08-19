@@ -8,6 +8,7 @@
     <EnableAOTAnalyzer>true</EnableAOTAnalyzer>
     <IsAotCompatible>true</IsAotCompatible>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

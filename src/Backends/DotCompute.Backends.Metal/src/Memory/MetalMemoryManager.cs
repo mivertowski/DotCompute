@@ -7,7 +7,8 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
 
-namespace DotCompute.Backends.Metal.Memory;
+namespace DotCompute.Backends.Metal.Memory
+{
 
 /// <summary>
 /// Memory manager for Metal GPU memory allocation and management.
@@ -422,4 +423,5 @@ internal sealed class MetalMemoryBufferView(MetalMemoryBuffer parent, long offse
     {
         // Views don't own the underlying buffer, so nothing to dispose
     }
+}
 }

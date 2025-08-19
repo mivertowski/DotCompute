@@ -4,7 +4,8 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities.TestInfrastructure;
+namespace DotCompute.Tests.Utilities.TestInfrastructure
+{
 
 /// <summary>
 /// Test implementation of IMemoryManager for testing purposes
@@ -354,4 +355,5 @@ public sealed class TestMemoryBufferView : TestMemoryBuffer
         // Adjust offset to parent buffer's coordinate system
         return _parentBuffer.CopyToHostAsync(destination, _offset + offset, cancellationToken);
     }
+}
 }

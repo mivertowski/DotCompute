@@ -9,6 +9,7 @@
     <RootNamespace>DotCompute.Tests.Mocks</RootNamespace>
     <AssemblyName>DotCompute.Tests.Mocks</AssemblyName>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>

@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Memory.Benchmarks;
+namespace DotCompute.Memory.Benchmarks
+{
 
 /// <summary>
 /// Comprehensive memory benchmark results.
@@ -1536,4 +1537,5 @@ public readonly struct PerformanceSummary : IEquatable<PerformanceSummary>
     /// The result of the operator.
     /// </returns>
     public static bool operator !=(PerformanceSummary left, PerformanceSummary right) => !left.Equals(right);
+}
 }

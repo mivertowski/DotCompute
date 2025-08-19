@@ -4,7 +4,8 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for backend implementations
@@ -273,4 +274,5 @@ public sealed class HardwareIntegrationTestsFixture : IDisposable
     {
         // Cleanup shared resources
     }
+}
 }

@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Core.Kernels;
+namespace DotCompute.Core.Kernels
+{
 
 /// <summary>
 /// Extension methods for IKernelCompiler to provide compatibility with Core types.
@@ -377,4 +378,4 @@ public enum WarningSeverity
     /// Serious warning
     /// </summary>
     Serious
-}
+}}

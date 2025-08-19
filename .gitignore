@@ -507,3 +507,4 @@ agent-*.json
 nupkgs/
 aot-test/
 arm-test/
+fix_quality_issues.sh

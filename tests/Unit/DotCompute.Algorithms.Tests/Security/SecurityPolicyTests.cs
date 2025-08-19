@@ -7,7 +7,8 @@ using System.Security.Cryptography.X509Certificates;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Security;
+namespace DotCompute.Tests.Security
+{
 
 /// <summary>
 /// Comprehensive tests for SecurityPolicy functionality.
@@ -375,4 +376,5 @@ public sealed class SecurityPolicyTests : IDisposable
             };
         }
     }
+}
 }

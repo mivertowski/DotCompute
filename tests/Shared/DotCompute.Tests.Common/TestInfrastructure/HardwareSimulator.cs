@@ -2,7 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Utilities.TestInfrastructure;
+namespace DotCompute.Tests.Utilities.TestInfrastructure
+{
 
 /// <summary>
 /// Simulates hardware accelerators for testing purposes
@@ -309,4 +310,5 @@ public class SimulatedAcceleratorContext
     {
         // Nothing to dispose for simulation
     }
+}
 }

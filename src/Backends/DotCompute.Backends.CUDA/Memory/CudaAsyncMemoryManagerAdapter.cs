@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Backends.CUDA.Memory;
+namespace DotCompute.Backends.CUDA.Memory
+{
 
 /// <summary>
 /// Adapts the synchronous CudaMemoryManager to the async IMemoryManager interface.
@@ -132,4 +133,5 @@ public class CudaAsyncMemoryManagerAdapter(CudaMemoryManager syncMemoryManager) 
             throw new ArgumentException("Buffer must be a CUDA memory buffer", nameof(buffer));
         }
     }
+}
 }

@@ -13,7 +13,8 @@ using BenchmarkDotNet.Attributes;
 using Xunit.Abstractions;
 
 #pragma warning disable CA1515 // Make types internal
-namespace DotCompute.Backends.CPU;
+namespace DotCompute.Backends.CPU
+{
 
 /// <summary>
 /// Performance tests demonstrating SIMD speedup for CPU backend.
@@ -436,4 +437,5 @@ internal sealed class SimdBenchmarks
             _result[i] = _a[i] + _b[i];
         }
     }
+}
 }

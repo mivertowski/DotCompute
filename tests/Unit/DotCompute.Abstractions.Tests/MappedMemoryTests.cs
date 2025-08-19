@@ -5,7 +5,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Abstractions.Tests;
+namespace DotCompute.Abstractions.Tests
+{
 
 /// <summary>
 /// Comprehensive unit tests for the MappedMemory&lt;T&gt; struct.
@@ -577,4 +578,5 @@ public sealed class MappedMemoryTests
     }
 
     #endregion
+}
 }

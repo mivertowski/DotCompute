@@ -11,7 +11,8 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace DotCompute.Backends.CPU;
+namespace DotCompute.Backends.CPU
+{
 
 public sealed class CpuAcceleratorTests
 {
@@ -445,4 +446,5 @@ public sealed class CpuMemoryBufferTests
         buffer.Invoking(b => b.GetMemory())
             .Should().Throw<ObjectDisposedException>();
     }
+}
 }

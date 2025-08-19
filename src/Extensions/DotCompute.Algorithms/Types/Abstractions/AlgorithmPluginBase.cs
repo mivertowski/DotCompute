@@ -4,7 +4,8 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Types.Abstractions;
+namespace DotCompute.Algorithms.Types.Abstractions
+{
 
 /// <summary>
 /// Base class for algorithm plugins providing common functionality.
@@ -99,4 +100,4 @@ public abstract class AlgorithmPluginBase : IAlgorithmPlugin
     {
         return ValueTask.CompletedTask;
     }
-}
+}}

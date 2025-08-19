@@ -6,7 +6,8 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
-namespace DotCompute.Algorithms.Security;
+namespace DotCompute.Algorithms.Security
+{
 
 /// <summary>
 /// Security rule that validates file size constraints.
@@ -521,4 +522,4 @@ public sealed class BlocklistSecurityRule : SecurityRule
 
         return result;
     }
-}
+}}

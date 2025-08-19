@@ -7,7 +7,8 @@ using System.Management;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 
-namespace DotCompute.Backends.CPU.Threading;
+namespace DotCompute.Backends.CPU.Threading
+{
 
 /// <summary>
 /// Provides information about NUMA (Non-Uniform Memory Access) topology.
@@ -1613,4 +1614,5 @@ public static partial class NumaInfo
 
     [GeneratedRegex(@"(\d+)([KMG]?)")]
     private static partial Regex CacheSizeRegex();
+}
 }

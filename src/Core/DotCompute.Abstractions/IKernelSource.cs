@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Represents a source of kernel code that can be compiled.
@@ -201,4 +202,5 @@ public class BytecodeKernelSource : IKernelSource
 
     /// <inheritdoc/>
     public string[] Dependencies { get; }
+}
 }

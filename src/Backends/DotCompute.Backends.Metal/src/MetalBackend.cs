@@ -7,7 +7,8 @@ using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.Metal;
+namespace DotCompute.Backends.Metal
+{
 
 /// <summary>
 /// Main entry point for Metal compute backend
@@ -451,4 +452,5 @@ public sealed partial class MetalBackend : IDisposable
         _disposed = true;
         GC.SuppressFinalize(this);
     }
+}
 }

@@ -6,7 +6,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Tests.Common.Hardware;
+namespace DotCompute.Tests.Common.Hardware
+{
 
 /// <summary>
 /// Base class for mock hardware device implementations.
@@ -347,4 +348,5 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
 
         _disposed = true;
     }
+}
 }

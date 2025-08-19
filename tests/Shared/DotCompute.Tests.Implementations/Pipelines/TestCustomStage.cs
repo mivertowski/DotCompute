@@ -1,7 +1,8 @@
 using System.Diagnostics;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Utilities.Pipelines;
+namespace DotCompute.Tests.Implementations.Pipelines
+{
 
 /// <summary>
 /// Test implementation of a custom pipeline stage.
@@ -412,4 +413,5 @@ public sealed class TestLoopStage : IPipelineStage
     public IStageMetrics GetMetrics() => _metrics;
 
     public void SetDependencies(params string[] dependencies) => Dependencies = dependencies;
+}
 }

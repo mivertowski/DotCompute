@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Core;
+namespace DotCompute.Core
+{
 
 /// <summary>
 /// Context for kernel execution.
@@ -32,4 +33,5 @@ public sealed class KernelExecutionContext
     /// Gets or sets the cancellation token.
     /// </summary>
     public CancellationToken CancellationToken { get; init; }
+}
 }

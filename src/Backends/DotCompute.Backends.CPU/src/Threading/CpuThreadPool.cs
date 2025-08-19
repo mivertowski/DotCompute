@@ -7,7 +7,8 @@ using System.Runtime.InteropServices;
 using System.Threading.Channels;
 using Microsoft.Extensions.Options;
 
-namespace DotCompute.Backends.CPU.Threading;
+namespace DotCompute.Backends.CPU.Threading
+{
 
 /// <summary>
 /// Configuration options for the CPU thread pool.
@@ -807,4 +808,5 @@ internal sealed class NumaThreadAffinityInfo
     /// Gets the processor group (Windows only).
     /// </summary>
     public required ushort Group { get; init; }
+}
 }

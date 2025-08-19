@@ -21,7 +21,8 @@ using IAccelerator = DotCompute.Abstractions.IAccelerator;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Plugin lifecycle logging is minimal and not performance-critical
 
-namespace DotCompute.Backends.CPU.Registration;
+namespace DotCompute.Backends.CPU.Registration
+{
 
 /// <summary>
 /// Plugin implementation for the CPU backend.
@@ -216,3 +217,4 @@ public static class CpuBackendPluginExtensions
 
 
 #pragma warning restore CA1848
+}

@@ -16,7 +16,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for multi-stage kernel pipeline execution,
@@ -889,4 +890,5 @@ __kernel void scalable_process(__global const float* input, __global float* outp
     float stage_factor = 1.0f + stage_id * 0.05f;
     output[gid] = input[gid] * stage_factor + stage_id;
 }";
+}
 }

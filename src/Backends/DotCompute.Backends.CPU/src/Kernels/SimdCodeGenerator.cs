@@ -10,7 +10,8 @@ using System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Intrinsics;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// Generates optimized SIMD code for kernel execution using Native AOT-compatible approaches.
@@ -2285,4 +2286,5 @@ public static class VectorPatterns
             }
         }
     }
+}
 }

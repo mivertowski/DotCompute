@@ -5,7 +5,8 @@ using DotCompute.Algorithms.Types;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Examples;
+namespace DotCompute.Examples
+{
 
 /// <summary>
 /// Example demonstrating advanced linear algebra operations in DotCompute.
@@ -321,4 +322,4 @@ public class AdvancedLinearAlgebraExample
 
         _logger.LogInformation("All examples completed successfully!");
     }
-}
+}}

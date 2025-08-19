@@ -12,7 +12,8 @@ using DotCompute.Backends.CPU.Intrinsics;
 using DotCompute.Backends.CPU.Threading;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// High-performance kernel executor for CPU with SIMD vectorization and parallel execution.
@@ -1035,4 +1036,4 @@ public sealed class ExecutorPerformanceMetrics
     public required double TotalExecutionTimeMs { get; init; }
     public required double AverageExecutionTimeMs { get; init; }
     public required ThreadPoolStatistics ThreadPoolStatistics { get; init; }
-}
+}}

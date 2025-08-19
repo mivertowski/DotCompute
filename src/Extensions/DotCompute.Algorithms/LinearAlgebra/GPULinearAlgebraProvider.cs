@@ -11,7 +11,8 @@ using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels
 using LAHardwareInfo = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.HardwareInfo;
 using LAKernelParams = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.KernelExecutionParameters;
 
-namespace DotCompute.Algorithms.LinearAlgebra;
+namespace DotCompute.Algorithms.LinearAlgebra
+{
 
 /// <summary>
 /// Provides GPU-accelerated linear algebra operations with automatic kernel selection and optimization.
@@ -1373,4 +1374,4 @@ public enum LinearSystemSolver
     ConjugateGradient
 }
 
-#endregion
+#endregion}

@@ -3,7 +3,8 @@ using DotCompute.Core.Memory;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for Core memory types and components.
@@ -140,4 +141,5 @@ public class CoreMemoryTypesTests
         Assert.False(deviceLocal1 == hostVisible);
         Assert.False(hostVisible == shared);
     }
+}
 }

@@ -5,7 +5,8 @@ using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using OptimizationLevel = DotCompute.Abstractions.OptimizationLevel;
 
-namespace DotCompute.Core.Compute;
+namespace DotCompute.Core.Compute
+{
 
 /// <summary>
 /// Provides a unified interface for kernel compilation and execution across different compute backends.
@@ -170,4 +171,5 @@ public enum ExecutionPriority
     /// Critical priority execution.
     /// </summary>
     Critical
+}
 }

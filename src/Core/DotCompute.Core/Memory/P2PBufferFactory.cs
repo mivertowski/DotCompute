@@ -6,7 +6,8 @@ using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Memory;
+namespace DotCompute.Core.Memory
+{
 
 /// <summary>
 /// P2P-aware buffer factory that creates optimized buffers for multi-GPU scenarios.
@@ -550,4 +551,4 @@ public sealed class DeviceBufferPoolStatistics
     public long AllocationCount { get; init; }
     public long DeallocationCount { get; init; }
     public double PoolEfficiency { get; init; }
-}
+}}

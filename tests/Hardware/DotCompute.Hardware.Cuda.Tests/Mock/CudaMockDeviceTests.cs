@@ -10,7 +10,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Mock;
+namespace DotCompute.Tests.Hardware.Mock
+{
 
 /// <summary>
 /// Mock device tests for CI/CD environments without actual CUDA hardware
@@ -615,4 +616,5 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
     {
         _loggerFactory?.Dispose();
     }
+}
 }

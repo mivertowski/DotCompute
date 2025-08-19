@@ -3,7 +3,8 @@
 
 using DotCompute.Algorithms.LinearAlgebra;
 
-namespace DotCompute.Algorithms.Types;
+namespace DotCompute.Algorithms.Types
+{
 
 /// <summary>
 /// Properties and characteristics of matrices for optimization decisions.
@@ -293,4 +294,4 @@ public enum MatrixOperation
     /// Determinant computation.
     /// </summary>
     Determinant
-}
+}}

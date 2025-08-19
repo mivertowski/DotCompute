@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CUDA.Memory;
+namespace DotCompute.Backends.CUDA.Memory
+{
 
 /// <summary>
 /// CUDA unified memory manager implementing IMemoryManager with unified memory support.
@@ -469,4 +470,4 @@ public sealed class CudaUnifiedMemoryManager : IMemoryManager, IDisposable
             _disposed = true;
         }
     }
-}
+}}

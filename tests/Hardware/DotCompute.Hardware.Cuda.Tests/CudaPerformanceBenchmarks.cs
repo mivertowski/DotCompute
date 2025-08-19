@@ -10,7 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Performance benchmarks for CUDA backend on real hardware
@@ -464,4 +465,5 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
         _loggerFactory?.Dispose();
         _disposed = true;
     }
+}
 }

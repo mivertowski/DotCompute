@@ -3,7 +3,8 @@
 
 using System.Runtime.CompilerServices;
 
-namespace DotCompute.Algorithms.SignalProcessing;
+namespace DotCompute.Algorithms.SignalProcessing
+{
 
 /// <summary>
 /// Represents a complex number with single-precision floating-point real and imaginary components.
@@ -268,4 +269,4 @@ public readonly struct Complex : IEquatable<Complex>
     {
         return !left.Equals(right);
     }
-}
+}}

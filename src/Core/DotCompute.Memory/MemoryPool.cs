@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Memory;
+namespace DotCompute.Memory
+{
 
 /// <summary>
 /// A high-performance memory pool that uses power-of-2 bucket allocation for efficient memory reuse.
@@ -550,3 +551,4 @@ public record MemoryPoolPerformanceStats(
     long TotalRetainedBytes,
     long ReuseCount
 );
+}

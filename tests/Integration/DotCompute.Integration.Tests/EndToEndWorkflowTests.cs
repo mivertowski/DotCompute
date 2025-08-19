@@ -9,7 +9,8 @@ using Xunit.Abstractions;
 using DotCompute.Core.Pipelines;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for complete end-to-end compute workflows.
@@ -464,4 +465,5 @@ public class WorkflowResult
     public PipelineExecutionMetrics? Metrics { get; set; }
 
     public T GetOutput<T>(string key) => Results.TryGetValue(key, out var value) ? (T)value : default!;
+}
 }

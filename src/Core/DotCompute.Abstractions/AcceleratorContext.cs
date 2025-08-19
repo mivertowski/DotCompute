@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Represents an accelerator context for managing device state.
@@ -51,4 +52,5 @@ public readonly struct AcceleratorContext(IntPtr handle, int deviceId) : IEquata
     }
 
     public override string ToString() => IsValid ? $"AcceleratorContext(Device={DeviceId}, Handle={Handle:X})" : "AcceleratorContext(Invalid)";
+}
 }

@@ -6,7 +6,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using DotCompute.Core.Kernels;
 
-namespace DotCompute.Core.Execution;
+namespace DotCompute.Core.Execution
+{
 
 /// <summary>
 /// Monitors and analyzes parallel execution performance with machine learning-based optimization.
@@ -831,4 +832,4 @@ public class KernelCharacteristics
     public bool IsComputeBound { get; set; }
     public double AverageThroughput { get; set; }
     public double AverageMemoryBandwidth { get; set; }
-}
+}}

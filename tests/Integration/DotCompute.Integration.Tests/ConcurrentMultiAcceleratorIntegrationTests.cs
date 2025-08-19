@@ -14,7 +14,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for concurrent multi-accelerator workflows including
@@ -979,4 +980,5 @@ __kernel void cpu_optimized(__global const float* input, __global float* output)
     data = data + 1.0f;
     vstore4(data, gid / 4,__global float4*)output);
 }";
+}
 }

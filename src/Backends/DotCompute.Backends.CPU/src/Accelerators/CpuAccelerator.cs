@@ -16,7 +16,8 @@ using CoreKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CPU.Accelerators;
+namespace DotCompute.Backends.CPU.Accelerators
+{
 
 /// <summary>
 /// CPU-based compute accelerator with SIMD vectorization support.
@@ -584,3 +585,4 @@ internal sealed class CompiledKernelAdapter(CoreICompiledKernel coreKernel) : IC
     public ValueTask DisposeAsync() => _coreKernel.DisposeAsync();
 }
 
+}

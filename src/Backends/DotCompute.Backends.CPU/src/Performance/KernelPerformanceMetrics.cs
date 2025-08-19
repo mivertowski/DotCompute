@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Backends.CPU.Threading;
 
-namespace DotCompute.Backends.CPU.Performance;
+namespace DotCompute.Backends.CPU.Performance
+{
 
 /// <summary>
 /// Performance metrics and profiling for CPU kernels.
@@ -710,4 +711,4 @@ public sealed class PerformanceAnalysis
     /// Gets the detailed analysis text.
     /// </summary>
     public required string Analysis { get; init; }
-}
+}}

@@ -2,7 +2,8 @@ using System.Diagnostics;
 using DotCompute.Core.Pipelines;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Utilities.Pipelines;
+namespace DotCompute.Tests.Implementations.Pipelines
+{
 
 /// <summary>
 /// Test implementation of a kernel pipeline.
@@ -461,4 +462,5 @@ public sealed class TestKernelPipeline : IKernelPipeline
         _stages.Clear();
         GC.SuppressFinalize(this);
     }
+}
 }

@@ -16,7 +16,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// High-concurrency stress tests for the DotCompute integration layer.
@@ -550,3 +551,4 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
     }
 }
 
+}

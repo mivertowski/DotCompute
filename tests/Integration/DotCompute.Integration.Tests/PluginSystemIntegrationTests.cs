@@ -14,7 +14,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for the plugin system including plugin loading,
@@ -924,4 +925,5 @@ __kernel void baseline_compute(__global const float* input, __global float* outp
     
     output[gid] = data;
 }";
+}
 }

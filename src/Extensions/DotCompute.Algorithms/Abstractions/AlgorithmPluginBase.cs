@@ -4,7 +4,8 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Abstractions;
+namespace DotCompute.Algorithms.Abstractions
+{
 
 /// <summary>
 /// Base class for algorithm plugins providing common functionality.
@@ -201,4 +202,4 @@ public abstract partial class AlgorithmPluginBase : IAlgorithmPlugin
             _ => AcceleratorType.Custom
         };
     }
-}
+}}

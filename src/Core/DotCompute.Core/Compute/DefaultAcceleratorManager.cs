@@ -4,7 +4,8 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Compute;
+namespace DotCompute.Core.Compute
+{
 
 /// <summary>
 /// Default implementation of IAcceleratorManager.
@@ -272,4 +273,5 @@ public class DefaultAcceleratorManager(ILogger<DefaultAcceleratorManager> logger
 /// </summary>
 public class ProductionAcceleratorManager(ILogger<ProductionAcceleratorManager> logger) : DefaultAcceleratorManager(logger)
 {
+}
 }

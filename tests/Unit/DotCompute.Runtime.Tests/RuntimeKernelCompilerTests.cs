@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Runtime.Tests;
+namespace DotCompute.Runtime.Tests
+{
 
 /// <summary>
 /// Comprehensive unit tests for RuntimeKernelCompiler to achieve 90%+ coverage.
@@ -560,4 +561,4 @@ public sealed class RuntimeKernelCompilerTests : IDisposable
     {
         // Compiler doesn't implement IDisposable, but keeping for consistency
     }
-}
+}}

@@ -6,7 +6,8 @@ using System.Text;
 using Microsoft.Win32.SafeHandles;
 using DotCompute.Backends.CUDA.Native;
 
-namespace DotCompute.Backends.CUDA.Native;
+namespace DotCompute.Backends.CUDA.Native
+{
 
 /// <summary>
 /// P/Invoke wrapper for CUDA runtime API
@@ -969,3 +970,4 @@ public sealed class SafeCudaModuleHandle : SafeHandleZeroOrMinusOneIsInvalid
     }
 }
 
+}

@@ -5,7 +5,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Options;
 using System.ComponentModel.DataAnnotations;
 
-namespace DotCompute.Runtime.Configuration;
+namespace DotCompute.Runtime.Configuration
+{
 
 /// <summary>
 /// Configuration options for DotCompute Runtime
@@ -363,4 +364,4 @@ public class RuntimeOptionsValidator : IValidateOptions<DotComputeRuntimeOptions
             ? ValidateOptionsResult.Fail(failures)
             : ValidateOptionsResult.Success;
     }
-}
+}}

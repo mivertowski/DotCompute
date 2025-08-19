@@ -6,7 +6,8 @@ using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Kernels;
+namespace DotCompute.Core.Kernels
+{
 
 /// <summary>
 /// Manages kernel generation, compilation, caching, and execution.
@@ -635,4 +636,4 @@ public sealed class KernelCacheStatistics
     /// Gets or sets kernel counts by type.
     /// </summary>
     public Dictionary<string, int> KernelsByType { get; init; } = [];
-}
+}}

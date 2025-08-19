@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Memory;
+namespace DotCompute.Core.Memory
+{
 
 /// <summary>
 /// Advanced P2P transfer scheduler that optimizes bandwidth usage and coordinates transfers.
@@ -634,4 +635,4 @@ public sealed class TransferStatistics
     public double PeakThroughputMBps { get; set; }
     public TimeSpan TotalTransferTime { get; set; }
     public double BandwidthUtilization { get; set; }
-}
+}}

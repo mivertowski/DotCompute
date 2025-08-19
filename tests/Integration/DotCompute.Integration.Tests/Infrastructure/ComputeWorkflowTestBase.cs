@@ -15,7 +15,8 @@ using Xunit.Abstractions;
 
 #pragma warning disable CA1848 // Use LoggerMessage delegates - suppressed for test infrastructure
 
-namespace DotCompute.Tests.Integration.Infrastructure;
+namespace DotCompute.Tests.Integration.Infrastructure
+{
 
 /// <summary>
 /// Base class for compute workflow integration tests with comprehensive testing infrastructure.
@@ -711,4 +712,5 @@ public interface IComputeEngine
 {
     public ValueTask<ICompiledKernel> CompileKernelAsync(string source, string name, CompilationOptions options, CancellationToken cancellationToken);
     public ValueTask ExecuteAsync(ICompiledKernel kernel, object[] arguments, ComputeBackendType backend, ExecutionOptions options, CancellationToken cancellationToken);
+}
 }

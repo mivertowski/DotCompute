@@ -6,7 +6,8 @@ using System.Text;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Operators;
+namespace DotCompute.Linq.Operators
+{
 
 /// <summary>
 /// Generates GPU kernels from LINQ expressions with advanced optimization support.
@@ -375,4 +376,4 @@ internal class ComparisonHandler : IExpressionHandler
         }
         return "/* Unknown comparison */";
     }
-}
+}}

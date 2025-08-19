@@ -5,7 +5,8 @@ using FluentAssertions;
 
 #pragma warning disable CA2012 // Use ValueTasks correctly - NSubstitute mock setup requires storing ValueTask
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class AcceleratorMockTests
 {
@@ -359,3 +360,4 @@ public sealed class MemoryBufferMockTests
 }
 
 #pragma warning restore CA2012
+}

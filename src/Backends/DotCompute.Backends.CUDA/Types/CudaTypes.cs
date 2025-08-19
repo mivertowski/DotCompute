@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Backends.CUDA.Types;
+namespace DotCompute.Backends.CUDA.Types
+{
 
 /// <summary>
 /// Extended memory statistics for CUDA memory management
@@ -162,4 +163,4 @@ public sealed class KernelCompilationException : Exception
         SourceCode = sourceCode;
         ErrorCode = errorCode;
     }
-}
+}}

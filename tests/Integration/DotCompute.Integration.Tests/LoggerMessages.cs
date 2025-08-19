@@ -3,7 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Static class containing LoggerMessage delegates for integration tests to fix CA1848 warnings.
@@ -845,4 +846,5 @@ internal static partial class LoggerMessages
         Level = LogLevel.Information,
         Message = "Physics particle simulation: {ParticleCount:N0} particles, {UpdatesPerSecond:N0} updates/sec")]
     public static partial void PhysicsParticleSimulation(ILogger logger, long particleCount, double updatesPerSecond);
+}
 }

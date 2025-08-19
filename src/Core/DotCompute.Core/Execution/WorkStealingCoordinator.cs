@@ -6,7 +6,8 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Execution;
+namespace DotCompute.Core.Execution
+{
 
 /// <summary>
 /// Coordinates work-stealing execution across multiple devices for dynamic load balancing.
@@ -1145,4 +1146,5 @@ public class StealingStatistics
     /// The steal success rate.
     /// </value>
     public double StealSuccessRate { get; set; }
+}
 }

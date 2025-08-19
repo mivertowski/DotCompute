@@ -2,7 +2,8 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Utilities.Pipelines;
+namespace DotCompute.Tests.Implementations.Pipelines
+{
 
 /// <summary>
 /// Test implementation of a parallel pipeline stage.
@@ -364,4 +365,5 @@ public sealed class TestParallelStageBuilder : IParallelStageBuilder
         _stage.SetBarrier(true);
         return this;
     }
+}
 }

@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.Types.Security;
+namespace DotCompute.Algorithms.Types.Security
+{
 
 /// <summary>
 /// Validates security constraints for algorithm operations.
@@ -27,4 +28,4 @@ public sealed class SecurityValidationResult
 {
     public required bool IsValid { get; init; }
     public string? ErrorMessage { get; init; }
-}
+}}

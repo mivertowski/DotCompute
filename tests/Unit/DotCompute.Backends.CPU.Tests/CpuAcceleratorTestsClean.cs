@@ -10,7 +10,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Backends.CPU.Tests.Clean;
+namespace DotCompute.Backends.CPU.Tests.Clean
+{
 
 /// <summary>
 /// Clean unit tests for CpuAccelerator focusing only on public API and working components.
@@ -394,4 +395,5 @@ public sealed class CpuAcceleratorOptionsTests
         options.EnableMemoryPrefetching.Should().BeFalse();
         options.MemoryPrefetchDistance.Should().Be(1);
     }
+}
 }

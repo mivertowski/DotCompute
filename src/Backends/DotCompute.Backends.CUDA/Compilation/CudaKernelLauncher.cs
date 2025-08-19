@@ -6,7 +6,8 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Compilation;
+namespace DotCompute.Backends.CUDA.Compilation
+{
 
 /// <summary>
 /// Launch configuration for CUDA kernels
@@ -399,4 +400,4 @@ public sealed class CudaKernelLauncher
         
         return true;
     }
-}
+}}

@@ -4,7 +4,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for Core execution and type system components.
@@ -216,4 +217,5 @@ public class CoreExecutionTypesTests
         // Assert that all enum values are defined
         Assert.True(Enum.IsDefined(typeof(SynchronizationStrategy), strategy));
     }
+}
 }

@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Manages memory allocation and transfer between pipeline stages.
@@ -449,4 +450,5 @@ public interface IPipelineMemoryWithDirectAccess<T> : IPipelineMemory<T> where T
     /// This method should only be called when holding an appropriate memory lock.
     /// </remarks>
     public ReadOnlySpan<T> GetReadOnlySpan();
+}
 }

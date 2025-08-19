@@ -2,7 +2,8 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Utilities;
+namespace DotCompute.Tests.Hardware.Utilities
+{
 
 /// <summary>
 /// Utility class providing common functionality for RTX 2000 Ada Generation testing.
@@ -552,4 +553,5 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
     }
 
     #endregion
+}
 }

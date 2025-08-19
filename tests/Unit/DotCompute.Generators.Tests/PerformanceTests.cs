@@ -6,7 +6,8 @@ using DotCompute.Generators.Kernel;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public class PerformanceTests
 {
@@ -338,4 +339,5 @@ public class PerformanceTests
         source.AppendLine("}");
         return source.ToString();
     }
+}
 }

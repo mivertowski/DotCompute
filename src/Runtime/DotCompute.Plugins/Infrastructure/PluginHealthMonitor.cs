@@ -8,7 +8,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Plugins.Infrastructure;
+namespace DotCompute.Plugins.Infrastructure
+{
 
 /// <summary>
 /// Simplified Plugin Health Monitor - monitors basic plugin health status
@@ -151,4 +152,4 @@ public class PluginHealthMonitor : IDisposable
         _pluginErrors.Clear();
         _disposed = true;
     }
-}
+}}

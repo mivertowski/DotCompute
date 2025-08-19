@@ -15,7 +15,8 @@ using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Types.Security;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Management;
+namespace DotCompute.Algorithms.Management
+{
 
 /// <summary>
 /// Manages the loading, registration, and execution of algorithm plugins with advanced isolation and lifecycle management.
@@ -2327,4 +2328,4 @@ public sealed class PluginAssemblyLoadContext : AssemblyLoadContext
             name.StartsWith("netstandard", StringComparison.OrdinalIgnoreCase) ||
             name.Equals("mscorlib", StringComparison.OrdinalIgnoreCase));
     }
-}
+}}

@@ -5,7 +5,8 @@ using DotCompute.Plugins.Exceptions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for plugin exception classes covering serialization, inheritance, and specific properties.
@@ -406,4 +407,5 @@ public sealed class PluginExceptionTests
             Assert.IsAssignableFrom<PluginException>(exception);
         }
     }
+}
 }

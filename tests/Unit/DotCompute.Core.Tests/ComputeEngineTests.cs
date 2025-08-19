@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for the IComputeEngine interface implementations.
@@ -246,4 +247,5 @@ public sealed class ComputeEngineTests : IDisposable
             GC.SuppressFinalize(this);
         }
     }
+}
 }

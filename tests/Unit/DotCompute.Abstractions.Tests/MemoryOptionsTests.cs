@@ -2,7 +2,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class MemoryOptionsTests
 {
@@ -86,4 +87,5 @@ public sealed class MemoryOptionsTests
         options.HasFlag(MemoryOptions.ReadOnly).Should().BeTrue();
         options.HasFlag(MemoryOptions.WriteOnly).Should().BeTrue();
     }
+}
 }

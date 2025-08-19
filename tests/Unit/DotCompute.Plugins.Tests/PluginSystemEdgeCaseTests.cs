@@ -11,7 +11,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Edge case and stress tests for the plugin system.
@@ -705,4 +706,5 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     }
 
     #endregion
+}
 }

@@ -8,7 +8,8 @@ using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using DotCompute.Backends.CUDA.Types;
 
-namespace DotCompute.Backends.CUDA.Compilation;
+namespace DotCompute.Backends.CUDA.Compilation
+{
 
 /// <summary>
 /// Enhanced compilation features for modern CUDA architectures including RTX 2000 Ada Generation.
@@ -495,4 +496,4 @@ public static class CudaCompilerEnhancements
         // Use CUBIN by default for Ada generation and newer
         return major > 8 || (major == 8 && minor >= 9);
     }
-}
+}}

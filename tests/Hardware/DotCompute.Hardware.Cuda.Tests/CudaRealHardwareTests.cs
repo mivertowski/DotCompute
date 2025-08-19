@@ -4,7 +4,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Real hardware tests for CUDA GPU operations.
@@ -603,4 +604,5 @@ public sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
+}
 }

@@ -12,7 +12,8 @@ using System.Threading.Channels;
 using System.Numerics;
 using System.Buffers;
 
-namespace DotCompute.Runtime.Services;
+namespace DotCompute.Runtime.Services
+{
 
 
 /// <summary>
@@ -1045,4 +1046,4 @@ internal sealed class RuntimeAccelerator : IAccelerator
         }
         return ValueTask.CompletedTask;
     }
-}
+}}

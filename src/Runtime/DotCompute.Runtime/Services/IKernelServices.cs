@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Runtime.Services;
+namespace DotCompute.Runtime.Services
+{
 
 /// <summary>
 /// Service for compiling kernels with caching and optimization
@@ -422,4 +423,4 @@ public class PluginInfo
     /// Gets plugin-specific metadata
     /// </summary>
     public Dictionary<string, object> Metadata { get; init; } = new();
-}
+}}

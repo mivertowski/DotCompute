@@ -14,7 +14,8 @@ using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using KernelArguments = DotCompute.Abstractions.KernelArguments;
 using KernelDefinition = DotCompute.Abstractions.KernelDefinition;
 
-namespace DotCompute.Core.Compute;
+namespace DotCompute.Core.Compute
+{
 
 /// <summary>
 /// High-performance CPU accelerator provider with SIMD optimization and OpenCL kernel execution.
@@ -614,4 +615,4 @@ internal class KernelParameter
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public bool IsGlobal { get; set; }
-}
+}}

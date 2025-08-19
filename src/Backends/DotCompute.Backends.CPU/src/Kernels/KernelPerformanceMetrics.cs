@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// Performance metrics for a compiled kernel.
@@ -54,4 +55,5 @@ public sealed class KernelPerformanceMetrics
     public double ThroughputOpsPerSecond => ExecutionCount > 0 && TotalExecutionTimeMs > 0
         ? (ExecutionCount * 1000.0) / TotalExecutionTimeMs
         : 0;
+}
 }

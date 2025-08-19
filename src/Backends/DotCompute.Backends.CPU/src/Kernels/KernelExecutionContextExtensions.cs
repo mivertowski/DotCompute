@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// Extended kernel execution context for CPU backend with additional helper methods.
@@ -76,4 +77,5 @@ internal sealed class ExtendedKernelExecutionContext
         }
         return default;
     }
+}
 }

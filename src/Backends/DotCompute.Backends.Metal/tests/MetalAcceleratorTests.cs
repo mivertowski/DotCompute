@@ -17,7 +17,8 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Backends.Metal;
+namespace DotCompute.Backends.Metal
+{
 
 /// <summary>
 /// Comprehensive backend tests for Metal accelerators focusing on device capability,
@@ -586,4 +587,4 @@ public static class Skip
 public class SkipException : Exception
 {
     public SkipException(string reason) : base(reason) { }
-}
+}}

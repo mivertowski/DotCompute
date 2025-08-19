@@ -6,7 +6,8 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for Core compute components.
@@ -139,4 +140,5 @@ public class CoreComputeTests
         Assert.Equal(handle, context.Handle);
         Assert.Equal(deviceId, context.DeviceId);
     }
+}
 }

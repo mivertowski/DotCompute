@@ -7,7 +7,8 @@ using DotCompute.Algorithms.Types.Management;
 using DotCompute.Algorithms.Types.Security;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Examples;
+namespace DotCompute.Algorithms.Examples
+{
 
 /// <summary>
 /// Comprehensive example demonstrating NuGet plugin loading capabilities with DotCompute.
@@ -610,4 +611,4 @@ public sealed class NuGetPluginLoadingExample
     {
         await _pluginManager.DisposeAsync();
     }
-}
+}}

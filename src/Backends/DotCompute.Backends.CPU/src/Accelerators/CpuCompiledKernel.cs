@@ -16,7 +16,8 @@ using CoreKernelDefinition = DotCompute.Abstractions.KernelDefinition;
 using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 using IMemoryBuffer = DotCompute.Abstractions.IMemoryBuffer;
 
-namespace DotCompute.Backends.CPU.Accelerators;
+namespace DotCompute.Backends.CPU.Accelerators
+{
 
 /// <summary>
 /// Represents a compiled kernel for CPU execution with vectorization support.
@@ -1281,4 +1282,5 @@ internal sealed class VectorizedExecutionContext
     public required CoreKernelExecutionContext KernelContext { get; init; }
     public required KernelExecutionPlan ExecutionPlan { get; init; }
     public required CancellationToken CancellationToken { get; init; }
+}
 }

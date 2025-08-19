@@ -5,7 +5,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks;
+namespace DotCompute.Benchmarks
+{
 
 /// <summary>
 /// Benchmarks for plugin system loading and initialization performance.
@@ -389,4 +390,4 @@ internal sealed class DependentTestPlugin : TestPluginBase
 
         IsInitialized = true;
     }
-}
+}}

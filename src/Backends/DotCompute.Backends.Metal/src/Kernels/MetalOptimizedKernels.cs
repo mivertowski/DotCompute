@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Backends.Metal.Kernels;
+namespace DotCompute.Backends.Metal.Kernels
+{
 
 /// <summary>
 /// Provides optimized kernel implementations for Metal.
@@ -393,4 +394,5 @@ public enum ActivationType
     Sigmoid,
     Tanh,
     LeakyReLU
+}
 }

@@ -3,7 +3,8 @@
 
 using System.Collections.Concurrent;
 
-namespace DotCompute.Backends.CPU.Tests.Helpers;
+namespace DotCompute.Backends.CPU.Tests.Helpers
+{
 
 /// <summary>
 /// Fake logger implementation for testing purposes.
@@ -80,4 +81,4 @@ public class LogEntryCollector
             _entries.Clear();
         }
     }
-}
+}}

@@ -9,7 +9,8 @@ using DotCompute.Linq.Operators;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Execution;
+namespace DotCompute.Linq.Execution
+{
 
 /// <summary>
 /// Executes compiled compute plans on accelerators.
@@ -464,4 +465,4 @@ public class DefaultMemoryManagerFactory : IMemoryManagerFactory
     {
         return new UnifiedMemoryManager(accelerator.Memory);
     }
-}
+}}

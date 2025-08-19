@@ -20,7 +20,8 @@ using NuGet.Resolver;
 using NuGet.Versioning;
 using DotCompute.Algorithms.Types.Security;
 
-namespace DotCompute.Algorithms.Management;
+namespace DotCompute.Algorithms.Management
+{
 
 /// <summary>
 /// Production-ready NuGet plugin loader with comprehensive package management, 
@@ -1229,4 +1230,4 @@ public sealed class NuGetLogger : LoggerBase
         Log(message);
         return Task.CompletedTask;
     }
-}
+}}

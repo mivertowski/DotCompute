@@ -3,7 +3,8 @@
 
 using DotCompute.Algorithms.Types.Abstractions;
 
-namespace DotCompute.Algorithms.Types.Management;
+namespace DotCompute.Algorithms.Types.Management
+{
 
 /// <summary>
 /// Manages algorithm plugins and their lifecycle.
@@ -33,4 +34,4 @@ public sealed class PluginManager : IDisposable
         _providers.Clear();
         _disposed = true;
     }
-}
+}}

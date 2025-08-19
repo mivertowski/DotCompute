@@ -3,7 +3,8 @@
 
 using System.Runtime.InteropServices;
 
-namespace DotCompute.Core.Types;
+namespace DotCompute.Core.Types
+{
 
 /// <summary>
 /// Represents a half-precision floating-point number (16-bit).
@@ -371,4 +372,4 @@ public readonly struct Half : IComparable<Half>, IEquatable<Half>
     public static Half Negate(Half value) => -value;
 
     #endregion
-}
+}}

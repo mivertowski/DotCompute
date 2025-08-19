@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Memory;
+namespace DotCompute.Memory
+{
 
 /// <summary>
 /// Internal interface for memory pools to support Native AOT by avoiding reflection.
@@ -27,4 +28,5 @@ internal interface IMemoryPoolInternal
     /// <param name="maxBytesToRelease">The maximum number of bytes to release.</param>
     /// <returns>The number of bytes released.</returns>
     public long Compact(long maxBytesToRelease = long.MaxValue);
+}
 }

@@ -6,7 +6,8 @@ using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Advanced;
+namespace DotCompute.Backends.CUDA.Advanced
+{
 
 /// <summary>
 /// Manager for CUDA Dynamic Parallelism functionality
@@ -135,4 +136,4 @@ public sealed class CudaDynamicParallelismManager : IDisposable
             _disposed = true;
         }
     }
-}
+}}

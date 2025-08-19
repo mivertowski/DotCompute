@@ -2,7 +2,8 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities.Kernels;
+namespace DotCompute.Tests.Implementations.Kernels
+{
 
 /// <summary>
 /// Test kernel executor that simulates kernel execution.
@@ -340,4 +341,5 @@ public sealed class KernelStatistics
 
     public double SuccessRate
         => ExecutionCount > 0 ? (double)SuccessfulExecutions / ExecutionCount * 100 : 0;
+}
 }

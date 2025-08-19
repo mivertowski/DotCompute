@@ -2,7 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Utilities.TestInfrastructure;
+namespace DotCompute.Tests.Utilities.TestInfrastructure
+{
 
 /// <summary>
 /// Base class for all tests that provides common infrastructure and coverage utilities
@@ -312,4 +313,5 @@ public sealed class XUnitLogger : ILogger
         public static readonly NullDisposable Instance = new();
         public void Dispose() { GC.SuppressFinalize(this); }
     }
+}
 }

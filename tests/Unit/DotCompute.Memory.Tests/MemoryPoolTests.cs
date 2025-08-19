@@ -4,7 +4,8 @@ using DotCompute.Memory;
 using NSubstitute;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class MemoryPoolTests : IDisposable
 {
@@ -251,4 +252,5 @@ public sealed class MemoryPoolTests : IDisposable
         var act = () => pool.Rent(100);
         Assert.Throws<ObjectDisposedException>(() => act());
     }
+}
 }

@@ -8,7 +8,8 @@ using DotCompute.Linq.Compilation;
 using DotCompute.Linq.Execution;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Providers;
+namespace DotCompute.Linq.Providers
+{
 
 /// <summary>
 /// LINQ query provider that enables GPU-accelerated query execution.
@@ -234,4 +235,4 @@ public class ComputeQueryable<T> : IOrderedQueryable<T>
     {
         return GetEnumerator();
     }
-}
+}}

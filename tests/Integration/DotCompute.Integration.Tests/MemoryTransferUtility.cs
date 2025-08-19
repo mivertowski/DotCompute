@@ -7,7 +7,8 @@ using DotCompute.Abstractions;
 using DotCompute.Memory;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Utility class for advanced memory transfer operations in tests.
@@ -223,4 +224,5 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
 
         await _transferEngine.DisposeAsync();
     }
+}
 }

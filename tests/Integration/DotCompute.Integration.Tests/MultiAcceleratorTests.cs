@@ -13,7 +13,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for multi-accelerator scenarios.
@@ -740,4 +741,5 @@ public class PeerToPeerResult
     public bool DataIntegrity { get; set; }
     public bool DirectTransferSupported { get; set; }
     public string? Error { get; set; }
+}
 }

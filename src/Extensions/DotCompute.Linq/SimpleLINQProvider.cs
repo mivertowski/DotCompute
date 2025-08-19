@@ -5,7 +5,8 @@ using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq;
+namespace DotCompute.Linq
+{
 
 /// <summary>
 /// Simplified LINQ provider implementation for initial testing.
@@ -122,4 +123,4 @@ public class SimpleQueryable<T> : IOrderedQueryable<T>
     {
         return GetEnumerator();
     }
-}
+}}

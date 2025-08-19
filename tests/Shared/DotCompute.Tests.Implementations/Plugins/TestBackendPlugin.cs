@@ -4,7 +4,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Utilities.Plugins;
+namespace DotCompute.Tests.Implementations.Plugins
+{
 
 /// <summary>
 /// Test implementation of IBackendPlugin for testing plugin functionality.
@@ -459,4 +460,5 @@ public static class EnumerableExtensions
         }
         return true;
     }
+}
 }

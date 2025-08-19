@@ -3,7 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.Metal;
+namespace DotCompute.Backends.Metal
+{
 
 /// <summary>
 /// Logger message definitions for MetalBackend
@@ -165,4 +166,5 @@ public partial class MetalBackend
         Level = LogLevel.Error,
         Message = "Failed to create Metal accelerator for device {DeviceIndex}")]
     private static partial void LogAcceleratorCreationError(ILogger logger, Exception ex, int deviceIndex);
+}
 }

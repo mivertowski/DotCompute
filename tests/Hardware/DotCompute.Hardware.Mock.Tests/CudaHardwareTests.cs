@@ -4,7 +4,8 @@ using DotCompute.Tests.Utilities;
 using DotCompute.Tests.Utilities.TestFixtures;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Hardware-dependent tests for CUDA GPUs.
@@ -247,4 +248,5 @@ public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
 
         await Task.CompletedTask;
     }
+}
 }

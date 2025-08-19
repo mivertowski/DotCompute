@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities;
+namespace DotCompute.SharedTestUtilities
+{
 /// <summary>
 /// Memory test utilities.
 /// </summary>
@@ -120,4 +121,5 @@ public static class KernelFactory
             sharedMemorySize,
             configuration);
     }
+}
 }

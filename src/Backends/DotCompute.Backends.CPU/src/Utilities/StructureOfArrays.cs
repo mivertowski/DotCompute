@@ -8,7 +8,8 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 
-namespace DotCompute.Backends.CPU.Utilities;
+namespace DotCompute.Backends.CPU.Utilities
+{
 
 /// <summary>
 /// Structure of Arrays (SoA) utilities for optimal SIMD performance.
@@ -446,4 +447,5 @@ public readonly struct Point3D(float x, float y, float z) : IEquatable<Point3D>
     public static bool operator ==(Point3D left, Point3D right) => left.Equals(right);
 
     public static bool operator !=(Point3D left, Point3D right) => !left.Equals(right);
+}
 }

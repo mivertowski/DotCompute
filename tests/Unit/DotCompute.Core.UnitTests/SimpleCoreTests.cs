@@ -3,7 +3,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Simple focused tests to drive up code coverage on Core types.
@@ -261,4 +262,5 @@ public class SimpleCoreTests
         Assert.True(Enum.IsDefined(typeof(AcceleratorType), AcceleratorType.GPU));
         Assert.True(Enum.IsDefined(typeof(AcceleratorType), AcceleratorType.DirectML));
     }
+}
 }

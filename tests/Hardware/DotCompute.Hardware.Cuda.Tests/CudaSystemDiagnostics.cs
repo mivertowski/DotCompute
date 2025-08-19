@@ -10,7 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Comprehensive system diagnostics for CUDA backend
@@ -724,4 +725,5 @@ extern ""C"" __global__ void invalidKernel(float* data)
         _loggerFactory?.Dispose();
         _disposed = true;
     }
+}
 }

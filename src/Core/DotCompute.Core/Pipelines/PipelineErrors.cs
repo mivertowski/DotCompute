@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Represents an error that occurred during pipeline execution.
@@ -404,4 +405,5 @@ public sealed class PipelineOptimizationException : PipelineException
         FailedOptimization = OptimizationType.KernelFusion;
         Reason = "Unknown reason";
     }
+}
 }

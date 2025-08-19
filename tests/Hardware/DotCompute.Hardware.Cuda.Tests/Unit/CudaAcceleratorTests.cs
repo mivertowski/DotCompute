@@ -10,7 +10,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Unit;
+namespace DotCompute.Tests.Hardware.Unit
+{
 
 /// <summary>
 /// Unit tests for CUDA accelerator lifecycle management and operations
@@ -522,4 +523,5 @@ __global__ void test_kernel(float* input, float* output, int n)
         _accelerators.Clear();
         GC.SuppressFinalize(this);
     }
+}
 }

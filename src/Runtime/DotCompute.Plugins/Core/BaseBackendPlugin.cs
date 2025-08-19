@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Base backend plugin has dynamic logging requirements
 
-namespace DotCompute.Plugins.Core;
+namespace DotCompute.Plugins.Core
+{
 
 /// <summary>
 /// Abstract base class for backend plugins that provides common registration patterns.
@@ -263,6 +264,8 @@ public sealed class NamedAcceleratorWrapper : IAccelerator
 
     /// <inheritdoc/>
     public ValueTask DisposeAsync() => _accelerator.DisposeAsync();
+}
+
 }
 
 #pragma warning restore CA1848

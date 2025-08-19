@@ -3,7 +3,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Test runner that demonstrates real implementations working together
@@ -295,4 +296,5 @@ public sealed class TestRunner
 
         return data;
     }
+}
 }

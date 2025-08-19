@@ -4,7 +4,8 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Types.Security;
+namespace DotCompute.Algorithms.Types.Security
+{
 
 /// <summary>
 /// Security policy for algorithm plugin loading and execution.
@@ -362,4 +363,4 @@ public class FileSizeSecurityRule : ISecurityRule
 
         return result;
     }
-}
+}}

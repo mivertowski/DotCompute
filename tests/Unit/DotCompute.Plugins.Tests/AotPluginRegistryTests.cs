@@ -11,7 +11,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for the AotPluginRegistry and AotPluginSystem classes covering AOT-compatible plugin management.
@@ -513,4 +514,5 @@ public sealed class AotPluginHelpersTests
         Assert.NotNull(system);
         Assert.IsAssignableFrom<IDisposable>(system);
     }
+}
 }

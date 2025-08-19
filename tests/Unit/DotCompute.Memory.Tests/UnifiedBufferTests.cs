@@ -5,7 +5,8 @@ using DotCompute.Memory;
 using NSubstitute;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class UnifiedBufferTests : IDisposable
 {
@@ -226,4 +227,5 @@ public sealed class UnifiedBufferTests : IDisposable
             span2[i].Should().Be(i * 10);
         }
     }
+}
 }

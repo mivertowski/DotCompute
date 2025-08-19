@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.Types.SignalProcessing;
+namespace DotCompute.Algorithms.Types.SignalProcessing
+{
 
 /// <summary>
 /// Represents a convolution kernel for signal processing operations.
@@ -31,4 +32,4 @@ public enum ConvolutionMode
     Valid,
     Same,
     Full
-}
+}}

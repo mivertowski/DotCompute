@@ -12,7 +12,8 @@ using DotCompute.Backends.CPU.Intrinsics;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Backends.CPU;
+namespace DotCompute.Backends.CPU
+{
 
 /// <summary>
 /// Stress tests and edge cases for CPU backend components.
@@ -606,4 +607,5 @@ public sealed class CpuBackendStressTests
             output[i] = input[i] * 2.0f;
         }
     }
+}
 }

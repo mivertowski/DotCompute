@@ -3,7 +3,8 @@
 
 using System.Linq.Expressions;
 
-namespace DotCompute.Linq.Operators;
+namespace DotCompute.Linq.Operators
+{
 
 /// <summary>
 /// Interface for handling specific types of expressions during kernel generation.
@@ -90,4 +91,4 @@ internal class BinaryExpressionHandler : IExpressionHandler
         
         return "// Unsupported binary operation";
     }
-}
+}}

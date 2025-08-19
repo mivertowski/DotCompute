@@ -9,7 +9,8 @@ using DotCompute.Core.Kernels;
 // using DotCompute.Core.Types; // Commented out missing namespace
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.SignalProcessing;
+namespace DotCompute.Algorithms.SignalProcessing
+{
 
 /// <summary>
 /// Provides GPU-accelerated convolution operations for signal processing and deep learning.
@@ -1069,4 +1070,4 @@ public enum PaddingMode
     /// Causal padding for time series (pad only on one side).
     /// </summary>
     Causal
-}
+}}

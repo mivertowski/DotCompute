@@ -6,7 +6,8 @@ using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Core.Execution;
+namespace DotCompute.Core.Execution
+{
 
 /// <summary>
 /// Example demonstrating how to use the parallel execution strategies.
@@ -279,4 +280,5 @@ public static class ParallelExecutionFeatures
     ///    - Error reporting and diagnostics
     /// </summary>
     public const string ProductionNotes = "See class documentation for deployment details";
+}
 }

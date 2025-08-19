@@ -7,7 +7,8 @@ using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests;
+namespace DotCompute.Tests
+{
 
 /// <summary>
 /// Comprehensive tests for P2P capability detection including hardware-specific scenarios.
@@ -354,4 +355,5 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         _detector?.DisposeAsync().AsTask().Wait();
         GC.SuppressFinalize(this);
     }
+}
 }

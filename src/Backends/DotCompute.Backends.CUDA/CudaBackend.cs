@@ -5,7 +5,8 @@ using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Backends.CUDA;
+namespace DotCompute.Backends.CUDA
+{
 
 /// <summary>
 /// Main entry point for CUDA compute backend
@@ -244,4 +245,5 @@ public sealed partial class CudaBackend : IDisposable
         _disposed = true;
         GC.SuppressFinalize(this);
     }
+}
 }

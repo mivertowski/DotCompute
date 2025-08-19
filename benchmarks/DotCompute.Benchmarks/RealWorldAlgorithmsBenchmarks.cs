@@ -6,7 +6,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Numerics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks;
+namespace DotCompute.Benchmarks
+{
 
 /// <summary>
 /// Benchmarks for real-world algorithms: FFT, convolution, sorting, and image processing.
@@ -666,4 +667,5 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         }
         GC.SuppressFinalize(this);
     }
+}
 }

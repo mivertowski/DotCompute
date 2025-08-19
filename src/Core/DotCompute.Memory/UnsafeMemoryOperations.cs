@@ -6,7 +6,8 @@ using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
-namespace DotCompute.Memory;
+namespace DotCompute.Memory
+{
 
 /// <summary>
 /// Provides high-performance unsafe memory operations with platform-specific optimizations.
@@ -447,4 +448,5 @@ public static unsafe class UnsafeMemoryOperations
     }
 
     #endregion
+}
 }

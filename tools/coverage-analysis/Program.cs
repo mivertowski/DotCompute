@@ -1,6 +1,6 @@
 using System.Globalization;
-using CoverageAnalysis;
-using AnalysisResult = CoverageAnalysis.CoverageAnalyzer.CoverageAnalysis;
+using DotCompute.Tools.Coverage;
+using AnalysisResult = DotCompute.Tools.Coverage.CoverageAnalyzer.CoverageAnalysis;
 
 internal sealed class Program
 {
@@ -57,44 +57,44 @@ internal sealed class Program
     private static string GenerateMarkdownReport(AnalysisResult analysis)
     {
         var report = new System.Text.StringBuilder();
-        
-        report.AppendLine("# DotCompute Coverage Analysis Report");
-        report.AppendLine();
-        report.AppendLine("## Overall Coverage");
-        report.AppendLine(CultureInfo.InvariantCulture, $"- **Line Coverage**: {analysis.Overall.LineRate:P1} ({analysis.Overall.LinesCovered}/{analysis.Overall.LinesTotal})");
-        report.AppendLine(CultureInfo.InvariantCulture, $"- **Branch Coverage**: {analysis.Overall.BranchRate:P1} ({analysis.Overall.BranchesCovered}/{analysis.Overall.BranchesTotal})");
-        report.AppendLine();
+
+        _ = report.AppendLine("# DotCompute Coverage Analysis Report");
+        _ = report.AppendLine();
+        _ = report.AppendLine("## Overall Coverage");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"- **Line Coverage**: {analysis.Overall.LineRate:P1} ({analysis.Overall.LinesCovered}/{analysis.Overall.LinesTotal})");
+        _ = report.AppendLine(CultureInfo.InvariantCulture, $"- **Branch Coverage**: {analysis.Overall.BranchRate:P1} ({analysis.Overall.BranchesCovered}/{analysis.Overall.BranchesTotal})");
+        _ = report.AppendLine();
         
         if (analysis.ByProject.Count > 0)
         {
-            report.AppendLine("## Coverage by Project");
-            report.AppendLine("| Project | Line Coverage | Branch Coverage |");
-            report.AppendLine("|---------|---------------|-----------------|");
+            _ = report.AppendLine("## Coverage by Project");
+            _ = report.AppendLine("| Project | Line Coverage | Branch Coverage |");
+            _ = report.AppendLine("|---------|---------------|-----------------|");
             
             foreach (var project in analysis.ByProject.OrderBy(p => p.Key))
             {
                 var metrics = project.Value;
-                report.AppendLine(CultureInfo.InvariantCulture, $"| {project.Key} | {metrics.LineRate:P1} | {metrics.BranchRate:P1} |");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"| {project.Key} | {metrics.LineRate:P1} | {metrics.BranchRate:P1} |");
             }
-            report.AppendLine();
+            _ = report.AppendLine();
         }
 
         if (analysis.LowCoverageAreas.Count > 0)
         {
-            report.AppendLine("## Low Coverage Areas");
+            _ = report.AppendLine("## Low Coverage Areas");
             foreach (var area in analysis.LowCoverageAreas)
             {
-                report.AppendLine(CultureInfo.InvariantCulture, $"- {area}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"- {area}");
             }
-            report.AppendLine();
+            _ = report.AppendLine();
         }
 
         if (analysis.Recommendations.Count > 0)
         {
-            report.AppendLine("## Recommendations");
+            _ = report.AppendLine("## Recommendations");
             foreach (var recommendation in analysis.Recommendations)
             {
-                report.AppendLine(CultureInfo.InvariantCulture, $"- {recommendation}");
+                _ = report.AppendLine(CultureInfo.InvariantCulture, $"- {recommendation}");
             }
         }
 

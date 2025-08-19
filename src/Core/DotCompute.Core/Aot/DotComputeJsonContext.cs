@@ -3,7 +3,8 @@
 
 using System.Text.Json.Serialization;
 
-namespace DotCompute.Core.Aot;
+namespace DotCompute.Core.Aot
+{
 
 /// <summary>
 /// AOT-compatible JSON serialization context for DotCompute.
@@ -112,4 +113,5 @@ public sealed class OpenTelemetryDataPoint
     public Dictionary<string, object> Attributes { get; set; } = [];
     public long? Count { get; set; }
     public double? Sum { get; set; }
+}
 }

@@ -8,7 +8,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Memory;
+namespace DotCompute.Memory
+{
 
 /// <summary>
 /// Advanced memory transfer engine with high-performance optimizations for large datasets,
@@ -916,4 +917,5 @@ public class TransferStatistics
 internal abstract class TransferOperation
 {
     public abstract Task ExecuteAsync(CancellationToken cancellationToken);
+}
 }

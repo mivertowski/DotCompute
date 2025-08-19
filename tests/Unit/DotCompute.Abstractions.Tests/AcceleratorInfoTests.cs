@@ -2,7 +2,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class AcceleratorInfoTests
 {
@@ -197,4 +198,5 @@ public sealed class AcceleratorInfoTests
         _ = info.Type.Should().Be(type.ToString());
         info.Type.Should().Be(info.DeviceType);
     }
+}
 }

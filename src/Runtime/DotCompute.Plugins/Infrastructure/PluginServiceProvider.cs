@@ -6,7 +6,8 @@ using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Reflection;
 
-namespace DotCompute.Plugins.Infrastructure;
+namespace DotCompute.Plugins.Infrastructure
+{
 
 /// <summary>
 /// Advanced service provider for plugin dependency injection with isolation and lifecycle management.
@@ -811,4 +812,4 @@ public sealed record PluginMetric
     /// </summary>
     public TimeSpan AverageExecutionTime => 
         ExecutionCount > 0 ? TimeSpan.FromTicks(TotalExecutionTime.Ticks / ExecutionCount) : TimeSpan.Zero;
-}
+}}

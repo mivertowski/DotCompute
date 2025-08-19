@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Exception thrown when memory operations fail.
@@ -29,4 +30,5 @@ public class MemoryException : Exception
     public MemoryException(string message, Exception innerException) : base(message, innerException)
     {
     }
+}
 }

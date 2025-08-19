@@ -5,7 +5,8 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Win32.SafeHandles;
 
-namespace DotCompute.Backends.CUDA.Native;
+namespace DotCompute.Backends.CUDA.Native
+{
 
 /// <summary>
 /// P/Invoke wrapper for NVRTC (NVIDIA Runtime Compilation) API with proper memory safety.
@@ -662,4 +663,4 @@ public enum ComputeFeature
     AsyncCopy,
     ClusterApi,
     FP8
-}
+}}

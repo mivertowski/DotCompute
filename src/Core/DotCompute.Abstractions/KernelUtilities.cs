@@ -3,7 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Utility methods for common kernel compilation patterns to reduce code duplication.
@@ -308,4 +309,4 @@ public static class KernelUtilities
             ["CompilerType"] = backendType
         };
     }
-}
+}}

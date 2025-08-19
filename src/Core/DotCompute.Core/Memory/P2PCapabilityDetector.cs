@@ -4,7 +4,8 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Memory;
+namespace DotCompute.Core.Memory
+{
 
 /// <summary>
 /// Detects and manages P2P capabilities between accelerator devices.
@@ -914,4 +915,4 @@ internal enum DeviceVendor
     NVIDIA = 1,
     AMD = 2,
     Intel = 3
-}
+}}

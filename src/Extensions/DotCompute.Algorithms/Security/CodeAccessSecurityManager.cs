@@ -8,7 +8,8 @@ using System.Security;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Security;
+namespace DotCompute.Algorithms.Security
+{
 
 /// <summary>
 /// Manages Code Access Security (CAS) permissions for plugin assemblies.
@@ -745,4 +746,4 @@ public sealed class CodeAccessSecurityConfiguration
     /// Gets or sets the allowed network endpoints.
     /// </summary>
     public List<string> AllowedNetworkEndpoints { get; set; } = [];
-}
+}}

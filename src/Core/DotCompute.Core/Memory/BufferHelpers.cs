@@ -4,7 +4,8 @@
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Core.Memory;
+namespace DotCompute.Core.Memory
+{
 
 /// <summary>
 /// Helper utilities for working with IBuffer interface compatibility.
@@ -61,4 +62,4 @@ public static class BufferHelpers
             await Task.CompletedTask; // Placeholder
         }
     }
-}
+}}

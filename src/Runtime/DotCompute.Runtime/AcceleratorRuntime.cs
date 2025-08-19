@@ -6,7 +6,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Runtime;
+namespace DotCompute.Runtime
+{
 
 /// <summary>
 /// Main runtime for accelerator management and execution
@@ -167,4 +168,5 @@ public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<Accele
             _disposeLock?.Release();
         }
     }
+}
 }

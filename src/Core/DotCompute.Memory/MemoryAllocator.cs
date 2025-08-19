@@ -6,7 +6,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Memory;
+namespace DotCompute.Memory
+{
 
 /// <summary>
 /// A high-performance memory allocator that provides aligned memory allocation and efficient memory management.
@@ -294,4 +295,5 @@ public record MemoryAllocatorStatistics(
     /// Gets the current number of active allocations.
     /// </summary>
     public long ActiveAllocations => TotalAllocations - TotalDeallocations;
+}
 }

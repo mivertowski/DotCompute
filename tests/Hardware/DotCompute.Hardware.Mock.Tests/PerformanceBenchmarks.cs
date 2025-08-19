@@ -3,7 +3,8 @@ using DotCompute.Tests.Utilities;
 using DotCompute.Tests.Utilities.TestFixtures;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Performance benchmark tests for real hardware.
@@ -342,4 +343,5 @@ public class PerformanceBenchmarks : IClassFixture<AcceleratorTestFixture>
 
         return coresCount * estimatedGHzPerCore * flopsPerCyclePerCore;
     }
+}
 }

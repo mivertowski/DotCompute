@@ -5,7 +5,8 @@ using Xunit;
 using FluentAssertions;
 using System.Globalization;
 
-namespace DotCompute.Abstractions.Tests;
+namespace DotCompute.Abstractions.Tests
+{
 
 /// <summary>
 /// Comprehensive unit tests for core structs, enums, and supporting classes in DotCompute.Abstractions.
@@ -795,4 +796,5 @@ public sealed class CoreStructsAndEnumsTests
     }
 
     #endregion
+}
 }

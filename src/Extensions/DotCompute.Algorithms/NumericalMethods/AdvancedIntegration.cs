@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.NumericalMethods;
+namespace DotCompute.Algorithms.NumericalMethods
+{
 
 /// <summary>
 /// Advanced numerical integration methods with adaptive quadrature and error estimation.
@@ -385,4 +386,4 @@ public static class AdvancedIntegration
         
         return sum * h;
     }
-}
+}}

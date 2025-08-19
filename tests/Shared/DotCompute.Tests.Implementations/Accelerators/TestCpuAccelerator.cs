@@ -1,9 +1,10 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Utilities.Memory;
+using DotCompute.Tests.Implementations.Memory;
 
-namespace DotCompute.Tests.Utilities.Accelerators;
+namespace DotCompute.Tests.Implementations.Accelerators
+{
 
 /// <summary>
 /// Test CPU-based accelerator implementation for testing without GPU hardware.
@@ -145,4 +146,5 @@ public sealed class TestCompiledKernel : ICompiledKernel
             GC.SuppressFinalize(this);
         }
     }
+}
 }

@@ -4,7 +4,8 @@ using DotCompute.Tests.Utilities;
 using DotCompute.Tests.Utilities.TestFixtures;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Hardware-dependent tests for OpenCL devices.
@@ -265,4 +266,5 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
 
         await Task.CompletedTask;
     }
+}
 }

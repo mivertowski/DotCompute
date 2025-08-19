@@ -8,7 +8,8 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Intrinsics;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// High-performance SIMD kernel executor with hardware-specific optimizations.
@@ -566,4 +567,4 @@ public sealed class SimdPerformanceMetrics
     public required double ExecutionTimeMs { get; init; }
     public required double ThroughputGFlops { get; init; }
     public required string InstructionSet { get; init; }
-}
+}}

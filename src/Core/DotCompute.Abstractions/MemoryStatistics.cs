@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Represents memory usage statistics for an accelerator.
@@ -47,4 +48,5 @@ public class MemoryStatistics
     /// Gets the percentage of free memory available.
     /// </summary>
     public double FreePercentage => TotalMemory > 0 ? (double)FreeMemory / TotalMemory * 100 : 0;
+}
 }

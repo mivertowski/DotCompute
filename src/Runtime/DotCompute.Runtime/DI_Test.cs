@@ -9,7 +9,8 @@ using DotCompute.Runtime.Configuration;
 using DotCompute.Runtime.Factories;
 using DotCompute.Runtime.Services;
 
-namespace DotCompute.Runtime;
+namespace DotCompute.Runtime
+{
 
 /// <summary>
 /// Simple test class to validate DI integration compiles correctly
@@ -136,5 +137,6 @@ public static class ConfigurationTest
         // Configuration objects should be constructible
         // This validates that all properties and types are correct
     }
+}
 }
 #endif

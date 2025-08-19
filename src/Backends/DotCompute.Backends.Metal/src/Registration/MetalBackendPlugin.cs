@@ -12,7 +12,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.Metal.Registration;
+namespace DotCompute.Backends.Metal.Registration
+{
 
 /// <summary>
 /// Plugin implementation for the Metal backend.
@@ -264,3 +265,4 @@ public enum MetalDeviceSelector
     PreferDiscrete
 }
 
+}

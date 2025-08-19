@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Core.Types;
+namespace DotCompute.Core.Types
+{
 
 /// <summary>
 /// Represents 3D dimensions for kernel configuration.
@@ -84,4 +85,4 @@ public readonly struct Dimensions3D(int x, int y = 1, int z = 1) : IEquatable<Di
     /// Returns a string representation of the dimensions.
     /// </summary>
     public override string ToString() => $"({X}, {Y}, {Z})";
-}
+}}

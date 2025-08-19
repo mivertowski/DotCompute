@@ -5,7 +5,8 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Compute;
+namespace DotCompute.Core.Compute
+{
 
 /// <summary>
 /// Simple implementation of IKernelSource for testing.
@@ -274,4 +275,4 @@ public class DefaultComputeEngine : IComputeEngine
         
         await ValueTask.CompletedTask;
     }
-}
+}}

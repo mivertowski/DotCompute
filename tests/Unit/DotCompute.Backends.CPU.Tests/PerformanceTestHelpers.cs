@@ -4,7 +4,8 @@
 
 using System.Runtime.InteropServices;
 
-namespace DotCompute.Backends.CPU;
+namespace DotCompute.Backends.CPU
+{
 
 /// <summary>
 /// Helper methods for performance tests that account for different environments.
@@ -101,4 +102,5 @@ internal static class PerformanceTestHelpers
 
         return 0.05; // 5% tolerance otherwise
     }
+}
 }

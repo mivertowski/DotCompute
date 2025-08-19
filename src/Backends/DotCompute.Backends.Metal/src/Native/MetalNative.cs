@@ -7,7 +7,8 @@ using System.Runtime.InteropServices;
 [assembly: DisableRuntimeMarshalling]
 [assembly: DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
 
-namespace DotCompute.Backends.Metal.Native;
+namespace DotCompute.Backends.Metal.Native
+{
 
 /// <summary>
 /// Native interop for Metal API.
@@ -264,3 +265,4 @@ internal enum MetalLanguageVersion
 internal delegate void CommandBufferCompletionHandler(MetalCommandBufferStatus status);
 
 #endregion
+}

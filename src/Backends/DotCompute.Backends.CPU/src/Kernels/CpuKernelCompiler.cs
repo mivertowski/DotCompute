@@ -12,7 +12,8 @@ using Microsoft.CodeAnalysis.CSharp;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// Compiles kernels for CPU execution with vectorization support.
@@ -1155,4 +1156,5 @@ internal static partial class KernelOptimizer
     public static KernelAst ApplyLoopUnrolling(KernelAst ast, int unrollFactor) => ast; // Unroll loops by the specified factor
 
     public static KernelAst ApplyFastMathOptimizations(KernelAst ast) => ast; // Relaxed floating-point operations for performance
+}
 }

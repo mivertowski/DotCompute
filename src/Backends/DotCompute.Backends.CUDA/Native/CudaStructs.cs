@@ -3,7 +3,8 @@
 
 using System.Runtime.InteropServices;
 
-namespace DotCompute.Backends.CUDA.Native;
+namespace DotCompute.Backends.CUDA.Native
+{
 
 /// <summary>
 /// P/Invoke structures for CUDA API
@@ -17,4 +18,4 @@ public struct CudaKernelNodeParams
     public uint SharedMemBytes;
     public IntPtr KernelParams;
     public IntPtr Extra;
-}
+}}

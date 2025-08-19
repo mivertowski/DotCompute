@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels;
+namespace DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels
+{
 
 /// <summary>
 /// Linear algebra operation types.
@@ -34,4 +35,4 @@ public sealed class KernelExecutionParameters
     public int BlockSize { get; init; } = 256;
     public int GridSize { get; init; } = 1;
     public long SharedMemorySize { get; init; }
-}
+}}

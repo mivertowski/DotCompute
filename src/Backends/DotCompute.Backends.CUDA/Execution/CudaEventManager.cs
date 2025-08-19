@@ -6,7 +6,8 @@ using System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Execution;
+namespace DotCompute.Backends.CUDA.Execution
+{
 
 /// <summary>
 /// Advanced CUDA event manager with timing, profiling, synchronization, and event pooling
@@ -893,4 +894,4 @@ public sealed class CudaEventStatistics
     public int ActiveTimingSessions { get; set; }
     public CudaEventPoolStatistics? PoolStatistics { get; set; }
     public int MaxConcurrentEvents { get; set; }
-}
+}}

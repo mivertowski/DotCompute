@@ -5,7 +5,8 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using DotCompute.Core.Memory;
 
-namespace DotCompute.Core.Execution;
+namespace DotCompute.Core.Execution
+{
 
 /// <summary>
 /// Defines the types of parallel execution strategies available.
@@ -428,4 +429,4 @@ public class ExecutionStrategyRecommendation
     
     /// <summary>Gets or sets recommended options for the strategy.</summary>
     public object? RecommendedOptions { get; set; }
-}
+}}

@@ -11,7 +11,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Unit;
+namespace DotCompute.Tests.Hardware.Unit
+{
 
 /// <summary>
 /// Unit tests for CUDA kernel compilation functionality
@@ -590,4 +591,5 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
         _accelerators.Clear();
         _loggerFactory?.Dispose();
     }
+}
 }

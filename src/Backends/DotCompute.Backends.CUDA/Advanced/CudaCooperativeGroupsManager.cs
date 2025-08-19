@@ -10,7 +10,8 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Advanced;
+namespace DotCompute.Backends.CUDA.Advanced
+{
 
 /// <summary>
 /// Manager for CUDA Cooperative Groups functionality
@@ -404,3 +405,4 @@ public sealed class CudaCooperativeLaunchResult
     public string? ErrorMessage { get; set; }
 }
 
+}

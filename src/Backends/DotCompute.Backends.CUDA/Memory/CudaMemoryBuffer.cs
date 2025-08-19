@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CUDA.Memory;
+namespace DotCompute.Backends.CUDA.Memory
+{
 
 /// <summary>
 /// CUDA memory buffer implementation
@@ -480,4 +481,5 @@ internal sealed class CudaMemoryBufferView : ISyncMemoryBuffer
     {
         // Views don't own the memory, so nothing to dispose
     }
+}
 }

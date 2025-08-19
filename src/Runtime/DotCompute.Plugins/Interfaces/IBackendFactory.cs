@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Plugins.Interfaces;
+namespace DotCompute.Plugins.Interfaces
+{
 
 /// <summary>
 /// Factory interface for creating accelerator backend instances.
@@ -110,4 +111,5 @@ public class BackendCapabilities
     /// List of supported features specific to this backend.
     /// </summary>
     public IReadOnlyList<string> SupportedFeatures { get; set; } = Array.Empty<string>();
+}
 }

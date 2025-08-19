@@ -8,7 +8,8 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// Advanced SIMD patterns for high-performance scientific computing.
@@ -656,4 +657,5 @@ public static class AdvancedSimdPatterns
             }
         }
     }
+}
 }

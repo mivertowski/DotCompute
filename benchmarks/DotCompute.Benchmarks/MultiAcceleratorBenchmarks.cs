@@ -5,7 +5,8 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks;
+namespace DotCompute.Benchmarks
+{
 
 /// <summary>
 /// Benchmarks for multi-accelerator scaling and coordination performance.
@@ -471,4 +472,4 @@ internal sealed class MultiAcceleratorBenchmarks : IDisposable
         }
         GC.SuppressFinalize(this);
     }
-}
+}}

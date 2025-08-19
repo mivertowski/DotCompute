@@ -5,7 +5,8 @@ using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Backends.CUDA;
+namespace DotCompute.Backends.CUDA
+{
 
 /// <summary>
 /// Validates Phase 1 implementation of the CUDA backend.
@@ -379,4 +380,4 @@ public class ValidationResult
 
         return summary;
     }
-}
+}}

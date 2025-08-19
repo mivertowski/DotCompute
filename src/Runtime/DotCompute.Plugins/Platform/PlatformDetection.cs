@@ -7,7 +7,8 @@ using System.Runtime.Intrinsics.X86;
 using System.Runtime.Intrinsics.Arm;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Plugins.Platform;
+namespace DotCompute.Plugins.Platform
+{
 
 /// <summary>
 /// Comprehensive platform and hardware capability detection utility.
@@ -829,4 +830,4 @@ public enum ComputeBackendType
     OpenCL,
     DirectCompute,
     Vulkan
-}
+}}

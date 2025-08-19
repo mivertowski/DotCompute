@@ -3,7 +3,8 @@ using System.Text.Json;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace DotCompute.Tools.coverage-enhancement;
+namespace DotCompute.Tools.coverage-enhancement
+{
 
 /// <summary>
 /// Analyzes coverage gaps and suggests test improvements
@@ -660,4 +661,4 @@ public class CoverageEnhancer
         await File.WriteAllTextAsync(outputPath, report.ToString());
         Console.WriteLine($"Coverage enhancement report generated: {outputPath}");
     }
-}
+}}

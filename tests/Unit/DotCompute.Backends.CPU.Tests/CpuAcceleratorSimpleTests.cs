@@ -10,7 +10,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Backends.CPU.Tests.Simple;
+namespace DotCompute.Backends.CPU.Tests.Simple
+{
 
 /// <summary>
 /// Simplified comprehensive unit tests for CpuAccelerator with 90% coverage target.
@@ -433,4 +434,5 @@ options.MaxMemoryAllocation > 0.Should().BeTrue();
             _disposed = true;
         }
     }
+}
 }

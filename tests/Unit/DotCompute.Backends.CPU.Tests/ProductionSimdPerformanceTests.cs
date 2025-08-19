@@ -14,7 +14,8 @@ using DotCompute.Backends.CPU.Optimization;
 using Xunit.Abstractions;
 
 #pragma warning disable CA1515 // Make types internal
-namespace DotCompute.Backends.CPU;
+namespace DotCompute.Backends.CPU
+{
 
 /// <summary>
 /// Comprehensive production tests for SIMD performance and validation.
@@ -593,4 +594,5 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
             }
         }
     }
+}
 }

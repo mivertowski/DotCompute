@@ -12,7 +12,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Backends.CPU.Tests.Accelerators;
+namespace DotCompute.Backends.CPU.Tests.Accelerators
+{
 
 /// <summary>
 /// Comprehensive unit tests for CpuAccelerator with 90% coverage target.
@@ -532,4 +533,5 @@ public sealed class CpuAcceleratorComprehensiveTests : IDisposable
             _disposed = true;
         }
     }
+}
 }

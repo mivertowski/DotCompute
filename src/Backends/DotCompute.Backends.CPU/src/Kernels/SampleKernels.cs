@@ -9,7 +9,8 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using CoreKernelExecutionContext = DotCompute.Core.KernelExecutionContext;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// Sample vectorized kernels demonstrating CPU SIMD operations.
@@ -455,3 +456,4 @@ public static class CpuKernelUtils
 #pragma warning disable CA1711 // Identifiers should not have incorrect suffix - Delegate is the appropriate suffix for a delegate type
 public unsafe delegate void VectorizedKernelDelegate<T>(T* source1, T* source2, T* destination, int count) where T : unmanaged;
 #pragma warning restore CA1711
+}

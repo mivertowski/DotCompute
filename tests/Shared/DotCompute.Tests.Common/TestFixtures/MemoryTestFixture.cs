@@ -3,7 +3,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Utilities.TestFixtures;
+namespace DotCompute.Tests.Utilities.TestFixtures
+{
 
 /// <summary>
 /// Shared test fixture for memory-related tests.
@@ -234,4 +235,5 @@ public sealed class MemoryStressTestResult
 
     public double AllocationsPerSecond
         => Duration.TotalSeconds > 0 ? SuccessfulAllocations / Duration.TotalSeconds : 0;
+}
 }

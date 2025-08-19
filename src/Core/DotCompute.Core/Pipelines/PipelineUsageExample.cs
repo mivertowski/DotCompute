@@ -4,7 +4,8 @@
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Example demonstrating kernel pipeline usage.
@@ -481,4 +482,5 @@ internal sealed class BasicPipelineProfiler : IPipelineProfiler
             CommonBottlenecks = new List<BottleneckInfo>()
         };
     }
+}
 }

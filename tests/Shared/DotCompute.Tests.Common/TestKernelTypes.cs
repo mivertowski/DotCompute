@@ -3,7 +3,8 @@
 
 using DotCompute.Core.Types;
 
-namespace DotCompute.Tests.Utilities;
+namespace DotCompute.SharedTestUtilities
+{
 
 /// <summary>
 /// Test-specific CompiledKernel class with mutable properties for testing.
@@ -511,4 +512,5 @@ public static class TestTypeConversions
             _ => KernelLanguage.CSharpIL
         };
     }
+}
 }

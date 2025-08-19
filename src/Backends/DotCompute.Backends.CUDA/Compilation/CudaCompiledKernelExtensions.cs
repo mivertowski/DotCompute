@@ -6,7 +6,8 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Compilation;
+namespace DotCompute.Backends.CUDA.Compilation
+{
 
 /// <summary>
 /// Extensions and utilities for CudaCompiledKernel with modern architecture support.
@@ -355,4 +356,4 @@ public static class CudaLaunchConfigExtensions
 
         return CudaLaunchConfig.Create2D(width, height);
     }
-}
+}}

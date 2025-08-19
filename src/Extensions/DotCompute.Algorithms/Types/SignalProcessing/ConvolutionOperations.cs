@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.Types.SignalProcessing;
+namespace DotCompute.Algorithms.Types.SignalProcessing
+{
 
 /// <summary>
 /// Convolution operations for signal processing.
@@ -78,4 +79,4 @@ public static class StaticConvolutionOperations
         // Placeholder implementation
         return new float[image.GetLength(0), image.GetLength(1)];
     }
-}
+}}

@@ -12,7 +12,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using DotCompute.Memory;
 
-namespace DotCompute.Linq;
+namespace DotCompute.Linq
+{
 
 /// <summary>
 /// Extension methods for creating and executing GPU-accelerated LINQ queries.
@@ -381,4 +382,4 @@ public interface IKernelFactory
     /// <returns>The created kernel.</returns>
     Operators.IKernel CreateKernel(IAccelerator accelerator, Operators.KernelDefinition definition);
 }
-}
+}}

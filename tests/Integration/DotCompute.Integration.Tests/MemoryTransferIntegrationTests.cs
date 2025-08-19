@@ -12,7 +12,8 @@ using FluentAssertions;
 
 #pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for memory transfer scenarios including host-to-device,
@@ -611,4 +612,5 @@ __kernel void aligned_access(__global const float4* input, __global float4* outp
     
     output[gid] = data;
 }";
+}
 }

@@ -5,7 +5,8 @@ using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace DotCompute.Algorithms.LinearAlgebra;
+namespace DotCompute.Algorithms.LinearAlgebra
+{
 
 /// <summary>
 /// Represents a 2D matrix of floating-point values.
@@ -340,4 +341,4 @@ public sealed class Matrix : IEquatable<Matrix>
     {
         return !(left == right);
     }
-}
+}}

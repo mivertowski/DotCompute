@@ -10,7 +10,8 @@ using Moq;
 using System.Runtime.InteropServices;
 using Xunit;
 
-namespace DotCompute.Runtime.Tests;
+namespace DotCompute.Runtime.Tests
+{
 
 /// <summary>
 /// Comprehensive unit tests for RuntimeMemoryManager to achieve 90%+ coverage.
@@ -670,4 +671,4 @@ public sealed class RuntimeMemoryManagerTests : IDisposable
     {
         _memoryManager?.Dispose();
     }
-}
+}}

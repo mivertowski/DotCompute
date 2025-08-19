@@ -8,7 +8,8 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-namespace DotCompute.Runtime.Services;
+namespace DotCompute.Runtime.Services
+{
 
 /// <summary>
 /// Production memory manager implementation with advanced memory pool management, P2P transfers, 
@@ -1004,4 +1005,4 @@ public sealed class KernelCompilerStatistics
     {
         Interlocked.Increment(ref _cacheHits);
     }
-}
+}}

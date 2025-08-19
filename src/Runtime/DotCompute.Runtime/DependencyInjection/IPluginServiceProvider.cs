@@ -4,7 +4,8 @@
 // using DotCompute.Algorithms.Types // Commented out - missing reference.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DotCompute.Runtime.DependencyInjection;
+namespace DotCompute.Runtime.DependencyInjection
+{
 
 /// <summary>
 /// Provides dependency injection services for plugins
@@ -293,4 +294,4 @@ public class PluginLifecycleHandlers
     /// Called when plugin is being disposed
     /// </summary>
     public Func<object, Task>? OnDisposing { get; init; }
-}
+}}

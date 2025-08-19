@@ -10,7 +10,8 @@ using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public class KernelSourceGeneratorTests
 {
@@ -429,4 +430,5 @@ public class TestIncrementalValueProvider<T> : IncrementalValueProvider<T>
     {
         return new TestIncrementalValueProvider<TResult>();
     }
+}
 }

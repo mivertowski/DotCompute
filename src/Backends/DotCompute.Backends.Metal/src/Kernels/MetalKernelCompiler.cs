@@ -10,7 +10,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
-namespace DotCompute.Backends.Metal.Kernels;
+namespace DotCompute.Backends.Metal.Kernels
+{
 
 /// <summary>
 /// Compiles kernels to Metal Shading Language and creates compute pipeline states.
@@ -276,4 +277,5 @@ public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILog
         _compilationSemaphore?.Dispose();
         GC.SuppressFinalize(this);
     }
+}
 }

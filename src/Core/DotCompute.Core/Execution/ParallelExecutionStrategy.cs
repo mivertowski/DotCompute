@@ -9,7 +9,8 @@ using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Core.Execution;
+namespace DotCompute.Core.Execution
+{
 
 /// <summary>
 /// Provides comprehensive parallel execution strategies for multi-GPU and heterogeneous computing.
@@ -945,4 +946,5 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
     }
 
     #endregion
+}
 }

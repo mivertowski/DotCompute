@@ -12,7 +12,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Memory.Benchmarks;
+namespace DotCompute.Memory.Benchmarks
+{
 
 /// <summary>
 /// Comprehensive benchmarks for memory system performance analysis.

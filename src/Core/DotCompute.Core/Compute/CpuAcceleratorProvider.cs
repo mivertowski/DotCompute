@@ -11,7 +11,8 @@ using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using KernelArguments = DotCompute.Abstractions.KernelArguments;
 using KernelDefinition = DotCompute.Abstractions.KernelDefinition;
 
-namespace DotCompute.Core.Compute;
+namespace DotCompute.Core.Compute
+{
 
 /// <summary>
 /// Provides CPU accelerator instances.
@@ -504,4 +505,5 @@ internal class SimpleCpuCompiledKernel(string name, KernelDefinition definition)
         _disposed = true;
         return ValueTask.CompletedTask;
     }
+}
 }

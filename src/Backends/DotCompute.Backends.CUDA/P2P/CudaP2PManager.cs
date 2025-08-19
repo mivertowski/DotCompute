@@ -6,7 +6,8 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.P2P;
+namespace DotCompute.Backends.CUDA.P2P
+{
 
 /// <summary>
 /// Advanced CUDA Peer-to-Peer (P2P) manager for multi-GPU operations
@@ -719,4 +720,4 @@ public sealed class CudaP2PConnectionStats
     public ulong TotalBytes { get; set; }
     public double AverageBandwidth { get; set; }
     public DateTimeOffset? LastTransfer { get; set; }
-}
+}}

@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Synchronous memory manager interface for backends that don't require async operations.
@@ -57,4 +58,5 @@ public interface ISyncMemoryManager : IDisposable
     /// Resets the memory manager, freeing all allocations.
     /// </summary>
     public void Reset();
+}
 }

@@ -6,7 +6,8 @@ using DotCompute.Linq.Compilation;
 using DotCompute.Memory;
 using MemoryOptions = DotCompute.Memory.MemoryOptions;
 
-namespace DotCompute.Linq.Execution;
+namespace DotCompute.Linq.Execution
+{
 
 /// <summary>
 /// Defines the interface for executing compiled compute plans.
@@ -245,4 +246,4 @@ public class CacheStatistics
     /// Gets the cache hit ratio.
     /// </summary>
     public double HitRatio => Hits + Misses > 0 ? (double)Hits / (Hits + Misses) : 0;
-}
+}}

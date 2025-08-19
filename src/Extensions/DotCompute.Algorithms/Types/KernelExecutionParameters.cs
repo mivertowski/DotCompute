@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.Types;
+namespace DotCompute.Algorithms.Types
+{
 
 /// <summary>
 /// Configuration parameters for kernel execution optimization.
@@ -75,4 +76,4 @@ public sealed record KernelExecutionParameters
             _ => new KernelExecutionParameters()
         };
     }
-}
+}}

@@ -7,7 +7,8 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Security;
+namespace DotCompute.Algorithms.Security
+{
 
 /// <summary>
 /// Comprehensive security policy configuration system for plugin validation.
@@ -467,4 +468,4 @@ public abstract class SecurityRule
     /// <param name="context">The evaluation context.</param>
     /// <returns>The evaluation result.</returns>
     public abstract SecurityEvaluationResult Evaluate(SecurityEvaluationContext context);
-}
+}}

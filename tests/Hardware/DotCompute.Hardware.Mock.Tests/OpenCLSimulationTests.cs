@@ -4,7 +4,8 @@
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Mock OpenCL tests that simulate hardware operations without requiring actual OpenCL runtime.
@@ -355,4 +356,5 @@ public class OpenCLSimulationTests
             _ => false
         };
     }
+}
 }

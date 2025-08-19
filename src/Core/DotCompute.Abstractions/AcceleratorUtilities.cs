@@ -3,7 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Utility methods for common accelerator patterns to reduce code duplication.
@@ -219,4 +220,4 @@ public static class AcceleratorUtilities
     {
         ObjectDisposedException.ThrowIf(disposed != 0, instance);
     }
-}
+}}

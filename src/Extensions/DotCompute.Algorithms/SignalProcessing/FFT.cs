@@ -4,7 +4,8 @@
 using System.Numerics;
 using System.Runtime.CompilerServices;
 
-namespace DotCompute.Algorithms.SignalProcessing;
+namespace DotCompute.Algorithms.SignalProcessing
+{
 
 /// <summary>
 /// Provides Fast Fourier Transform (FFT) operations.
@@ -318,4 +319,4 @@ public enum WindowType
     /// Blackman window.
     /// </summary>
     Blackman
-}
+}}

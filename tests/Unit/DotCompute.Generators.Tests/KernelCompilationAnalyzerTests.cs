@@ -10,7 +10,8 @@ using Microsoft.CodeAnalysis.Testing;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public class KernelCompilationAnalyzerTests
 {
@@ -451,4 +452,5 @@ public class XUnitVerifier : IVerifier
     {
         assert.Should().BeFalse(message);
     }
+}
 }

@@ -8,7 +8,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for memory transfer operations between devices and host.
@@ -911,4 +912,5 @@ public class ErrorResult
 {
     public bool Success { get; set; }
     public string? Error { get; set; }
+}
 }

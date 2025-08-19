@@ -3,7 +3,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Hardware-dependent tests for OpenCL functionality.
@@ -142,4 +143,5 @@ public class OpenCLHardwareTests
         CL_DEVICE_TYPE_ACCELERATOR = (1 << 3),
         CL_DEVICE_TYPE_ALL = 0xFFFFFFFF
     }
+}
 }

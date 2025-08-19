@@ -3,7 +3,8 @@
 
 using System.Numerics;
 
-namespace DotCompute.Algorithms.NumericalMethods;
+namespace DotCompute.Algorithms.NumericalMethods
+{
 
 /// <summary>
 /// Advanced Fast Fourier Transform implementations with multiple algorithms and optimizations.
@@ -550,4 +551,4 @@ public enum WindowType
     Hann,
     Hamming,
     Blackman
-}
+}}

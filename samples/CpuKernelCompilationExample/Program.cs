@@ -11,7 +11,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace CpuKernelCompilationExample;
+namespace CpuKernelCompilationExample
+{
 
 /// <summary>
 /// Example demonstrating CPU kernel compilation with optimization and vectorization.
@@ -557,4 +558,4 @@ internal sealed class MockCompiledKernel : ICompiledKernel
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-}
+}}

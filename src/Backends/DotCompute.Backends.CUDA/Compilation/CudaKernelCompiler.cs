@@ -11,7 +11,8 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Types;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Compilation;
+namespace DotCompute.Backends.CUDA.Compilation
+{
 
 // Internal types for kernel compilation
 internal sealed class KernelSource
@@ -1144,4 +1145,5 @@ public sealed partial class CudaKernelCompiler : IDisposable
             LogDisposalError(_logger, ex);
         }
     }
+}
 }

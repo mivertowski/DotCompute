@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 
-namespace DotCompute.Core.Execution;
+namespace DotCompute.Core.Execution
+{
 
 /// <summary>
 /// Thread-safe cache for compiled kernels across multiple devices.
@@ -581,4 +582,4 @@ public class GlobalCacheStatistics
     
     /// <summary>Gets or sets the number of cleanup operations performed.</summary>
     public long CleanupCount { get; set; }
-}
+}}

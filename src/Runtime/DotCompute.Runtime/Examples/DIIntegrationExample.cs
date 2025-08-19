@@ -14,7 +14,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace DotCompute.Runtime.Examples;
+namespace DotCompute.Runtime.Examples
+{
 
 /// <summary>
 /// Comprehensive example demonstrating DotCompute DI integration
@@ -502,4 +503,4 @@ public class CustomAcceleratorProvider : IAcceleratorProvider
     {
         throw new NotImplementedException("Custom accelerator creation not implemented in this example");
     }
-}
+}}

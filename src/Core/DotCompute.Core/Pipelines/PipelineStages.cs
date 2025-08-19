@@ -6,7 +6,8 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Custom synchronization strategies for parallel execution.
@@ -1142,4 +1143,5 @@ internal sealed class PipelineWrapperStage(string id, string name, IKernelPipeli
 
     /// <inheritdoc/>
     public IStageMetrics GetMetrics() => _metrics;
+}
 }

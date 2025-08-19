@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.Types;
+namespace DotCompute.Algorithms.Types
+{
 
 /// <summary>
 /// Represents different types of linear algebra operations for kernel optimization.
@@ -87,4 +88,4 @@ public enum LinearAlgebraOperation
     /// Vector norm computation.
     /// </summary>
     VectorNorm
-}
+}}

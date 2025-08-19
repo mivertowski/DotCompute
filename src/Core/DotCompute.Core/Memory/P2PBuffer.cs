@@ -5,7 +5,8 @@ using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Memory;
+namespace DotCompute.Core.Memory
+{
 
 /// <summary>
 /// P2P-optimized buffer that supports direct GPU-to-GPU transfers and host-mediated fallbacks.
@@ -942,4 +943,4 @@ internal enum P2PCopyStrategy
     CUDA = 1,        // NVIDIA CUDA devices
     HIP = 2,         // AMD ROCm/HIP devices  
     OpenCL = 3,      // Intel/OpenCL devices
-}
+}}

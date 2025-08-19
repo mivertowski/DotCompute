@@ -4,7 +4,8 @@
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Abstractions.Tests;
+namespace DotCompute.Abstractions.Tests
+{
 
 /// <summary>
 /// Comprehensive unit tests for the IKernel interface and related types.
@@ -424,4 +425,5 @@ public sealed class IKernelTests
     }
 
     #endregion
+}
 }

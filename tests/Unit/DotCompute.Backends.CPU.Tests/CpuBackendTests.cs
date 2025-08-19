@@ -17,7 +17,8 @@ using Xunit.Abstractions;
 using FluentAssertions;
 using DotCompute.Core.Compute;
 
-namespace DotCompute.Tests;
+namespace DotCompute.Tests
+{
 
 /// <summary>
 /// Comprehensive backend tests for CPU accelerators focusing on SIMD optimization, 
@@ -535,4 +536,5 @@ public class SimdCapabilitySummary
     public bool SupportsAvx2 { get; set; }
     public bool SupportsAvx512 { get; set; }
     public bool SupportsNeon { get; set; }
+}
 }

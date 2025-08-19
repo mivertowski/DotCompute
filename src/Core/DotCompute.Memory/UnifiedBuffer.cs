@@ -5,7 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Memory;
+namespace DotCompute.Memory
+{
 
 /// <summary>
 /// A unified buffer that provides seamless host/device memory management with lazy transfer semantics.
@@ -1430,4 +1431,5 @@ internal sealed class UnifiedBufferView<TOriginal, TNew>(UnifiedBuffer<TOriginal
     {
         // View doesn't own the parent buffer, so no disposal needed
     }
+}
 }

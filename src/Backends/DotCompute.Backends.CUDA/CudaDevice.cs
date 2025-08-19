@@ -2,12 +2,14 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
+using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.InteropServices;
 
-namespace DotCompute.Backends.CUDA;
+namespace DotCompute.Backends.CUDA
+{
 
 /// <summary>
 /// Represents a CUDA-capable GPU device with enhanced device detection capabilities.
@@ -163,6 +165,16 @@ public sealed class CudaDevice : IDisposable
     public CudaDeviceProperties Properties => _deviceProperties;
 
     /// <summary>
+    /// Gets device information for compatibility with test/benchmark code.
+    /// </summary>
+    public CudaDeviceInfo Info => new(this);
+
+    /// <summary>
+    /// Gets the memory manager for this device.
+    /// </summary>
+    public CudaMemoryManager Memory { get; private set; } = null!;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="CudaDevice"/> class.
     /// </summary>
     /// <param name="deviceId">The CUDA device ID.</param>
@@ -191,6 +203,10 @@ public sealed class CudaDevice : IDisposable
 
         // Build capabilities dictionary
         _capabilities = BuildCapabilities();
+
+        // Initialize memory manager with context
+        var context = new CudaContext(_deviceId);
+        Memory = new CudaMemoryManager(context, _logger);
 
         _logger.LogInformation("Initialized CUDA device {DeviceId}: {DeviceName} (CC {Major}.{Minor})",
             _deviceId, Name, ComputeCapabilityMajor, ComputeCapabilityMinor);
@@ -450,6 +466,52 @@ public sealed class CudaDevice : IDisposable
         return capabilities;
     }
 
+    /// <summary>
+    /// Creates a CUDA context for this device.
+    /// </summary>
+    public CudaContext CreateContext()
+    {
+        return new CudaContext(_deviceId);
+    }
+
+    /// <summary>
+    /// Synchronizes all operations on this device asynchronously.
+    /// </summary>
+    public async Task SynchronizeAsync(CancellationToken cancellationToken = default)
+    {
+        await Task.Run(() => CudaRuntime.cudaDeviceSynchronize(), cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Copies data from host to device asynchronously.
+    /// </summary>
+    public async Task CopyToDeviceAsync(IntPtr hostPtr, IMemoryBuffer deviceBuffer, ulong sizeInBytes, CancellationToken cancellationToken = default)
+    {
+        if (deviceBuffer is CudaMemoryBuffer cudaBuffer)
+        {
+            await Task.Run(() =>
+            {
+                var result = CudaRuntime.cudaMemcpy(cudaBuffer.DevicePointer, hostPtr, sizeInBytes, CudaMemcpyKind.HostToDevice);
+                if (result != CudaError.Success)
+                {
+                    throw new InvalidOperationException($"CUDA memory copy failed: {CudaRuntime.GetErrorString(result)}");
+                }
+            }, cancellationToken).ConfigureAwait(false);
+        }
+        else
+        {
+            throw new ArgumentException("Device buffer must be a CUDA memory buffer", nameof(deviceBuffer));
+        }
+    }
+
+    /// <summary>
+    /// Allocates memory on this device asynchronously.
+    /// </summary>
+    public async Task<IMemoryBuffer> AllocateAsync(ulong sizeInBytes)
+    {
+        return await Memory.AllocateAsync((long)sizeInBytes).ConfigureAwait(false);
+    }
+
     private void ThrowIfDisposed()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -466,4 +528,4 @@ public sealed class CudaDevice : IDisposable
             _logger.LogDebug("Disposed CUDA device {DeviceId}", _deviceId);
         }
     }
-}
+}}

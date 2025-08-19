@@ -4,7 +4,8 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DotCompute.Runtime.Factories;
+namespace DotCompute.Runtime.Factories
+{
 
 /// <summary>
 /// Factory for creating accelerator instances with dependency injection support
@@ -188,4 +189,4 @@ public class AcceleratorValidationResult
             Errors = errors.ToList(),
             Warnings = warnings?.ToList() ?? new List<string>()
         };
-}
+}}

@@ -5,7 +5,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.P2P;
+namespace DotCompute.Tests.Hardware.P2P
+{
 
 /// <summary>
 /// Multi-GPU P2P(Peer-to-Peer) communication tests for RTX 2000 Ada Generation.
@@ -672,4 +673,5 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
+}
 }

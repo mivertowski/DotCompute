@@ -6,7 +6,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.NVRTC;
+namespace DotCompute.Tests.Hardware.NVRTC
+{
 
 /// <summary>
 /// Tests for NVRTC(NVIDIA Runtime Compilation) on RTX 2000 Ada Generation GPU.
@@ -688,4 +689,5 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
+}
 }

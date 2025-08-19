@@ -10,7 +10,8 @@ using System.Runtime.Intrinsics.X86;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Threading;
 
-namespace DotCompute.Backends.CPU.Accelerators;
+namespace DotCompute.Backends.CPU.Accelerators
+{
 
 /// <summary>
 /// NUMA-aware memory manager for CPU-based compute with advanced allocation strategies.
@@ -1191,4 +1192,5 @@ public sealed class NumaNodeStatistics
     /// Gets the number of buffers allocated on this node.
     /// </summary>
     public int BufferCount { get; set; }
+}
 }

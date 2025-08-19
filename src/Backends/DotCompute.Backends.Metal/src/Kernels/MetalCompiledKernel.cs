@@ -8,7 +8,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
-namespace DotCompute.Backends.Metal.Kernels;
+namespace DotCompute.Backends.Metal.Kernels
+{
 
 /// <summary>
 /// Represents a compiled Metal kernel ready for execution.
@@ -349,4 +350,5 @@ public class CompilationMetadata
     /// Gets additional metadata properties.
     /// </summary>
     public IDictionary<string, object> Properties { get; } = new Dictionary<string, object>();
+}
 }

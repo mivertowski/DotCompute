@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Backends.CUDA;
+namespace DotCompute.Backends.CUDA
+{
 
 /// <summary>
 /// Configuration options for the CUDA backend.
@@ -88,4 +89,4 @@ public enum CudaDeviceSelectionStrategy
     /// Select the device with the fastest clock speed.
     /// </summary>
     FastestClock
-}
+}}

@@ -9,7 +9,8 @@ using DotCompute.Backends.CPU.Tests.Helpers;
 using Microsoft.Extensions.Options;
 using FluentAssertions;
 
-namespace DotCompute.Backends.CPU;
+namespace DotCompute.Backends.CPU
+{
 
 public sealed class CpuKernelExecutorTests
 {
@@ -535,4 +536,5 @@ public sealed class CpuThreadPoolTests
         await threadPool.Invoking(tp => tp.EnqueueBatchAsync(emptyActions))
             .CompleteWithinAsync(TimeSpan.FromMilliseconds(100));
     }
+}
 }

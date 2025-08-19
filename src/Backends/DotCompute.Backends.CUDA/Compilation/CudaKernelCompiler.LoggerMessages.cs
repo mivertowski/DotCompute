@@ -3,7 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Compilation;
+namespace DotCompute.Backends.CUDA.Compilation
+{
 
 /// <summary>
 /// LoggerMessage delegates for CudaKernelCompiler
@@ -303,4 +304,5 @@ public sealed partial class CudaKernelCompiler
         Level = LogLevel.Information,
         Message = "NVRTC supported architectures: {Architectures}")]
     private static partial void LogSupportedArchitectures(ILogger logger, string architectures);
+}
 }

@@ -7,7 +7,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public class IncrementalGenerationTests
 {
@@ -455,4 +456,5 @@ public class InvalidKernels
         validResult.GeneratedSources.Should().NotBeEmpty();
         invalidResult.GeneratedSources.Should().BeEmpty("Generator should not produce output for invalid syntax");
     }
+}
 }

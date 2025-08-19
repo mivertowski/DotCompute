@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Algorithms.Types;
+namespace DotCompute.Algorithms.Types
+{
 
 /// <summary>
 /// Represents hardware capabilities and characteristics for optimization purposes.
@@ -126,4 +127,4 @@ public sealed record HardwareInfo
             _ => 1e9 // 1 GFLOPS fallback
         };
     }
-}
+}}

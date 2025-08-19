@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Algorithms.Abstractions;
+namespace DotCompute.Algorithms.Abstractions
+{
 
 /// <summary>
 /// Defines the contract for algorithm plugins that can be dynamically loaded and executed.
@@ -127,4 +128,4 @@ public sealed class AlgorithmPerformanceProfile
     /// Gets or sets additional performance metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; init; } = [];
-}
+}}

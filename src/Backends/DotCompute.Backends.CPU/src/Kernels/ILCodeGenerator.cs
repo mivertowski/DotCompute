@@ -5,7 +5,8 @@ using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// Advanced IL code generator for CPU kernels using Expression Trees and DynamicMethod.
@@ -355,4 +356,5 @@ internal sealed class CompiledKernelCode
     public OptimizationLevel OptimizationLevel { get; set; }
     public long EstimatedCodeSize { get; set; }
     public string[] OptimizationNotes { get; set; } = [];
+}
 }

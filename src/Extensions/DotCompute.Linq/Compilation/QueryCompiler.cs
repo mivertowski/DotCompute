@@ -9,7 +9,8 @@ using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Compilation;
+namespace DotCompute.Linq.Compilation
+{
 
 /// <summary>
 /// Compiles LINQ expression trees into executable compute plans.
@@ -516,4 +517,4 @@ internal class ComputeStage : IComputeStage
     public IReadOnlyList<string> InputBuffers { get; }
     public string OutputBuffer { get; }
     public ExecutionConfiguration Configuration { get; }
-}
+}}

@@ -6,7 +6,8 @@ using DotCompute.Core.Pipelines;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for Pipeline classes.
@@ -469,4 +470,5 @@ public sealed class TestStateData
 {
     public int Value { get; set; }
     public string Name { get; set; } = string.Empty;
+}
 }

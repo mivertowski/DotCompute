@@ -4,7 +4,8 @@
 using DotCompute.Backends.CPU.Performance;
 using FluentAssertions;
 
-namespace DotCompute.Backends.CPU;
+namespace DotCompute.Backends.CPU
+{
 
 public sealed class KernelPerformanceMetricsTests
 {
@@ -472,4 +473,5 @@ public sealed class NumaNodeMetricsTests
         metrics.MemoryAllocations.Should().Be(50);
         metrics.MemoryUsageBytes.Should().Be(1024 * 1024 * 10);
     }
+}
 }

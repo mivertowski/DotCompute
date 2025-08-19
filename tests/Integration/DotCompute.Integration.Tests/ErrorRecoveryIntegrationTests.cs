@@ -12,7 +12,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for error recovery scenarios including hardware failures,
@@ -941,4 +942,5 @@ __kernel void device_stress(__global const float* input, __global float* output)
     
     output[gid] = result;
 }";
+}
 }

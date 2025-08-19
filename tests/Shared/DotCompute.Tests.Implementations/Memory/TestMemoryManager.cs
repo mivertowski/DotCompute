@@ -3,7 +3,8 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities.Memory;
+namespace DotCompute.Tests.Implementations.Memory
+{
 
 /// <summary>
 /// Test implementation of IMemoryManager for testing without GPU hardware.
@@ -316,4 +317,5 @@ public sealed class TestMemoryView : IMemoryBuffer
     public ValueTask DisposeAsync()
         // Views don't own the memory, so nothing to dispose
         => ValueTask.CompletedTask;
+}
 }

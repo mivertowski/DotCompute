@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Common.Hardware;
+namespace DotCompute.Tests.Common.Hardware
+{
 
 /// <summary>
 /// Advanced hardware simulator for complex testing scenarios.
@@ -466,4 +467,5 @@ public enum SimulationActionType
     ClockSpeedChange,
     DeviceFailure,
     DeviceRecovery
+}
 }

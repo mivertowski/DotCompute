@@ -8,7 +8,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public class DiagnosticTests
 {
@@ -466,4 +467,5 @@ public class GenericKernels
             Assert.Contains($"Kernel{i:D3}", registryCode);
         }
     }
+}
 }

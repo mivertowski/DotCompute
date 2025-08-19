@@ -6,7 +6,8 @@ using DotCompute.Core.Pipelines;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks;
+namespace DotCompute.Benchmarks
+{
 
 /// <summary>
 /// Benchmarks for pipeline orchestration overhead and execution performance.
@@ -896,4 +897,4 @@ internal sealed class SimpleStageMetrics : IStageMetrics
             _customMetrics[key] = value;
         }
     }
-}
+}}

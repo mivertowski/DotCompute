@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Defines the type of accelerator device.
@@ -62,4 +63,5 @@ public enum AcceleratorType
     /// Custom or unknown accelerator type.
     /// </summary>
     Custom = 100
+}
 }

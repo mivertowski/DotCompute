@@ -5,7 +5,8 @@ using DotCompute.Abstractions;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms;
+namespace DotCompute.Algorithms
+{
 
 /// <summary>
 /// Example of a simple algorithm that demonstrates the plugin pattern.
@@ -208,4 +209,4 @@ public partial class MatrixOperations
 
         return result;
     }
-}
+}}

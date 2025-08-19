@@ -3,7 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Common disposal patterns and utilities for accelerator implementations.
@@ -279,4 +280,4 @@ public static class DisposalUtilities
     {
         ObjectDisposedException.ThrowIf(disposed != 0, objectInstance);
     }
-}
+}}

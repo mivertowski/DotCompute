@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Runtime.Services;
+namespace DotCompute.Runtime.Services
+{
 
 /// <summary>
 /// Service for profiling performance across the DotCompute runtime
@@ -616,4 +617,4 @@ public class ProfilingSessionResult
     public Dictionary<string, double> FinalMetrics { get; init; } = new();
     public Dictionary<string, string> Tags { get; init; } = new();
     public bool Success { get; init; }
-}
+}}

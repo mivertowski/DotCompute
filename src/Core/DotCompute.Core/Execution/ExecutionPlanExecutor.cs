@@ -7,7 +7,8 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Execution;
+namespace DotCompute.Core.Execution
+{
 
 /// <summary>
 /// Executes execution plans with proper synchronization, resource management, and performance monitoring.
@@ -1112,4 +1113,4 @@ public class ProfilingEvent
 public partial class ParallelExecutionResult
 {
     public ExecutionProfilingData? ProfilingData { get; set; }
-}
+}}

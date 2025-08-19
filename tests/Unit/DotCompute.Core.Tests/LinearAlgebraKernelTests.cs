@@ -8,7 +8,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Comprehensive tests for linear algebra kernels and mathematical operations.
@@ -1305,3 +1306,4 @@ public sealed class LinearAlgebraKernels : IDisposable
 }
 
 #endregion
+}

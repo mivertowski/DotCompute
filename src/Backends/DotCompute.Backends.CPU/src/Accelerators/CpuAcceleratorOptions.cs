@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Backends.CPU.Accelerators;
+namespace DotCompute.Backends.CPU.Accelerators
+{
 
 /// <summary>
 /// Configuration options for the CPU accelerator.
@@ -311,4 +312,4 @@ public static class CpuAcceleratorOptionsExtensions
 
         return options;
     }
-}
+}}

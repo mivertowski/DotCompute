@@ -5,7 +5,8 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Security;
+namespace DotCompute.Algorithms.Security
+{
 
 /// <summary>
 /// Validates Authenticode digital signatures on assemblies using Windows APIs.
@@ -426,4 +427,4 @@ public sealed class CertificateInfo
     /// Gets or sets the certificate serial number.
     /// </summary>
     public string? SerialNumber { get; set; }
-}
+}}

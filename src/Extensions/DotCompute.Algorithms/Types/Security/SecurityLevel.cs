@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.Types.Security;
+namespace DotCompute.Algorithms.Types.Security
+{
 
 /// <summary>
 /// Security levels for algorithm plugins and operations.
@@ -140,4 +141,4 @@ public enum SecurityOperation
     /// UI operations.
     /// </summary>
     UserInterface
-}
+}}

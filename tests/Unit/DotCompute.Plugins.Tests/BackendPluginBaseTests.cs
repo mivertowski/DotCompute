@@ -8,7 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for the BackendPluginBase class covering plugin lifecycle, state management, and metrics.
@@ -530,4 +531,5 @@ public sealed class BackendPluginBaseTests : IDisposable
         public void TestChangeHealth(PluginHealth newHealth) => Health = newHealth;
         public void TestRaiseError(Exception exception, string context) => OnError(exception, context);
     }
+}
 }

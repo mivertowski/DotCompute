@@ -3,12 +3,13 @@
 
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Utilities;
+using DotCompute.Tests.Mocks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Common.Hardware;
+namespace DotCompute.Tests.Common.Hardware
+{
 
 /// <summary>
 /// Mock hardware provider for testing without actual hardware dependencies.
@@ -313,4 +314,5 @@ public enum HardwareConfiguration
 
     /// <summary>Minimal single device configuration.</summary>
     Minimal
+}
 }

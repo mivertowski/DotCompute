@@ -11,7 +11,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Hardware;
+namespace DotCompute.Tests.Hardware.Hardware
+{
 
 /// <summary>
 /// RTX 2000 series specific validation tests
@@ -512,4 +513,5 @@ __global__ void turing_optimized(float* input, float* output, int n)
         _accelerators.Clear();
         _loggerFactory?.Dispose();
     }
+}
 }

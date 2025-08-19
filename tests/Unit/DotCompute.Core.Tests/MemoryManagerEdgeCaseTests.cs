@@ -7,7 +7,8 @@ using Moq;
 using Xunit;
 using CoreMemory = DotCompute.Core.Memory;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Edge case tests for IMemoryManager implementations focusing on boundary conditions,
@@ -192,4 +193,5 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
             GC.SuppressFinalize(this);
         }
     }
+}
 }

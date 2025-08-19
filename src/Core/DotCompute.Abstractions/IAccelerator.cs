@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Represents a compute accelerator device.
@@ -687,4 +688,5 @@ public enum AcceleratorFeature
     Bfloat16 = 1 << 8,
     SignedByte = 1 << 9,
     MixedPrecision = 1 << 10
+}
 }

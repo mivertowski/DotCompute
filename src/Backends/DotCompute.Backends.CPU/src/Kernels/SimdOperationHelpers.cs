@@ -5,7 +5,8 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// Helper methods for SIMD operations across different vector sizes.
@@ -105,4 +106,5 @@ internal static class SimdOperationHelpers
             _ => &Sse2.Add
         };
     }
+}
 }

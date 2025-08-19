@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Core.Memory;
+namespace DotCompute.Core.Memory
+{
 
 /// <summary>
 /// Provides unified memory management across different compute backends.
@@ -192,4 +193,5 @@ public interface IMemoryStatistics
     /// Gets memory usage by location.
     /// </summary>
     public IReadOnlyDictionary<MemoryLocation, long> UsageByLocation { get; }
+}
 }

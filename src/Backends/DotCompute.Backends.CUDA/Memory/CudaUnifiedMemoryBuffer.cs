@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CUDA.Memory;
+namespace DotCompute.Backends.CUDA.Memory
+{
 
 /// <summary>
 /// CUDA unified memory buffer implementation with automatic host/device migration.
@@ -476,4 +477,4 @@ public readonly struct CudaBufferStatistics
     public long TotalTransfers => HostToDeviceTransfers + DeviceToHostTransfers;
     public double AverageTransferSize => TotalTransfers > 0 ? 
         TotalBytesTransferred / (double)TotalTransfers : 0.0;
-}
+}}

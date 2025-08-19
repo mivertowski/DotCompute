@@ -1,7 +1,8 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Utilities.Pipelines;
+namespace DotCompute.Tests.Implementations.Pipelines
+{
 
 /// <summary>
 /// Test implementation of a kernel pipeline builder.
@@ -371,4 +372,5 @@ public interface IPipelineProfiler
     public void StartStage(string stageId);
     public void EndStage(string stageId);
     public void RecordMetric(string name, double value);
+}
 }

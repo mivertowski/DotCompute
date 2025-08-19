@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 using System.Text.Json;
 using DotCompute.Core.Aot;
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Implementation of pipeline performance metrics.
@@ -458,4 +459,5 @@ internal sealed class StageMetrics(string stageId) : IStageMetrics
     }
 
     public void RecordCustomMetric(string name, double value) => _customMetrics.AddOrUpdate(name, value, (_, _) => value);
+}
 }

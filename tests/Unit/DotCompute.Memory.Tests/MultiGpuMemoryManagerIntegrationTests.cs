@@ -7,7 +7,8 @@ using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests;
+namespace DotCompute.Tests
+{
 
 /// <summary>
 /// Integration tests for MultiGpuMemoryManager with real P2P scenarios.
@@ -537,4 +538,5 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
             }
         }
     }
+}
 }

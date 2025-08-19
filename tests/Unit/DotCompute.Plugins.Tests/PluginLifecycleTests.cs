@@ -12,7 +12,8 @@ using NSubstitute;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for plugin lifecycle management, including initialization, startup, shutdown, and error handling.
@@ -502,4 +503,5 @@ public sealed class PluginSecurityTests
             return Task.CompletedTask;
         }
     }
+}
 }

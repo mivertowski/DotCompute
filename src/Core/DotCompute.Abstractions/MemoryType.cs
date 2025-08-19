@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Represents different types of memory available on compute devices.
@@ -50,4 +51,4 @@ public enum MemoryType
     /// Write-only memory optimized for output data.
     /// </summary>
     WriteOnly
-}
+}}

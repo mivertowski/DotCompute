@@ -10,7 +10,8 @@ using System.Text.Json;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Compilation;
+namespace DotCompute.Backends.CUDA.Compilation
+{
 
 /// <summary>
 /// Advanced CUDA kernel compilation cache with memory-mapped file storage,
@@ -739,4 +740,4 @@ public class CacheStatistics
     public DateTimeOffset? NewestEntry { get; set; }
     public int ExpiredEntries { get; set; }
     public int MappedFileCount { get; set; }
-}
+}}

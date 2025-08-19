@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.ErrorHandling;
+namespace DotCompute.Backends.CUDA.ErrorHandling
+{
 
 /// <summary>
 /// Comprehensive CUDA error handling and recovery system
@@ -589,4 +590,4 @@ public sealed class CudaErrorStatistics
     public List<KeyValuePair<string, int>> ProblematicOperations { get; set; } = [];
     public CudaErrorEvent? LastError { get; set; }
     public double RecoverySuccessRate { get; set; }
-}
+}}

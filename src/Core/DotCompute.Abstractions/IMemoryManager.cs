@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Manages memory allocation and transfer for an accelerator.
@@ -132,4 +133,5 @@ public enum MemoryOptions
     /// Memory will be used for atomic operations.
     /// </summary>
     Atomic = 16
+}
 }

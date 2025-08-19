@@ -6,7 +6,8 @@ using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Types.SignalProcessing;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Plugins;
+namespace DotCompute.Algorithms.Plugins
+{
 
 /// <summary>
 /// Plugin for signal processing operations.
@@ -282,4 +283,4 @@ public sealed class SignalProcessingPlugin : AlgorithmPluginBase
 
         return await Task.Run(() => SignalProcessor.Resample(signal, originalRate, targetRate), cancellationToken).ConfigureAwait(false);
     }
-}
+}}

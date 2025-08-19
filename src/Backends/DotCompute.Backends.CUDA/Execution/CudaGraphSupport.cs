@@ -9,7 +9,8 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Execution;
+namespace DotCompute.Backends.CUDA.Execution
+{
 
 /// <summary>
 /// Advanced CUDA Graph support for kernel fusion and optimization on RTX 2000 Ada
@@ -999,3 +1000,4 @@ public enum CudaKernelType
 }
 
 
+}

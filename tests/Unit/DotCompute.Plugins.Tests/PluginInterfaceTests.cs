@@ -8,7 +8,8 @@ using NSubstitute;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for plugin interfaces, enums, and data structures.
@@ -447,4 +448,5 @@ public sealed class PluginInterfaceTests
         metrics.CustomMetrics["Array"].Should().BeEquivalentTo(new[] { 1, 2, 3 });
         metrics.CustomMetrics["Null"].Should().BeNull();
     }
+}
 }

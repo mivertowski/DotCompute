@@ -4,7 +4,8 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities.TestInfrastructure;
+namespace DotCompute.Tests.Utilities.TestInfrastructure
+{
 
 /// <summary>
 /// Test implementation of compiled kernel for unit testing.
@@ -55,4 +56,5 @@ public sealed class TestCompiledKernel : ICompiledKernel
         GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;
     }
+}
 }

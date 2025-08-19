@@ -6,7 +6,8 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 
-namespace DotCompute.Backends.CPU.Intrinsics;
+namespace DotCompute.Backends.CPU.Intrinsics
+{
 
 /// <summary>
 /// Provides information about SIMD capabilities of the current CPU.
@@ -260,4 +261,5 @@ public sealed class SimdSummary
 
         return $"SIMD: {PreferredVectorWidth}-bit vectors, Instructions: {string.Join(", ", SupportedInstructionSets)}";
     }
+}
 }

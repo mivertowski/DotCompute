@@ -6,7 +6,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks;
+namespace DotCompute.Benchmarks
+{
 
 [MemoryDiagnoser]
 [ThreadingDiagnoser]
@@ -195,4 +196,5 @@ internal sealed class ComprehensivePerformanceTests : IDisposable
         Cleanup().GetAwaiter().GetResult();
         GC.SuppressFinalize(this);
     }
+}
 }

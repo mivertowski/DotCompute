@@ -6,7 +6,8 @@ using System.Collections.Concurrent;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Plugins.Loaders;
+namespace DotCompute.Plugins.Loaders
+{
 
 /// <summary>
 /// Simplified dependency resolver for plugin dependencies
@@ -91,4 +92,4 @@ public class EnhancedDependencyResolverOptions
     /// Maximum number of concurrent resolutions
     /// </summary>
     public int MaxConcurrentResolutions { get; set; } = 4;
-}
+}}

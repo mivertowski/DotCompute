@@ -11,7 +11,8 @@ using DotCompute.Backends.CUDA.Types;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Execution;
+namespace DotCompute.Backends.CUDA.Execution
+{
 
 /// <summary>
 /// High-performance CUDA kernel executor with advanced features for RTX 2000 Ada GPU
@@ -714,4 +715,4 @@ internal sealed class CudaKernelExecution
     public IntPtr StartEvent { get; set; }
     public IntPtr EndEvent { get; set; }
     public Exception? Error { get; set; }
-}
+}}

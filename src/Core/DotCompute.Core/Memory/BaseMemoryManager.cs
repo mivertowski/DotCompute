@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Base memory manager has dynamic logging requirements
 
-namespace DotCompute.Core.Memory;
+namespace DotCompute.Core.Memory
+{
 
 /// <summary>
 /// Abstract base class for memory managers that provides common functionality
@@ -789,6 +790,8 @@ public class MemoryStatistics
     /// Gets the memory fragmentation percentage.
     /// </summary>
     public double FragmentationPercentage { get; init; }
+}
+
 }
 
 #pragma warning restore CA1848

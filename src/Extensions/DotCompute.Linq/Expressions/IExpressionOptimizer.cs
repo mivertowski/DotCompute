@@ -4,7 +4,8 @@
 using System.Linq.Expressions;
 using DotCompute.Linq.Compilation;
 
-namespace DotCompute.Linq.Expressions;
+namespace DotCompute.Linq.Expressions
+{
 
 /// <summary>
 /// Defines the interface for optimizing LINQ expression trees for GPU execution.
@@ -142,4 +143,4 @@ public enum PerformanceImpact
     /// Critical for performance.
     /// </summary>
     Critical
-}
+}}

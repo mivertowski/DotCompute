@@ -8,7 +8,8 @@ using DotCompute.Linq.Expressions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Linq.Operators;
+namespace DotCompute.Linq.Operators
+{
 
 /// <summary>
 /// Default implementation of kernel factory for LINQ operations with dynamic kernel generation.
@@ -354,4 +355,4 @@ internal class PlaceholderKernel : IKernel
             _disposed = true;
         }
     }
-}
+}}

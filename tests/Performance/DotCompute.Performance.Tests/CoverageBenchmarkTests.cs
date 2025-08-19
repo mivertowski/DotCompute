@@ -11,7 +11,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Performance;
+namespace DotCompute.Tests.Performance
+{
 
 /// <summary>
 /// Performance benchmark tests for coverage analysis
@@ -333,4 +334,5 @@ public sealed class XunitLogger : BdnLogger
     public void WriteLine(LogKind logKind, string text) => _output.WriteLine($"[{logKind}] {text}");
 
     public void Flush() { }
+}
 }

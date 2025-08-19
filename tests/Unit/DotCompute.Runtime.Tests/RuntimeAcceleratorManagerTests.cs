@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Runtime.Tests;
+namespace DotCompute.Runtime.Tests
+{
 
 /// <summary>
 /// Comprehensive unit tests for RuntimeAcceleratorManager to achieve 90%+ coverage.
@@ -864,4 +865,4 @@ public sealed class RuntimeAcceleratorManagerTests : IDisposable
     {
         _manager?.DisposeAsync().AsTask().Wait();
     }
-}
+}}

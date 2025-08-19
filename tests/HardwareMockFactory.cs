@@ -6,7 +6,8 @@ using DotCompute.Core.Types;
 using Microsoft.Extensions.Logging;
 using Moq;
 
-namespace DotCompute.Tests;
+namespace DotCompute.Tests
+{
 
 /// <summary>
 /// Factory for creating hardware mocks that work in CI/CD environments.
@@ -196,4 +197,4 @@ public static class TestFilters
     /// Usage: dotnet test --filter "Category=Unit|Category=Integration&Category!=LongRunning&Category!=Performance"
     /// </summary>
     public const string Quick = "Category=Unit|(Category=Integration&Category!=LongRunning&Category!=Performance)";
-}
+}}

@@ -2,7 +2,8 @@ using Xunit;
 using FluentAssertions;
 using DotCompute.Core;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class CommandQueueOptionsTests
 {
@@ -108,4 +109,5 @@ public sealed class CommandQueueOptionsTests
         defaultOptions.EnableOutOfOrderExecution.Should().BeFalse();
         defaultOptions.Priority.Should().Be(QueuePriority.Normal);
     }
+}
 }

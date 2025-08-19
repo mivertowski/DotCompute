@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Manages accelerator devices and their lifecycle.
@@ -167,4 +168,5 @@ public interface IAcceleratorProvider
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>The created accelerator instance.</returns>
     public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default);
+}
 }

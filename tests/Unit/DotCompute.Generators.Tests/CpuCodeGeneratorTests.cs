@@ -8,7 +8,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public class CpuCodeGeneratorTests
 {
@@ -426,4 +427,5 @@ public static void MemoryMethod(float[] input, float[] output, int length)
         var syntaxTree = CSharpSyntaxTree.ParseText(source);
         return syntaxTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
     }
+}
 }

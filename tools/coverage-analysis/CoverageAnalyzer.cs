@@ -3,7 +3,8 @@ using System.Text.Json;
 using System.Text;
 using System.Globalization;
 
-namespace CoverageAnalysis;
+namespace DotCompute.Tools.Coverage
+{
 
 /// <summary>
 /// Analyzes code coverage reports and generates comprehensive analysis
@@ -188,18 +189,15 @@ internal sealed class CoverageAnalyzer
 
         // Fallback: extract from file path
         var testResultsIndex = Array.LastIndexOf(parts, "TestResults");
-        if (testResultsIndex > 0 && testResultsIndex < parts.Length - 2)
-        {
-            return parts[testResultsIndex + 1];
-        }
-
-        return Path.GetFileName(Path.GetDirectoryName(filePath)) ?? "Unknown";
+        return testResultsIndex > 0 && testResultsIndex < parts.Length - 2
+            ? parts[testResultsIndex + 1]
+            : Path.GetFileName(Path.GetDirectoryName(filePath)) ?? "Unknown";
     }
 
     private List<string> GenerateRecommendations(
         CoverageMetrics overall,
         Dictionary<string, CoverageMetrics> byProject,
-        List<string> lowCoverageAreas)
+        List<string> _)
     {
         var recommendations = new List<string>();
 
@@ -254,65 +252,65 @@ internal sealed class CoverageAnalyzer
         var report = new StringBuilder();
 
         report.AppendLine("# DotCompute Code Coverage Analysis Report");
-        report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}"));
-        report.AppendLine();
+        _ = report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}"));
+        _ = report.AppendLine();
 
         // Overall metrics
-        report.AppendLine("## Overall Coverage Metrics");
-        report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- Line Coverage: {analysis.Overall.LineRate:P2} ({analysis.Overall.LinesCovered:N0}/{analysis.Overall.LinesTotal:N0})"));
-        report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- Branch Coverage: {analysis.Overall.BranchRate:P2} ({analysis.Overall.BranchesCovered:N0}/{analysis.Overall.BranchesTotal:N0})"));
-        report.AppendLine();
+        _ = report.AppendLine("## Overall Coverage Metrics");
+        _ = report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- Line Coverage: {analysis.Overall.LineRate:P2} ({analysis.Overall.LinesCovered:N0}/{analysis.Overall.LinesTotal:N0})"));
+        _ = report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- Branch Coverage: {analysis.Overall.BranchRate:P2} ({analysis.Overall.BranchesCovered:N0}/{analysis.Overall.BranchesTotal:N0})"));
+        _ = report.AppendLine();
 
         // By project
         if (analysis.ByProject.Count != 0)
         {
-            report.AppendLine("## Coverage By Project");
-            report.AppendLine("| Project | Line Coverage | Branch Coverage | Lines (Covered/Total) | Branches (Covered/Total) |");
-            report.AppendLine("|---------|---------------|-----------------|----------------------|--------------------------|");
+            _ = report.AppendLine("## Coverage By Project");
+            _ = report.AppendLine("| Project | Line Coverage | Branch Coverage | Lines (Covered/Total) | Branches (Covered/Total) |");
+            _ = report.AppendLine("|---------|---------------|-----------------|----------------------|--------------------------|");
 
             foreach (var project in analysis.ByProject.OrderBy(p => p.Key))
             {
                 var p = project.Value;
-                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"| {project.Key} | {p.LineRate:P1} | {p.BranchRate:P1} | {p.LinesCovered:N0}/{p.LinesTotal:N0} | {p.BranchesCovered:N0}/{p.BranchesTotal:N0} |"));
+                _ = report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"| {project.Key} | {p.LineRate:P1} | {p.BranchRate:P1} | {p.LinesCovered:N0}/{p.LinesTotal:N0} | {p.BranchesCovered:N0}/{p.BranchesTotal:N0} |"));
             }
-            report.AppendLine();
+            _ = report.AppendLine();
         }
 
         // Low coverage areas
         if (analysis.LowCoverageAreas.Count != 0)
         {
-            report.AppendLine("## Areas Needing Attention");
+            _ = report.AppendLine("## Areas Needing Attention");
             foreach (var area in analysis.LowCoverageAreas)
             {
-                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- {area}"));
+                _ = report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- {area}"));
             }
-            report.AppendLine();
+            _ = report.AppendLine();
         }
 
         // Uncovered methods
         if (analysis.UncoveredMethods.Count != 0)
         {
-            report.AppendLine("## Uncovered Methods (Sample)");
+            _ = report.AppendLine("## Uncovered Methods (Sample)");
             foreach (var method in analysis.UncoveredMethods.Take(20))
             {
-                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- {method}"));
+                _ = report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- {method}"));
             }
             if (analysis.UncoveredMethods.Count > 20)
             {
-                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"... and {analysis.UncoveredMethods.Count - 20} more"));
+                _ = report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"... and {analysis.UncoveredMethods.Count - 20} more"));
             }
-            report.AppendLine();
+            _ = report.AppendLine();
         }
 
         // Recommendations
         if (analysis.Recommendations.Count != 0)
         {
-            report.AppendLine("## Recommendations");
+            _ = report.AppendLine("## Recommendations");
             foreach (var recommendation in analysis.Recommendations)
             {
-                report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- {recommendation}"));
+                _ = report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"- {recommendation}"));
             }
-            report.AppendLine();
+            _ = report.AppendLine();
         }
 
         await File.WriteAllTextAsync(outputPath, report.ToString());
@@ -327,4 +325,5 @@ internal sealed class CoverageAnalyzer
         await File.WriteAllTextAsync(outputPath, json);
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Coverage JSON report generated: {outputPath}"));
     }
+}
 }

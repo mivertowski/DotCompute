@@ -7,7 +7,8 @@ using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using DotCompute.Memory.Benchmarks;
 
-namespace DotCompute.Memory;
+namespace DotCompute.Memory
+{
 
 /// <summary>
 /// Unified memory manager implementation that coordinates host and device memory
@@ -1023,4 +1024,5 @@ internal sealed class MemoryStatisticsImpl(MemoryManagerStats stats) : IMemorySt
         [MemoryLocation.Device] = _stats.TotalDeviceMemory - _stats.AvailableDeviceMemory,
         [MemoryLocation.Unified] = _stats.TotalAllocatedBytes / 4
     };
+}
 }

@@ -8,7 +8,8 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Operators;
+namespace DotCompute.Linq.Operators
+{
 
 /// <summary>
 /// A kernel compiled dynamically from generated source code.
@@ -586,4 +587,4 @@ internal class MockKernelSource : IKernelSource
     public DotCompute.Abstractions.KernelLanguage Language { get; set; }
     public string EntryPoint { get; set; } = string.Empty;
     public string[] Dependencies { get; set; } = Array.Empty<string>();
-}
+}}

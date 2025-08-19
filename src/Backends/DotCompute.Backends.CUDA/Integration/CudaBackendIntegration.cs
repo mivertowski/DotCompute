@@ -12,7 +12,8 @@ using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace DotCompute.Backends.CUDA.Integration;
+namespace DotCompute.Backends.CUDA.Integration
+{
 
 /// <summary>
 /// Complete CUDA backend integration for production use with RTX 2000 Ada optimizations
@@ -1143,4 +1144,4 @@ public sealed class KernelExecutionStats
     public long TotalFlops { get; set; }
     public long TotalBytesTransferred { get; set; }
     public TimeSpan ElapsedTime { get; set; }
-}
+}}

@@ -6,7 +6,8 @@ using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CPU.Tests.Helpers;
 
-namespace DotCompute.Backends.CPU.Tests.Constructor;
+namespace DotCompute.Backends.CPU.Tests.Constructor
+{
 
 /// <summary>
 /// Simple tests to verify that CpuAccelerator constructor calls work correctly.
@@ -107,4 +108,4 @@ public sealed class CpuAcceleratorConstructorTests : IDisposable
             _disposed = true;
         }
     }
-}
+}}

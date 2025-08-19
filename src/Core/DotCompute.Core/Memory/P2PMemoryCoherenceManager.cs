@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Memory;
+namespace DotCompute.Core.Memory
+{
 
 /// <summary>
 /// Advanced P2P memory coherence manager that maintains consistency across multiple GPU devices.
@@ -803,6 +804,8 @@ public enum OptimizationType
     LoadBalancing = 0,  // Balance load across devices
     LocalityOptimization = 1,  // Optimize data locality
     BandwidthOptimization = 2  // Optimize bandwidth usage
+}
+
 }
 
 #endregion

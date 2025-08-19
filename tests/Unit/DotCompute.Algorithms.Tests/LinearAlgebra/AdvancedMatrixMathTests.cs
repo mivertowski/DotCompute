@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit.LinearAlgebra;
+namespace DotCompute.Tests.Unit.LinearAlgebra
+{
 
 /// <summary>
 /// Tests for advanced matrix algorithms including QR, SVD, Cholesky, and eigenvalue decomposition.
@@ -385,4 +386,5 @@ public class AdvancedMatrixMathTests
             return ValueTask.CompletedTask;
         }
     }
+}
 }

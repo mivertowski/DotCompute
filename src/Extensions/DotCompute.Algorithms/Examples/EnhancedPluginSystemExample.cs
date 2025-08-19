@@ -6,7 +6,8 @@ using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Types.Management;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Examples;
+namespace DotCompute.Algorithms.Examples
+{
 
 /// <summary>
 /// Demonstrates the enhanced plugin system with isolation, hot reload, and security features.
@@ -430,4 +431,4 @@ internal class MockAccelerator : IAccelerator
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
 #endif
-}
+}}

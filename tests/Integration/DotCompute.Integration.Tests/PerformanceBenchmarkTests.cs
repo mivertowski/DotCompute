@@ -13,7 +13,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for performance benchmarking scenarios.
@@ -984,4 +985,5 @@ public class ParallelBenchmarkResult
     public List<ThreadBenchmarkResult> ThreadResults { get; set; } = [];
     public double SingleThreadThroughput { get; set; }
     public double ParallelEfficiency { get; set; }
+}
 }

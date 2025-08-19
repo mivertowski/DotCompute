@@ -4,7 +4,8 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Common.Hardware;
+namespace DotCompute.Tests.Common.Hardware
+{
 
 /// <summary>
 /// Simple test to verify the hardware abstraction layer builds correctly.
@@ -56,4 +57,5 @@ public static class QuickBuildTest
         var stats = simulator.GetStatistics();
         simulator.Stop();
     }
+}
 }

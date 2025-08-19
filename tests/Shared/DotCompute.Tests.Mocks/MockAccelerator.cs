@@ -3,7 +3,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Tests.Utilities;
+namespace DotCompute.Tests.Mocks
+{
 
 /// <summary>
 /// Mock accelerator implementation for testing without hardware dependencies.
@@ -421,4 +422,4 @@ public sealed class MockMemoryBufferView : IMemoryBuffer, IDisposable
         GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;
     }
-}
+}}

@@ -2,7 +2,8 @@ using DotCompute.Core;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class KernelExecutionContextTests
 {
@@ -130,4 +131,5 @@ public sealed class KernelExecutionContextTests
         // Assert
         context.CancellationToken.IsCancellationRequested.Should().BeTrue();
     }
+}
 }

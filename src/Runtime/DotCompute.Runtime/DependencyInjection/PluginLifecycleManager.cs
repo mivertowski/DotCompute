@@ -9,7 +9,8 @@ using System.Reflection;
 using System.Linq;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Runtime.DependencyInjection;
+namespace DotCompute.Runtime.DependencyInjection
+{
 
 /// <summary>
 /// Implementation of plugin lifecycle manager with DI support
@@ -485,4 +486,4 @@ public class DefaultPluginFactory : IPluginFactory
 
         return descriptors;
     }
-}
+}}

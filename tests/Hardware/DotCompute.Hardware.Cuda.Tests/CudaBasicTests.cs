@@ -10,7 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Basic validation tests for CUDA backend functionality
@@ -340,4 +341,5 @@ extern ""C"" __global__ void testConfig(int* data, int n)
         _disposed = true;
         GC.SuppressFinalize(this);
     }
+}
 }

@@ -2,7 +2,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class KernelArgumentsTests
 {
@@ -137,4 +138,5 @@ public sealed class KernelArgumentsTests
         args.Get(1).Should().Be(floatValue);
         args.Get(2).Should().Be(stringValue);
     }
+}
 }

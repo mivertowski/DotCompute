@@ -11,7 +11,8 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 
-namespace DotCompute.Backends.Metal;
+namespace DotCompute.Backends.Metal
+{
 
 public class MetalMemoryTests : IClassFixture<MetalTestFixture>
 {
@@ -228,4 +229,4 @@ public class MetalMemoryTests : IClassFixture<MetalTestFixture>
             _accelerator.Memory.Free(memory);
         }
     }
-}
+}}

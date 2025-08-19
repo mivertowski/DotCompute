@@ -8,7 +8,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Core.Tests.Pipelines;
+namespace DotCompute.Core.Tests.Pipelines
+{
 
 /// <summary>
 /// Comprehensive unit tests for pipeline components with 90% coverage target.
@@ -749,4 +750,5 @@ public sealed class PipelineOptimizationTests
             .Throw<InvalidOperationException>()
             .WithMessage("*circular dependency*");
     }
+}
 }

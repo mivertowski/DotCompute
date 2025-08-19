@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 
-namespace DotCompute.Runtime.Services;
+namespace DotCompute.Runtime.Services
+{
 
 /// <summary>
 /// Implementation of memory pool service
@@ -489,4 +490,4 @@ internal class UnifiedMemoryBuffer : IMemoryBuffer, IDisposable
         IsDisposed = true;
         return ValueTask.CompletedTask;
     }
-}
+}}

@@ -10,7 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests simulating real-world scenarios including machine learning workloads,
@@ -1216,4 +1217,5 @@ __kernel void hash_function(__global const float* data, __global float* hashes, 
     
     hashes[gid] =(float)hash / 4294967295.0f; // Convert back to float [0,1]
 }";
+}
 }

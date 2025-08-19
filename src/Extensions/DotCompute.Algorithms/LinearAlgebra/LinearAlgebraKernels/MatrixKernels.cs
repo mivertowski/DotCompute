@@ -3,7 +3,8 @@
 
 using DotCompute.Algorithms.Types.Kernels;
 
-namespace DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels;
+namespace DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels
+{
 
 /// <summary>
 /// GPU kernels for matrix operations.
@@ -33,4 +34,4 @@ public sealed class EigenvalueKernel : AlgorithmKernel
     public override string Name => "Eigenvalue";
     public override string Description => "GPU-accelerated eigenvalue computation";
     public override bool IsVectorized => true;
-}
+}}

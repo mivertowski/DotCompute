@@ -5,7 +5,8 @@ using DotCompute.Abstractions;
 using System.Linq.Expressions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Operators;
+namespace DotCompute.Linq.Operators
+{
 
 /// <summary>
 /// Kernel parameter information with direction.
@@ -352,4 +353,4 @@ public class KernelProperties
     /// Gets or sets the minimum compute capability required.
     /// </summary>
     public string? MinimumComputeCapability { get; set; }
-}
+}}

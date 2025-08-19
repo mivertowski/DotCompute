@@ -1,4 +1,5 @@
-namespace DotCompute.Tests.Common;
+namespace DotCompute.Tests.Common
+{
 
 /// <summary>
 /// Centralized test category constants for consistent test filtering.
@@ -117,4 +118,4 @@ public static class TestCategories
             TestCategories.Manual,
             TestCategories.Flaky
         };
-    }
+    }}

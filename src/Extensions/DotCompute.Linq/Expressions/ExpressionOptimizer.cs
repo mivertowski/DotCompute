@@ -7,7 +7,8 @@ using System.Globalization;
 using DotCompute.Linq.Compilation;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Expressions;
+namespace DotCompute.Linq.Expressions
+{
 
 /// <summary>
 /// Optimizes LINQ expression trees for efficient GPU execution.
@@ -586,4 +587,4 @@ public class ExpressionOptimizer : IExpressionOptimizer
             _store.Value!.Clear();
         }
     }
-}
+}}

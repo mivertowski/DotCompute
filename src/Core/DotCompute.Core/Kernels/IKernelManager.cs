@@ -4,7 +4,8 @@
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Core.Kernels;
+namespace DotCompute.Core.Kernels
+{
 
 /// <summary>
 /// Interface for managing kernel generation, compilation, caching, and execution.
@@ -78,4 +79,4 @@ public interface IKernelManager : IDisposable
     /// Gets cache statistics.
     /// </summary>
     KernelCacheStatistics GetCacheStatistics();
-}
+}}

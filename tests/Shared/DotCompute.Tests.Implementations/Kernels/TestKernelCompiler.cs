@@ -4,7 +4,8 @@ using System.Globalization;
 using System.Text;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities.Kernels;
+namespace DotCompute.Tests.Implementations.Kernels
+{
 
 /// <summary>
 /// Base test kernel compiler implementation for testing.
@@ -323,4 +324,5 @@ public enum DiagnosticLevel
     Info,
     Warning,
     Error
+}
 }

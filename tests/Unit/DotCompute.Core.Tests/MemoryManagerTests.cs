@@ -8,7 +8,8 @@ using Xunit;
 using CoreMemory = DotCompute.Core.Memory;
 using AbstractionsMemory = DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for the IMemoryManager interface implementations.
@@ -209,4 +210,5 @@ public sealed class MemoryManagerTests : IDisposable
             GC.SuppressFinalize(this);
         }
     }
+}
 }

@@ -6,7 +6,8 @@ using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Types.SignalProcessing;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Plugins;
+namespace DotCompute.Algorithms.Plugins
+{
 
 /// <summary>
 /// Plugin for Fast Fourier Transform operations.
@@ -243,4 +244,4 @@ public sealed class FFTPlugin : AlgorithmPluginBase
 
         return result;
     }
-}
+}}

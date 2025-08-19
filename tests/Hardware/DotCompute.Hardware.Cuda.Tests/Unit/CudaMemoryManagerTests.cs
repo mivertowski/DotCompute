@@ -11,7 +11,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Unit;
+namespace DotCompute.Tests.Hardware.Unit
+{
 
 /// <summary>
 /// Unit tests for CUDA memory management operations
@@ -535,4 +536,5 @@ public sealed class CudaMemoryManagerTests : IDisposable
         _accelerators.Clear();
         _loggerFactory?.Dispose();
     }
+}
 }

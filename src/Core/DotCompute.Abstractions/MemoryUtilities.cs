@@ -3,7 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Utility methods for common memory management patterns to reduce code duplication.
@@ -317,4 +318,4 @@ public static class MemoryUtilities
             throw new ArgumentException("Destination offset + size exceeds destination buffer capacity");
         }
     }
-}
+}}

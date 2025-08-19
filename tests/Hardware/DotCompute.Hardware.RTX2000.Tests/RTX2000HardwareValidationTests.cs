@@ -5,7 +5,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Comprehensive hardware validation tests specifically for NVIDIA RTX 2000 Ada Generation GPU.
@@ -880,4 +881,5 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
+}
 }

@@ -9,7 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Plugins.Tests;
+namespace DotCompute.Plugins.Tests
+{
 
 /// <summary>
 /// Tests for the BaseBackendPlugin abstract class.
@@ -294,4 +295,5 @@ public sealed class NamedAcceleratorWrapperTests
         // Assert
         mockAccelerator.Verify(x => x.DisposeAsync(), Times.Once);
     }
+}
 }

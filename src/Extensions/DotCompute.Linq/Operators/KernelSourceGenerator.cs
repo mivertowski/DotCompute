@@ -5,7 +5,8 @@ using System.Linq.Expressions;
 using System.Text;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Linq.Operators;
+namespace DotCompute.Linq.Operators
+{
 
 /// <summary>
 /// Generates kernel source code for different accelerator types.
@@ -393,4 +394,4 @@ public class CustomCodeTemplate : ICodeTemplate
         sourceBuilder.AppendLine("// TODO: Implement custom operation logic");
         return sourceBuilder.ToString();
     }
-}
+}}

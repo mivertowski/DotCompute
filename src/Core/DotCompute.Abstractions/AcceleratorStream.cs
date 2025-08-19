@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Represents an execution stream on an accelerator for asynchronous command submission.
@@ -165,4 +166,5 @@ public abstract class AcceleratorEvent : IDisposable
     /// Disposes of this event.
     /// </summary>
     public abstract void Dispose();
+}
 }

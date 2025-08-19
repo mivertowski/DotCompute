@@ -5,7 +5,8 @@ using Xunit;
 using NSubstitute;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for Core kernel types and components.
@@ -310,4 +311,5 @@ public class CoreKernelTypesTests
         Assert.Equal(1048576, context.WorkDimensions[0]);
         Assert.Equal(1048576, context.WorkDimensions[1]);
     }
+}
 }

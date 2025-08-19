@@ -9,7 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Examples;
+namespace DotCompute.Algorithms.Examples
+{
 
 /// <summary>
 /// Comprehensive example demonstrating the security validation system for plugin loading.
@@ -617,4 +618,4 @@ public static class SecurityValidationExample
 internal static class SecurityValidationDocumentation
 {
     // This class serves as documentation for the security validation example
-}
+}}

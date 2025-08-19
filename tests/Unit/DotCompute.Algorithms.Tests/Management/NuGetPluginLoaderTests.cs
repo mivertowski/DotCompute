@@ -12,7 +12,8 @@ using System.Text;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Management;
+namespace DotCompute.Tests.Management
+{
 
 /// <summary>
 /// Comprehensive tests for NuGetPluginLoader functionality.
@@ -444,4 +445,5 @@ public sealed class NuGetPluginLoaderTests : IDisposable
         public string ProjectPath => string.Empty;
         public DateTime Time => DateTime.UtcNow;
     }
+}
 }

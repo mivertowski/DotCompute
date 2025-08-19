@@ -8,7 +8,8 @@ using System.Runtime.InteropServices;
 using DotCompute.Memory;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Edge case and boundary condition tests for MemoryAllocator.
@@ -494,4 +495,5 @@ internal struct TestStruct
 {
     public int IntValue;
     public long LongValue;
+}
 }

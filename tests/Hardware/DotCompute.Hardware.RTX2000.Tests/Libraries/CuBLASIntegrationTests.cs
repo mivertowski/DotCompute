@@ -5,7 +5,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Libraries;
+namespace DotCompute.Tests.Hardware.Libraries
+{
 
 /// <summary>
 /// Integration tests for cuBLAS(CUDA Basic Linear Algebra Subroutines) on RTX 2000 Ada Generation.
@@ -773,4 +774,5 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
+}
 }

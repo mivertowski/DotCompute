@@ -1,6 +1,7 @@
 using System.Numerics;
 
-namespace DotCompute.Tests.Utilities;
+namespace DotCompute.Tests.Utilities
+{
 
 /// <summary>
 /// Utility class for generating test data.
@@ -299,4 +300,5 @@ public enum PatternType
     Gradient,
     Sine,
     Gaussian
+}
 }

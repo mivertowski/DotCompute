@@ -12,7 +12,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for multi-backend scenarios including backend switching,
@@ -724,4 +725,5 @@ __kernel void image_processing(__global const float* input, __global float* outp
     }
     output[gid] = sum / count;
 }";
+}
 }

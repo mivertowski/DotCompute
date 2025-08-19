@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Represents a compute kernel that can be compiled and executed on an accelerator.
@@ -107,4 +108,5 @@ public enum MemorySpace
     /// Private memory space for each work item.
     /// </summary>
     Private
+}
 }

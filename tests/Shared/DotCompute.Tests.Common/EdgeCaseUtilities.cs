@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
-namespace DotCompute.Tests.Utilities;
+namespace DotCompute.Tests.Utilities
+{
 
 /// <summary>
 /// Utility methods for edge case testing across the DotCompute test suite.
@@ -578,4 +579,5 @@ public sealed class TempFileCollection : IDisposable
         _disposed = true;
         GC.SuppressFinalize(this);
     }
+}
 }

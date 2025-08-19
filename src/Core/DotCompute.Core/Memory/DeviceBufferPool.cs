@@ -6,7 +6,8 @@ using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Memory;
+namespace DotCompute.Core.Memory
+{
 
 /// <summary>
 /// Device-specific buffer pool optimized for P2P operations and memory management.
@@ -552,4 +553,4 @@ internal sealed class PooledMemoryBuffer : IMemoryBuffer
         _pool.ReturnBuffer(_underlyingBuffer, _originalSize);
         await ValueTask.CompletedTask;
     }
-}
+}}

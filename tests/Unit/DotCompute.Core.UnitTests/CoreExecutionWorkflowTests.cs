@@ -5,7 +5,8 @@ using Xunit;
 using NSubstitute;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for Core execution workflow and caching components.
@@ -288,4 +289,5 @@ public class CoreExecutionWorkflowTests
         var stats = manager.GetStatistics();
         Assert.Contains(kernelName, stats.KernelNames);
     }
+}
 }

@@ -5,7 +5,8 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class AcceleratorManagerTests
 {
@@ -293,4 +294,5 @@ public sealed class AcceleratorManagerTests
         await accel1.Received(1).DisposeAsync();
         await accel2.Received(1).DisposeAsync();
     }
+}
 }

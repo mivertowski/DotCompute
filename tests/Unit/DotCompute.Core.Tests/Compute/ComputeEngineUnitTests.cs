@@ -6,7 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit.Compute;
+namespace DotCompute.Tests.Unit.Compute
+{
 
 /// <summary>
 /// Comprehensive unit tests for ComputeEngine
@@ -470,4 +471,5 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
             GC.SuppressFinalize(this);
         }
     }
+}
 }

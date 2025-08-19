@@ -10,7 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Tests.Hardware
+{
 
 /// <summary>
 /// Comprehensive real hardware tests for CUDA backend on RTX 2000 Ada Gen
@@ -558,4 +559,5 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
         _loggerFactory?.Dispose();
         _disposed = true;
     }
+}
 }

@@ -12,7 +12,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Week 3 Working Integration Tests - Focused on testable APIs with solid Week 2 foundation.
@@ -441,4 +442,5 @@ public sealed class Week3WorkingIntegrationTests : IntegrationTestBase
     }
 
     #endregion
+}
 }

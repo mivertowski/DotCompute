@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Core.Compute;
+namespace DotCompute.Core.Compute
+{
 
 /// <summary>
 /// Context for kernel execution containing work dimensions and arguments.
@@ -42,4 +43,4 @@ public class KernelExecutionContext
     /// Performance hints for optimization.
     /// </summary>
     public Dictionary<string, object> PerformanceHints { get; set; } = [];
-}
+}}

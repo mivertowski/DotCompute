@@ -13,7 +13,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for kernel compilation and execution pipelines.
@@ -677,4 +678,5 @@ public class CompilationResult
     public TimeSpan ExecutionTime { get; set; }
     public ComputeBackendType TargetBackend { get; set; }
     public string? Error { get; set; }
+}
 }

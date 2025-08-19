@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.Types.Abstractions;
+namespace DotCompute.Algorithms.Types.Abstractions
+{
 
 /// <summary>
 /// Base interface for algorithm providers.
@@ -20,4 +21,4 @@ public interface IPluginAlgorithmProvider : IAlgorithmProvider
 {
     Task<bool> InitializeAsync(CancellationToken cancellationToken = default);
     Task DisposeAsync();
-}
+}}

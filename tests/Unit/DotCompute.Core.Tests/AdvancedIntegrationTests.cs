@@ -6,7 +6,8 @@ using DotCompute.Tests.Utilities.Kernels;
 using Xunit.Abstractions;
 using DotCompute.Tests.Utilities.Accelerators;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Advanced integration tests demonstrating real implementations working together
@@ -496,4 +497,5 @@ public sealed class AdvancedIntegrationTests : IAsyncLifetime
         _output.WriteLine($"    Assembly size: {hlslResult.Assembly.Length} chars");
         _output.WriteLine($"    Compile time: {_directComputeCompiler.AverageCompilationTimeMs:F2}ms");
     }
+}
 }

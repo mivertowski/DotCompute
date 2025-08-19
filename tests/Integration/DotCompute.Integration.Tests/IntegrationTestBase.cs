@@ -18,7 +18,8 @@ using Xunit.Abstractions;
 using MemoryOptions = DotCompute.Abstractions.MemoryOptions;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Base class for integration tests providing common infrastructure and utilities.
@@ -828,3 +829,4 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer
     }
 }
 
+}

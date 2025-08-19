@@ -4,7 +4,8 @@
 using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// AOT-safe code generator that uses pre-compiled delegates instead of Expression.Compile().
@@ -706,3 +707,4 @@ internal sealed class AotSafeCodeGenerator
     }
 }
 #pragma warning restore CA1822
+}

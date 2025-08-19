@@ -8,7 +8,8 @@ using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Kernels;
 
-namespace DotCompute.Backends.CPU.Optimization;
+namespace DotCompute.Backends.CPU.Optimization
+{
 
 /// <summary>
 /// Simplified Native AOT optimization layer that uses the existing AdvancedSimdPatterns
@@ -391,4 +392,5 @@ public static class NativeAotOptimizations
 
         return result;
     }
+}
 }

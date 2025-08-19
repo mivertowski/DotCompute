@@ -5,7 +5,8 @@ using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 using KernelDefinition = DotCompute.Abstractions.KernelDefinition;
 
-namespace DotCompute.Core;
+namespace DotCompute.Core
+{
 
 /// <summary>
 /// Represents a compute device capable of executing kernels.
@@ -637,4 +638,5 @@ public interface IMemoryTransferStats
     /// Gets total transfer time.
     /// </summary>
     public TimeSpan TotalTransferTime { get; }
+}
 }

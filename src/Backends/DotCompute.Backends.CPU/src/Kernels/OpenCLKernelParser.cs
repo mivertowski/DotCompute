@@ -4,7 +4,8 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// OpenCL kernel parser that identifies kernel types and extracts parameters.
@@ -88,4 +89,4 @@ internal class OpenCLKernelParser(ILogger logger)
 
         return parameters;
     }
-}
+}}

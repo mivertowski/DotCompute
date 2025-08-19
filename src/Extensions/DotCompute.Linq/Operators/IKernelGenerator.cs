@@ -4,7 +4,8 @@
 using System.Linq.Expressions;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Linq.Operators;
+namespace DotCompute.Linq.Operators
+{
 
 /// <summary>
 /// Interface for generating kernels from expressions and operation types.
@@ -290,4 +291,4 @@ internal class OpenCLKernelGenerator : IKernelGenerator
         
         return parameters.ToArray();
     }
-}
+}}

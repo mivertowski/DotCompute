@@ -13,7 +13,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Integration;
+namespace DotCompute.Tests.Hardware.Integration
+{
 
 /// <summary>
 /// Integration tests for CUDA host-device memory transfer operations
@@ -668,4 +669,5 @@ public sealed class CudaMemoryTransferTests : IDisposable
         _loggerFactory?.Dispose();
         GC.SuppressFinalize(this);
     }
+}
 }

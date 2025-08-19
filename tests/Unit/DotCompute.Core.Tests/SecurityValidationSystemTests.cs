@@ -7,7 +7,8 @@ using Moq;
 using Xunit;
 using System.Collections.ObjectModel;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Comprehensive tests for the kernel security validation system.
@@ -933,3 +934,4 @@ public sealed class DataLeakageRisk
 public enum DataLeakageType { SensitiveDataExposure, LoggingSensitiveData, UnencryptedTransmission }
 
 #endregion
+}

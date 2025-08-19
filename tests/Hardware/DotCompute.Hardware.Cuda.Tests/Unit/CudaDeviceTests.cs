@@ -9,7 +9,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Unit;
+namespace DotCompute.Tests.Hardware.Unit
+{
 
 /// <summary>
 /// Unit tests for CUDA device detection and properties validation
@@ -388,4 +389,5 @@ public sealed class CudaDeviceTests : IDisposable
         _loggerFactory?.Dispose();
         GC.SuppressFinalize(this);
     }
+}
 }

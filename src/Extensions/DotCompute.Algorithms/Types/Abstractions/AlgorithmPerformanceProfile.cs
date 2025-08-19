@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.Types.Abstractions;
+namespace DotCompute.Algorithms.Types.Abstractions
+{
 
 /// <summary>
 /// Performance profile information for an algorithm plugin.
@@ -85,4 +86,4 @@ public class AlgorithmPerformanceProfile
         var baseSizeAssumption = 1000; // Assume base measurement is for 1000 elements
         return MemoryRequirementMB * ((double)inputSize / baseSizeAssumption);
     }
-}
+}}

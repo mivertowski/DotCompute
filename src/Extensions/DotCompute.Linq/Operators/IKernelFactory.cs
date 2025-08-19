@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Linq.Operators;
+namespace DotCompute.Linq.Operators
+{
 
 /// <summary>
 /// Factory for creating compute kernels.
@@ -32,4 +33,4 @@ public interface IKernelFactory
     /// <param name="accelerator">The accelerator to query.</param>
     /// <returns>The supported kernel languages.</returns>
     IReadOnlyList<KernelLanguage> GetSupportedLanguages(IAccelerator accelerator);
-}
+}}

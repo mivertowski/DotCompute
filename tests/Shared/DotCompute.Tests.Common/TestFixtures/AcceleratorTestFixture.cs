@@ -2,7 +2,8 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests.Utilities.TestFixtures;
+namespace DotCompute.Tests.Utilities.TestFixtures
+{
 
 /// <summary>
 /// Shared test fixture for accelerator-based tests.
@@ -224,4 +225,5 @@ public sealed class HardwareFactAttribute : FactAttribute
             Skip = $"Test requires {requiredType} hardware which is not available";
         }
     }
+}
 }

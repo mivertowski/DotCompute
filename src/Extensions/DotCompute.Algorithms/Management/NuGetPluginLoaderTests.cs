@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 using NuGet.Packaging.Core;
 using NuGet.Versioning;
 
-namespace DotCompute.Algorithms.Management;
+namespace DotCompute.Algorithms.Management
+{
 
 /// <summary>
 /// Integration tests for NuGet plugin loader functionality.
@@ -655,4 +656,4 @@ public static class Program
             Environment.ExitCode = 1;
         }
     }
-}
+}}

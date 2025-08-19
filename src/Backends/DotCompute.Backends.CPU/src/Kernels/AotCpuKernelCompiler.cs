@@ -8,7 +8,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CPU backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// AOT-compatible CPU kernel compiler that uses pre-compiled delegates instead of dynamic IL emission.
@@ -470,4 +471,5 @@ internal static class VectorizedMath
             }
         }
     }
+}
 }

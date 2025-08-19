@@ -13,7 +13,8 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace DotCompute.Runtime;
+namespace DotCompute.Runtime
+{
 
 /// <summary>
 /// Extension methods for registering DotCompute Runtime services
@@ -228,4 +229,5 @@ public static class ServiceCollectionExtensions
         
         return services;
     }
+}
 }

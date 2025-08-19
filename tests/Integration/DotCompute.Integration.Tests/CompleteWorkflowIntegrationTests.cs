@@ -9,7 +9,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for complete end-to-end compute workflows.
@@ -640,4 +641,5 @@ __kernel void parallel_reduction(__global const float* input, __global float* re
         atomic_add_global(result, scratch[0]);
     }
 }";
+}
 }

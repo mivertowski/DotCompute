@@ -6,7 +6,8 @@ using System.Runtime.CompilerServices;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Execution;
+namespace DotCompute.Backends.CUDA.Execution
+{
 
 /// <summary>
 /// Advanced CUDA stream manager with RTX 2000 optimizations, priority scheduling, and graph-like execution patterns
@@ -923,4 +924,4 @@ public sealed class CudaExecutionPlan
 {
     public List<CudaExecutionLevel> Levels { get; set; } = new();
     public int TotalNodes { get; set; }
-}
+}}

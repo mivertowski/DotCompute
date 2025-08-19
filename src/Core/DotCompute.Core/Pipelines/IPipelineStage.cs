@@ -3,7 +3,8 @@
 
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Represents execution result for a pipeline stage.
@@ -301,4 +302,5 @@ public enum SynchronizationMode
     /// Custom synchronization logic.
     /// </summary>
     Custom
+}
 }

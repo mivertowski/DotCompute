@@ -8,7 +8,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public class GeneratedCodeValidationTests
 {
@@ -413,4 +414,5 @@ public class Special_Class_123
             line.Should().MatchRegex(@"^\s*///", "Documentation comments should be properly formatted");
         }
     }
+}
 }

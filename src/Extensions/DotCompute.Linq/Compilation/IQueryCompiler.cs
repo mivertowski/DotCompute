@@ -5,7 +5,8 @@ using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using DotCompute.Linq.Operators;
 
-namespace DotCompute.Linq.Compilation;
+namespace DotCompute.Linq.Compilation
+{
 
 /// <summary>
 /// Defines the interface for compiling LINQ expression trees into compute plans.
@@ -256,4 +257,4 @@ public class ExecutionConfiguration
     /// Gets or sets additional configuration parameters.
     /// </summary>
     public Dictionary<string, object> Parameters { get; set; } = [];
-}
+}}

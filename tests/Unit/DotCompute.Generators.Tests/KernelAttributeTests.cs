@@ -5,7 +5,8 @@ using DotCompute.Generators.Kernel;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public class KernelAttributeTests
 {
@@ -250,4 +251,5 @@ public class KernelAttributeTests
         var optimizationValue =(int)attribute.Optimizations;
         Assert.Equal(4 + 2 + 16, optimizationValue); // Vectorize + LoopUnrolling + FastMath
     }
+}
 }

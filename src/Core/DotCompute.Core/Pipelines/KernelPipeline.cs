@@ -3,7 +3,8 @@
 
 using System.Diagnostics;
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Default implementation of a kernel pipeline.
@@ -607,4 +608,5 @@ public sealed class KernelPipeline : IKernelPipeline
     }
 
     private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, nameof(KernelPipeline));
+}
 }

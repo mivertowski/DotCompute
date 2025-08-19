@@ -10,7 +10,8 @@ using System.Diagnostics;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CUDA.Memory;
+namespace DotCompute.Backends.CUDA.Memory
+{
 
 /// <summary>
 /// Advanced CUDA memory manager with pooling, pinned memory optimization, and async streams.
@@ -852,4 +853,5 @@ public sealed class CudaMemoryManager : ISyncMemoryManager, IDisposable
         Dispose(true);
         GC.SuppressFinalize(this);
     }
+}
 }

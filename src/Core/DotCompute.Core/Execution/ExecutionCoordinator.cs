@@ -4,7 +4,8 @@
 using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Execution;
+namespace DotCompute.Core.Execution
+{
 
 /// <summary>
 /// Coordinates execution across multiple devices with synchronization primitives.
@@ -414,4 +415,4 @@ public class CoordinationStatistics
     
     /// <summary>Gets or sets the number of active (incomplete) barriers.</summary>
     public int ActiveBarriers { get; set; }
-}
+}}

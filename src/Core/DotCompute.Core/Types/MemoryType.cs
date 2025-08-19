@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Core.Types;
+namespace DotCompute.Core.Types
+{
 
 /// <summary>
 /// Represents different types of memory available on compute devices.
@@ -25,4 +26,4 @@ public enum MemoryType
     /// Provides automatic migration between host and device as needed.
     /// </summary>
     Shared
-}
+}}

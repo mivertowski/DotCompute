@@ -6,7 +6,8 @@ using DotCompute.Core.Memory;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Core.Tests.Memory;
+namespace DotCompute.Core.Tests.Memory
+{
 
 /// <summary>
 /// Comprehensive unit tests for IMemoryManager interface and related types.
@@ -444,4 +445,5 @@ public sealed class MemoryInterfaceUsageTests
                 break;
         }
     }
+}
 }

@@ -4,7 +4,8 @@
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Types.Abstractions;
+namespace DotCompute.Algorithms.Types.Abstractions
+{
 
 /// <summary>
 /// Interface for algorithm plugins that can be dynamically loaded and executed.
@@ -95,4 +96,4 @@ public enum ComputeComplexity
     /// Very high computational complexity - exponential or factorial.
     /// </summary>
     VeryHigh
-}
+}}

@@ -5,7 +5,8 @@ using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Types.Security;
+namespace DotCompute.Algorithms.Types.Security
+{
 
 /// <summary>
 /// Validates Authenticode digital signatures on assemblies.
@@ -240,4 +241,4 @@ public enum TrustLevel
     /// Highly trusted signature.
     /// </summary>
     HighlyTrusted
-}
+}}

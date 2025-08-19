@@ -2,7 +2,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Basic API validation tests to ensure core functionality works
@@ -145,4 +146,5 @@ public class BasicApiTests
             args.Get(i).Should().Be(values[i]);
         }
     }
+}
 }

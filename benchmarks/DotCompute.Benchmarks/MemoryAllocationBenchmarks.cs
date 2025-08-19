@@ -5,7 +5,8 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks;
+namespace DotCompute.Benchmarks
+{
 
 [MemoryDiagnoser]
 [ThreadingDiagnoser]
@@ -122,4 +123,4 @@ internal sealed class MemoryAllocationBenchmarks : IDisposable
         }
         GC.SuppressFinalize(this);
     }
-}
+}}

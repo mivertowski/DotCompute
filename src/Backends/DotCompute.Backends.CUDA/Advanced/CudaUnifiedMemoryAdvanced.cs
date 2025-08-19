@@ -6,7 +6,8 @@ using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Advanced;
+namespace DotCompute.Backends.CUDA.Advanced
+{
 
 /// <summary>
 /// Advanced CUDA Unified Memory manager with optimizations
@@ -231,4 +232,4 @@ public sealed class CudaUnifiedMemoryAdvanced : IDisposable
             _disposed = true;
         }
     }
-}
+}}

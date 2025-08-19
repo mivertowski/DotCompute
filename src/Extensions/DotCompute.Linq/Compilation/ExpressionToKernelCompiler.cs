@@ -10,7 +10,8 @@ using DotCompute.Linq.Expressions;
 using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Compilation;
+namespace DotCompute.Linq.Compilation
+{
 
 /// <summary>
 /// Compiles LINQ expression trees into GPU kernels with support for expression fusion and optimization.
@@ -588,4 +589,4 @@ internal class ParameterTypeExtractor : ExpressionVisitor
         }
         return base.VisitParameter(node);
     }
-}
+}}

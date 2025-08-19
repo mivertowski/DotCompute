@@ -1,9 +1,10 @@
 using System.Collections.Concurrent;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Utilities.Memory;
+using DotCompute.Tests.Implementations.Memory;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Utilities.Accelerators;
+namespace DotCompute.Tests.Implementations.Accelerators
+{
 
 /// <summary>
 /// Test implementation of IAcceleratorManager for testing without GPU hardware.
@@ -425,4 +426,5 @@ public sealed class TestGpuAccelerator : IAccelerator
             GC.SuppressFinalize(this);
         }
     }
+}
 }

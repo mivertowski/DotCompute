@@ -3,7 +3,8 @@
 
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Represents a pipeline of kernel operations that can be executed in sequence or parallel.
@@ -619,3 +620,4 @@ public enum PipelineEventType
     MemoryReleased
 }
 
+}

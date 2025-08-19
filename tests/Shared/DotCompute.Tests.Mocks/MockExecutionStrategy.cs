@@ -1,6 +1,7 @@
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities;
+namespace DotCompute.Tests.Mocks
+{
 
 /// <summary>
 /// Mock execution strategy for testing parallel execution without real hardware.
@@ -445,4 +446,4 @@ public sealed class MockKernelManager
     public void Clear() => _kernels.Clear();
 
     public IEnumerable<string> KernelNames => _kernels.Keys;
-}
+}}

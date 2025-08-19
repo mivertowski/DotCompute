@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Represents a generic buffer that can be used for accelerator computations.
@@ -199,4 +200,5 @@ public enum MapMode
     /// Map without blocking (may return invalid mapping).
     /// </summary>
     NoWait = 8
+}
 }

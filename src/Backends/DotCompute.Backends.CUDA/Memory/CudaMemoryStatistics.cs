@@ -7,7 +7,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CUDA.Memory;
+namespace DotCompute.Backends.CUDA.Memory
+{
 
 /// <summary>
 /// Thread-safe statistics tracking for CUDA memory management with performance metrics
@@ -275,4 +276,4 @@ public sealed class CudaMemoryStatisticsSnapshot
                $"{AllocationCount} allocations ({AllocatedMemoryMB}MB), " +
                $"Peak: {PeakMemoryMB}MB, Transfers: {TotalTransferredMB}MB";
     }
-}
+}}

@@ -15,7 +15,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 
-namespace DotCompute.Algorithms.Management;
+namespace DotCompute.Algorithms.Management
+{
 
 /// <summary>
 /// Advanced plugin loader with security validation, dependency resolution, and sandboxing capabilities.
@@ -1143,4 +1144,4 @@ public sealed class PluginInfo
     /// Gets or sets the plugin description.
     /// </summary>
     public required string Description { get; set; }
-}
+}}

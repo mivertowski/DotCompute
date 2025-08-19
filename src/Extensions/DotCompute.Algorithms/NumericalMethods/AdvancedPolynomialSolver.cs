@@ -3,7 +3,8 @@
 
 using System.Numerics;
 
-namespace DotCompute.Algorithms.NumericalMethods;
+namespace DotCompute.Algorithms.NumericalMethods
+{
 
 /// <summary>
 /// Advanced polynomial root-finding algorithms with high numerical accuracy and stability.
@@ -417,4 +418,4 @@ public class PolynomialAnalysis
     public float LeadingCoefficient { get; init; }
     public (float lower, float upper) RootBounds { get; init; }
     public float ConditionNumber { get; init; }
-}
+}}

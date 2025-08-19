@@ -10,7 +10,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CUDA;
+namespace DotCompute.Backends.CUDA
+{
 
 /// <summary>
 /// CUDA accelerator implementation for GPU compute operations
@@ -235,4 +236,5 @@ public sealed class CudaAccelerator : IAccelerator, IDisposable
 
         _disposed = true;
     }
+}
 }

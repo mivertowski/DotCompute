@@ -2,7 +2,8 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Utilities.Pipelines;
+namespace DotCompute.Tests.Implementations.Pipelines
+{
 
 /// <summary>
 /// Test implementation of a kernel pipeline stage.
@@ -379,4 +380,5 @@ public sealed class TestStageMetrics : IStageMetrics
             _customMetrics[name] = value;
         }
     }
+}
 }

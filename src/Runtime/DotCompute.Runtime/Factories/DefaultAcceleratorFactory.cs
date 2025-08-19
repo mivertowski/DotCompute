@@ -9,7 +9,8 @@ using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 
-namespace DotCompute.Runtime.Factories;
+namespace DotCompute.Runtime.Factories
+{
 
 /// <summary>
 /// Default implementation of accelerator factory with comprehensive DI support
@@ -384,4 +385,4 @@ public class DefaultAcceleratorFactory : IAcceleratorFactory, IDisposable
         
         _disposed = true;
     }
-}
+}}

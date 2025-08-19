@@ -2,7 +2,8 @@ using DotCompute.Core.Aot;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public class CorePipelineTypesTests
 {
@@ -195,4 +196,5 @@ public class CorePipelineTypesTests
         Assert.Equal("Pipeline started", pipelineEvent.Message);
         Assert.Equal("stage1", pipelineEvent.StageId);
     }
+}
 }

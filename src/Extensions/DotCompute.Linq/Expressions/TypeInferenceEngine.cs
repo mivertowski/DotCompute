@@ -5,7 +5,8 @@ using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Expressions;
+namespace DotCompute.Linq.Expressions
+{
 
 /// <summary>
 /// Engine for inferring and validating types in LINQ expression trees for GPU compilation.
@@ -990,4 +991,4 @@ internal sealed class TypeInferenceVisitor : ExpressionVisitor
 
         return false;
     }
-}
+}}

@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Runtime.Services;
+namespace DotCompute.Runtime.Services
+{
 
 /// <summary>
 /// Service for managing memory pools across accelerators
@@ -267,4 +268,4 @@ public enum MemoryCoherenceStatus
     /// Memory is being synchronized
     /// </summary>
     Synchronizing
-}
+}}

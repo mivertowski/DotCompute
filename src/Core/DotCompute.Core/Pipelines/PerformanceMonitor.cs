@@ -4,7 +4,8 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Provides real-time performance monitoring for pipeline execution.
@@ -250,4 +251,5 @@ internal static class PerformanceMonitor
             public long StartAllocatedBytes;
         }
     }
+}
 }

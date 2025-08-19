@@ -3,7 +3,8 @@
 
 using System.Runtime.CompilerServices;
 
-namespace DotCompute.Algorithms.SignalProcessing;
+namespace DotCompute.Algorithms.SignalProcessing
+{
 
 /// <summary>
 /// Provides signal processing operations.
@@ -336,4 +337,4 @@ public static class SignalProcessor
             result[i] = paddedSignal[i].Real;
         }
     }
-}
+}}

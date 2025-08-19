@@ -8,7 +8,8 @@ using CompilationOptions = DotCompute.Abstractions.CompilationOptions;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 
-namespace DotCompute.Core.Execution;
+namespace DotCompute.Core.Execution
+{
 
 /// <summary>
 /// Global memory allocator and buffer manager for execution plans.
@@ -3305,4 +3306,4 @@ public sealed class ExecutionOptimizer
     }
 
     #endregion
-}
+}}

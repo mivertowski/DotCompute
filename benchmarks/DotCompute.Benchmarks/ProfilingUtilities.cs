@@ -1,7 +1,8 @@
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
-namespace DotCompute.Benchmarks;
+namespace DotCompute.Benchmarks
+{
 
 internal static class ProfilingUtilities
 {
@@ -194,4 +195,4 @@ Virtual Memory: {VirtualMemory / (1024 * 1024):N0} MB
 GC Heap: {GCHeapSize / (1024 * 1024):N0} MB
 Threads: {ThreadCount}, Handles: {HandleCount}";
     }
-}
+}}

@@ -4,7 +4,8 @@
 using System.Runtime.InteropServices;
 using DotCompute.Backends.Metal.Native;
 
-namespace DotCompute.Backends.Metal.Utilities;
+namespace DotCompute.Backends.Metal.Utilities
+{
 
 /// <summary>
 /// Utility functions for Metal backend operations.
@@ -169,4 +170,5 @@ public class MetalDeviceInfoWrapper
                $"\n  Memory: {(HasUnifiedMemory ? "Unified" : "Dedicated")} - {MetalUtilities.FormatBytes(MaxBufferLength)}" +
                $"\n  Max Threadgroup: {MaxThreadgroupSize}";
     }
+}
 }

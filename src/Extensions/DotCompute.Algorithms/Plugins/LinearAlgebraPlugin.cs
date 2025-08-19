@@ -8,7 +8,8 @@ using DotCompute.Algorithms.Types.Abstractions;
 using DotCompute.Algorithms.Types;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Plugins;
+namespace DotCompute.Algorithms.Plugins
+{
 
 /// <summary>
 /// Plugin for linear algebra operations on matrices and vectors.
@@ -227,4 +228,4 @@ public sealed class LinearAlgebraPlugin : AlgorithmPluginBase
         // Nothing to dispose currently
         return ValueTask.CompletedTask;
     }
-}
+}}

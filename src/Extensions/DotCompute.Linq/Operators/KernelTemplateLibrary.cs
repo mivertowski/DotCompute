@@ -4,7 +4,8 @@
 using DotCompute.Abstractions;
 using System.Text;
 
-namespace DotCompute.Linq.Operators;
+namespace DotCompute.Linq.Operators
+{
 
 /// <summary>
 /// Library of kernel templates for common operations.
@@ -355,4 +356,4 @@ public class SortKernelTemplate : IKernelTemplate
             IsOutput = param.Direction == ParameterDirection.Out || param.Direction == ParameterDirection.InOut
         };
     }
-}
+}}

@@ -3,7 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Utilities.TestInfrastructure;
+namespace DotCompute.Tests.Utilities.TestInfrastructure
+{
 
 /// <summary>
 /// Base class for performance benchmark tests
@@ -258,4 +259,5 @@ public record PerformanceComparisonResult(
     public bool IsFirstFaster => SpeedupRatio > 1.0;
     public TimeSpan TimeDifference => Result1.AverageTime - Result2.AverageTime;
     public double PercentageImprovement => (SpeedupRatio - 1.0) * 100.0;
+}
 }

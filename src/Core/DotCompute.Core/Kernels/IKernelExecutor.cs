@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Core.Kernels;
+namespace DotCompute.Core.Kernels
+{
 
 /// <summary>
 /// Interface for executing compiled kernels on accelerators.
@@ -453,4 +454,4 @@ public enum BottleneckType
     /// No significant bottleneck
     /// </summary>
     None
-}
+}}

@@ -3,7 +3,8 @@
 
 using DotCompute.Core.Kernels;
 
-namespace DotCompute.Algorithms.Kernels;
+namespace DotCompute.Algorithms.Kernels
+{
 
 /// <summary>
 /// Advanced GPU kernels for specialized linear algebra operations.
@@ -1710,3 +1711,4 @@ public class KernelConfiguration
 #endregion
 
 } // namespace DotCompute.Algorithms.Kernels
+}

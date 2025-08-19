@@ -3,7 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Plugins.Platform;
+namespace DotCompute.Plugins.Platform
+{
 
 /// <summary>
 /// Hardware abstraction layer that provides unified interface for different compute backends.
@@ -646,4 +647,4 @@ public class BackendBenchmark
     public required float ComputeThroughput { get; init; } // GFLOPS estimate
     public required float Latency { get; init; } // ms
     public required float PowerEfficiency { get; init; } // GFLOPS/W
-}
+}}

@@ -3,7 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA;
+namespace DotCompute.Backends.CUDA
+{
 
 public partial class CudaBackend
 {
@@ -168,4 +169,5 @@ public partial class CudaBackend
         Level = LogLevel.Information,
         Message = "  Unified Virtual Addressing: Supported")]
     private static partial void LogUnifiedAddressingSupported(ILogger logger);
+}
 }

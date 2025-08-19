@@ -3,7 +3,8 @@
 
 using DotCompute.Core.Kernels;
 
-namespace DotCompute.Algorithms.Kernels;
+namespace DotCompute.Algorithms.Kernels
+{
 
 /// <summary>
 /// GPU kernel templates for Householder transformations used in QR decomposition.
@@ -358,4 +359,4 @@ kernel void compute_householder_vector_metal(
             _ => throw new NotSupportedException($"Accelerator type {acceleratorType} not supported")
         };
     }
-}
+}}

@@ -3,7 +3,8 @@
 
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CPU.Accelerators;
+namespace DotCompute.Backends.CPU.Accelerators
+{
 
 /// <summary>
 /// High-performance logger message delegates for CpuCompiledKernel.
@@ -63,4 +64,5 @@ internal static partial class CpuCompiledKernelLoggerMessages
         Level = LogLevel.Debug,
         Message = "Custom kernel execution not supported for '{KernelName}', falling back to pattern matching")]
     public static partial void LogCustomKernelNotSupported(ILogger logger, string kernelName);
+}
 }

@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - AOT plugin registry uses dynamic logging
 
-namespace DotCompute.Plugins.Core;
+namespace DotCompute.Plugins.Core
+{
 
 /// <summary>
 /// AOT-compatible plugin registry that avoids reflection-based activation.
@@ -1113,4 +1114,5 @@ internal sealed class AotVulkanBackendPlugin : IBackendPlugin
         }
         _disposed = true;
     }
+}
 }

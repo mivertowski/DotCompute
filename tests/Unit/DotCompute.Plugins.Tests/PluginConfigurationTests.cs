@@ -5,7 +5,8 @@ using DotCompute.Plugins.Configuration;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for plugin configuration classes covering options, settings, and directory management.
@@ -523,4 +524,5 @@ public class PluginConfigurationIntegrationTests
         // Assert
         options.LoadTimeout.Should().Be(timeout);
     }
+}
 }

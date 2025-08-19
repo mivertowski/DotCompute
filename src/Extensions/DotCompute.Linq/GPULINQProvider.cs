@@ -12,7 +12,8 @@ using DotCompute.Linq.Operators;
 using Microsoft.Extensions.Logging;
 using ManagedCompiledKernel = DotCompute.Core.Kernels.ManagedCompiledKernel;
 
-namespace DotCompute.Linq;
+namespace DotCompute.Linq
+{
 
 /// <summary>
 /// Adapter to use ILogger GPULINQProvider as ILogger KernelManager.
@@ -764,4 +765,4 @@ internal class DataSizeEstimator : ExpressionVisitor
         
         return base.VisitConstant(node);
     }
-}
+}}

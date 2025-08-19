@@ -7,7 +7,8 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Linq;
 
-namespace DotCompute.Runtime.DependencyInjection;
+namespace DotCompute.Runtime.DependencyInjection
+{
 
 /// <summary>
 /// Implementation of plugin service provider with DI support
@@ -456,4 +457,4 @@ public class InjectAttribute : Attribute
 [AttributeUsage(AttributeTargets.Parameter)]
 public class OptionalAttribute : Attribute
 {
-}
+}}

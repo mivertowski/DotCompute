@@ -5,7 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Common.Hardware;
+namespace DotCompute.Tests.Common.Hardware
+{
 
 /// <summary>
 /// Factory for creating test hardware instances with preset configurations.
@@ -361,4 +362,5 @@ public enum DevicePerformance
     Low,
     Medium,
     High
+}
 }

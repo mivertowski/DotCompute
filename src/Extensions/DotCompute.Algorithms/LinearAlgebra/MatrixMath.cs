@@ -12,7 +12,8 @@ using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 using LinearAlgebraOp = DotCompute.Algorithms.LinearAlgebra.LinearAlgebraKernels.LinearAlgebraOperation;
 
-namespace DotCompute.Algorithms.LinearAlgebra;
+namespace DotCompute.Algorithms.LinearAlgebra
+{
 
 /// <summary>
 /// Provides high-performance matrix operations with GPU acceleration.
@@ -1751,4 +1752,4 @@ public static class MatrixMath
             return await Task.Run(() => ComputeJacobiSVD(matrix), cancellationToken).ConfigureAwait(false);
         }
     }
-}
+}}

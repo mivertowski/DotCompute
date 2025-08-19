@@ -4,7 +4,8 @@
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Advanced;
+namespace DotCompute.Backends.CUDA.Advanced
+{
 
 /// <summary>
 /// RTX 2000 Ada Lovelace generation specific optimizations and utilities
@@ -245,4 +246,4 @@ public sealed class ValidationResult
     public List<string> Warnings { get; set; } = new();
     public double Occupancy { get; set; }
     public int BlocksPerSM { get; set; }
-}
+}}

@@ -4,7 +4,8 @@
 using System.Collections.Concurrent;
 using DotCompute.Core.Memory;
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Default implementation of IPipelineMemoryManager.
@@ -538,4 +539,4 @@ internal sealed class MemoryPool : IDisposable
 
         _isDisposed = true;
     }
-}
+}}

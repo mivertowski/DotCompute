@@ -12,7 +12,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Integration;
+namespace DotCompute.Tests.Hardware.Integration
+{
 
 /// <summary>
 /// End-to-end integration tests for the complete CUDA pipeline
@@ -650,4 +651,5 @@ __global__ void {name}(float* input, float* output, int n)
         _loggerFactory?.Dispose();
         GC.SuppressFinalize(this);
     }
+}
 }

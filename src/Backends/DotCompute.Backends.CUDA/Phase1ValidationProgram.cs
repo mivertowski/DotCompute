@@ -4,7 +4,8 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Backends.CUDA;
+namespace DotCompute.Backends.CUDA
+{
 
 /// <summary>
 /// Simple program to validate Phase 1 CUDA backend implementation.
@@ -39,4 +40,4 @@ public static class Phase1ValidationProgram
             return 2;
         }
     }
-}
+}}

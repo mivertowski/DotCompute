@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Memory;
+namespace DotCompute.Memory
+{
 
 /// <summary>
 /// Represents a unified buffer that can exist on both host and device memory.
@@ -173,4 +174,5 @@ public enum BufferState
     /// Buffer is dirty on device (host copy is stale).
     /// </summary>
     DeviceDirty
+}
 }

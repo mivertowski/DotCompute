@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Abstractions;
+namespace DotCompute.Abstractions
+{
 
 /// <summary>
 /// Defines the interface for compiling kernels from source code or expressions.
@@ -271,4 +272,5 @@ public readonly struct CompilationMetadata(
                 (OptimizationNotes != null && other.OptimizationNotes != null && 
                  OptimizationNotes.SequenceEqual(other.OptimizationNotes)));
     }
+}
 }

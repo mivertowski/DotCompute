@@ -6,7 +6,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace DotCompute.Runtime.Services;
+namespace DotCompute.Runtime.Services
+{
 
 /// <summary>
 /// Hosted service for initializing the DotCompute runtime at application startup
@@ -80,4 +81,4 @@ public class RuntimeInitializationService : IHostedService
             throw;
         }
     }
-}
+}}

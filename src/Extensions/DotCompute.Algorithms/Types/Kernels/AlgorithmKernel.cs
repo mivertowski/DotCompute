@@ -1,7 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Algorithms.Types.Kernels;
+namespace DotCompute.Algorithms.Types.Kernels
+{
 
 /// <summary>
 /// Base class for algorithm kernels.
@@ -20,4 +21,4 @@ public sealed class KernelExecutionContext
 {
     public required object[] Parameters { get; init; }
     public CancellationToken CancellationToken { get; init; }
-}
+}}

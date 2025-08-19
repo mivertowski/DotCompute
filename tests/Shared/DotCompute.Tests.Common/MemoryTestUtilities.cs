@@ -6,7 +6,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using AbstractionsMemory = DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities;
+namespace DotCompute.Tests.Utilities
+{
 
 /// <summary>
 /// Monitors memory usage during test execution.
@@ -444,4 +445,5 @@ public static class RegressionDetector
         var memoryIncrease = (currentPeak - baselinePeak) / (double)baselinePeak * 100;
         return memoryIncrease > tolerancePercent;
     }
+}
 }

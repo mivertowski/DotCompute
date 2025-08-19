@@ -6,7 +6,8 @@ using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Core.Execution;
+namespace DotCompute.Core.Execution
+{
 
 /// <summary>
 /// Manages memory allocation and transfers across multiple GPU devices.
@@ -719,4 +720,4 @@ internal sealed class MockCompiledKernel : ICompiledKernel
     {
         // Nothing to dispose
     }
-}
+}}

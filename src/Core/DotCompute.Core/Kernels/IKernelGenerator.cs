@@ -5,7 +5,8 @@ using System.Linq.Expressions;
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution;
 
-namespace DotCompute.Core.Kernels;
+namespace DotCompute.Core.Kernels
+{
 
 /// <summary>
 /// Interface for generating GPU kernels from expressions or operations.
@@ -361,4 +362,4 @@ public enum CacheConfiguration
     /// Equal preference
     /// </summary>
     Equal
-}
+}}

@@ -11,7 +11,8 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// Base class for optimized kernel implementations.
@@ -497,4 +498,4 @@ internal class KernelParameter
     public string Name { get; set; } = string.Empty;
     public string Type { get; set; } = string.Empty;
     public bool IsGlobal { get; set; }
-}
+}}

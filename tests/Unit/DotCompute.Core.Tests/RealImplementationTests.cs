@@ -5,7 +5,8 @@ using Xunit.Abstractions;
 using DotCompute.Tests.Utilities.Accelerators;
 using DotCompute.Tests.Utilities.Memory;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Integration tests using real test implementations instead of mocks.
@@ -349,4 +350,5 @@ public sealed class RealImplementationTests : IAsyncLifetime
         await bufferResult.DisposeAsync();
         await vectorAddKernel.DisposeAsync();
     }
+}
 }

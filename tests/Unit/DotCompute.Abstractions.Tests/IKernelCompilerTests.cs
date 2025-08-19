@@ -6,7 +6,8 @@ using Xunit;
 using FluentAssertions;
 using System.Globalization;
 
-namespace DotCompute.Abstractions.Tests;
+namespace DotCompute.Abstractions.Tests
+{
 
 /// <summary>
 /// Comprehensive unit tests for the IKernelCompiler interface and related types.
@@ -600,4 +601,5 @@ public sealed class IKernelCompilerTests
     }
 
     #endregion
+}
 }

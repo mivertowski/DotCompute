@@ -7,7 +7,8 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Helper class for testing source generators.
@@ -352,4 +353,5 @@ public unsafe class {className}
         public const string PointerParams = "float* input, float* output, int length";
         public const string SpanParams = "Span<float> input, Span<float> output";
     }
+}
 }

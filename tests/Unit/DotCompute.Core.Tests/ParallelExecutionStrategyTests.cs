@@ -13,7 +13,8 @@ using CommunicationBackend = DotCompute.Core.Execution.CommunicationBackend;
 using MemoryOptimizationLevel = DotCompute.Core.Execution.MemoryOptimizationLevel;
 using StealingStrategy = DotCompute.Core.Execution.StealingStrategy;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Comprehensive tests for parallel execution strategies with mock GPUs that can run on CI/CD.
@@ -748,3 +749,4 @@ public sealed class WorkStealingOptions
 
 
 #endregion
+}

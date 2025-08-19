@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Execution;
+namespace DotCompute.Backends.CUDA.Execution
+{
 
 /// <summary>
 /// High-performance CUDA stream pool with priority-based allocation and automatic rebalancing
@@ -588,4 +589,4 @@ internal sealed class PoolReturnManager : IStreamReturnManager
 internal interface IStreamReturnManager
 {
     void ReturnStreamToPool(StreamId streamId);
-}
+}}

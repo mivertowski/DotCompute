@@ -5,7 +5,8 @@ using System.Collections.Concurrent;
 using DotCompute.Backends.CUDA.Native;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Execution;
+namespace DotCompute.Backends.CUDA.Execution
+{
 
 /// <summary>
 /// High-performance CUDA event pool with separate pools for timing and synchronization events
@@ -562,4 +563,4 @@ public sealed class CudaEventPoolStatistics
     public long ActiveEvents { get; set; }
     public double PoolUtilization { get; set; }
     public double AverageAcquireCount { get; set; }
-}
+}}

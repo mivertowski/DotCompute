@@ -4,7 +4,8 @@
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA.Native;
 
-namespace DotCompute.Backends.CUDA;
+namespace DotCompute.Backends.CUDA
+{
 
 /// <summary>
 /// Manages CUDA context lifecycle and operations
@@ -124,4 +125,5 @@ public sealed class CudaContext : IDisposable
 
         _disposed = true;
     }
+}
 }

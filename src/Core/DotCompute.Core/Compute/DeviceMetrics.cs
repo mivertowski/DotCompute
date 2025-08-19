@@ -5,7 +5,8 @@ using DotCompute.Core.Aot;
 using DotCompute.Core.Execution;
 using PipelineMonitor = DotCompute.Core.Pipelines.PerformanceMonitor;
 
-namespace DotCompute.Core.Compute;
+namespace DotCompute.Core.Compute
+{
 
 /// <summary>
 /// Default implementation of device metrics.
@@ -179,4 +180,5 @@ public class MemoryTransferStats : IMemoryTransferStats
             _totalTransferTimeMs = 0;
         }
     }
+}
 }

@@ -7,7 +7,8 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Execution;
+namespace DotCompute.Linq.Execution
+{
 
 /// <summary>
 /// Implements caching for compiled query plans and results.
@@ -325,4 +326,4 @@ public class QueryCacheOptions
     /// Gets or sets a value indicating whether to enable cache statistics.
     /// </summary>
     public bool EnableStatistics { get; set; } = true;
-}
+}}

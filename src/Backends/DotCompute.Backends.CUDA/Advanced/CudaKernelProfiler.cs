@@ -10,7 +10,8 @@ using DotCompute.Backends.CUDA.Native;
 using DotCompute.Backends.CUDA.Compilation;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Advanced;
+namespace DotCompute.Backends.CUDA.Advanced
+{
 
 /// <summary>
 /// Advanced kernel profiler for CUDA with RTX 2000 Ada optimizations
@@ -424,4 +425,4 @@ internal sealed class KernelProfileData
     public ProfilingStatistics Statistics { get; set; } = new();
     public OccupancyMetrics Occupancy { get; set; } = new();
     public DateTime LastProfiled { get; set; }
-}
+}}

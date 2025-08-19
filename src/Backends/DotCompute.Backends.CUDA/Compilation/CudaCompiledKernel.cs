@@ -9,7 +9,8 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - CUDA backend has dynamic logging requirements
 
-namespace DotCompute.Backends.CUDA.Compilation;
+namespace DotCompute.Backends.CUDA.Compilation
+{
 
 /// <summary>
 /// Represents a compiled CUDA kernel ready for execution
@@ -261,4 +262,5 @@ public sealed class CudaCompiledKernel : ICompiledKernel, IDisposable
         
         _disposed = true;
     }
+}
 }

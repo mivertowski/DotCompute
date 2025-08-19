@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Core.Extensions;
+namespace DotCompute.Core.Extensions
+{
 
 /// <summary>
 /// Extension methods for IMemoryBuffer.
@@ -57,4 +58,4 @@ public static class MemoryBufferExtensions
     {
         return buffer.CopyToHostAsync<T>(data, offset, cancellationToken);
     }
-}
+}}

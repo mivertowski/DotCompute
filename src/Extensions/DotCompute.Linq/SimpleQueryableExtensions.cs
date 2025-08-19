@@ -5,7 +5,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Linq;
+namespace DotCompute.Linq
+{
 
 /// <summary>
 /// Extension methods for creating GPU-accelerated LINQ queries using the simple provider.
@@ -108,4 +109,4 @@ public static class SimpleQueryableExtensions
         ArgumentNullException.ThrowIfNull(source);
         return source.Average();
     }
-}
+}}

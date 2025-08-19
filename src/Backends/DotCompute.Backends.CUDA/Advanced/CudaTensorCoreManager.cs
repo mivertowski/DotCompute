@@ -7,7 +7,8 @@ using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Advanced;
+namespace DotCompute.Backends.CUDA.Advanced
+{
 
 /// <summary>
 /// Manager for CUDA Tensor Core operations (RTX 2000 Ada specific)
@@ -729,4 +730,4 @@ public enum CudaTensorFormat
     NHWC,   // Batch, Height, Width, Channels
     CHW,    // Channels, Height, Width
     HWC     // Height, Width, Channels
-}
+}}

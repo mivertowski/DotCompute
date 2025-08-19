@@ -7,7 +7,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public class SourceGeneratorHelpersTests
 {
@@ -421,4 +422,5 @@ public abstract void AbstractMethod();";
         var syntaxTree = CSharpSyntaxTree.ParseText(source);
         return syntaxTree.GetRoot().DescendantNodes().OfType<MethodDeclarationSyntax>().First();
     }
+}
 }

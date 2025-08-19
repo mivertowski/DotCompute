@@ -11,7 +11,8 @@ using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Linq.Tests;
+namespace DotCompute.Linq.Tests
+{
 
 /// <summary>
 /// Comprehensive test of the LINQ-to-GPU implementation.
@@ -449,4 +450,4 @@ internal class MockComputeStage : IComputeStage
     public IReadOnlyList<string> InputBuffers { get; init; } = [];
     public string OutputBuffer { get; init; } = string.Empty;
     public ExecutionConfiguration Configuration { get; init; } = new();
-}
+}}

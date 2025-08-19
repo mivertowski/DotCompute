@@ -8,7 +8,8 @@ using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Advanced;
+namespace DotCompute.Backends.CUDA.Advanced
+{
 
 /// <summary>
 /// Advanced CUDA features for RTX 2000 Ada: Cooperative Groups, Dynamic Parallelism, Unified Memory
@@ -523,4 +524,4 @@ public sealed class CudaTensorCoreMetrics
     public double EfficiencyScore { get; set; }
     public double Utilization { get; set; }
     public double ThroughputTFLOPS { get; set; }
-}
+}}

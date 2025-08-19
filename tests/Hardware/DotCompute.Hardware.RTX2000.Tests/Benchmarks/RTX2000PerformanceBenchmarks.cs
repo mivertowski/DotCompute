@@ -6,7 +6,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Benchmarks;
+namespace DotCompute.Tests.Hardware.Benchmarks
+{
 
 /// <summary>
 /// Comprehensive performance benchmarks for RTX 2000 Ada Generation GPU.
@@ -730,4 +731,5 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
+}
 }

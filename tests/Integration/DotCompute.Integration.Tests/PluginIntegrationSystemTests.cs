@@ -16,7 +16,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Tests.Integration
+{
 
 /// <summary>
 /// Integration tests for plugin system integration with core DotCompute functionality.
@@ -780,4 +781,5 @@ public sealed class ResourceCleanupResult
     public bool CleanupSuccess { get; set; }
     public bool MemoryLeaksDetected { get; set; }
     public string? Error { get; set; }
+}
 }

@@ -14,7 +14,8 @@ using NSubstitute;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 /// <summary>
 /// Tests for the PluginSystem class covering plugin loading, unloading, and lifecycle management.
@@ -403,4 +404,5 @@ public sealed class PluginSystemTests : IDisposable
         GC.SuppressFinalize(this);
     }
     }
+}
 }

@@ -9,7 +9,8 @@ using ManagedCompiledKernel = DotCompute.Core.Kernels.ManagedCompiledKernel;
 using DotCompute.Memory;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Plugins;
+namespace DotCompute.Algorithms.Plugins
+{
 
 /// <summary>
 /// Adapter to use ILogger VectorAdditionPlugin as ILogger KernelManager.
@@ -396,4 +397,4 @@ public sealed partial class VectorAdditionPlugin : AlgorithmPluginBase
     private void LogGPUExecutionFailed(string reason) => Log.GPUExecutionFailed(Logger, reason);
 
     #endregion
-}
+}}

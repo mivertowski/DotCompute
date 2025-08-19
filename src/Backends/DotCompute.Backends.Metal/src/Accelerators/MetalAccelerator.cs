@@ -11,7 +11,8 @@ using Microsoft.Extensions.Options;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
-namespace DotCompute.Backends.Metal.Accelerators;
+namespace DotCompute.Backends.Metal.Accelerators
+{
 
 /// <summary>
 /// Metal-based compute accelerator for macOS and iOS devices.
@@ -321,4 +322,5 @@ public class MetalAcceleratorOptions
     /// Default is 16.
     /// </summary>
     public int CommandBufferCacheSize { get; set; } = 16;
+}
 }

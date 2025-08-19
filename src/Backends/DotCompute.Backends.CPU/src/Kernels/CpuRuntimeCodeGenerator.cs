@@ -3,7 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Backends.CPU.Kernels;
+namespace DotCompute.Backends.CPU.Kernels
+{
 
 /// <summary>
 /// Generates CPU code from kernel representations.
@@ -57,4 +58,5 @@ internal static class CpuRuntimeCodeGenerator
 
         return compiledCode;
     }
+}
 }

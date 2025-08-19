@@ -6,7 +6,8 @@ using DotCompute.Algorithms.SignalProcessing;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Algorithms.Examples;
+namespace DotCompute.Algorithms.Examples
+{
 
 /// <summary>
 /// Demonstrates usage of GPU-accelerated convolution operations.
@@ -449,4 +450,4 @@ internal static class RandomExtensions
 
         return mean + stdDev * GenerateStandardNormal(random);
     }
-}
+}}

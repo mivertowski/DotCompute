@@ -2,7 +2,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Tests.Unit
+{
 
 public sealed class CompilationOptionsTests
 {
@@ -106,4 +107,5 @@ public sealed class CompilationOptionsTests
         // Assert
         options.AdditionalFlags.Should().BeEmpty();
     }
+}
 }

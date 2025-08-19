@@ -5,7 +5,8 @@ using DotCompute.Core.Kernels;
 using DotCompute.Algorithms.Types.Kernels;
 using System.Text;
 
-namespace DotCompute.Algorithms;
+namespace DotCompute.Algorithms
+{
 
 /// <summary>
 /// Comprehensive GPU kernel library for linear algebra operations.
@@ -1120,4 +1121,4 @@ public class AdaptiveKernelConfig
 
 #endregion
 
-} // namespace DotCompute.Algorithms
+} // namespace DotCompute.Algorithms}

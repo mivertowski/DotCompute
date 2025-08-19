@@ -5,7 +5,8 @@ using System.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Samples.GettingStarted;
+namespace DotCompute.Samples.GettingStarted
+{
 
 internal sealed partial class Program
 {
@@ -97,4 +98,5 @@ internal sealed partial class Program
     private static partial void LogActual(ILogger logger, string actual);
 
     #endregion
+}
 }

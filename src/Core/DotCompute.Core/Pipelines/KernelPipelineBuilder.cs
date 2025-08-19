@@ -3,7 +3,8 @@
 
 using ICompiledKernel = DotCompute.Abstractions.ICompiledKernel;
 
-namespace DotCompute.Core.Pipelines;
+namespace DotCompute.Core.Pipelines
+{
 
 /// <summary>
 /// Builder for creating kernel pipelines with a fluent API.
@@ -344,4 +345,5 @@ internal sealed class ParallelStageBuilder : IParallelStageBuilder
             _synchronizationMode,
             _hasBarrier);
     }
+}
 }

@@ -11,7 +11,8 @@ using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Hardware.Utilities;
+namespace DotCompute.Tests.Hardware.Utilities
+{
 
 /// <summary>
 /// Utility classes and methods for CUDA testing
@@ -502,4 +503,5 @@ public sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string message) : base(message) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
+}
 }
