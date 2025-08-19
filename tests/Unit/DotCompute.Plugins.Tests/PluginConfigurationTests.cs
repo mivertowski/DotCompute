@@ -5,8 +5,8 @@ using DotCompute.Plugins.Configuration;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Tests for plugin configuration classes covering options, settings, and directory management.
@@ -21,22 +21,22 @@ public sealed class PluginOptionsTests
 
         // Assert
         Assert.Null(options.PluginsDirectory);
-        options.EnableHotReload.Should().BeFalse();
-        options.IsolatePlugins.Should().BeTrue();
-        options.MaxConcurrentLoads.Should().Be(4);
-        options.LoadTimeout.Should().Be(TimeSpan.FromSeconds(30));
-        options.IsInitialized.Should().BeFalse();
+        _ = options.EnableHotReload.Should().BeFalse();
+        _ = options.IsolatePlugins.Should().BeTrue();
+        _ = options.MaxConcurrentLoads.Should().Be(4);
+        _ = options.LoadTimeout.Should().Be(TimeSpan.FromSeconds(30));
+        _ = options.IsInitialized.Should().BeFalse();
 
-        options.SharedAssemblies.Should().NotBeEmpty();
-        options.SharedAssemblies.Should().Contain("DotCompute.Core");
-        options.SharedAssemblies.Should().Contain("DotCompute.Plugins");
-        options.SharedAssemblies.Should().Contain("Microsoft.Extensions.DependencyInjection.Abstractions");
+        _ = options.SharedAssemblies.Should().NotBeEmpty();
+        _ = options.SharedAssemblies.Should().Contain("DotCompute.Core");
+        _ = options.SharedAssemblies.Should().Contain("DotCompute.Plugins");
+        _ = options.SharedAssemblies.Should().Contain("Microsoft.Extensions.DependencyInjection.Abstractions");
 
-        options.Plugins.Should().NotBeNull();
-        options.Plugins.Should().BeEmpty();
+        _ = options.Plugins.Should().NotBeNull();
+        _ = options.Plugins.Should().BeEmpty();
 
-        options.PluginDirectories.Should().NotBeNull();
-        options.PluginDirectories.Should().BeEmpty();
+        _ = options.PluginDirectories.Should().NotBeNull();
+        _ = options.PluginDirectories.Should().BeEmpty();
     }
 
     [Fact]
@@ -50,7 +50,7 @@ public sealed class PluginOptionsTests
         options.PluginsDirectory = directory;
 
         // Assert
-        options.PluginsDirectory.Should().Be(directory);
+        _ = options.PluginsDirectory.Should().Be(directory);
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class PluginOptionsTests
         options.EnableHotReload = true;
 
         // Assert
-        options.EnableHotReload.Should().BeTrue();
+        _ = options.EnableHotReload.Should().BeTrue();
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public sealed class PluginOptionsTests
         options.IsolatePlugins = false;
 
         // Assert
-        options.IsolatePlugins.Should().BeFalse();
+        _ = options.IsolatePlugins.Should().BeFalse();
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public sealed class PluginOptionsTests
         options.MaxConcurrentLoads = 8;
 
         // Assert
-        options.MaxConcurrentLoads.Should().Be(8);
+        _ = options.MaxConcurrentLoads.Should().Be(8);
     }
 
     [Fact]
@@ -103,7 +103,7 @@ public sealed class PluginOptionsTests
         options.LoadTimeout = timeout;
 
         // Assert
-        options.LoadTimeout.Should().Be(timeout);
+        _ = options.LoadTimeout.Should().Be(timeout);
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public sealed class PluginOptionsTests
         options.IsInitialized = true;
 
         // Assert
-        options.IsInitialized.Should().BeTrue();
+        _ = options.IsInitialized.Should().BeTrue();
     }
 
     [Fact]
@@ -127,11 +127,11 @@ public sealed class PluginOptionsTests
 
         // Act
         options.SharedAssemblies.Add("CustomAssembly");
-        options.SharedAssemblies.Remove("DotCompute.Core");
+        _ = options.SharedAssemblies.Remove("DotCompute.Core");
 
         // Assert
-        options.SharedAssemblies.Should().Contain("CustomAssembly");
-        options.SharedAssemblies.Should().NotContain("DotCompute.Core");
+        _ = options.SharedAssemblies.Should().Contain("CustomAssembly");
+        _ = options.SharedAssemblies.Should().NotContain("DotCompute.Core");
     }
 
     [Fact]
@@ -150,8 +150,8 @@ public sealed class PluginOptionsTests
         options.Plugins["test-plugin"] = pluginConfig;
 
         // Assert
-        options.Plugins.Should().ContainKey("test-plugin");
-        options.Plugins["test-plugin"].Should().BeSameAs(pluginConfig);
+        _ = options.Plugins.Should().ContainKey("test-plugin");
+        _ = options.Plugins["test-plugin"].Should().BeSameAs(pluginConfig);
     }
 
     [Fact]
@@ -165,9 +165,9 @@ public sealed class PluginOptionsTests
         options.PluginDirectories.Add("/path/to/plugins2");
 
         // Assert
-        options.PluginDirectories.Count.Should().Be(2);
-        options.PluginDirectories.Should().Contain("/path/to/plugins1");
-        options.PluginDirectories.Should().Contain("/path/to/plugins2");
+        _ = options.PluginDirectories.Count.Should().Be(2);
+        _ = options.PluginDirectories.Should().Contain("/path/to/plugins1");
+        _ = options.PluginDirectories.Should().Contain("/path/to/plugins2");
     }
 
     [Theory]
@@ -183,7 +183,7 @@ public sealed class PluginOptionsTests
         options.MaxConcurrentLoads = maxLoads;
 
         // Assert
-        options.MaxConcurrentLoads.Should().Be(maxLoads);
+        _ = options.MaxConcurrentLoads.Should().Be(maxLoads);
     }
 
     [Theory]
@@ -196,7 +196,7 @@ public sealed class PluginOptionsTests
         // Act & Assert - No validation in the class, so negative values are allowed
         Action act = () => options.MaxConcurrentLoads = maxLoads;
         act(); // Should not throw
-        options.MaxConcurrentLoads.Should().Be(maxLoads);
+        _ = options.MaxConcurrentLoads.Should().Be(maxLoads);
     }
 }
 
@@ -212,11 +212,11 @@ public class PluginConfigTests
         var config = new PluginConfig();
 
         // Assert
-        config.AssemblyPath.Should().Be("");
-        config.TypeName.Should().Be("");
-        config.Enabled.Should().BeTrue();
-        config.Settings.Should().NotBeNull();
-        config.Settings.Should().BeEmpty();
+        _ = config.AssemblyPath.Should().Be("");
+        _ = config.TypeName.Should().Be("");
+        _ = config.Enabled.Should().BeTrue();
+        _ = config.Settings.Should().NotBeNull();
+        _ = config.Settings.Should().BeEmpty();
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public class PluginConfigTests
         config.AssemblyPath = path;
 
         // Assert
-        config.AssemblyPath.Should().Be(path);
+        _ = config.AssemblyPath.Should().Be(path);
     }
 
     [Fact]
@@ -244,7 +244,7 @@ public class PluginConfigTests
         config.TypeName = typeName;
 
         // Assert
-        config.TypeName.Should().Be(typeName);
+        _ = config.TypeName.Should().Be(typeName);
     }
 
     [Fact]
@@ -257,7 +257,7 @@ public class PluginConfigTests
         config.Enabled = false;
 
         // Assert
-        config.Enabled.Should().BeFalse();
+        _ = config.Enabled.Should().BeFalse();
     }
 
     [Fact]
@@ -273,11 +273,11 @@ public class PluginConfigTests
         config.Settings["DoubleSetting"] = 3.14;
 
         // Assert
-        config.Settings.Count.Should().Be(4);
-        config.Settings["StringSetting"].Should().Be("test value");
-        config.Settings["IntSetting"].Should().Be(42);
-        config.Settings["BoolSetting"].Should().Be(true);
-        config.Settings["DoubleSetting"].Should().Be(3.14);
+        _ = config.Settings.Count.Should().Be(4);
+        _ = config.Settings["StringSetting"].Should().Be("test value");
+        _ = config.Settings["IntSetting"].Should().Be(42);
+        _ = config.Settings["BoolSetting"].Should().Be(true);
+        _ = config.Settings["DoubleSetting"].Should().Be(3.14);
     }
 
     [Fact]
@@ -293,8 +293,8 @@ public class PluginConfigTests
         config.Settings["ArrayObject"] = arrayObject;
 
         // Assert
-        config.Settings["ComplexObject"].Should().Be(complexObject);
-        config.Settings["ArrayObject"].Should().Be(arrayObject);
+        _ = config.Settings["ComplexObject"].Should().Be(complexObject);
+        _ = config.Settings["ArrayObject"].Should().Be(arrayObject);
     }
 
     [Fact]
@@ -308,7 +308,7 @@ public class PluginConfigTests
         config.Settings.Clear();
 
         // Assert
-        config.Settings.Should().BeEmpty();
+        _ = config.Settings.Should().BeEmpty();
     }
 
     [Fact]
@@ -321,8 +321,8 @@ public class PluginConfigTests
         config.Settings["NullValue"] = null!;
 
         // Assert
-        config.Settings.Should().ContainKey("NullValue");
-        config.Settings["NullValue"].Should().BeNull();
+        _ = config.Settings.Should().ContainKey("NullValue");
+        _ = config.Settings["NullValue"].Should().BeNull();
     }
 
     [Theory]
@@ -337,7 +337,7 @@ public class PluginConfigTests
         config.AssemblyPath = path!;
 
         // Assert
-        config.AssemblyPath.Should().Be(path ?? "");
+        _ = config.AssemblyPath.Should().Be(path ?? "");
     }
 
     [Theory]
@@ -352,7 +352,7 @@ public class PluginConfigTests
         config.TypeName = typeName!;
 
         // Assert
-        config.TypeName.Should().Be(typeName ?? "");
+        _ = config.TypeName.Should().Be(typeName ?? "");
     }
 
     [Fact]
@@ -365,23 +365,23 @@ public class PluginConfigTests
             TypeName = "MyCompany.MyPlugin.Backend",
             Enabled = true,
             Settings =
-            {
-                ["MaxThreads"] = 8,
-                ["CacheSizeBytes"] = 1024 * 1024,
-                ["EnableLogging"] = true,
-                ["LogLevel"] = "Information"
-            }
+        {
+            ["MaxThreads"] = 8,
+            ["CacheSizeBytes"] = 1024 * 1024,
+            ["EnableLogging"] = true,
+            ["LogLevel"] = "Information"
+        }
         };
 
         // Assert
-        config.AssemblyPath.Should().Be("/path/to/MyPlugin.dll");
-        config.TypeName.Should().Be("MyCompany.MyPlugin.Backend");
-        config.Enabled.Should().BeTrue();
-        config.Settings.Count.Should().Be(4);
-        config.Settings["MaxThreads"].Should().Be(8);
-        config.Settings["CacheSizeBytes"].Should().Be(1024 * 1024);
-        config.Settings["EnableLogging"].Should().Be(true);
-        config.Settings["LogLevel"].Should().Be("Information");
+        _ = config.AssemblyPath.Should().Be("/path/to/MyPlugin.dll");
+        _ = config.TypeName.Should().Be("MyCompany.MyPlugin.Backend");
+        _ = config.Enabled.Should().BeTrue();
+        _ = config.Settings.Count.Should().Be(4);
+        _ = config.Settings["MaxThreads"].Should().Be(8);
+        _ = config.Settings["CacheSizeBytes"].Should().Be(1024 * 1024);
+        _ = config.Settings["EnableLogging"].Should().Be(true);
+        _ = config.Settings["LogLevel"].Should().Be("Information");
     }
 
     [Fact]
@@ -397,8 +397,8 @@ public class PluginConfigTests
         var settings2 = config2.Settings;
 
         // Assert
-        settings1.Should().BeSameAs(settings1Again);
-        settings1.Should().NotBeSameAs(settings2);
+        _ = settings1.Should().BeSameAs(settings1Again);
+        _ = settings1.Should().NotBeSameAs(settings2);
     }
 }
 
@@ -419,10 +419,10 @@ public class PluginConfigurationIntegrationTests
             TypeName = "DotCompute.Backends.CPU.CpuBackendPlugin",
             Enabled = true,
             Settings =
-            {
-                ["MaxThreads"] = Environment.ProcessorCount,
-                ["EnableSIMD"] = true
-            }
+        {
+            ["MaxThreads"] = Environment.ProcessorCount,
+            ["EnableSIMD"] = true
+        }
         };
 
         var cudaConfig = new PluginConfig
@@ -431,10 +431,10 @@ public class PluginConfigurationIntegrationTests
             TypeName = "DotCompute.Backends.CUDA.CudaBackendPlugin",
             Enabled = false, // Disabled by default
             Settings =
-            {
-                ["DeviceId"] = 0,
-                ["MemoryPoolSize"] = 512 * 1024 * 1024 // 512MB
-            }
+        {
+            ["DeviceId"] = 0,
+            ["MemoryPoolSize"] = 512 * 1024 * 1024 // 512MB
+        }
         };
 
         // Act
@@ -446,19 +446,19 @@ public class PluginConfigurationIntegrationTests
         options.MaxConcurrentLoads = 2;
 
         // Assert
-        options.Plugins.Count.Should().Be(2);
-        options.Plugins["cpu-backend"].Should().BeSameAs(cpuConfig);
-        options.Plugins["cuda-backend"].Should().BeSameAs(cudaConfig);
-        options.PluginDirectories.Count.Should().Be(2);
-        options.EnableHotReload.Should().BeTrue();
-        options.MaxConcurrentLoads.Should().Be(2);
+        _ = options.Plugins.Count.Should().Be(2);
+        _ = options.Plugins["cpu-backend"].Should().BeSameAs(cpuConfig);
+        _ = options.Plugins["cuda-backend"].Should().BeSameAs(cudaConfig);
+        _ = options.PluginDirectories.Count.Should().Be(2);
+        _ = options.EnableHotReload.Should().BeTrue();
+        _ = options.MaxConcurrentLoads.Should().Be(2);
 
         // Verify individual plugin configurations
-        cpuConfig.Enabled.Should().BeTrue();
-        cpuConfig.Settings["MaxThreads"].Should().Be(Environment.ProcessorCount);
+        _ = cpuConfig.Enabled.Should().BeTrue();
+        _ = cpuConfig.Settings["MaxThreads"].Should().Be(Environment.ProcessorCount);
 
-        cudaConfig.Enabled.Should().BeFalse();
-        cudaConfig.Settings["MemoryPoolSize"].Should().Be(512 * 1024 * 1024);
+        _ = cudaConfig.Enabled.Should().BeFalse();
+        _ = cudaConfig.Settings["MemoryPoolSize"].Should().Be(512 * 1024 * 1024);
     }
 
     [Fact]
@@ -468,11 +468,11 @@ public class PluginConfigurationIntegrationTests
         var options = new PluginOptions();
 
         // Act & Assert
-        options.SharedAssemblies.Should().Contain("DotCompute.Core");
-        options.SharedAssemblies.Should().Contain("DotCompute.Plugins");
-        options.SharedAssemblies.Should().Contain("Microsoft.Extensions.DependencyInjection.Abstractions");
-        options.SharedAssemblies.Should().Contain("Microsoft.Extensions.Logging.Abstractions");
-        options.SharedAssemblies.Should().Contain("Microsoft.Extensions.Configuration.Abstractions");
+        _ = options.SharedAssemblies.Should().Contain("DotCompute.Core");
+        _ = options.SharedAssemblies.Should().Contain("DotCompute.Plugins");
+        _ = options.SharedAssemblies.Should().Contain("Microsoft.Extensions.DependencyInjection.Abstractions");
+        _ = options.SharedAssemblies.Should().Contain("Microsoft.Extensions.Logging.Abstractions");
+        _ = options.SharedAssemblies.Should().Contain("Microsoft.Extensions.Configuration.Abstractions");
     }
 
     [Fact]
@@ -484,12 +484,12 @@ public class PluginConfigurationIntegrationTests
 
         // Act
         options.SharedAssemblies.Add("Custom.Shared.Assembly");
-        options.SharedAssemblies.Remove("Microsoft.Extensions.Configuration.Abstractions");
+        _ = options.SharedAssemblies.Remove("Microsoft.Extensions.Configuration.Abstractions");
 
         // Assert
-        options.SharedAssemblies.Count.Should().Be(originalCount); // +1 -1 = same count
-        options.SharedAssemblies.Should().Contain("Custom.Shared.Assembly");
-        options.SharedAssemblies.Should().NotContain("Microsoft.Extensions.Configuration.Abstractions");
+        _ = options.SharedAssemblies.Count.Should().Be(originalCount); // +1 -1 = same count
+        _ = options.SharedAssemblies.Should().Contain("Custom.Shared.Assembly");
+        _ = options.SharedAssemblies.Should().NotContain("Microsoft.Extensions.Configuration.Abstractions");
     }
 
     [Theory]
@@ -505,7 +505,7 @@ public class PluginConfigurationIntegrationTests
         options.MaxConcurrentLoads = maxLoads;
 
         // Assert
-        options.MaxConcurrentLoads.Should().Be(maxLoads);
+        _ = options.MaxConcurrentLoads.Should().Be(maxLoads);
     }
 
     [Theory]
@@ -522,7 +522,6 @@ public class PluginConfigurationIntegrationTests
         options.LoadTimeout = timeout;
 
         // Assert
-        options.LoadTimeout.Should().Be(timeout);
+        _ = options.LoadTimeout.Should().Be(timeout);
     }
-}
 }

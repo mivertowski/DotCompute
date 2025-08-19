@@ -1,7 +1,7 @@
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Implementations.Kernels
-{
+namespace DotCompute.Tests.Implementations.Kernels;
+
 
 /// <summary>
 /// Test implementation of IKernelSource for testing purposes.
@@ -13,5 +13,4 @@ public sealed class TestKernelSource : IKernelSource
     public string EntryPoint { get; set; } = "main";
     public KernelLanguage Language { get; set; } = KernelLanguage.OpenCL;
     public string[] Dependencies { get; set; } = [];
-}
 }

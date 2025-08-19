@@ -4,8 +4,8 @@
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Abstractions.Tests
-{
+namespace DotCompute.Abstractions.Tests;
+
 
 /// <summary>
 /// Comprehensive unit tests for the Dim3 struct.
@@ -21,9 +21,9 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(5);
 
         // Assert
-        dim3.X.Should().Be(5);
-        dim3.Y.Should().Be(1);
-        dim3.Z.Should().Be(1);
+        _ = dim3.X.Should().Be(5);
+        _ = dim3.Y.Should().Be(1);
+        _ = dim3.Z.Should().Be(1);
     }
 
     [Fact]
@@ -33,9 +33,9 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(10, 20);
 
         // Assert
-        dim3.X.Should().Be(10);
-        dim3.Y.Should().Be(20);
-        dim3.Z.Should().Be(1);
+        _ = dim3.X.Should().Be(10);
+        _ = dim3.Y.Should().Be(20);
+        _ = dim3.Z.Should().Be(1);
     }
 
     [Fact]
@@ -45,9 +45,9 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(100, 200, 300);
 
         // Assert
-        dim3.X.Should().Be(100);
-        dim3.Y.Should().Be(200);
-        dim3.Z.Should().Be(300);
+        _ = dim3.X.Should().Be(100);
+        _ = dim3.Y.Should().Be(200);
+        _ = dim3.Z.Should().Be(300);
     }
 
     [Fact]
@@ -57,9 +57,9 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(0, 0, 0);
 
         // Assert
-        dim3.X.Should().Be(0);
-        dim3.Y.Should().Be(0);
-        dim3.Z.Should().Be(0);
+        _ = dim3.X.Should().Be(0);
+        _ = dim3.Y.Should().Be(0);
+        _ = dim3.Z.Should().Be(0);
     }
 
     [Fact]
@@ -69,9 +69,9 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(-1, -2, -3);
 
         // Assert
-        dim3.X.Should().Be(-1);
-        dim3.Y.Should().Be(-2);
-        dim3.Z.Should().Be(-3);
+        _ = dim3.X.Should().Be(-1);
+        _ = dim3.Y.Should().Be(-2);
+        _ = dim3.Z.Should().Be(-3);
     }
 
     [Fact]
@@ -81,9 +81,9 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(int.MaxValue, int.MaxValue, int.MaxValue);
 
         // Assert
-        dim3.X.Should().Be(int.MaxValue);
-        dim3.Y.Should().Be(int.MaxValue);
-        dim3.Z.Should().Be(int.MaxValue);
+        _ = dim3.X.Should().Be(int.MaxValue);
+        _ = dim3.Y.Should().Be(int.MaxValue);
+        _ = dim3.Z.Should().Be(int.MaxValue);
     }
 
     [Fact]
@@ -93,9 +93,9 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(int.MinValue, int.MinValue, int.MinValue);
 
         // Assert
-        dim3.X.Should().Be(int.MinValue);
-        dim3.Y.Should().Be(int.MinValue);
-        dim3.Z.Should().Be(int.MinValue);
+        _ = dim3.X.Should().Be(int.MinValue);
+        _ = dim3.Y.Should().Be(int.MinValue);
+        _ = dim3.Z.Should().Be(int.MinValue);
     }
 
     #endregion
@@ -109,9 +109,9 @@ public sealed class Dim3Tests
         Dim3 dim3 = 42;
 
         // Assert
-        dim3.X.Should().Be(42);
-        dim3.Y.Should().Be(1);
-        dim3.Z.Should().Be(1);
+        _ = dim3.X.Should().Be(42);
+        _ = dim3.Y.Should().Be(1);
+        _ = dim3.Z.Should().Be(1);
     }
 
     [Fact]
@@ -121,9 +121,9 @@ public sealed class Dim3Tests
         Dim3 dim3 = (10, 20);
 
         // Assert
-        dim3.X.Should().Be(10);
-        dim3.Y.Should().Be(20);
-        dim3.Z.Should().Be(1);
+        _ = dim3.X.Should().Be(10);
+        _ = dim3.Y.Should().Be(20);
+        _ = dim3.Z.Should().Be(1);
     }
 
     [Fact]
@@ -133,9 +133,9 @@ public sealed class Dim3Tests
         Dim3 dim3 = (100, 200, 300);
 
         // Assert
-        dim3.X.Should().Be(100);
-        dim3.Y.Should().Be(200);
-        dim3.Z.Should().Be(300);
+        _ = dim3.X.Should().Be(100);
+        _ = dim3.Y.Should().Be(200);
+        _ = dim3.Z.Should().Be(300);
     }
 
     [Fact]
@@ -145,9 +145,9 @@ public sealed class Dim3Tests
         Dim3 dim3 = 0;
 
         // Assert
-        dim3.X.Should().Be(0);
-        dim3.Y.Should().Be(1);
-        dim3.Z.Should().Be(1);
+        _ = dim3.X.Should().Be(0);
+        _ = dim3.Y.Should().Be(1);
+        _ = dim3.Z.Should().Be(1);
     }
 
     [Fact]
@@ -157,9 +157,9 @@ public sealed class Dim3Tests
         Dim3 dim3 = -5;
 
         // Assert
-        dim3.X.Should().Be(-5);
-        dim3.Y.Should().Be(1);
-        dim3.Z.Should().Be(1);
+        _ = dim3.X.Should().Be(-5);
+        _ = dim3.Y.Should().Be(1);
+        _ = dim3.Z.Should().Be(1);
     }
 
     [Fact]
@@ -170,13 +170,13 @@ public sealed class Dim3Tests
         Dim3 dim3XYZ = (0, 0, 0);
 
         // Assert
-        dim3XY.X.Should().Be(0);
-        dim3XY.Y.Should().Be(0);
-        dim3XY.Z.Should().Be(1);
+        _ = dim3XY.X.Should().Be(0);
+        _ = dim3XY.Y.Should().Be(0);
+        _ = dim3XY.Z.Should().Be(1);
 
-        dim3XYZ.X.Should().Be(0);
-        dim3XYZ.Y.Should().Be(0);
-        dim3XYZ.Z.Should().Be(0);
+        _ = dim3XYZ.X.Should().Be(0);
+        _ = dim3XYZ.Y.Should().Be(0);
+        _ = dim3XYZ.Z.Should().Be(0);
     }
 
     [Fact]
@@ -187,13 +187,13 @@ public sealed class Dim3Tests
         Dim3 dim3XYZ = (-10, -20, -30);
 
         // Assert
-        dim3XY.X.Should().Be(-1);
-        dim3XY.Y.Should().Be(-2);
-        dim3XY.Z.Should().Be(1);
+        _ = dim3XY.X.Should().Be(-1);
+        _ = dim3XY.Y.Should().Be(-2);
+        _ = dim3XY.Z.Should().Be(1);
 
-        dim3XYZ.X.Should().Be(-10);
-        dim3XYZ.Y.Should().Be(-20);
-        dim3XYZ.Z.Should().Be(-30);
+        _ = dim3XYZ.X.Should().Be(-10);
+        _ = dim3XYZ.Y.Should().Be(-20);
+        _ = dim3XYZ.Z.Should().Be(-30);
     }
 
     #endregion
@@ -207,9 +207,9 @@ public sealed class Dim3Tests
         var dim3 = Dim3.FromInt32(15);
 
         // Assert
-        dim3.X.Should().Be(15);
-        dim3.Y.Should().Be(1);
-        dim3.Z.Should().Be(1);
+        _ = dim3.X.Should().Be(15);
+        _ = dim3.Y.Should().Be(1);
+        _ = dim3.Z.Should().Be(1);
     }
 
     [Fact]
@@ -219,9 +219,9 @@ public sealed class Dim3Tests
         var dim3 = Dim3.FromValueTuple((25, 35));
 
         // Assert
-        dim3.X.Should().Be(25);
-        dim3.Y.Should().Be(35);
-        dim3.Z.Should().Be(1);
+        _ = dim3.X.Should().Be(25);
+        _ = dim3.Y.Should().Be(35);
+        _ = dim3.Z.Should().Be(1);
     }
 
     [Fact]
@@ -231,9 +231,9 @@ public sealed class Dim3Tests
         var dim3 = Dim3.FromValueTuple((45, 55, 65));
 
         // Assert
-        dim3.X.Should().Be(45);
-        dim3.Y.Should().Be(55);
-        dim3.Z.Should().Be(65);
+        _ = dim3.X.Should().Be(45);
+        _ = dim3.Y.Should().Be(55);
+        _ = dim3.Z.Should().Be(65);
     }
 
     [Theory]
@@ -249,9 +249,9 @@ public sealed class Dim3Tests
         var dim3 = Dim3.FromInt32(value);
 
         // Assert
-        dim3.X.Should().Be(value);
-        dim3.Y.Should().Be(1);
-        dim3.Z.Should().Be(1);
+        _ = dim3.X.Should().Be(value);
+        _ = dim3.Y.Should().Be(1);
+        _ = dim3.Z.Should().Be(1);
     }
 
     #endregion
@@ -265,7 +265,7 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(1, 2, 3);
 
         // Act & Assert
-        dim3.Equals(dim3).Should().BeTrue();
+        _ = dim3.Equals(dim3).Should().BeTrue();
         // Note: Self-comparison tests are always true by definition
 #pragma warning disable CS1718 // Comparison made to same variable
         Assert.True(dim3 == dim3);
@@ -281,9 +281,9 @@ public sealed class Dim3Tests
         var dim3b = new Dim3(10, 20, 30);
 
         // Act & Assert
-        dim3a.Equals(dim3b).Should().BeTrue();
-        (dim3a == dim3b).Should().BeTrue();
-        (dim3a != dim3b).Should().BeFalse();
+        _ = dim3a.Equals(dim3b).Should().BeTrue();
+        _ = (dim3a == dim3b).Should().BeTrue();
+        _ = (dim3a != dim3b).Should().BeFalse();
     }
 
     [Fact]
@@ -294,9 +294,9 @@ public sealed class Dim3Tests
         var dim3b = new Dim3(2, 2, 3);
 
         // Act & Assert
-        dim3a.Equals(dim3b).Should().BeFalse();
-        (dim3a == dim3b).Should().BeFalse();
-        (dim3a != dim3b).Should().BeTrue();
+        _ = dim3a.Equals(dim3b).Should().BeFalse();
+        _ = (dim3a == dim3b).Should().BeFalse();
+        _ = (dim3a != dim3b).Should().BeTrue();
     }
 
     [Fact]
@@ -307,9 +307,9 @@ public sealed class Dim3Tests
         var dim3b = new Dim3(1, 3, 3);
 
         // Act & Assert
-        dim3a.Equals(dim3b).Should().BeFalse();
-        (dim3a == dim3b).Should().BeFalse();
-        (dim3a != dim3b).Should().BeTrue();
+        _ = dim3a.Equals(dim3b).Should().BeFalse();
+        _ = (dim3a == dim3b).Should().BeFalse();
+        _ = (dim3a != dim3b).Should().BeTrue();
     }
 
     [Fact]
@@ -320,9 +320,9 @@ public sealed class Dim3Tests
         var dim3b = new Dim3(1, 2, 4);
 
         // Act & Assert
-        dim3a.Equals(dim3b).Should().BeFalse();
-        (dim3a == dim3b).Should().BeFalse();
-        (dim3a != dim3b).Should().BeTrue();
+        _ = dim3a.Equals(dim3b).Should().BeFalse();
+        _ = (dim3a == dim3b).Should().BeFalse();
+        _ = (dim3a != dim3b).Should().BeTrue();
     }
 
     [Fact]
@@ -333,9 +333,9 @@ public sealed class Dim3Tests
         var dim3b = new Dim3(4, 5, 6);
 
         // Act & Assert
-        dim3a.Equals(dim3b).Should().BeFalse();
-        (dim3a == dim3b).Should().BeFalse();
-        (dim3a != dim3b).Should().BeTrue();
+        _ = dim3a.Equals(dim3b).Should().BeFalse();
+        _ = (dim3a == dim3b).Should().BeFalse();
+        _ = (dim3a != dim3b).Should().BeTrue();
     }
 
     [Fact]
@@ -345,7 +345,7 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(1, 2, 3);
 
         // Act & Assert
-        dim3.Equals(null).Should().BeFalse();
+        _ = dim3.Equals(null).Should().BeFalse();
     }
 
     [Fact]
@@ -356,7 +356,7 @@ public sealed class Dim3Tests
         var otherObject = "not a dim3";
 
         // Act & Assert
-        dim3.Equals(otherObject).Should().BeFalse();
+        _ = dim3.Equals(otherObject).Should().BeFalse();
     }
 
     [Fact]
@@ -368,7 +368,7 @@ public sealed class Dim3Tests
         object boxedDim3b = dim3b;
 
         // Act & Assert
-        dim3a.Equals(boxedDim3b).Should().BeTrue();
+        _ = dim3a.Equals(boxedDim3b).Should().BeTrue();
     }
 
     #endregion
@@ -418,7 +418,7 @@ public sealed class Dim3Tests
         var hashCode2 = dim3b.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        _ = hashCode1.Should().NotBe(hashCode2);
     }
 
     [Fact]
@@ -433,7 +433,7 @@ public sealed class Dim3Tests
         var hashCode2 = dim3b.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        _ = hashCode1.Should().NotBe(hashCode2);
     }
 
     #endregion
@@ -449,10 +449,10 @@ public sealed class Dim3Tests
         var dim3c = new Dim3(5, 10, 16);
 
         // Act & Assert
-        (dim3a == dim3b).Should().BeTrue();
-        (dim3a == dim3c).Should().BeFalse();
+        _ = (dim3a == dim3b).Should().BeTrue();
+        _ = (dim3a == dim3c).Should().BeFalse();
 #pragma warning disable CS1718 // Comparison made to same variable
-        (dim3a == dim3a).Should().BeTrue();
+        _ = (dim3a == dim3a).Should().BeTrue();
 #pragma warning restore CS1718
     }
 
@@ -465,10 +465,10 @@ public sealed class Dim3Tests
         var dim3c = new Dim3(5, 10, 16);
 
         // Act & Assert
-        (dim3a != dim3b).Should().BeFalse();
-        (dim3a != dim3c).Should().BeTrue();
+        _ = (dim3a != dim3b).Should().BeFalse();
+        _ = (dim3a != dim3c).Should().BeTrue();
 #pragma warning disable CS1718 // Comparison made to same variable
-        (dim3a != dim3a).Should().BeFalse();
+        _ = (dim3a != dim3a).Should().BeFalse();
 #pragma warning restore CS1718
     }
 
@@ -487,17 +487,17 @@ public sealed class Dim3Tests
         var yProperty = typeof(Dim3).GetProperty(nameof(Dim3.Y));
         var zProperty = typeof(Dim3).GetProperty(nameof(Dim3.Z));
 
-        xProperty!.CanRead.Should().BeTrue();
-        xProperty.CanWrite.Should().BeFalse();
-        yProperty!.CanRead.Should().BeTrue();
-        yProperty.CanWrite.Should().BeFalse();
-        zProperty!.CanRead.Should().BeTrue();
-        zProperty.CanWrite.Should().BeFalse();
+        _ = xProperty!.CanRead.Should().BeTrue();
+        _ = xProperty.CanWrite.Should().BeFalse();
+        _ = yProperty!.CanRead.Should().BeTrue();
+        _ = yProperty.CanWrite.Should().BeFalse();
+        _ = zProperty!.CanRead.Should().BeTrue();
+        _ = zProperty.CanWrite.Should().BeFalse();
 
         // Verify values are accessible
-        dim3.X.Should().Be(100);
-        dim3.Y.Should().Be(200);
-        dim3.Z.Should().Be(300);
+        _ = dim3.X.Should().Be(100);
+        _ = dim3.Y.Should().Be(200);
+        _ = dim3.Z.Should().Be(300);
     }
 
     #endregion
@@ -511,9 +511,9 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(0, 0, 0);
 
         // Assert
-        dim3.X.Should().Be(0);
-        dim3.Y.Should().Be(0);
-        dim3.Z.Should().Be(0);
+        _ = dim3.X.Should().Be(0);
+        _ = dim3.Y.Should().Be(0);
+        _ = dim3.Z.Should().Be(0);
     }
 
     [Fact]
@@ -523,9 +523,9 @@ public sealed class Dim3Tests
         var dim3 = new Dim3(-100, 0, 100);
 
         // Assert
-        dim3.X.Should().Be(-100);
-        dim3.Y.Should().Be(0);
-        dim3.Z.Should().Be(100);
+        _ = dim3.X.Should().Be(-100);
+        _ = dim3.Y.Should().Be(0);
+        _ = dim3.Z.Should().Be(100);
     }
 
     [Fact]
@@ -534,19 +534,19 @@ public sealed class Dim3Tests
         // Test with common GPU block sizes
         var testCases = new[]
         {
-            new Dim3(256),
-            new Dim3(16, 16),
-            new Dim3(8, 8, 8),
-            new Dim3(32, 32),
-            new Dim3(1024)
-        };
+        new Dim3(256),
+        new Dim3(16, 16),
+        new Dim3(8, 8, 8),
+        new Dim3(32, 32),
+        new Dim3(1024)
+    };
 
         foreach (var dim3 in testCases)
         {
             // Should not throw and should have reasonable values
-            (dim3.X > 0).Should().BeTrue();
-            (dim3.Y > 0).Should().BeTrue();
-            (dim3.Z > 0).Should().BeTrue();
+            _ = (dim3.X > 0).Should().BeTrue();
+            _ = (dim3.Y > 0).Should().BeTrue();
+            _ = (dim3.Z > 0).Should().BeTrue();
         }
     }
 
@@ -561,7 +561,7 @@ public sealed class Dim3Tests
         var type = typeof(Dim3);
 
         // Assert
-        type.Should().BeAssignableTo<IEquatable<Dim3>>();
+        _ = type.Should().BeAssignableTo<IEquatable<Dim3>>();
     }
 
     #endregion
@@ -630,12 +630,11 @@ public sealed class Dim3Tests
             }));
         }
 
-        System.Threading.Tasks.Task.WaitAll(tasks.ToArray());
+        System.Threading.Tasks.Task.WaitAll([.. tasks]);
 
         // Assert - No exceptions should be thrown
-        tasks.Should().AllSatisfy(t => t.IsCompletedSuccessfully.Should().BeTrue());
+        _ = tasks.Should().AllSatisfy(t => t.IsCompletedSuccessfully.Should().BeTrue());
     }
 
     #endregion
-}
 }

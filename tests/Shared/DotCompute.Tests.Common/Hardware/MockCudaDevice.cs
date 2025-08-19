@@ -5,8 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Common.Hardware
-{
+namespace DotCompute.Tests.Common.Hardware;
+
 
 /// <summary>
 /// Mock CUDA device implementation for testing without actual NVIDIA hardware.
@@ -346,5 +346,4 @@ public enum CudaErrorType
     DeviceUnavailable,
     InvalidDevice,
     KernelTimeout
-}
 }

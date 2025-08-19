@@ -2,27 +2,20 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Implementations.Kernels
-{
+namespace DotCompute.Tests.Implementations.Kernels;
+
 
 /// <summary>
 /// Test kernel executor that simulates kernel execution.
 /// </summary>
-public sealed class TestKernelExecutor
+public sealed class TestKernelExecutor(int maxConcurrentExecutions = 4)
 {
-    private readonly ConcurrentQueue<KernelExecution> _executionQueue;
-    private readonly ConcurrentDictionary<string, KernelStatistics> _statistics;
-    private readonly SemaphoreSlim _executionSemaphore;
+    private readonly ConcurrentQueue<KernelExecution> _executionQueue = new();
+    private readonly ConcurrentDictionary<string, KernelStatistics> _statistics = new();
+    private readonly SemaphoreSlim _executionSemaphore = new(maxConcurrentExecutions, maxConcurrentExecutions);
     private long _totalExecutions;
     private TimeSpan _totalExecutionTime;
     private bool _disposed;
-
-    public TestKernelExecutor(int maxConcurrentExecutions = 4)
-    {
-        _executionQueue = new ConcurrentQueue<KernelExecution>();
-        _statistics = new ConcurrentDictionary<string, KernelStatistics>();
-        _executionSemaphore = new SemaphoreSlim(maxConcurrentExecutions, maxConcurrentExecutions);
-    }
 
     public long TotalExecutions => _totalExecutions;
     public TimeSpan TotalExecutionTime => _totalExecutionTime;
@@ -69,7 +62,7 @@ public sealed class TestKernelExecutor
         }
         finally
         {
-            _executionSemaphore.Release();
+            _ = _executionSemaphore.Release();
         }
     }
 
@@ -93,7 +86,7 @@ public sealed class TestKernelExecutor
             await Task.Run(() =>
             {
                 var partitioner = Partitioner.Create(0, totalThreads);
-                Parallel.ForEach(partitioner, new ParallelOptions
+                _ = Parallel.ForEach(partitioner, new ParallelOptions
                 {
                     CancellationToken = cancellationToken,
                     MaxDegreeOfParallelism = Environment.ProcessorCount
@@ -109,7 +102,7 @@ public sealed class TestKernelExecutor
 
             stopwatch.Stop();
 
-            Interlocked.Increment(ref _totalExecutions);
+            _ = Interlocked.Increment(ref _totalExecutions);
             var elapsed = stopwatch.Elapsed;
             _totalExecutionTime = _totalExecutionTime.Add(elapsed);
 
@@ -145,7 +138,7 @@ public sealed class TestKernelExecutor
         var threadsPerBlock = blockDim.X * blockDim.Y * blockDim.Z;
         var blockId = threadId / threadsPerBlock;
         var localThreadId = threadId % threadsPerBlock;
-        
+
         // Use values to avoid IDE0059 warnings
         _ = gridDim;
         _ = blockId;
@@ -341,5 +334,4 @@ public sealed class KernelStatistics
 
     public double SuccessRate
         => ExecutionCount > 0 ? (double)SuccessfulExecutions / ExecutionCount * 100 : 0;
-}
 }

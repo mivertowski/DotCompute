@@ -10,8 +10,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Mock
-{
+namespace DotCompute.Tests.Hardware.Mock;
+
 
 /// <summary>
 /// Mock device tests for CI/CD environments without actual CUDA hardware
@@ -39,14 +39,14 @@ public sealed class CudaMockDeviceTests : IDisposable
         var mockProperties = CreateMockRTX2070Properties();
 
         // Act & Assert
-        mockProperties.Major.Should().Be(7);
-        mockProperties.Minor.Should().Be(5);
-        mockProperties.Name.Should().Be("Mock RTX 2070");
-        mockProperties.TotalGlobalMem.Should().Be(8UL * 1024 * 1024 * 1024); // 8GB
-        mockProperties.MultiProcessorCount.Should().Be(36);
-        mockProperties.MaxThreadsPerBlock.Should().Be(1024);
-        mockProperties.WarpSize.Should().Be(32);
-        mockProperties.SharedMemPerBlock.Should().Be(49152UL); // 48KB
+        _ = mockProperties.Major.Should().Be(7);
+        _ = mockProperties.Minor.Should().Be(5);
+        _ = mockProperties.Name.Should().Be("Mock RTX 2070");
+        _ = mockProperties.TotalGlobalMem.Should().Be(8UL * 1024 * 1024 * 1024); // 8GB
+        _ = mockProperties.MultiProcessorCount.Should().Be(36);
+        _ = mockProperties.MaxThreadsPerBlock.Should().Be(1024);
+        _ = mockProperties.WarpSize.Should().Be(32);
+        _ = mockProperties.SharedMemPerBlock.Should().Be(49152UL); // 48KB
     }
 
     [Fact]
@@ -60,17 +60,17 @@ public sealed class CudaMockDeviceTests : IDisposable
 
         // Act & Assert
         _ = mockInfo.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
-        mockInfo.Name.Should().Be("Mock RTX 2070");
-        mockInfo.TotalMemory.Should().Be(8L * 1024 * 1024 * 1024); // 8GB
-        mockInfo.ComputeUnits.Should().Be(36);
-        mockInfo.ComputeCapability.Should().Be(new Version(7, 5));
+        _ = mockInfo.Name.Should().Be("Mock RTX 2070");
+        _ = mockInfo.TotalMemory.Should().Be(8L * 1024 * 1024 * 1024); // 8GB
+        _ = mockInfo.ComputeUnits.Should().Be(36);
+        _ = mockInfo.ComputeCapability.Should().Be(new Version(7, 5));
 
-        mockInfo.Capabilities.Should().ContainKey("ComputeCapabilityMajor");
-        mockInfo.Capabilities.Should().ContainKey("ComputeCapabilityMinor");
-        mockInfo.Capabilities.Should().ContainKey("MultiprocessorCount");
-        mockInfo.Capabilities.Should().ContainKey("WarpSize");
-        mockInfo.Capabilities.Should().ContainKey("UnifiedAddressing");
-        mockInfo.Capabilities.Should().ContainKey("ConcurrentKernels");
+        _ = mockInfo.Capabilities.Should().ContainKey("ComputeCapabilityMajor");
+        _ = mockInfo.Capabilities.Should().ContainKey("ComputeCapabilityMinor");
+        _ = mockInfo.Capabilities.Should().ContainKey("MultiprocessorCount");
+        _ = mockInfo.Capabilities.Should().ContainKey("WarpSize");
+        _ = mockInfo.Capabilities.Should().ContainKey("UnifiedAddressing");
+        _ = mockInfo.Capabilities.Should().ContainKey("ConcurrentKernels");
     }
 
     [Theory]
@@ -110,11 +110,11 @@ public sealed class CudaMockDeviceTests : IDisposable
         var mockInfo = CreateAcceleratorInfoFromMockProperties(mockProperties);
 
         // Assert
-        mockInfo.Name.Should().Be(deviceName);
-        mockInfo.ComputeCapability!.Major.Should().Be(computeMajor);
-        mockInfo.ComputeCapability!.Minor.Should().Be(computeMinor);
-        mockInfo.ComputeUnits.Should().Be(smCount);
-        mockInfo.MemorySize.Should().Be(memoryMB * 1024L * 1024L);
+        _ = mockInfo.Name.Should().Be(deviceName);
+        _ = mockInfo.ComputeCapability!.Major.Should().Be(computeMajor);
+        _ = mockInfo.ComputeCapability!.Minor.Should().Be(computeMinor);
+        _ = mockInfo.ComputeUnits.Should().Be(smCount);
+        _ = mockInfo.MemorySize.Should().Be(memoryMB * 1024L * 1024L);
 
         _output.WriteLine($"Mock GPU: {deviceName}");
         _output.WriteLine($"  Compute Capability: {computeMajor}.{computeMinor}");
@@ -143,12 +143,12 @@ public sealed class CudaMockDeviceTests : IDisposable
         };
 
         // Act & Assert
-        mockStats.TotalMemory.Should().Be(8L * 1024 * 1024 * 1024);
-        mockStats.FreeMemory.Should().Be(totalMemory - usedMemory);
-        (mockStats.UsedMemory > 0).Should().BeTrue();
-        (mockStats.AllocatedMemory <= mockStats.UsedMemory).Should().BeTrue();
-        (mockStats.AllocationCount > 0).Should().BeTrue();
-        (mockStats.PeakMemory >= mockStats.UsedMemory).Should().BeTrue();
+        _ = mockStats.TotalMemory.Should().Be(8L * 1024 * 1024 * 1024);
+        _ = mockStats.FreeMemory.Should().Be(totalMemory - usedMemory);
+        _ = (mockStats.UsedMemory > 0).Should().BeTrue();
+        _ = (mockStats.AllocatedMemory <= mockStats.UsedMemory).Should().BeTrue();
+        _ = (mockStats.AllocationCount > 0).Should().BeTrue();
+        _ = (mockStats.PeakMemory >= mockStats.UsedMemory).Should().BeTrue();
 
         var utilizationPercent = (mockStats.UsedMemory * 100.0) / mockStats.TotalMemory;
         _output.WriteLine($"Mock Memory Usage: {utilizationPercent:F1}% ({mockStats.UsedMemory / (1024 * 1024 * 1024)}GB / {mockStats.TotalMemory / (1024 * 1024 * 1024)}GB)");
@@ -162,18 +162,18 @@ public sealed class CudaMockDeviceTests : IDisposable
         // Arrange
         var mockErrors = new[]
         {
-            CudaError.MemoryAllocation,
-            CudaError.InvalidDevice,
-            CudaError.InvalidValue,
-            CudaError.LaunchFailure,
-            CudaError.InvalidDevicePointer
-        };
+        CudaError.MemoryAllocation,
+        CudaError.InvalidDevice,
+        CudaError.InvalidValue,
+        CudaError.LaunchFailure,
+        CudaError.InvalidDevicePointer
+    };
 
         // Act & Assert
         foreach (var error in mockErrors)
         {
             var errorString = GetMockErrorString(error);
-            errorString.Should().NotBeNullOrEmpty($"Error {error} should have a descriptive string");
+            _ = errorString.Should().NotBeNullOrEmpty($"Error {error} should have a descriptive string");
             _ = errorString.Should().Contain(error.ToString().ToUpperInvariant());
 
             _output.WriteLine($"Mock Error: {error} -> {errorString}");
@@ -196,9 +196,9 @@ public sealed class CudaMockDeviceTests : IDisposable
 
         // Assert
         Assert.NotNull(allocationResult);
-        allocationResult.Success.Should().BeTrue();
-        allocationResult.AllocatedSize.Should().Be(sizeInBytes);
-        allocationResult.AllocationTime.Should().BeLessThan(TimeSpan.FromSeconds(1));
+        _ = allocationResult.Success.Should().BeTrue();
+        _ = allocationResult.AllocatedSize.Should().Be(sizeInBytes);
+        _ = allocationResult.AllocationTime.Should().BeLessThan(TimeSpan.FromSeconds(1));
 
         _output.WriteLine($"Mock allocation of {sizeInBytes / 1024}KB took {allocationResult.AllocationTime.TotalMilliseconds:F2}ms");
     }
@@ -220,10 +220,10 @@ __global__ void mock_kernel(float* input, float* output, int n)
         var mockCompilationResult = CreateMockCompilationResult(mockKernelSource, true);
 
         // Act & Assert
-        mockCompilationResult.Success.Should().BeTrue();
-        mockCompilationResult.CompiledCode.Should().NotBeEmpty();
-        mockCompilationResult.CompilationTime.Should().BeLessThan(TimeSpan.FromSeconds(10));
-        mockCompilationResult.CompilerLog.Should().NotBeNull();
+        _ = mockCompilationResult.Success.Should().BeTrue();
+        _ = mockCompilationResult.CompiledCode.Should().NotBeEmpty();
+        _ = mockCompilationResult.CompilationTime.Should().BeLessThan(TimeSpan.FromSeconds(10));
+        _ = mockCompilationResult.CompilerLog.Should().NotBeNull();
 
         // Simulate PTX output
         var ptxString = System.Text.Encoding.UTF8.GetString(mockCompilationResult.CompiledCode);
@@ -244,9 +244,9 @@ __global__ void mock_kernel(float* input, float* output, int n)
         var mockCompilationResult = CreateMockCompilationResult(invalidKernelSource, false);
 
         // Act & Assert
-        mockCompilationResult.Success.Should().BeFalse();
-        mockCompilationResult.CompiledCode.Should().BeEmpty();
-        mockCompilationResult.ErrorMessage.Should().NotBeNullOrEmpty();
+        _ = mockCompilationResult.Success.Should().BeFalse();
+        _ = mockCompilationResult.CompiledCode.Should().BeEmpty();
+        _ = mockCompilationResult.ErrorMessage.Should().NotBeNullOrEmpty();
         Assert.Contains("error", mockCompilationResult.CompilerLog, StringComparison.OrdinalIgnoreCase); // "Compiler log should contain error information";
 
         _output.WriteLine($"Mock compilation failed as expected: {mockCompilationResult.ErrorMessage}");
@@ -266,16 +266,16 @@ __global__ void mock_kernel(float* input, float* output, int n)
         var mockCompilationResult = CreateMockCompilationResult(mockKernelSource, true, level);
 
         // Act & Assert
-        mockCompilationResult.Success.Should().BeTrue();
+        _ = mockCompilationResult.Success.Should().BeTrue();
 
         // Compilation time should vary with optimization level
         var actualCompileTime = mockCompilationResult.CompilationTime.TotalMilliseconds;
-        (actualCompileTime <= expectedCompileTimeMs + 1000).Should().BeTrue(
+        _ = (actualCompileTime <= expectedCompileTimeMs + 1000).Should().BeTrue(
             $"Compilation with {level} should complete within expected time");
 
         // Simulated execution performance should improve with higher optimization
         var mockExecutionTime = SimulateKernelExecution(mockCompilationResult, level);
-        (mockExecutionTime.TotalMicroseconds <= expectedExecutionTimeUs + 500).Should().BeTrue(
+        _ = (mockExecutionTime.TotalMicroseconds <= expectedExecutionTimeUs + 500).Should().BeTrue(
             $"Execution with {level} optimization should meet performance targets");
 
         _output.WriteLine($"Optimization {level}: Compile={actualCompileTime:F0}ms, Execute={mockExecutionTime.TotalMicroseconds:F0}μs");
@@ -300,11 +300,11 @@ __global__ void mock_kernel(float* input, float* output, int n)
 
         // Assert
         Assert.Equal(concurrentOperations, results.Length);
-        results.Should().AllSatisfy(result => result.Result.Should().BeTrue());
+        _ = results.Should().AllSatisfy(result => result.Result.Should().BeTrue());
 
         // Concurrent execution should be faster than sequential
         var estimatedSequentialTime = concurrentOperations * 100; // 100ms per operation
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan((long)(estimatedSequentialTime * 0.8),
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan((long)(estimatedSequentialTime * 0.8),
             "Concurrent operations should be faster than sequential execution");
 
         _output.WriteLine($"Completed {concurrentOperations} concurrent operations in {stopwatch.ElapsedMilliseconds}ms");
@@ -521,47 +521,47 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
     {
         var ptxBuilder = new StringBuilder();
 
-        ptxBuilder.AppendLine(".version 7.5");
-        ptxBuilder.AppendLine(".target sm_75");
-        ptxBuilder.AppendLine(".address_size 64");
-        ptxBuilder.AppendLine();
+        _ = ptxBuilder.AppendLine(".version 7.5");
+        _ = ptxBuilder.AppendLine(".target sm_75");
+        _ = ptxBuilder.AppendLine(".address_size 64");
+        _ = ptxBuilder.AppendLine();
 
-        ptxBuilder.AppendLine(CultureInfo.InvariantCulture, $"// Generated from source code ({sourceCode.Length} chars)");
-        ptxBuilder.AppendLine(CultureInfo.InvariantCulture, $"// Optimization level: {optimization}");
-        ptxBuilder.AppendLine();
+        _ = ptxBuilder.AppendLine(CultureInfo.InvariantCulture, $"// Generated from source code ({sourceCode.Length} chars)");
+        _ = ptxBuilder.AppendLine(CultureInfo.InvariantCulture, $"// Optimization level: {optimization}");
+        _ = ptxBuilder.AppendLine();
 
-        ptxBuilder.AppendLine(".visible .entry mock_kernel(");
-        ptxBuilder.AppendLine("    .param .u64 mock_kernel_param_0,");
-        ptxBuilder.AppendLine("    .param .u64 mock_kernel_param_1,");
-        ptxBuilder.AppendLine("    .param .u32 mock_kernel_param_2");
-        ptxBuilder.AppendLine(")");
-        ptxBuilder.AppendLine("{");
-        ptxBuilder.AppendLine("    .reg .pred %p<2>;");
-        ptxBuilder.AppendLine("    .reg .f32 %f<4>;");
-        ptxBuilder.AppendLine("    .reg .b32 %r<8>;");
-        ptxBuilder.AppendLine("    .reg .b64 %rd<8>;");
-        ptxBuilder.AppendLine();
-        ptxBuilder.AppendLine("    // Mock PTX instructions");
-        ptxBuilder.AppendLine("    mov.u32 %r1, %ctaid.x;");
-        ptxBuilder.AppendLine("    mov.u32 %r2, %ntid.x;");
-        ptxBuilder.AppendLine("    mad.lo.s32 %r3, %r1, %r2, %tid.x;");
-        ptxBuilder.AppendLine("    ld.param.u32 %r4, [mock_kernel_param_2];");
-        ptxBuilder.AppendLine("    setp.ge.s32 %p1, %r3, %r4;");
-        ptxBuilder.AppendLine("    @%p1 bra LBB0_2;");
-        ptxBuilder.AppendLine();
-        ptxBuilder.AppendLine("    // Mock computation");
-        ptxBuilder.AppendLine("    ld.param.u64 %rd1, [mock_kernel_param_0];");
-        ptxBuilder.AppendLine("    mul.wide.u32 %rd2, %r3, 4;");
-        ptxBuilder.AppendLine("    add.s64 %rd3, %rd1, %rd2;");
-        ptxBuilder.AppendLine("    ld.global.f32 %f1, [%rd3];");
-        ptxBuilder.AppendLine("    mul.f32 %f2, %f1, 0f40000000;");
-        ptxBuilder.AppendLine("    ld.param.u64 %rd4, [mock_kernel_param_1];");
-        ptxBuilder.AppendLine("    add.s64 %rd5, %rd4, %rd2;");
-        ptxBuilder.AppendLine("    st.global.f32 [%rd5], %f2;");
-        ptxBuilder.AppendLine();
-        ptxBuilder.AppendLine("LBB0_2:");
-        ptxBuilder.AppendLine("    ret;");
-        ptxBuilder.AppendLine("}");
+        _ = ptxBuilder.AppendLine(".visible .entry mock_kernel(");
+        _ = ptxBuilder.AppendLine("    .param .u64 mock_kernel_param_0,");
+        _ = ptxBuilder.AppendLine("    .param .u64 mock_kernel_param_1,");
+        _ = ptxBuilder.AppendLine("    .param .u32 mock_kernel_param_2");
+        _ = ptxBuilder.AppendLine(")");
+        _ = ptxBuilder.AppendLine("{");
+        _ = ptxBuilder.AppendLine("    .reg .pred %p<2>;");
+        _ = ptxBuilder.AppendLine("    .reg .f32 %f<4>;");
+        _ = ptxBuilder.AppendLine("    .reg .b32 %r<8>;");
+        _ = ptxBuilder.AppendLine("    .reg .b64 %rd<8>;");
+        _ = ptxBuilder.AppendLine();
+        _ = ptxBuilder.AppendLine("    // Mock PTX instructions");
+        _ = ptxBuilder.AppendLine("    mov.u32 %r1, %ctaid.x;");
+        _ = ptxBuilder.AppendLine("    mov.u32 %r2, %ntid.x;");
+        _ = ptxBuilder.AppendLine("    mad.lo.s32 %r3, %r1, %r2, %tid.x;");
+        _ = ptxBuilder.AppendLine("    ld.param.u32 %r4, [mock_kernel_param_2];");
+        _ = ptxBuilder.AppendLine("    setp.ge.s32 %p1, %r3, %r4;");
+        _ = ptxBuilder.AppendLine("    @%p1 bra LBB0_2;");
+        _ = ptxBuilder.AppendLine();
+        _ = ptxBuilder.AppendLine("    // Mock computation");
+        _ = ptxBuilder.AppendLine("    ld.param.u64 %rd1, [mock_kernel_param_0];");
+        _ = ptxBuilder.AppendLine("    mul.wide.u32 %rd2, %r3, 4;");
+        _ = ptxBuilder.AppendLine("    add.s64 %rd3, %rd1, %rd2;");
+        _ = ptxBuilder.AppendLine("    ld.global.f32 %f1, [%rd3];");
+        _ = ptxBuilder.AppendLine("    mul.f32 %f2, %f1, 0f40000000;");
+        _ = ptxBuilder.AppendLine("    ld.param.u64 %rd4, [mock_kernel_param_1];");
+        _ = ptxBuilder.AppendLine("    add.s64 %rd5, %rd4, %rd2;");
+        _ = ptxBuilder.AppendLine("    st.global.f32 [%rd5], %f2;");
+        _ = ptxBuilder.AppendLine();
+        _ = ptxBuilder.AppendLine("LBB0_2:");
+        _ = ptxBuilder.AppendLine("    ret;");
+        _ = ptxBuilder.AppendLine("}");
 
         return ptxBuilder.ToString();
     }
@@ -612,9 +612,5 @@ __global__ void complex_kernel(float* input, float* output, float* temp, int n)
         }
     }
 
-    public void Dispose()
-    {
-        _loggerFactory?.Dispose();
-    }
-}
+    public void Dispose() => _loggerFactory?.Dispose();
 }

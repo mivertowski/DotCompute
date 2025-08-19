@@ -7,8 +7,8 @@ using Moq;
 using Xunit;
 using CoreMemory = DotCompute.Core.Memory;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Edge case tests for IMemoryManager implementations focusing on boundary conditions,
@@ -27,7 +27,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
         _memoryManagerMock = new Mock<CoreMemory.IMemoryManager>();
 
         // Setup default behavior
-        _memoryManagerMock.Setup(m => m.AvailableLocations)
+        _ = _memoryManagerMock.Setup(m => m.AvailableLocations)
             .Returns([CoreMemory.MemoryLocation.Host, CoreMemory.MemoryLocation.Device]);
     }
 
@@ -37,12 +37,12 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
     public async Task CreateBufferAsync_WithMaxIntSize_ShouldThrowOrSucceedGracefully()
     {
         // Arrange
-        _memoryManagerMock
+        _ = _memoryManagerMock
             .Setup(m => m.CreateBufferAsync<byte>(int.MaxValue, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("Buffer size too large"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentException>(() =>
             _memoryManagerMock.Object.CreateBufferAsync<byte>(int.MaxValue, CoreMemory.MemoryLocation.Device).AsTask());
     }
 
@@ -50,12 +50,12 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
     public async Task CreateBufferAsync_WithNegativeSize_ShouldThrowArgumentException()
     {
         // Arrange
-        _memoryManagerMock
+        _ = _memoryManagerMock
             .Setup(m => m.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("Element count must be positive"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentException>(() =>
             _memoryManagerMock.Object.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host).AsTask());
     }
 
@@ -72,9 +72,9 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
         var mockBuffer = new Mock<IMemoryBuffer>();
         // ElementCount is not available in IMemoryBuffer, calculate from SizeInBytes
         // mockBuffer.Setup(b => b.ElementCount).Returns(elementCount);
-        mockBuffer.Setup(b => b.SizeInBytes).Returns(elementCount);
+        _ = mockBuffer.Setup(b => b.SizeInBytes).Returns(elementCount);
 
-        _memoryManagerMock
+        _ = _memoryManagerMock
             .Setup(m => m.CreateBufferAsync<byte>(elementCount, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<Abstractions.IBuffer<byte>>());
 
@@ -109,9 +109,9 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
     {
         // Arrange
         var mockBuffer = new Mock<IMemoryBuffer>();
-        mockBuffer.Setup(b => b.SizeInBytes).Returns(100 * sizeof(int));
+        _ = mockBuffer.Setup(b => b.SizeInBytes).Returns(100 * sizeof(int));
 
-        _memoryManagerMock
+        _ = _memoryManagerMock
             .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
             .ReturnsAsync(Mock.Of<Abstractions.IBuffer<int>>());
 
@@ -166,7 +166,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
     public async Task DisposeAsync_ShouldDisposeCorrectly()
     {
         // Arrange
-        _memoryManagerMock.Setup(m => m.DisposeAsync()).Returns(ValueTask.CompletedTask);
+        _ = _memoryManagerMock.Setup(m => m.DisposeAsync()).Returns(ValueTask.CompletedTask);
 
         // Act & Assert(should not throw)
         await _memoryManagerMock.Object.DisposeAsync();
@@ -178,7 +178,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
         if (typeof(T) == typeof(IMemoryBuffer))
         {
             var mockBuffer = new Mock<IMemoryBuffer>();
-            mockBuffer.Setup(b => b.SizeInBytes).Returns(elementCount * sizeof(int));
+            _ = mockBuffer.Setup(b => b.SizeInBytes).Returns(elementCount * sizeof(int));
             return (T)mockBuffer.Object;
         }
         return Mock.Of<T>();
@@ -193,5 +193,4 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
             GC.SuppressFinalize(this);
         }
     }
-}
 }

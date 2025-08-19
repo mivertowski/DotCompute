@@ -2,8 +2,8 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Utilities
-{
+namespace DotCompute.Tests.Hardware.Utilities;
+
 
 /// <summary>
 /// Utility class providing common functionality for RTX 2000 Ada Generation testing.
@@ -79,13 +79,13 @@ public static class RTX2000TestUtilities
         return
         [
             "--gpu-architecture=compute_89",
-            "--use_fast_math",
-            "--extra-device-vectorization",
-            "--maxrregcount=64",
-            "--ftz=true", // Flush denormals to zero
-            "--prec-div=false", // Use fast division
-            "--prec-sqrt=false", // Use fast square root
-            "--fmad=true" // Enable fused multiply-add
+        "--use_fast_math",
+        "--extra-device-vectorization",
+        "--maxrregcount=64",
+        "--ftz=true", // Flush denormals to zero
+        "--prec-div=false", // Use fast division
+        "--prec-sqrt=false", // Use fast square root
+        "--fmad=true" // Enable fused multiply-add
         ];
     }
 
@@ -127,7 +127,7 @@ public static class RTX2000TestUtilities
                 MinTimeMicroseconds = times.Min(),
                 MaxTimeMicroseconds = times.Max(),
                 StandardDeviation = CalculateStandardDeviation(times),
-                AllTimes = times.ToArray()
+                AllTimes = [.. times]
             };
         }
         catch (Exception ex)
@@ -196,14 +196,14 @@ public static class RTX2000TestUtilities
         const double MinPCIeBandwidth = 12.0; // GB/s for PCIe 4.0 x16
         const double MaxPCIeBandwidth = 32.0; // GB/s theoretical maximum
 
-        result.H2DValid = measurement.H2D >= MinPCIeBandwidth && measurement.H2D <= MaxPCIeBandwidth;
-        result.D2HValid = measurement.D2H >= MinPCIeBandwidth && measurement.D2H <= MaxPCIeBandwidth;
+        result.H2DValid = measurement.H2D is >= MinPCIeBandwidth and <= MaxPCIeBandwidth;
+        result.D2HValid = measurement.D2H is >= MinPCIeBandwidth and <= MaxPCIeBandwidth;
 
         // D2D bandwidth validation(GDDR6 memory)
         const double MinGDDR6Bandwidth = 150.0; // GB/s conservative minimum
         const double MaxGDDR6Bandwidth = 300.0; // GB/s theoretical maximum
 
-        result.D2DValid = measurement.D2D >= MinGDDR6Bandwidth && measurement.D2D <= MaxGDDR6Bandwidth;
+        result.D2DValid = measurement.D2D is >= MinGDDR6Bandwidth and <= MaxGDDR6Bandwidth;
 
         // Calculate efficiency relative to theoretical peak
         result.PCIeEfficiency = Math.Min(measurement.H2D, measurement.D2H) / MaxPCIeBandwidth;
@@ -396,7 +396,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public bool IsCompiled { get; set; }
         public IntPtr ModuleHandle { get; set; }
         public IntPtr FunctionHandle { get; set; }
-        
+
         public bool Equals(CompiledKernel? other)
         {
             if (other is null)
@@ -410,9 +410,9 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                    ModuleHandle.Equals(other.ModuleHandle) &&
                    FunctionHandle.Equals(other.FunctionHandle);
         }
-        
+
         public override bool Equals(object? obj) => Equals(obj as CompiledKernel);
-        
+
         public override int GetHashCode() => HashCode.Combine(Name, Source, IsCompiled, ModuleHandle, FunctionHandle);
     }
 
@@ -425,7 +425,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public uint BlockDimY { get; set; }
         public uint BlockDimZ { get; set; }
         public uint SharedMemoryBytes { get; set; }
-        
+
         public bool Equals(KernelLaunchParameters? other)
         {
             if (other is null)
@@ -440,9 +440,9 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                    BlockDimZ == other.BlockDimZ &&
                    SharedMemoryBytes == other.SharedMemoryBytes;
         }
-        
+
         public override bool Equals(object? obj) => Equals(obj as KernelLaunchParameters);
-        
+
         public override int GetHashCode() => HashCode.Combine(GridDimX, GridDimY, GridDimZ, BlockDimX, BlockDimY, BlockDimZ, SharedMemoryBytes);
     }
 
@@ -453,7 +453,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public double MaxTimeMicroseconds { get; set; }
         public double StandardDeviation { get; set; }
         public double[] AllTimes { get; set; } = Array.Empty<double>();
-        
+
         public bool Equals(KernelExecutionResult? other)
         {
             if (other is null)
@@ -466,9 +466,9 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                    StandardDeviation.Equals(other.StandardDeviation) &&
                    AllTimes.SequenceEqual(other.AllTimes);
         }
-        
+
         public override bool Equals(object? obj) => Equals(obj as KernelExecutionResult);
-        
+
         public override int GetHashCode() => HashCode.Combine(AverageTimeMicroseconds, MinTimeMicroseconds, MaxTimeMicroseconds, StandardDeviation);
     }
 
@@ -477,15 +477,15 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public double H2D { get; set; }
         public double D2H { get; set; }
         public double D2D { get; set; }
-        
+
         public readonly bool Equals(BandwidthMeasurement other) => H2D.Equals(other.H2D) && D2H.Equals(other.D2H) && D2D.Equals(other.D2D);
-            
+
         public override readonly bool Equals(object? obj) => obj is BandwidthMeasurement other && Equals(other);
-        
+
         public override readonly int GetHashCode() => HashCode.Combine(H2D, D2H, D2D);
-        
+
         public static bool operator ==(BandwidthMeasurement left, BandwidthMeasurement right) => left.Equals(right);
-        
+
         public static bool operator !=(BandwidthMeasurement left, BandwidthMeasurement right) => !left.Equals(right);
     }
 
@@ -497,7 +497,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public bool IsValid { get; set; }
         public double PCIeEfficiency { get; set; }
         public double MemoryEfficiency { get; set; }
-        
+
         public bool Equals(BandwidthValidationResult? other)
         {
             if (other is null)
@@ -511,9 +511,9 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                    PCIeEfficiency.Equals(other.PCIeEfficiency) &&
                    MemoryEfficiency.Equals(other.MemoryEfficiency);
         }
-        
+
         public override bool Equals(object? obj) => Equals(obj as BandwidthValidationResult);
-        
+
         public override int GetHashCode() => HashCode.Combine(H2DValid, D2HValid, D2DValid, IsValid, PCIeEfficiency, MemoryEfficiency);
     }
 
@@ -524,7 +524,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public double MaxError { get; set; }
         public double AverageError { get; set; }
         public int SamplesValidated { get; set; }
-        
+
         public bool Equals(ValidationResult? other)
         {
             if (other is null)
@@ -537,9 +537,9 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                    AverageError.Equals(other.AverageError) &&
                    SamplesValidated == other.SamplesValidated;
         }
-        
+
         public override bool Equals(object? obj) => Equals(obj as ValidationResult);
-        
+
         public override int GetHashCode() => HashCode.Combine(IsValid, ErrorMessage, MaxError, AverageError, SamplesValidated);
     }
 
@@ -553,5 +553,4 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
     }
 
     #endregion
-}
 }

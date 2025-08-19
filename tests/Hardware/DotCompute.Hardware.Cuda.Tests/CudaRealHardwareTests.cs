@@ -4,8 +4,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Real hardware tests for CUDA GPU operations.
@@ -79,7 +79,7 @@ public sealed class CudaRealHardwareTests : IDisposable
         var result = CudaGetDeviceCount(ref deviceCount);
 
         Assert.Equal(0, result);
-        deviceCount.Should().BeGreaterThan(0, "Should have at least one CUDA device");
+        _ = deviceCount.Should().BeGreaterThan(0, "Should have at least one CUDA device");
 
         _output.WriteLine($"CUDA device count: {deviceCount}");
 
@@ -103,9 +103,9 @@ public sealed class CudaRealHardwareTests : IDisposable
         var result = CudaMemGetInfo(ref free, ref total);
 
         Assert.Equal(0, result);
-        total.Should().BeGreaterThan(0, "Total memory should be greater than 0");
-        free.Should().BeGreaterThan(0, "Free memory should be greater than 0");
-        (free <= total).Should().BeTrue();
+        _ = total.Should().BeGreaterThan(0, "Total memory should be greater than 0");
+        _ = free.Should().BeGreaterThan(0, "Free memory should be greater than 0");
+        _ = (free <= total).Should().BeTrue();
 
         _output.WriteLine($"GPU Memory - Total: {total / (1024 * 1024)} MB, Free: {free / (1024 * 1024)} MB");
     }
@@ -197,7 +197,7 @@ public sealed class CudaRealHardwareTests : IDisposable
         {
             if (devicePtr != IntPtr.Zero)
             {
-                CudaFree(devicePtr);
+                _ = CudaFree(devicePtr);
             }
         }
 
@@ -274,11 +274,11 @@ public sealed class CudaRealHardwareTests : IDisposable
         finally
         {
             if (d_a != IntPtr.Zero)
-                CudaFree(d_a);
+                _ = CudaFree(d_a);
             if (d_b != IntPtr.Zero)
-                CudaFree(d_b);
+                _ = CudaFree(d_b);
             if (d_result != IntPtr.Zero)
-                CudaFree(d_result);
+                _ = CudaFree(d_result);
         }
 
         await Task.CompletedTask;
@@ -309,7 +309,7 @@ public sealed class CudaRealHardwareTests : IDisposable
             try
             {
                 // Warm up
-                CudaMemcpyHtoD(devicePtr, hostHandle.AddrOfPinnedObject(), size);
+                _ = CudaMemcpyHtoD(devicePtr, hostHandle.AddrOfPinnedObject(), size);
 
                 // Measure H2D bandwidth
                 var sw = Stopwatch.StartNew();
@@ -322,7 +322,7 @@ public sealed class CudaRealHardwareTests : IDisposable
 
                 var h2dBandwidth = (size * iterations / 1024.0 / 1024.0 / 1024.0) / (sw.Elapsed.TotalSeconds);
                 _output.WriteLine($"Host to Device bandwidth: {h2dBandwidth:F2} GB/s");
-                h2dBandwidth.Should().BeGreaterThan(1.0, "H2D bandwidth should be at least 1 GB/s");
+                _ = h2dBandwidth.Should().BeGreaterThan(1.0, "H2D bandwidth should be at least 1 GB/s");
 
                 // Measure D2H bandwidth
                 sw.Restart();
@@ -335,7 +335,7 @@ public sealed class CudaRealHardwareTests : IDisposable
 
                 var d2hBandwidth = (size * iterations / 1024.0 / 1024.0 / 1024.0) / (sw.Elapsed.TotalSeconds);
                 _output.WriteLine($"Device to Host bandwidth: {d2hBandwidth:F2} GB/s");
-                d2hBandwidth.Should().BeGreaterThan(1.0, "D2H bandwidth should be at least 1 GB/s");
+                _ = d2hBandwidth.Should().BeGreaterThan(1.0, "D2H bandwidth should be at least 1 GB/s");
             }
             finally
             {
@@ -346,7 +346,7 @@ public sealed class CudaRealHardwareTests : IDisposable
         {
             if (devicePtr != IntPtr.Zero)
             {
-                CudaFree(devicePtr);
+                _ = CudaFree(devicePtr);
             }
         }
     }
@@ -355,7 +355,7 @@ public sealed class CudaRealHardwareTests : IDisposable
     {
         if (_cudaContext != IntPtr.Zero)
         {
-            CudaCtxDestroy(_cudaContext);
+            _ = CudaCtxDestroy(_cudaContext);
             _cudaContext = IntPtr.Zero;
         }
         _cudaInitialized = false;
@@ -604,5 +604,4 @@ public sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
-}
 }

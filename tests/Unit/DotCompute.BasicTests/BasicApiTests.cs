@@ -2,8 +2,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Basic API validation tests to ensure core functionality works
@@ -29,7 +29,7 @@ public class BasicApiTests
         var args = KernelArguments.Create(3);
 
         // Assert
-        args.Length.Should().Be(3);
+        _ = args.Length.Should().Be(3);
     }
 
     [Fact]
@@ -74,9 +74,9 @@ public class BasicApiTests
         };
 
         // Assert
-        options.OptimizationLevel.Should().Be(OptimizationLevel.None);
-        options.FastMath.Should().BeTrue();
-        options.UnrollLoops.Should().BeTrue();
+        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.None);
+        _ = options.FastMath.Should().BeTrue();
+        _ = options.UnrollLoops.Should().BeTrue();
     }
 
     [Theory]
@@ -89,7 +89,7 @@ public class BasicApiTests
         var result = type.ToString();
 
         // Assert
-        result.Should().NotBeNullOrEmpty();
+        _ = result.Should().NotBeNullOrEmpty();
         _ = result.Should().Be(type.ToString());
     }
 
@@ -100,9 +100,9 @@ public class BasicApiTests
         var combined = MemoryOptions.ReadOnly | MemoryOptions.HostVisible;
 
         // Act & Assert
-        combined.Should().HaveFlag(MemoryOptions.ReadOnly);
-        combined.Should().HaveFlag(MemoryOptions.HostVisible);
-        combined.Should().NotHaveFlag(MemoryOptions.WriteOnly);
+        _ = combined.Should().HaveFlag(MemoryOptions.ReadOnly);
+        _ = combined.Should().HaveFlag(MemoryOptions.HostVisible);
+        _ = combined.Should().NotHaveFlag(MemoryOptions.WriteOnly);
     }
 
     [Fact]
@@ -114,7 +114,7 @@ public class BasicApiTests
         // Assert
         Assert.Contains(OptimizationLevel.None, values);
         Assert.Contains(OptimizationLevel.Default, values);
-        (values.Length > 1).Should().BeTrue();
+        _ = (values.Length > 1).Should().BeTrue();
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public class BasicApiTests
         var args = KernelArguments.Create(0);
 
         // Assert
-        args.Length.Should().Be(0);
+        _ = args.Length.Should().Be(0);
     }
 
     [Fact]
@@ -143,8 +143,7 @@ public class BasicApiTests
         // Assert
         for (var i = 0; i < values.Length; i++)
         {
-            args.Get(i).Should().Be(values[i]);
+            _ = args.Get(i).Should().Be(values[i]);
         }
     }
-}
 }

@@ -2,23 +2,18 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Utilities.TestInfrastructure
-{
+namespace DotCompute.Tests.Utilities.TestInfrastructure;
+
 
 /// <summary>
 /// Simulates hardware accelerators for testing purposes
 /// </summary>
 [ExcludeFromCodeCoverage]
-public sealed class HardwareSimulator : IDisposable
+public sealed class HardwareSimulator(ILogger<HardwareSimulator>? logger = null) : IDisposable
 {
-    private readonly ILogger<HardwareSimulator> _logger;
+    private readonly ILogger<HardwareSimulator> _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<HardwareSimulator>.Instance;
     private readonly Dictionary<AcceleratorType, List<SimulatedAccelerator>> _accelerators = [];
     private bool _disposed;
-
-    public HardwareSimulator(ILogger<HardwareSimulator>? logger = null)
-    {
-        _logger = logger ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<HardwareSimulator>.Instance;
-    }
 
     /// <summary>
     /// Add a simulated accelerator
@@ -59,9 +54,9 @@ public sealed class HardwareSimulator : IDisposable
     /// </summary>
     public void CreateStandardGpuSetup()
     {
-        AddAccelerator(AcceleratorType.CUDA, "NVIDIA RTX 4090", 24L * 1024 * 1024 * 1024);
-        AddAccelerator(AcceleratorType.CUDA, "NVIDIA GTX 1080", 8L * 1024 * 1024 * 1024);
-        AddAccelerator(AcceleratorType.OpenCL, "Intel UHD Graphics", 2L * 1024 * 1024 * 1024);
+        _ = AddAccelerator(AcceleratorType.CUDA, "NVIDIA RTX 4090", 24L * 1024 * 1024 * 1024);
+        _ = AddAccelerator(AcceleratorType.CUDA, "NVIDIA GTX 1080", 8L * 1024 * 1024 * 1024);
+        _ = AddAccelerator(AcceleratorType.OpenCL, "Intel UHD Graphics", 2L * 1024 * 1024 * 1024);
     }
 
     /// <summary>
@@ -291,15 +286,8 @@ public sealed class SimulatedAccelerator : IAccelerator
 /// Simulated accelerator context
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class SimulatedAcceleratorContext
+public class SimulatedAcceleratorContext(SimulatedAccelerator accelerator)
 {
-    private readonly SimulatedAccelerator _accelerator;
-
-    public SimulatedAcceleratorContext(SimulatedAccelerator accelerator)
-    {
-        _accelerator = accelerator;
-    }
-
     public static void Synchronize()
         // Simulate synchronization
         => Thread.Sleep(1);
@@ -310,5 +298,4 @@ public class SimulatedAcceleratorContext
     {
         // Nothing to dispose for simulation
     }
-}
 }

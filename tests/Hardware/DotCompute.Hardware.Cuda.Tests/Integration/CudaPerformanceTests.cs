@@ -14,8 +14,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Integration
-{
+namespace DotCompute.Tests.Hardware.Integration;
+
 
 /// <summary>
 /// Performance benchmarks and tests for CUDA backend operations
@@ -30,13 +30,13 @@ public sealed class CudaPerformanceTests : IDisposable
     private readonly List<ISyncMemoryBuffer> _buffers = [];
 
     // LoggerMessage delegates for performance
-    private static readonly Action<ILogger, string, Exception?> LogBufferDisposeError = 
+    private static readonly Action<ILogger, string, Exception?> LogBufferDisposeError =
         LoggerMessage.Define<string>(
             LogLevel.Warning,
             new EventId(1, nameof(LogBufferDisposeError)),
             "Error disposing CUDA buffer: {Message}");
 
-    private static readonly Action<ILogger, string, Exception?> LogAcceleratorDisposeError = 
+    private static readonly Action<ILogger, string, Exception?> LogAcceleratorDisposeError =
         LoggerMessage.Define<string>(
             LogLevel.Warning,
             new EventId(2, nameof(LogAcceleratorDisposeError)),
@@ -68,7 +68,7 @@ public sealed class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(3000,
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(3000,
             "Device initialization should complete within 3 seconds");
         _output.WriteLine($"Device initialization took {stopwatch.ElapsedMilliseconds}ms");
     }
@@ -101,7 +101,7 @@ public sealed class CudaPerformanceTests : IDisposable
         var timePerMB = stopwatch.ElapsedMilliseconds / Math.Max(sizeInMB, 0.001);
 
         Assert.NotNull(buffer);
-        timePerMB.Should().BeLessThan(1000, $"Allocation time should be reasonable for {sizeInMB:F2}MB");
+        _ = timePerMB.Should().BeLessThan(1000, $"Allocation time should be reasonable for {sizeInMB:F2}MB");
 
         _output.WriteLine($"Allocated {sizeInMB:F2}MB in {stopwatch.ElapsedMilliseconds}ms{timePerMB:F2}ms/MB)");
     }
@@ -155,7 +155,7 @@ public sealed class CudaPerformanceTests : IDisposable
         var avgTimeMs = stopwatch.ElapsedMilliseconds / (double)benchmarkRuns;
         var bandwidthGBps = (sizeInBytes / 1024.0 / 1024.0 / 1024.0) / (avgTimeMs / 1000.0);
 
-        bandwidthGBps.Should().BeGreaterThan(0.1, "Host-to-device transfer should achieve reasonable bandwidth");
+        _ = bandwidthGBps.Should().BeGreaterThan(0.1, "Host-to-device transfer should achieve reasonable bandwidth");
 
         _output.WriteLine($"{description} H2D transfer: {avgTimeMs:F2}ms avg, {bandwidthGBps:F2} GB/s");
     }
@@ -210,7 +210,7 @@ public sealed class CudaPerformanceTests : IDisposable
         var avgTimeMs = stopwatch.ElapsedMilliseconds / (double)benchmarkRuns;
         var bandwidthGBps = (sizeInBytes / 1024.0 / 1024.0 / 1024.0) / (avgTimeMs / 1000.0);
 
-        bandwidthGBps.Should().BeGreaterThan(0.1, "Device-to-host transfer should achieve reasonable bandwidth");
+        _ = bandwidthGBps.Should().BeGreaterThan(0.1, "Device-to-host transfer should achieve reasonable bandwidth");
 
         _output.WriteLine($"{description} D2H transfer: {avgTimeMs:F2}ms avg, {bandwidthGBps:F2} GB/s");
     }
@@ -249,7 +249,7 @@ public sealed class CudaPerformanceTests : IDisposable
 
         // Cache hits should be significantly faster
         var cacheSpeedup = (double)stopwatch1.ElapsedMilliseconds / Math.Max(stopwatch2.ElapsedMilliseconds, 1);
-        cacheSpeedup.Should().BeGreaterThanOrEqualTo(0.1, "Cached compilation should be faster or similar speed");
+        _ = cacheSpeedup.Should().BeGreaterThanOrEqualTo(0.1, "Cached compilation should be faster or similar speed");
 
         _output.WriteLine($"First compile: {stopwatch1.ElapsedMilliseconds}ms");
         _output.WriteLine($"Second compile: {stopwatch2.ElapsedMilliseconds}msspeedup: {cacheSpeedup:F1}x)");
@@ -284,7 +284,7 @@ public sealed class CudaPerformanceTests : IDisposable
 
         // Assert
         Assert.NotNull(kernel);
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(30000,
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(30000,
             $"Kernel compilation with {level} optimization should complete within 30 seconds");
 
         _output.WriteLine($"Compilation with {level} optimization took {stopwatch.ElapsedMilliseconds}ms");
@@ -320,10 +320,10 @@ public sealed class CudaPerformanceTests : IDisposable
 
         // Assert
         Assert.Equal(concurrentKernels, compiledKernels.Length);
-        compiledKernels.Should().AllSatisfy((k => k.Should().NotBeNull()));
+        _ = compiledKernels.Should().AllSatisfy((k => k.Should().NotBeNull()));
 
         var avgTimePerKernel = stopwatch.ElapsedMilliseconds / (double)concurrentKernels;
-        avgTimePerKernel.Should().BeLessThan(15000,
+        _ = avgTimePerKernel.Should().BeLessThan(15000,
             "Average concurrent compilation time should be reasonable");
 
         _output.WriteLine($"Compiled {concurrentKernels} kernels concurrently in {stopwatch.ElapsedMilliseconds}ms");
@@ -365,7 +365,7 @@ public sealed class CudaPerformanceTests : IDisposable
 
         // Assert
         var avgSyncTime = stopwatch.ElapsedMilliseconds / (double)syncCount;
-        avgSyncTime.Should().BeLessThan(100, "Average synchronization should be fast");
+        _ = avgSyncTime.Should().BeLessThan(100, "Average synchronization should be fast");
 
         _output.WriteLine($"Average synchronization time: {avgSyncTime:F3}ms{syncCount} operations)");
     }
@@ -396,7 +396,7 @@ public sealed class CudaPerformanceTests : IDisposable
 
         // Assert
         var avgQueryTime = (stopwatch.ElapsedTicks * 1000000.0 / Stopwatch.Frequency) / (double)queryCount;
-        avgQueryTime.Should().BeLessThan(1000, "Memory statistics queries should be very fast");
+        _ = avgQueryTime.Should().BeLessThan(1000, "Memory statistics queries should be very fast");
 
         _output.WriteLine($"Average memory statistics query time: {avgQueryTime:F2}μs{queryCount} queries)");
     }
@@ -451,7 +451,7 @@ public sealed class CudaPerformanceTests : IDisposable
         var lastQuarter = allocationTimes.Skip(3 * cycles / 4).Average();
         var slowdown = lastQuarter / firstQuarter;
 
-        slowdown.Should().BeLessThan(10.0, "Memory fragmentation shouldn't cause severe performance degradation");
+        _ = slowdown.Should().BeLessThan(10.0, "Memory fragmentation shouldn't cause severe performance degradation");
 
         _output.WriteLine($"First quarter avg: {firstQuarter:F2}μs, Last quarter avg: {lastQuarter:F2}μs");
         _output.WriteLine($"Performance degradation: {slowdown:F2}x");
@@ -483,7 +483,7 @@ public sealed class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
             "Device reset should complete within 10 seconds");
 
         _output.WriteLine($"Device reset took {stopwatch.ElapsedMilliseconds}ms");
@@ -702,5 +702,4 @@ public sealed class CudaBenchmarkSuite : IDisposable
             return false;
         }
     }
-}
 }

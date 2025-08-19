@@ -4,8 +4,8 @@
 using System.Globalization;
 using Xunit;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Test collection definition for CUDA hardware tests to ensure proper test isolation
@@ -136,5 +136,4 @@ public sealed class CudaTestFixture : IDisposable
         }
         GC.SuppressFinalize(this);
     }
-}
 }

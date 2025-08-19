@@ -6,8 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit.Compute
-{
+namespace DotCompute.Tests.Unit.Compute;
+
 
 /// <summary>
 /// Comprehensive unit tests for ComputeEngine
@@ -28,9 +28,9 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
 #pragma warning restore CA2000
 
         var services = new ServiceCollection();
-        services.AddLogging(builder => builder.AddProvider(new XUnitLoggerProvider(output)));
-        services.AddSingleton<IAcceleratorManager>(sp => new TestAcceleratorManager(_hardwareSimulator));
-        services.AddTransient<IComputeEngine, DefaultComputeEngine>();
+        _ = services.AddLogging(builder => builder.AddProvider(new XUnitLoggerProvider(output)));
+        _ = services.AddSingleton<IAcceleratorManager>(sp => new TestAcceleratorManager(_hardwareSimulator));
+        _ = services.AddTransient<IComputeEngine, DefaultComputeEngine>();
 
         _serviceProvider = RegisterDisposable(services.BuildServiceProvider());
     }
@@ -56,7 +56,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
         var logger = _serviceProvider.GetRequiredService<ILogger<DefaultComputeEngine>>();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new DefaultComputeEngine(null!, logger));
+        _ = Assert.Throws<ArgumentNullException>(() => new DefaultComputeEngine(null!, logger));
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
         var acceleratorManager = _serviceProvider.GetRequiredService<IAcceleratorManager>();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new DefaultComputeEngine(acceleratorManager, null!));
+        _ = Assert.Throws<ArgumentNullException>(() => new DefaultComputeEngine(acceleratorManager, null!));
     }
 
     [Fact]
@@ -124,7 +124,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
         var parameters = new object[] { 1, 2, 3 };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await engine.ExecuteKernelAsync("", parameters, CancellationToken));
     }
 
@@ -137,7 +137,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
         var kernelSource = "kernel void test() { }";
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await engine.ExecuteKernelAsync(kernelSource, null!, CancellationToken));
     }
 
@@ -154,7 +154,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
         cts.CancelAfter(TimeSpan.FromMilliseconds(10));
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
             await engine.ExecuteKernelAsync(kernelSource, parameters, cts.Token));
     }
 
@@ -166,7 +166,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
     {
         // Arrange
         _hardwareSimulator.CreateStandardGpuSetup();
-        _hardwareSimulator.AddAccelerator(type, $"Test {type} Device");
+        _ = _hardwareSimulator.AddAccelerator(type, $"Test {type} Device");
         var engine = _serviceProvider.GetRequiredService<IComputeEngine>();
 
         // Act
@@ -202,10 +202,10 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
 
         var operations = new[]
         {
-           ("kernel1", new object[] { 1 }),
-           ("kernel2", [2]),
-           ("kernel3", [3])
-        };
+       ("kernel1", new object[] { 1 }),
+       ("kernel2", [2]),
+       ("kernel3", [3])
+    };
 
         // Act
         var results = await engine.ExecuteParallelAsync(operations, CancellationToken);
@@ -226,7 +226,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
         engine.Dispose();
 
         // Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() =>
             engine.GetAvailableAcceleratorsAsync(CancellationToken.None));
     }
 
@@ -274,7 +274,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
         var engine = _serviceProvider.GetRequiredService<IComputeEngine>();
 
         // Execute some operations first
-        await engine.ExecuteKernelAsync("kernel void test() { }", [], CancellationToken);
+        _ = await engine.ExecuteKernelAsync("kernel void test() { }", [], CancellationToken);
 
         // Act
         var metrics = await engine.GetPerformanceMetricsAsync();
@@ -294,7 +294,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
         public TestAcceleratorManager(HardwareSimulator simulator)
         {
             _simulator = simulator;
-            _accelerators = _simulator.GetAllAccelerators().Cast<IAccelerator>().ToList();
+            _accelerators = [.. _simulator.GetAllAccelerators().Cast<IAccelerator>()];
         }
 
         public Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(CancellationToken cancellationToken = default) => Task.FromResult(_simulator.GetAllAccelerators().Cast<IAccelerator>());
@@ -334,7 +334,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
             return candidates.FirstOrDefault();
         }
 
-        public AcceleratorContext CreateContext(IAccelerator accelerator) => new AcceleratorContext();
+        public AcceleratorContext CreateContext(IAccelerator accelerator) => new();
 
         public void RegisterProvider(IAcceleratorProvider provider)
         {
@@ -353,10 +353,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
             return ValueTask.CompletedTask;
         }
 
-        public void Dispose()
-        {
-            _simulator.Dispose();
-        }
+        public void Dispose() => _simulator.Dispose();
     }
 
 
@@ -377,17 +374,10 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
     /// <summary>
     /// Default implementation for testing
     /// </summary>
-    private sealed class DefaultComputeEngine : IComputeEngine
+    private sealed class DefaultComputeEngine(IAcceleratorManager acceleratorManager, ILogger<ComputeEngineUnitTests.DefaultComputeEngine> logger) : IComputeEngine
     {
-        private readonly IAcceleratorManager _acceleratorManager;
-        private readonly ILogger<DefaultComputeEngine> _logger;
+        private readonly IAcceleratorManager _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(nameof(acceleratorManager));
         private bool _disposed;
-
-        public DefaultComputeEngine(IAcceleratorManager acceleratorManager, ILogger<DefaultComputeEngine> logger)
-        {
-            _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(nameof(acceleratorManager));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        }
 
         public async Task<IEnumerable<IAccelerator>> GetAvailableAcceleratorsAsync(CancellationToken cancellationToken = default)
         {
@@ -419,7 +409,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
             var accelerator = await GetBestAcceleratorAsync(cancellationToken: cancellationToken);
             if (accelerator is SimulatedAccelerator simAccelerator)
             {
-                await simAccelerator.ExecuteKernelAsync(kernelSource, parameters, cancellationToken);
+                _ = await simAccelerator.ExecuteKernelAsync(kernelSource, parameters, cancellationToken);
             }
 
             return new { Success = true, KernelSource = kernelSource, Parameters = parameters };
@@ -466,10 +456,6 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
 
     private sealed class TestExecutionContext : IDisposable
     {
-        public void Dispose()
-        {
-            GC.SuppressFinalize(this);
-        }
+        public void Dispose() => GC.SuppressFinalize(this);
     }
-}
 }

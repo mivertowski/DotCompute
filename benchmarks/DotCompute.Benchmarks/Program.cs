@@ -65,40 +65,40 @@ else if (args[0].Equals("interactive", StringComparison.OrdinalIgnoreCase))
     switch (choice?.ToUpperInvariant())
     {
         case "1":
-            BenchmarkRunner.Run<MemoryOperationsBenchmarks>(config);
+            _ = BenchmarkRunner.Run<MemoryOperationsBenchmarks>(config);
             break;
         case "2":
-            BenchmarkRunner.Run<EnhancedDataTransferBenchmarks>(config);
+            _ = BenchmarkRunner.Run<EnhancedDataTransferBenchmarks>(config);
             break;
         case "3":
-            BenchmarkRunner.Run<EnhancedKernelCompilationBenchmarks>(config);
+            _ = BenchmarkRunner.Run<EnhancedKernelCompilationBenchmarks>(config);
             break;
         case "4":
-            BenchmarkRunner.Run<ComputeKernelsBenchmarks>(config);
+            _ = BenchmarkRunner.Run<ComputeKernelsBenchmarks>(config);
             break;
         case "5":
-            BenchmarkRunner.Run<PipelineExecutionBenchmarks>(config);
+            _ = BenchmarkRunner.Run<PipelineExecutionBenchmarks>(config);
             break;
         case "6":
-            BenchmarkRunner.Run<PluginSystemBenchmarks>(config);
+            _ = BenchmarkRunner.Run<PluginSystemBenchmarks>(config);
             break;
         case "7":
-            BenchmarkRunner.Run<MultiAcceleratorBenchmarks>(config);
+            _ = BenchmarkRunner.Run<MultiAcceleratorBenchmarks>(config);
             break;
         case "8":
-            BenchmarkRunner.Run<SimdOperationsBenchmarks>(config);
+            _ = BenchmarkRunner.Run<SimdOperationsBenchmarks>(config);
             break;
         case "9":
-            BenchmarkRunner.Run<BackendComparisonBenchmarks>(config);
+            _ = BenchmarkRunner.Run<BackendComparisonBenchmarks>(config);
             break;
         case "10":
-            BenchmarkRunner.Run<RealWorldAlgorithmsBenchmarks>(config);
+            _ = BenchmarkRunner.Run<RealWorldAlgorithmsBenchmarks>(config);
             break;
         case "11":
-            BenchmarkRunner.Run<ConcurrentOperationsBenchmarks>(config);
+            _ = BenchmarkRunner.Run<ConcurrentOperationsBenchmarks>(config);
             break;
         case "A":
-            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).RunAll(config);
+            _ = BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).RunAll(config);
             break;
         default:
             Console.WriteLine("Invalid selection.");

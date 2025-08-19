@@ -11,42 +11,42 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.CPU.Accelerators;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CPU.Kernels
-{
+namespace DotCompute.Backends.CPU.Kernels;
+
 
 /// <summary>
 /// Base class for optimized kernel implementations.
 /// </summary>
 internal abstract class OptimizedKernelBase : ICompiledKernel
 {
-    protected readonly ILogger Logger;
-    protected readonly CompilationOptions Options;
-    protected bool Disposed;
+protected readonly ILogger Logger;
+protected readonly CompilationOptions Options;
+protected bool Disposed;
 
-    protected OptimizedKernelBase(string name, CompilationOptions options, ILogger logger)
+protected OptimizedKernelBase(string name, CompilationOptions options, ILogger logger)
+{
+    Name = name;
+    Options = options;
+    Logger = logger;
+}
+
+public string Name { get; }
+
+public abstract ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default);
+
+public ValueTask DisposeAsync()
+{
+    Disposed = true;
+    return ValueTask.CompletedTask;
+}
+
+protected void ThrowIfDisposed()
+{
+    if (Disposed)
     {
-        Name = name;
-        Options = options;
-        Logger = logger;
+        throw new ObjectDisposedException(GetType().Name);
     }
-
-    public string Name { get; }
-
-    public abstract ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default);
-
-    public ValueTask DisposeAsync()
-    {
-        Disposed = true;
-        return ValueTask.CompletedTask;
-    }
-
-    protected void ThrowIfDisposed()
-    {
-        if (Disposed)
-        {
-            throw new ObjectDisposedException(GetType().Name);
-        }
-    }
+}
 }
 
 /// <summary>
@@ -54,64 +54,64 @@ internal abstract class OptimizedKernelBase : ICompiledKernel
 /// </summary>
 internal class OptimizedVectorAddKernel : OptimizedKernelBase
 {
-    public OptimizedVectorAddKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
+public OptimizedVectorAddKernel(string name, CompilationOptions options, ILogger logger)
+    : base(name, options, logger) { }
 
-    public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+{
+    ThrowIfDisposed();
+
+    if (arguments.Arguments.Length < 3)
     {
-        ThrowIfDisposed();
-
-        if (arguments.Arguments.Length < 3)
-        {
-            throw new ArgumentException("Vector add requires 3 arguments: input A, input B, output");
-        }
-
-        var bufferA = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var bufferB = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
-        var bufferResult = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
-
-        var elementCount = (int)(bufferA.SizeInBytes / sizeof(float));
-        
-        await Task.Run(() => ExecuteVectorAddOptimized(bufferA, bufferB, bufferResult, elementCount), cancellationToken);
+        throw new ArgumentException("Vector add requires 3 arguments: input A, input B, output");
     }
 
-    private async void ExecuteVectorAddOptimized(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
+    var bufferA = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
+    var bufferB = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
+    var bufferResult = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
+
+    var elementCount = (int)(bufferA.SizeInBytes / sizeof(float));
+    
+    await Task.Run(() => ExecuteVectorAddOptimized(bufferA, bufferB, bufferResult, elementCount), cancellationToken);
+}
+
+private async void ExecuteVectorAddOptimized(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
+{
+    // Use generic implementation since we don't have direct access to HighPerformanceMemoryBuffer here
+    // This could be optimized further by exposing unsafe pointers through IMemoryBuffer
+    await ExecuteVectorAddGeneric(bufferA, bufferB, bufferResult, elementCount);
+}
+
+private async Task ExecuteVectorAddGeneric(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
+{
+    var dataA = new float[elementCount];
+    var dataB = new float[elementCount];
+    var dataResult = new float[elementCount];
+
+    await bufferA.CopyToHostAsync<float>(dataA);
+    await bufferB.CopyToHostAsync<float>(dataB);
+
+    // Vectorized addition
+    var vectorSize = Vector<float>.Count;
+    var vectorCount = elementCount / vectorSize;
+
+    for (var i = 0; i < vectorCount; i++)
     {
-        // Use generic implementation since we don't have direct access to HighPerformanceMemoryBuffer here
-        // This could be optimized further by exposing unsafe pointers through IMemoryBuffer
-        await ExecuteVectorAddGeneric(bufferA, bufferB, bufferResult, elementCount);
+        var offset = i * vectorSize;
+        var vecA = new Vector<float>(dataA, offset);
+        var vecB = new Vector<float>(dataB, offset);
+        var result = vecA + vecB;
+        result.CopyTo(dataResult, offset);
     }
 
-    private async Task ExecuteVectorAddGeneric(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferResult, int elementCount)
+    // Handle remaining elements
+    for (var i = vectorCount * vectorSize; i < elementCount; i++)
     {
-        var dataA = new float[elementCount];
-        var dataB = new float[elementCount];
-        var dataResult = new float[elementCount];
-
-        await bufferA.CopyToHostAsync<float>(dataA);
-        await bufferB.CopyToHostAsync<float>(dataB);
-
-        // Vectorized addition
-        var vectorSize = Vector<float>.Count;
-        var vectorCount = elementCount / vectorSize;
-
-        for (var i = 0; i < vectorCount; i++)
-        {
-            var offset = i * vectorSize;
-            var vecA = new Vector<float>(dataA, offset);
-            var vecB = new Vector<float>(dataB, offset);
-            var result = vecA + vecB;
-            result.CopyTo(dataResult, offset);
-        }
-
-        // Handle remaining elements
-        for (var i = vectorCount * vectorSize; i < elementCount; i++)
-        {
-            dataResult[i] = dataA[i] + dataB[i];
-        }
-
-        await bufferResult.CopyFromHostAsync<float>(dataResult);
+        dataResult[i] = dataA[i] + dataB[i];
     }
+
+    await bufferResult.CopyFromHostAsync<float>(dataResult);
+}
 }
 
 /// <summary>
@@ -119,51 +119,51 @@ internal class OptimizedVectorAddKernel : OptimizedKernelBase
 /// </summary>
 internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
 {
-    public OptimizedMatrixMultiplyKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
+public OptimizedMatrixMultiplyKernel(string name, CompilationOptions options, ILogger logger)
+    : base(name, options, logger) { }
 
-    public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+{
+    ThrowIfDisposed();
+
+    if (arguments.Arguments.Length < 4)
     {
-        ThrowIfDisposed();
-
-        if (arguments.Arguments.Length < 4)
-        {
-            throw new ArgumentException("Matrix multiply requires 4 arguments: matrix A, matrix B, result C, size");
-        }
-
-        var bufferA = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var bufferB = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
-        var bufferC = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
-        var size = Convert.ToInt32(arguments.Arguments[3]);
-
-        await Task.Run(() => ExecuteMatrixMultiplyGenericAsync(bufferA, bufferB, bufferC, size), cancellationToken);
+        throw new ArgumentException("Matrix multiply requires 4 arguments: matrix A, matrix B, result C, size");
     }
 
-    private async Task ExecuteMatrixMultiplyGenericAsync(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferC, int size)
+    var bufferA = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
+    var bufferB = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
+    var bufferC = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
+    var size = Convert.ToInt32(arguments.Arguments[3]);
+
+    await Task.Run(() => ExecuteMatrixMultiplyGenericAsync(bufferA, bufferB, bufferC, size), cancellationToken);
+}
+
+private async Task ExecuteMatrixMultiplyGenericAsync(IMemoryBuffer bufferA, IMemoryBuffer bufferB, IMemoryBuffer bufferC, int size)
+{
+    var matrixA = new float[size * size];
+    var matrixB = new float[size * size];
+    var matrixC = new float[size * size];
+
+    await bufferA.CopyToHostAsync<float>(matrixA);
+    await bufferB.CopyToHostAsync<float>(matrixB);
+
+    // Parallel matrix multiplication
+    Parallel.For(0, size, i =>
     {
-        var matrixA = new float[size * size];
-        var matrixB = new float[size * size];
-        var matrixC = new float[size * size];
-
-        await bufferA.CopyToHostAsync<float>(matrixA);
-        await bufferB.CopyToHostAsync<float>(matrixB);
-
-        // Parallel matrix multiplication
-        Parallel.For(0, size, i =>
+        for (var j = 0; j < size; j++)
         {
-            for (var j = 0; j < size; j++)
+            var sum = 0.0f;
+            for (var k = 0; k < size; k++)
             {
-                var sum = 0.0f;
-                for (var k = 0; k < size; k++)
-                {
-                    sum += matrixA[i * size + k] * matrixB[k * size + j];
-                }
-                matrixC[i * size + j] = sum;
+                sum += matrixA[i * size + k] * matrixB[k * size + j];
             }
-        });
+            matrixC[i * size + j] = sum;
+        }
+    });
 
-        await bufferC.CopyFromHostAsync<float>(matrixC);
-    }
+    await bufferC.CopyFromHostAsync<float>(matrixC);
+}
 }
 
 /// <summary>
@@ -171,52 +171,52 @@ internal class OptimizedMatrixMultiplyKernel : OptimizedKernelBase
 /// </summary>
 internal class OptimizedReductionKernel : OptimizedKernelBase
 {
-    public OptimizedReductionKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
+public OptimizedReductionKernel(string name, CompilationOptions options, ILogger logger)
+    : base(name, options, logger) { }
 
-    public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+{
+    ThrowIfDisposed();
+
+    if (arguments.Arguments.Length < 2)
     {
-        ThrowIfDisposed();
+        throw new ArgumentException("Reduction requires 2 arguments: input, output");
+    }
 
-        if (arguments.Arguments.Length < 2)
+    var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
+    var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
+
+    var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
+    
+    await Task.Run(() => ExecuteReductionGenericAsync(inputBuffer, outputBuffer, elementCount), cancellationToken);
+}
+
+private async Task ExecuteReductionGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
+{
+    var input = new float[elementCount];
+    await inputBuffer.CopyToHostAsync<float>(input);
+
+    // Parallel reduction with partitioning
+    var numPartitions = Environment.ProcessorCount;
+    var partitionSums = new double[numPartitions];
+
+    Parallel.For(0, numPartitions, partition =>
+    {
+        var elementsPerPartition = elementCount / numPartitions;
+        var start = partition * elementsPerPartition;
+        var end = (partition == numPartitions - 1) ? elementCount : start + elementsPerPartition;
+
+        var sum = 0.0;
+        for (var i = start; i < end; i++)
         {
-            throw new ArgumentException("Reduction requires 2 arguments: input, output");
+            sum += input[i];
         }
+        partitionSums[partition] = sum;
+    });
 
-        var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
-
-        var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
-        
-        await Task.Run(() => ExecuteReductionGenericAsync(inputBuffer, outputBuffer, elementCount), cancellationToken);
-    }
-
-    private async Task ExecuteReductionGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
-    {
-        var input = new float[elementCount];
-        await inputBuffer.CopyToHostAsync<float>(input);
-
-        // Parallel reduction with partitioning
-        var numPartitions = Environment.ProcessorCount;
-        var partitionSums = new double[numPartitions];
-
-        Parallel.For(0, numPartitions, partition =>
-        {
-            var elementsPerPartition = elementCount / numPartitions;
-            var start = partition * elementsPerPartition;
-            var end = (partition == numPartitions - 1) ? elementCount : start + elementsPerPartition;
-
-            var sum = 0.0;
-            for (var i = start; i < end; i++)
-            {
-                sum += input[i];
-            }
-            partitionSums[partition] = sum;
-        });
-
-        var totalSum = partitionSums.Sum();
-        await outputBuffer.CopyFromHostAsync<float>(new[] { (float)totalSum });
-    }
+    var totalSum = partitionSums.Sum();
+    await outputBuffer.CopyFromHostAsync<float>(new[] { (float)totalSum });
+}
 }
 
 /// <summary>
@@ -224,44 +224,44 @@ internal class OptimizedReductionKernel : OptimizedKernelBase
 /// </summary>
 internal class OptimizedMemoryKernel : OptimizedKernelBase
 {
-    public OptimizedMemoryKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
+public OptimizedMemoryKernel(string name, CompilationOptions options, ILogger logger)
+    : base(name, options, logger) { }
 
-    public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+{
+    ThrowIfDisposed();
+
+    if (arguments.Arguments.Length < 2)
     {
-        ThrowIfDisposed();
-
-        if (arguments.Arguments.Length < 2)
-        {
-            throw new ArgumentException("Memory kernel requires 2 arguments: input, output");
-        }
-
-        var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
-
-        var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
-        
-        await Task.Run(() => ExecuteMemoryIntensiveGenericAsync(inputBuffer, outputBuffer, elementCount), cancellationToken);
+        throw new ArgumentException("Memory kernel requires 2 arguments: input, output");
     }
 
-    private async Task ExecuteMemoryIntensiveGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
+    var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
+    var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
+
+    var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
+    
+    await Task.Run(() => ExecuteMemoryIntensiveGenericAsync(inputBuffer, outputBuffer, elementCount), cancellationToken);
+}
+
+private async Task ExecuteMemoryIntensiveGenericAsync(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount)
+{
+    var input = new float[elementCount];
+    var output = new float[elementCount];
+
+    await inputBuffer.CopyToHostAsync<float>(input);
+
+    Parallel.For(0, elementCount, i =>
     {
-        var input = new float[elementCount];
-        var output = new float[elementCount];
+        var value = input[i];
+        value += input[i];
+        value *= input[i];
+        value /= input[i] + 1.0f;
+        output[i] = value;
+    });
 
-        await inputBuffer.CopyToHostAsync<float>(input);
-
-        Parallel.For(0, elementCount, i =>
-        {
-            var value = input[i];
-            value += input[i];
-            value *= input[i];
-            value /= input[i] + 1.0f;
-            output[i] = value;
-        });
-
-        await outputBuffer.CopyFromHostAsync<float>(output);
-    }
+    await outputBuffer.CopyFromHostAsync<float>(output);
+}
 }
 
 /// <summary>
@@ -269,51 +269,51 @@ internal class OptimizedMemoryKernel : OptimizedKernelBase
 /// </summary>
 internal class OptimizedComputeKernel : OptimizedKernelBase
 {
-    public OptimizedComputeKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
+public OptimizedComputeKernel(string name, CompilationOptions options, ILogger logger)
+    : base(name, options, logger) { }
 
-    public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+{
+    ThrowIfDisposed();
+
+    if (arguments.Arguments.Length < 3)
     {
-        ThrowIfDisposed();
+        throw new ArgumentException("Compute kernel requires 3 arguments: input, output, iterations");
+    }
 
-        if (arguments.Arguments.Length < 3)
-        {
-            throw new ArgumentException("Compute kernel requires 3 arguments: input, output, iterations");
-        }
+    var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
+    var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
+    var iterations = Convert.ToInt32(arguments.Arguments[2]);
 
-        var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var outputBuffer = arguments.Arguments[1] as IMemoryBuffer ?? throw new ArgumentException("Argument 1 must be IMemoryBuffer");
-        var iterations = Convert.ToInt32(arguments.Arguments[2]);
+    var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
+    
+    await Task.Run(() => ExecuteComputeIntensiveOptimized(inputBuffer, outputBuffer, elementCount, iterations), cancellationToken);
+}
 
-        var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
+private async void ExecuteComputeIntensiveOptimized(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount, int iterations)
+{
+    var input = new float[elementCount];
+    var output = new float[elementCount];
+
+    await inputBuffer.CopyToHostAsync<float>(input);
+
+    // Parallel compute-intensive operations
+    Parallel.For(0, elementCount, i =>
+    {
+        var value = input[i];
         
-        await Task.Run(() => ExecuteComputeIntensiveOptimized(inputBuffer, outputBuffer, elementCount, iterations), cancellationToken);
-    }
-
-    private async void ExecuteComputeIntensiveOptimized(IMemoryBuffer inputBuffer, IMemoryBuffer outputBuffer, int elementCount, int iterations)
-    {
-        var input = new float[elementCount];
-        var output = new float[elementCount];
-
-        await inputBuffer.CopyToHostAsync<float>(input);
-
-        // Parallel compute-intensive operations
-        Parallel.For(0, elementCount, i =>
+        for (var iter = 0; iter < iterations; iter++)
         {
-            var value = input[i];
-            
-            for (var iter = 0; iter < iterations; iter++)
-            {
-                value = MathF.Sin(value) * MathF.Cos(value) + MathF.Sqrt(MathF.Abs(value) + 1.0f);
-                value = MathF.Abs(value);
-                value = MathF.Pow(value, 0.5f);
-            }
-            
-            output[i] = value;
-        });
+            value = MathF.Sin(value) * MathF.Cos(value) + MathF.Sqrt(MathF.Abs(value) + 1.0f);
+            value = MathF.Abs(value);
+            value = MathF.Pow(value, 0.5f);
+        }
+        
+        output[i] = value;
+    });
 
-        await outputBuffer.CopyFromHostAsync<float>(output);
-    }
+    await outputBuffer.CopyFromHostAsync<float>(output);
+}
 }
 
 /// <summary>
@@ -321,53 +321,53 @@ internal class OptimizedComputeKernel : OptimizedKernelBase
 /// </summary>
 internal class OptimizedVectorScaleKernel : OptimizedKernelBase
 {
-    public OptimizedVectorScaleKernel(string name, CompilationOptions options, ILogger logger)
-        : base(name, options, logger) { }
+public OptimizedVectorScaleKernel(string name, CompilationOptions options, ILogger logger)
+    : base(name, options, logger) { }
 
-    public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+{
+    ThrowIfDisposed();
+
+    if (arguments.Arguments.Length < 3)
+        throw new ArgumentException("Vector scale requires 3 arguments: input, scale factor, result");
+
+    var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
+    var scaleFactor = Convert.ToSingle(arguments.Arguments[1]);
+    var resultBuffer = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
+
+    var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
+    
+    await Task.Run(() => ExecuteVectorScaleGeneric(inputBuffer, resultBuffer, scaleFactor, elementCount), cancellationToken);
+}
+
+private async Task ExecuteVectorScaleGeneric(IMemoryBuffer inputBuffer, IMemoryBuffer resultBuffer, float scaleFactor, int elementCount)
+{
+    var inputData = new float[elementCount];
+    var resultData = new float[elementCount];
+
+    await inputBuffer.CopyToHostAsync<float>(inputData);
+
+    // Vectorized scaling
+    var vectorSize = Vector<float>.Count;
+    var vectorCount = elementCount / vectorSize;
+    var scaleVec = new Vector<float>(scaleFactor);
+
+    for (int i = 0; i < vectorCount; i++)
     {
-        ThrowIfDisposed();
-
-        if (arguments.Arguments.Length < 3)
-            throw new ArgumentException("Vector scale requires 3 arguments: input, scale factor, result");
-
-        var inputBuffer = arguments.Arguments[0] as IMemoryBuffer ?? throw new ArgumentException("Argument 0 must be IMemoryBuffer");
-        var scaleFactor = Convert.ToSingle(arguments.Arguments[1]);
-        var resultBuffer = arguments.Arguments[2] as IMemoryBuffer ?? throw new ArgumentException("Argument 2 must be IMemoryBuffer");
-
-        var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
-        
-        await Task.Run(() => ExecuteVectorScaleGeneric(inputBuffer, resultBuffer, scaleFactor, elementCount), cancellationToken);
+        var offset = i * vectorSize;
+        var inputVec = new Vector<float>(inputData, offset);
+        var result = inputVec * scaleVec;
+        result.CopyTo(resultData, offset);
     }
 
-    private async Task ExecuteVectorScaleGeneric(IMemoryBuffer inputBuffer, IMemoryBuffer resultBuffer, float scaleFactor, int elementCount)
+    // Handle remaining elements
+    for (int i = vectorCount * vectorSize; i < elementCount; i++)
     {
-        var inputData = new float[elementCount];
-        var resultData = new float[elementCount];
-
-        await inputBuffer.CopyToHostAsync<float>(inputData);
-
-        // Vectorized scaling
-        var vectorSize = Vector<float>.Count;
-        var vectorCount = elementCount / vectorSize;
-        var scaleVec = new Vector<float>(scaleFactor);
-
-        for (int i = 0; i < vectorCount; i++)
-        {
-            var offset = i * vectorSize;
-            var inputVec = new Vector<float>(inputData, offset);
-            var result = inputVec * scaleVec;
-            result.CopyTo(resultData, offset);
-        }
-
-        // Handle remaining elements
-        for (int i = vectorCount * vectorSize; i < elementCount; i++)
-        {
-            resultData[i] = inputData[i] * scaleFactor;
-        }
-
-        await resultBuffer.CopyFromHostAsync<float>(resultData);
+        resultData[i] = inputData[i] * scaleFactor;
     }
+
+    await resultBuffer.CopyFromHostAsync<float>(resultData);
+}
 }
 
 /// <summary>
@@ -375,127 +375,127 @@ internal class OptimizedVectorScaleKernel : OptimizedKernelBase
 /// </summary>
 internal class GenericOptimizedKernel : OptimizedKernelBase
 {
-    private readonly KernelInfo _kernelInfo;
+private readonly KernelInfo _kernelInfo;
 
-    public GenericOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger)
-        : base(name, options, logger)
+public GenericOptimizedKernel(string name, KernelInfo kernelInfo, CompilationOptions options, ILogger logger)
+    : base(name, options, logger)
+{
+    _kernelInfo = kernelInfo;
+}
+
+public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+{
+    ThrowIfDisposed();
+
+    Logger.LogWarning("Executing generic kernel - performance may be suboptimal: {KernelName}", Name);
+
+    // Try to execute based on the kernel source analysis
+    await TryExecuteGenericKernel(arguments, cancellationToken);
+}
+
+private async ValueTask TryExecuteGenericKernel(KernelArguments arguments, CancellationToken cancellationToken)
+{
+    // Analyze kernel source to infer execution pattern
+    var source = _kernelInfo.Source.ToLowerInvariant();
+    
+    // Try common patterns based on source analysis
+    if (source.Contains("result[i]") && source.Contains("input[i]") && source.Contains("scale"))
     {
-        _kernelInfo = kernelInfo;
+        // Vector scale pattern - handle it manually
+        await ExecuteVectorScalePattern(arguments, cancellationToken);
+    }
+    else if (source.Contains("result[i]") && arguments.Arguments.Length >= 3)
+    {
+        // General element-wise operation pattern
+        await ExecuteElementWisePattern(arguments, cancellationToken);
+    }
+    else
+    {
+        Logger.LogWarning("Unable to infer kernel execution pattern for: {KernelName}. No operation performed.", Name);
+    }
+}
+
+private async ValueTask ExecuteVectorScalePattern(KernelArguments arguments, CancellationToken cancellationToken)
+{
+    if (arguments.Arguments.Length < 3)
+    {
+        Logger.LogError("Vector scale pattern requires at least 3 arguments");
+        return;
     }
 
-    public override async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+    var inputBuffer = arguments.Arguments[0] as IMemoryBuffer;
+    var scaleFactor = 2.0f; // Default scale factor
+    var resultBuffer = arguments.Arguments[2] as IMemoryBuffer;
+    
+    // Try to extract scale factor from arguments[1]
+    if (arguments.Arguments[1] is float f)
+        scaleFactor = f;
+    else if (arguments.Arguments[1] is double d)
+        scaleFactor = (float)d;
+    else if (arguments.Arguments[1] is int i)
+        scaleFactor = (float)i;
+
+    if (inputBuffer != null && resultBuffer != null)
     {
-        ThrowIfDisposed();
+        var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
+        var inputData = new float[elementCount];
+        var resultData = new float[elementCount];
 
-        Logger.LogWarning("Executing generic kernel - performance may be suboptimal: {KernelName}", Name);
-
-        // Try to execute based on the kernel source analysis
-        await TryExecuteGenericKernel(arguments, cancellationToken);
-    }
-
-    private async ValueTask TryExecuteGenericKernel(KernelArguments arguments, CancellationToken cancellationToken)
-    {
-        // Analyze kernel source to infer execution pattern
-        var source = _kernelInfo.Source.ToLowerInvariant();
+        await inputBuffer.CopyToHostAsync<float>(inputData);
         
-        // Try common patterns based on source analysis
-        if (source.Contains("result[i]") && source.Contains("input[i]") && source.Contains("scale"))
+        // Perform scaling
+        for (int idx = 0; idx < elementCount; idx++)
         {
-            // Vector scale pattern - handle it manually
-            await ExecuteVectorScalePattern(arguments, cancellationToken);
+            resultData[idx] = inputData[idx] * scaleFactor;
         }
-        else if (source.Contains("result[i]") && arguments.Arguments.Length >= 3)
-        {
-            // General element-wise operation pattern
-            await ExecuteElementWisePattern(arguments, cancellationToken);
-        }
-        else
-        {
-            Logger.LogWarning("Unable to infer kernel execution pattern for: {KernelName}. No operation performed.", Name);
-        }
+
+        await resultBuffer.CopyFromHostAsync<float>(resultData);
+        Logger.LogInformation("Generic vector scale executed: {Elements} elements scaled by {Factor}", elementCount, scaleFactor);
     }
+}
 
-    private async ValueTask ExecuteVectorScalePattern(KernelArguments arguments, CancellationToken cancellationToken)
+private async ValueTask ExecuteElementWisePattern(KernelArguments arguments, CancellationToken cancellationToken)
+{
+    // Generic element-wise operation - just copy input to output as fallback
+    if (arguments.Arguments.Length >= 2 &&
+        arguments.Arguments[0] is IMemoryBuffer inputBuffer &&
+        arguments.Arguments[1] is IMemoryBuffer outputBuffer)
     {
-        if (arguments.Arguments.Length < 3)
-        {
-            Logger.LogError("Vector scale pattern requires at least 3 arguments");
-            return;
-        }
-
-        var inputBuffer = arguments.Arguments[0] as IMemoryBuffer;
-        var scaleFactor = 2.0f; // Default scale factor
-        var resultBuffer = arguments.Arguments[2] as IMemoryBuffer;
+        var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
+        var data = new float[elementCount];
         
-        // Try to extract scale factor from arguments[1]
-        if (arguments.Arguments[1] is float f)
-            scaleFactor = f;
-        else if (arguments.Arguments[1] is double d)
-            scaleFactor = (float)d;
-        else if (arguments.Arguments[1] is int i)
-            scaleFactor = (float)i;
-
-        if (inputBuffer != null && resultBuffer != null)
-        {
-            var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
-            var inputData = new float[elementCount];
-            var resultData = new float[elementCount];
-
-            await inputBuffer.CopyToHostAsync<float>(inputData);
-            
-            // Perform scaling
-            for (int idx = 0; idx < elementCount; idx++)
-            {
-                resultData[idx] = inputData[idx] * scaleFactor;
-            }
-
-            await resultBuffer.CopyFromHostAsync<float>(resultData);
-            Logger.LogInformation("Generic vector scale executed: {Elements} elements scaled by {Factor}", elementCount, scaleFactor);
-        }
+        await inputBuffer.CopyToHostAsync<float>(data);
+        await outputBuffer.CopyFromHostAsync<float>(data);
+        
+        Logger.LogInformation("Generic element-wise operation executed: {Elements} elements copied", elementCount);
     }
-
-    private async ValueTask ExecuteElementWisePattern(KernelArguments arguments, CancellationToken cancellationToken)
-    {
-        // Generic element-wise operation - just copy input to output as fallback
-        if (arguments.Arguments.Length >= 2 &&
-            arguments.Arguments[0] is IMemoryBuffer inputBuffer &&
-            arguments.Arguments[1] is IMemoryBuffer outputBuffer)
-        {
-            var elementCount = (int)(inputBuffer.SizeInBytes / sizeof(float));
-            var data = new float[elementCount];
-            
-            await inputBuffer.CopyToHostAsync<float>(data);
-            await outputBuffer.CopyFromHostAsync<float>(data);
-            
-            Logger.LogInformation("Generic element-wise operation executed: {Elements} elements copied", elementCount);
-        }
-    }
+}
 }
 
 // Supporting data structures
 internal enum KernelType
 {
-    Generic,
-    VectorAdd,
-    VectorMultiply,
-    VectorScale,
-    MatrixMultiply,
-    Reduction,
-    MemoryIntensive,
-    ComputeIntensive
+Generic,
+VectorAdd,
+VectorMultiply,
+VectorScale,
+MatrixMultiply,
+Reduction,
+MemoryIntensive,
+ComputeIntensive
 }
 
 internal class KernelInfo
 {
-    public string Name { get; set; } = string.Empty;
-    public KernelType Type { get; set; }
-    public string Source { get; set; } = string.Empty;
-    public List<KernelParameter> Parameters { get; set; } = [];
+public string Name { get; set; } = string.Empty;
+public KernelType Type { get; set; }
+public string Source { get; set; } = string.Empty;
+public List<KernelParameter> Parameters { get; set; } = [];
 }
 
 internal class KernelParameter
 {
-    public string Name { get; set; } = string.Empty;
-    public string Type { get; set; } = string.Empty;
-    public bool IsGlobal { get; set; }
-}}
+public string Name { get; set; } = string.Empty;
+public string Type { get; set; } = string.Empty;
+public bool IsGlobal { get; set; }
+}

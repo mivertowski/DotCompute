@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 [MemoryDiagnoser]
 [ThreadingDiagnoser]
@@ -161,4 +161,4 @@ internal sealed class DataTransferBenchmarks : IDisposable
         }
         GC.SuppressFinalize(this);
     }
-}}
+}

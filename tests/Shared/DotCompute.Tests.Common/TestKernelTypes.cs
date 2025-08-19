@@ -3,8 +3,8 @@
 
 using DotCompute.Core.Types;
 
-namespace DotCompute.SharedTestUtilities
-{
+namespace DotCompute.SharedTestUtilities;
+
 
 /// <summary>
 /// Test-specific CompiledKernel class with mutable properties for testing.
@@ -97,10 +97,7 @@ public class CompiledKernel
     /// <summary>
     /// Explicit conversion method for CA2225 compliance.
     /// </summary>
-    public static DotCompute.Abstractions.CompiledKernel ToCompiledKernel(CompiledKernel testKernel)
-    {
-        return testKernel.ToAbstractionsCompiledKernel();
-    }
+    public static DotCompute.Abstractions.CompiledKernel ToCompiledKernel(CompiledKernel testKernel) => testKernel.ToAbstractionsCompiledKernel();
 }
 
 /// <summary>
@@ -213,7 +210,7 @@ public class KernelArgument
     /// <summary>
     /// Converts an array to Core.Kernels.KernelArgument array
     /// </summary>
-    public static DotCompute.Core.Kernels.KernelArgument[] ToCoreKernelArguments(KernelArgument[] testArgs) => testArgs.Select(arg => arg.ToCoreKernelArgument()).ToArray();
+    public static DotCompute.Core.Kernels.KernelArgument[] ToCoreKernelArguments(KernelArgument[] testArgs) => [.. testArgs.Select(arg => arg.ToCoreKernelArgument())];
 
     /// <summary>
     /// Implicit conversion operator to DotCompute.Core.Kernels.KernelArgument.
@@ -226,10 +223,7 @@ public class KernelArgument
     /// <summary>
     /// Explicit conversion method for CA2225 compliance.
     /// </summary>
-    public static DotCompute.Core.Kernels.KernelArgument ToKernelArgument(KernelArgument testArg)
-    {
-        return testArg.ToCoreKernelArgument();
-    }
+    public static DotCompute.Core.Kernels.KernelArgument ToKernelArgument(KernelArgument testArg) => testArg.ToCoreKernelArgument();
 
 }
 
@@ -422,11 +416,11 @@ public static class TestKernelFactory
         return
         [
             CreateKernelArgument("input", new float[arraySize], typeof(float[]),
-                isInput: true, isDeviceMemory: true, argumentType: KernelArgumentType.Buffer),
-            CreateKernelArgument("output", new float[arraySize], typeof(float[]),
-                isInput: false, isOutput: true, isDeviceMemory: true, argumentType: KernelArgumentType.Buffer),
-            CreateKernelArgument("size", arraySize, typeof(int),
-                argumentType: KernelArgumentType.Scalar)
+            isInput: true, isDeviceMemory: true, argumentType: KernelArgumentType.Buffer),
+        CreateKernelArgument("output", new float[arraySize], typeof(float[]),
+            isInput: false, isOutput: true, isDeviceMemory: true, argumentType: KernelArgumentType.Buffer),
+        CreateKernelArgument("size", arraySize, typeof(int),
+            argumentType: KernelArgumentType.Scalar)
         ];
     }
 
@@ -464,7 +458,7 @@ public static class TestTypeConversions
     /// <summary>
     /// Converts an array of test KernelArguments to production KernelArguments.
     /// </summary>
-    public static DotCompute.Core.Kernels.KernelArgument[] ToCoreKernelArguments(this KernelArgument[] testArgs) => testArgs.Select(arg => (DotCompute.Core.Kernels.KernelArgument)arg).ToArray();
+    public static DotCompute.Core.Kernels.KernelArgument[] ToCoreKernelArguments(this KernelArgument[] testArgs) => [.. testArgs.Select(arg => (DotCompute.Core.Kernels.KernelArgument)arg)];
 
     /// <summary>
     /// Converts test CompiledKernel to production CompiledKernel.
@@ -512,5 +506,4 @@ public static class TestTypeConversions
             _ => KernelLanguage.CSharpIL
         };
     }
-}
 }

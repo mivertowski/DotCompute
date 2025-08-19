@@ -13,8 +13,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Integration
-{
+namespace DotCompute.Tests.Hardware.Integration;
+
 
 /// <summary>
 /// Integration tests for CUDA host-device memory transfer operations
@@ -29,13 +29,13 @@ public sealed class CudaMemoryTransferTests : IDisposable
     private readonly List<ISyncMemoryBuffer> _buffers = [];
 
     // LoggerMessage delegates for performance
-    private static readonly Action<ILogger, Exception, Exception?> LogBufferDisposeError = 
+    private static readonly Action<ILogger, Exception, Exception?> LogBufferDisposeError =
         LoggerMessage.Define<Exception>(
             LogLevel.Warning,
             new EventId(1, nameof(LogBufferDisposeError)),
             "Error disposing CUDA buffer: {Exception}");
 
-    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError =
         LoggerMessage.Define<Exception>(
             LogLevel.Warning,
             new EventId(2, nameof(LogAcceleratorDisposeError)),
@@ -78,7 +78,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
         }
 
         // Assert
-        retrievedData.Should().BeEquivalentTo(hostData, $"{description} data should be preserved in round-trip transfer");
+        _ = retrievedData.Should().BeEquivalentTo(hostData, $"{description} data should be preserved in round-trip transfer");
     }
 
     [Theory]
@@ -139,7 +139,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
         }
 
         // Assert
-        retrievedData.Should().BeEquivalentTo(hostData, $"{typeof(T).Name} data should be preserved accurately");
+        _ = retrievedData.Should().BeEquivalentTo(hostData, $"{typeof(T).Name} data should be preserved accurately");
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
 
         // Assert
         var expectedData = hostData.Skip(offsetFloats).Take(transferFloats).ToArray();
-        retrievedData.Should().BeEquivalentTo(expectedData, "Partial transfer with offset should retrieve correct data segment");
+        _ = retrievedData.Should().BeEquivalentTo(expectedData, "Partial transfer with offset should retrieve correct data segment");
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
         // Assert
         for (var i = 0; i < bufferCount; i++)
         {
-            retrievedDataArrays[i].Should().BeEquivalentTo(hostDataArrays[i], $"Buffer {i} should preserve data integrity");
+            _ = retrievedDataArrays[i].Should().BeEquivalentTo(hostDataArrays[i], $"Buffer {i} should preserve data integrity");
         }
     }
 
@@ -281,8 +281,8 @@ public sealed class CudaMemoryTransferTests : IDisposable
         var uploadBandwidth = sizeMB / (uploadStopwatch.ElapsedMilliseconds / 1000.0);
         var downloadBandwidth = sizeMB / (downloadStopwatch.ElapsedMilliseconds / 1000.0);
 
-        uploadBandwidth.Should().BeGreaterThan(10.0, $"Upload bandwidth should be reasonable for {sizeMB:F1}MB");
-        downloadBandwidth.Should().BeGreaterThan(10.0, $"Download bandwidth should be reasonable for {sizeMB:F1}MB");
+        _ = uploadBandwidth.Should().BeGreaterThan(10.0, $"Upload bandwidth should be reasonable for {sizeMB:F1}MB");
+        _ = downloadBandwidth.Should().BeGreaterThan(10.0, $"Download bandwidth should be reasonable for {sizeMB:F1}MB");
 
         _output.WriteLine($"{sizeMB:F1}MB Upload: {uploadStopwatch.ElapsedMilliseconds}ms{uploadBandwidth:F1} MB/s)");
         _output.WriteLine($"{sizeMB:F1}MB Download: {downloadStopwatch.ElapsedMilliseconds}ms{downloadBandwidth:F1} MB/s)");
@@ -333,8 +333,8 @@ public sealed class CudaMemoryTransferTests : IDisposable
                     copyToHostResult = false;
                 }
 
-                copyFromHostResult.Should().BeTrue("CopyFromHost should not throw");
-                copyToHostResult.Should().BeTrue("CopyToHost should not throw");
+                _ = copyFromHostResult.Should().BeTrue("CopyFromHost should not throw");
+                _ = copyToHostResult.Should().BeTrue("CopyToHost should not throw");
             }
         }
     }
@@ -373,7 +373,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
                 {
                     exactSizeResult = false;
                 }
-                exactSizeResult.Should().BeTrue("Transfer of exact buffer size should succeed");
+                _ = exactSizeResult.Should().BeTrue("Transfer of exact buffer size should succeed");
 
                 // Transfer beyond buffer should throw
                 var beyondBoundsResult = false;
@@ -390,7 +390,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
                 {
                     beyondBoundsResult = false; // Wrong exception type
                 }
-                beyondBoundsResult.Should().BeTrue("Transfer beyond buffer bounds should be rejected");
+                _ = beyondBoundsResult.Should().BeTrue("Transfer beyond buffer bounds should be rejected");
 
                 // Transfer with offset at boundary should throw
                 var offsetBoundsResult = false;
@@ -407,7 +407,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
                 {
                     offsetBoundsResult = false; // Wrong exception type
                 }
-                offsetBoundsResult.Should().BeTrue("Transfer with offset beyond bounds should be rejected");
+                _ = offsetBoundsResult.Should().BeTrue("Transfer with offset beyond bounds should be rejected");
             }
         }
     }
@@ -443,7 +443,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
                 // Act & Assert - Execute transfers directly 
                 memoryManager.CopyFromHost(hostPtr, deviceBuffer, size);
                 memoryManager.CopyToHost(deviceBuffer, retrievedPtr, size);
-                retrievedData.Should().BeEquivalentTo(hostData, $"Data integrity should be preserved for {size} bytes");
+                _ = retrievedData.Should().BeEquivalentTo(hostData, $"Data integrity should be preserved for {size} bytes");
             }
         }
     }
@@ -494,7 +494,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
         var lastQuarter = transferTimes.Skip(3 * transferCount / 4).Average();
         var performanceDegradation = lastQuarter / firstQuarter;
 
-        performanceDegradation.Should().BeLessThan(2.0, "Performance should not degrade significantly with repeated transfers");
+        _ = performanceDegradation.Should().BeLessThan(2.0, "Performance should not degrade significantly with repeated transfers");
 
         _output.WriteLine($"First quarter avg: {firstQuarter:F2}μs, Last quarter avg: {lastQuarter:F2}μs");
         _output.WriteLine($"Performance degradation: {performanceDegradation:F2}x");
@@ -569,7 +569,7 @@ public sealed class CudaMemoryTransferTests : IDisposable
 
         // Assert
         Assert.Equal(threadCount, results.Count);
-        results.Should().AllSatisfy(result => result.Should().BeTrue("All concurrent transfers should succeed"));
+        _ = results.Should().AllSatisfy(result => result.Should().BeTrue("All concurrent transfers should succeed"));
     }
 
     [Fact]
@@ -588,13 +588,13 @@ public sealed class CudaMemoryTransferTests : IDisposable
 
         // Act & Assert
         Action uploadWithNullPtr = () => memoryManager.CopyFromHost(null, deviceBuffer, 1024);
-        uploadWithNullPtr.Should().Throw<ArgumentNullException>("Upload with null source should throw");
+        _ = uploadWithNullPtr.Should().Throw<ArgumentNullException>("Upload with null source should throw");
 
         var hostData = new byte[1024];
         fixed (byte* hostPtr = hostData)
         {
             Action downloadWithNullPtr = () => memoryManager.CopyToHost(deviceBuffer, null, 1024);
-            downloadWithNullPtr.Should().Throw<ArgumentNullException>("Download with null destination should throw");
+            _ = downloadWithNullPtr.Should().Throw<ArgumentNullException>("Download with null destination should throw");
         }
     }
 
@@ -669,5 +669,4 @@ public sealed class CudaMemoryTransferTests : IDisposable
         _loggerFactory?.Dispose();
         GC.SuppressFinalize(this);
     }
-}
 }

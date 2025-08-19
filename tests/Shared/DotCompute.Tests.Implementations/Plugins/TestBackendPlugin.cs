@@ -4,19 +4,19 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Implementations.Plugins
-{
+namespace DotCompute.Tests.Implementations.Plugins;
+
 
 /// <summary>
 /// Test implementation of IBackendPlugin for testing plugin functionality.
 /// </summary>
-public sealed class TestBackendPlugin : IBackendPlugin
+public sealed class TestBackendPlugin(string pluginType = "TestBackend", PluginCapabilities capabilities = PluginCapabilities.ComputeBackend) : IBackendPlugin
 {
-    private readonly string _pluginType;
-    private readonly Stopwatch _uptime;
-    private readonly Dictionary<string, object> _customMetrics;
-    private PluginState _state;
-    private PluginHealth _health;
+    private readonly string _pluginType = pluginType;
+    private readonly Stopwatch _uptime = new();
+    private readonly Dictionary<string, object> _customMetrics = [];
+    private PluginState _state = PluginState.Unknown;
+    private PluginHealth _health = PluginHealth.Unknown;
     private ILogger<TestBackendPlugin>? _logger;
     private IServiceProvider? _serviceProvider;
     private IConfiguration? _configuration;
@@ -47,27 +47,12 @@ public sealed class TestBackendPlugin : IBackendPlugin
     private static readonly Action<ILogger, string, Exception?> LogPluginStopError =
         LoggerMessage.Define<string>(LogLevel.Error, new EventId(103, "PluginStopError"), "Error stopping plugin {PluginId}");
 
-    public TestBackendPlugin(string pluginType = "TestBackend", PluginCapabilities capabilities = PluginCapabilities.ComputeBackend)
-    {
-        _pluginType = pluginType;
-        Id = $"test.backend.{pluginType.ToUpperInvariant()}";
-        Name = $"Test {pluginType} Backend Plugin";
-        Version = new Version(1, 0, 0);
-        Description = $"Test implementation of {pluginType} backend plugin for testing";
-        Author = "DotCompute Test Suite";
-        Capabilities = capabilities;
-        _state = PluginState.Unknown;
-        _health = PluginHealth.Unknown;
-        _uptime = new Stopwatch();
-        _customMetrics = [];
-    }
-
-    public string Id { get; }
-    public string Name { get; }
-    public Version Version { get; }
-    public string Description { get; }
-    public string Author { get; }
-    public PluginCapabilities Capabilities { get; }
+    public string Id { get; } = $"test.backend.{pluginType.ToUpperInvariant()}";
+    public string Name { get; } = $"Test {pluginType} Backend Plugin";
+    public Version Version { get; } = new Version(1, 0, 0);
+    public string Description { get; } = $"Test implementation of {pluginType} backend plugin for testing";
+    public string Author { get; } = "DotCompute Test Suite";
+    public PluginCapabilities Capabilities { get; } = capabilities;
     public PluginState State => _state;
     public PluginHealth Health => _health;
 
@@ -80,28 +65,28 @@ public sealed class TestBackendPlugin : IBackendPlugin
         _configuration = configuration;
 
         // Register plugin-specific services
-        services.AddSingleton(this);
+        _ = services.AddSingleton(this);
 
         // Add logging if not already registered
         if (services.All(s => s.ServiceType != typeof(ILoggerFactory)))
         {
-            services.AddLogging();
+            _ = services.AddLogging();
         }
 
         // Register plugin-specific implementations based on capabilities
         if (Capabilities.HasFlag(PluginCapabilities.ComputeBackend))
         {
-            services.AddSingleton<IComputeService>(new TestComputeService());
+            _ = services.AddSingleton<IComputeService>(new TestComputeService());
         }
 
         if (Capabilities.HasFlag(PluginCapabilities.StorageProvider))
         {
-            services.AddSingleton<IStorageService>(new TestStorageService());
+            _ = services.AddSingleton<IStorageService>(new TestStorageService());
         }
 
         if (Capabilities.HasFlag(PluginCapabilities.MetricsProvider))
         {
-            services.AddSingleton<IMetricsService>(new TestMetricsService());
+            _ = services.AddSingleton<IMetricsService>(new TestMetricsService());
         }
 
         ChangeState(PluginState.Loaded, "Services configured");
@@ -149,7 +134,7 @@ public sealed class TestBackendPlugin : IBackendPlugin
 
     public async Task StartAsync(CancellationToken cancellationToken = default)
     {
-        if (_state != PluginState.Initialized && _state != PluginState.Stopped)
+        if (_state is not PluginState.Initialized and not PluginState.Stopped)
         {
             throw new InvalidOperationException($"Cannot start plugin in state: {_state}");
         }
@@ -332,14 +317,14 @@ public sealed class TestBackendPlugin : IBackendPlugin
 
     public void SimulateRequest(double responseTimeMs)
     {
-        Interlocked.Increment(ref _requestCount);
+        _ = Interlocked.Increment(ref _requestCount);
         _totalResponseTime += responseTimeMs;
         _customMetrics["LastRequestTime"] = DateTime.UtcNow;
     }
 
     public void SimulateError(Exception exception)
     {
-        Interlocked.Increment(ref _errorCount);
+        _ = Interlocked.Increment(ref _errorCount);
         OnErrorOccurred(exception, "SimulatedError");
 
         // Degrade health after multiple errors
@@ -385,7 +370,7 @@ public sealed class TestBackendPlugin : IBackendPlugin
 
         if (_state == PluginState.Running)
         {
-            StopAsync().Wait(1000);
+            _ = StopAsync().Wait(1000);
         }
 
         ChangeState(PluginState.Unloaded, "Plugin disposed");
@@ -460,5 +445,4 @@ public static class EnumerableExtensions
         }
         return true;
     }
-}
 }

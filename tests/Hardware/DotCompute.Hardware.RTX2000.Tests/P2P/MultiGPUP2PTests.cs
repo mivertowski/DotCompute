@@ -5,8 +5,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.P2P
-{
+namespace DotCompute.Tests.Hardware.P2P;
+
 
 /// <summary>
 /// Multi-GPU P2P(Peer-to-Peer) communication tests for RTX 2000 Ada Generation.
@@ -21,7 +21,7 @@ public sealed class MultiGPUP2PTests : IDisposable
     private readonly ITestOutputHelper _output;
 #pragma warning disable CA1823 // Unused field - Logger for future use
     private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
-    
+
     // Logger messages
     private static readonly Action<ILogger, string, Exception?> LogP2POperation =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(6001), "P2P operation: {Operation}");
@@ -134,8 +134,8 @@ public sealed class MultiGPUP2PTests : IDisposable
     {
         Skip.IfNot(_deviceCount >= 2, "Multi-GPU configuration not available");
 
-        _deviceCount.Should().BeGreaterThanOrEqualTo(2, "Should detect at least 2 GPU devices");
-        _cudaContexts.Count.Should().BeGreaterThanOrEqualTo(2, "Should create contexts for multiple devices");
+        _ = _deviceCount.Should().BeGreaterThanOrEqualTo(2, "Should detect at least 2 GPU devices");
+        _ = _cudaContexts.Count.Should().BeGreaterThanOrEqualTo(2, "Should create contexts for multiple devices");
 
         _output.WriteLine($"Multi-GPU configuration validated:");
         _output.WriteLine($"  Device count: {_deviceCount}");
@@ -195,7 +195,7 @@ public sealed class MultiGPUP2PTests : IDisposable
             }
         }
 
-        p2pConnections.Should().BeGreaterThan(0, "Should establish at least one P2P connection");
+        _ = p2pConnections.Should().BeGreaterThan(0, "Should establish at least one P2P connection");
         _output.WriteLine($"P2P connections established: {p2pConnections}");
 
         await Task.CompletedTask;
@@ -271,7 +271,7 @@ public sealed class MultiGPUP2PTests : IDisposable
                     // Verify data integrity
                     for (var i = 0; i < Math.Min(1000, elementCount); i++)
                     {
-                        resultData[i].Should().Be(hostData[i], $"Data at index {i} should match after P2P transfer");
+                        _ = resultData[i].Should().Be(hostData[i], $"Data at index {i} should match after P2P transfer");
                     }
 
                     _output.WriteLine("✓ P2P data integrity verified");
@@ -282,7 +282,7 @@ public sealed class MultiGPUP2PTests : IDisposable
                 }
 
                 // P2P bandwidth should be significantly higher than PCIe
-                transferBandwidth.Should().BeGreaterThan(20.0, "P2P bandwidth should exceed PCIe limitations");
+                _ = transferBandwidth.Should().BeGreaterThan(20.0, "P2P bandwidth should exceed PCIe limitations");
             }
             finally
             {
@@ -397,8 +397,8 @@ public sealed class MultiGPUP2PTests : IDisposable
             _output.WriteLine($"  Load balance efficiency: {workloadEfficiency:F1}%");
 
             // Validate performance characteristics
-            workloadEfficiency.Should().BeGreaterThan(70.0, "GPUs should have reasonably balanced workloads");
-            totalTime.Should().BeLessThan((long)(maxTime * 1.2), "Parallel execution should not exceed sequential by much");
+            _ = workloadEfficiency.Should().BeGreaterThan(70.0, "GPUs should have reasonably balanced workloads");
+            _ = totalTime.Should().BeLessThan((long)(maxTime * 1.2), "Parallel execution should not exceed sequential by much");
 
             _output.WriteLine("✓ Multi-GPU workload distribution validated");
         }
@@ -468,7 +468,7 @@ public sealed class MultiGPUP2PTests : IDisposable
                         // Warm up
                         for (var i = 0; i < 3; i++)
                         {
-                            CudaMemcpyHtoD(gpuBuffers[capturedGpu], hostHandle.AddrOfPinnedObject(), transferSize);
+                            _ = CudaMemcpyHtoD(gpuBuffers[capturedGpu], hostHandle.AddrOfPinnedObject(), transferSize);
                         }
 
                         // Measure H2D bandwidth
@@ -506,7 +506,7 @@ public sealed class MultiGPUP2PTests : IDisposable
             _output.WriteLine($"  Parallel efficiency: {parallelEfficiency:F1}%");
 
             // Validate aggregated performance
-            totalBandwidth.Should().BeGreaterThan(averageBandwidth * _deviceIds.Count * 0.7,
+            _ = totalBandwidth.Should().BeGreaterThan(averageBandwidth * _deviceIds.Count * 0.7,
                 "Aggregated bandwidth should benefit from parallelism");
 
             _output.WriteLine("✓ Multi-GPU memory bandwidth aggregation validated");
@@ -532,7 +532,7 @@ public sealed class MultiGPUP2PTests : IDisposable
 
         // This would normally launch a CUDA kernel using computeIterations
         await Task.Delay(computeIterations / 100); // Simulate compute time
-        // For simulation, we'll just do synchronous operations
+                                                   // For simulation, we'll just do synchronous operations
         await Task.Delay(50 + gpuId * 10); // Simulate variable compute time
 
         // In real implementation, this would be:
@@ -673,5 +673,4 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
-}
 }

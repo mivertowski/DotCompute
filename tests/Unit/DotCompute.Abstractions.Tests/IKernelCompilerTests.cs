@@ -6,8 +6,8 @@ using Xunit;
 using FluentAssertions;
 using System.Globalization;
 
-namespace DotCompute.Abstractions.Tests
-{
+namespace DotCompute.Abstractions.Tests;
+
 
 /// <summary>
 /// Comprehensive unit tests for the IKernelCompiler interface and related types.
@@ -36,7 +36,7 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         const string expectedName = "TestCompiler";
-        _mockCompiler.Setup(c => c.Name).Returns(expectedName);
+        _ = _mockCompiler.Setup(c => c.Name).Returns(expectedName);
 
         // Act
         var actualName = _mockCompiler.Object.Name;
@@ -55,7 +55,7 @@ public sealed class IKernelCompilerTests
     public void Name_ShouldHandleDifferentCompilerNames(string compilerName)
     {
         // Arrange
-        _mockCompiler.Setup(c => c.Name).Returns(compilerName);
+        _ = _mockCompiler.Setup(c => c.Name).Returns(compilerName);
 
         // Act
         var actualName = _mockCompiler.Object.Name;
@@ -69,13 +69,13 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         var expectedTypes = new[] { KernelSourceType.CUDA, KernelSourceType.OpenCL, KernelSourceType.SPIRV };
-        _mockCompiler.Setup(c => c.SupportedSourceTypes).Returns(expectedTypes);
+        _ = _mockCompiler.Setup(c => c.SupportedSourceTypes).Returns(expectedTypes);
 
         // Act
         var actualTypes = _mockCompiler.Object.SupportedSourceTypes;
 
         // Assert
-        actualTypes.Should().BeEquivalentTo(expectedTypes);
+        _ = actualTypes.Should().BeEquivalentTo(expectedTypes);
         _mockCompiler.Verify(c => c.SupportedSourceTypes, Times.Once);
     }
 
@@ -83,7 +83,7 @@ public sealed class IKernelCompilerTests
     public void SupportedSourceTypes_ShouldNotReturnNull()
     {
         // Arrange
-        _mockCompiler.Setup(c => c.SupportedSourceTypes).Returns(Array.Empty<KernelSourceType>());
+        _ = _mockCompiler.Setup(c => c.SupportedSourceTypes).Returns(Array.Empty<KernelSourceType>());
 
         // Act
         var actualTypes = _mockCompiler.Object.SupportedSourceTypes;
@@ -98,14 +98,14 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         var allSourceTypes = Enum.GetValues<KernelSourceType>();
-        _mockCompiler.Setup(c => c.SupportedSourceTypes).Returns(allSourceTypes);
+        _ = _mockCompiler.Setup(c => c.SupportedSourceTypes).Returns(allSourceTypes);
 
         // Act
         var actualTypes = _mockCompiler.Object.SupportedSourceTypes;
 
         // Assert
         Assert.Equal(allSourceTypes.Length, actualTypes.Length);
-        actualTypes.Should().BeEquivalentTo(allSourceTypes);
+        _ = actualTypes.Should().BeEquivalentTo(allSourceTypes);
     }
 
     #endregion
@@ -116,7 +116,7 @@ public sealed class IKernelCompilerTests
     public async Task CompileAsync_WithValidDefinition_ShouldReturnCompiledKernel()
     {
         // Arrange
-        _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, default))
+        _ = _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, default))
                     .ReturnsAsync(_mockCompiledKernel.Object);
 
         // Act
@@ -124,7 +124,7 @@ public sealed class IKernelCompilerTests
 
         // Assert
         Assert.NotNull(result);
-        result.Should().BeSameAs(_mockCompiledKernel.Object);
+        _ = result.Should().BeSameAs(_mockCompiledKernel.Object);
         _mockCompiler.Verify(c => c.CompileAsync(_testKernelDefinition, null, default), Times.Once);
     }
 
@@ -132,14 +132,14 @@ public sealed class IKernelCompilerTests
     public async Task CompileAsync_WithCompilationOptions_ShouldPassOptionsToCompiler()
     {
         // Arrange
-        _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, _testCompilationOptions, default))
+        _ = _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, _testCompilationOptions, default))
                     .ReturnsAsync(_mockCompiledKernel.Object);
 
         // Act
         var result = await _mockCompiler.Object.CompileAsync(_testKernelDefinition, _testCompilationOptions);
 
         // Assert
-        result.Should().BeSameAs(_mockCompiledKernel.Object);
+        _ = result.Should().BeSameAs(_mockCompiledKernel.Object);
         _mockCompiler.Verify(c => c.CompileAsync(_testKernelDefinition, _testCompilationOptions, default), Times.Once);
     }
 
@@ -148,14 +148,14 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         var cancellationToken = new CancellationToken();
-        _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, cancellationToken))
+        _ = _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, cancellationToken))
                     .ReturnsAsync(_mockCompiledKernel.Object);
 
         // Act
         var result = await _mockCompiler.Object.CompileAsync(_testKernelDefinition, null, cancellationToken);
 
         // Assert
-        result.Should().BeSameAs(_mockCompiledKernel.Object);
+        _ = result.Should().BeSameAs(_mockCompiledKernel.Object);
         _mockCompiler.Verify(c => c.CompileAsync(_testKernelDefinition, null, cancellationToken), Times.Once);
     }
 
@@ -165,19 +165,19 @@ public sealed class IKernelCompilerTests
         // Arrange
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
-        _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, cts.Token))
+        _ = _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, cts.Token))
                     .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
         var action = () => _mockCompiler.Object.CompileAsync(_testKernelDefinition, null, cts.Token);
-        await Assert.ThrowsAsync<OperationCanceledException>(() => action().AsTask());
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(() => action().AsTask());
     }
 
     [Fact]
     public async Task CompileAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Arrange
-        _mockCompiler.Setup(c => c.CompileAsync(null!, null, default))
+        _ = _mockCompiler.Setup(c => c.CompileAsync(null!, null, default))
                     .ThrowsAsync(new ArgumentNullException("definition"));
 
         // Act & Assert
@@ -191,7 +191,7 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         var compilationError = new AcceleratorException("Compilation failed: syntax error");
-        _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, default))
+        _ = _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, default))
                     .ThrowsAsync(compilationError);
 
         // Act & Assert
@@ -205,7 +205,7 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
-        _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, cts.Token))
+        _ = _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, cts.Token))
                     .Returns(async (KernelDefinition def, CompilationOptions opts, CancellationToken ct) =>
                     {
                         await Task.Delay(200, ct); // Simulate long compilation
@@ -214,7 +214,7 @@ public sealed class IKernelCompilerTests
 
         // Act & Assert
         var action = () => _mockCompiler.Object.CompileAsync(_testKernelDefinition, null, cts.Token);
-        await Assert.ThrowsAsync<OperationCanceledException>(() => action().AsTask());
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(() => action().AsTask());
     }
 
     #endregion
@@ -226,15 +226,15 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         var successResult = ValidationResult.Success();
-        _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(successResult);
+        _ = _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(successResult);
 
         // Act
         var result = _mockCompiler.Object.Validate(_testKernelDefinition);
 
         // Assert
-        result.Should().BeSameAs(successResult);
-        result.IsValid.Should().BeTrue();
-        result.ErrorMessage.Should().BeNull();
+        _ = result.Should().BeSameAs(successResult);
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.ErrorMessage.Should().BeNull();
         _mockCompiler.Verify(c => c.Validate(_testKernelDefinition), Times.Once);
     }
 
@@ -244,15 +244,15 @@ public sealed class IKernelCompilerTests
         // Arrange
         var warnings = new[] { "Unused variable 'x'", "Performance hint: consider loop unrolling" };
         var successResult = ValidationResult.SuccessWithWarnings(warnings);
-        _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(successResult);
+        _ = _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(successResult);
 
         // Act
         var result = _mockCompiler.Object.Validate(_testKernelDefinition);
 
         // Assert
-        result.IsValid.Should().BeTrue();
-        result.ErrorMessage.Should().BeNull();
-        result.Warnings.Should().BeEquivalentTo(warnings);
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.ErrorMessage.Should().BeNull();
+        _ = result.Warnings.Should().BeEquivalentTo(warnings);
     }
 
     [Fact]
@@ -261,15 +261,15 @@ public sealed class IKernelCompilerTests
         // Arrange
         const string errorMessage = "Syntax error: missing semicolon on line 5";
         var failureResult = ValidationResult.Failure(errorMessage);
-        _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(failureResult);
+        _ = _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(failureResult);
 
         // Act
         var result = _mockCompiler.Object.Validate(_testKernelDefinition);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Be(errorMessage);
-        result.Warnings.Should().BeEmpty();
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Be(errorMessage);
+        _ = result.Warnings.Should().BeEmpty();
     }
 
     [Fact]
@@ -279,22 +279,22 @@ public sealed class IKernelCompilerTests
         const string errorMessage = "Critical error: undefined function 'invalidCall'";
         var warnings = new[] { "Warning: potential performance issue" };
         var failureResult = ValidationResult.FailureWithWarnings(errorMessage, warnings);
-        _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(failureResult);
+        _ = _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(failureResult);
 
         // Act
         var result = _mockCompiler.Object.Validate(_testKernelDefinition);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Be(errorMessage);
-        result.Warnings.Should().BeEquivalentTo(warnings);
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Be(errorMessage);
+        _ = result.Warnings.Should().BeEquivalentTo(warnings);
     }
 
     [Fact]
     public void Validate_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Arrange
-        _mockCompiler.Setup(c => c.Validate(null!)).Throws(new ArgumentNullException("definition"));
+        _ = _mockCompiler.Setup(c => c.Validate(null!)).Throws(new ArgumentNullException("definition"));
 
         // Act & Assert
         var action = () => _mockCompiler.Object.Validate(null!);
@@ -311,14 +311,14 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         var failureResult = ValidationResult.Failure(errorMessage);
-        _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(failureResult);
+        _ = _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(failureResult);
 
         // Act
         var result = _mockCompiler.Object.Validate(_testKernelDefinition);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Be(errorMessage);
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Be(errorMessage);
     }
 
     #endregion
@@ -332,8 +332,8 @@ public sealed class IKernelCompilerTests
         var compilerType = typeof(IKernelCompiler);
 
         // Assert
-        compilerType.IsInterface.Should().BeTrue();
-        compilerType.IsPublic.Should().BeTrue();
+        _ = compilerType.IsInterface.Should().BeTrue();
+        _ = compilerType.IsPublic.Should().BeTrue();
     }
 
     [Fact]
@@ -365,9 +365,9 @@ public sealed class IKernelCompilerTests
         var optionsType = typeof(CompilerSpecificOptions);
 
         // Assert
-        optionsType.IsAbstract.Should().BeTrue();
-        optionsType.IsClass.Should().BeTrue();
-        optionsType.IsPublic.Should().BeTrue();
+        _ = optionsType.IsAbstract.Should().BeTrue();
+        _ = optionsType.IsClass.Should().BeTrue();
+        _ = optionsType.IsPublic.Should().BeTrue();
     }
 
     [Fact]
@@ -381,8 +381,8 @@ public sealed class IKernelCompilerTests
 
         // Assert
         Assert.NotNull(compilerNameProperty);
-        compilerNameProperty!.PropertyType.Should().Be<string>();
-        compilerNameProperty.GetMethod!.IsAbstract.Should().BeTrue();
+        _ = compilerNameProperty!.PropertyType.Should().Be<string>();
+        _ = compilerNameProperty.GetMethod!.IsAbstract.Should().BeTrue();
     }
 
     /// <summary>
@@ -402,9 +402,9 @@ public sealed class IKernelCompilerTests
         var options = new TestCompilerOptions { TestOption = "CustomValue" };
 
         // Assert
-        options.CompilerName.Should().Be("TestCompiler");
-        options.TestOption.Should().Be("CustomValue");
-        Assert.IsAssignableFrom<CompilerSpecificOptions>(options);
+        _ = options.CompilerName.Should().Be("TestCompiler");
+        _ = options.TestOption.Should().Be("CustomValue");
+        _ = Assert.IsAssignableFrom<CompilerSpecificOptions>(options);
     }
 
     #endregion
@@ -436,22 +436,22 @@ public sealed class IKernelCompilerTests
         // Arrange
         var expectedValues = new[]
         {
-            KernelSourceType.ExpressionTree,
-            KernelSourceType.CUDA,
-            KernelSourceType.OpenCL,
-            KernelSourceType.HLSL,
-            KernelSourceType.SPIRV,
-            KernelSourceType.Metal,
-            KernelSourceType.HIP,
-            KernelSourceType.SYCL,
-            KernelSourceType.Binary
-        };
+        KernelSourceType.ExpressionTree,
+        KernelSourceType.CUDA,
+        KernelSourceType.OpenCL,
+        KernelSourceType.HLSL,
+        KernelSourceType.SPIRV,
+        KernelSourceType.Metal,
+        KernelSourceType.HIP,
+        KernelSourceType.SYCL,
+        KernelSourceType.Binary
+    };
 
         // Act
         var actualValues = Enum.GetValues<KernelSourceType>();
 
         // Assert
-        actualValues.Should().BeEquivalentTo(expectedValues);
+        _ = actualValues.Should().BeEquivalentTo(expectedValues);
     }
 
     #endregion
@@ -462,7 +462,7 @@ public sealed class IKernelCompilerTests
     public async Task CompileAsync_MultipleParallelCalls_ShouldHandleConcurrency()
     {
         // Arrange
-        _mockCompiler.Setup(c => c.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()))
+        _ = _mockCompiler.Setup(c => c.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()))
                     .ReturnsAsync(_mockCompiledKernel.Object);
 
         var tasks = new Task<ICompiledKernel>[10];
@@ -477,7 +477,7 @@ public sealed class IKernelCompilerTests
 
         // Assert
         Assert.Equal(10, results.Length);
-        results.Should().AllSatisfy(r => r.Should().BeSameAs(_mockCompiledKernel.Object));
+        _ = results.Should().AllSatisfy(r => r.Should().BeSameAs(_mockCompiledKernel.Object));
         _mockCompiler.Verify(c => c.CompileAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()), Times.Exactly(10));
     }
 
@@ -486,7 +486,7 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         var successResult = ValidationResult.Success();
-        _mockCompiler.Setup(c => c.Validate(It.IsAny<KernelDefinition>())).Returns(successResult);
+        _ = _mockCompiler.Setup(c => c.Validate(It.IsAny<KernelDefinition>())).Returns(successResult);
 
         var tasks = new Task<ValidationResult>[10];
 
@@ -501,7 +501,7 @@ public sealed class IKernelCompilerTests
 
         // Assert
         Assert.Equal(10, results.Length);
-        results.Should().AllSatisfy(r => r.IsValid.Should().BeTrue());
+        _ = results.Should().AllSatisfy(r => r.IsValid.Should().BeTrue());
         _mockCompiler.Verify(c => c.Validate(It.IsAny<KernelDefinition>()), Times.Exactly(10));
     }
 
@@ -514,8 +514,8 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         var validationResult = ValidationResult.Success();
-        _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(validationResult);
-        _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, default))
+        _ = _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(validationResult);
+        _ = _mockCompiler.Setup(c => c.CompileAsync(_testKernelDefinition, null, default))
                     .ReturnsAsync(_mockCompiledKernel.Object);
 
         // Act
@@ -528,9 +528,9 @@ public sealed class IKernelCompilerTests
         }
 
         // Assert
-        validation.IsValid.Should().BeTrue();
+        _ = validation.IsValid.Should().BeTrue();
         Assert.NotNull(compiledKernel);
-        compiledKernel.Should().BeSameAs(_mockCompiledKernel.Object);
+        _ = compiledKernel.Should().BeSameAs(_mockCompiledKernel.Object);
 
         _mockCompiler.Verify(c => c.Validate(_testKernelDefinition), Times.Once);
         _mockCompiler.Verify(c => c.CompileAsync(_testKernelDefinition, null, default), Times.Once);
@@ -541,7 +541,7 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         var validationResult = ValidationResult.Failure("Invalid kernel source");
-        _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(validationResult);
+        _ = _mockCompiler.Setup(c => c.Validate(_testKernelDefinition)).Returns(validationResult);
 
         // Act
         var validation = _mockCompiler.Object.Validate(_testKernelDefinition);
@@ -553,8 +553,8 @@ public sealed class IKernelCompilerTests
         }
 
         // Assert
-        validation.IsValid.Should().BeFalse();
-        validation.ErrorMessage.Should().Be("Invalid kernel source");
+        _ = validation.IsValid.Should().BeFalse();
+        _ = validation.ErrorMessage.Should().Be("Invalid kernel source");
         Assert.Null(compiledKernel);
 
         _mockCompiler.Verify(c => c.Validate(_testKernelDefinition), Times.Once);
@@ -570,7 +570,7 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         const string compilerName = "ConsistentCompiler";
-        _mockCompiler.Setup(c => c.Name).Returns(compilerName);
+        _ = _mockCompiler.Setup(c => c.Name).Returns(compilerName);
 
         // Act
         var name1 = _mockCompiler.Object.Name;
@@ -588,18 +588,17 @@ public sealed class IKernelCompilerTests
     {
         // Arrange
         var sourceTypes = new[] { KernelSourceType.CUDA, KernelSourceType.OpenCL };
-        _mockCompiler.Setup(c => c.SupportedSourceTypes).Returns(sourceTypes);
+        _ = _mockCompiler.Setup(c => c.SupportedSourceTypes).Returns(sourceTypes);
 
         // Act
         var types1 = _mockCompiler.Object.SupportedSourceTypes;
         var types2 = _mockCompiler.Object.SupportedSourceTypes;
 
         // Assert
-        types1.Should().BeEquivalentTo(sourceTypes);
-        types2.Should().BeEquivalentTo(sourceTypes);
-        types1.Should().BeEquivalentTo(types2);
+        _ = types1.Should().BeEquivalentTo(sourceTypes);
+        _ = types2.Should().BeEquivalentTo(sourceTypes);
+        _ = types1.Should().BeEquivalentTo(types2);
     }
 
     #endregion
-}
 }

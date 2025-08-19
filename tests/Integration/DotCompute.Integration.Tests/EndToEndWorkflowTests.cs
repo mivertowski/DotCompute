@@ -9,19 +9,15 @@ using Xunit.Abstractions;
 using DotCompute.Core.Pipelines;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Integration tests for complete end-to-end compute workflows.
 /// Tests the full pipeline from kernel definition through execution and result collection.
 /// </summary>
-public sealed class EndToEndWorkflowTests : IntegrationTestBase
+public sealed class EndToEndWorkflowTests(ITestOutputHelper output) : IntegrationTestBase(output)
 {
-    public EndToEndWorkflowTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
     [Fact]
     public async Task CompleteComputePipeline_VectorAddition_ShouldExecuteSuccessfully()
     {
@@ -40,15 +36,15 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
 
         var output = result.GetOutput<float[]>("result");
         Assert.NotNull(output);
-        output.Length.Should().Be(arraySize);
+        _ = output.Length.Should().Be(arraySize);
 
         for (var i = 0; i < arraySize; i++)
         {
-            output[i].Should().BeApproximately(expected[i], 0.001f);
+            _ = output[i].Should().BeApproximately(expected[i], 0.001f);
         }
     }
 
@@ -69,11 +65,11 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
 
         var output = result.GetOutput<float[]>("result");
         Assert.NotNull(output);
-        output.Length.Should().Be(matrixSize * matrixSize);
+        _ = output.Length.Should().Be(matrixSize * matrixSize);
     }
 
     [Fact]
@@ -93,7 +89,7 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
 
         var output = result.GetOutput<float>("result");
         Assert.Equal(expected, output, 0.1f);
@@ -118,21 +114,21 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
 
         var output = result.GetOutput<float[]>("result");
         Assert.NotNull(output);
-        output.Length.Should().Be(size);
+        _ = output.Length.Should().Be(size);
 
         // Verify scaling
         for (var i = 0; i < size; i++)
         {
-            output[i].Should().BeApproximately(input[i] * 2.0f, 0.001f);
+            _ = output[i].Should().BeApproximately(input[i] * 2.0f, 0.001f);
         }
 
         // Verify execution metrics show expected scaling characteristics
-        result.Metrics?.Should().NotBeNull();
-        
+        _ = (result.Metrics?.Should().NotBeNull());
+
         // Validate that metrics reflect expected thread block usage for this problem size
         // This is a placeholder assertion that can be expanded when metrics are available
         Assert.True(expectedThreadBlocks > 0, "Expected thread blocks should be positive");
@@ -163,13 +159,13 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.Success.Should().BeTrue();
-        result.StageResults.Count.Should().Be(3); // Three stages: load, transform, store
+        _ = result.Success.Should().BeTrue();
+        _ = result.StageResults.Count.Should().Be(3); // Three stages: load, transform, store
 
         foreach (var stageResult in result.StageResults)
         {
-            stageResult.Success.Should().BeTrue();
-            stageResult.Duration.Should().BePositive();
+            _ = stageResult.Success.Should().BeTrue();
+            _ = stageResult.Duration.Should().BePositive();
         }
     }
 
@@ -189,12 +185,12 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.Success.Should().BeTrue();
-        result.Metrics.Should().NotBeNull();
-        result.Metrics!.Duration.Should().BePositive();
-        result.Metrics.MemoryUsage.Should().NotBeNull();
-        result.Metrics!.ComputeUtilization.Should().BeGreaterThanOrEqualTo(0);
-        result.Metrics.MemoryBandwidthUtilization.Should().BeGreaterThanOrEqualTo(0);
+        _ = result.Success.Should().BeTrue();
+        _ = result.Metrics.Should().NotBeNull();
+        _ = result.Metrics!.Duration.Should().BePositive();
+        _ = result.Metrics.MemoryUsage.Should().NotBeNull();
+        _ = result.Metrics!.ComputeUtilization.Should().BeGreaterThanOrEqualTo(0);
+        _ = result.Metrics.MemoryBandwidthUtilization.Should().BeGreaterThanOrEqualTo(0);
     }
 
     [Fact]
@@ -210,7 +206,7 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
             ExecuteEndToEndWorkflow("invalid", invalidKernel, Array.Empty<object>(), 0));
 
         Assert.NotNull(exception);
-        exception.Message.Should().Contain("compilation");
+        _ = exception.Message.Should().Contain("compilation");
     }
 
     [Fact]
@@ -222,7 +218,7 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(10));
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+        _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
             ExecuteEndToEndWorkflow(
                 "long_running_kernel",
                 LongRunningKernelSource,
@@ -300,7 +296,7 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
 
         await engine.ExecuteAsync(
             compiledKernel,
-            arguments.ToArray(),
+            [.. arguments],
             ComputeBackendType.CPU,
             executionOptions,
             cancellationToken);
@@ -362,7 +358,7 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
     {
         var builder = new KernelPipelineBuilder();
 
-        builder.AddStage(new MockPipelineStage("load", "LoadStage"))
+        _ = builder.AddStage(new MockPipelineStage("load", "LoadStage"))
                .AddStage(new MockPipelineStage("transform", "TransformStage"))
                .AddStage(new MockPipelineStage("store", "StoreStage"));
 
@@ -372,17 +368,13 @@ public sealed class EndToEndWorkflowTests : IntegrationTestBase
     private static float[] GenerateTestArray(int size)
     {
         var random = new Random(42);
-        return Enumerable.Range(0, size)
-                        .Select(_ => (float)random.NextDouble() * 100.0f)
-                        .ToArray();
+        return [.. Enumerable.Range(0, size).Select(_ => (float)random.NextDouble() * 100.0f)];
     }
 
     private static float[] GenerateTestMatrix(int rows, int cols)
     {
         var random = new Random(42);
-        return Enumerable.Range(0, rows * cols)
-                        .Select(_ => (float)random.NextDouble() * 10.0f)
-                        .ToArray();
+        return [.. Enumerable.Range(0, rows * cols).Select(_ => (float)random.NextDouble() * 10.0f)];
     }
 
     private const string VectorAddKernelSource = @"
@@ -465,5 +457,4 @@ public class WorkflowResult
     public PipelineExecutionMetrics? Metrics { get; set; }
 
     public T GetOutput<T>(string key) => Results.TryGetValue(key, out var value) ? (T)value : default!;
-}
 }

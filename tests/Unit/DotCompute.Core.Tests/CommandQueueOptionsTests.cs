@@ -2,8 +2,8 @@ using Xunit;
 using FluentAssertions;
 using DotCompute.Core;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 public sealed class CommandQueueOptionsTests
 {
@@ -14,9 +14,9 @@ public sealed class CommandQueueOptionsTests
         var options = CommandQueueOptions.Default;
 
         // Assert
-        options.EnableProfiling.Should().BeFalse();
-        options.EnableOutOfOrderExecution.Should().BeFalse();
-        options.Priority.Should().Be(QueuePriority.Normal);
+        _ = options.EnableProfiling.Should().BeFalse();
+        _ = options.EnableOutOfOrderExecution.Should().BeFalse();
+        _ = options.Priority.Should().Be(QueuePriority.Normal);
     }
 
     [Fact]
@@ -31,9 +31,9 @@ public sealed class CommandQueueOptionsTests
         };
 
         // Assert
-        options.EnableProfiling.Should().BeTrue();
-        options.EnableOutOfOrderExecution.Should().BeTrue();
-        options.Priority.Should().Be(QueuePriority.High);
+        _ = options.EnableProfiling.Should().BeTrue();
+        _ = options.EnableOutOfOrderExecution.Should().BeTrue();
+        _ = options.Priority.Should().Be(QueuePriority.High);
     }
 
     [Theory]
@@ -46,7 +46,7 @@ public sealed class CommandQueueOptionsTests
         var options = new CommandQueueOptions { Priority = priority };
 
         // Assert
-        options.Priority.Should().Be(priority);
+        _ = options.Priority.Should().Be(priority);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class CommandQueueOptionsTests
         var options = new CommandQueueOptions { EnableProfiling = true };
 
         // Assert
-        options.EnableProfiling.Should().BeTrue();
+        _ = options.EnableProfiling.Should().BeTrue();
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class CommandQueueOptionsTests
         var options = new CommandQueueOptions { EnableOutOfOrderExecution = true };
 
         // Assert
-        options.EnableOutOfOrderExecution.Should().BeTrue();
+        _ = options.EnableOutOfOrderExecution.Should().BeTrue();
     }
 
     [Fact]
@@ -86,10 +86,10 @@ public sealed class CommandQueueOptionsTests
         };
 
         // Assert
-        options1.EnableProfiling.Should().BeTrue();
-        options1.Priority.Should().Be(QueuePriority.High);
-        options2.EnableProfiling.Should().BeFalse();
-        options2.Priority.Should().Be(QueuePriority.Low);
+        _ = options1.EnableProfiling.Should().BeTrue();
+        _ = options1.Priority.Should().Be(QueuePriority.High);
+        _ = options2.EnableProfiling.Should().BeFalse();
+        _ = options2.Priority.Should().Be(QueuePriority.Low);
     }
 
     [Fact]
@@ -105,9 +105,8 @@ public sealed class CommandQueueOptionsTests
         };
 
         // Assert
-        defaultOptions.EnableProfiling.Should().BeFalse();
-        defaultOptions.EnableOutOfOrderExecution.Should().BeFalse();
-        defaultOptions.Priority.Should().Be(QueuePriority.Normal);
+        _ = defaultOptions.EnableProfiling.Should().BeFalse();
+        _ = defaultOptions.EnableOutOfOrderExecution.Should().BeFalse();
+        _ = defaultOptions.Priority.Should().Be(QueuePriority.Normal);
     }
-}
 }

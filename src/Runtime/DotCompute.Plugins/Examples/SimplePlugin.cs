@@ -7,36 +7,35 @@ using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - simple example code
 
-namespace DotCompute.Plugins.Examples
+namespace DotCompute.Plugins.Examples;
+
+/// <summary>
+/// Simple example plugin implementation.
+/// </summary>
+public class SimplePlugin : BackendPluginBase
 {
-    /// <summary>
-    /// Simple example plugin implementation.
-    /// </summary>
-    public class SimplePlugin : BackendPluginBase
+    public override string Id => "simple.plugin";
+    public override string Name => "Simple Plugin";
+    public override Version Version => new(1, 0, 0);
+    public override string Description => "A simple example plugin";
+    public override string Author => "DotCompute Team";
+    public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend;
+
+    protected override Task OnInitializeAsync(CancellationToken cancellationToken)
     {
-        public override string Id => "simple.plugin";
-        public override string Name => "Simple Plugin";
-        public override Version Version => new(1, 0, 0);
-        public override string Description => "A simple example plugin";
-        public override string Author => "DotCompute Team";
-        public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend;
+        Logger?.LogInformation("Simple plugin initialized");
+        return Task.CompletedTask;
+    }
 
-        protected override Task OnInitializeAsync(CancellationToken cancellationToken)
-        {
-            Logger?.LogInformation("Simple plugin initialized");
-            return Task.CompletedTask;
-        }
+    protected override Task OnStartAsync(CancellationToken cancellationToken)
+    {
+        Logger?.LogInformation("Simple plugin started");
+        return Task.CompletedTask;
+    }
 
-        protected override Task OnStartAsync(CancellationToken cancellationToken)
-        {
-            Logger?.LogInformation("Simple plugin started");
-            return Task.CompletedTask;
-        }
-
-        protected override Task OnStopAsync(CancellationToken cancellationToken)
-        {
-            Logger?.LogInformation("Simple plugin stopped");
-            return Task.CompletedTask;
-        }
+    protected override Task OnStopAsync(CancellationToken cancellationToken)
+    {
+        Logger?.LogInformation("Simple plugin stopped");
+        return Task.CompletedTask;
     }
 }

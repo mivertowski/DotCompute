@@ -7,8 +7,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Common.Hardware
-{
+namespace DotCompute.Tests.Common.Hardware;
+
 
 /// <summary>
 /// Advanced hardware simulator for complex testing scenarios.
@@ -63,7 +63,7 @@ public sealed class HardwareSimulator : IDisposable
         IsRunning = true;
 
         var interval = updateInterval ?? TimeSpan.FromSeconds(1);
-        _simulationTimer?.Change(interval, interval);
+        _ = (_simulationTimer?.Change(interval, interval));
 
         _logger.LogInformation("Hardware simulation started with {Configuration} configuration, update interval: {Interval}ms",
             configuration, interval.TotalMilliseconds);
@@ -77,7 +77,7 @@ public sealed class HardwareSimulator : IDisposable
         if (!IsRunning)
             return;
 
-        _simulationTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+        _ = (_simulationTimer?.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan));
         IsRunning = false;
 
         // Clear all active scenarios
@@ -206,12 +206,12 @@ public sealed class HardwareSimulator : IDisposable
                 {
                     var errorMessages = new[]
                     {
-                        "Hardware fault detected",
-                        "Device driver crashed",
-                        "Thermal protection triggered",
-                        "Power supply instability",
-                        "Memory corruption detected"
-                    };
+                    "Hardware fault detected",
+                    "Device driver crashed",
+                    "Thermal protection triggered",
+                    "Power supply instability",
+                    "Memory corruption detected"
+                };
 
                     var errorMessage = errorMessages[random.Next(errorMessages.Length)];
                     device.SimulateFailure(errorMessage);
@@ -335,7 +335,7 @@ public sealed class HardwareSimulator : IDisposable
             // Remove expired scenarios
             foreach (var scenarioId in scenariosToRemove)
             {
-                RemoveScenario(scenarioId);
+                _ = RemoveScenario(scenarioId);
             }
         }
         catch (Exception ex)
@@ -467,5 +467,4 @@ public enum SimulationActionType
     ClockSpeedChange,
     DeviceFailure,
     DeviceRecovery
-}
 }

@@ -3,8 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Utilities.TestInfrastructure
-{
+namespace DotCompute.Tests.Utilities.TestInfrastructure;
+
 
 /// <summary>
 /// Base class for performance benchmark tests
@@ -109,14 +109,9 @@ public abstract class PerformanceBenchmarkBase : CoverageTestBase
 /// Performance benchmark utilities
 /// </summary>
 [ExcludeFromCodeCoverage]
-public class PerformanceBenchmark
+public class PerformanceBenchmark(ILogger logger)
 {
-    private readonly ILogger _logger;
-
-    public PerformanceBenchmark(ILogger logger)
-    {
-        _logger = logger;
-    }
+    private readonly ILogger _logger = logger;
 
     /// <summary>
     /// Measure operation performance
@@ -132,7 +127,7 @@ public class PerformanceBenchmark
         // Warm up
         try
         {
-            await operation();
+            _ = await operation();
         }
         catch
         {
@@ -177,7 +172,7 @@ public class PerformanceBenchmark
         // Warm up
         try
         {
-            operation();
+            _ = operation();
         }
         catch
         {
@@ -259,5 +254,4 @@ public record PerformanceComparisonResult(
     public bool IsFirstFaster => SpeedupRatio > 1.0;
     public TimeSpan TimeDifference => Result1.AverageTime - Result2.AverageTime;
     public double PercentageImprovement => (SpeedupRatio - 1.0) * 100.0;
-}
 }

@@ -6,8 +6,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Benchmarks
-{
+namespace DotCompute.Tests.Hardware.Benchmarks;
+
 
 /// <summary>
 /// Comprehensive performance benchmarks for RTX 2000 Ada Generation GPU.
@@ -24,12 +24,12 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
     private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
 #pragma warning restore CA1823
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
-    
+
     // Logger messages
 #pragma warning disable CA1823 // Unused field - Logger messages for future use
     private static readonly Action<ILogger, string, Exception?> LogBenchmarkStart =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(3001), "Starting benchmark: {BenchmarkName}");
-    
+
     private static readonly Action<ILogger, double, Exception?> LogBandwidthResult =
         LoggerMessage.Define<double>(LogLevel.Information, new EventId(3002), "Bandwidth measurement: {Bandwidth} GB/s");
 #pragma warning restore CA1823
@@ -87,8 +87,8 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
         var maxH2DBandwidth = results.H2DBandwidths.Max();
         var maxD2DBandwidth = results.D2DBandwidths.Max();
 
-        maxH2DBandwidth.Should().BeGreaterThan(15.0, "H2D bandwidth should exceed PCIe 4.0 x16 minimum");
-        maxD2DBandwidth.Should().BeGreaterThan(200.0, "D2D bandwidth should approach GDDR6 theoretical bandwidth");
+        _ = maxH2DBandwidth.Should().BeGreaterThan(15.0, "H2D bandwidth should exceed PCIe 4.0 x16 minimum");
+        _ = maxD2DBandwidth.Should().BeGreaterThan(200.0, "D2D bandwidth should approach GDDR6 theoretical bandwidth");
 
         _output.WriteLine($"Peak bandwidth - H2D: {maxH2DBandwidth:F2} GB/s, D2D: {maxD2DBandwidth:F2} GB/s");
 
@@ -216,7 +216,7 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
             for (var i = 0; i < launchCount; i++)
             {
                 result = CuLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
-                result.Should().Be(0, $"Kernel launch {i} should succeed");
+                _ = result.Should().Be(0, $"Kernel launch {i} should succeed");
             }
             _ = CudaCtxSynchronize();
             sw.Stop();
@@ -225,7 +225,7 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
             _output.WriteLine($"Average kernel launch overhead: {averageLaunchTime:F2} μs");
 
             // RTX 2000 Ada Gen should have low launch overhead
-            averageLaunchTime.Should().BeLessThan(50.0, "Kernel launch overhead should be minimal");
+            _ = averageLaunchTime.Should().BeLessThan(50.0, "Kernel launch overhead should be minimal");
 
             _baseline.KernelLaunchOverhead = averageLaunchTime;
         }
@@ -310,9 +310,9 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
             // Prepare kernel parameters
             var kernelParams = new IntPtr[]
             {
-                Marshal.AllocHGlobal(IntPtr.Size),
-                Marshal.AllocHGlobal(sizeof(int)),
-                Marshal.AllocHGlobal(sizeof(int))
+            Marshal.AllocHGlobal(IntPtr.Size),
+            Marshal.AllocHGlobal(sizeof(int)),
+            Marshal.AllocHGlobal(sizeof(int))
             };
 
             try
@@ -349,7 +349,7 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
                     _output.WriteLine($"Execution time: {sw.ElapsedMilliseconds} ms");
 
                     // RTX 2000 Ada Gen should achieve substantial GFLOPS
-                    gflops.Should().BeGreaterThan(1000, "Should achieve significant compute throughput");
+                    _ = gflops.Should().BeGreaterThan(1000, "Should achieve significant compute throughput");
 
                     _baseline.ComputeThroughputGFLOPS = gflops;
                 }
@@ -460,10 +460,10 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
             // Measure latency
             var kernelParams = new IntPtr[]
             {
-                Marshal.AllocHGlobal(IntPtr.Size),
-                Marshal.AllocHGlobal(IntPtr.Size),
-                Marshal.AllocHGlobal(IntPtr.Size),
-                Marshal.AllocHGlobal(sizeof(int))
+            Marshal.AllocHGlobal(IntPtr.Size),
+            Marshal.AllocHGlobal(IntPtr.Size),
+            Marshal.AllocHGlobal(IntPtr.Size),
+            Marshal.AllocHGlobal(sizeof(int))
             };
 
             try
@@ -496,7 +496,7 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
                     _output.WriteLine($"Average memory access latency: {averageLatency:F2} ns");
 
                     // GDDR6 should provide reasonable latency for random access
-                    averageLatency.Should().BeLessThan(1000, "Memory latency should be reasonable for GDDR6");
+                    _ = averageLatency.Should().BeLessThan(1000, "Memory latency should be reasonable for GDDR6");
 
                     _baseline.MemoryLatencyNs = averageLatency;
                 }
@@ -576,12 +576,11 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
         public double MemoryLatencyNs { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
-        public string ToJson()
-        {
+        public string ToJson() =>
 #pragma warning disable IL2026, IL3050 // JsonSerializer AOT warnings - test code only
-            return JsonSerializer.Serialize(this, JsonOptions);
+            JsonSerializer.Serialize(this, JsonOptions);
 #pragma warning restore IL2026, IL3050
-        }
+
     }
 
     internal sealed class MemoryBandwidthResults
@@ -603,15 +602,15 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
         public double H2D { get; set; }
         public double D2H { get; set; }
         public double D2D { get; set; }
-        
+
         public readonly bool Equals(BandwidthMeasurement other) => H2D.Equals(other.H2D) && D2H.Equals(other.D2H) && D2D.Equals(other.D2D);
-            
+
         public override readonly bool Equals(object? obj) => obj is BandwidthMeasurement other && Equals(other);
-        
+
         public override readonly int GetHashCode() => HashCode.Combine(H2D, D2H, D2D);
-        
+
         public static bool operator ==(BandwidthMeasurement left, BandwidthMeasurement right) => left.Equals(right);
-        
+
         public static bool operator !=(BandwidthMeasurement left, BandwidthMeasurement right) => !left.Equals(right);
     }
 
@@ -675,11 +674,11 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCreateProgram", ExactSpelling = true, CharSet = CharSet.Ansi)]
-    private static extern int NvrtcCreateProgram(ref IntPtr prog, 
-        [MarshalAs(UnmanagedType.LPStr)] string src, 
+    private static extern int NvrtcCreateProgram(ref IntPtr prog,
+        [MarshalAs(UnmanagedType.LPStr)] string src,
         [MarshalAs(UnmanagedType.LPStr)] string name,
-        int numHeaders, 
-        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[] headers, 
+        int numHeaders,
+        [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[] headers,
         [MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPStr)] string[] includeNames);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -731,5 +730,4 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
-}
 }

@@ -3,8 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Common.Hardware
-{
+namespace DotCompute.Tests.Common.Hardware;
+
 
 /// <summary>
 /// Interface for hardware abstraction providers.
@@ -135,5 +135,4 @@ public interface IHardwareDevice
     /// </summary>
     /// <returns>True if the device is healthy, false otherwise.</returns>
     public bool HealthCheck();
-}
 }

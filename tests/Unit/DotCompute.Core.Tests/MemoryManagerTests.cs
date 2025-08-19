@@ -8,8 +8,8 @@ using Xunit;
 using CoreMemory = DotCompute.Core.Memory;
 using AbstractionsMemory = DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Tests for the IMemoryManager interface implementations.
@@ -29,7 +29,7 @@ public sealed class MemoryManagerTests : IDisposable
         _abstractionsMemoryManagerMock = new Mock<AbstractionsMemory.IMemoryManager>();
 
         // Setup default behavior for Core.Memory.IMemoryManager
-        _coreMemoryManagerMock.Setup(m => m.AvailableLocations)
+        _ = _coreMemoryManagerMock.Setup(m => m.AvailableLocations)
             .Returns([CoreMemory.MemoryLocation.Host, CoreMemory.MemoryLocation.Device]);
     }
 
@@ -50,10 +50,10 @@ public sealed class MemoryManagerTests : IDisposable
     {
         // Arrange
         var mockBuffer = new Mock<DotCompute.Abstractions.IBuffer<int>>();
-        mockBuffer.Setup(b => b.Length).Returns(100);
-        mockBuffer.Setup(b => b.Accelerator).Returns(Mock.Of<IAccelerator>());
+        _ = mockBuffer.Setup(b => b.Length).Returns(100);
+        _ = mockBuffer.Setup(b => b.Accelerator).Returns(Mock.Of<IAccelerator>());
 
-        _coreMemoryManagerMock
+        _ = _coreMemoryManagerMock
             .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockBuffer.Object);
 
@@ -69,12 +69,12 @@ public sealed class MemoryManagerTests : IDisposable
     public async Task CoreMemoryManager_CreateBufferAsync_WithNegativeSize_ShouldThrowArgumentException()
     {
         // Arrange
-        _coreMemoryManagerMock
+        _ = _coreMemoryManagerMock
             .Setup(m => m.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("Element count must be positive"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _coreMemoryManagerMock.Object.CreateBufferAsync<byte>(-1, CoreMemory.MemoryLocation.Host));
     }
 
@@ -85,7 +85,7 @@ public sealed class MemoryManagerTests : IDisposable
         var sourceBuffer = Mock.Of<DotCompute.Abstractions.IBuffer<float>>();
         var destBuffer = Mock.Of<DotCompute.Abstractions.IBuffer<float>>();
 
-        _coreMemoryManagerMock
+        _ = _coreMemoryManagerMock
             .Setup(m => m.CopyAsync(sourceBuffer, destBuffer, 0, 0, null, It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
@@ -100,7 +100,7 @@ public sealed class MemoryManagerTests : IDisposable
     {
         // Arrange
         var mockStats = Mock.Of<CoreMemory.IMemoryStatistics>();
-        _coreMemoryManagerMock.Setup(m => m.GetStatistics()).Returns(mockStats);
+        _ = _coreMemoryManagerMock.Setup(m => m.GetStatistics()).Returns(mockStats);
 
         // Act
         var stats = _coreMemoryManagerMock.Object.GetStatistics();
@@ -115,10 +115,10 @@ public sealed class MemoryManagerTests : IDisposable
     {
         // Arrange
         var mockBuffer = new Mock<AbstractionsMemory.IMemoryBuffer>();
-        mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
-        mockBuffer.Setup(b => b.Options).Returns(AbstractionsMemory.MemoryOptions.None);
+        _ = mockBuffer.Setup(b => b.SizeInBytes).Returns(1024);
+        _ = mockBuffer.Setup(b => b.Options).Returns(AbstractionsMemory.MemoryOptions.None);
 
-        _abstractionsMemoryManagerMock
+        _ = _abstractionsMemoryManagerMock
             .Setup(m => m.AllocateAsync(1024, AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockBuffer.Object);
 
@@ -134,12 +134,12 @@ public sealed class MemoryManagerTests : IDisposable
     public async Task AbstractionsMemoryManager_AllocateAsync_WithZeroSize_ShouldThrowArgumentException()
     {
         // Arrange
-        _abstractionsMemoryManagerMock
+        _ = _abstractionsMemoryManagerMock
             .Setup(m => m.AllocateAsync(0, It.IsAny<AbstractionsMemory.MemoryOptions>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentException("Size must be positive"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentException>(async () =>
             await _abstractionsMemoryManagerMock.Object.AllocateAsync(0));
     }
 
@@ -149,9 +149,9 @@ public sealed class MemoryManagerTests : IDisposable
         // Arrange
         var sourceData = new int[] { 1, 2, 3, 4, 5 };
         var mockBuffer = new Mock<AbstractionsMemory.IMemoryBuffer>();
-        mockBuffer.Setup(b => b.SizeInBytes).Returns(sourceData.Length * sizeof(int));
+        _ = mockBuffer.Setup(b => b.SizeInBytes).Returns(sourceData.Length * sizeof(int));
 
-        _abstractionsMemoryManagerMock
+        _ = _abstractionsMemoryManagerMock
             .Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), AbstractionsMemory.MemoryOptions.None, It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockBuffer.Object);
 
@@ -170,7 +170,7 @@ public sealed class MemoryManagerTests : IDisposable
         var sourceBuffer = Mock.Of<AbstractionsMemory.IMemoryBuffer>(b => b.SizeInBytes == 1024);
         var mockView = Mock.Of<AbstractionsMemory.IMemoryBuffer>(b => b.SizeInBytes == 512);
 
-        _abstractionsMemoryManagerMock
+        _ = _abstractionsMemoryManagerMock
             .Setup(m => m.CreateView(sourceBuffer, 0, 512))
             .Returns(mockView);
 
@@ -186,7 +186,7 @@ public sealed class MemoryManagerTests : IDisposable
     public async Task CoreMemoryManager_DisposeAsync_ShouldDisposeCorrectly()
     {
         // Arrange
-        _coreMemoryManagerMock.Setup(m => m.DisposeAsync()).Returns(ValueTask.CompletedTask);
+        _ = _coreMemoryManagerMock.Setup(m => m.DisposeAsync()).Returns(ValueTask.CompletedTask);
 
         // Act & Assert(should not throw)
         await _coreMemoryManagerMock.Object.DisposeAsync();
@@ -210,5 +210,4 @@ public sealed class MemoryManagerTests : IDisposable
             GC.SuppressFinalize(this);
         }
     }
-}
 }

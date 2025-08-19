@@ -9,20 +9,16 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Integration tests for complete end-to-end compute workflows.
 /// Tests kernel compilation → execution → result validation with real-world scenarios.
 /// </summary>
 [Collection("Integration")]
-public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
+public sealed class CompleteWorkflowIntegrationTests(ITestOutputHelper output) : ComputeWorkflowTestBase(output)
 {
-    public CompleteWorkflowIntegrationTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
     [Fact]
     public async Task VectorAdditionWorkflow_EndToEnd_ShouldExecuteSuccessfully()
     {
@@ -33,45 +29,45 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel
+            {
+                Name = "vector_add",
+                SourceCode = KernelSources.VectorAdd,
+                CompilationOptions = new CompilationOptions
                 {
-                    Name = "vector_add",
-                    SourceCode = KernelSources.VectorAdd,
-                    CompilationOptions = new CompilationOptions
-                    {
-                        OptimizationLevel = OptimizationLevel.Maximum,
-                        FastMath = true
-                    }
+                    OptimizationLevel = OptimizationLevel.Maximum,
+                    FastMath = true
                 }
+            }
             ],
             Inputs =
             [
                 new WorkflowInput { Name = "inputA", Data = TestDataGenerators.GenerateFloatArray(1024) },
-                new WorkflowInput { Name = "inputB", Data = TestDataGenerators.GenerateFloatArray(1024) }
+            new WorkflowInput { Name = "inputB", Data = TestDataGenerators.GenerateFloatArray(1024) }
             ],
             Outputs =
             [
                 new WorkflowOutput
-                {
-                    Name = "result",
-                    Size = 1024,
-                    Validator = ValidateVectorAddition
-                }
+            {
+                Name = "result",
+                Size = 1024,
+                Validator = ValidateVectorAddition
+            }
             ],
             ExecutionStages =
             [
                 new WorkflowExecutionStage
+            {
+                Name = "add_stage",
+                Order = 1,
+                KernelName = "vector_add",
+                BackendType = ComputeBackendType.CPU,
+                ExecutionOptions = new ExecutionOptions
                 {
-                    Name = "add_stage",
-                    Order = 1,
-                    KernelName = "vector_add",
-                    BackendType = ComputeBackendType.CPU,
-                    ExecutionOptions = new ExecutionOptions
-                    {
-                        GlobalWorkSize = [1024],
-                        LocalWorkSize = [64]
-                    },
-                    ArgumentNames = ["inputA", "inputB", "result"]
-                }
+                    GlobalWorkSize = [1024],
+                    LocalWorkSize = [64]
+                },
+                ArgumentNames = ["inputA", "inputB", "result"]
+            }
             ]
         };
 
@@ -79,21 +75,21 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("VectorAddition", workflow);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.CompilationResults["vector_add"].Success.Should().BeTrue();
-        result.ExecutionResults["add_stage"].Success.Should().BeTrue();
-        result.Validation?.IsValid.Should().BeTrue();
-        result.Results.Should().ContainKey("result");
+        _ = result.Success.Should().BeTrue();
+        _ = result.CompilationResults["vector_add"].Success.Should().BeTrue();
+        _ = result.ExecutionResults["add_stage"].Success.Should().BeTrue();
+        _ = (result.Validation?.IsValid.Should().BeTrue());
+        _ = result.Results.Should().ContainKey("result");
 
         var resultData = (float[])result.Results["result"];
-        resultData.Length.Should().Be(1024);
+        _ = resultData.Length.Should().Be(1024);
 
         // Verify the addition was performed correctly
         var inputA = workflow.Inputs[0].Data;
         var inputB = workflow.Inputs[1].Data;
         for (var i = 0; i < 100; i++) // Check first 100 elements
         {
-            resultData[i].Should().BeApproximately(inputA[i] + inputB[i], 0.001f);
+            _ = resultData[i].Should().BeApproximately(inputA[i] + inputB[i], 0.001f);
         }
 
         LogPerformanceMetrics("VectorAddition", result.Duration, 1024);
@@ -113,46 +109,46 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel
+            {
+                Name = "matrix_multiply",
+                SourceCode = KernelSources.MatrixMultiply,
+                CompilationOptions = new CompilationOptions
                 {
-                    Name = "matrix_multiply",
-                    SourceCode = KernelSources.MatrixMultiply,
-                    CompilationOptions = new CompilationOptions
-                    {
-                        OptimizationLevel = OptimizationLevel.Maximum,
-                        EnableMemoryCoalescing = true
-                    }
+                    OptimizationLevel = OptimizationLevel.Maximum,
+                    EnableMemoryCoalescing = true
                 }
+            }
             ],
             Inputs =
             [
                 new WorkflowInput { Name = "matrixA", Data = matrixA },
-                new WorkflowInput { Name = "matrixB", Data = matrixB }
+            new WorkflowInput { Name = "matrixB", Data = matrixB }
             ],
             Outputs =
             [
                 new WorkflowOutput
-                {
-                    Name = "matrixC",
-                    Size = matrixSize * matrixSize,
-                    Validator = data => ValidateMatrixMultiplication(data, matrixA, matrixB, matrixSize)
-                }
+            {
+                Name = "matrixC",
+                Size = matrixSize * matrixSize,
+                Validator = data => ValidateMatrixMultiplication(data, matrixA, matrixB, matrixSize)
+            }
             ],
             ExecutionStages =
             [
                 new WorkflowExecutionStage
+            {
+                Name = "multiply_stage",
+                Order = 1,
+                KernelName = "matrix_multiply",
+                BackendType = ComputeBackendType.CPU,
+                ExecutionOptions = new ExecutionOptions
                 {
-                    Name = "multiply_stage",
-                    Order = 1,
-                    KernelName = "matrix_multiply",
-                    BackendType = ComputeBackendType.CPU,
-                    ExecutionOptions = new ExecutionOptions
-                    {
-                        GlobalWorkSize = [matrixSize, matrixSize],
-                        LocalWorkSize = [8, 8]
-                    },
-                    ArgumentNames = ["matrixA", "matrixB", "matrixC"],
-                    Parameters = new Dictionary<string, object> { ["size"] = matrixSize }
-                }
+                    GlobalWorkSize = [matrixSize, matrixSize],
+                    LocalWorkSize = [8, 8]
+                },
+                ArgumentNames = ["matrixA", "matrixB", "matrixC"],
+                Parameters = new Dictionary<string, object> { ["size"] = matrixSize }
+            }
             ]
         };
 
@@ -160,9 +156,9 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("MatrixMultiplication", workflow);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Results.Should().ContainKey("matrixC");
-        result.Validation?.IsValid.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
+        _ = result.Results.Should().ContainKey("matrixC");
+        _ = (result.Validation?.IsValid.Should().BeTrue());
 
         LogPerformanceMetrics("MatrixMultiplication", result.Duration, matrixSize * matrixSize);
     }
@@ -180,8 +176,8 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel { Name = "gaussian_blur", SourceCode = KernelSources.GaussianBlur },
-                new WorkflowKernel { Name = "edge_detection", SourceCode = KernelSources.EdgeDetection },
-                new WorkflowKernel { Name = "contrast_enhance", SourceCode = KernelSources.ContrastEnhance }
+            new WorkflowKernel { Name = "edge_detection", SourceCode = KernelSources.EdgeDetection },
+            new WorkflowKernel { Name = "contrast_enhance", SourceCode = KernelSources.ContrastEnhance }
             ],
             Inputs =
             [
@@ -194,42 +190,42 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
             IntermediateBuffers =
             [
                 new WorkflowIntermediateBuffer
-                {
-                    Name = "blurredImage",
-                    SizeInBytes = imageSize * imageSize * sizeof(float)
-                },
-                new WorkflowIntermediateBuffer
-                {
-                    Name = "edgeImage",
-                    SizeInBytes = imageSize * imageSize * sizeof(float)
-                }
+            {
+                Name = "blurredImage",
+                SizeInBytes = imageSize * imageSize * sizeof(float)
+            },
+            new WorkflowIntermediateBuffer
+            {
+                Name = "edgeImage",
+                SizeInBytes = imageSize * imageSize * sizeof(float)
+            }
             ],
             ExecutionStages =
             [
                 new WorkflowExecutionStage
-                {
-                    Name = "blur_stage",
-                    Order = 1,
-                    KernelName = "gaussian_blur",
-                    ArgumentNames = ["originalImage", "blurredImage"],
-                    Parameters = new Dictionary<string, object> { ["width"] = imageSize, ["height"] = imageSize }
-                },
-                new WorkflowExecutionStage
-                {
-                    Name = "edge_stage",
-                    Order = 2,
-                    KernelName = "edge_detection",
-                    ArgumentNames = ["blurredImage", "edgeImage"],
-                    Parameters = new Dictionary<string, object> { ["width"] = imageSize, ["height"] = imageSize }
-                },
-                new WorkflowExecutionStage
-                {
-                    Name = "enhance_stage",
-                    Order = 3,
-                    KernelName = "contrast_enhance",
-                    ArgumentNames = ["edgeImage", "processedImage"],
-                    Parameters = new Dictionary<string, object> { ["factor"] = 1.5f }
-                }
+            {
+                Name = "blur_stage",
+                Order = 1,
+                KernelName = "gaussian_blur",
+                ArgumentNames = ["originalImage", "blurredImage"],
+                Parameters = new Dictionary<string, object> { ["width"] = imageSize, ["height"] = imageSize }
+            },
+            new WorkflowExecutionStage
+            {
+                Name = "edge_stage",
+                Order = 2,
+                KernelName = "edge_detection",
+                ArgumentNames = ["blurredImage", "edgeImage"],
+                Parameters = new Dictionary<string, object> { ["width"] = imageSize, ["height"] = imageSize }
+            },
+            new WorkflowExecutionStage
+            {
+                Name = "enhance_stage",
+                Order = 3,
+                KernelName = "contrast_enhance",
+                ArgumentNames = ["edgeImage", "processedImage"],
+                Parameters = new Dictionary<string, object> { ["factor"] = 1.5f }
+            }
             ],
             ContinueOnError = false
         };
@@ -238,15 +234,15 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("ImageProcessingPipeline", workflow);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.ExecutionResults.Count.Should().Be(3);
-        result.ExecutionResults.Values.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        _ = result.Success.Should().BeTrue();
+        _ = result.ExecutionResults.Count.Should().Be(3);
+        _ = result.ExecutionResults.Values.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         // Verify all stages executed in correct order
         var stageResults = result.ExecutionResults.Values.OrderBy(r => r.StageId).ToList();
-        stageResults[0].StageId.Should().Be("blur_stage");
-        stageResults[1].StageId.Should().Be("edge_stage");
-        stageResults[2].StageId.Should().Be("enhance_stage");
+        _ = stageResults[0].StageId.Should().Be("blur_stage");
+        _ = stageResults[1].StageId.Should().Be("edge_stage");
+        _ = stageResults[2].StageId.Should().Be("enhance_stage");
 
         LogPerformanceMetrics("ImageProcessingPipeline", result.Duration, imageSize * imageSize * 3);
     }
@@ -274,55 +270,55 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel
+            {
+                Name = "convolution2d",
+                SourceCode = KernelSources.Convolution2D,
+                CompilationOptions = new CompilationOptions
                 {
-                    Name = "convolution2d",
-                    SourceCode = KernelSources.Convolution2D,
-                    CompilationOptions = new CompilationOptions
-                    {
-                        OptimizationLevel = OptimizationLevel.Aggressive,
-                        FastMath = true,
-                        EnableOperatorFusion = true
-                    }
+                    OptimizationLevel = OptimizationLevel.Aggressive,
+                    FastMath = true,
+                    EnableOperatorFusion = true
                 }
+            }
             ],
             Inputs =
             [
                 new WorkflowInput { Name = "input", Data = inputTensor },
-                new WorkflowInput { Name = "weights", Data = weights },
-                new WorkflowInput { Name = "biases", Data = biases }
+            new WorkflowInput { Name = "weights", Data = weights },
+            new WorkflowInput { Name = "biases", Data = biases }
             ],
             Outputs =
             [
                 new WorkflowOutput
-                {
-                    Name = "output",
-                    Size = batchSize * outputChannels * outputSize * outputSize,
-                    Validator = data => ValidateConvolutionOutput(data, outputChannels)
-                }
+            {
+                Name = "output",
+                Size = batchSize * outputChannels * outputSize * outputSize,
+                Validator = data => ValidateConvolutionOutput(data, outputChannels)
+            }
             ],
             ExecutionStages =
             [
                 new WorkflowExecutionStage
+            {
+                Name = "conv_stage",
+                Order = 1,
+                KernelName = "convolution2d",
+                BackendType = ComputeBackendType.CPU,
+                ExecutionOptions = new ExecutionOptions
                 {
-                    Name = "conv_stage",
-                    Order = 1,
-                    KernelName = "convolution2d",
-                    BackendType = ComputeBackendType.CPU,
-                    ExecutionOptions = new ExecutionOptions
-                    {
-                        GlobalWorkSize = [outputSize, outputSize, outputChannels],
-                        LocalWorkSize = [8, 8, 2]
-                    },
-                    ArgumentNames = ["input", "weights", "biases", "output"],
-                    Parameters = new Dictionary<string, object>
-                    {
-                        ["batchSize"] = batchSize,
-                        ["inputChannels"] = inputChannels,
-                        ["outputChannels"] = outputChannels,
-                        ["inputSize"] = inputSize,
-                        ["kernelSize"] = kernelSize
-                    }
+                    GlobalWorkSize = [outputSize, outputSize, outputChannels],
+                    LocalWorkSize = [8, 8, 2]
+                },
+                ArgumentNames = ["input", "weights", "biases", "output"],
+                Parameters = new Dictionary<string, object>
+                {
+                    ["batchSize"] = batchSize,
+                    ["inputChannels"] = inputChannels,
+                    ["outputChannels"] = outputChannels,
+                    ["inputSize"] = inputSize,
+                    ["kernelSize"] = kernelSize
                 }
+            }
             ]
         };
 
@@ -330,17 +326,17 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("CNNConvolutionLayer", workflow);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Results.Should().ContainKey("output");
+        _ = result.Success.Should().BeTrue();
+        _ = result.Results.Should().ContainKey("output");
 
         var output = (float[])result.Results["output"];
-        output.Length.Should().Be(batchSize * outputChannels * outputSize * outputSize);
+        _ = output.Length.Should().Be(batchSize * outputChannels * outputSize * outputSize);
 
         // Verify output is reasonable(no NaN, not all zeros)
-        output.Should().NotContain(float.NaN);
-        output.Should().NotContain(float.PositiveInfinity);
-        output.Should().NotContain(float.NegativeInfinity);
-        output.Where(x => Math.Abs(x) > 1e-6f).Should().NotBeEmpty();
+        _ = output.Should().NotContain(float.NaN);
+        _ = output.Should().NotContain(float.PositiveInfinity);
+        _ = output.Should().NotContain(float.NegativeInfinity);
+        _ = output.Where(x => Math.Abs(x) > 1e-6f).Should().NotBeEmpty();
 
         LogPerformanceMetrics("CNNConvolutionLayer", result.Duration,
             batchSize * outputChannels * outputSize * outputSize);
@@ -363,15 +359,15 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel
+            {
+                Name = "parallel_reduction",
+                SourceCode = KernelSources.ParallelReduction,
+                CompilationOptions = new CompilationOptions
                 {
-                    Name = "parallel_reduction",
-                    SourceCode = KernelSources.ParallelReduction,
-                    CompilationOptions = new CompilationOptions
-                    {
-                        OptimizationLevel = OptimizationLevel.Maximum,
-                        EnableParallelExecution = true
-                    }
+                    OptimizationLevel = OptimizationLevel.Maximum,
+                    EnableParallelExecution = true
                 }
+            }
             ],
             Inputs =
             [
@@ -380,27 +376,27 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
             Outputs =
             [
                 new WorkflowOutput
-                {
-                    Name = "result",
-                    Size = 1,
-                    Validator = data => Math.Abs(data[0] - expectedSum) < expectedSum * 0.01f // 1% tolerance
-                }
+            {
+                Name = "result",
+                Size = 1,
+                Validator = data => Math.Abs(data[0] - expectedSum) < expectedSum * 0.01f // 1% tolerance
+            }
             ],
             ExecutionStages =
             [
                 new WorkflowExecutionStage
+            {
+                Name = "reduce_stage",
+                Order = 1,
+                KernelName = "parallel_reduction",
+                ExecutionOptions = new ExecutionOptions
                 {
-                    Name = "reduce_stage",
-                    Order = 1,
-                    KernelName = "parallel_reduction",
-                    ExecutionOptions = new ExecutionOptions
-                    {
-                        GlobalWorkSize = [arraySize],
-                        LocalWorkSize = [Math.Min(256, arraySize)]
-                    },
-                    ArgumentNames = ["input", "result"],
-                    Parameters = new Dictionary<string, object> { ["size"] = arraySize }
-                }
+                    GlobalWorkSize = [arraySize],
+                    LocalWorkSize = [Math.Min(256, arraySize)]
+                },
+                ArgumentNames = ["input", "result"],
+                Parameters = new Dictionary<string, object> { ["size"] = arraySize }
+            }
             ]
         };
 
@@ -408,11 +404,11 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync($"Reduction_{arraySize}", workflow);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Validation?.IsValid.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
+        _ = (result.Validation?.IsValid.Should().BeTrue());
 
         var reductionResult = (float[])result.Results["result"];
-        reductionResult[0].Should().BeApproximately(expectedSum, expectedSum * 0.01f);
+        _ = reductionResult[0].Should().BeApproximately(expectedSum, expectedSum * 0.01f);
 
         // Verify performance scales reasonably
         if (arraySize > 64)
@@ -434,10 +430,10 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel
-                {
-                    Name = "broken_kernel",
-                    SourceCode = "this is not valid kernel code!",
-                }
+            {
+                Name = "broken_kernel",
+                SourceCode = "this is not valid kernel code!",
+            }
             ],
             Inputs =
             [
@@ -450,12 +446,12 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
             ExecutionStages =
             [
                 new WorkflowExecutionStage
-                {
-                    Name = "broken_stage",
-                    Order = 1,
-                    KernelName = "broken_kernel",
-                    ArgumentNames = ["input", "output"]
-                }
+            {
+                Name = "broken_stage",
+                Order = 1,
+                KernelName = "broken_kernel",
+                ArgumentNames = ["input", "output"]
+            }
             ]
         };
 
@@ -463,11 +459,11 @@ public sealed class CompleteWorkflowIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("ErrorRecoveryTest", workflow);
 
         // Assert
-        result.Success.Should().BeFalse();
-        result.Error.Should().NotBeNull();
-        result.CompilationResults.Should().ContainKey("broken_kernel");
-        result.CompilationResults["broken_kernel"].Success.Should().BeFalse();
-        result.CompilationResults["broken_kernel"].Error.Should().NotBeNull();
+        _ = result.Success.Should().BeFalse();
+        _ = result.Error.Should().NotBeNull();
+        _ = result.CompilationResults.Should().ContainKey("broken_kernel");
+        _ = result.CompilationResults["broken_kernel"].Success.Should().BeFalse();
+        _ = result.CompilationResults["broken_kernel"].Error.Should().NotBeNull();
     }
 
     // Validation methods
@@ -641,5 +637,4 @@ __kernel void parallel_reduction(__global const float* input, __global float* re
         atomic_add_global(result, scratch[0]);
     }
 }";
-}
 }

@@ -3,8 +3,8 @@ using DotCompute.Abstractions;
 using DotCompute.Tests.Implementations.Memory;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Implementations.Accelerators
-{
+namespace DotCompute.Tests.Implementations.Accelerators;
+
 
 /// <summary>
 /// Test implementation of IAcceleratorManager for testing without GPU hardware.
@@ -193,7 +193,7 @@ public sealed class TestAcceleratorManager : IAcceleratorManager
         // Clear existing accelerators
         foreach (var accelerator in _accelerators)
         {
-            _contexts.Remove(accelerator);
+            _ = _contexts.Remove(accelerator);
             await accelerator.DisposeAsync();
         }
         _accelerators.Clear();
@@ -312,14 +312,9 @@ public sealed class TestCpuAcceleratorProvider : IAcceleratorProvider
 /// <summary>
 /// Test GPU accelerator provider for simulating GPU devices.
 /// </summary>
-public sealed class TestGpuAcceleratorProvider : IAcceleratorProvider
+public sealed class TestGpuAcceleratorProvider(int deviceCount = 1) : IAcceleratorProvider
 {
-    private readonly int _deviceCount;
-
-    public TestGpuAcceleratorProvider(int deviceCount = 1)
-    {
-        _deviceCount = deviceCount;
-    }
+    private readonly int _deviceCount = deviceCount;
 
     public string Name => "Test GPU Provider";
 
@@ -426,5 +421,4 @@ public sealed class TestGpuAccelerator : IAccelerator
             GC.SuppressFinalize(this);
         }
     }
-}
 }

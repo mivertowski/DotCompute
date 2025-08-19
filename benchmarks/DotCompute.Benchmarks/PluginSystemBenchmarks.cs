@@ -5,8 +5,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 /// <summary>
 /// Benchmarks for plugin system loading and initialization performance.
@@ -35,7 +35,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
     public void Setup()
     {
         _services = new ServiceCollection();
-        _services.AddSingleton<ILoggerFactory, NullLoggerFactory>();
+        _ = _services.AddSingleton<ILoggerFactory, NullLoggerFactory>();
         _serviceProvider = _services.BuildServiceProvider();
     }
 
@@ -203,7 +203,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
             }));
         }
 
-        Task.WaitAll(loadTasks.ToArray());
+        Task.WaitAll([.. loadTasks]);
         _disposables.AddRange(plugins);
     }
 
@@ -277,7 +277,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
             foreach (var plugin in canResolve)
             {
                 resolved.Add(plugin);
-                remaining.Remove(plugin);
+                _ = remaining.Remove(plugin);
             }
         }
 
@@ -390,4 +390,4 @@ internal sealed class DependentTestPlugin : TestPluginBase
 
         IsInitialized = true;
     }
-}}
+}

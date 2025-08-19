@@ -5,8 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Common.Hardware
-{
+namespace DotCompute.Tests.Common.Hardware;
+
 
 /// <summary>
 /// Mock Metal device implementation for testing Apple Silicon and macOS GPU scenarios.
@@ -347,5 +347,4 @@ public enum MetalOperationType
     VectorOps,
     MatrixOps,
     TextureOps
-}
 }

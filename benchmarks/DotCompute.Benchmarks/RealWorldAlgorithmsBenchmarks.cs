@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Numerics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 /// <summary>
 /// Benchmarks for real-world algorithms: FFT, convolution, sorting, and image processing.
@@ -539,7 +539,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         var imageSize = (int)Math.Sqrt(DataSize);
         var imageData = new float[imageSize * imageSize];
         var random = Random.Shared;
-        
+
         for (var i = 0; i < imageData.Length; i++)
         {
             imageData[i] = (float)random.NextDouble();
@@ -667,5 +667,4 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         }
         GC.SuppressFinalize(this);
     }
-}
 }

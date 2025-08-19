@@ -13,19 +13,15 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Integration tests for performance benchmarking scenarios.
 /// Tests real-world use cases and performance validation.
 /// </summary>
-public sealed class PerformanceBenchmarkTests : IntegrationTestBase
+public sealed class PerformanceBenchmarkTests(ITestOutputHelper output) : IntegrationTestBase(output)
 {
-    public PerformanceBenchmarkTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
     [Theory]
     [InlineData(1024)]      // 1K elements
     [InlineData(65536)]     // 64K elements  
@@ -48,8 +44,8 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(benchmarkResult);
-        benchmarkResult.Success.Should().BeTrue();
-        benchmarkResult.ElementsProcessed.Should().Be(vectorSize);
+        _ = benchmarkResult.Success.Should().BeTrue();
+        _ = benchmarkResult.ElementsProcessed.Should().Be(vectorSize);
 
         // Performance assertions
         var elementsPerSecond = vectorSize / benchmarkResult.ExecutionTime.TotalSeconds;
@@ -89,7 +85,7 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(benchmarkResult);
-        benchmarkResult.Success.Should().BeTrue();
+        _ = benchmarkResult.Success.Should().BeTrue();
 
         var totalOperations = (long)matrixSize * matrixSize * matrixSize2 * 2; // Multiply-add operations
         var operationsPerSecond = totalOperations / benchmarkResult.ExecutionTime.TotalSeconds;
@@ -103,7 +99,7 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
         Assert.True(gflops > 0.1); // Conservative threshold
 
         // Execution time should be reasonable
-        benchmarkResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
+        _ = benchmarkResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
     }
 
     [Theory]
@@ -125,8 +121,8 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(benchmarkResult);
-        benchmarkResult.Success.Should().BeTrue();
-        benchmarkResult.ResultAccurate.Should().BeTrue();
+        _ = benchmarkResult.Success.Should().BeTrue();
+        _ = benchmarkResult.ResultAccurate.Should().BeTrue();
 
         var elementsPerSecond = dataSize / benchmarkResult.ExecutionTime.TotalSeconds;
         benchmarkResult.ThroughputElementsPerSecond = elementsPerSecond;
@@ -138,7 +134,7 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         // Time complexity should be reasonable(better than O(n) on CPU)
         var expectedLinearTime = dataSize / 500_000_000.0; // More realistic: assume 500 MHz effective rate
-        (benchmarkResult.ExecutionTime.TotalSeconds < expectedLinearTime * 4).Should().BeTrue(); // Allow more variance
+        _ = (benchmarkResult.ExecutionTime.TotalSeconds < expectedLinearTime * 4).Should().BeTrue(); // Allow more variance
     }
 
     [Fact]
@@ -156,7 +152,7 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(benchmarkResult);
-        benchmarkResult.Success.Should().BeTrue();
+        _ = benchmarkResult.Success.Should().BeTrue();
 
         var bytesTransferred = dataSize * sizeof(float) * 4; // Multiple reads/writes per element
         var mbPerSecond = bytesTransferred / benchmarkResult.ExecutionTime.TotalSeconds / (1024 * 1024);
@@ -185,7 +181,7 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(benchmarkResult);
-        benchmarkResult.Success.Should().BeTrue();
+        _ = benchmarkResult.Success.Should().BeTrue();
 
         var totalOperations = (long)dataSize * iterations * 10; // ~10 ops per element per iteration
         var operationsPerSecond = totalOperations / benchmarkResult.ExecutionTime.TotalSeconds;
@@ -217,8 +213,8 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(benchmarkResult);
-        benchmarkResult.Success.Should().BeTrue();
-        benchmarkResult.ThreadResults.Count.Should().Be(threadCount);
+        _ = benchmarkResult.Success.Should().BeTrue();
+        _ = benchmarkResult.ThreadResults.Count.Should().Be(threadCount);
 
         var totalThroughput = benchmarkResult.ThreadResults.Sum(r => r.ElementsPerSecond);
         var averageLatency = benchmarkResult.ThreadResults.Average(r => r.AverageLatency.TotalMilliseconds);
@@ -256,7 +252,7 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(benchmarkResult);
-        benchmarkResult.Success.Should().BeTrue();
+        _ = benchmarkResult.Success.Should().BeTrue();
 
         var pixelsPerSecond = (imageWidth * imageHeight) / benchmarkResult.ExecutionTime.TotalSeconds;
         var megapixelsPerSecond = pixelsPerSecond / 1_000_000.0;
@@ -267,7 +263,7 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
         Assert.True(megapixelsPerSecond > 100);
 
         // Processing time should be acceptable for real-time scenarios
-        benchmarkResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(500)); // More generous for test stability
+        _ = benchmarkResult.ExecutionTime.Should().BeLessThan(TimeSpan.FromMilliseconds(500)); // More generous for test stability
     }
 
     [Fact]
@@ -288,7 +284,7 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(benchmarkResult);
-        benchmarkResult.Success.Should().BeTrue();
+        _ = benchmarkResult.Success.Should().BeTrue();
 
         var samplesPerSecond = sampleCount / benchmarkResult.ExecutionTime.TotalSeconds;
         var realTimeRatio = samplesPerSecond / sampleRate;
@@ -318,8 +314,8 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(benchmarkResult);
-        benchmarkResult.Success.Should().BeTrue();
-        benchmarkResult.OptimizationLevel.Should().Be(optimizationLevel);
+        _ = benchmarkResult.Success.Should().BeTrue();
+        _ = benchmarkResult.OptimizationLevel.Should().Be(optimizationLevel);
 
         var elementsPerSecond = dataSize / benchmarkResult.ExecutionTime.TotalSeconds;
 
@@ -692,7 +688,7 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
         return new ParallelBenchmarkResult
         {
             Success = threadResults.All(r => r.ElementsProcessed > 0),
-            ThreadResults = threadResults.ToList(),
+            ThreadResults = [.. threadResults],
             SingleThreadThroughput = singleThreadThroughput
         };
     }
@@ -869,25 +865,19 @@ public sealed class PerformanceBenchmarkTests : IntegrationTestBase
     private static float[] GenerateTestVector(int size, int seed = 42)
     {
         var random = new Random(seed);
-        return Enumerable.Range(0, size)
-                        .Select(_ => (float)random.NextDouble() * 100.0f)
-                        .ToArray();
+        return [.. Enumerable.Range(0, size).Select(_ => (float)random.NextDouble() * 100.0f)];
     }
 
     private static float[] GenerateTestMatrix(int rows, int cols, int seed = 42)
     {
         var random = new Random(seed);
-        return Enumerable.Range(0, rows * cols)
-                        .Select(_ => (float)random.NextDouble() * 10.0f)
-                        .ToArray();
+        return [.. Enumerable.Range(0, rows * cols).Select(_ => (float)random.NextDouble() * 10.0f)];
     }
 
     private static float[] GenerateImageData(int width, int height, int seed = 42)
     {
         var random = new Random(seed);
-        return Enumerable.Range(0, width * height)
-                        .Select(_ => (float)random.NextDouble() * 255.0f)
-                        .ToArray();
+        return [.. Enumerable.Range(0, width * height).Select(_ => (float)random.NextDouble() * 255.0f)];
     }
 
     private static float[] GenerateAudioSignal(int sampleCount, int sampleRate, int seed = 42)
@@ -985,5 +975,4 @@ public class ParallelBenchmarkResult
     public List<ThreadBenchmarkResult> ThreadResults { get; set; } = [];
     public double SingleThreadThroughput { get; set; }
     public double ParallelEfficiency { get; set; }
-}
 }

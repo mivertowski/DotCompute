@@ -10,8 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Basic validation tests for CUDA backend functionality
@@ -29,55 +29,55 @@ public sealed class CudaBasicTests : IDisposable
     private bool _disposed;
 
     // LoggerMessage delegates for performance
-    private static readonly Action<ILogger, string, Exception?> LogDeviceInfo = 
+    private static readonly Action<ILogger, string, Exception?> LogDeviceInfo =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(1, nameof(LogDeviceInfo)),
             "Device: {Name}");
 
-    private static readonly Action<ILogger, string, Exception?> LogComputeCapability = 
+    private static readonly Action<ILogger, string, Exception?> LogComputeCapability =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(2, nameof(LogComputeCapability)),
             "Compute Capability: {Capability}");
 
-    private static readonly Action<ILogger, double, Exception?> LogMemory = 
+    private static readonly Action<ILogger, double, Exception?> LogMemory =
         LoggerMessage.Define<double>(
             LogLevel.Information,
             new EventId(3, nameof(LogMemory)),
             "Memory: {Memory:F2} GB");
 
-    private static readonly Action<ILogger, int, Exception?> LogComputeUnits = 
+    private static readonly Action<ILogger, int, Exception?> LogComputeUnits =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(4, nameof(LogComputeUnits)),
             "Compute Units: {Units}");
 
-    private static readonly Action<ILogger, int, Exception?> LogMemoryOperationsTest = 
+    private static readonly Action<ILogger, int, Exception?> LogMemoryOperationsTest =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(5, nameof(LogMemoryOperationsTest)),
             "Memory operations test passed for {Size} elements");
 
-    private static readonly Action<ILogger, Exception?> LogKernelCompilationSuccess = 
+    private static readonly Action<ILogger, Exception?> LogKernelCompilationSuccess =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(6, nameof(LogKernelCompilationSuccess)),
             "Kernel compilation successful");
 
-    private static readonly Action<ILogger, Exception?> LogSimpleKernelExecutionTest = 
+    private static readonly Action<ILogger, Exception?> LogSimpleKernelExecutionTest =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(7, nameof(LogSimpleKernelExecutionTest)),
             "Simple kernel execution test passed");
 
-    private static readonly Action<ILogger, int, uint, uint, uint, Exception?> LogOptimalConfig = 
+    private static readonly Action<ILogger, int, uint, uint, uint, Exception?> LogOptimalConfig =
         LoggerMessage.Define<int, uint, uint, uint>(
             LogLevel.Information,
             new EventId(8, nameof(LogOptimalConfig)),
             "Optimal config for {Elements} elements: Grid={Grid}, Block={Block}, Total Threads={Total}");
 
-    private static readonly Action<ILogger, Exception?> LogLaunchConfigurationTest = 
+    private static readonly Action<ILogger, Exception?> LogLaunchConfigurationTest =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(9, nameof(LogLaunchConfigurationTest)),
@@ -293,9 +293,9 @@ extern ""C"" __global__ void testConfig(int* data, int n)
 
             // Verify configuration makes sense
             var totalThreads = config.GridX * config.BlockX;
-            (totalThreads >= N).Should().BeTrue();
-            config.BlockX.Should().BeLessThanOrEqualTo(1024, "Block size should be reasonable"); // Max for most GPUs
-            config.BlockX.Should().BeGreaterThanOrEqualTo(32, "Block size should be at least one warp");
+            _ = (totalThreads >= N).Should().BeTrue();
+            _ = config.BlockX.Should().BeLessThanOrEqualTo(1024, "Block size should be reasonable"); // Max for most GPUs
+            _ = config.BlockX.Should().BeGreaterThanOrEqualTo(32, "Block size should be at least one warp");
 
             LogOptimalConfig(_logger, N, config.GridX, config.BlockX, totalThreads, null);
 
@@ -311,10 +311,10 @@ extern ""C"" __global__ void testConfig(int* data, int n)
                 await buffer.CopyToHostAsync<int>(data);
 
                 // Verify some results(block IDs should be reasonable)
-                data[0].Should().BeGreaterThanOrEqualTo(0, "Block ID should be non-negative");
+                _ = data[0].Should().BeGreaterThanOrEqualTo(0, "Block ID should be non-negative");
                 if (N > 100)
                 {
-                    data[N - 1].Should().BeGreaterThanOrEqualTo(0, "Last element should have valid block ID");
+                    _ = data[N - 1].Should().BeGreaterThanOrEqualTo(0, "Last element should have valid block ID");
                 }
 
                 LogLaunchConfigurationTest(_logger, null);
@@ -341,5 +341,4 @@ extern ""C"" __global__ void testConfig(int* data, int n)
         _disposed = true;
         GC.SuppressFinalize(this);
     }
-}
 }

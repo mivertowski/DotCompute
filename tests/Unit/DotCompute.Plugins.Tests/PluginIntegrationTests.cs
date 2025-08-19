@@ -13,8 +13,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Integration tests for the plugin system covering end-to-end scenarios, dependency resolution,
@@ -30,7 +30,7 @@ public sealed class PluginIntegrationTests : IDisposable
     public PluginIntegrationTests()
     {
         var services = new ServiceCollection();
-        services.AddLogging();
+        _ = services.AddLogging();
         _serviceProvider = services.BuildServiceProvider();
 
         var configData = new Dictionary<string, string?>
@@ -76,22 +76,22 @@ public sealed class PluginIntegrationTests : IDisposable
         await mockResult.OnConfigurationChangedAsync(_configuration);
 
         // Assert
-        pluginSystem.GetLoadedPlugins().Should().HaveCount(2);
+        _ = pluginSystem.GetLoadedPlugins().Should().HaveCount(2);
 
-        cpuResult.State.Should().Be(PluginState.Running);
-        cpuResult.Health.Should().Be(PluginHealth.Healthy);
+        _ = cpuResult.State.Should().Be(PluginState.Running);
+        _ = cpuResult.Health.Should().Be(PluginHealth.Healthy);
 
-        mockResult.State.Should().Be(PluginState.Running);
-        mockResult.Health.Should().Be(PluginHealth.Healthy);
+        _ = mockResult.State.Should().Be(PluginState.Running);
+        _ = mockResult.Health.Should().Be(PluginHealth.Healthy);
 
         var cpuMetrics = cpuResult.GetMetrics();
         Assert.NotNull(cpuMetrics);
-        cpuMetrics.RequestCount.Should().BeGreaterThanOrEqualTo(0);
+        _ = cpuMetrics.RequestCount.Should().BeGreaterThanOrEqualTo(0);
 
         // Test unloading
         var unloadResult = await pluginSystem.UnloadPluginAsync(cpuResult.Id);
         Assert.True(unloadResult);
-        pluginSystem.GetPlugin(cpuResult.Id).Should().BeNull();
+        _ = pluginSystem.GetPlugin(cpuResult.Id).Should().BeNull();
     }
 
     [Fact]
@@ -112,10 +112,10 @@ public sealed class PluginIntegrationTests : IDisposable
             TypeName = "Test.Plugin",
             Enabled = true,
             Settings =
-            {
-                ["MaxConnections"] = 100,
-                ["EnableCaching"] = true
-            }
+        {
+            ["MaxConnections"] = 100,
+            ["EnableCaching"] = true
+        }
         };
 
         using var pluginSystem = new PluginSystem(options, _logger);
@@ -124,7 +124,7 @@ public sealed class PluginIntegrationTests : IDisposable
         await pluginSystem.InitializeAsync();
 
         // Assert
-        pluginSystem.IsInitialized.Should().BeTrue();
+        _ = pluginSystem.IsInitialized.Should().BeTrue();
     }
 
     [Fact]
@@ -132,8 +132,8 @@ public sealed class PluginIntegrationTests : IDisposable
     {
         // Arrange
         var services = new ServiceCollection();
-        services.AddLogging();
-        services.AddSingleton<ITestService, TestService>();
+        _ = services.AddLogging();
+        _ = services.AddSingleton<ITestService, TestService>();
 
         using var serviceProvider = services.BuildServiceProvider();
         using var pluginSystem = new PluginSystem(_logger);
@@ -141,12 +141,12 @@ public sealed class PluginIntegrationTests : IDisposable
         using var plugin = new DependentPlugin();
 
         // Act
-        await pluginSystem.LoadPluginAsync(plugin);
+        _ = await pluginSystem.LoadPluginAsync(plugin);
         await plugin.InitializeAsync(serviceProvider);
 
         // Assert
-        plugin.TestService.Should().NotBeNull();
-        plugin.TestService.Should().BeOfType<TestService>();
+        _ = plugin.TestService.Should().NotBeNull();
+        _ = plugin.TestService.Should().BeOfType<TestService>();
     }
 
     [Fact]
@@ -158,18 +158,18 @@ public sealed class PluginIntegrationTests : IDisposable
         using var badPlugin = new FailingPlugin();
 
         // Act - Load good plugin first
-        await pluginSystem.LoadPluginAsync(goodPlugin);
+        _ = await pluginSystem.LoadPluginAsync(goodPlugin);
         await goodPlugin.InitializeAsync(_serviceProvider);
         await goodPlugin.StartAsync();
 
         // Try to load bad plugin
-        await FluentActions.Awaiting(() => pluginSystem.LoadPluginAsync(badPlugin))
+        _ = await FluentActions.Awaiting(() => pluginSystem.LoadPluginAsync(badPlugin))
             .Should().ThrowAsync<PluginLoadException>();
 
         // Assert - Good plugin should still be working
-        pluginSystem.GetLoadedPlugins().Should().HaveCount(1);
-        goodPlugin.State.Should().Be(PluginState.Running);
-        goodPlugin.Health.Should().Be(PluginHealth.Healthy);
+        _ = pluginSystem.GetLoadedPlugins().Should().HaveCount(1);
+        _ = goodPlugin.State.Should().Be(PluginState.Running);
+        _ = goodPlugin.Health.Should().Be(PluginHealth.Healthy);
     }
 
     [Fact]
@@ -196,10 +196,10 @@ public sealed class PluginIntegrationTests : IDisposable
         await Task.WhenAll(startTasks);
 
         // Assert
-        pluginSystem.GetLoadedPlugins().Should().HaveCount(10);
+        _ = pluginSystem.GetLoadedPlugins().Should().HaveCount(10);
         foreach (var plugin in plugins)
         {
-            plugin.State.Should().Be(PluginState.Running);
+            _ = plugin.State.Should().Be(PluginState.Running);
         }
     }
 
@@ -211,7 +211,7 @@ public sealed class PluginIntegrationTests : IDisposable
         var plugin = new IntegrationCpuPlugin();
 
         // Act
-        await pluginSystem.LoadPluginAsync(plugin);
+        _ = await pluginSystem.LoadPluginAsync(plugin);
         await plugin.InitializeAsync(_serviceProvider);
         await plugin.StartAsync();
 
@@ -219,7 +219,7 @@ public sealed class PluginIntegrationTests : IDisposable
         pluginSystem.Dispose();
 
         // Assert
-        plugin.IsDisposed.Should().BeTrue();
+        _ = plugin.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -230,7 +230,7 @@ public sealed class PluginIntegrationTests : IDisposable
         var invalidPlugin = new InvalidPlugin();
 
         // Act & Assert
-        await FluentActions.Awaiting(() => pluginSystem.LoadPluginAsync(invalidPlugin))
+        _ = await FluentActions.Awaiting(() => pluginSystem.LoadPluginAsync(invalidPlugin))
             .Should().ThrowAsync<PluginLoadException>();
     }
 
@@ -242,7 +242,7 @@ public sealed class PluginIntegrationTests : IDisposable
 
         // Assert
         Assert.NotNull(system);
-        Assert.IsAssignableFrom<IDisposable>(system);
+        _ = Assert.IsAssignableFrom<IDisposable>(system);
     }
 
     [Fact]
@@ -252,7 +252,7 @@ public sealed class PluginIntegrationTests : IDisposable
         using var pluginSystem = new PluginSystem(_logger);
         var plugin = new ConfigurationAwarePlugin();
 
-        await pluginSystem.LoadPluginAsync(plugin);
+        _ = await pluginSystem.LoadPluginAsync(plugin);
         await plugin.InitializeAsync(_serviceProvider);
 
         // Act
@@ -266,7 +266,7 @@ public sealed class PluginIntegrationTests : IDisposable
         await plugin.OnConfigurationChangedAsync(newConfig);
 
         // Assert
-        plugin.LastConfigurationValue.Should().Be("NewValue");
+        _ = plugin.LastConfigurationValue.Should().Be("NewValue");
     }
 
     [Fact]
@@ -285,7 +285,7 @@ public sealed class PluginIntegrationTests : IDisposable
         plugin.ErrorOccurred += (s, e) => errorEvents.Add(e);
 
         // Act
-        await pluginSystem.LoadPluginAsync(plugin);
+        _ = await pluginSystem.LoadPluginAsync(plugin);
         await plugin.InitializeAsync(_serviceProvider);
         await plugin.StartAsync();
         plugin.SimulateError();
@@ -293,9 +293,9 @@ public sealed class PluginIntegrationTests : IDisposable
         await plugin.StopAsync();
 
         // Assert
-        stateEvents.Should().HaveCountGreaterThan(0);
-        healthEvents.Should().HaveCountGreaterThan(0);
-        Assert.Single(errorEvents);
+        _ = stateEvents.Should().HaveCountGreaterThan(0);
+        _ = healthEvents.Should().HaveCountGreaterThan(0);
+        _ = Assert.Single(errorEvents);
     }
 
     [Fact]
@@ -306,8 +306,8 @@ public sealed class PluginIntegrationTests : IDisposable
         using var plugin1 = new MetricsTestPlugin("plugin1");
         using var plugin2 = new MetricsTestPlugin("plugin2");
 
-        await pluginSystem.LoadPluginAsync(plugin1);
-        await pluginSystem.LoadPluginAsync(plugin2);
+        _ = await pluginSystem.LoadPluginAsync(plugin1);
+        _ = await pluginSystem.LoadPluginAsync(plugin2);
 
         await plugin1.InitializeAsync(_serviceProvider);
         await plugin2.InitializeAsync(_serviceProvider);
@@ -323,10 +323,10 @@ public sealed class PluginIntegrationTests : IDisposable
         var metrics2 = plugin2.GetMetrics();
 
         // Assert
-        (metrics1.RequestCount > 0).Should().BeTrue();
-        (metrics2.RequestCount > 0).Should().BeTrue();
-        metrics1.CustomMetrics.Should().ContainKey("WorkCount");
-        metrics2.CustomMetrics.Should().ContainKey("WorkCount");
+        _ = (metrics1.RequestCount > 0).Should().BeTrue();
+        _ = (metrics2.RequestCount > 0).Should().BeTrue();
+        _ = metrics1.CustomMetrics.Should().ContainKey("WorkCount");
+        _ = metrics2.CustomMetrics.Should().ContainKey("WorkCount");
     }
 
     public void Dispose()
@@ -359,14 +359,9 @@ public sealed class PluginIntegrationTests : IDisposable
         public string GetData() => "Test data";
     }
 
-    private sealed class IntegrationCpuPlugin : BackendPluginBase
+    private sealed class IntegrationCpuPlugin(string? id = null) : BackendPluginBase
     {
-        private readonly string _id;
-
-        public IntegrationCpuPlugin(string? id = null)
-        {
-            _id = id ?? "integration-cpu-plugin";
-        }
+        private readonly string _id = id ?? "integration-cpu-plugin";
 
         public override string Id => _id;
         public override string Name => "Integration CPU Plugin";
@@ -476,15 +471,10 @@ public sealed class PluginIntegrationTests : IDisposable
         public void SimulateHealthChange() => Health = PluginHealth.Degraded;
     }
 
-    private sealed class MetricsTestPlugin : BackendPluginBase
+    private sealed class MetricsTestPlugin(string id) : BackendPluginBase
     {
-        private readonly string _id;
+        private readonly string _id = id;
         private int _workCount;
-
-        public MetricsTestPlugin(string id)
-        {
-            _id = id;
-        }
 
         public override string Id => _id;
         public override string Name => "Metrics Test Plugin";
@@ -503,5 +493,4 @@ public sealed class PluginIntegrationTests : IDisposable
     }
 
     #endregion
-}
 }

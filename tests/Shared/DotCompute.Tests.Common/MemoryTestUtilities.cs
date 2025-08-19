@@ -6,8 +6,8 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using AbstractionsMemory = DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities
-{
+namespace DotCompute.Tests.Utilities;
+
 
 /// <summary>
 /// Monitors memory usage during test execution.
@@ -334,7 +334,7 @@ public static class TestReporter
     [RequiresDynamicCode("This method uses System.Text.Json serialization which may require dynamic code generation")]
     public static async Task SaveMemoryReport(MemoryReport report)
     {
-        Directory.CreateDirectory(ReportDirectory);
+        _ = Directory.CreateDirectory(ReportDirectory);
 
         var fileName = $"memory_report_{report.TestName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
         var filePath = Path.Combine(ReportDirectory, fileName);
@@ -347,7 +347,7 @@ public static class TestReporter
     [RequiresDynamicCode("This method uses System.Text.Json serialization which may require dynamic code generation")]
     public static async Task SaveBenchmarkReport(BenchmarkSummary summary, string testName)
     {
-        Directory.CreateDirectory(ReportDirectory);
+        _ = Directory.CreateDirectory(ReportDirectory);
 
         var fileName = $"benchmark_report_{testName}_{DateTime.Now:yyyyMMdd_HHmmss}.json";
         var filePath = Path.Combine(ReportDirectory, fileName);
@@ -445,5 +445,4 @@ public static class RegressionDetector
         var memoryIncrease = (currentPeak - baselinePeak) / (double)baselinePeak * 100;
         return memoryIncrease > tolerancePercent;
     }
-}
 }

@@ -1,8 +1,8 @@
 // Copyright (c) 2025 Michael Ivertowski
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
-namespace DotCompute.Tests.Utilities
-{
+namespace DotCompute.Tests.Utilities;
+
 
 /// <summary>
 /// Provides consolidated test data generation utilities for all DotCompute test projects.
@@ -228,4 +228,4 @@ public static class TestDataGenerator
     }
 }
 #pragma warning restore CA5394
-}
+

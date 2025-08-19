@@ -6,8 +6,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Tests.Common.Hardware
-{
+namespace DotCompute.Tests.Common.Hardware;
+
 
 /// <summary>
 /// Base class for mock hardware device implementations.
@@ -158,7 +158,7 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
             MaxSharedMemoryPerBlock = Math.Min(TotalMemory / 4, 48 * 1024), // Reasonable default
             MaxMemoryAllocationSize = TotalMemory,
             LocalMemorySize = TotalMemory / 8,
-            IsUnifiedMemory = Type == AcceleratorType.CPU || Type == AcceleratorType.Metal,
+            IsUnifiedMemory = Type is AcceleratorType.CPU or AcceleratorType.Metal,
             ComputeUnits = ComputeUnits,
             MaxClockFrequency = MaxClockFrequency,
             MaxThreadsPerBlock = MaxThreadsPerBlock,
@@ -321,10 +321,7 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
     protected void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     /// <inheritdoc/>
-    public void Dispose()
-    {
-        Dispose(true);
-    }
+    public void Dispose() => Dispose(true);
 
     /// <summary>
     /// Disposes the device.
@@ -348,5 +345,4 @@ public abstract class MockHardwareDevice : IHardwareDevice, IDisposable
 
         _disposed = true;
     }
-}
 }

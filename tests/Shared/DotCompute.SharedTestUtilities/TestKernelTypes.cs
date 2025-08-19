@@ -3,8 +3,8 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.SharedTestUtilities
-{
+namespace DotCompute.SharedTestUtilities;
+
 /// <summary>
 /// Memory test utilities.
 /// </summary>
@@ -35,22 +35,22 @@ public static class MemoryTestUtilities
 /// </summary>
 public static class EdgeCaseUtilities
 {
-    private static readonly object[][] s_memorySizes = 
+    private static readonly object[][] s_memorySizes =
     {
-        new object[] { 0 },
-        new object[] { 1 },
-        new object[] { 1024 },
-        new object[] { 1024 * 1024 },
-        new object[] { int.MaxValue }
-    };
+    new object[] { 0 },
+    new object[] { 1 },
+    new object[] { 1024 },
+    new object[] { 1024 * 1024 },
+    new object[] { int.MaxValue }
+};
 
-    private static readonly object[][] s_threadCounts = 
+    private static readonly object[][] s_threadCounts =
     {
-        new object[] { 1 },
-        new object[] { 32 },
-        new object[] { 256 },
-        new object[] { 1024 }
-    };
+    new object[] { 1 },
+    new object[] { 32 },
+    new object[] { 256 },
+    new object[] { 1024 }
+};
 
     public static IEnumerable<object[]> MemorySizes => s_memorySizes;
 
@@ -121,5 +121,4 @@ public static class KernelFactory
             sharedMemorySize,
             configuration);
     }
-}
 }

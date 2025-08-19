@@ -5,8 +5,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Abstractions.Tests
-{
+namespace DotCompute.Abstractions.Tests;
+
 
 /// <summary>
 /// Comprehensive unit tests for the IBuffer&lt;T&gt; interface.
@@ -39,7 +39,7 @@ public sealed class IBufferTests
     {
         // Arrange
         const int expectedLength = 1000;
-        _mockFloatBuffer.SetupGet(b => b.Length).Returns(expectedLength);
+        _ = _mockFloatBuffer.SetupGet(b => b.Length).Returns(expectedLength);
 
         // Act
         var length = _mockFloatBuffer.Object.Length;
@@ -57,7 +57,7 @@ public sealed class IBufferTests
     public void Length_ShouldSupportDifferentSizes(int length)
     {
         // Arrange
-        _mockFloatBuffer.SetupGet(b => b.Length).Returns(length);
+        _ = _mockFloatBuffer.SetupGet(b => b.Length).Returns(length);
 
         // Act
         var actualLength = _mockFloatBuffer.Object.Length;
@@ -71,8 +71,8 @@ public sealed class IBufferTests
     {
         // Arrange
         const int expectedCount = 500;
-        _mockFloatBuffer.SetupGet(b => b.Length).Returns(expectedCount);
-        _mockFloatBuffer.SetupGet(b => b.ElementCount).Returns(expectedCount);
+        _ = _mockFloatBuffer.SetupGet(b => b.Length).Returns(expectedCount);
+        _ = _mockFloatBuffer.SetupGet(b => b.ElementCount).Returns(expectedCount);
 
         // Act
         var elementCount = _mockFloatBuffer.Object.ElementCount;
@@ -87,7 +87,7 @@ public sealed class IBufferTests
     public void Accelerator_ShouldReturnAssociatedAccelerator()
     {
         // Arrange
-        _mockFloatBuffer.SetupGet(b => b.Accelerator).Returns(_mockAccelerator.Object);
+        _ = _mockFloatBuffer.SetupGet(b => b.Accelerator).Returns(_mockAccelerator.Object);
 
         // Act
         var accelerator = _mockFloatBuffer.Object.Accelerator;
@@ -104,8 +104,8 @@ public sealed class IBufferTests
         const int length = 250;
         const long expectedSizeInBytes = length * sizeof(float);
 
-        _mockFloatBuffer.SetupGet(b => b.Length).Returns(length);
-        _mockFloatBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSizeInBytes);
+        _ = _mockFloatBuffer.SetupGet(b => b.Length).Returns(length);
+        _ = _mockFloatBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSizeInBytes);
 
         // Act
         var sizeInBytes = _mockFloatBuffer.Object.SizeInBytes;
@@ -128,8 +128,8 @@ public sealed class IBufferTests
         const int length = 200;
         var mockSlice = new Mock<IBuffer<float>>();
 
-        mockSlice.SetupGet(s => s.Length).Returns(length);
-        _mockFloatBuffer.Setup(b => b.Slice(offset, length))
+        _ = mockSlice.SetupGet(s => s.Length).Returns(length);
+        _ = _mockFloatBuffer.Setup(b => b.Slice(offset, length))
                        .Returns(mockSlice.Object);
 
         // Act
@@ -137,7 +137,7 @@ public sealed class IBufferTests
 
         // Assert
         Assert.NotNull(slice);
-        slice.Length.Should().Be(length);
+        _ = slice.Length.Should().Be(length);
         _mockFloatBuffer.Verify(b => b.Slice(offset, length), Times.Once);
     }
 
@@ -149,8 +149,8 @@ public sealed class IBufferTests
         const int length = 50;
         var mockSlice = new Mock<IBuffer<float>>();
 
-        mockSlice.SetupGet(s => s.Length).Returns(length);
-        _mockFloatBuffer.Setup(b => b.Slice(offset, length))
+        _ = mockSlice.SetupGet(s => s.Length).Returns(length);
+        _ = _mockFloatBuffer.Setup(b => b.Slice(offset, length))
                        .Returns(mockSlice.Object);
 
         // Act
@@ -158,20 +158,20 @@ public sealed class IBufferTests
 
         // Assert
         Assert.NotNull(slice);
-        slice.Length.Should().Be(length);
+        _ = slice.Length.Should().Be(length);
     }
 
     [Fact]
     public void Slice_WithNegativeOffset_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
-        _mockFloatBuffer.Setup(b => b.Slice(-1, 100))
+        _ = _mockFloatBuffer.Setup(b => b.Slice(-1, 100))
                        .Throws(new ArgumentOutOfRangeException("offset"));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(
            () => _mockFloatBuffer.Object.Slice(-1, 100));
-        exception.ParamName.Should().Be("offset");
+        _ = exception.ParamName.Should().Be("offset");
     }
 
     [Theory]
@@ -181,13 +181,13 @@ public sealed class IBufferTests
     public void Slice_WithInvalidLength_ShouldThrowArgumentException(int invalidLength)
     {
         // Arrange
-        _mockFloatBuffer.Setup(b => b.Slice(0, invalidLength))
+        _ = _mockFloatBuffer.Setup(b => b.Slice(0, invalidLength))
                        .Throws(new ArgumentException("Length must be positive", nameof(invalidLength)));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(
            () => _mockFloatBuffer.Object.Slice(0, invalidLength));
-        exception.ParamName.Should().Be(nameof(invalidLength));
+        _ = exception.ParamName.Should().Be(nameof(invalidLength));
     }
 
     [Fact]
@@ -197,14 +197,14 @@ public sealed class IBufferTests
         const int bufferLength = 100;
         const int invalidOffset = 150;
 
-        _mockFloatBuffer.SetupGet(b => b.Length).Returns(bufferLength);
-        _mockFloatBuffer.Setup(b => b.Slice(invalidOffset, 10))
+        _ = _mockFloatBuffer.SetupGet(b => b.Length).Returns(bufferLength);
+        _ = _mockFloatBuffer.Setup(b => b.Slice(invalidOffset, 10))
                        .Throws(new ArgumentOutOfRangeException("offset"));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(
            () => _mockFloatBuffer.Object.Slice(invalidOffset, 10));
-        exception.ParamName.Should().Be("offset");
+        _ = exception.ParamName.Should().Be("offset");
     }
 
     [Fact]
@@ -215,14 +215,14 @@ public sealed class IBufferTests
         const int offset = 80;
         const int invalidLength = 30; // Would exceed buffer length
 
-        _mockFloatBuffer.SetupGet(b => b.Length).Returns(bufferLength);
-        _mockFloatBuffer.Setup(b => b.Slice(offset, invalidLength))
+        _ = _mockFloatBuffer.SetupGet(b => b.Length).Returns(bufferLength);
+        _ = _mockFloatBuffer.Setup(b => b.Slice(offset, invalidLength))
                        .Throws(new ArgumentException("Slice extends beyond buffer boundary"));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(
            () => _mockFloatBuffer.Object.Slice(offset, invalidLength));
-        exception.Message.Should().Be("Slice extends beyond buffer boundary");
+        _ = exception.Message.Should().Be("Slice extends beyond buffer boundary");
     }
 
     #endregion
@@ -234,7 +234,7 @@ public sealed class IBufferTests
     {
         // Arrange
         var mockIntBuffer = new Mock<IBuffer<int>>();
-        _mockFloatBuffer.Setup(b => b.AsType<int>())
+        _ = _mockFloatBuffer.Setup(b => b.AsType<int>())
                        .Returns(mockIntBuffer.Object);
 
         // Act
@@ -251,7 +251,7 @@ public sealed class IBufferTests
     {
         // Arrange
         var mockFloatBuffer2 = new Mock<IBuffer<float>>();
-        _mockFloatBuffer.Setup(b => b.AsType<float>())
+        _ = _mockFloatBuffer.Setup(b => b.AsType<float>())
                        .Returns(mockFloatBuffer2.Object);
 
         // Act
@@ -266,13 +266,13 @@ public sealed class IBufferTests
     public void AsType_WithIncompatibleType_ShouldThrowInvalidOperationException()
     {
         // Arrange
-        _mockFloatBuffer.Setup(b => b.AsType<decimal>()) // decimal is not unmanaged
+        _ = _mockFloatBuffer.Setup(b => b.AsType<decimal>()) // decimal is not unmanaged
                        .Throws(new InvalidOperationException("Cannot convert to incompatible type"));
 
         // Act & Assert
         var exception = Assert.Throws<InvalidOperationException>(
-           () => _mockFloatBuffer.Object.AsType<decimal>());
-        exception.Message.Should().Be("Cannot convert to incompatible type");
+           _mockFloatBuffer.Object.AsType<decimal>);
+        _ = exception.Message.Should().Be("Cannot convert to incompatible type");
     }
 
     [Theory]
@@ -290,7 +290,7 @@ public sealed class IBufferTests
         if (targetType == typeof(int))
         {
             var mockIntBuffer = new Mock<IBuffer<int>>();
-            _mockFloatBuffer.Setup(b => b.AsType<int>()).Returns(mockIntBuffer.Object);
+            _ = _mockFloatBuffer.Setup(b => b.AsType<int>()).Returns(mockIntBuffer.Object);
 
             var result = _mockFloatBuffer.Object.AsType<int>();
             Assert.NotNull(result);
@@ -308,7 +308,7 @@ public sealed class IBufferTests
         // Arrange
         var mockDestination = new Mock<IBuffer<float>>();
 
-        _mockFloatBuffer.Setup(b => b.CopyToAsync(mockDestination.Object, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.CopyToAsync(mockDestination.Object, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -322,13 +322,13 @@ public sealed class IBufferTests
     public async Task CopyToAsync_WithNullDestination_ShouldThrowArgumentNullException()
     {
         // Arrange
-        _mockFloatBuffer.Setup(b => b.CopyToAsync(null!, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.CopyToAsync(null!, CancellationToken.None))
                        .ThrowsAsync(new ArgumentNullException("destination"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(
            () => _mockFloatBuffer.Object.CopyToAsync(null!).AsTask());
-        exception.ParamName.Should().Be("destination");
+        _ = exception.ParamName.Should().Be("destination");
     }
 
     [Fact]
@@ -340,7 +340,7 @@ public sealed class IBufferTests
         const int count = 100;
         var mockDestination = new Mock<IBuffer<float>>();
 
-        _mockFloatBuffer.Setup(b => b.CopyToAsync(sourceOffset, mockDestination.Object, destinationOffset, count, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.CopyToAsync(sourceOffset, mockDestination.Object, destinationOffset, count, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -356,13 +356,13 @@ public sealed class IBufferTests
         // Arrange
         var mockDestination = new Mock<IBuffer<float>>();
 
-        _mockFloatBuffer.Setup(b => b.CopyToAsync(-1, mockDestination.Object, 0, 10, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.CopyToAsync(-1, mockDestination.Object, 0, 10, CancellationToken.None))
                        .ThrowsAsync(new ArgumentOutOfRangeException("sourceOffset"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
            () => _mockFloatBuffer.Object.CopyToAsync(-1, mockDestination.Object, 0, 10).AsTask());
-        exception.ParamName.Should().Be("sourceOffset");
+        _ = exception.ParamName.Should().Be("sourceOffset");
     }
 
     [Fact]
@@ -371,13 +371,13 @@ public sealed class IBufferTests
         // Arrange
         var mockDestination = new Mock<IBuffer<float>>();
 
-        _mockFloatBuffer.Setup(b => b.CopyToAsync(0, mockDestination.Object, -1, 10, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.CopyToAsync(0, mockDestination.Object, -1, 10, CancellationToken.None))
                        .ThrowsAsync(new ArgumentOutOfRangeException("destinationOffset"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
            () => _mockFloatBuffer.Object.CopyToAsync(0, mockDestination.Object, -1, 10).AsTask());
-        exception.ParamName.Should().Be("destinationOffset");
+        _ = exception.ParamName.Should().Be("destinationOffset");
     }
 
     [Theory]
@@ -389,13 +389,13 @@ public sealed class IBufferTests
         // Arrange
         var mockDestination = new Mock<IBuffer<float>>();
 
-        _mockFloatBuffer.Setup(b => b.CopyToAsync(0, mockDestination.Object, 0, invalidCount, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.CopyToAsync(0, mockDestination.Object, 0, invalidCount, CancellationToken.None))
                        .ThrowsAsync(new ArgumentException("Count must be positive", nameof(invalidCount)));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockFloatBuffer.Object.CopyToAsync(0, mockDestination.Object, 0, invalidCount).AsTask());
-        exception.ParamName.Should().Be(nameof(invalidCount));
+        _ = exception.ParamName.Should().Be(nameof(invalidCount));
     }
 
     [Fact]
@@ -406,11 +406,11 @@ public sealed class IBufferTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        _mockFloatBuffer.Setup(b => b.CopyToAsync(mockDestination.Object, cts.Token))
+        _ = _mockFloatBuffer.Setup(b => b.CopyToAsync(mockDestination.Object, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(
            () => _mockFloatBuffer.Object.CopyToAsync(mockDestination.Object, cts.Token).AsTask());
     }
 
@@ -424,7 +424,7 @@ public sealed class IBufferTests
         // Arrange
         const float fillValue = 3.14f;
 
-        _mockFloatBuffer.Setup(b => b.FillAsync(fillValue, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.FillAsync(fillValue, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -442,7 +442,7 @@ public sealed class IBufferTests
         const int offset = 50;
         const int count = 100;
 
-        _mockFloatBuffer.Setup(b => b.FillAsync(fillValue, offset, count, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.FillAsync(fillValue, offset, count, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -456,13 +456,13 @@ public sealed class IBufferTests
     public async Task FillAsync_WithNegativeOffset_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
-        _mockFloatBuffer.Setup(b => b.FillAsync(1.0f, -1, 10, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.FillAsync(1.0f, -1, 10, CancellationToken.None))
                        .ThrowsAsync(new ArgumentOutOfRangeException("offset"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
            () => _mockFloatBuffer.Object.FillAsync(1.0f, -1, 10).AsTask());
-        exception.ParamName.Should().Be("offset");
+        _ = exception.ParamName.Should().Be("offset");
     }
 
     [Theory]
@@ -472,13 +472,13 @@ public sealed class IBufferTests
     public async Task FillAsync_WithInvalidCount_ShouldThrowArgumentException(int invalidCount)
     {
         // Arrange
-        _mockFloatBuffer.Setup(b => b.FillAsync(1.0f, 0, invalidCount, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.FillAsync(1.0f, 0, invalidCount, CancellationToken.None))
                        .ThrowsAsync(new ArgumentException("Count must be positive", nameof(invalidCount)));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockFloatBuffer.Object.FillAsync(1.0f, 0, invalidCount).AsTask());
-        exception.ParamName.Should().Be(nameof(invalidCount));
+        _ = exception.ParamName.Should().Be(nameof(invalidCount));
     }
 
     [Fact]
@@ -488,11 +488,11 @@ public sealed class IBufferTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        _mockFloatBuffer.Setup(b => b.FillAsync(1.0f, cts.Token))
+        _ = _mockFloatBuffer.Setup(b => b.FillAsync(1.0f, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(
            () => _mockFloatBuffer.Object.FillAsync(1.0f, cts.Token).AsTask());
     }
 
@@ -508,7 +508,7 @@ public sealed class IBufferTests
     public async Task FillAsync_WithDifferentValues_ShouldWork(float value)
     {
         // Arrange
-        _mockFloatBuffer.Setup(b => b.FillAsync(value, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.FillAsync(value, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -529,14 +529,14 @@ public sealed class IBufferTests
         var mockMemory = new Memory<float>(new float[100]);
         var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
 
-        _mockFloatBuffer.Setup(b => b.Map(MapMode.ReadWrite))
+        _ = _mockFloatBuffer.Setup(b => b.Map(MapMode.ReadWrite))
                        .Returns(expectedMapping);
 
         // Act
         var mapping = _mockFloatBuffer.Object.Map();
 
         // Assert
-        mapping.Mode.Should().Be(MapMode.ReadWrite);
+        _ = mapping.Mode.Should().Be(MapMode.ReadWrite);
         _mockFloatBuffer.Verify(b => b.Map(MapMode.ReadWrite), Times.Once);
     }
 
@@ -552,14 +552,14 @@ public sealed class IBufferTests
         var mockMemory = new Memory<float>(new float[100]);
         var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, mode);
 
-        _mockFloatBuffer.Setup(b => b.Map(mode))
+        _ = _mockFloatBuffer.Setup(b => b.Map(mode))
                        .Returns(expectedMapping);
 
         // Act
         var mapping = _mockFloatBuffer.Object.Map(mode);
 
         // Assert
-        mapping.Mode.Should().Be(mode);
+        _ = mapping.Mode.Should().Be(mode);
         _mockFloatBuffer.Verify(b => b.Map(mode), Times.Once);
     }
 
@@ -573,14 +573,14 @@ public sealed class IBufferTests
         var mockMemory = new Memory<float>(new float[length]);
         var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, mode);
 
-        _mockFloatBuffer.Setup(b => b.MapRange(offset, length, mode))
+        _ = _mockFloatBuffer.Setup(b => b.MapRange(offset, length, mode))
                        .Returns(expectedMapping);
 
         // Act
         var mapping = _mockFloatBuffer.Object.MapRange(offset, length, mode);
 
         // Assert
-        mapping.Mode.Should().Be(mode);
+        _ = mapping.Mode.Should().Be(mode);
         _mockFloatBuffer.Verify(b => b.MapRange(offset, length, mode), Times.Once);
     }
 
@@ -588,13 +588,13 @@ public sealed class IBufferTests
     public void MapRange_WithNegativeOffset_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
-        _mockFloatBuffer.Setup(b => b.MapRange(-1, 10, MapMode.ReadWrite))
+        _ = _mockFloatBuffer.Setup(b => b.MapRange(-1, 10, MapMode.ReadWrite))
                        .Throws(new ArgumentOutOfRangeException("offset"));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(
            () => _mockFloatBuffer.Object.MapRange(-1, 10, MapMode.ReadWrite));
-        exception.ParamName.Should().Be("offset");
+        _ = exception.ParamName.Should().Be("offset");
     }
 
     [Theory]
@@ -604,13 +604,13 @@ public sealed class IBufferTests
     public void MapRange_WithInvalidLength_ShouldThrowArgumentException(int invalidLength)
     {
         // Arrange
-        _mockFloatBuffer.Setup(b => b.MapRange(0, invalidLength, MapMode.ReadWrite))
+        _ = _mockFloatBuffer.Setup(b => b.MapRange(0, invalidLength, MapMode.ReadWrite))
                        .Throws(new ArgumentException("Length must be positive", nameof(invalidLength)));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(
            () => _mockFloatBuffer.Object.MapRange(0, invalidLength, MapMode.ReadWrite));
-        exception.ParamName.Should().Be(nameof(invalidLength));
+        _ = exception.ParamName.Should().Be(nameof(invalidLength));
     }
 
     [Fact]
@@ -620,14 +620,14 @@ public sealed class IBufferTests
         var mockMemory = new Memory<float>(new float[100]);
         var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
 
-        _mockFloatBuffer.Setup(b => b.MapAsync(MapMode.ReadWrite, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.MapAsync(MapMode.ReadWrite, CancellationToken.None))
                        .ReturnsAsync(expectedMapping);
 
         // Act
         var mapping = await _mockFloatBuffer.Object.MapAsync();
 
         // Assert
-        mapping.Mode.Should().Be(MapMode.ReadWrite);
+        _ = mapping.Mode.Should().Be(MapMode.ReadWrite);
         _mockFloatBuffer.Verify(b => b.MapAsync(MapMode.ReadWrite, CancellationToken.None), Times.Once);
     }
 
@@ -638,11 +638,11 @@ public sealed class IBufferTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        _mockFloatBuffer.Setup(b => b.MapAsync(MapMode.ReadWrite, cts.Token))
+        _ = _mockFloatBuffer.Setup(b => b.MapAsync(MapMode.ReadWrite, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(
            () => _mockFloatBuffer.Object.MapAsync(cancellationToken: cts.Token).AsTask());
     }
 
@@ -657,7 +657,7 @@ public sealed class IBufferTests
         var type = typeof(IBuffer<float>);
 
         // Assert
-        Assert.IsAssignableFrom<IMemoryBuffer>(type);
+        _ = Assert.IsAssignableFrom<IMemoryBuffer>(type);
     }
 
     [Fact]
@@ -667,7 +667,7 @@ public sealed class IBufferTests
         var type = typeof(IBuffer<float>);
 
         // Assert
-        Assert.IsAssignableFrom<IAsyncDisposable>(type);
+        _ = Assert.IsAssignableFrom<IAsyncDisposable>(type);
     }
 
     [Fact]
@@ -677,7 +677,7 @@ public sealed class IBufferTests
         var type = typeof(IBuffer<float>);
 
         // Assert
-        Assert.IsAssignableFrom<IDisposable>(type);
+        _ = Assert.IsAssignableFrom<IDisposable>(type);
     }
 
     #endregion
@@ -698,19 +698,19 @@ public sealed class IBufferTests
         var expectedMapping = CreateMappedMemory(_mockFloatBuffer.Object, mockMemory, MapMode.ReadWrite);
 
         // Setup all operations
-        _mockFloatBuffer.SetupGet(b => b.Length).Returns(bufferLength);
-        _mockFloatBuffer.SetupGet(b => b.ElementCount).Returns(bufferLength);
-        _mockFloatBuffer.SetupGet(b => b.SizeInBytes).Returns(bufferSize);
-        _mockFloatBuffer.SetupGet(b => b.Accelerator).Returns(_mockAccelerator.Object);
-        _mockFloatBuffer.Setup(b => b.Slice(0, 100)).Returns(mockSlice.Object);
-        _mockFloatBuffer.Setup(b => b.AsType<int>()).Returns(_mockIntBuffer.Object);
-        _mockFloatBuffer.Setup(b => b.CopyToAsync(mockDestination.Object, CancellationToken.None))
+        _ = _mockFloatBuffer.SetupGet(b => b.Length).Returns(bufferLength);
+        _ = _mockFloatBuffer.SetupGet(b => b.ElementCount).Returns(bufferLength);
+        _ = _mockFloatBuffer.SetupGet(b => b.SizeInBytes).Returns(bufferSize);
+        _ = _mockFloatBuffer.SetupGet(b => b.Accelerator).Returns(_mockAccelerator.Object);
+        _ = _mockFloatBuffer.Setup(b => b.Slice(0, 100)).Returns(mockSlice.Object);
+        _ = _mockFloatBuffer.Setup(b => b.AsType<int>()).Returns(_mockIntBuffer.Object);
+        _ = _mockFloatBuffer.Setup(b => b.CopyToAsync(mockDestination.Object, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
-        _mockFloatBuffer.Setup(b => b.FillAsync(fillValue, CancellationToken.None))
+        _ = _mockFloatBuffer.Setup(b => b.FillAsync(fillValue, CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
-        _mockFloatBuffer.Setup(b => b.Map(MapMode.ReadWrite))
+        _ = _mockFloatBuffer.Setup(b => b.Map(MapMode.ReadWrite))
                        .Returns(expectedMapping);
-        _mockFloatBuffer.Setup(b => b.DisposeAsync())
+        _ = _mockFloatBuffer.Setup(b => b.DisposeAsync())
                        .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -733,7 +733,7 @@ public sealed class IBufferTests
         Assert.Equal(_mockAccelerator.Object, accelerator);
         Assert.Equal(mockSlice.Object, slice);
         Assert.Equal(_mockIntBuffer.Object, intBuffer);
-        mapping.Mode.Should().Be(MapMode.ReadWrite);
+        _ = mapping.Mode.Should().Be(MapMode.ReadWrite);
 
         // Verify all methods were called
         _mockFloatBuffer.Verify(b => b.Slice(0, 100), Times.Once);
@@ -759,14 +759,14 @@ public sealed class IBufferTests
         var doubleBuffer = new Mock<IBuffer<double>>();
         var byteBuffer = new Mock<IBuffer<byte>>();
 
-        intBuffer.SetupGet(b => b.Length).Returns(100);
-        doubleBuffer.SetupGet(b => b.Length).Returns(50);
-        byteBuffer.SetupGet(b => b.Length).Returns(1000);
+        _ = intBuffer.SetupGet(b => b.Length).Returns(100);
+        _ = doubleBuffer.SetupGet(b => b.Length).Returns(50);
+        _ = byteBuffer.SetupGet(b => b.Length).Returns(1000);
 
         // Act & Assert
-        intBuffer.Object.Length.Should().Be(100);
-        doubleBuffer.Object.Length.Should().Be(50);
-        byteBuffer.Object.Length.Should().Be(1000);
+        _ = intBuffer.Object.Length.Should().Be(100);
+        _ = doubleBuffer.Object.Length.Should().Be(50);
+        _ = byteBuffer.Object.Length.Should().Be(1000);
     }
 
     #endregion
@@ -777,20 +777,20 @@ public sealed class IBufferTests
     public void Operations_AfterDispose_ShouldThrowObjectDisposedException()
     {
         // Arrange
-        _mockFloatBuffer.SetupGet(b => b.IsDisposed).Returns(true);
-        _mockFloatBuffer.Setup(b => b.Slice(It.IsAny<int>(), It.IsAny<int>()))
+        _ = _mockFloatBuffer.SetupGet(b => b.IsDisposed).Returns(true);
+        _ = _mockFloatBuffer.Setup(b => b.Slice(It.IsAny<int>(), It.IsAny<int>()))
                        .Throws(new ObjectDisposedException(nameof(IBuffer<float>)));
-        _mockFloatBuffer.Setup(b => b.AsType<int>())
+        _ = _mockFloatBuffer.Setup(b => b.AsType<int>())
                        .Throws(new ObjectDisposedException(nameof(IBuffer<float>)));
 
         // Act & Assert
         var sliceException = Assert.Throws<ObjectDisposedException>(
            () => _mockFloatBuffer.Object.Slice(0, 10));
-        sliceException.ObjectName.Should().Be(nameof(IBuffer<float>));
+        _ = sliceException.ObjectName.Should().Be(nameof(IBuffer<float>));
 
         var asTypeException = Assert.Throws<ObjectDisposedException>(
-           () => _mockFloatBuffer.Object.AsType<int>());
-        asTypeException.ObjectName.Should().Be(nameof(IBuffer<float>));
+           _mockFloatBuffer.Object.AsType<int>);
+        _ = asTypeException.ObjectName.Should().Be(nameof(IBuffer<float>));
     }
 
     [Fact]
@@ -803,14 +803,13 @@ public sealed class IBufferTests
         var acceleratorProperty = type.GetProperty(nameof(IBuffer<float>.Accelerator));
 
         // Assert
-        lengthProperty!.CanRead.Should().BeTrue();
-        lengthProperty.CanWrite.Should().BeFalse();
-        elementCountProperty!.CanRead.Should().BeTrue();
-        elementCountProperty.CanWrite.Should().BeFalse();
-        acceleratorProperty!.CanRead.Should().BeTrue();
-        acceleratorProperty.CanWrite.Should().BeFalse();
+        _ = lengthProperty!.CanRead.Should().BeTrue();
+        _ = lengthProperty.CanWrite.Should().BeFalse();
+        _ = elementCountProperty!.CanRead.Should().BeTrue();
+        _ = elementCountProperty.CanWrite.Should().BeFalse();
+        _ = acceleratorProperty!.CanRead.Should().BeTrue();
+        _ = acceleratorProperty.CanWrite.Should().BeFalse();
     }
 
     #endregion
-}
 }

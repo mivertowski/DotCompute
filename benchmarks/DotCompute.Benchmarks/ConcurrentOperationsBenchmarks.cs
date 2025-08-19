@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Collections.Concurrent;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 /// <summary>
 /// Benchmarks for concurrent operations performance.
@@ -126,5 +126,4 @@ internal sealed class ConcurrentOperationsBenchmarks : IDisposable
         }
         GC.SuppressFinalize(this);
     }
-}
 }

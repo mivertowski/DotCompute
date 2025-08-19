@@ -11,8 +11,8 @@ using DotCompute.Backends.CUDA.Compilation;
 using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Hardware.Utilities
-{
+namespace DotCompute.Tests.Hardware.Utilities;
+
 
 /// <summary>
 /// Utility classes and methods for CUDA testing
@@ -105,10 +105,10 @@ public static class CudaTestUtilities
     {
         var rtx2000Names = new[]
         {
-            "RTX 2060", "RTX 2070", "RTX 2080", "RTX 2080 Ti",
-            "GeForce RTX 2060", "GeForce RTX 2070", "GeForce RTX 2080", "GeForce RTX 2080 Ti",
-            "Quadro RTX 4000", "Quadro RTX 5000", "Quadro RTX 6000", "Quadro RTX 8000"
-        };
+        "RTX 2060", "RTX 2070", "RTX 2080", "RTX 2080 Ti",
+        "GeForce RTX 2060", "GeForce RTX 2070", "GeForce RTX 2080", "GeForce RTX 2080 Ti",
+        "Quadro RTX 4000", "Quadro RTX 5000", "Quadro RTX 6000", "Quadro RTX 8000"
+    };
 
         return rtx2000Names.Any(name => deviceName.Contains(name, StringComparison.OrdinalIgnoreCase));
     }
@@ -421,7 +421,7 @@ __global__ void tensor_core_gemm(half* a, half* b, float* c, int n)
         public static float[][] Matrix(int rows, int cols)
         {
             var matrix = new float[rows][];
-            for (int i = 0; i < rows; i++)
+            for (var i = 0; i < rows; i++)
             {
                 matrix[i] = TestDataGenerator.GenerateFloatArray(cols);
             }
@@ -470,26 +470,26 @@ public class TestEnvironmentValidation
     public override string ToString()
     {
         var sb = new StringBuilder();
-        sb.AppendLine(CultureInfo.InvariantCulture, $"CUDA Test Environment Validation:");
-        sb.AppendLine(CultureInfo.InvariantCulture, $"  CUDA Available: {CudaAvailable}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"CUDA Test Environment Validation:");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  CUDA Available: {CudaAvailable}");
 
         if (CudaAvailable)
         {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  Device Count: {DeviceCount}");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  Primary Device: {PrimaryDeviceName}");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  Compute Capability: {ComputeCapability}");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  Device Memory: {DeviceMemoryGB:F1} GB");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  Device Count: {DeviceCount}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  Primary Device: {PrimaryDeviceName}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  Compute Capability: {ComputeCapability}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  Device Memory: {DeviceMemoryGB:F1} GB");
         }
 
-        sb.AppendLine(CultureInfo.InvariantCulture, $"  NVRTC Available: {NvrtcAvailable}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  NVRTC Available: {NvrtcAvailable}");
         if (NvrtcAvailable)
         {
-            sb.AppendLine(CultureInfo.InvariantCulture, $"  NVRTC Version: {NvrtcVersion}");
+            _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  NVRTC Version: {NvrtcVersion}");
         }
 
-        sb.AppendLine(CultureInfo.InvariantCulture, $"  Platform: {PlatformInfo.OperatingSystem} {PlatformInfo.Architecture}");
-        sb.AppendLine(CultureInfo.InvariantCulture, $"  .NET: {PlatformInfo.FrameworkVersion}");
-        sb.AppendLine(CultureInfo.InvariantCulture, $"  Fully Functional: {IsFullyFunctional}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  Platform: {PlatformInfo.OperatingSystem} {PlatformInfo.Architecture}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  .NET: {PlatformInfo.FrameworkVersion}");
+        _ = sb.AppendLine(CultureInfo.InvariantCulture, $"  Fully Functional: {IsFullyFunctional}");
 
         return sb.ToString();
     }
@@ -503,5 +503,4 @@ public sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string message) : base(message) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
-}
 }

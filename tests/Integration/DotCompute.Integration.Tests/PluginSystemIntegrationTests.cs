@@ -14,8 +14,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Integration tests for the plugin system including plugin loading,
@@ -31,7 +31,7 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
     {
         _pluginSystem = ServiceProvider.GetRequiredService<PluginSystem>();
         _tempPluginDirectory = Path.Combine(Path.GetTempPath(), "DotComputePluginTests", Guid.NewGuid().ToString());
-        Directory.CreateDirectory(_tempPluginDirectory);
+        _ = Directory.CreateDirectory(_tempPluginDirectory);
     }
 
     public override async Task DisposeAsync()
@@ -62,14 +62,14 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var loadResult = await _pluginSystem.LoadPluginAsync(pluginAssemblyPath);
 
         // Assert
-        loadResult.Should().Be(true);
+        _ = loadResult.Should().Be(true);
 
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
         Assert.Contains("TestAlgorithmPlugin", loadedPlugins.Select(p => p.Name));
 
         var plugin = loadedPlugins.FirstOrDefault(p => p.Name == "TestAlgorithmPlugin");
         Assert.NotNull(plugin);
-        plugin!.Name.Should().Be("TestAlgorithmPlugin");
+        _ = plugin!.Name.Should().Be("TestAlgorithmPlugin");
         // plugin.IsInitialized.Should().BeTrue(); // Property doesn't exist on IBackendPlugin
 
         Logger.LogInformation("Successfully loaded plugin: {Name}", plugin.Name);
@@ -82,7 +82,7 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var matrixPluginCode = CreateMatrixMultiplicationPluginCode();
         var pluginPath = await CompilePluginAsync(matrixPluginCode, "MatrixPlugin.dll");
 
-        await _pluginSystem.LoadPluginAsync(pluginPath);
+        _ = await _pluginSystem.LoadPluginAsync(pluginPath);
 
         const int matrixSize = 16;
         var matrixA = TestDataGenerators.GenerateFloatArray(matrixSize * matrixSize);
@@ -94,16 +94,16 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel
-                {
-                    Name = "plugin_matrix_multiply",
-                    SourceCode = GetPluginKernelSource("MatrixMultiplicationPlugin"),
-                    CompilationOptions = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum }
-                }
+            {
+                Name = "plugin_matrix_multiply",
+                SourceCode = GetPluginKernelSource("MatrixMultiplicationPlugin"),
+                CompilationOptions = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum }
+            }
             ],
             Inputs =
             [
                 new WorkflowInput { Name = "matrixA", Data = matrixA },
-                new WorkflowInput { Name = "matrixB", Data = matrixB }
+            new WorkflowInput { Name = "matrixB", Data = matrixB }
             ],
             Outputs =
             [
@@ -112,13 +112,13 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
             ExecutionStages =
             [
                 new WorkflowExecutionStage
-                {
-                    Name = "matrix_multiply_stage",
-                    Order = 1,
-                    KernelName = "plugin_matrix_multiply",
-                    ArgumentNames = ["matrixA", "matrixB", "matrixC"],
-                    Parameters = new Dictionary<string, object> { ["size"] = matrixSize }
-                }
+            {
+                Name = "matrix_multiply_stage",
+                Order = 1,
+                KernelName = "plugin_matrix_multiply",
+                ArgumentNames = ["matrixA", "matrixB", "matrixC"],
+                Parameters = new Dictionary<string, object> { ["size"] = matrixSize }
+            }
             ]
         };
 
@@ -126,12 +126,12 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("PluginMatrixMultiplication", workflow);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.Results.Should().ContainKey("matrixC");
+        _ = result.Success.Should().BeTrue();
+        _ = result.Results.Should().ContainKey("matrixC");
 
         var resultMatrix = (float[])result.Results["matrixC"];
-        resultMatrix.Length.Should().Be(matrixSize * matrixSize);
-        resultMatrix.Should().NotContain(float.NaN);
+        _ = resultMatrix.Length.Should().Be(matrixSize * matrixSize);
+        _ = resultMatrix.Should().NotContain(float.NaN);
 
         // Verify a few elements of matrix multiplication
         ValidateMatrixMultiplication(resultMatrix, matrixA, matrixB, matrixSize);
@@ -150,10 +150,10 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var loadResult = await _pluginSystem.LoadPluginAsync(pluginPath);
 
         // Assert
-        loadResult.Should().Be(false);
+        _ = loadResult.Should().Be(false);
 
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
-        loadedPlugins.Should().NotContain(p => p.Name == "MaliciousPlugin");
+        _ = loadedPlugins.Should().NotContain(p => p.Name == "MaliciousPlugin");
 
         Logger.LogInformation("Successfully rejected malicious plugin");
     }
@@ -173,20 +173,20 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var load2Result = await _pluginSystem.LoadPluginAsync(plugin2Path);
 
         // Assert
-        load1Result.Should().Be(true);
-        load2Result.Should().Be(true);
+        _ = load1Result.Should().Be(true);
+        _ = load2Result.Should().Be(true);
 
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
         Assert.Equal(2, loadedPlugins.Count());
-        loadedPlugins.Should().Contain(p => p.Name == "Plugin1");
-        loadedPlugins.Should().Contain(p => p.Name == "Plugin2");
+        _ = loadedPlugins.Should().Contain(p => p.Name == "Plugin1");
+        _ = loadedPlugins.Should().Contain(p => p.Name == "Plugin2");
 
         // Verify plugins are isolated(different app domains or load contexts)
         var plugin1 = loadedPlugins.First(p => p.Name == "Plugin1");
         var plugin2 = loadedPlugins.First(p => p.Name == "Plugin2");
 
-        plugin1.Should().NotBeSameAs(plugin2);
-        plugin1.Name.Should().NotBe(plugin2.Name);
+        _ = plugin1.Should().NotBeSameAs(plugin2);
+        _ = plugin1.Name.Should().NotBe(plugin2.Name);
 
         Logger.LogInformation("Successfully loaded and isolated {Count} plugins", loadedPlugins.Count());
     }
@@ -200,18 +200,18 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
 
         // Act & Assert - Load
         var loadResult = await _pluginSystem.LoadPluginAsync(pluginPath);
-        loadResult.Should().Be(true);
-        _pluginSystem.GetLoadedPlugins().Should().Contain(p => p.Name == "LifecycleTestPlugin");
+        _ = loadResult.Should().Be(true);
+        _ = _pluginSystem.GetLoadedPlugins().Should().Contain(p => p.Name == "LifecycleTestPlugin");
 
         // Act & Assert - Unload
         var unloadResult = await _pluginSystem.UnloadPluginAsync("LifecycleTestPlugin");
-        unloadResult.Should().Be(true);
-        _pluginSystem.GetLoadedPlugins().Should().NotContain(p => p.Name == "LifecycleTestPlugin");
+        _ = unloadResult.Should().Be(true);
+        _ = _pluginSystem.GetLoadedPlugins().Should().NotContain(p => p.Name == "LifecycleTestPlugin");
 
         // Act & Assert - Reload
         var reloadResult = await _pluginSystem.LoadPluginAsync(pluginPath);
-        reloadResult.Should().Be(true);
-        _pluginSystem.GetLoadedPlugins().Should().Contain(p => p.Name == "LifecycleTestPlugin");
+        _ = reloadResult.Should().Be(true);
+        _ = _pluginSystem.GetLoadedPlugins().Should().Contain(p => p.Name == "LifecycleTestPlugin");
 
         Logger.LogInformation("Successfully completed plugin lifecycle test");
     }
@@ -231,12 +231,12 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var dependentLoadResult = await _pluginSystem.LoadPluginAsync(dependentPath);
 
         // Assert
-        baseLoadResult.Should().Be(true);
-        dependentLoadResult.Should().Be(true);
+        _ = baseLoadResult.Should().Be(true);
+        _ = dependentLoadResult.Should().Be(true);
 
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
-        loadedPlugins.Should().Contain(p => p.Name == "BasePlugin");
-        loadedPlugins.Should().Contain(p => p.Name == "DependentPlugin");
+        _ = loadedPlugins.Should().Contain(p => p.Name == "BasePlugin");
+        _ = loadedPlugins.Should().Contain(p => p.Name == "DependentPlugin");
 
         // Verify dependency resolution worked
         var dependentPlugin = loadedPlugins.First(p => p.Name == "DependentPlugin");
@@ -260,12 +260,12 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         };
 
         // Act
-        await _pluginSystem.LoadPluginAsync(pluginPath);
+        _ = await _pluginSystem.LoadPluginAsync(pluginPath);
         // var configResult = await _pluginSystem.ConfigurePluginAsync("ConfigurablePlugin", configuration);
         var configResult = true; // Temporarily set to true since ConfigurePluginAsync doesn't exist
 
         // Assert
-        configResult.Should().Be(true);
+        _ = configResult.Should().Be(true);
 
         var plugin = _pluginSystem.GetLoadedPlugins().First(p => p.Name == "ConfigurablePlugin");
         // plugin.IsInitialized.Should().BeTrue(); // Property doesn't exist
@@ -275,13 +275,13 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var workflow = CreateConfigurablePluginWorkflow(testData);
 
         var result = await ExecuteComputeWorkflowAsync("ConfigurablePluginTest", workflow);
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
 
         // Verify configuration was applied(processing factor should affect results)
         var output = (float[])result.Results["output"];
         for (var i = 0; i < Math.Min(10, output.Length); i++)
         {
-            output[i].Should().BeApproximately(testData[i] * 2.5f, 0.01f);
+            _ = output[i].Should().BeApproximately(testData[i] * 2.5f, 0.01f);
         }
 
         Logger.LogInformation("Successfully applied plugin configuration");
@@ -294,7 +294,7 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var optimizedPluginCode = CreateOptimizedPluginCode();
         var pluginPath = await CompilePluginAsync(optimizedPluginCode, "OptimizedPlugin.dll");
 
-        await _pluginSystem.LoadPluginAsync(pluginPath);
+        _ = await _pluginSystem.LoadPluginAsync(pluginPath);
 
         const int benchmarkSize = 4096;
         var testData = TestDataGenerators.GenerateFloatArray(benchmarkSize);
@@ -308,8 +308,8 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var baselineResult = await ExecuteComputeWorkflowAsync("BaselineBenchmark", baselineWorkflow);
 
         // Assert
-        pluginResult.Success.Should().BeTrue();
-        baselineResult.Success.Should().BeTrue();
+        _ = pluginResult.Success.Should().BeTrue();
+        _ = baselineResult.Success.Should().BeTrue();
 
         // Plugin should be competitive with baseline(within 50% performance)
         var pluginThroughput = pluginResult.Metrics?.ThroughputMBps ?? 0;
@@ -318,7 +318,7 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         if (baselineThroughput > 0)
         {
             var performanceRatio = pluginThroughput / baselineThroughput;
-            performanceRatio.Should().BeGreaterThan(0.5, "Plugin performance should be competitive");
+            _ = performanceRatio.Should().BeGreaterThan(0.5, "Plugin performance should be competitive");
 
             Logger.LogInformation("Plugin performance: {Plugin:F2} MB/s vs Baseline: {Baseline:F2} MB/sRatio: {Ratio:F2})",
                 pluginThroughput, baselineThroughput, performanceRatio);
@@ -336,9 +336,9 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         var v2Path = await CompilePluginAsync(version2Code, "HotswapPluginV2.dll");
 
         // Act & Assert - Load version 1
-        await _pluginSystem.LoadPluginAsync(v1Path);
+        _ = await _pluginSystem.LoadPluginAsync(v1Path);
         var v1Plugin = _pluginSystem.GetLoadedPlugins().First(p => p.Name == "HotswapPlugin");
-        v1Plugin.Version.Should().Be(new Version("1.0.0"));
+        _ = v1Plugin.Version.Should().Be(new Version("1.0.0"));
 
         // Act & Assert - Hot-swap to version 2
         // var hotswapResult = await _pluginSystem.HotSwapPluginAsync("HotswapPlugin", v2Path);
@@ -346,7 +346,7 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         Assert.True(hotswapResult);
 
         var v2Plugin = _pluginSystem.GetLoadedPlugins().First(p => p.Name == "HotswapPlugin");
-        v2Plugin.Version.Should().Be(new Version("2.0.0"));
+        _ = v2Plugin.Version.Should().Be(new Version("2.0.0"));
 
         Logger.LogInformation("Successfully hot-swapped plugin from v{V1} to v{V2}", "1.0", "2.0");
     }
@@ -365,7 +365,7 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         try
         {
             var testWorkflow = CreateFaultyPluginWorkflow();
-            await ExecuteComputeWorkflowAsync("FaultyPluginTest", testWorkflow);
+            _ = await ExecuteComputeWorkflowAsync("FaultyPluginTest", testWorkflow);
         }
         catch (Exception ex)
         {
@@ -373,7 +373,7 @@ public sealed class PluginSystemIntegrationTests : ComputeWorkflowTestBase
         }
 
         // Assert
-        loadResult.Should().Be(true); // Plugin should load
+        _ = loadResult.Should().Be(true); // Plugin should load
         Assert.NotNull(caughtException); // But execution should fail gracefully
 
         // System should still be operational
@@ -730,14 +730,14 @@ namespace FaultyPlugin
             Kernels =
             [
                 new WorkflowKernel
-                {
-                    Name = "configurable_process",
-                    SourceCode = @"
+            {
+                Name = "configurable_process",
+                SourceCode = @"
                         __kernel void configurable_process(__global const float* input, __global float* output) {
                             int gid = get_global_id(0);
                             output[gid] = input[gid] * 2.5f;
                         }"
-                }
+            }
             ],
             Inputs =
             [
@@ -750,12 +750,12 @@ namespace FaultyPlugin
             ExecutionStages =
             [
                 new WorkflowExecutionStage
-                {
-                    Name = "process_stage",
-                    Order = 1,
-                    KernelName = "configurable_process",
-                    ArgumentNames = ["input", "output"]
-                }
+            {
+                Name = "process_stage",
+                Order = 1,
+                KernelName = "configurable_process",
+                ArgumentNames = ["input", "output"]
+            }
             ]
         };
     }
@@ -768,16 +768,16 @@ namespace FaultyPlugin
             Kernels =
             [
                 new WorkflowKernel
+            {
+                Name = "optimized_compute",
+                SourceCode = KernelSources.OptimizedCompute,
+                CompilationOptions = new CompilationOptions
                 {
-                    Name = "optimized_compute",
-                    SourceCode = KernelSources.OptimizedCompute,
-                    CompilationOptions = new CompilationOptions
-                    {
-                        OptimizationLevel = OptimizationLevel.Aggressive,
-                        FastMath = true,
-                        UnrollLoops = true
-                    }
+                    OptimizationLevel = OptimizationLevel.Aggressive,
+                    FastMath = true,
+                    UnrollLoops = true
                 }
+            }
             ],
             Inputs =
             [
@@ -790,12 +790,12 @@ namespace FaultyPlugin
             ExecutionStages =
             [
                 new WorkflowExecutionStage
-                {
-                    Name = "optimized_stage",
-                    Order = 1,
-                    KernelName = "optimized_compute",
-                    ArgumentNames = ["input", "output"]
-                }
+            {
+                Name = "optimized_stage",
+                Order = 1,
+                KernelName = "optimized_compute",
+                ArgumentNames = ["input", "output"]
+            }
             ]
         };
     }
@@ -808,10 +808,10 @@ namespace FaultyPlugin
             Kernels =
             [
                 new WorkflowKernel
-                {
-                    Name = "baseline_compute",
-                    SourceCode = KernelSources.BaselineCompute
-                }
+            {
+                Name = "baseline_compute",
+                SourceCode = KernelSources.BaselineCompute
+            }
             ],
             Inputs =
             [
@@ -824,12 +824,12 @@ namespace FaultyPlugin
             ExecutionStages =
             [
                 new WorkflowExecutionStage
-                {
-                    Name = "baseline_stage",
-                    Order = 1,
-                    KernelName = "baseline_compute",
-                    ArgumentNames = ["input", "output"]
-                }
+            {
+                Name = "baseline_stage",
+                Order = 1,
+                KernelName = "baseline_compute",
+                ArgumentNames = ["input", "output"]
+            }
             ]
         };
     }
@@ -842,9 +842,9 @@ namespace FaultyPlugin
             Kernels =
             [
                 new WorkflowKernel
-                {
-                    Name = "faulty_process",
-                    SourceCode = @"
+            {
+                Name = "faulty_process",
+                SourceCode = @"
                         __kernel void faulty_process(__global const float* input, __global float* output) {
                             int gid = get_global_id(0);
                             if(gid == 10) {
@@ -854,7 +854,7 @@ namespace FaultyPlugin
                                 output[gid] = input[gid];
                             }
                         }"
-                }
+            }
             ],
             Inputs =
             [
@@ -867,12 +867,12 @@ namespace FaultyPlugin
             ExecutionStages =
             [
                 new WorkflowExecutionStage
-                {
-                    Name = "faulty_stage",
-                    Order = 1,
-                    KernelName = "faulty_process",
-                    ArgumentNames = ["input", "output"]
-                }
+            {
+                Name = "faulty_stage",
+                Order = 1,
+                KernelName = "faulty_process",
+                ArgumentNames = ["input", "output"]
+            }
             ]
         };
     }
@@ -891,7 +891,7 @@ namespace FaultyPlugin
                 }
 
                 var actual = result[i * size + j];
-                actual.Should().BeApproximately(expected, Math.Abs(expected) * 0.01f + 1e-5f);
+                _ = actual.Should().BeApproximately(expected, Math.Abs(expected) * 0.01f + 1e-5f);
             }
         }
     }
@@ -925,5 +925,4 @@ __kernel void baseline_compute(__global const float* input, __global float* outp
     
     output[gid] = data;
 }";
-}
 }

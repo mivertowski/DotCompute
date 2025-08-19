@@ -3,8 +3,8 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Implementations.Memory
-{
+namespace DotCompute.Tests.Implementations.Memory;
+
 
 /// <summary>
 /// Test implementation of IMemoryManager for testing without GPU hardware.
@@ -40,7 +40,7 @@ public sealed class TestMemoryManager : IMemoryManager, IDisposable
         var currentPeak = _peakAllocated;
         while (newTotal > currentPeak)
         {
-            Interlocked.CompareExchange(ref _peakAllocated, newTotal, currentPeak);
+            _ = Interlocked.CompareExchange(ref _peakAllocated, newTotal, currentPeak);
             currentPeak = _peakAllocated;
         }
 
@@ -151,7 +151,7 @@ public sealed class TestMemoryManager : IMemoryManager, IDisposable
     {
         if (_allocations.TryRemove(buffer.Handle, out _))
         {
-            Interlocked.Add(ref _totalAllocated, -buffer.SizeInBytes);
+            _ = Interlocked.Add(ref _totalAllocated, -buffer.SizeInBytes);
         }
     }
 
@@ -273,10 +273,7 @@ public sealed class TestMemoryBuffer : IMemoryBuffer, IDisposable
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 }
 
 /// <summary>
@@ -317,5 +314,4 @@ public sealed class TestMemoryView : IMemoryBuffer
     public ValueTask DisposeAsync()
         // Views don't own the memory, so nothing to dispose
         => ValueTask.CompletedTask;
-}
 }

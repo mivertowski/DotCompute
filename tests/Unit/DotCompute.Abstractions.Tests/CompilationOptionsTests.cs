@@ -2,8 +2,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 public sealed class CompilationOptionsTests
 {
@@ -14,12 +14,12 @@ public sealed class CompilationOptionsTests
         var options = new CompilationOptions();
 
         // Assert
-        options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
-        options.EnableDebugInfo.Should().BeFalse();
-        options.AdditionalFlags.Should().BeNull();
-        options.Defines.Should().BeNull();
-        options.FastMath.Should().BeFalse();
-        options.UnrollLoops.Should().BeFalse();
+        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
+        _ = options.EnableDebugInfo.Should().BeFalse();
+        _ = options.AdditionalFlags.Should().BeNull();
+        _ = options.Defines.Should().BeNull();
+        _ = options.FastMath.Should().BeFalse();
+        _ = options.UnrollLoops.Should().BeFalse();
     }
 
     [Fact]
@@ -41,12 +41,12 @@ public sealed class CompilationOptionsTests
         };
 
         // Assert
-        options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
-        options.EnableDebugInfo.Should().BeTrue();
-        options.AdditionalFlags.Should().BeEquivalentTo(flags);
-        options.Defines.Should().BeEquivalentTo(defines);
-        options.FastMath.Should().BeTrue();
-        options.UnrollLoops.Should().BeTrue();
+        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
+        _ = options.EnableDebugInfo.Should().BeTrue();
+        _ = options.AdditionalFlags.Should().BeEquivalentTo(flags);
+        _ = options.Defines.Should().BeEquivalentTo(defines);
+        _ = options.FastMath.Should().BeTrue();
+        _ = options.UnrollLoops.Should().BeTrue();
     }
 
     [Theory]
@@ -59,7 +59,7 @@ public sealed class CompilationOptionsTests
         var options = new CompilationOptions { OptimizationLevel = level };
 
         // Assert
-        options.OptimizationLevel.Should().Be(level);
+        _ = options.OptimizationLevel.Should().Be(level);
     }
 
     [Fact]
@@ -79,13 +79,13 @@ public sealed class CompilationOptionsTests
         };
 
         // Assert
-        options1.OptimizationLevel.Should().Be(OptimizationLevel.None);
-        options1.EnableDebugInfo.Should().BeTrue();
-        options1.FastMath.Should().BeFalse();
+        _ = options1.OptimizationLevel.Should().Be(OptimizationLevel.None);
+        _ = options1.EnableDebugInfo.Should().BeTrue();
+        _ = options1.FastMath.Should().BeFalse();
 
-        options2.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
-        options2.EnableDebugInfo.Should().BeFalse();
-        options2.FastMath.Should().BeTrue();
+        _ = options2.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
+        _ = options2.EnableDebugInfo.Should().BeFalse();
+        _ = options2.FastMath.Should().BeTrue();
     }
 
     [Fact]
@@ -95,7 +95,7 @@ public sealed class CompilationOptionsTests
         var options = new CompilationOptions { Defines = null };
 
         // Assert
-        options.Defines.Should().BeNull();
+        _ = options.Defines.Should().BeNull();
     }
 
     [Fact]
@@ -105,7 +105,6 @@ public sealed class CompilationOptionsTests
         var options = new CompilationOptions { AdditionalFlags = [] };
 
         // Assert
-        options.AdditionalFlags.Should().BeEmpty();
+        _ = options.AdditionalFlags.Should().BeEmpty();
     }
-}
 }

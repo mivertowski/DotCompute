@@ -3,13 +3,13 @@ using System.Text.Json;
 using System.Text;
 using System.Globalization;
 
-namespace DotCompute.Tools.Coverage
-{
+namespace DotCompute.Tools.Coverage;
+
 
 /// <summary>
 /// Analyzes code coverage reports and generates comprehensive analysis
 /// </summary>
-internal sealed class CoverageAnalyzer
+internal sealed class CoverageAnalyzer(string coverageDirectory, double lineThreshold = 80.0, double branchThreshold = 70.0)
 {
     internal sealed record CoverageMetrics(
         double LineRate,
@@ -33,16 +33,9 @@ internal sealed class CoverageAnalyzer
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    private readonly string _coverageDirectory;
-    private readonly double _lineThreshold;
-    private readonly double _branchThreshold;
-
-    public CoverageAnalyzer(string coverageDirectory, double lineThreshold = 80.0, double branchThreshold = 70.0)
-    {
-        _coverageDirectory = coverageDirectory;
-        _lineThreshold = lineThreshold;
-        _branchThreshold = branchThreshold;
-    }
+    private readonly string _coverageDirectory = coverageDirectory;
+    private readonly double _lineThreshold = lineThreshold;
+    private readonly double _branchThreshold = branchThreshold;
 
     public async Task<CoverageAnalysis> AnalyzeCoverageAsync()
     {
@@ -251,7 +244,7 @@ internal sealed class CoverageAnalyzer
     {
         var report = new StringBuilder();
 
-        report.AppendLine("# DotCompute Code Coverage Analysis Report");
+        _ = report.AppendLine("# DotCompute Code Coverage Analysis Report");
         _ = report.AppendLine(string.Create(CultureInfo.InvariantCulture, $"Generated: {DateTime.Now:yyyy-MM-dd HH:mm:ss}"));
         _ = report.AppendLine();
 
@@ -325,5 +318,4 @@ internal sealed class CoverageAnalyzer
         await File.WriteAllTextAsync(outputPath, json);
         Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"Coverage JSON report generated: {outputPath}"));
     }
-}
 }

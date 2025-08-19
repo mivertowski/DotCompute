@@ -11,8 +11,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Edge case and stress tests for the plugin system.
@@ -28,8 +28,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         var services = new ServiceCollection();
         _loggerMock = new Mock<ILogger<PluginSystem>>();
-        services.AddSingleton(_loggerMock.Object);
-        services.AddSingleton<PluginSystem>(provider =>
+        _ = services.AddSingleton(_loggerMock.Object);
+        _ = services.AddSingleton<PluginSystem>(provider =>
             new PluginSystem(_loggerMock.Object, provider));
 
         _serviceProvider = services.BuildServiceProvider();
@@ -67,18 +67,18 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         for (var i = 0; i < threadCount * pluginsPerThread; i++)
         {
             var mock = new Mock<IBackendPlugin>();
-            mock.Setup(p => p.Id).Returns($"TestPlugin_{i}");
-            mock.Setup(p => p.Name).Returns($"TestPlugin_{i}");
-            mock.Setup(p => p.Version).Returns(new Version(1, 0));
-            mock.Setup(p => p.Description).Returns($"Test plugin {i}");
-            mock.Setup(p => p.Author).Returns("Test Author");
-            mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-            mock.Setup(p => p.State).Returns(PluginState.Loaded);
-            mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-            mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-            mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-            mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+            _ = mock.Setup(p => p.Id).Returns($"TestPlugin_{i}");
+            _ = mock.Setup(p => p.Name).Returns($"TestPlugin_{i}");
+            _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+            _ = mock.Setup(p => p.Description).Returns($"Test plugin {i}");
+            _ = mock.Setup(p => p.Author).Returns("Test Author");
+            _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+            _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+            _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+            _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+            _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+            _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+            _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             pluginMocks.Add(mock);
         }
@@ -94,7 +94,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
                         var pluginIndex = threadId * pluginsPerThread + i;
                         var plugin = pluginMocks[pluginIndex].Object;
 
-                        await _pluginSystem.LoadPluginAsync(plugin);
+                        _ = await _pluginSystem.LoadPluginAsync(plugin);
                         loadedPlugins.Add(plugin.Id);
 
                         // Small delay to increase chance of race conditions
@@ -110,11 +110,11 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         await Task.WhenAll(tasks);
 
         // Assert
-        exceptions.Should().BeEmpty("Concurrent plugin loading should be thread-safe");
-        loadedPlugins.Count.Should().Be(threadCount * pluginsPerThread);
+        _ = exceptions.Should().BeEmpty("Concurrent plugin loading should be thread-safe");
+        _ = loadedPlugins.Count.Should().Be(threadCount * pluginsPerThread);
 
         var plugins = _pluginSystem.GetLoadedPlugins();
-        plugins.Count().Should().Be(threadCount * pluginsPerThread);
+        _ = plugins.Count().Should().Be(threadCount * pluginsPerThread);
     }
 
     [Fact]
@@ -128,23 +128,23 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         for (var i = 0; i < pluginCount; i++)
         {
             var mock = new Mock<IBackendPlugin>();
-            mock.Setup(p => p.Id).Returns($"TestPlugin_{i}");
-            mock.Setup(p => p.Name).Returns($"TestPlugin_{i}");
-            mock.Setup(p => p.Version).Returns(new Version(1, 0));
-            mock.Setup(p => p.Description).Returns($"Test plugin {i}");
-            mock.Setup(p => p.Author).Returns("Test Author");
-            mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-            mock.Setup(p => p.State).Returns(PluginState.Loaded);
-            mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-            mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-            mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-            mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+            _ = mock.Setup(p => p.Id).Returns($"TestPlugin_{i}");
+            _ = mock.Setup(p => p.Name).Returns($"TestPlugin_{i}");
+            _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+            _ = mock.Setup(p => p.Description).Returns($"Test plugin {i}");
+            _ = mock.Setup(p => p.Author).Returns("Test Author");
+            _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+            _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+            _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+            _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+            _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+            _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+            _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var plugin = mock.Object;
             plugins.Add(plugin);
-            await _pluginSystem.LoadPluginAsync(plugin);
+            _ = await _pluginSystem.LoadPluginAsync(plugin);
         }
 
         var exceptions = new ConcurrentBag<Exception>();
@@ -156,7 +156,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
             {
                 try
                 {
-                    await _pluginSystem.UnloadPluginAsync(plugin.Id);
+                    _ = await _pluginSystem.UnloadPluginAsync(plugin.Id);
                     unloadedPlugins.Add(plugin.Id);
                 }
                 catch (Exception ex)
@@ -168,11 +168,11 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         await Task.WhenAll(tasks);
 
         // Assert
-        exceptions.Should().BeEmpty("Concurrent plugin unloading should be thread-safe");
-        unloadedPlugins.Count.Should().Be(pluginCount);
+        _ = exceptions.Should().BeEmpty("Concurrent plugin unloading should be thread-safe");
+        _ = unloadedPlugins.Count.Should().Be(pluginCount);
 
         var remainingPlugins = _pluginSystem.GetLoadedPlugins();
-        remainingPlugins.Should().BeEmpty("All plugins should be unloaded");
+        _ = remainingPlugins.Should().BeEmpty("All plugins should be unloaded");
     }
 
     #endregion
@@ -193,21 +193,21 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
             try
             {
                 var mock = new Mock<IBackendPlugin>();
-                mock.Setup(p => p.Id).Returns($"MassiveTestPlugin_{i}");
-                mock.Setup(p => p.Name).Returns($"MassiveTestPlugin_{i}");
-                mock.Setup(p => p.Version).Returns(new Version(1, 0));
-                mock.Setup(p => p.Description).Returns($"Massive test plugin {i}");
-                mock.Setup(p => p.Author).Returns("Test Author");
-                mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-                mock.Setup(p => p.State).Returns(PluginState.Loaded);
-                mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-                mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-                mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-                mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-                mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+                _ = mock.Setup(p => p.Id).Returns($"MassiveTestPlugin_{i}");
+                _ = mock.Setup(p => p.Name).Returns($"MassiveTestPlugin_{i}");
+                _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+                _ = mock.Setup(p => p.Description).Returns($"Massive test plugin {i}");
+                _ = mock.Setup(p => p.Author).Returns("Test Author");
+                _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+                _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+                _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+                _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+                _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+                _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+                _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
                     .Returns(Task.CompletedTask);
 
-                await _pluginSystem.LoadPluginAsync(mock.Object);
+                _ = await _pluginSystem.LoadPluginAsync(mock.Object);
                 loadedCount++;
             }
             catch (Exception ex)
@@ -224,7 +224,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         if (exceptions.Count != 0)
         {
             // If we hit exceptions, they should be resource-related
-            exceptions.Should().OnlyContain(ex =>
+            _ = exceptions.Should().OnlyContain(ex =>
                 ex is OutOfMemoryException ||
                 ex is InvalidOperationException ||
                 ex is PluginLoadException);
@@ -236,18 +236,18 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Arrange - Create a plugin that uses significant memory during initialization
         var mock = new Mock<IBackendPlugin>();
-        mock.Setup(p => p.Id).Returns("MemoryIntensivePlugin");
-        mock.Setup(p => p.Name).Returns("MemoryIntensivePlugin");
-        mock.Setup(p => p.Version).Returns(new Version(1, 0));
-        mock.Setup(p => p.Description).Returns("Plugin that uses lots of memory");
-        mock.Setup(p => p.Author).Returns("Test Author");
-        mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        mock.Setup(p => p.State).Returns(PluginState.Loaded);
-        mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-        mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+        _ = mock.Setup(p => p.Id).Returns("MemoryIntensivePlugin");
+        _ = mock.Setup(p => p.Name).Returns("MemoryIntensivePlugin");
+        _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = mock.Setup(p => p.Description).Returns("Plugin that uses lots of memory");
+        _ = mock.Setup(p => p.Author).Returns("Test Author");
+        _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+        _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .Returns(async (IServiceProvider sp, CancellationToken ct) =>
             {
                 // Simulate memory-intensive initialization
@@ -263,11 +263,11 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         // Act & Assert
         try
         {
-            await _pluginSystem.LoadPluginAsync(mock.Object);
+            _ = await _pluginSystem.LoadPluginAsync(mock.Object);
 
             // If successful, plugin should be loaded
             var plugins = _pluginSystem.GetLoadedPlugins();
-            plugins.Should().Contain(p => p.Name == "MemoryIntensivePlugin");
+            _ = plugins.Should().Contain(p => p.Name == "MemoryIntensivePlugin");
         }
         catch (OutOfMemoryException)
         {
@@ -288,66 +288,66 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Arrange
         var goodPlugin = new Mock<IBackendPlugin>();
-        goodPlugin.Setup(p => p.Id).Returns("GoodPlugin");
-        goodPlugin.Setup(p => p.Name).Returns("GoodPlugin");
-        goodPlugin.Setup(p => p.Version).Returns(new Version(1, 0));
-        goodPlugin.Setup(p => p.Description).Returns("Working plugin");
-        goodPlugin.Setup(p => p.Author).Returns("Test Author");
-        goodPlugin.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        goodPlugin.Setup(p => p.State).Returns(PluginState.Loaded);
-        goodPlugin.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        goodPlugin.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-        goodPlugin.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        goodPlugin.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        goodPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+        _ = goodPlugin.Setup(p => p.Id).Returns("GoodPlugin");
+        _ = goodPlugin.Setup(p => p.Name).Returns("GoodPlugin");
+        _ = goodPlugin.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = goodPlugin.Setup(p => p.Description).Returns("Working plugin");
+        _ = goodPlugin.Setup(p => p.Author).Returns("Test Author");
+        _ = goodPlugin.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = goodPlugin.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = goodPlugin.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = goodPlugin.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+        _ = goodPlugin.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = goodPlugin.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = goodPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         var badPlugin = new Mock<IBackendPlugin>();
-        badPlugin.Setup(p => p.Id).Returns("BadPlugin");
-        badPlugin.Setup(p => p.Name).Returns("BadPlugin");
-        badPlugin.Setup(p => p.Version).Returns(new Version(1, 0));
-        badPlugin.Setup(p => p.Description).Returns("Failing plugin");
-        badPlugin.Setup(p => p.Author).Returns("Test Author");
-        badPlugin.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        badPlugin.Setup(p => p.State).Returns(PluginState.Failed);
-        badPlugin.Setup(p => p.Health).Returns(PluginHealth.Unhealthy);
-        badPlugin.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = false, Errors = { "Validation failed" } });
-        badPlugin.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        badPlugin.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        badPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+        _ = badPlugin.Setup(p => p.Id).Returns("BadPlugin");
+        _ = badPlugin.Setup(p => p.Name).Returns("BadPlugin");
+        _ = badPlugin.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = badPlugin.Setup(p => p.Description).Returns("Failing plugin");
+        _ = badPlugin.Setup(p => p.Author).Returns("Test Author");
+        _ = badPlugin.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = badPlugin.Setup(p => p.State).Returns(PluginState.Failed);
+        _ = badPlugin.Setup(p => p.Health).Returns(PluginHealth.Unhealthy);
+        _ = badPlugin.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = false, Errors = { "Validation failed" } });
+        _ = badPlugin.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = badPlugin.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = badPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .ThrowsAsync(new InvalidOperationException("Plugin initialization failed"));
 
         // Act - Load good plugin first
-        await _pluginSystem.LoadPluginAsync(goodPlugin.Object);
+        _ = await _pluginSystem.LoadPluginAsync(goodPlugin.Object);
 
         // Try to load bad plugin
         var loadBadPluginAct = async () => await _pluginSystem.LoadPluginAsync(badPlugin.Object);
-        await Assert.ThrowsAsync<PluginLoadException>(() => loadBadPluginAct());
+        _ = await Assert.ThrowsAsync<PluginLoadException>(() => loadBadPluginAct());
 
         // Load another good plugin
         var anotherGoodPlugin = new Mock<IBackendPlugin>();
-        anotherGoodPlugin.Setup(p => p.Id).Returns("AnotherGoodPlugin");
-        anotherGoodPlugin.Setup(p => p.Name).Returns("AnotherGoodPlugin");
-        anotherGoodPlugin.Setup(p => p.Version).Returns(new Version(1, 0));
-        anotherGoodPlugin.Setup(p => p.Description).Returns("Another working plugin");
-        anotherGoodPlugin.Setup(p => p.Author).Returns("Test Author");
-        anotherGoodPlugin.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        anotherGoodPlugin.Setup(p => p.State).Returns(PluginState.Loaded);
-        anotherGoodPlugin.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        anotherGoodPlugin.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-        anotherGoodPlugin.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        anotherGoodPlugin.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        anotherGoodPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+        _ = anotherGoodPlugin.Setup(p => p.Id).Returns("AnotherGoodPlugin");
+        _ = anotherGoodPlugin.Setup(p => p.Name).Returns("AnotherGoodPlugin");
+        _ = anotherGoodPlugin.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = anotherGoodPlugin.Setup(p => p.Description).Returns("Another working plugin");
+        _ = anotherGoodPlugin.Setup(p => p.Author).Returns("Test Author");
+        _ = anotherGoodPlugin.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = anotherGoodPlugin.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = anotherGoodPlugin.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = anotherGoodPlugin.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+        _ = anotherGoodPlugin.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = anotherGoodPlugin.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = anotherGoodPlugin.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
-        await _pluginSystem.LoadPluginAsync(anotherGoodPlugin.Object);
+        _ = await _pluginSystem.LoadPluginAsync(anotherGoodPlugin.Object);
 
         // Assert
         var loadedPlugins = _pluginSystem.GetLoadedPlugins().ToList();
-        loadedPlugins.Count.Should().Be(2);
-        loadedPlugins.Should().Contain(p => p.Name == "GoodPlugin");
-        loadedPlugins.Should().Contain(p => p.Name == "AnotherGoodPlugin");
-        loadedPlugins.Should().NotContain(p => p.Name == "BadPlugin");
+        _ = loadedPlugins.Count.Should().Be(2);
+        _ = loadedPlugins.Should().Contain(p => p.Name == "GoodPlugin");
+        _ = loadedPlugins.Should().Contain(p => p.Name == "AnotherGoodPlugin");
+        _ = loadedPlugins.Should().NotContain(p => p.Name == "BadPlugin");
     }
 
     [Fact]
@@ -355,31 +355,31 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Arrange
         var mock = new Mock<IBackendPlugin>();
-        mock.Setup(p => p.Id).Returns("FailingDisposePlugin");
-        mock.Setup(p => p.Name).Returns("FailingDisposePlugin");
-        mock.Setup(p => p.Version).Returns(new Version(1, 0));
-        mock.Setup(p => p.Description).Returns("Plugin that fails during disposal");
-        mock.Setup(p => p.Author).Returns("Test Author");
-        mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        mock.Setup(p => p.State).Returns(PluginState.Loaded);
-        mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-        mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+        _ = mock.Setup(p => p.Id).Returns("FailingDisposePlugin");
+        _ = mock.Setup(p => p.Name).Returns("FailingDisposePlugin");
+        _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = mock.Setup(p => p.Description).Returns("Plugin that fails during disposal");
+        _ = mock.Setup(p => p.Author).Returns("Test Author");
+        _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+        _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-        mock.Setup(p => p.Dispose())
+        _ = mock.Setup(p => p.Dispose())
             .Throws(new InvalidOperationException("Disposal failed"));
 
-        await _pluginSystem.LoadPluginAsync(mock.Object);
+        _ = await _pluginSystem.LoadPluginAsync(mock.Object);
 
         // Act & Assert - The current API returns bool instead of throwing exceptions
         var result = await _pluginSystem.UnloadPluginAsync("FailingDisposePlugin");
-        result.Should().BeFalse("Unloading should fail when disposal fails");
+        _ = result.Should().BeFalse("Unloading should fail when disposal fails");
 
         // Plugin should still be removed from the system despite disposal failure
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
-        loadedPlugins.Should().NotContain(p => p.Id == "FailingDisposePlugin");
+        _ = loadedPlugins.Should().NotContain(p => p.Id == "FailingDisposePlugin");
     }
 
     #endregion
@@ -391,7 +391,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Act & Assert
         var act = async () => await _pluginSystem.LoadPluginAsync((IBackendPlugin)null!);
-        await Assert.ThrowsAsync<ArgumentNullException>(() => act());
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => act());
     }
 
     [Fact]
@@ -399,21 +399,21 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Arrange
         var mock = new Mock<IBackendPlugin>();
-        mock.Setup(p => p.Id).Returns((string)null!);
-        mock.Setup(p => p.Name).Returns((string)null!);
-        mock.Setup(p => p.Version).Returns(new Version(1, 0));
-        mock.Setup(p => p.Description).Returns("Plugin with null name");
-        mock.Setup(p => p.Author).Returns("Test Author");
-        mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        mock.Setup(p => p.State).Returns(PluginState.Loaded);
-        mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = false, Errors = { "Plugin has null name" } });
-        mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = mock.Setup(p => p.Id).Returns((string)null!);
+        _ = mock.Setup(p => p.Name).Returns((string)null!);
+        _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = mock.Setup(p => p.Description).Returns("Plugin with null name");
+        _ = mock.Setup(p => p.Author).Returns("Test Author");
+        _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = false, Errors = { "Plugin has null name" } });
+        _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
 
         // Act & Assert
         var act = async () => await _pluginSystem.LoadPluginAsync(mock.Object);
-        await Assert.ThrowsAsync<PluginLoadException>(() => act());
+        _ = await Assert.ThrowsAsync<PluginLoadException>(() => act());
     }
 
     [Fact]
@@ -421,21 +421,21 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Arrange
         var mock = new Mock<IBackendPlugin>();
-        mock.Setup(p => p.Id).Returns("");
-        mock.Setup(p => p.Name).Returns("");
-        mock.Setup(p => p.Version).Returns(new Version(1, 0));
-        mock.Setup(p => p.Description).Returns("Plugin with empty name");
-        mock.Setup(p => p.Author).Returns("Test Author");
-        mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        mock.Setup(p => p.State).Returns(PluginState.Loaded);
-        mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = false, Errors = { "Plugin has empty name" } });
-        mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = mock.Setup(p => p.Id).Returns("");
+        _ = mock.Setup(p => p.Name).Returns("");
+        _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = mock.Setup(p => p.Description).Returns("Plugin with empty name");
+        _ = mock.Setup(p => p.Author).Returns("Test Author");
+        _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = false, Errors = { "Plugin has empty name" } });
+        _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
 
         // Act & Assert
         var act = async () => await _pluginSystem.LoadPluginAsync(mock.Object);
-        await Assert.ThrowsAsync<PluginLoadException>(() => act());
+        _ = await Assert.ThrowsAsync<PluginLoadException>(() => act());
     }
 
     [Fact]
@@ -443,21 +443,21 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Arrange
         var mock = new Mock<IBackendPlugin>();
-        mock.Setup(p => p.Id).Returns("   ");
-        mock.Setup(p => p.Name).Returns("   ");
-        mock.Setup(p => p.Version).Returns(new Version(1, 0));
-        mock.Setup(p => p.Description).Returns("Plugin with whitespace name");
-        mock.Setup(p => p.Author).Returns("Test Author");
-        mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        mock.Setup(p => p.State).Returns(PluginState.Loaded);
-        mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = false, Errors = { "Plugin has whitespace name" } });
-        mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = mock.Setup(p => p.Id).Returns("   ");
+        _ = mock.Setup(p => p.Name).Returns("   ");
+        _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = mock.Setup(p => p.Description).Returns("Plugin with whitespace name");
+        _ = mock.Setup(p => p.Author).Returns("Test Author");
+        _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = false, Errors = { "Plugin has whitespace name" } });
+        _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
 
         // Act & Assert
         var act = async () => await _pluginSystem.LoadPluginAsync(mock.Object);
-        await Assert.ThrowsAsync<PluginLoadException>(() => act());
+        _ = await Assert.ThrowsAsync<PluginLoadException>(() => act());
     }
 
     [Fact]
@@ -466,26 +466,26 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         // Arrange
         var longName = new string('A', 10000); // 10K character name
         var mock = new Mock<IBackendPlugin>();
-        mock.Setup(p => p.Id).Returns(longName);
-        mock.Setup(p => p.Name).Returns(longName);
-        mock.Setup(p => p.Version).Returns(new Version(1, 0));
-        mock.Setup(p => p.Description).Returns("Plugin with extremely long name");
-        mock.Setup(p => p.Author).Returns("Test Author");
-        mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        mock.Setup(p => p.State).Returns(PluginState.Loaded);
-        mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-        mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+        _ = mock.Setup(p => p.Id).Returns(longName);
+        _ = mock.Setup(p => p.Name).Returns(longName);
+        _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = mock.Setup(p => p.Description).Returns("Plugin with extremely long name");
+        _ = mock.Setup(p => p.Author).Returns("Test Author");
+        _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+        _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Act
-        await _pluginSystem.LoadPluginAsync(mock.Object);
+        _ = await _pluginSystem.LoadPluginAsync(mock.Object);
 
         // Assert
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
-        loadedPlugins.Should().Contain(p => p.Name == longName);
+        _ = loadedPlugins.Should().Contain(p => p.Name == longName);
     }
 
     [Fact]
@@ -494,43 +494,43 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         // Arrange
         var specialNames = new[]
         {
-            "Plugin.With.Dots",
-            "Plugin-With-Dashes",
-            "Plugin_With_Underscores",
-            "Plugin With Spaces",
-            "Plugin@#$%^&*()",
-            "Plugin🔌", // Emoji
-            "ПлагинКириллица", // Cyrillic
-            "プラグイン日本語" // Japanese
-        };
+        "Plugin.With.Dots",
+        "Plugin-With-Dashes",
+        "Plugin_With_Underscores",
+        "Plugin With Spaces",
+        "Plugin@#$%^&*()",
+        "Plugin🔌", // Emoji
+        "ПлагинКириллица", // Cyrillic
+        "プラグイン日本語" // Japanese
+    };
 
         // Act & Assert
         foreach (var name in specialNames)
         {
             var mock = new Mock<IBackendPlugin>();
-            mock.Setup(p => p.Id).Returns(name);
-            mock.Setup(p => p.Name).Returns(name);
-            mock.Setup(p => p.Version).Returns(new Version(1, 0));
-            mock.Setup(p => p.Description).Returns($"Plugin with name: {name}");
-            mock.Setup(p => p.Author).Returns("Test Author");
-            mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-            mock.Setup(p => p.State).Returns(PluginState.Loaded);
-            mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-            mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-            mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-            mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+            _ = mock.Setup(p => p.Id).Returns(name);
+            _ = mock.Setup(p => p.Name).Returns(name);
+            _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+            _ = mock.Setup(p => p.Description).Returns($"Plugin with name: {name}");
+            _ = mock.Setup(p => p.Author).Returns("Test Author");
+            _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+            _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+            _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+            _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+            _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+            _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+            _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            await _pluginSystem.LoadPluginAsync(mock.Object);
+            _ = await _pluginSystem.LoadPluginAsync(mock.Object);
         }
 
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
-        loadedPlugins.Count().Should().Be(specialNames.Length);
+        _ = loadedPlugins.Count().Should().Be(specialNames.Length);
 
         foreach (var name in specialNames)
         {
-            loadedPlugins.Should().Contain(p => p.Name == name);
+            _ = loadedPlugins.Should().Contain(p => p.Name == name);
         }
     }
 
@@ -551,7 +551,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Act & Assert
         var act = async () => await _pluginSystem.UnloadPluginAsync(invalidName!);
-        await Assert.ThrowsAsync<ArgumentException>(() => act());
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => act());
     }
 
     #endregion
@@ -563,40 +563,40 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Arrange
         var mock = new Mock<IBackendPlugin>();
-        mock.Setup(p => p.Id).Returns("DuplicatePlugin");
-        mock.Setup(p => p.Name).Returns("DuplicatePlugin");
-        mock.Setup(p => p.Version).Returns(new Version(1, 0));
-        mock.Setup(p => p.Description).Returns("Plugin to test duplication");
-        mock.Setup(p => p.Author).Returns("Test Author");
-        mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        mock.Setup(p => p.State).Returns(PluginState.Loaded);
-        mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-        mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+        _ = mock.Setup(p => p.Id).Returns("DuplicatePlugin");
+        _ = mock.Setup(p => p.Name).Returns("DuplicatePlugin");
+        _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = mock.Setup(p => p.Description).Returns("Plugin to test duplication");
+        _ = mock.Setup(p => p.Author).Returns("Test Author");
+        _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+        _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
 
         // Act - Load plugin first time
-        await _pluginSystem.LoadPluginAsync(mock.Object);
+        _ = await _pluginSystem.LoadPluginAsync(mock.Object);
 
         // Try to load same plugin again - create a new mock with same ID
         var duplicateMock = new Mock<IBackendPlugin>();
-        duplicateMock.Setup(p => p.Id).Returns("DuplicatePlugin");
-        duplicateMock.Setup(p => p.Name).Returns("DuplicatePlugin");
-        duplicateMock.Setup(p => p.Author).Returns("Test Author");
-        duplicateMock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        duplicateMock.Setup(p => p.State).Returns(PluginState.Loaded);
-        duplicateMock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        duplicateMock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-        duplicateMock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        duplicateMock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = duplicateMock.Setup(p => p.Id).Returns("DuplicatePlugin");
+        _ = duplicateMock.Setup(p => p.Name).Returns("DuplicatePlugin");
+        _ = duplicateMock.Setup(p => p.Author).Returns("Test Author");
+        _ = duplicateMock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = duplicateMock.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = duplicateMock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = duplicateMock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+        _ = duplicateMock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = duplicateMock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
         var act = async () => await _pluginSystem.LoadPluginAsync(duplicateMock.Object);
 
         // Assert - The current implementation would overwrite, but we expect it to behave correctly
         // Since there's no PluginAlreadyLoadedException, we check if it succeeds or fails appropriately
         var result = await _pluginSystem.LoadPluginAsync(duplicateMock.Object);
-        result.Should().NotBeNull("Plugin system should handle duplicate loading gracefully");
+        _ = result.Should().NotBeNull("Plugin system should handle duplicate loading gracefully");
     }
 
     [Fact]
@@ -604,18 +604,18 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
     {
         // Arrange
         var mock = new Mock<IBackendPlugin>();
-        mock.Setup(p => p.Id).Returns("SlowPlugin");
-        mock.Setup(p => p.Name).Returns("SlowPlugin");
-        mock.Setup(p => p.Version).Returns(new Version(1, 0));
-        mock.Setup(p => p.Description).Returns("Plugin with slow initialization");
-        mock.Setup(p => p.Author).Returns("Test Author");
-        mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        mock.Setup(p => p.State).Returns(PluginState.Loading);
-        mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-        mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-        mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+        _ = mock.Setup(p => p.Id).Returns("SlowPlugin");
+        _ = mock.Setup(p => p.Name).Returns("SlowPlugin");
+        _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+        _ = mock.Setup(p => p.Description).Returns("Plugin with slow initialization");
+        _ = mock.Setup(p => p.Author).Returns("Test Author");
+        _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = mock.Setup(p => p.State).Returns(PluginState.Loading);
+        _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+        _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .Returns(async (IServiceProvider sp, CancellationToken ct) =>
             {
                 // Simulate long initialization
@@ -626,11 +626,11 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
 
         // Act & Assert
         var act = async () => await _pluginSystem.LoadPluginAsync(mock.Object, cts.Token);
-        await Assert.ThrowsAsync<OperationCanceledException>(() => act());
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(() => act());
 
         // Plugin should not be loaded
         var loadedPlugins = _pluginSystem.GetLoadedPlugins();
-        loadedPlugins.Should().NotContain(p => p.Name == "SlowPlugin");
+        _ = loadedPlugins.Should().NotContain(p => p.Name == "SlowPlugin");
     }
 
     #endregion
@@ -645,22 +645,22 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         for (var i = 0; i < 10; i++)
         {
             var mock = new Mock<IBackendPlugin>();
-            mock.Setup(p => p.Id).Returns($"DisposeTestPlugin_{i}");
-            mock.Setup(p => p.Name).Returns($"DisposeTestPlugin_{i}");
-            mock.Setup(p => p.Version).Returns(new Version(1, 0));
-            mock.Setup(p => p.Description).Returns($"Dispose test plugin {i}");
-            mock.Setup(p => p.Author).Returns("Test Author");
-            mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-            mock.Setup(p => p.State).Returns(PluginState.Loaded);
-            mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-            mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-            mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-            mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
-            mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
+            _ = mock.Setup(p => p.Id).Returns($"DisposeTestPlugin_{i}");
+            _ = mock.Setup(p => p.Name).Returns($"DisposeTestPlugin_{i}");
+            _ = mock.Setup(p => p.Version).Returns(new Version(1, 0));
+            _ = mock.Setup(p => p.Description).Returns($"Dispose test plugin {i}");
+            _ = mock.Setup(p => p.Author).Returns("Test Author");
+            _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+            _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+            _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+            _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+            _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+            _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+            _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             plugins.Add(mock);
-            await _pluginSystem.LoadPluginAsync(mock.Object);
+            _ = await _pluginSystem.LoadPluginAsync(mock.Object);
         }
 
         // Act
@@ -674,7 +674,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
 
         // After disposal, accessing GetLoadedPlugins should throw ObjectDisposedException
         Action act = () => _pluginSystem.GetLoadedPlugins();
-        Assert.Throws<ObjectDisposedException>(() => act());
+        _ = Assert.Throws<ObjectDisposedException>(() => act());
     }
 
     [Fact]
@@ -685,26 +685,25 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
 
         // Act & Assert - All operations should throw ObjectDisposedException
         var mock = new Mock<IBackendPlugin>();
-        mock.Setup(p => p.Id).Returns("TestPlugin");
-        mock.Setup(p => p.Name).Returns("TestPlugin");
-        mock.Setup(p => p.Author).Returns("Test Author");
-        mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
-        mock.Setup(p => p.State).Returns(PluginState.Loaded);
-        mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
-        mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
-        mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
-        mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
+        _ = mock.Setup(p => p.Id).Returns("TestPlugin");
+        _ = mock.Setup(p => p.Name).Returns("TestPlugin");
+        _ = mock.Setup(p => p.Author).Returns("Test Author");
+        _ = mock.Setup(p => p.Capabilities).Returns(PluginCapabilities.ComputeBackend);
+        _ = mock.Setup(p => p.State).Returns(PluginState.Loaded);
+        _ = mock.Setup(p => p.Health).Returns(PluginHealth.Healthy);
+        _ = mock.Setup(p => p.Validate()).Returns(new PluginValidationResult { IsValid = true });
+        _ = mock.Setup(p => p.GetConfigurationSchema()).Returns("{}");
+        _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
 
         var loadAct = async () => await _pluginSystem.LoadPluginAsync(mock.Object);
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => loadAct());
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => loadAct());
 
         var unloadAct = async () => await _pluginSystem.UnloadPluginAsync("TestPlugin");
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => unloadAct());
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => unloadAct());
 
-        var getPluginsAct = () => _pluginSystem.GetLoadedPlugins();
-        Assert.Throws<ObjectDisposedException>(() => getPluginsAct());
+        var getPluginsAct = _pluginSystem.GetLoadedPlugins;
+        _ = Assert.Throws<ObjectDisposedException>(() => getPluginsAct());
     }
 
     #endregion
-}
 }

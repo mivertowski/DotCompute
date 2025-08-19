@@ -5,8 +5,8 @@ using Xunit;
 using FluentAssertions;
 using System.Globalization;
 
-namespace DotCompute.Abstractions.Tests
-{
+namespace DotCompute.Abstractions.Tests;
+
 
 /// <summary>
 /// Comprehensive unit tests for AcceleratorException and MemoryException classes.
@@ -23,8 +23,8 @@ public sealed class ExceptionTests
 
         // Assert
         Assert.NotNull(exception);
-        exception.Message.Should().NotBeNullOrEmpty();
-        exception.InnerException.Should().BeNull();
+        _ = exception.Message.Should().NotBeNullOrEmpty();
+        _ = exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -37,8 +37,8 @@ public sealed class ExceptionTests
         var exception = new AcceleratorException(expectedMessage);
 
         // Assert
-        exception.Message.Should().Be(expectedMessage);
-        exception.InnerException.Should().BeNull();
+        _ = exception.Message.Should().Be(expectedMessage);
+        _ = exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -52,8 +52,8 @@ public sealed class ExceptionTests
         var exception = new AcceleratorException(expectedMessage, innerException);
 
         // Assert
-        exception.Message.Should().Be(expectedMessage);
-        exception.InnerException.Should().Be(innerException);
+        _ = exception.Message.Should().Be(expectedMessage);
+        _ = exception.InnerException.Should().Be(innerException);
     }
 
     [Fact]
@@ -75,7 +75,7 @@ public sealed class ExceptionTests
 
         // Assert
         Assert.NotNull(exception);
-        exception.Message.Should().Be(string.Empty);
+        _ = exception.Message.Should().Be(string.Empty);
     }
 
     [Fact]
@@ -88,8 +88,8 @@ public sealed class ExceptionTests
         var exception = new AcceleratorException(message, null!);
 
         // Assert
-        exception.Message.Should().Be(message);
-        exception.InnerException.Should().BeNull();
+        _ = exception.Message.Should().Be(message);
+        _ = exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public sealed class ExceptionTests
         var exception = new AcceleratorException();
 
         // Assert
-        Assert.IsAssignableFrom<Exception>(exception);
+        _ = Assert.IsAssignableFrom<Exception>(exception);
     }
 
     [Theory]
@@ -113,7 +113,7 @@ public sealed class ExceptionTests
         var exception = new AcceleratorException(message);
 
         // Assert
-        exception.Message.Should().Be(message);
+        _ = exception.Message.Should().Be(message);
     }
 
     [Fact]
@@ -125,9 +125,9 @@ public sealed class ExceptionTests
         var topException = new AcceleratorException("Top level error", middleException);
 
         // Act & Assert
-        topException.InnerException.Should().Be(middleException);
-        topException.InnerException!.InnerException.Should().Be(rootException);
-        topException.InnerException.InnerException!.InnerException.Should().BeNull();
+        _ = topException.InnerException.Should().Be(middleException);
+        _ = topException.InnerException!.InnerException.Should().Be(rootException);
+        _ = topException.InnerException.InnerException!.InnerException.Should().BeNull();
     }
 
     #endregion
@@ -142,8 +142,8 @@ public sealed class ExceptionTests
 
         // Assert
         Assert.NotNull(exception);
-        exception.Message.Should().NotBeNullOrEmpty();
-        exception.InnerException.Should().BeNull();
+        _ = exception.Message.Should().NotBeNullOrEmpty();
+        _ = exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -156,8 +156,8 @@ public sealed class ExceptionTests
         var exception = new MemoryException(expectedMessage);
 
         // Assert
-        exception.Message.Should().Be(expectedMessage);
-        exception.InnerException.Should().BeNull();
+        _ = exception.Message.Should().Be(expectedMessage);
+        _ = exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -171,8 +171,8 @@ public sealed class ExceptionTests
         var exception = new MemoryException(expectedMessage, innerException);
 
         // Assert
-        exception.Message.Should().Be(expectedMessage);
-        exception.InnerException.Should().Be(innerException);
+        _ = exception.Message.Should().Be(expectedMessage);
+        _ = exception.InnerException.Should().Be(innerException);
     }
 
     [Fact]
@@ -194,7 +194,7 @@ public sealed class ExceptionTests
 
         // Assert
         Assert.NotNull(exception);
-        exception.Message.Should().Be(string.Empty);
+        _ = exception.Message.Should().Be(string.Empty);
     }
 
     [Fact]
@@ -207,8 +207,8 @@ public sealed class ExceptionTests
         var exception = new MemoryException(message, null!);
 
         // Assert
-        exception.Message.Should().Be(message);
-        exception.InnerException.Should().BeNull();
+        _ = exception.Message.Should().Be(message);
+        _ = exception.InnerException.Should().BeNull();
     }
 
     [Fact]
@@ -218,7 +218,7 @@ public sealed class ExceptionTests
         var exception = new MemoryException();
 
         // Assert
-        Assert.IsAssignableFrom<Exception>(exception);
+        _ = Assert.IsAssignableFrom<Exception>(exception);
     }
 
     [Theory]
@@ -232,7 +232,7 @@ public sealed class ExceptionTests
         var exception = new MemoryException(message);
 
         // Assert
-        exception.Message.Should().Be(message);
+        _ = exception.Message.Should().Be(message);
     }
 
     [Fact]
@@ -244,9 +244,9 @@ public sealed class ExceptionTests
         var topException = new MemoryException("Device memory allocation failed", middleException);
 
         // Act & Assert
-        topException.InnerException.Should().Be(middleException);
-        topException.InnerException!.InnerException.Should().Be(rootException);
-        topException.InnerException.InnerException!.InnerException.Should().BeNull();
+        _ = topException.InnerException.Should().Be(middleException);
+        _ = topException.InnerException!.InnerException.Should().Be(rootException);
+        _ = topException.InnerException.InnerException!.InnerException.Should().BeNull();
     }
 
     #endregion
@@ -261,8 +261,8 @@ public sealed class ExceptionTests
         var memoryException = new MemoryException();
 
         // Assert
-        Assert.IsAssignableFrom<Exception>(acceleratorException);
-        Assert.IsAssignableFrom<Exception>(memoryException);
+        _ = Assert.IsAssignableFrom<Exception>(acceleratorException);
+        _ = Assert.IsAssignableFrom<Exception>(memoryException);
     }
 
     [Fact]
@@ -273,8 +273,8 @@ public sealed class ExceptionTests
         var memoryException = new MemoryException();
 
         // Assert
-        acceleratorException.Should().NotBeAssignableTo<MemoryException>();
-        memoryException.Should().NotBeAssignableTo<AcceleratorException>();
+        _ = acceleratorException.Should().NotBeAssignableTo<MemoryException>();
+        _ = memoryException.Should().NotBeAssignableTo<AcceleratorException>();
     }
 
     [Fact]
@@ -286,12 +286,12 @@ public sealed class ExceptionTests
         var exceptionType = typeof(Exception);
 
         // Assert
-        acceleratorType.Should().NotBe(memoryType);
-        acceleratorType.Should().NotBe(exceptionType);
-        memoryType.Should().NotBe(exceptionType);
+        _ = acceleratorType.Should().NotBe(memoryType);
+        _ = acceleratorType.Should().NotBe(exceptionType);
+        _ = memoryType.Should().NotBe(exceptionType);
 
-        acceleratorType.IsSubclassOf(exceptionType).Should().BeTrue();
-        memoryType.IsSubclassOf(exceptionType).Should().BeTrue();
+        _ = acceleratorType.IsSubclassOf(exceptionType).Should().BeTrue();
+        _ = memoryType.IsSubclassOf(exceptionType).Should().BeTrue();
     }
 
     #endregion
@@ -317,8 +317,8 @@ public sealed class ExceptionTests
 
         // Assert
         Assert.NotNull(caughtException);
-        Assert.IsType<AcceleratorException>(caughtException);
-        caughtException!.Message.Should().Be(expectedMessage);
+        _ = Assert.IsType<AcceleratorException>(caughtException);
+        _ = caughtException!.Message.Should().Be(expectedMessage);
     }
 
     [Fact]
@@ -340,8 +340,8 @@ public sealed class ExceptionTests
 
         // Assert
         Assert.NotNull(caughtException);
-        Assert.IsType<MemoryException>(caughtException);
-        caughtException!.Message.Should().Be(expectedMessage);
+        _ = Assert.IsType<MemoryException>(caughtException);
+        _ = caughtException!.Message.Should().Be(expectedMessage);
     }
 
     [Fact]
@@ -363,7 +363,7 @@ public sealed class ExceptionTests
 
         // Assert
         Assert.NotNull(caughtException);
-        caughtException!.Message.Should().Be(expectedMessage);
+        _ = caughtException!.Message.Should().Be(expectedMessage);
     }
 
     [Fact]
@@ -385,7 +385,7 @@ public sealed class ExceptionTests
 
         // Assert
         Assert.NotNull(caughtException);
-        caughtException!.Message.Should().Be(expectedMessage);
+        _ = caughtException!.Message.Should().Be(expectedMessage);
     }
 
     [Fact]
@@ -436,13 +436,13 @@ public sealed class ExceptionTests
         var memoryException = new MemoryException(message, innerException);
 
         // Assert - Should have standard Exception properties
-        acceleratorException.Message.Should().Be(message);
-        acceleratorException.InnerException.Should().Be(innerException);
-        acceleratorException.StackTrace.Should().NotBeNull();
+        _ = acceleratorException.Message.Should().Be(message);
+        _ = acceleratorException.InnerException.Should().Be(innerException);
+        _ = acceleratorException.StackTrace.Should().NotBeNull();
 
-        memoryException.Message.Should().Be(message);
-        memoryException.InnerException.Should().Be(innerException);
-        memoryException.StackTrace.Should().NotBeNull();
+        _ = memoryException.Message.Should().Be(message);
+        _ = memoryException.InnerException.Should().Be(innerException);
+        _ = memoryException.StackTrace.Should().NotBeNull();
     }
 
     [Fact]
@@ -458,10 +458,10 @@ public sealed class ExceptionTests
         var memoryString = memoryException.ToString();
 
         // Assert
-        acceleratorString.Should().Contain(nameof(AcceleratorException));
+        _ = acceleratorString.Should().Contain(nameof(AcceleratorException));
         Assert.Contains(message, acceleratorString, StringComparison.Ordinal);
 
-        memoryString.Should().Contain(nameof(MemoryException));
+        _ = memoryString.Should().Contain(nameof(MemoryException));
         Assert.Contains(message, memoryString, StringComparison.Ordinal);
     }
 
@@ -478,8 +478,8 @@ public sealed class ExceptionTests
         memoryException.Source = expectedSource;
 
         // Assert
-        acceleratorException.Source.Should().Be(expectedSource);
-        memoryException.Source.Should().Be(expectedSource);
+        _ = acceleratorException.Source.Should().Be(expectedSource);
+        _ = memoryException.Source.Should().Be(expectedSource);
     }
 
     #endregion
@@ -497,11 +497,11 @@ public sealed class ExceptionTests
         var memoryException = new MemoryException(longMessage);
 
         // Assert
-        acceleratorException.Message.Should().Be(longMessage);
-        acceleratorException.Message.Length.Should().Be(10000);
+        _ = acceleratorException.Message.Should().Be(longMessage);
+        _ = acceleratorException.Message.Length.Should().Be(10000);
 
-        memoryException.Message.Should().Be(longMessage);
-        memoryException.Message.Length.Should().Be(10000);
+        _ = memoryException.Message.Should().Be(longMessage);
+        _ = memoryException.Message.Length.Should().Be(10000);
     }
 
     [Fact]
@@ -515,8 +515,8 @@ public sealed class ExceptionTests
         var memoryException = new MemoryException(specialMessage);
 
         // Assert
-        acceleratorException.Message.Should().Be(specialMessage);
-        memoryException.Message.Should().Be(specialMessage);
+        _ = acceleratorException.Message.Should().Be(specialMessage);
+        _ = memoryException.Message.Should().Be(specialMessage);
     }
 
     [Fact]
@@ -530,8 +530,8 @@ public sealed class ExceptionTests
         var memoryException = new MemoryException(unicodeMessage);
 
         // Assert
-        acceleratorException.Message.Should().Be(unicodeMessage);
-        memoryException.Message.Should().Be(unicodeMessage);
+        _ = acceleratorException.Message.Should().Be(unicodeMessage);
+        _ = memoryException.Message.Should().Be(unicodeMessage);
     }
 
     #endregion
@@ -544,18 +544,18 @@ public sealed class ExceptionTests
         // Test various realistic scenarios for AcceleratorException
         var scenarios = new[]
         {
-            "CUDA driver not found",
-            "Device compute capability insufficient(required: 7.0, found: 6.1)",
-            "Failed to initialize OpenCL context",
-            "Metal device not available on this system",
-            "DirectML adapter initialization failed"
-        };
+        "CUDA driver not found",
+        "Device compute capability insufficient(required: 7.0, found: 6.1)",
+        "Failed to initialize OpenCL context",
+        "Metal device not available on this system",
+        "DirectML adapter initialization failed"
+    };
 
         foreach (var scenario in scenarios)
         {
             var exception = new AcceleratorException(scenario);
-            exception.Message.Should().Be(scenario);
-            Assert.IsAssignableFrom<Exception>(exception);
+            _ = exception.Message.Should().Be(scenario);
+            _ = Assert.IsAssignableFrom<Exception>(exception);
         }
     }
 
@@ -565,18 +565,18 @@ public sealed class ExceptionTests
         // Test various realistic scenarios for MemoryException
         var scenarios = new[]
         {
-            "Insufficient GPU memory: required 4096MB, available 2048MB",
-            "Memory allocation failed: out of device memory",
-            "Buffer copy operation failed: invalid memory address",
-            "Memory mapping not supported on this device",
-            "Host memory allocation failed: system out of memory"
-        };
+        "Insufficient GPU memory: required 4096MB, available 2048MB",
+        "Memory allocation failed: out of device memory",
+        "Buffer copy operation failed: invalid memory address",
+        "Memory mapping not supported on this device",
+        "Host memory allocation failed: system out of memory"
+    };
 
         foreach (var scenario in scenarios)
         {
             var exception = new MemoryException(scenario);
-            exception.Message.Should().Be(scenario);
-            Assert.IsAssignableFrom<Exception>(exception);
+            _ = exception.Message.Should().Be(scenario);
+            _ = Assert.IsAssignableFrom<Exception>(exception);
         }
     }
 
@@ -595,16 +595,15 @@ public sealed class ExceptionTests
         }
 
         // Act & Assert
-        var acceleratorAction = () => SimulateAcceleratorOperation();
-        var memoryAction = () => SimulateMemoryOperation();
+        var acceleratorAction = SimulateAcceleratorOperation;
+        var memoryAction = SimulateMemoryOperation;
 
-        acceleratorAction.Should().Throw<AcceleratorException>()
+        _ = acceleratorAction.Should().Throw<AcceleratorException>()
                         .WithMessage("Simulated accelerator failure");
 
-        memoryAction.Should().Throw<MemoryException>()
+        _ = memoryAction.Should().Throw<MemoryException>()
                    .WithMessage("Simulated memory failure");
     }
 
     #endregion
-}
 }

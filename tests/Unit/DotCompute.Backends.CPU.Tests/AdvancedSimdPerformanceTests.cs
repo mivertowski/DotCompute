@@ -13,8 +13,8 @@ using DotCompute.Backends.CPU.Kernels;
 using Xunit.Abstractions;
 
 #pragma warning disable CA1515 // Make types internal
-namespace DotCompute.Backends.CPU
-{
+namespace DotCompute.Backends.CPU;
+
 
 /// <summary>
 /// Production-level performance tests for advanced SIMD implementations.
@@ -224,7 +224,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         _output.WriteLine($"Int16 SIMD time for {elementCount} elements: {simdTime:F2}ms");
 
         // Should process 4M 16-bit values very quickly
-        simdTime.Should().BeLessThan(10.0, $"Expected Int16 SIMD to process 4M elements in < 10ms, but took {simdTime:F2}ms");
+        _ = simdTime.Should().BeLessThan(10.0, $"Expected Int16 SIMD to process 4M elements in < 10ms, but took {simdTime:F2}ms");
     }
 
     #endregion
@@ -254,12 +254,12 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
             // Test various NEON operations
             var operations = new[]
             {
-                NeonOperation.Add,
-                NeonOperation.Multiply,
-                NeonOperation.MultiplyAdd,
-                NeonOperation.Maximum,
-                NeonOperation.Minimum
-            };
+            NeonOperation.Add,
+            NeonOperation.Multiply,
+            NeonOperation.MultiplyAdd,
+            NeonOperation.Maximum,
+            NeonOperation.Minimum
+        };
 
             foreach (var operation in operations)
             {
@@ -277,7 +277,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
                 _output.WriteLine($"ARM NEON {operation} time: {time:F2}ms");
 
                 // Validate ARM NEON performance
-                time.Should().BeLessThan(5.0, $"ARM NEON {operation} should complete in < 5ms, but took {time:F2}ms");
+                _ = time.Should().BeLessThan(5.0, $"ARM NEON {operation} should complete in < 5ms, but took {time:F2}ms");
             }
         }
         else
@@ -341,10 +341,10 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
                 }, 20);
 
                 _output.WriteLine($"SIMD Scatter time: {scatterTime:F2}ms");
-                scatterTime.Should().BeLessThan(5.0, $"AVX-512 scatter should complete quickly, but took {scatterTime:F2}ms");
+                _ = scatterTime.Should().BeLessThan(5.0, $"AVX-512 scatter should complete quickly, but took {scatterTime:F2}ms");
             }
 
-            gatherTime.Should().BeLessThan(10.0, $"AVX2 gather should complete quickly, but took {gatherTime:F2}ms");
+            _ = gatherTime.Should().BeLessThan(10.0, $"AVX2 gather should complete quickly, but took {gatherTime:F2}ms");
         }
         else
         {
@@ -530,9 +530,9 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         _output.WriteLine($"✓ Cross-platform Compatibility: {crossPlatformScore}");
 
         // Assert roadmap completion
-        fmaSpeedup.Should().BeGreaterThanOrEqualTo(2.0, "FMA implementation must achieve at least 2x speedup");
-        intSpeedup.Should().BeGreaterThanOrEqualTo(2.0, "Integer SIMD must achieve at least 2x speedup");
-        crossPlatformScore.Should().BeGreaterThanOrEqualTo(80, "Cross-platform compatibility must be >= 80%");
+        _ = fmaSpeedup.Should().BeGreaterThanOrEqualTo(2.0, "FMA implementation must achieve at least 2x speedup");
+        _ = intSpeedup.Should().BeGreaterThanOrEqualTo(2.0, "Integer SIMD must achieve at least 2x speedup");
+        _ = crossPlatformScore.Should().BeGreaterThanOrEqualTo(80, "Cross-platform compatibility must be >= 80%");
 
         _output.WriteLine("=== SIMD Roadmap Completion: SUCCESS ===");
     }
@@ -546,7 +546,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         var sw = Stopwatch.StartNew();
         for (var i = 0; i < iterations; i++)
         {
-            action();
+            _ = action();
         }
         sw.Stop();
         return sw.Elapsed.TotalMilliseconds / iterations;
@@ -599,7 +599,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         for (var i = 0; i < count; i++)
         {
             var diff = Math.Abs(expected[i] - actual[i]);
-            diff.Should().BeLessThanOrEqualTo(tolerance,
+            _ = diff.Should().BeLessThanOrEqualTo(tolerance,
                 $"Results differ at index {i}: expected={expected[i]}, actual={actual[i]}, diff={diff}, tolerance={tolerance}");
         }
     }
@@ -609,7 +609,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         for (var i = 0; i < count; i++)
         {
             var diff = Math.Abs(expected[i] - actual[i]);
-            diff.Should().BeLessThanOrEqualTo(tolerance,
+            _ = diff.Should().BeLessThanOrEqualTo(tolerance,
                 $"Results differ at index {i}: expected={expected[i]}, actual={actual[i]}, diff={diff}, tolerance={tolerance}");
         }
     }
@@ -747,5 +747,4 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
     }
 
     #endregion
-}
 }

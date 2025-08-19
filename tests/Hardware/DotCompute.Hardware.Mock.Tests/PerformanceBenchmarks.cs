@@ -3,23 +3,16 @@ using DotCompute.Tests.Utilities;
 using DotCompute.Tests.Utilities.TestFixtures;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Performance benchmark tests for real hardware.
 /// These tests measure actual performance on available hardware.
 /// </summary>
-public class PerformanceBenchmarks : IClassFixture<AcceleratorTestFixture>
+public class PerformanceBenchmarks(ITestOutputHelper output, AcceleratorTestFixture fixture) : IClassFixture<AcceleratorTestFixture>
 {
-    private readonly ITestOutputHelper _output;
-    private readonly AcceleratorTestFixture _fixture;
-
-    public PerformanceBenchmarks(ITestOutputHelper output, AcceleratorTestFixture fixture)
-    {
-        _output = output;
-        _fixture = fixture;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     [Theory]
     [InlineData(1024)]        // 1K elements
@@ -343,5 +336,4 @@ public class PerformanceBenchmarks : IClassFixture<AcceleratorTestFixture>
 
         return coresCount * estimatedGHzPerCore * flopsPerCyclePerCore;
     }
-}
 }

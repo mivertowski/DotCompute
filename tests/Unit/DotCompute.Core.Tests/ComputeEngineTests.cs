@@ -7,8 +7,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Tests for the IComputeEngine interface implementations.
@@ -26,9 +26,9 @@ public sealed class ComputeEngineTests : IDisposable
         _computeEngineMock = new Mock<IComputeEngine>();
 
         // Setup default behavior for the compute engine
-        _computeEngineMock.Setup(e => e.AvailableBackends)
+        _ = _computeEngineMock.Setup(e => e.AvailableBackends)
             .Returns([ComputeBackendType.CPU, ComputeBackendType.CUDA]);
-        _computeEngineMock.Setup(e => e.DefaultBackend)
+        _ = _computeEngineMock.Setup(e => e.DefaultBackend)
             .Returns(ComputeBackendType.CPU);
     }
 
@@ -61,7 +61,7 @@ public sealed class ComputeEngineTests : IDisposable
         var kernelSource = "__global__ void testKernel() { }";
         var compiledKernel = Mock.Of<ICompiledKernel>();
 
-        _computeEngineMock
+        _ = _computeEngineMock
             .Setup(e => e.CompileKernelAsync(kernelSource, null, null, It.IsAny<CancellationToken>()))
             .ReturnsAsync(compiledKernel);
 
@@ -77,12 +77,12 @@ public sealed class ComputeEngineTests : IDisposable
     public async Task CompileKernelAsync_WithNullSource_ThrowsArgumentException()
     {
         // Arrange
-        _computeEngineMock
+        _ = _computeEngineMock
             .Setup(e => e.CompileKernelAsync(null!, null, null, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentNullException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await _computeEngineMock.Object.CompileKernelAsync(null!));
     }
 
@@ -94,7 +94,7 @@ public sealed class ComputeEngineTests : IDisposable
         var arguments = new object[] { 1, 2, 3 };
         var backendType = ComputeBackendType.CPU;
 
-        _computeEngineMock
+        _ = _computeEngineMock
             .Setup(e => e.ExecuteAsync(kernel, arguments, backendType, null, It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
@@ -111,12 +111,12 @@ public sealed class ComputeEngineTests : IDisposable
         var arguments = new object[] { 1, 2, 3 };
         var backendType = ComputeBackendType.CPU;
 
-        _computeEngineMock
+        _ = _computeEngineMock
             .Setup(e => e.ExecuteAsync(null!, arguments, backendType, null, It.IsAny<CancellationToken>()))
             .ThrowsAsync(new ArgumentNullException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(async () =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () =>
             await _computeEngineMock.Object.ExecuteAsync(null!, arguments, backendType));
     }
 
@@ -186,7 +186,7 @@ public sealed class ComputeEngineTests : IDisposable
     public async Task DisposeAsync_WithComputeEngine_DisposesCorrectly()
     {
         // Arrange
-        _computeEngineMock
+        _ = _computeEngineMock
             .Setup(e => e.DisposeAsync())
             .Returns(ValueTask.CompletedTask);
 
@@ -205,7 +205,7 @@ public sealed class ComputeEngineTests : IDisposable
         var options = new CompilationOptions();
         var compiledKernel = Mock.Of<ICompiledKernel>();
 
-        _computeEngineMock
+        _ = _computeEngineMock
             .Setup(e => e.CompileKernelAsync(kernelSource, entryPoint, options, It.IsAny<CancellationToken>()))
             .ReturnsAsync(compiledKernel);
 
@@ -226,7 +226,7 @@ public sealed class ComputeEngineTests : IDisposable
         var backendType = ComputeBackendType.CUDA;
         var options = new ExecutionOptions { Priority = ExecutionPriority.High };
 
-        _computeEngineMock
+        _ = _computeEngineMock
             .Setup(e => e.ExecuteAsync(kernel, arguments, backendType, options, It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
@@ -247,5 +247,4 @@ public sealed class ComputeEngineTests : IDisposable
             GC.SuppressFinalize(this);
         }
     }
-}
 }

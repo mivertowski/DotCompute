@@ -5,8 +5,8 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Common.Hardware
-{
+namespace DotCompute.Tests.Common.Hardware;
+
 
 /// <summary>
 /// Factory for creating test hardware instances with preset configurations.
@@ -297,13 +297,9 @@ public static class TestHardwareFactory
     /// <summary>
     /// Generic mock device for unsupported or generic device types.
     /// </summary>
-    private sealed class MockGenericDevice : MockHardwareDevice
+    private sealed class MockGenericDevice(string id, string name, AcceleratorType type, string vendor,
+                            long totalMemory, ILogger? logger) : MockHardwareDevice(id, name, type, vendor, "1.0", totalMemory, 1024, 16, logger)
     {
-        public MockGenericDevice(string id, string name, AcceleratorType type, string vendor,
-                                long totalMemory, ILogger? logger)
-            : base(id, name, type, vendor, "1.0", totalMemory, 1024, 16, logger)
-        {
-        }
     }
 }
 
@@ -362,5 +358,4 @@ public enum DevicePerformance
     Low,
     Medium,
     High
-}
 }

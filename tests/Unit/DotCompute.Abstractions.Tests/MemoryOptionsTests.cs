@@ -2,8 +2,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 public sealed class MemoryOptionsTests
 {
@@ -14,7 +14,7 @@ public sealed class MemoryOptionsTests
         var options = MemoryOptions.None;
 
         // Assert
-        options.Should().Be((MemoryOptions)0);
+        _ = options.Should().Be((MemoryOptions)0);
     }
 
     [Fact]
@@ -24,20 +24,20 @@ public sealed class MemoryOptionsTests
         var options = MemoryOptions.ReadOnly | MemoryOptions.HostVisible;
 
         // Assert
-        options.HasFlag(MemoryOptions.ReadOnly).Should().BeTrue();
-        options.HasFlag(MemoryOptions.HostVisible).Should().BeTrue();
-        options.HasFlag(MemoryOptions.WriteOnly).Should().BeFalse();
+        _ = options.HasFlag(MemoryOptions.ReadOnly).Should().BeTrue();
+        _ = options.HasFlag(MemoryOptions.HostVisible).Should().BeTrue();
+        _ = options.HasFlag(MemoryOptions.WriteOnly).Should().BeFalse();
     }
 
     [Fact]
     public void Individual_Flags_ShouldBeCorrect()
     {
         // Assert
-        MemoryOptions.ReadOnly.Should().Be((MemoryOptions)1);
-        MemoryOptions.WriteOnly.Should().Be((MemoryOptions)2);
-        MemoryOptions.HostVisible.Should().Be((MemoryOptions)4);
-        MemoryOptions.Cached.Should().Be((MemoryOptions)8);
-        MemoryOptions.Atomic.Should().Be((MemoryOptions)16);
+        _ = MemoryOptions.ReadOnly.Should().Be((MemoryOptions)1);
+        _ = MemoryOptions.WriteOnly.Should().Be((MemoryOptions)2);
+        _ = MemoryOptions.HostVisible.Should().Be((MemoryOptions)4);
+        _ = MemoryOptions.Cached.Should().Be((MemoryOptions)8);
+        _ = MemoryOptions.Atomic.Should().Be((MemoryOptions)16);
     }
 
     [Fact]
@@ -47,10 +47,10 @@ public sealed class MemoryOptionsTests
         var options = MemoryOptions.ReadOnly | MemoryOptions.Cached;
 
         // Assert
-        ((int)options).Should().Be(1 | 8);
-        options.Should().HaveFlag(MemoryOptions.ReadOnly);
-        options.Should().HaveFlag(MemoryOptions.Cached);
-        options.Should().NotHaveFlag(MemoryOptions.WriteOnly);
+        _ = ((int)options).Should().Be(1 | 8);
+        _ = options.Should().HaveFlag(MemoryOptions.ReadOnly);
+        _ = options.Should().HaveFlag(MemoryOptions.Cached);
+        _ = options.Should().NotHaveFlag(MemoryOptions.WriteOnly);
     }
 
     [Theory]
@@ -69,11 +69,11 @@ public sealed class MemoryOptionsTests
         var options = MemoryOptions.ReadOnly | MemoryOptions.Cached | MemoryOptions.HostVisible;
 
         // Act & Assert
-        options.HasFlag(MemoryOptions.ReadOnly).Should().BeTrue();
-        options.HasFlag(MemoryOptions.Cached).Should().BeTrue();
-        options.HasFlag(MemoryOptions.HostVisible).Should().BeTrue();
-        options.HasFlag(MemoryOptions.WriteOnly).Should().BeFalse();
-        options.HasFlag(MemoryOptions.Atomic).Should().BeFalse();
+        _ = options.HasFlag(MemoryOptions.ReadOnly).Should().BeTrue();
+        _ = options.HasFlag(MemoryOptions.Cached).Should().BeTrue();
+        _ = options.HasFlag(MemoryOptions.HostVisible).Should().BeTrue();
+        _ = options.HasFlag(MemoryOptions.WriteOnly).Should().BeFalse();
+        _ = options.HasFlag(MemoryOptions.Atomic).Should().BeFalse();
     }
 
     [Fact]
@@ -84,8 +84,7 @@ public sealed class MemoryOptionsTests
         var options = MemoryOptions.ReadOnly | MemoryOptions.WriteOnly;
 
         // Act & Assert
-        options.HasFlag(MemoryOptions.ReadOnly).Should().BeTrue();
-        options.HasFlag(MemoryOptions.WriteOnly).Should().BeTrue();
+        _ = options.HasFlag(MemoryOptions.ReadOnly).Should().BeTrue();
+        _ = options.HasFlag(MemoryOptions.WriteOnly).Should().BeTrue();
     }
-}
 }

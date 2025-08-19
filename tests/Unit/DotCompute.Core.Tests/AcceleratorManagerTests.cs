@@ -5,8 +5,8 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 public sealed class AcceleratorManagerTests
 {
@@ -23,7 +23,7 @@ public sealed class AcceleratorManagerTests
         // Arrange
         await using var manager = new DefaultAcceleratorManager(_logger);
         var provider = Substitute.For<IAcceleratorProvider>();
-        provider.Name.Returns("TestProvider");
+        _ = provider.Name.Returns("TestProvider");
 
         // Act
         manager.RegisterProvider(provider);
@@ -40,7 +40,7 @@ public sealed class AcceleratorManagerTests
 
         // Act & Assert
         var act = () => manager.RegisterProvider(null!);
-        act.Should().Throw<ArgumentNullException>();
+        _ = act.Should().Throw<ArgumentNullException>();
     }
 
     [Fact]
@@ -50,13 +50,13 @@ public sealed class AcceleratorManagerTests
         await using var manager = new DefaultAcceleratorManager(_logger);
         await manager.InitializeAsync();
         var provider = Substitute.For<IAcceleratorProvider>();
-        provider.Name.Returns("TestProvider");
+        _ = provider.Name.Returns("TestProvider");
 
         // Act
         var act = () => manager.RegisterProvider(provider);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        _ = act.Should().Throw<InvalidOperationException>()
             .WithMessage("*Cannot register providers after initialization*");
     }
 
@@ -68,10 +68,10 @@ public sealed class AcceleratorManagerTests
         var provider = Substitute.For<IAcceleratorProvider>();
         var accelerator = Substitute.For<IAccelerator>();
         var info = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024 * 1024 * 1024);
-        accelerator.Info.Returns(info);
+        _ = accelerator.Info.Returns(info);
 
-        provider.Name.Returns("TestProvider");
-        provider.DiscoverAsync(default).Returns(new[] { accelerator });
+        _ = provider.Name.Returns("TestProvider");
+        _ = provider.DiscoverAsync(default).Returns(new[] { accelerator });
 
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
@@ -80,7 +80,7 @@ public sealed class AcceleratorManagerTests
         var result = manager.GetAccelerator(0);
 
         // Assert
-        result.Should().BeSameAs(accelerator);
+        _ = result.Should().BeSameAs(accelerator);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public sealed class AcceleratorManagerTests
         var act = () => manager.GetAccelerator(0);
 
         // Assert
-        act.Should().Throw<InvalidOperationException>()
+        _ = act.Should().Throw<InvalidOperationException>()
             .WithMessage("*must be initialized*");
     }
 
@@ -105,10 +105,10 @@ public sealed class AcceleratorManagerTests
         var provider = Substitute.For<IAcceleratorProvider>();
         var accelerator = Substitute.For<IAccelerator>();
         var info = new AcceleratorInfo(AcceleratorType.CPU, "Test", "1.0", 1024 * 1024 * 1024);
-        accelerator.Info.Returns(info);
+        _ = accelerator.Info.Returns(info);
 
-        provider.Name.Returns("TestProvider");
-        provider.DiscoverAsync(default).Returns(new[] { accelerator });
+        _ = provider.Name.Returns("TestProvider");
+        _ = provider.DiscoverAsync(default).Returns(new[] { accelerator });
 
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
@@ -117,7 +117,7 @@ public sealed class AcceleratorManagerTests
         var result = manager.GetAcceleratorById("CPU_Test");
 
         // Assert
-        result.Should().BeSameAs(accelerator);
+        _ = result.Should().BeSameAs(accelerator);
     }
 
     [Fact]
@@ -146,11 +146,11 @@ public sealed class AcceleratorManagerTests
         var cpuInfo = new AcceleratorInfo(AcceleratorType.CPU, "CPU", "1.0", 1024 * 1024 * 1024);
         var gpuInfo = new AcceleratorInfo(AcceleratorType.OpenCL, "GPU", "1.0", 1024 * 1024 * 1024);
 
-        cpuAccel.Info.Returns(cpuInfo);
-        gpuAccel.Info.Returns(gpuInfo);
+        _ = cpuAccel.Info.Returns(cpuInfo);
+        _ = gpuAccel.Info.Returns(gpuInfo);
 
-        provider.Name.Returns("TestProvider");
-        provider.DiscoverAsync(default).Returns(new[] { cpuAccel, gpuAccel });
+        _ = provider.Name.Returns("TestProvider");
+        _ = provider.DiscoverAsync(default).Returns(new[] { cpuAccel, gpuAccel });
 
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
@@ -160,9 +160,9 @@ public sealed class AcceleratorManagerTests
         var gpus = manager.GetAcceleratorsByType(AcceleratorType.OpenCL).ToList();
 
         // Assert
-        Assert.Single(cpus);
+        _ = Assert.Single(cpus);
         Assert.Contains(cpuAccel, cpus);
-        Assert.Single(gpus);
+        _ = Assert.Single(gpus);
         Assert.Contains(gpuAccel, gpus);
     }
 
@@ -182,14 +182,14 @@ public sealed class AcceleratorManagerTests
         var info2 = new AcceleratorInfo(AcceleratorType.CUDA, "GPU1", "1.0", 2 * 1024 * 1024 * 1024L);
         var info3 = new AcceleratorInfo(AcceleratorType.CUDA, "GPU2", "1.0", 2 * 1024 * 1024 * 1024L);
 
-        accel1.Info.Returns(info1);
-        accel2.Info.Returns(info2);
-        accel3.Info.Returns(info3);
+        _ = accel1.Info.Returns(info1);
+        _ = accel2.Info.Returns(info2);
+        _ = accel3.Info.Returns(info3);
 
-        provider1.Name.Returns("Provider1");
-        provider2.Name.Returns("Provider2");
-        provider1.DiscoverAsync(default).Returns(new[] { accel1, accel2 });
-        provider2.DiscoverAsync(default).Returns(new[] { accel3 });
+        _ = provider1.Name.Returns("Provider1");
+        _ = provider2.Name.Returns("Provider2");
+        _ = provider1.DiscoverAsync(default).Returns(new[] { accel1, accel2 });
+        _ = provider2.DiscoverAsync(default).Returns(new[] { accel3 });
 
         manager.RegisterProvider(provider1);
         manager.RegisterProvider(provider2);
@@ -198,10 +198,10 @@ public sealed class AcceleratorManagerTests
         await manager.InitializeAsync();
 
         // Assert
-        manager.Count.Should().Be(3);
-        manager.AvailableAccelerators.Count.Should().Be(3);
+        _ = manager.Count.Should().Be(3);
+        _ = manager.AvailableAccelerators.Count.Should().Be(3);
         // Since none have DeviceType == "GPU", it should fall back to first CPU
-        manager.Default.Should().BeSameAs(accel1); // Falls back to CPU since no GPU found
+        _ = manager.Default.Should().BeSameAs(accel1); // Falls back to CPU since no GPU found
     }
 
     [Fact]
@@ -219,12 +219,12 @@ public sealed class AcceleratorManagerTests
         var info2 = new AcceleratorInfo(AcceleratorType.OpenCL, "GPU1", "1.0", 2048L * 1024 * 1024);
         var info3 = new AcceleratorInfo(AcceleratorType.OpenCL, "GPU2", "1.0", 4096L * 1024 * 1024);
 
-        accel1.Info.Returns(info1);
-        accel2.Info.Returns(info2);
-        accel3.Info.Returns(info3);
+        _ = accel1.Info.Returns(info1);
+        _ = accel2.Info.Returns(info2);
+        _ = accel3.Info.Returns(info3);
 
-        provider.Name.Returns("Provider");
-        provider.DiscoverAsync(default).Returns(new[] { accel1, accel2, accel3 });
+        _ = provider.Name.Returns("Provider");
+        _ = provider.DiscoverAsync(default).Returns(new[] { accel1, accel2, accel3 });
 
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
@@ -239,7 +239,7 @@ public sealed class AcceleratorManagerTests
         var result = manager.SelectBest(criteria);
 
         // Assert
-        result.Should().BeSameAs(accel3); // GPU2 with 4GB
+        _ = result.Should().BeSameAs(accel3); // GPU2 with 4GB
     }
 
     [Fact]
@@ -250,10 +250,10 @@ public sealed class AcceleratorManagerTests
         var provider = Substitute.For<IAcceleratorProvider>();
         var accelerator = Substitute.For<IAccelerator>();
         var info = new AcceleratorInfo(AcceleratorType.CPU, "CPU", "1.0", 1024 * 1024 * 1024);
-        accelerator.Info.Returns(info);
+        _ = accelerator.Info.Returns(info);
 
-        provider.Name.Returns("Provider");
-        provider.DiscoverAsync(default).Returns(new[] { accelerator });
+        _ = provider.Name.Returns("Provider");
+        _ = provider.DiscoverAsync(default).Returns(new[] { accelerator });
 
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
@@ -263,7 +263,7 @@ public sealed class AcceleratorManagerTests
 
         // Assert
         // Context is a value type, so no null check needed
-        context.DeviceId.Should().Be(0);
+        _ = context.DeviceId.Should().Be(0);
     }
 
     [Fact]
@@ -278,11 +278,11 @@ public sealed class AcceleratorManagerTests
         var info1 = new AcceleratorInfo(AcceleratorType.CPU, "CPU", "1.0", 1024 * 1024 * 1024);
         var info2 = new AcceleratorInfo(AcceleratorType.OpenCL, "GPU", "1.0", 1024 * 1024 * 1024);
 
-        accel1.Info.Returns(info1);
-        accel2.Info.Returns(info2);
+        _ = accel1.Info.Returns(info1);
+        _ = accel2.Info.Returns(info2);
 
-        provider.Name.Returns("Provider");
-        provider.DiscoverAsync(default).Returns(new[] { accel1, accel2 });
+        _ = provider.Name.Returns("Provider");
+        _ = provider.DiscoverAsync(default).Returns(new[] { accel1, accel2 });
 
         manager.RegisterProvider(provider);
         await manager.InitializeAsync();
@@ -294,5 +294,4 @@ public sealed class AcceleratorManagerTests
         await accel1.Received(1).DisposeAsync();
         await accel2.Received(1).DisposeAsync();
     }
-}
 }

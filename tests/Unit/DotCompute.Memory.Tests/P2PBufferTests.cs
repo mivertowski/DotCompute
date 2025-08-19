@@ -3,13 +3,12 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
-using DotCompute.Tests.Utilities;
+using DotCompute.Tests.Mocks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests
-{
+namespace DotCompute.Tests;
 
 /// <summary>
 /// Comprehensive tests for P2P buffer functionality including type-aware transfers.
@@ -52,7 +51,7 @@ public sealed class P2PBufferTests : IDisposable
     public void Constructor_NullUnderlyingBuffer_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
             new P2PBuffer<float>(null!, _mockAccelerator, 256, true, _logger));
     }
 
@@ -60,7 +59,7 @@ public sealed class P2PBufferTests : IDisposable
     public void Constructor_NullAccelerator_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
             new P2PBuffer<float>(_mockMemoryBuffer, null!, 256, true, _logger));
     }
 
@@ -68,7 +67,7 @@ public sealed class P2PBufferTests : IDisposable
     public void Constructor_NullLogger_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
             new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, null!));
     }
 
@@ -97,7 +96,7 @@ public sealed class P2PBufferTests : IDisposable
         using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() =>
             buffer.CopyFromHostAsync<float>(null!, 0));
     }
 
@@ -109,7 +108,7 @@ public sealed class P2PBufferTests : IDisposable
         var intData = new int[256];
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentException>(() =>
             buffer.CopyFromHostAsync(intData, 0));
     }
 
@@ -121,7 +120,7 @@ public sealed class P2PBufferTests : IDisposable
         var sourceData = new float[256];
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             buffer.CopyFromHostAsync(sourceData, -1));
     }
 
@@ -165,7 +164,7 @@ public sealed class P2PBufferTests : IDisposable
         using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() =>
             buffer.CopyToHostAsync<float>(null!, 0));
     }
 
@@ -177,7 +176,7 @@ public sealed class P2PBufferTests : IDisposable
         var intData = new int[256];
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentException>(() =>
             buffer.CopyToHostAsync(intData, 0));
     }
 
@@ -220,7 +219,7 @@ public sealed class P2PBufferTests : IDisposable
         using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() =>
             buffer.CopyToAsync((IBuffer<float>)null!).AsTask());
     }
 
@@ -237,19 +236,19 @@ public sealed class P2PBufferTests : IDisposable
         await sourceBuffer.CopyToAsync(0, targetBuffer, 0, 128);
 
         // Act & Assert - invalid source offset
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             sourceBuffer.CopyToAsync(-1, targetBuffer, 0, 10).AsTask());
 
         // Act & Assert - invalid destination offset
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             sourceBuffer.CopyToAsync(0, targetBuffer, -1, 10).AsTask());
 
         // Act & Assert - invalid count
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             sourceBuffer.CopyToAsync(0, targetBuffer, 0, -1).AsTask());
 
         // Act & Assert - count exceeds buffer bounds
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             sourceBuffer.CopyToAsync(0, targetBuffer, 0, 300).AsTask());
     }
 
@@ -275,7 +274,7 @@ public sealed class P2PBufferTests : IDisposable
         const int intValue = 42;
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentException>(() =>
             buffer.FillAsync(intValue));
     }
 
@@ -290,15 +289,15 @@ public sealed class P2PBufferTests : IDisposable
         await buffer.FillAsync(fillValue, 10, 50);
 
         // Act & Assert - invalid offset
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             buffer.FillAsync(fillValue, -1, 10).AsTask());
 
         // Act & Assert - invalid count
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             buffer.FillAsync(fillValue, 0, -1).AsTask());
 
         // Act & Assert - range exceeds buffer bounds
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             buffer.FillAsync(fillValue, 0, 300).AsTask());
     }
 
@@ -327,7 +326,7 @@ public sealed class P2PBufferTests : IDisposable
         // Assert
         Assert.Equal(128, slice.Length);
         Assert.Equal(_mockAccelerator, slice.Accelerator);
-        Assert.IsType<P2PBuffer<float>>(slice);
+        _ = Assert.IsType<P2PBuffer<float>>(slice);
     }
 
     [Fact]
@@ -337,13 +336,13 @@ public sealed class P2PBufferTests : IDisposable
         using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act & Assert - negative offset
-        Assert.Throws<ArgumentOutOfRangeException>(() => buffer.Slice(-1, 10));
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => buffer.Slice(-1, 10));
 
         // Act & Assert - non-positive count
-        Assert.Throws<ArgumentOutOfRangeException>(() => buffer.Slice(0, -1));
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => buffer.Slice(0, -1));
 
         // Act & Assert - range exceeds buffer bounds
-        Assert.Throws<ArgumentOutOfRangeException>(() => buffer.Slice(200, 100));
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => buffer.Slice(200, 100));
     }
 
     [Fact]
@@ -358,7 +357,7 @@ public sealed class P2PBufferTests : IDisposable
         // Assert
         Assert.Equal(256, intBuffer.Length); // Same element count
         Assert.Equal(_mockAccelerator, intBuffer.Accelerator);
-        Assert.IsType<P2PBuffer<int>>(intBuffer);
+        _ = Assert.IsType<P2PBuffer<int>>(intBuffer);
     }
 
     [Fact]
@@ -395,15 +394,15 @@ public sealed class P2PBufferTests : IDisposable
         using var buffer = new P2PBuffer<float>(_mockMemoryBuffer, _mockAccelerator, 256, true, _logger);
 
         // Act & Assert - negative offset
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
             buffer.MapRange(-1, 10, MapMode.Read));
 
         // Act & Assert - non-positive count
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
             buffer.MapRange(0, -1, MapMode.Read));
 
         // Act & Assert - range exceeds buffer bounds
-        Assert.Throws<ArgumentOutOfRangeException>(() =>
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() =>
             buffer.MapRange(200, 100, MapMode.Read));
     }
 
@@ -428,18 +427,18 @@ public sealed class P2PBufferTests : IDisposable
         await buffer.DisposeAsync();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() =>
             buffer.CopyFromHostAsync(new float[10], 0));
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() =>
             buffer.CopyToHostAsync(new float[10], 0));
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() =>
             buffer.FillAsync(1.0f).AsTask());
 
-        Assert.Throws<ObjectDisposedException>(() => buffer.Slice(0, 10));
+        _ = Assert.Throws<ObjectDisposedException>(() => buffer.Slice(0, 10));
 
-        Assert.Throws<ObjectDisposedException>(() => buffer.AsType<int>());
+        _ = Assert.Throws<ObjectDisposedException>(buffer.AsType<int>);
     }
 
     [Fact]
@@ -472,10 +471,10 @@ public sealed class P2PBufferTests : IDisposable
         await cts.CancelAsync();
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(() =>
             buffer.CopyFromHostAsync(new float[256], 0, cts.Token));
 
-        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(() =>
             buffer.CopyToHostAsync(new float[256], 0, cts.Token));
     }
 
@@ -505,5 +504,4 @@ public sealed class P2PBufferTests : IDisposable
         _mockAccelerator?.DisposeAsync().AsTask().Wait();
         GC.SuppressFinalize(this);
     }
-}
 }

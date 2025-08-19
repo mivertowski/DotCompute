@@ -13,19 +13,15 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Integration tests for kernel compilation and execution pipelines.
 /// Tests the complete workflow from source code to executable kernels.
 /// </summary>
-public sealed class KernelCompilationPipelineTests : IntegrationTestBase
+public sealed class KernelCompilationPipelineTests(ITestOutputHelper output) : IntegrationTestBase(output)
 {
-    public KernelCompilationPipelineTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
     [Theory]
     [InlineData(OptimizationLevel.None)]
     [InlineData(OptimizationLevel.Default)]
@@ -49,14 +45,14 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(compilationResult);
-        compilationResult.CompilationSuccess.Should().BeTrue();
-        compilationResult.ExecutionSuccess.Should().BeTrue();
-        compilationResult.CompilationTime.Should().BePositive();
+        _ = compilationResult.CompilationSuccess.Should().BeTrue();
+        _ = compilationResult.ExecutionSuccess.Should().BeTrue();
+        _ = compilationResult.CompilationTime.Should().BePositive();
 
         // Higher optimization levels might take longer to compile
         if (level == OptimizationLevel.Maximum)
         {
-            compilationResult.CompilationTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
+            _ = compilationResult.CompilationTime.Should().BeLessThan(TimeSpan.FromSeconds(30));
         }
     }
 
@@ -67,11 +63,11 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
         var computeEngine = ServiceProvider.GetRequiredService<IComputeEngine>();
         var kernelSources = new[]
         {
-           ("vector_add", VectorAddKernelSource),
-           ("vector_mul", VectorMultiplyKernelSource),
-           ("matrix_transpose", MatrixTransposeKernelSource),
-           ("reduction_sum", ReductionKernelSource)
-        };
+       ("vector_add", VectorAddKernelSource),
+       ("vector_mul", VectorMultiplyKernelSource),
+       ("matrix_transpose", MatrixTransposeKernelSource),
+       ("reduction_sum", ReductionKernelSource)
+    };
 
         var compilationOptions = new CompilationOptions
         {
@@ -89,7 +85,7 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(kernelSources.Length, concurrentResults.Count);
-        concurrentResults.Should().AllSatisfy(r => r.CompilationSuccess.Should().BeTrue());
+        _ = concurrentResults.Should().AllSatisfy(r => r.CompilationSuccess.Should().BeTrue());
 
         var totalCompilationTime = concurrentResults.Sum(r => r.CompilationTime.TotalMilliseconds);
         var concurrentTime = stopwatch.Elapsed.TotalMilliseconds;
@@ -147,8 +143,8 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.CompilationSuccess.Should().BeTrue();
-        result.ExecutionSuccess.Should().BeTrue();
+        _ = result.CompilationSuccess.Should().BeTrue();
+        _ = result.ExecutionSuccess.Should().BeTrue();
     }
 
     [Fact]
@@ -174,7 +170,7 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
             await computeEngine.CompileKernelAsync(invalidKernel, "invalid_kernel", compilationOptions));
 
         Assert.NotNull(exception);
-        exception.Message.Should().Contain("compilation");
+        _ = exception.Message.Should().Contain("compilation");
     }
 
     [Fact]
@@ -208,8 +204,8 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.CompilationSuccess.Should().BeTrue();
-        result.ExecutionSuccess.Should().BeTrue();
+        _ = result.CompilationSuccess.Should().BeTrue();
+        _ = result.ExecutionSuccess.Should().BeTrue();
     }
 
     [Theory]
@@ -242,9 +238,9 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.CompilationSuccess.Should().BeTrue();
-        result.ExecutionSuccess.Should().BeTrue();
-        result.TargetBackend.Should().Be(backendType);
+        _ = result.CompilationSuccess.Should().BeTrue();
+        _ = result.ExecutionSuccess.Should().BeTrue();
+        _ = result.TargetBackend.Should().Be(backendType);
     }
 
     [Fact]
@@ -268,8 +264,8 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.CompilationSuccess.Should().BeTrue();
-        result.CompilationTime.Should().BeLessThan(TimeSpan.FromMinutes(1));
+        _ = result.CompilationSuccess.Should().BeTrue();
+        _ = result.CompilationTime.Should().BeLessThan(TimeSpan.FromMinutes(1));
     }
 
     [Fact]
@@ -296,8 +292,8 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
             compilationOptions);
 
         // Assert
-        firstCompilation.CompilationSuccess.Should().BeTrue();
-        secondCompilation.CompilationSuccess.Should().BeTrue();
+        _ = firstCompilation.CompilationSuccess.Should().BeTrue();
+        _ = secondCompilation.CompilationSuccess.Should().BeTrue();
 
         // Second compilation should be faster due to caching
         //(This is an assumption - actual behavior depends on implementation)
@@ -348,8 +344,8 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.CompilationSuccess.Should().BeTrue();
-        result.ExecutionSuccess.Should().BeTrue();
+        _ = result.CompilationSuccess.Should().BeTrue();
+        _ = result.ExecutionSuccess.Should().BeTrue();
     }
 
     [Theory]
@@ -383,9 +379,9 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(result);
-        result.CompilationSuccess.Should().BeTrue();
-        result.ExecutionSuccess.Should().BeTrue();
-        result.ExecutionTime.Should().BePositive();
+        _ = result.CompilationSuccess.Should().BeTrue();
+        _ = result.ExecutionSuccess.Should().BeTrue();
+        _ = result.ExecutionTime.Should().BePositive();
     }
 
     // Helper methods
@@ -534,7 +530,7 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
                 compilationOptions);
         });
 
-        return (await Task.WhenAll(tasks)).ToList();
+        return [.. (await Task.WhenAll(tasks))];
     }
 
     private async Task<CompilationResult> CompileKernelWithTiming(
@@ -580,14 +576,14 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
         // Generate many similar functions
         for (var i = 0; i < functionCount; i++)
         {
-            source.AppendLine(CultureInfo.InvariantCulture, $@"
+            _ = source.AppendLine(CultureInfo.InvariantCulture, $@"
             float function_{i}(float x) {{
                 return x * {i + 1}.0f + {i * 2}.0f;
             }}");
         }
 
         // Main kernel that uses all functions
-        source.AppendLine(@"
+        _ = source.AppendLine(@"
             __kernel void large_kernel(__global const float* input,
                                      __global float* output) {
                 int i = get_global_id(0);
@@ -595,10 +591,10 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
 
         for (var i = 0; i < Math.Min(functionCount, 10); i++) // Use only first 10 to avoid too much computation
         {
-            source.AppendLine(CultureInfo.InvariantCulture, $"                value = function_{i}(value);");
+            _ = source.AppendLine(CultureInfo.InvariantCulture, $"                value = function_{i}(value);");
         }
 
-        source.AppendLine(@"
+        _ = source.AppendLine(@"
                 output[i] = value;
             }");
 
@@ -608,9 +604,7 @@ public sealed class KernelCompilationPipelineTests : IntegrationTestBase
     private static float[] GenerateTestData(int size)
     {
         var random = new Random(42);
-        return Enumerable.Range(0, size)
-                        .Select(_ => (float)random.NextDouble() * 100.0f)
-                        .ToArray();
+        return [.. Enumerable.Range(0, size).Select(_ => (float)random.NextDouble() * 100.0f)];
     }
 
     // Kernel source constants
@@ -678,5 +672,4 @@ public class CompilationResult
     public TimeSpan ExecutionTime { get; set; }
     public ComputeBackendType TargetBackend { get; set; }
     public string? Error { get; set; }
-}
 }

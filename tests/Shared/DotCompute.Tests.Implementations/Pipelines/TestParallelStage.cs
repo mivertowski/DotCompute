@@ -2,8 +2,8 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Implementations.Pipelines
-{
+namespace DotCompute.Tests.Implementations.Pipelines;
+
 
 /// <summary>
 /// Test implementation of a parallel pipeline stage.
@@ -168,7 +168,7 @@ public sealed class TestParallelStage : IPipelineStage
         {
             var completedTask = await Task.WhenAny(tasks);
             results.Add(await completedTask);
-            tasks.Remove(completedTask);
+            _ = tasks.Remove(completedTask);
 
             // For WaitAny, we might want to cancel remaining tasks after first completion
             if (results.Count == 1 && _metadata.ContainsKey("CancelOthersOnFirstCompletion"))
@@ -190,7 +190,7 @@ public sealed class TestParallelStage : IPipelineStage
             {
                 try
                 {
-                    await stage.ExecuteAsync(context, cancellationToken);
+                    _ = await stage.ExecuteAsync(context, cancellationToken);
                 }
                 catch
                 {
@@ -234,7 +234,7 @@ public sealed class TestParallelStage : IPipelineStage
         }
         finally
         {
-            semaphore.Release();
+            _ = semaphore.Release();
         }
     }
 
@@ -292,14 +292,9 @@ public sealed class TestParallelStage : IPipelineStage
 /// <summary>
 /// Builder for configuring parallel stages.
 /// </summary>
-public sealed class TestParallelStageBuilder : IParallelStageBuilder
+public sealed class TestParallelStageBuilder(TestParallelStage stage) : IParallelStageBuilder
 {
-    private readonly TestParallelStage _stage;
-
-    public TestParallelStageBuilder(TestParallelStage stage)
-    {
-        _stage = stage;
-    }
+    private readonly TestParallelStage _stage = stage;
 
     public IParallelStageBuilder AddKernel(
         string name,
@@ -323,7 +318,7 @@ public sealed class TestParallelStageBuilder : IParallelStageBuilder
         Action<IKernelPipelineBuilder> configure)
     {
         var pipelineBuilder = new TestKernelPipelineBuilder();
-        pipelineBuilder.WithName(name);
+        _ = pipelineBuilder.WithName(name);
         configure(pipelineBuilder);
 
         var pipeline = pipelineBuilder.Build();
@@ -365,5 +360,4 @@ public sealed class TestParallelStageBuilder : IParallelStageBuilder
         _stage.SetBarrier(true);
         return this;
     }
-}
 }

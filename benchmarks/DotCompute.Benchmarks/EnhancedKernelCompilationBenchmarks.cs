@@ -5,8 +5,8 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 /// <summary>
 /// Enhanced benchmarks for kernel compilation performance.
@@ -234,10 +234,10 @@ internal sealed class EnhancedKernelCompilationBenchmarks : IDisposable
     {
         var optimizationLevels = new[]
         {
-            OptimizationLevel.Debug,
-            OptimizationLevel.Default,
-            OptimizationLevel.Release
-        };
+        OptimizationLevel.Debug,
+        OptimizationLevel.Default,
+        OptimizationLevel.Release
+    };
 
         var kernels = new List<ICompiledKernel>();
 
@@ -326,4 +326,4 @@ internal sealed class EnhancedKernelCompilationBenchmarks : IDisposable
         }
         GC.SuppressFinalize(this);
     }
-}}
+}

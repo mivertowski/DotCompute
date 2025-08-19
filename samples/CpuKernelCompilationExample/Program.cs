@@ -11,8 +11,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace CpuKernelCompilationExample
-{
+namespace CpuKernelCompilationExample;
+
 
 /// <summary>
 /// Example demonstrating CPU kernel compilation with optimization and vectorization.
@@ -81,8 +81,8 @@ internal sealed class Program
     {
         // Setup services
         var services = new ServiceCollection();
-        services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
-        services.AddSingleton<IAcceleratorProvider, MockCpuAcceleratorProvider>();
+        _ = services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
+        _ = services.AddSingleton<IAcceleratorProvider, MockCpuAcceleratorProvider>();
 
         using var serviceProvider = services.BuildServiceProvider();
         var logger = serviceProvider.GetRequiredService<ILogger<Program>>();
@@ -241,11 +241,11 @@ internal sealed class Program
 
         var optimizationLevels = new[]
         {
-            (OptimizationLevel.None, "None"),
-            (OptimizationLevel.Debug, "Debug"),
-            (OptimizationLevel.Release, "Release"),
-            (OptimizationLevel.Maximum, "Maximum")
-        };
+        (OptimizationLevel.None, "None"),
+        (OptimizationLevel.Debug, "Debug"),
+        (OptimizationLevel.Release, "Release"),
+        (OptimizationLevel.Maximum, "Maximum")
+    };
 
         foreach (var (level, name) in optimizationLevels)
         {
@@ -271,7 +271,7 @@ internal sealed class Program
 /// <summary>
 /// Simple mock implementation for demonstration purposes.
 /// </summary>
-[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes", 
+[System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1812:Avoid uninstantiated internal classes",
     Justification = "This class is instantiated via dependency injection")]
 internal sealed class MockCpuAcceleratorProvider : IAcceleratorProvider
 {
@@ -417,7 +417,7 @@ internal sealed class MockMemoryManager : IMemoryManager, IDisposable
     {
         if (buffer is MockMemoryBuffer mockBuffer)
         {
-            _buffers.Remove(mockBuffer);
+            _ = _buffers.Remove(mockBuffer);
             buffer.Dispose();
         }
     }
@@ -491,21 +491,13 @@ internal sealed class MockMemoryBuffer : IMemoryBuffer
 /// <summary>
 /// Mock memory buffer view.
 /// </summary>
-internal sealed class MockMemoryBufferView : IMemoryBuffer
+internal sealed class MockMemoryBufferView(MockMemoryBuffer parent, long offset, long length) : IMemoryBuffer
 {
-    private readonly MockMemoryBuffer _parent;
-    private readonly long _offset;
+    private readonly MockMemoryBuffer _parent = parent;
+    private readonly long _offset = offset;
 
-    public MockMemoryBufferView(MockMemoryBuffer parent, long offset, long length)
-    {
-        _parent = parent;
-        _offset = offset;
-        SizeInBytes = length;
-        Options = parent.Options;
-    }
-
-    public long SizeInBytes { get; }
-    public MemoryOptions Options { get; }
+    public long SizeInBytes { get; } = length;
+    public MemoryOptions Options { get; } = parent.Options;
     public bool IsDisposed => _parent.IsDisposed;
 
     public ValueTask CopyFromHostAsync<T>(
@@ -529,14 +521,9 @@ internal sealed class MockMemoryBufferView : IMemoryBuffer
 /// <summary>
 /// Simple mock compiled kernel.
 /// </summary>
-internal sealed class MockCompiledKernel : ICompiledKernel
+internal sealed class MockCompiledKernel(string name) : ICompiledKernel
 {
-    public string Name { get; }
-
-    public MockCompiledKernel(string name)
-    {
-        Name = name;
-    }
+    public string Name { get; } = name;
 
     public async ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
     {
@@ -558,4 +545,4 @@ internal sealed class MockCompiledKernel : ICompiledKernel
     }
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
-}}
+}

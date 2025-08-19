@@ -8,8 +8,8 @@ using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 using DotCompute.Backends.CPU.Kernels;
 
-namespace DotCompute.Backends.CPU.Optimization
-{
+namespace DotCompute.Backends.CPU.Optimization;
+
 
 /// <summary>
 /// Simplified Native AOT optimization layer that uses the existing AdvancedSimdPatterns
@@ -18,379 +18,378 @@ namespace DotCompute.Backends.CPU.Optimization
 [SuppressMessage("Design", "CA1034:Nested types should not be visible")]
 public static class NativeAotOptimizations
 {
-    /// <summary>
-    /// Pre-compiled delegates for optimal Native AOT performance.
-    /// Uses hardware detection at startup to select best code paths.
-    /// </summary>
-    internal static class CompiledDelegates
-    {
-        // Use the robust implementations from AdvancedSimdPatterns
-        public static readonly Func<ReadOnlySpan<float>, ReadOnlySpan<float>, float> DotProductFloat32 = AdvancedSimdPatterns.DotProduct;
-        public static readonly Func<ReadOnlySpan<double>, ReadOnlySpan<double>, double> DotProductFloat64 = DotProductDouble;
+/// <summary>
+/// Pre-compiled delegates for optimal Native AOT performance.
+/// Uses hardware detection at startup to select best code paths.
+/// </summary>
+internal static class CompiledDelegates
+{
+    // Use the robust implementations from AdvancedSimdPatterns
+    public static readonly Func<ReadOnlySpan<float>, ReadOnlySpan<float>, float> DotProductFloat32 = AdvancedSimdPatterns.DotProduct;
+    public static readonly Func<ReadOnlySpan<double>, ReadOnlySpan<double>, double> DotProductFloat64 = DotProductDouble;
 
-        // Vector operations delegates
-        public static readonly Action<ReadOnlySpan<float>, ReadOnlySpan<float>, Span<float>> VectorAddFloat32 = VectorAdd;
-        public static readonly Action<ReadOnlySpan<double>, ReadOnlySpan<double>, Span<double>> VectorAddFloat64 = VectorAdd;
+    // Vector operations delegates
+    public static readonly Action<ReadOnlySpan<float>, ReadOnlySpan<float>, Span<float>> VectorAddFloat32 = VectorAdd;
+    public static readonly Action<ReadOnlySpan<double>, ReadOnlySpan<double>, Span<double>> VectorAddFloat64 = VectorAdd;
+}
+
+/// <summary>
+/// High-performance vector addition using SIMD with hardware detection.
+/// </summary>
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void VectorAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+{
+    if (a.Length != b.Length || a.Length != result.Length)
+    {
+        throw new ArgumentException("All spans must have the same length");
     }
 
-    /// <summary>
-    /// High-performance vector addition using SIMD with hardware detection.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void VectorAdd(ReadOnlySpan<float> a, ReadOnlySpan<float> b, Span<float> result)
+    var length = a.Length;
+    var i = 0;
+
+    // AVX-512 path (16 floats at once)
+    if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated && length >= 16)
     {
-        if (a.Length != b.Length || a.Length != result.Length)
+        var vectorLength = Vector512<float>.Count;
+        for (; i <= length - vectorLength; i += vectorLength)
         {
-            throw new ArgumentException("All spans must have the same length");
+            var va = Vector512.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
+            var vb = Vector512.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
+            var vr = Vector512.Add(va, vb);
+            Vector512.StoreUnsafe(vr, ref result[i]);
         }
-
-        var length = a.Length;
-        var i = 0;
-
-        // AVX-512 path (16 floats at once)
-        if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated && length >= 16)
+    }
+    // AVX2 path (8 floats at once)
+    else if (Avx2.IsSupported && Vector256.IsHardwareAccelerated && length >= 8)
+    {
+        var vectorLength = Vector256<float>.Count;
+        for (; i <= length - vectorLength; i += vectorLength)
         {
-            var vectorLength = Vector512<float>.Count;
-            for (; i <= length - vectorLength; i += vectorLength)
-            {
-                var va = Vector512.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
-                var vb = Vector512.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
-                var vr = Vector512.Add(va, vb);
-                Vector512.StoreUnsafe(vr, ref result[i]);
-            }
+            var va = Vector256.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
+            var vb = Vector256.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
+            var vr = Vector256.Add(va, vb);
+            Vector256.StoreUnsafe(vr, ref result[i]);
         }
-        // AVX2 path (8 floats at once)
-        else if (Avx2.IsSupported && Vector256.IsHardwareAccelerated && length >= 8)
+    }
+    // NEON path (4 floats at once)
+    else if (AdvSimd.IsSupported && length >= 4)
+    {
+        var vectorLength = Vector128<float>.Count;
+        for (; i <= length - vectorLength; i += vectorLength)
         {
-            var vectorLength = Vector256<float>.Count;
-            for (; i <= length - vectorLength; i += vectorLength)
-            {
-                var va = Vector256.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
-                var vb = Vector256.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
-                var vr = Vector256.Add(va, vb);
-                Vector256.StoreUnsafe(vr, ref result[i]);
-            }
-        }
-        // NEON path (4 floats at once)
-        else if (AdvSimd.IsSupported && length >= 4)
-        {
-            var vectorLength = Vector128<float>.Count;
-            for (; i <= length - vectorLength; i += vectorLength)
-            {
-                var va = Vector128.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
-                var vb = Vector128.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
-                var vr = Vector128.Add(va, vb);
-                Vector128.StoreUnsafe(vr, ref result[i]);
-            }
-        }
-
-        // Handle remaining elements (scalar fallback)
-        for (; i < length; i++)
-        {
-            result[i] = a[i] + b[i];
+            var va = Vector128.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
+            var vb = Vector128.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
+            var vr = Vector128.Add(va, vb);
+            Vector128.StoreUnsafe(vr, ref result[i]);
         }
     }
 
-    /// <summary>
-    /// High-performance vector addition for double precision.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void VectorAdd(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+    // Handle remaining elements (scalar fallback)
+    for (; i < length; i++)
     {
-        if (a.Length != b.Length || a.Length != result.Length)
-        {
-            throw new ArgumentException("All spans must have the same length");
-        }
+        result[i] = a[i] + b[i];
+    }
+}
 
-        var length = a.Length;
-        var i = 0;
+/// <summary>
+/// High-performance vector addition for double precision.
+/// </summary>
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+public static void VectorAdd(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> result)
+{
+    if (a.Length != b.Length || a.Length != result.Length)
+    {
+        throw new ArgumentException("All spans must have the same length");
+    }
 
-        // AVX-512 path (8 doubles at once)
-        if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated && length >= 8)
-        {
-            var vectorLength = Vector512<double>.Count;
-            for (; i <= length - vectorLength; i += vectorLength)
-            {
-                var va = Vector512.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
-                var vb = Vector512.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
-                var vr = Vector512.Add(va, vb);
-                Vector512.StoreUnsafe(vr, ref result[i]);
-            }
-        }
-        // AVX2 path (4 doubles at once)
-        else if (Avx2.IsSupported && Vector256.IsHardwareAccelerated && length >= 4)
-        {
-            var vectorLength = Vector256<double>.Count;
-            for (; i <= length - vectorLength; i += vectorLength)
-            {
-                var va = Vector256.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
-                var vb = Vector256.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
-                var vr = Vector256.Add(va, vb);
-                Vector256.StoreUnsafe(vr, ref result[i]);
-            }
-        }
-        // NEON path (2 doubles at once)
-        else if (AdvSimd.IsSupported && length >= 2)
-        {
-            var vectorLength = Vector128<double>.Count;
-            for (; i <= length - vectorLength; i += vectorLength)
-            {
-                var va = Vector128.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
-                var vb = Vector128.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
-                var vr = Vector128.Add(va, vb);
-                Vector128.StoreUnsafe(vr, ref result[i]);
-            }
-        }
+    var length = a.Length;
+    var i = 0;
 
-        // Handle remaining elements (scalar fallback)
-        for (; i < length; i++)
+    // AVX-512 path (8 doubles at once)
+    if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated && length >= 8)
+    {
+        var vectorLength = Vector512<double>.Count;
+        for (; i <= length - vectorLength; i += vectorLength)
         {
-            result[i] = a[i] + b[i];
+            var va = Vector512.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
+            var vb = Vector512.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
+            var vr = Vector512.Add(va, vb);
+            Vector512.StoreUnsafe(vr, ref result[i]);
+        }
+    }
+    // AVX2 path (4 doubles at once)
+    else if (Avx2.IsSupported && Vector256.IsHardwareAccelerated && length >= 4)
+    {
+        var vectorLength = Vector256<double>.Count;
+        for (; i <= length - vectorLength; i += vectorLength)
+        {
+            var va = Vector256.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
+            var vb = Vector256.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
+            var vr = Vector256.Add(va, vb);
+            Vector256.StoreUnsafe(vr, ref result[i]);
+        }
+    }
+    // NEON path (2 doubles at once)
+    else if (AdvSimd.IsSupported && length >= 2)
+    {
+        var vectorLength = Vector128<double>.Count;
+        for (; i <= length - vectorLength; i += vectorLength)
+        {
+            var va = Vector128.LoadUnsafe(ref Unsafe.AsRef(in a[i]));
+            var vb = Vector128.LoadUnsafe(ref Unsafe.AsRef(in b[i]));
+            var vr = Vector128.Add(va, vb);
+            Vector128.StoreUnsafe(vr, ref result[i]);
         }
     }
 
-    /// <summary>
-    /// Gets the optimal vector width for the current hardware.
-    /// </summary>
-    public static int GetOptimalVectorWidth<T>() where T : struct
+    // Handle remaining elements (scalar fallback)
+    for (; i < length; i++)
     {
-        if (typeof(T) == typeof(float))
-        {
-            if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated)
-            {
-                return Vector512<float>.Count;
-            }
-
-            if (Avx2.IsSupported && Vector256.IsHardwareAccelerated)
-            {
-                return Vector256<float>.Count;
-            }
-
-            if (AdvSimd.IsSupported || Sse.IsSupported)
-            {
-                return Vector128<float>.Count;
-            }
-        }
-        else if (typeof(T) == typeof(double))
-        {
-            if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated)
-            {
-                return Vector512<double>.Count;
-            }
-
-            if (Avx2.IsSupported && Vector256.IsHardwareAccelerated)
-            {
-                return Vector256<double>.Count;
-            }
-
-            if (AdvSimd.IsSupported || Sse2.IsSupported)
-            {
-                return Vector128<double>.Count;
-            }
-        }
-
-        return 1; // Scalar fallback
+        result[i] = a[i] + b[i];
     }
+}
 
-    /// <summary>
-    /// Checks if the current hardware supports advanced SIMD operations.
-    /// </summary>
-    public static bool HasAdvancedSimdSupport
+/// <summary>
+/// Gets the optimal vector width for the current hardware.
+/// </summary>
+public static int GetOptimalVectorWidth<T>() where T : struct
+{
+    if (typeof(T) == typeof(float))
     {
-        get
+        if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated)
         {
-            return (Avx512F.IsSupported && Vector512.IsHardwareAccelerated) ||
-                   (Avx2.IsSupported && Vector256.IsHardwareAccelerated) ||
-                   AdvSimd.IsSupported ||
-                   Sse.IsSupported;
+            return Vector512<float>.Count;
+        }
+
+        if (Avx2.IsSupported && Vector256.IsHardwareAccelerated)
+        {
+            return Vector256<float>.Count;
+        }
+
+        if (AdvSimd.IsSupported || Sse.IsSupported)
+        {
+            return Vector128<float>.Count;
+        }
+    }
+    else if (typeof(T) == typeof(double))
+    {
+        if (Avx512F.IsSupported && Vector512.IsHardwareAccelerated)
+        {
+            return Vector512<double>.Count;
+        }
+
+        if (Avx2.IsSupported && Vector256.IsHardwareAccelerated)
+        {
+            return Vector256<double>.Count;
+        }
+
+        if (AdvSimd.IsSupported || Sse2.IsSupported)
+        {
+            return Vector128<double>.Count;
         }
     }
 
-    /// <summary>
-    /// Performs vectorized dot product for double precision.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
-    public static double DotProductDouble(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
-    {
-        if (a.Length != b.Length)
-        {
-            throw new ArgumentException("Arrays must have the same length");
-        }
+    return 1; // Scalar fallback
+}
 
-        if (Vector512.IsHardwareAccelerated && a.Length >= 8)
-        {
-            return DotProductDoubleAvx512(a, b);
-        }
-        else if (Vector256.IsHardwareAccelerated && a.Length >= 4)
-        {
-            return DotProductDoubleAvx2(a, b);
-        }
-        else return Vector128.IsHardwareAccelerated && a.Length >= 2 ? AdvSimd.IsSupported ? DotProductDoubleNeon(a, b) : DotProductDoubleSse(a, b) : DotProductDoubleScalar(a, b);
+/// <summary>
+/// Checks if the current hardware supports advanced SIMD operations.
+/// </summary>
+public static bool HasAdvancedSimdSupport
+{
+    get
+    {
+        return (Avx512F.IsSupported && Vector512.IsHardwareAccelerated) ||
+               (Avx2.IsSupported && Vector256.IsHardwareAccelerated) ||
+               AdvSimd.IsSupported ||
+               Sse.IsSupported;
+    }
+}
+
+/// <summary>
+/// Performs vectorized dot product for double precision.
+/// </summary>
+[MethodImpl(MethodImplOptions.AggressiveInlining | MethodImplOptions.AggressiveOptimization)]
+public static double DotProductDouble(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+{
+    if (a.Length != b.Length)
+    {
+        throw new ArgumentException("Arrays must have the same length");
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static double DotProductDoubleScalar(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+    if (Vector512.IsHardwareAccelerated && a.Length >= 8)
     {
-        var result = 0.0;
-        for (var i = 0; i < a.Length; i++)
+        return DotProductDoubleAvx512(a, b);
+    }
+    else if (Vector256.IsHardwareAccelerated && a.Length >= 4)
+    {
+        return DotProductDoubleAvx2(a, b);
+    }
+    else return Vector128.IsHardwareAccelerated && a.Length >= 2 ? AdvSimd.IsSupported ? DotProductDoubleNeon(a, b) : DotProductDoubleSse(a, b) : DotProductDoubleScalar(a, b);
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+private static double DotProductDoubleScalar(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+{
+    var result = 0.0;
+    for (var i = 0; i < a.Length; i++)
+    {
+        result += a[i] * b[i];
+    }
+    return result;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+private static double DotProductDoubleAvx512(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+{
+    const int VectorSize = 8;
+    var vectorCount = a.Length / VectorSize;
+
+    ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
+    ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
+
+    var sum = Vector512<double>.Zero;
+
+    for (var i = 0; i < vectorCount; i++)
+    {
+        var offset = i * VectorSize;
+        var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+        var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+
+        if (Avx512F.IsSupported)
         {
-            result += a[i] * b[i];
+            sum = Avx512F.FusedMultiplyAdd(va, vb, sum);
         }
-        return result;
+        else
+        {
+            sum = Avx512F.Add(sum, Avx512F.Multiply(va, vb));
+        }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static double DotProductDoubleAvx512(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+    var result = Vector512.Sum(sum);
+
+    var remainder = a.Length % VectorSize;
+    if (remainder > 0)
     {
-        const int VectorSize = 8;
-        var vectorCount = a.Length / VectorSize;
-
-        ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
-        ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
-
-        var sum = Vector512<double>.Zero;
-
-        for (var i = 0; i < vectorCount; i++)
+        var lastOffset = vectorCount * VectorSize;
+        for (var i = 0; i < remainder; i++)
         {
-            var offset = i * VectorSize;
-            var va = Vector512.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-            var vb = Vector512.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-
-            if (Avx512F.IsSupported)
-            {
-                sum = Avx512F.FusedMultiplyAdd(va, vb, sum);
-            }
-            else
-            {
-                sum = Avx512F.Add(sum, Avx512F.Multiply(va, vb));
-            }
+            result += a[lastOffset + i] * b[lastOffset + i];
         }
-
-        var result = Vector512.Sum(sum);
-
-        var remainder = a.Length % VectorSize;
-        if (remainder > 0)
-        {
-            var lastOffset = vectorCount * VectorSize;
-            for (var i = 0; i < remainder; i++)
-            {
-                result += a[lastOffset + i] * b[lastOffset + i];
-            }
-        }
-
-        return result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static double DotProductDoubleAvx2(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+    return result;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+private static double DotProductDoubleAvx2(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+{
+    const int VectorSize = 4;
+    var vectorCount = a.Length / VectorSize;
+
+    ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
+    ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
+
+    var sum = Vector256<double>.Zero;
+
+    for (var i = 0; i < vectorCount; i++)
     {
-        const int VectorSize = 4;
-        var vectorCount = a.Length / VectorSize;
+        var offset = i * VectorSize;
+        var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+        var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
 
-        ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
-        ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
-
-        var sum = Vector256<double>.Zero;
-
-        for (var i = 0; i < vectorCount; i++)
+        if (Fma.IsSupported)
         {
-            var offset = i * VectorSize;
-            var va = Vector256.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-            var vb = Vector256.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-
-            if (Fma.IsSupported)
-            {
-                sum = Fma.MultiplyAdd(va, vb, sum);
-            }
-            else
-            {
-                sum = Avx.Add(sum, Avx.Multiply(va, vb));
-            }
+            sum = Fma.MultiplyAdd(va, vb, sum);
         }
-
-        var result = Vector256.Sum(sum);
-
-        var remainder = a.Length % VectorSize;
-        if (remainder > 0)
+        else
         {
-            var lastOffset = vectorCount * VectorSize;
-            for (var i = 0; i < remainder; i++)
-            {
-                result += a[lastOffset + i] * b[lastOffset + i];
-            }
+            sum = Avx.Add(sum, Avx.Multiply(va, vb));
         }
-
-        return result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static double DotProductDoubleNeon(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+    var result = Vector256.Sum(sum);
+
+    var remainder = a.Length % VectorSize;
+    if (remainder > 0)
     {
-        const int VectorSize = 2;
-        var vectorCount = a.Length / VectorSize;
-
-        ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
-        ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
-
-        var sum = Vector128<double>.Zero;
-
-        for (var i = 0; i < vectorCount; i++)
+        var lastOffset = vectorCount * VectorSize;
+        for (var i = 0; i < remainder; i++)
         {
-            var offset = i * VectorSize;
-            var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-            var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-
-            sum = AdvSimd.Arm64.FusedMultiplyAdd(sum, va, vb);
+            result += a[lastOffset + i] * b[lastOffset + i];
         }
-
-        var result = Vector128.Sum(sum);
-
-        var remainder = a.Length % VectorSize;
-        if (remainder > 0)
-        {
-            var lastOffset = vectorCount * VectorSize;
-            for (var i = 0; i < remainder; i++)
-            {
-                result += a[lastOffset + i] * b[lastOffset + i];
-            }
-        }
-
-        return result;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static double DotProductDoubleSse(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+    return result;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+private static double DotProductDoubleNeon(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+{
+    const int VectorSize = 2;
+    var vectorCount = a.Length / VectorSize;
+
+    ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
+    ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
+
+    var sum = Vector128<double>.Zero;
+
+    for (var i = 0; i < vectorCount; i++)
     {
-        const int VectorSize = 2;
-        var vectorCount = a.Length / VectorSize;
+        var offset = i * VectorSize;
+        var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+        var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
 
-        ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
-        ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
-
-        var sum = Vector128<double>.Zero;
-
-        for (var i = 0; i < vectorCount; i++)
-        {
-            var offset = i * VectorSize;
-            var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
-            var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
-
-            sum = Sse2.Add(sum, Sse2.Multiply(va, vb));
-        }
-
-        var result = Vector128.Sum(sum);
-
-        var remainder = a.Length % VectorSize;
-        if (remainder > 0)
-        {
-            var lastOffset = vectorCount * VectorSize;
-            for (var i = 0; i < remainder; i++)
-            {
-                result += a[lastOffset + i] * b[lastOffset + i];
-            }
-        }
-
-        return result;
+        sum = AdvSimd.Arm64.FusedMultiplyAdd(sum, va, vb);
     }
+
+    var result = Vector128.Sum(sum);
+
+    var remainder = a.Length % VectorSize;
+    if (remainder > 0)
+    {
+        var lastOffset = vectorCount * VectorSize;
+        for (var i = 0; i < remainder; i++)
+        {
+            result += a[lastOffset + i] * b[lastOffset + i];
+        }
+    }
+
+    return result;
+}
+
+[MethodImpl(MethodImplOptions.AggressiveInlining)]
+private static double DotProductDoubleSse(ReadOnlySpan<double> a, ReadOnlySpan<double> b)
+{
+    const int VectorSize = 2;
+    var vectorCount = a.Length / VectorSize;
+
+    ref var aRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(a);
+    ref var bRef = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(b);
+
+    var sum = Vector128<double>.Zero;
+
+    for (var i = 0; i < vectorCount; i++)
+    {
+        var offset = i * VectorSize;
+        var va = Vector128.LoadUnsafe(ref Unsafe.Add(ref aRef, offset));
+        var vb = Vector128.LoadUnsafe(ref Unsafe.Add(ref bRef, offset));
+
+        sum = Sse2.Add(sum, Sse2.Multiply(va, vb));
+    }
+
+    var result = Vector128.Sum(sum);
+
+    var remainder = a.Length % VectorSize;
+    if (remainder > 0)
+    {
+        var lastOffset = vectorCount * VectorSize;
+        for (var i = 0; i < remainder; i++)
+        {
+            result += a[lastOffset + i] * b[lastOffset + i];
+        }
+    }
+
+    return result;
 }
 }

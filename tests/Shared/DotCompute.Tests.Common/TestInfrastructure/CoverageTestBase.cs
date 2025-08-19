@@ -2,8 +2,8 @@ using System.Diagnostics.CodeAnalysis;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Utilities.TestInfrastructure
-{
+namespace DotCompute.Tests.Utilities.TestInfrastructure;
+
 
 /// <summary>
 /// Base class for all tests that provides common infrastructure and coverage utilities
@@ -236,14 +236,9 @@ public abstract class CoverageTestBase : IDisposable
     /// <summary>
     /// Wrapper for async disposable resources
     /// </summary>
-    private sealed class AsyncDisposableWrapper : IDisposable
+    private sealed class AsyncDisposableWrapper(IAsyncDisposable asyncDisposable) : IDisposable
     {
-        private readonly IAsyncDisposable _asyncDisposable;
-
-        public AsyncDisposableWrapper(IAsyncDisposable asyncDisposable)
-        {
-            _asyncDisposable = asyncDisposable;
-        }
+        private readonly IAsyncDisposable _asyncDisposable = asyncDisposable;
 
         public void Dispose()
         {
@@ -257,34 +252,23 @@ public abstract class CoverageTestBase : IDisposable
 /// xUnit logger provider for test output
 /// </summary>
 [ExcludeFromCodeCoverage]
-public sealed class XUnitLoggerProvider : ILoggerProvider
+public sealed class XUnitLoggerProvider(ITestOutputHelper output) : ILoggerProvider
 {
-    private readonly ITestOutputHelper _output;
-
-    public XUnitLoggerProvider(ITestOutputHelper output)
-    {
-        _output = output ?? throw new ArgumentNullException(nameof(output));
-    }
+    private readonly ITestOutputHelper _output = output ?? throw new ArgumentNullException(nameof(output));
 
     public ILogger CreateLogger(string categoryName) => new XUnitLogger(_output, categoryName);
 
-    public void Dispose() { GC.SuppressFinalize(this); }
+    public void Dispose() => GC.SuppressFinalize(this);
 }
 
 /// <summary>
 /// xUnit logger implementation
 /// </summary>
 [ExcludeFromCodeCoverage]
-public sealed class XUnitLogger : ILogger
+public sealed class XUnitLogger(ITestOutputHelper output, string categoryName) : ILogger
 {
-    private readonly ITestOutputHelper _output;
-    private readonly string _categoryName;
-
-    public XUnitLogger(ITestOutputHelper output, string categoryName)
-    {
-        _output = output ?? throw new ArgumentNullException(nameof(output));
-        _categoryName = categoryName ?? throw new ArgumentNullException(nameof(categoryName));
-    }
+    private readonly ITestOutputHelper _output = output ?? throw new ArgumentNullException(nameof(output));
+    private readonly string _categoryName = categoryName ?? throw new ArgumentNullException(nameof(categoryName));
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => NullDisposable.Instance;
 
@@ -311,7 +295,6 @@ public sealed class XUnitLogger : ILogger
     private sealed class NullDisposable : IDisposable
     {
         public static readonly NullDisposable Instance = new();
-        public void Dispose() { GC.SuppressFinalize(this); }
+        public void Dispose() => GC.SuppressFinalize(this);
     }
-}
 }

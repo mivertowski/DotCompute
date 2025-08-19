@@ -3,12 +3,13 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
+using DotCompute.Tests.Mocks;
 using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests
-{
+namespace DotCompute.Tests;
+
 
 /// <summary>
 /// Comprehensive tests for P2P capability detection including hardware-specific scenarios.
@@ -217,7 +218,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         await using var device2 = CreateMockAccelerator("cuda-device-1", "CUDA", "RTX 4090");
 
         // Enable first
-        await _detector.EnableP2PAccessAsync(device1, device2);
+        _ = await _detector.EnableP2PAccessAsync(device1, device2);
 
         // Act
         var result = await _detector.DisableP2PAccessAsync(device1, device2);
@@ -332,7 +333,7 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         await cts.CancelAsync();
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(() =>
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(() =>
             _detector.DetectP2PCapabilityAsync(device1, device2, cts.Token).AsTask());
     }
 
@@ -350,10 +351,9 @@ public sealed class P2PCapabilityDetectorTests : IDisposable
         return new MockAccelerator(name: deviceTypeEnum.ToString(), type: deviceTypeEnum);
     }
 
-    public void Dispose() 
+    public void Dispose()
     {
         _detector?.DisposeAsync().AsTask().Wait();
         GC.SuppressFinalize(this);
     }
-}
 }

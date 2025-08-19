@@ -5,8 +5,8 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
-namespace DotCompute.Tests.Utilities
-{
+namespace DotCompute.Tests.Utilities;
+
 
 /// <summary>
 /// Utility methods for edge case testing across the DotCompute test suite.
@@ -291,7 +291,7 @@ public static class EdgeCaseUtilities
         return new ConcurrencyTestResult
         {
             TimedOut = completedTask == timeoutTask,
-            Exceptions = exceptions.ToArray(),
+            Exceptions = [.. exceptions],
             CompletedOperations = completedOperations.Count,
             ExpectedOperations = threadCount * operationsPerThread,
             Duration = endTime - startTime
@@ -337,7 +337,7 @@ public static class EdgeCaseUtilities
         return new ConcurrencyTestResult
         {
             TimedOut = completedTask == timeoutTask,
-            Exceptions = exceptions.ToArray(),
+            Exceptions = [.. exceptions],
             CompletedOperations = completedOperations.Count,
             ExpectedOperations = threadCount * testData.Length,
             Duration = endTime - startTime
@@ -361,10 +361,10 @@ public static class EdgeCaseUtilities
         var beforeMemory = GC.GetTotalMemory(false);
         var beforeGenCounts = new[]
         {
-            GC.CollectionCount(0),
-            GC.CollectionCount(1),
-            GC.CollectionCount(2)
-        };
+        GC.CollectionCount(0),
+        GC.CollectionCount(1),
+        GC.CollectionCount(2)
+    };
 
         var startTime = DateTime.UtcNow;
 
@@ -380,10 +380,10 @@ public static class EdgeCaseUtilities
         var afterMemory = GC.GetTotalMemory(false);
         var afterGenCounts = new[]
         {
-            GC.CollectionCount(0),
-            GC.CollectionCount(1),
-            GC.CollectionCount(2)
-        };
+        GC.CollectionCount(0),
+        GC.CollectionCount(1),
+        GC.CollectionCount(2)
+    };
 
         return new MemoryUsageResult
         {
@@ -579,5 +579,4 @@ public sealed class TempFileCollection : IDisposable
         _disposed = true;
         GC.SuppressFinalize(this);
     }
-}
 }

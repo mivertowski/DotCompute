@@ -10,8 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Performance benchmarks for CUDA backend on real hardware
@@ -29,43 +29,43 @@ public sealed class CudaPerformanceBenchmarks : IDisposable
     private bool _disposed;
 
     // LoggerMessage delegates for performance
-    private static readonly Action<ILogger, Exception?> LogStartingMemoryBandwidthBenchmark = 
+    private static readonly Action<ILogger, Exception?> LogStartingMemoryBandwidthBenchmark =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(1, nameof(LogStartingMemoryBandwidthBenchmark)),
             "Starting memory bandwidth benchmark");
 
-    private static readonly Action<ILogger, double, double, double, Exception?> LogMemoryBandwidth = 
+    private static readonly Action<ILogger, double, double, double, Exception?> LogMemoryBandwidth =
         LoggerMessage.Define<double, double, double>(
             LogLevel.Information,
             new EventId(2, nameof(LogMemoryBandwidth)),
             "Memory Bandwidth {SizeMB}MB: H2D={H2DBandwidth:F1} GB/s, D2H={D2HBandwidth:F1} GB/s");
 
-    private static readonly Action<ILogger, double, double, Exception?> LogSAXPYPerformance = 
+    private static readonly Action<ILogger, double, double, Exception?> LogSAXPYPerformance =
         LoggerMessage.Define<double, double>(
             LogLevel.Information,
             new EventId(3, nameof(LogSAXPYPerformance)),
             "SAXPY Performance: {GFLOPS:F1} GFLOPS, {Bandwidth:F1} GB/s effective bandwidth");
 
-    private static readonly Action<ILogger, double, Exception?> LogAverageKernelLaunchTime = 
+    private static readonly Action<ILogger, double, Exception?> LogAverageKernelLaunchTime =
         LoggerMessage.Define<double>(
             LogLevel.Information,
             new EventId(4, nameof(LogAverageKernelLaunchTime)),
             "Average kernel launch time: {AvgTime:F3} ms");
 
-    private static readonly Action<ILogger, string, string, long, Exception?> LogCompilationTime = 
+    private static readonly Action<ILogger, string, string, long, Exception?> LogCompilationTime =
         LoggerMessage.Define<string, string, long>(
             LogLevel.Information,
             new EventId(5, nameof(LogCompilationTime)),
             "Compilation time for {KernelName} ({OptLevel}): {CompileTime}ms");
 
-    private static readonly Action<ILogger, long, long, Exception?> LogExecutionTimes = 
+    private static readonly Action<ILogger, long, long, Exception?> LogExecutionTimes =
         LoggerMessage.Define<long, long>(
             LogLevel.Information,
             new EventId(6, nameof(LogExecutionTimes)),
             "Execution times - Sequential: {Sequential}ms, Concurrent: {Concurrent}ms");
 
-    private static readonly Action<ILogger, double, Exception?> LogSpeedupFromConcurrency = 
+    private static readonly Action<ILogger, double, Exception?> LogSpeedupFromConcurrency =
         LoggerMessage.Define<double>(
             LogLevel.Information,
             new EventId(7, nameof(LogSpeedupFromConcurrency)),
@@ -139,8 +139,8 @@ public sealed class CudaPerformanceBenchmarks : IDisposable
                 // RTX 2000 Ada Gen should achieve reasonable bandwidth >100 GB/s for large transfers
                 if (sizeMB >= 64)
                 {
-                    h2dBandwidth.Should().BeGreaterThan(50.0, $"H2D bandwidth too low: {h2dBandwidth:F1} GB/s");
-                    d2hBandwidth.Should().BeGreaterThan(50.0, $"D2H bandwidth too low: {d2hBandwidth:F1} GB/s");
+                    _ = h2dBandwidth.Should().BeGreaterThan(50.0, $"H2D bandwidth too low: {h2dBandwidth:F1} GB/s");
+                    _ = d2hBandwidth.Should().BeGreaterThan(50.0, $"D2H bandwidth too low: {d2hBandwidth:F1} GB/s");
                 }
             }
             finally
@@ -218,7 +218,7 @@ extern ""C"" __global__ void saxpy(float* x, float* y, float alpha, int n)
             LogSAXPYPerformance(_logger, gflops, bandwidth, null);
 
             // RTX 2000 Ada Gen should achieve substantial performance
-            gflops.Should().BeGreaterThan(100.0, $"Compute performance too low: {gflops:F1} GFLOPS");
+            _ = gflops.Should().BeGreaterThan(100.0, $"Compute performance too low: {gflops:F1} GFLOPS");
 
             // Verify correctness of final result
             var result = new float[100]; // Check first 100 elements
@@ -282,7 +282,7 @@ extern ""C"" __global__ void emptyKernel()
         LogAverageKernelLaunchTime(_logger, avgLaunchTime, null);
 
         // Launch overhead should be reasonable < 1ms on modern GPUs
-        avgLaunchTime.Should().BeLessThan(1.0, $"Kernel launch overhead too high: {avgLaunchTime:F3} ms");
+        _ = avgLaunchTime.Should().BeLessThan(1.0, $"Kernel launch overhead too high: {avgLaunchTime:F3} ms");
     }
 
     [SkippableFact]
@@ -295,23 +295,23 @@ extern ""C"" __global__ void emptyKernel()
 
         var kernelSources = new[]
         {
-            // Simple kernel
-            @"extern ""C"" __global__ void simple(float* data, int n) {
+        // Simple kernel
+        @"extern ""C"" __global__ void simple(float* data, int n) {
                 int idx = blockIdx.x * blockDim.x + threadIdx.x;
                 if(idx < n) data[idx] *= 2.0f;
             }",
-            
-            // Complex kernel with math functions
-            @"extern ""C"" __global__ void complex(float* input, float* output, int n) {
+        
+        // Complex kernel with math functions
+        @"extern ""C"" __global__ void complex(float* input, float* output, int n) {
                 int idx = blockIdx.x * blockDim.x + threadIdx.x;
                 if(idx < n) {
                     float x = input[idx];
                     output[idx] = sinf(x) * cosf(x * 2.0f) + expf(x * 0.1f) - logf(fabsf(x) + 1.0f);
                 }
             }",
-            
-            // Kernel with shared memory
-            @"extern ""C"" __global__ void sharedMem(float* input, float* output, int n) {
+        
+        // Kernel with shared memory
+        @"extern ""C"" __global__ void sharedMem(float* input, float* output, int n) {
                 __shared__ float sdata[256];
                 int tid = threadIdx.x;
                 int idx = blockIdx.x * blockDim.x + tid;
@@ -326,7 +326,7 @@ extern ""C"" __global__ void emptyKernel()
                 
                 if(idx < n) output[idx] = sum;
             }"
-        };
+    };
 
         var kernelNames = new[] { "simple", "complex", "sharedMem" };
         var optimizationLevels = new[] { OptimizationLevel.None, OptimizationLevel.Default, OptimizationLevel.Maximum };
@@ -349,7 +349,7 @@ extern ""C"" __global__ void emptyKernel()
                 LogCompilationTime(_logger, kernelName, optLevel.ToString(), stopwatch.ElapsedMilliseconds, null);
 
                 // Compilation should complete in reasonable time < 10 seconds for complex kernels
-                stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
+                _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
                     $"Compilation too slow for {kernelName}: {stopwatch.ElapsedMilliseconds}ms");
 
                 await compiledKernel.DisposeAsync();
@@ -442,7 +442,7 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
         var speedup = sequentialTime / (double)concurrentTime;
         LogSpeedupFromConcurrency(_logger, speedup, null);
 
-        speedup.Should().BeGreaterThan(1.2, $"Insufficient speedup from concurrency: {speedup:F2}x");
+        _ = speedup.Should().BeGreaterThan(1.2, $"Insufficient speedup from concurrency: {speedup:F2}x");
 
         await compiledKernel.DisposeAsync();
     }
@@ -465,5 +465,4 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
         _loggerFactory?.Dispose();
         _disposed = true;
     }
-}
 }

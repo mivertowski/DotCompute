@@ -10,8 +10,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Unit
-{
+namespace DotCompute.Tests.Hardware.Unit;
+
 
 /// <summary>
 /// Unit tests for CUDA accelerator lifecycle management and operations
@@ -24,7 +24,7 @@ public sealed class CudaAcceleratorTests : IDisposable
     private readonly List<CudaAccelerator> _accelerators = [];
 
     // LoggerMessage delegate for performance
-    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError =
         LoggerMessage.Define<Exception>(
             LogLevel.Warning,
             new EventId(1, nameof(LogAcceleratorDisposeError)),
@@ -53,9 +53,9 @@ public sealed class CudaAcceleratorTests : IDisposable
 
         // Assert
         Assert.NotNull(accelerator);
-        accelerator.Info.Should().NotBeNull();
-        accelerator.Memory.Should().NotBeNull();
-        accelerator.Info.Type.Should().Be("CUDA");
+        _ = accelerator.Info.Should().NotBeNull();
+        _ = accelerator.Memory.Should().NotBeNull();
+        _ = accelerator.Info.Type.Should().Be("CUDA");
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class CudaAcceleratorTests : IDisposable
 
         // Assert
         Assert.NotNull(accelerator);
-        accelerator.Info.Should().NotBeNull();
+        _ = accelerator.Info.Should().NotBeNull();
     }
 
     [Fact]
@@ -96,7 +96,7 @@ public sealed class CudaAcceleratorTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        compiledKernel.Name.Should().Be("test_kernel");
+        _ = compiledKernel.Name.Should().Be("test_kernel");
         (compiledKernel as IDisposable)?.Dispose(); // Clean up
     }
 
@@ -116,7 +116,7 @@ public sealed class CudaAcceleratorTests : IDisposable
 
         // Act & Assert
         var compileAction = async () => await accelerator.CompileKernelAsync(null!);
-        await compileAction.Should().ThrowAsync<ArgumentNullException>();
+        _ = await compileAction.Should().ThrowAsync<ArgumentNullException>();
     }
 
     [Fact]
@@ -185,7 +185,7 @@ public sealed class CudaAcceleratorTests : IDisposable
 
         // Act & Assert
         var syncAction = async () => await accelerator.SynchronizeAsync(cts.Token);
-        await Assert.ThrowsAsync<OperationCanceledException>(syncAction);
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(syncAction);
     }
 
     [Fact]
@@ -203,7 +203,7 @@ public sealed class CudaAcceleratorTests : IDisposable
         _accelerators.Add(accelerator);
 
         // Act & Assert
-        Action resetAction = () => accelerator.Reset();
+        Action resetAction = accelerator.Reset;
         resetAction(); // Should not throw
     }
 
@@ -227,13 +227,13 @@ public sealed class CudaAcceleratorTests : IDisposable
         // Assert
         Assert.NotNull(info);
         _ = info.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
-        info.Name.Should().NotBeNullOrEmpty();
-        (info.TotalMemory > 0).Should().BeTrue();
-        (info.ComputeUnits > 0).Should().BeTrue();
-        (info.MaxClockFrequency > 0).Should().BeTrue();
-        info.ComputeCapability.Should().NotBeNull();
-        (info.MaxSharedMemoryPerBlock > 0).Should().BeTrue();
-        info.Capabilities.Should().NotBeEmpty();
+        _ = info.Name.Should().NotBeNullOrEmpty();
+        _ = (info.TotalMemory > 0).Should().BeTrue();
+        _ = (info.ComputeUnits > 0).Should().BeTrue();
+        _ = (info.MaxClockFrequency > 0).Should().BeTrue();
+        _ = info.ComputeCapability.Should().NotBeNull();
+        _ = (info.MaxSharedMemoryPerBlock > 0).Should().BeTrue();
+        _ = info.Capabilities.Should().NotBeEmpty();
     }
 
     [Fact]
@@ -255,7 +255,7 @@ public sealed class CudaAcceleratorTests : IDisposable
 
         // Assert
         Assert.NotNull(memory);
-        Assert.IsAssignableFrom<IMemoryManager>(memory);
+        _ = Assert.IsAssignableFrom<IMemoryManager>(memory);
     }
 
     [Fact]
@@ -283,7 +283,7 @@ public sealed class CudaAcceleratorTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000,
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000,
             "Multiple sync operations should complete within 5 seconds");
 
         _output.WriteLine($"10 sync operations took {stopwatch.ElapsedMilliseconds}ms");
@@ -306,8 +306,8 @@ public sealed class CudaAcceleratorTests : IDisposable
         // Act & Assert
         for (var i = 0; i < 5; i++)
         {
-            Action resetAction = () => accelerator.Reset();
-            resetAction.Should().NotThrow($"Reset operation {i + 1} should succeed");
+            Action resetAction = accelerator.Reset;
+            _ = resetAction.Should().NotThrow($"Reset operation {i + 1} should succeed");
         }
     }
 
@@ -341,7 +341,7 @@ public sealed class CudaAcceleratorTests : IDisposable
         // Don't add to _accelerators list since we're testing disposal
 
         // Act & Assert
-        Action disposeAction = () => accelerator.Dispose();
+        Action disposeAction = accelerator.Dispose;
         disposeAction(); // Should not throw
     }
 
@@ -359,10 +359,10 @@ public sealed class CudaAcceleratorTests : IDisposable
 
         // Act & Assert
         var syncAction = async () => await accelerator.SynchronizeAsync();
-        await Assert.ThrowsAsync<ObjectDisposedException>(async () => await syncAction());
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(async () => await syncAction());
 
-        Action resetAction = () => accelerator.Reset();
-        Assert.Throws<ObjectDisposedException>(() => resetAction());
+        Action resetAction = accelerator.Reset;
+        _ = Assert.Throws<ObjectDisposedException>(() => resetAction());
     }
 
     [Fact]
@@ -417,11 +417,11 @@ public sealed class CudaAcceleratorTests : IDisposable
                 _accelerators.Add(accelerator);
 
                 // Assert
-                accelerator.Info.Should().NotBeNull();
-                accelerator.Memory.Should().NotBeNull();
+                _ = accelerator.Info.Should().NotBeNull();
+                _ = accelerator.Memory.Should().NotBeNull();
             }
 
-            accelerators.Count.Should().BeGreaterThan(1);
+            _ = accelerators.Count.Should().BeGreaterThan(1);
         }
         catch (Exception ex)
         {
@@ -523,5 +523,4 @@ __global__ void test_kernel(float* input, float* output, int n)
         _accelerators.Clear();
         GC.SuppressFinalize(this);
     }
-}
 }

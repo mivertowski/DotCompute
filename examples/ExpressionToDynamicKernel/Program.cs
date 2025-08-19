@@ -454,16 +454,10 @@ internal sealed class MockMemoryManager : IMemoryManager
 /// <summary>
 /// Mock memory buffer for demonstration.
 /// </summary>
-internal sealed class MockMemoryBuffer : IMemoryBuffer
+internal sealed class MockMemoryBuffer(long size, MemoryOptions options = MemoryOptions.None) : IMemoryBuffer
 {
-    public MockMemoryBuffer(long size, MemoryOptions options = MemoryOptions.None)
-    {
-        SizeInBytes = size;
-        Options = options;
-    }
-
-    public long SizeInBytes { get; }
-    public MemoryOptions Options { get; }
+    public long SizeInBytes { get; } = size;
+    public MemoryOptions Options { get; } = options;
     public bool IsDisposed => false;
 
     public ValueTask CopyFromHostAsync<T>(
@@ -480,18 +474,11 @@ internal sealed class MockMemoryBuffer : IMemoryBuffer
 /// Mock memory buffer view for demonstration.
 /// </summary>
 [SuppressMessage("CodeQuality", "CA1812:Avoid uninstantiated internal classes", Justification = "Class is instantiated via CreateView method")]
-internal sealed class MockMemoryBufferView : IMemoryBuffer
+internal sealed class MockMemoryBufferView(MockMemoryBuffer parentBuffer, long offset, long length) : IMemoryBuffer
 {
-    private readonly MockMemoryBuffer _parentBuffer;
-    private readonly long _offset;
-    private readonly long _length;
-
-    public MockMemoryBufferView(MockMemoryBuffer parentBuffer, long offset, long length)
-    {
-        _parentBuffer = parentBuffer;
-        _offset = offset;
-        _length = length;
-    }
+    private readonly MockMemoryBuffer _parentBuffer = parentBuffer;
+    private readonly long _offset = offset;
+    private readonly long _length = length;
 
     public long SizeInBytes => _length;
     public MemoryOptions Options => _parentBuffer.Options;
@@ -513,25 +500,13 @@ internal sealed class MockMemoryBufferView : IMemoryBuffer
 /// Mock compiled kernel for demonstration.
 /// </summary>
 [SuppressMessage("CodeQuality", "CA1812:Avoid uninstantiated internal classes", Justification = "Class is instantiated via CompileKernelAsync method")]
-internal sealed class MockCompiledKernel : DotCompute.Abstractions.ICompiledKernel
+internal sealed class MockCompiledKernel(string name) : DotCompute.Abstractions.ICompiledKernel
 {
-    public MockCompiledKernel(string name)
-    {
-        Name = name;
-    }
-
-    public string Name { get; }
+    public string Name { get; } = name;
 
     public async ValueTask ExecuteAsync(
         KernelArguments arguments,
-        CancellationToken cancellationToken = default)
-    {
-        // Simulate kernel execution
-        await Task.Delay(20, cancellationToken);
-    }
+        CancellationToken cancellationToken = default) => await Task.Delay(20, cancellationToken);
 
-    public ValueTask DisposeAsync()
-    {
-        return default;
-    }
+    public ValueTask DisposeAsync() => default;
 }

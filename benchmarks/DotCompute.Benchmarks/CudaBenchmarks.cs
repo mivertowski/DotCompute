@@ -3,8 +3,8 @@ using BenchmarkDotNet.Jobs;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 [MemoryDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90)]
@@ -203,4 +203,4 @@ internal sealed class CudaBenchmarks : IDisposable
         Cleanup();
         GC.SuppressFinalize(this);
     }
-}}
+}

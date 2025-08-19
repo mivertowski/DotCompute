@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Runtime.InteropServices;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 /// <summary>
 /// Comprehensive benchmarks for memory allocation and deallocation performance.
@@ -259,4 +259,4 @@ internal sealed class MemoryOperationsBenchmarks : IDisposable
         }
         GC.SuppressFinalize(this);
     }
-}}
+}

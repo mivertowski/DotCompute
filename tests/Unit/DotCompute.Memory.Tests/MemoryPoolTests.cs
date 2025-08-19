@@ -4,8 +4,8 @@ using DotCompute.Memory;
 using NSubstitute;
 using Xunit;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 public sealed class MemoryPoolTests : IDisposable
 {
@@ -33,7 +33,7 @@ public sealed class MemoryPoolTests : IDisposable
 
         // Assert
         Assert.NotNull(buffer);
-        buffer.Length.Should().BeGreaterThanOrEqualTo(1024);
+        _ = buffer.Length.Should().BeGreaterThanOrEqualTo(1024);
     }
 
     [Fact]
@@ -41,7 +41,7 @@ public sealed class MemoryPoolTests : IDisposable
     {
         // Act & Assert
         var act = () => _pool.Rent(0);
-        Assert.Throws<ArgumentOutOfRangeException>(() => act());
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public sealed class MemoryPoolTests : IDisposable
     {
         // Act & Assert
         var act = () => _pool.Rent(-1);
-        Assert.Throws<ArgumentOutOfRangeException>(() => act());
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Theory]
@@ -65,7 +65,7 @@ public sealed class MemoryPoolTests : IDisposable
 
         // Assert
         Assert.NotNull(buffer);
-        buffer.Length.Should().BeGreaterThanOrEqualTo(size);
+        _ = buffer.Length.Should().BeGreaterThanOrEqualTo(size);
     }
 
     [Fact]
@@ -101,7 +101,7 @@ public sealed class MemoryPoolTests : IDisposable
 
         // Act & Assert
         Assert.NotNull(buffer);
-        buffer.Length.Should().BeGreaterThanOrEqualTo(10);
+        _ = buffer.Length.Should().BeGreaterThanOrEqualTo(10);
 
         // Cleanup
         buffer.Dispose();
@@ -115,14 +115,14 @@ public sealed class MemoryPoolTests : IDisposable
         var buffer1 = _pool.Rent(1024);
 
         // Verify buffer was allocated
-        _pool.TotalAllocatedBuffers.Should().Be(initialAllocated + 1);
+        _ = _pool.TotalAllocatedBuffers.Should().Be(initialAllocated + 1);
 
         // Act
         buffer1.Dispose();
         _ = _pool.Rent(1024);
 
         // Assert - No new allocation should have occurred for same size
-        _pool.TotalAllocatedBuffers.Should().Be(initialAllocated + 1);
+        _ = _pool.TotalAllocatedBuffers.Should().Be(initialAllocated + 1);
     }
 
     [Fact]
@@ -137,7 +137,7 @@ public sealed class MemoryPoolTests : IDisposable
         var totalBytes = _pool.TotalAllocatedBytes;
 
         // Assert
-        totalBytes.Should().BeGreaterThanOrEqualTo(initialBytes);
+        _ = totalBytes.Should().BeGreaterThanOrEqualTo(initialBytes);
 
         // Cleanup
         buffer1.Dispose();
@@ -162,11 +162,11 @@ public sealed class MemoryPoolTests : IDisposable
         var bytesBefore = _pool.TotalAllocatedBytes;
 
         // Act
-        _pool.Compact();
+        _ = _pool.Compact();
         var bytesAfter = _pool.TotalAllocatedBytes;
 
         // Assert
-        bytesAfter.Should().BeLessThanOrEqualTo(bytesBefore);
+        _ = bytesAfter.Should().BeLessThanOrEqualTo(bytesBefore);
     }
 
     [Fact]
@@ -191,7 +191,7 @@ public sealed class MemoryPoolTests : IDisposable
 
         // Assert
         // Memory pressure handling should not throw
-        _pool.TotalReturnedBuffers.Should().BeGreaterThanOrEqualTo(5);
+        _ = _pool.TotalReturnedBuffers.Should().BeGreaterThanOrEqualTo(5);
     }
 
     [Fact]
@@ -237,7 +237,7 @@ public sealed class MemoryPoolTests : IDisposable
 
         // Assert
         var act = () => pool.Rent(100);
-        Assert.Throws<ObjectDisposedException>(() => act());
+        _ = Assert.Throws<ObjectDisposedException>(() => act());
     }
 
     [Fact]
@@ -250,7 +250,6 @@ public sealed class MemoryPoolTests : IDisposable
 
         // Act & Assert
         var act = () => pool.Rent(100);
-        Assert.Throws<ObjectDisposedException>(() => act());
+        _ = Assert.Throws<ObjectDisposedException>(() => act());
     }
-}
 }

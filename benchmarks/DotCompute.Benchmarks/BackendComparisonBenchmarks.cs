@@ -5,8 +5,8 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 /// <summary>
 /// Benchmarks for comparing CPU vs simulated GPU backend performance.
@@ -489,4 +489,4 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
         }
         GC.SuppressFinalize(this);
     }
-}}
+}

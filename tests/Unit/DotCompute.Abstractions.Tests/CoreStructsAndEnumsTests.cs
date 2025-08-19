@@ -5,8 +5,8 @@ using Xunit;
 using FluentAssertions;
 using System.Globalization;
 
-namespace DotCompute.Abstractions.Tests
-{
+namespace DotCompute.Abstractions.Tests;
+
 
 /// <summary>
 /// Comprehensive unit tests for core structs, enums, and supporting classes in DotCompute.Abstractions.
@@ -31,10 +31,10 @@ public sealed class CoreStructsAndEnumsTests
         var compiledKernel = new CompiledKernel(id, handle, sharedMemorySize, configuration);
 
         // Assert
-        compiledKernel.Id.Should().Be(id);
-        compiledKernel.NativeHandle.Should().Be(handle);
-        compiledKernel.SharedMemorySize.Should().Be(sharedMemorySize);
-        compiledKernel.Configuration.Should().Be(configuration);
+        _ = compiledKernel.Id.Should().Be(id);
+        _ = compiledKernel.NativeHandle.Should().Be(handle);
+        _ = compiledKernel.SharedMemorySize.Should().Be(sharedMemorySize);
+        _ = compiledKernel.Configuration.Should().Be(configuration);
     }
 
     [Fact]
@@ -50,9 +50,9 @@ public sealed class CoreStructsAndEnumsTests
         var kernel2 = new CompiledKernel(id, handle, sharedMemorySize, configuration);
 
         // Act & Assert
-        kernel1.Equals(kernel2).Should().BeTrue();
-        (kernel1 == kernel2).Should().BeTrue();
-        (kernel1 != kernel2).Should().BeFalse();
+        _ = kernel1.Equals(kernel2).Should().BeTrue();
+        _ = (kernel1 == kernel2).Should().BeTrue();
+        _ = (kernel1 != kernel2).Should().BeFalse();
     }
 
     [Fact]
@@ -68,9 +68,9 @@ public sealed class CoreStructsAndEnumsTests
         var kernel2 = new CompiledKernel(id2, handle, 512, config);
 
         // Act & Assert
-        kernel1.Equals(kernel2).Should().BeFalse();
-        (kernel1 == kernel2).Should().BeFalse();
-        (kernel1 != kernel2).Should().BeTrue();
+        _ = kernel1.Equals(kernel2).Should().BeFalse();
+        _ = (kernel1 == kernel2).Should().BeFalse();
+        _ = (kernel1 != kernel2).Should().BeTrue();
     }
 
     [Fact]
@@ -107,8 +107,8 @@ public sealed class CoreStructsAndEnumsTests
         var config = new KernelConfiguration(gridDim, blockDim);
 
         // Assert
-        config.GridDimensions.Should().Be(gridDim);
-        config.BlockDimensions.Should().Be(blockDim);
+        _ = config.GridDimensions.Should().Be(gridDim);
+        _ = config.BlockDimensions.Should().Be(blockDim);
     }
 
     [Fact]
@@ -122,9 +122,9 @@ public sealed class CoreStructsAndEnumsTests
         var config2 = new KernelConfiguration(gridDim, blockDim);
 
         // Act & Assert
-        config1.Equals(config2).Should().BeTrue();
-        (config1 == config2).Should().BeTrue();
-        (config1 != config2).Should().BeFalse();
+        _ = config1.Equals(config2).Should().BeTrue();
+        _ = (config1 == config2).Should().BeTrue();
+        _ = (config1 != config2).Should().BeFalse();
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public sealed class CoreStructsAndEnumsTests
         var config2 = new KernelConfiguration(gridDim, blockDim);
 
         // Act & Assert
-        config1.GetHashCode().Should().Be(config2.GetHashCode());
+        _ = config1.GetHashCode().Should().Be(config2.GetHashCode());
     }
 
     #endregion
@@ -157,12 +157,12 @@ public sealed class CoreStructsAndEnumsTests
         var definition = new KernelDefinition(name, source, options);
 
         // Assert
-        definition.Name.Should().Be(name);
-        definition.Code.Should().NotBeNullOrEmpty();
-        definition.EntryPoint.Should().Be(source.EntryPoint);
-        definition.Metadata.Should().ContainKey("Language");
-        definition.Metadata.Should().ContainKey("Dependencies");
-        definition.Metadata.Should().ContainKey("CompilationOptions");
+        _ = definition.Name.Should().Be(name);
+        _ = definition.Code.Should().NotBeNullOrEmpty();
+        _ = definition.EntryPoint.Should().Be(source.EntryPoint);
+        _ = definition.Metadata.Should().ContainKey("Language");
+        _ = definition.Metadata.Should().ContainKey("Dependencies");
+        _ = definition.Metadata.Should().ContainKey("CompilationOptions");
     }
 
     [Theory]
@@ -176,7 +176,7 @@ public sealed class CoreStructsAndEnumsTests
 
         // Act & Assert
         var action = () => new KernelDefinition(invalidName, source, options);
-        action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("name");
+        _ = action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("name");
     }
 
     [Fact]
@@ -187,7 +187,7 @@ public sealed class CoreStructsAndEnumsTests
 
         // Act & Assert
         var action = () => new KernelDefinition("TestKernel", null!, options);
-        action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("source");
+        _ = action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("source");
     }
 
     [Fact]
@@ -198,7 +198,7 @@ public sealed class CoreStructsAndEnumsTests
 
         // Act & Assert
         var action = () => new KernelDefinition("TestKernel", source, null!);
-        action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("options");
+        _ = action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("options");
     }
 
     #endregion
@@ -212,19 +212,19 @@ public sealed class CoreStructsAndEnumsTests
         var options = new CompilationOptions();
 
         // Assert
-        options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
-        options.EnableDebugInfo.Should().BeFalse();
-        options.AdditionalFlags.Should().BeNull();
-        options.Defines.Should().BeNull();
-        options.FastMath.Should().BeFalse();
-        options.UnrollLoops.Should().BeFalse();
-        options.PreferredBlockSize.Should().Be(new Dim3(256, 1, 1));
-        options.SharedMemorySize.Should().Be(0);
-        options.MaxThreadsPerBlock.Should().Be(1024);
-        options.EnableMemoryCoalescing.Should().BeTrue();
-        options.EnableOperatorFusion.Should().BeTrue();
-        options.EnableParallelExecution.Should().BeTrue();
-        options.GenerateDebugInfo.Should().BeFalse();
+        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Default);
+        _ = options.EnableDebugInfo.Should().BeFalse();
+        _ = options.AdditionalFlags.Should().BeNull();
+        _ = options.Defines.Should().BeNull();
+        _ = options.FastMath.Should().BeFalse();
+        _ = options.UnrollLoops.Should().BeFalse();
+        _ = options.PreferredBlockSize.Should().Be(new Dim3(256, 1, 1));
+        _ = options.SharedMemorySize.Should().Be(0);
+        _ = options.MaxThreadsPerBlock.Should().Be(1024);
+        _ = options.EnableMemoryCoalescing.Should().BeTrue();
+        _ = options.EnableOperatorFusion.Should().BeTrue();
+        _ = options.EnableParallelExecution.Should().BeTrue();
+        _ = options.GenerateDebugInfo.Should().BeFalse();
     }
 
     [Fact]
@@ -249,19 +249,19 @@ public sealed class CoreStructsAndEnumsTests
         };
 
         // Assert
-        options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
-        options.EnableDebugInfo.Should().BeTrue();
-        options.AdditionalFlags.Should().BeEquivalentTo(["-O3", "-ffast-math"]);
-        options.Defines.Should().ContainKey("DEBUG");
-        options.FastMath.Should().BeTrue();
-        options.UnrollLoops.Should().BeTrue();
-        options.PreferredBlockSize.Should().Be(new Dim3(256, 1, 1));
-        options.SharedMemorySize.Should().Be(2048);
-        options.MaxThreadsPerBlock.Should().Be(512);
-        options.EnableMemoryCoalescing.Should().BeFalse();
-        options.EnableOperatorFusion.Should().BeFalse();
-        options.EnableParallelExecution.Should().BeFalse();
-        options.GenerateDebugInfo.Should().BeTrue();
+        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
+        _ = options.EnableDebugInfo.Should().BeTrue();
+        _ = options.AdditionalFlags.Should().BeEquivalentTo(["-O3", "-ffast-math"]);
+        _ = options.Defines.Should().ContainKey("DEBUG");
+        _ = options.FastMath.Should().BeTrue();
+        _ = options.UnrollLoops.Should().BeTrue();
+        _ = options.PreferredBlockSize.Should().Be(new Dim3(256, 1, 1));
+        _ = options.SharedMemorySize.Should().Be(2048);
+        _ = options.MaxThreadsPerBlock.Should().Be(512);
+        _ = options.EnableMemoryCoalescing.Should().BeFalse();
+        _ = options.EnableOperatorFusion.Should().BeFalse();
+        _ = options.EnableParallelExecution.Should().BeFalse();
+        _ = options.GenerateDebugInfo.Should().BeTrue();
     }
 
     #endregion
@@ -283,14 +283,14 @@ public sealed class CoreStructsAndEnumsTests
         var parameter = new KernelParameter(name, type, index, isInput, isOutput, isConstant);
 
         // Assert
-        parameter.Name.Should().Be(name);
-        parameter.Type.Should().Be(type);
-        parameter.Index.Should().Be(index);
-        parameter.IsInput.Should().Be(isInput);
-        parameter.IsOutput.Should().Be(isOutput);
-        parameter.IsConstant.Should().Be(isConstant);
-        parameter.IsReadOnly.Should().Be(true); // IsInput && !IsOutput
-        parameter.MemorySpace.Should().Be(MemorySpace.Global); // Default
+        _ = parameter.Name.Should().Be(name);
+        _ = parameter.Type.Should().Be(type);
+        _ = parameter.Index.Should().Be(index);
+        _ = parameter.IsInput.Should().Be(isInput);
+        _ = parameter.IsOutput.Should().Be(isOutput);
+        _ = parameter.IsConstant.Should().Be(isConstant);
+        _ = parameter.IsReadOnly.Should().Be(true); // IsInput && !IsOutput
+        _ = parameter.MemorySpace.Should().Be(MemorySpace.Global); // Default
     }
 
     [Fact]
@@ -298,7 +298,7 @@ public sealed class CoreStructsAndEnumsTests
     {
         // Act & Assert
         var action = () => new KernelParameter(null!, typeof(int), 0);
-        action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("name");
+        _ = action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("name");
     }
 
     [Fact]
@@ -306,7 +306,7 @@ public sealed class CoreStructsAndEnumsTests
     {
         // Act & Assert
         var action = () => new KernelParameter("test", null!, 0);
-        action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("type");
+        _ = action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("type");
     }
 
     [Fact]
@@ -318,9 +318,9 @@ public sealed class CoreStructsAndEnumsTests
         var readWriteParam = new KernelParameter("test3", typeof(int), 2, isInput: true, isOutput: true);
 
         // Assert
-        readOnlyParam.IsReadOnly.Should().BeTrue();
-        writeOnlyParam.IsReadOnly.Should().BeFalse();
-        readWriteParam.IsReadOnly.Should().BeFalse();
+        _ = readOnlyParam.IsReadOnly.Should().BeTrue();
+        _ = writeOnlyParam.IsReadOnly.Should().BeFalse();
+        _ = readWriteParam.IsReadOnly.Should().BeFalse();
     }
 
     [Fact]
@@ -333,7 +333,7 @@ public sealed class CoreStructsAndEnumsTests
         };
 
         // Assert
-        parameter.MemorySpace.Should().Be(MemorySpace.Shared);
+        _ = parameter.MemorySpace.Should().Be(MemorySpace.Shared);
     }
 
     #endregion
@@ -346,24 +346,24 @@ public sealed class CoreStructsAndEnumsTests
         // Arrange
         var expectedValues = new[]
         {
-            AcceleratorType.CPU,
-            AcceleratorType.CUDA,
-            AcceleratorType.ROCm,
-            AcceleratorType.OneAPI,
-            AcceleratorType.Metal,
-            AcceleratorType.OpenCL,
-            AcceleratorType.DirectML,
-            AcceleratorType.GPU,
-            AcceleratorType.FPGA,
-            AcceleratorType.TPU,
-            AcceleratorType.Custom
-        };
+        AcceleratorType.CPU,
+        AcceleratorType.CUDA,
+        AcceleratorType.ROCm,
+        AcceleratorType.OneAPI,
+        AcceleratorType.Metal,
+        AcceleratorType.OpenCL,
+        AcceleratorType.DirectML,
+        AcceleratorType.GPU,
+        AcceleratorType.FPGA,
+        AcceleratorType.TPU,
+        AcceleratorType.Custom
+    };
 
         // Act
         var actualValues = Enum.GetValues<AcceleratorType>();
 
         // Assert
-        actualValues.Should().BeEquivalentTo(expectedValues);
+        _ = actualValues.Should().BeEquivalentTo(expectedValues);
     }
 
     [Theory]
@@ -389,14 +389,14 @@ public sealed class CoreStructsAndEnumsTests
         var type = typeof(MemoryOptions);
 
         // Act & Assert
-        type.Should().BeDecoratedWith<FlagsAttribute>();
+        _ = type.Should().BeDecoratedWith<FlagsAttribute>();
 
         // Test flag combinations
         var combined = MemoryOptions.ReadOnly | MemoryOptions.HostVisible | MemoryOptions.Cached;
-        combined.Should().HaveFlag(MemoryOptions.ReadOnly);
-        combined.Should().HaveFlag(MemoryOptions.HostVisible);
-        combined.Should().HaveFlag(MemoryOptions.Cached);
-        combined.Should().NotHaveFlag(MemoryOptions.WriteOnly);
+        _ = combined.Should().HaveFlag(MemoryOptions.ReadOnly);
+        _ = combined.Should().HaveFlag(MemoryOptions.HostVisible);
+        _ = combined.Should().HaveFlag(MemoryOptions.Cached);
+        _ = combined.Should().NotHaveFlag(MemoryOptions.WriteOnly);
     }
 
     [Fact]
@@ -406,17 +406,17 @@ public sealed class CoreStructsAndEnumsTests
         var type = typeof(MapMode);
 
         // Act & Assert
-        type.Should().BeDecoratedWith<FlagsAttribute>();
+        _ = type.Should().BeDecoratedWith<FlagsAttribute>();
 
         // Test flag combinations
         var readWrite = MapMode.Read | MapMode.Write;
         Assert.Equal(MapMode.ReadWrite, readWrite);
 
         var complexMode = MapMode.ReadWrite | MapMode.Discard | MapMode.NoWait;
-        complexMode.Should().HaveFlag(MapMode.Read);
-        complexMode.Should().HaveFlag(MapMode.Write);
-        complexMode.Should().HaveFlag(MapMode.Discard);
-        complexMode.Should().HaveFlag(MapMode.NoWait);
+        _ = complexMode.Should().HaveFlag(MapMode.Read);
+        _ = complexMode.Should().HaveFlag(MapMode.Write);
+        _ = complexMode.Should().HaveFlag(MapMode.Discard);
+        _ = complexMode.Should().HaveFlag(MapMode.NoWait);
     }
 
     [Theory]
@@ -477,14 +477,14 @@ public sealed class CoreStructsAndEnumsTests
         var type = typeof(AcceleratorFeature);
 
         // Act & Assert
-        type.Should().BeDecoratedWith<FlagsAttribute>();
+        _ = type.Should().BeDecoratedWith<FlagsAttribute>();
 
         // Test feature combinations
         var features = AcceleratorFeature.Float16 | AcceleratorFeature.DoublePrecision | AcceleratorFeature.TensorCores;
-        features.Should().HaveFlag(AcceleratorFeature.Float16);
-        features.Should().HaveFlag(AcceleratorFeature.DoublePrecision);
-        features.Should().HaveFlag(AcceleratorFeature.TensorCores);
-        features.Should().NotHaveFlag(AcceleratorFeature.UnifiedMemory);
+        _ = features.Should().HaveFlag(AcceleratorFeature.Float16);
+        _ = features.Should().HaveFlag(AcceleratorFeature.DoublePrecision);
+        _ = features.Should().HaveFlag(AcceleratorFeature.TensorCores);
+        _ = features.Should().NotHaveFlag(AcceleratorFeature.UnifiedMemory);
     }
 
     #endregion
@@ -505,11 +505,11 @@ public sealed class CoreStructsAndEnumsTests
         var source = new TextKernelSource(code, name, language, entryPoint, dependencies);
 
         // Assert
-        source.Code.Should().Be(code);
-        source.Name.Should().Be(name);
-        source.Language.Should().Be(language);
-        source.EntryPoint.Should().Be(entryPoint);
-        source.Dependencies.Should().BeEquivalentTo(dependencies);
+        _ = source.Code.Should().Be(code);
+        _ = source.Name.Should().Be(name);
+        _ = source.Language.Should().Be(language);
+        _ = source.EntryPoint.Should().Be(entryPoint);
+        _ = source.Dependencies.Should().BeEquivalentTo(dependencies);
     }
 
     [Theory]
@@ -519,7 +519,7 @@ public sealed class CoreStructsAndEnumsTests
     {
         // Act & Assert
         var action = () => new TextKernelSource(invalidCode);
-        action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("code");
+        _ = action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("code");
     }
 
     [Fact]
@@ -535,11 +535,11 @@ public sealed class CoreStructsAndEnumsTests
         var source = new BytecodeKernelSource(bytecode, name, language, entryPoint);
 
         // Assert
-        source.Name.Should().Be(name);
-        source.Language.Should().Be(language);
-        source.EntryPoint.Should().Be(entryPoint);
-        source.Code.Should().Be(Convert.ToBase64String(bytecode));
-        source.Dependencies.Should().NotBeNull().And.HaveCount(0);
+        _ = source.Name.Should().Be(name);
+        _ = source.Language.Should().Be(language);
+        _ = source.EntryPoint.Should().Be(entryPoint);
+        _ = source.Code.Should().Be(Convert.ToBase64String(bytecode));
+        _ = source.Dependencies.Should().NotBeNull().And.HaveCount(0);
     }
 
     [Fact]
@@ -547,7 +547,7 @@ public sealed class CoreStructsAndEnumsTests
     {
         // Act & Assert
         var action = () => new BytecodeKernelSource(null!);
-        action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("bytecode");
+        _ = action.Should().Throw<ArgumentNullException>().And.ParamName.Should().Be("bytecode");
     }
 
     [Fact]
@@ -555,7 +555,7 @@ public sealed class CoreStructsAndEnumsTests
     {
         // Act & Assert
         var action = () => new BytecodeKernelSource([]);
-        action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("bytecode");
+        _ = action.Should().Throw<ArgumentException>().And.ParamName.Should().Be("bytecode");
     }
 
     #endregion
@@ -569,9 +569,9 @@ public sealed class CoreStructsAndEnumsTests
         var result = ValidationResult.Success();
 
         // Assert
-        result.IsValid.Should().BeTrue();
-        result.ErrorMessage.Should().BeNull();
-        result.Warnings.Should().NotBeNull().And.HaveCount(0);
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.ErrorMessage.Should().BeNull();
+        _ = result.Warnings.Should().NotBeNull().And.HaveCount(0);
     }
 
     [Fact]
@@ -584,9 +584,9 @@ public sealed class CoreStructsAndEnumsTests
         var result = ValidationResult.SuccessWithWarnings(warnings);
 
         // Assert
-        result.IsValid.Should().BeTrue();
-        result.ErrorMessage.Should().BeNull();
-        result.Warnings.Should().BeEquivalentTo(warnings);
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.ErrorMessage.Should().BeNull();
+        _ = result.Warnings.Should().BeEquivalentTo(warnings);
     }
 
     [Fact]
@@ -599,9 +599,9 @@ public sealed class CoreStructsAndEnumsTests
         var result = ValidationResult.Failure(errorMessage);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Be(errorMessage);
-        result.Warnings.Should().NotBeNull().And.HaveCount(0);
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Be(errorMessage);
+        _ = result.Warnings.Should().NotBeNull().And.HaveCount(0);
     }
 
     [Fact]
@@ -615,9 +615,9 @@ public sealed class CoreStructsAndEnumsTests
         var result = ValidationResult.FailureWithWarnings(errorMessage, warnings);
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.ErrorMessage.Should().Be(errorMessage);
-        result.Warnings.Should().BeEquivalentTo(warnings);
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.ErrorMessage.Should().Be(errorMessage);
+        _ = result.Warnings.Should().BeEquivalentTo(warnings);
     }
 
     [Fact]
@@ -631,7 +631,7 @@ public sealed class CoreStructsAndEnumsTests
         result.AddWarning(warning);
 
         // Assert
-        result.Warnings.Should().Contain(warning);
+        _ = result.Warnings.Should().Contain(warning);
     }
 
     [Fact]
@@ -642,9 +642,9 @@ public sealed class CoreStructsAndEnumsTests
         var result2 = ValidationResult.SuccessWithWarnings("Warning 1", "Warning 2");
 
         // Act & Assert
-        result1.Equals(result2).Should().BeTrue();
-        (result1 == result2).Should().BeTrue();
-        (result1 != result2).Should().BeFalse();
+        _ = result1.Equals(result2).Should().BeTrue();
+        _ = (result1 == result2).Should().BeTrue();
+        _ = (result1 != result2).Should().BeFalse();
     }
 
     [Fact]
@@ -655,7 +655,7 @@ public sealed class CoreStructsAndEnumsTests
         var result2 = ValidationResult.Failure("Error message");
 
         // Act & Assert
-        result1.GetHashCode().Should().Be(result2.GetHashCode());
+        _ = result1.GetHashCode().Should().Be(result2.GetHashCode());
     }
 
     #endregion
@@ -676,11 +676,11 @@ public sealed class CoreStructsAndEnumsTests
         var metadata = new CompilationMetadata(compilationTime, codeSize, registersPerThread, sharedMemoryPerBlock, optimizationNotes);
 
         // Assert
-        metadata.CompilationTime.Should().Be(compilationTime);
-        metadata.CodeSize.Should().Be(codeSize);
-        metadata.RegistersPerThread.Should().Be(registersPerThread);
-        metadata.SharedMemoryPerBlock.Should().Be(sharedMemoryPerBlock);
-        metadata.OptimizationNotes.Should().BeEquivalentTo(optimizationNotes);
+        _ = metadata.CompilationTime.Should().Be(compilationTime);
+        _ = metadata.CodeSize.Should().Be(codeSize);
+        _ = metadata.RegistersPerThread.Should().Be(registersPerThread);
+        _ = metadata.SharedMemoryPerBlock.Should().Be(sharedMemoryPerBlock);
+        _ = metadata.OptimizationNotes.Should().BeEquivalentTo(optimizationNotes);
     }
 
     [Fact]
@@ -692,9 +692,9 @@ public sealed class CoreStructsAndEnumsTests
         var metadata2 = new CompilationMetadata(time, 1024, 16, 512, ["note1"]);
 
         // Act & Assert
-        metadata1.Equals(metadata2).Should().BeTrue();
-        (metadata1 == metadata2).Should().BeTrue();
-        (metadata1 != metadata2).Should().BeFalse();
+        _ = metadata1.Equals(metadata2).Should().BeTrue();
+        _ = (metadata1 == metadata2).Should().BeTrue();
+        _ = (metadata1 != metadata2).Should().BeFalse();
     }
 
     [Fact]
@@ -706,7 +706,7 @@ public sealed class CoreStructsAndEnumsTests
         var metadata2 = new CompilationMetadata(time, 512, 8, 256);
 
         // Act & Assert
-        metadata1.GetHashCode().Should().Be(metadata2.GetHashCode());
+        _ = metadata1.GetHashCode().Should().Be(metadata2.GetHashCode());
     }
 
     #endregion
@@ -717,12 +717,12 @@ public sealed class CoreStructsAndEnumsTests
     public void AllStructs_ShouldImplementIEquatable()
     {
         // Assert
-        typeof(CompiledKernel).Should().BeAssignableTo<IEquatable<CompiledKernel>>();
-        typeof(KernelConfiguration).Should().BeAssignableTo<IEquatable<KernelConfiguration>>();
-        typeof(CompilationMetadata).Should().BeAssignableTo<IEquatable<CompilationMetadata>>();
-        typeof(Dim3).Should().BeAssignableTo<IEquatable<Dim3>>();
-        typeof(KernelArguments).Should().BeAssignableTo<IEquatable<KernelArguments>>();
-        typeof(AcceleratorContext).Should().BeAssignableTo<IEquatable<AcceleratorContext>>();
+        _ = typeof(CompiledKernel).Should().BeAssignableTo<IEquatable<CompiledKernel>>();
+        _ = typeof(KernelConfiguration).Should().BeAssignableTo<IEquatable<KernelConfiguration>>();
+        _ = typeof(CompilationMetadata).Should().BeAssignableTo<IEquatable<CompilationMetadata>>();
+        _ = typeof(Dim3).Should().BeAssignableTo<IEquatable<Dim3>>();
+        _ = typeof(KernelArguments).Should().BeAssignableTo<IEquatable<KernelArguments>>();
+        _ = typeof(AcceleratorContext).Should().BeAssignableTo<IEquatable<AcceleratorContext>>();
     }
 
     [Fact]
@@ -740,7 +740,7 @@ public sealed class CoreStructsAndEnumsTests
         {
             var prop = kernelDefType.GetProperty(propName);
             Assert.NotNull(prop);
-            prop.CanRead.Should().BeTrue();
+            _ = prop.CanRead.Should().BeTrue();
             if (prop.CanWrite)
             {
                 // Check if it's an init-only property by looking for init accessor
@@ -759,7 +759,7 @@ public sealed class CoreStructsAndEnumsTests
         {
             var prop = acceleratorInfoType.GetProperty(propName);
             Assert.NotNull(prop);
-            prop.CanRead.Should().BeTrue();
+            _ = prop.CanRead.Should().BeTrue();
             if (prop.CanWrite)
             {
                 // Check if it's an init-only property by looking for init accessor
@@ -784,17 +784,16 @@ public sealed class CoreStructsAndEnumsTests
         var kernelLanguages = Enum.GetValues<KernelLanguage>();
 
         // These should not change between runs
-        acceleratorTypes.Should().HaveCountGreaterThan(5);
-        memoryOptions.Should().HaveCountGreaterThan(3);
-        kernelLanguages.Should().HaveCountGreaterThan(5);
+        _ = acceleratorTypes.Should().HaveCountGreaterThan(5);
+        _ = memoryOptions.Should().HaveCountGreaterThan(3);
+        _ = kernelLanguages.Should().HaveCountGreaterThan(5);
 
         // Test specific critical values
-        ((int)AcceleratorType.CPU).Should().Be(1);
-        ((int)AcceleratorType.CUDA).Should().Be(2);
-        ((int)MemoryOptions.None).Should().Be(0);
-        ((int)MemoryOptions.ReadOnly).Should().Be(1);
+        _ = ((int)AcceleratorType.CPU).Should().Be(1);
+        _ = ((int)AcceleratorType.CUDA).Should().Be(2);
+        _ = ((int)MemoryOptions.None).Should().Be(0);
+        _ = ((int)MemoryOptions.ReadOnly).Should().Be(1);
     }
 
     #endregion
-}
 }

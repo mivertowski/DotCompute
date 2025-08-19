@@ -3,8 +3,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Integration
-{
+namespace DotCompute.Tests.Hardware.Integration;
+
 
 /// <summary>
 /// End-to-end integration tests for RTX 2000 Ada Generation GPU.
@@ -14,23 +14,17 @@ namespace DotCompute.Tests.Hardware.Integration
 [Trait("Category", "Integration")]
 [Trait("Category", "EndToEnd")]
 [Trait("Category", "RequiresGPU")]
-public sealed class EndToEndWorkflowTests : IDisposable
+public sealed class EndToEndWorkflowTests(ITestOutputHelper output) : IDisposable
 {
-    private readonly ITestOutputHelper _output;
+    private readonly ITestOutputHelper _output = output;
 #pragma warning disable CA1823 // Unused field - Logger for future use
     private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
-    
+
     // Logger messages
     private static readonly Action<ILogger, string, Exception?> LogWorkflowStep =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(2001), "Workflow step: {Step}");
 #pragma warning restore CA1823
-    private readonly bool _cudaAvailable;
-
-    public EndToEndWorkflowTests(ITestOutputHelper output)
-    {
-        _output = output;
-        _cudaAvailable = CheckCudaAvailability();
-    }
+    private readonly bool _cudaAvailable = CheckCudaAvailability();
 
     private static bool CheckCudaAvailability()
     {
@@ -98,7 +92,7 @@ public sealed class EndToEndWorkflowTests : IDisposable
             // Step 7: Validate results
             for (var i = 0; i < Math.Min(1000, vectorSize); i++) // Sample validation
             {
-                actualResult[i].Should().BeApproximately(expectedResult[i], 0.001f,
+                _ = actualResult[i].Should().BeApproximately(expectedResult[i], 0.001f,
                     $"Result at index {i} should match expected value");
             }
 
@@ -112,7 +106,7 @@ public sealed class EndToEndWorkflowTests : IDisposable
             _output.WriteLine($"  Elements/sec: {elementsPerSecond:E2}");
             _output.WriteLine($"  Effective bandwidth: {bandwidth:F2} GB/s");
 
-            elementsPerSecond.Should().BeGreaterThan(1e6, "Should process at least 1M elements per second");
+            _ = elementsPerSecond.Should().BeGreaterThan(1e6, "Should process at least 1M elements per second");
         }
         catch (Exception ex)
         {
@@ -182,7 +176,7 @@ public sealed class EndToEndWorkflowTests : IDisposable
             _output.WriteLine($"  GFLOPS: {gflops:F2}");
             _output.WriteLine($"  Execution time: {kernelExecutionTime:F2} ms");
 
-            gflops.Should().BeGreaterThan(100, "Should achieve significant GFLOPS for matrix multiplication");
+            _ = gflops.Should().BeGreaterThan(100, "Should achieve significant GFLOPS for matrix multiplication");
         }
         catch (Exception ex)
         {
@@ -244,8 +238,8 @@ public sealed class EndToEndWorkflowTests : IDisposable
             _output.WriteLine($"  Average per stage: {totalPipelineTime / 3:F2} ms");
 
             // Validate pipeline efficiency
-            throughput.Should().BeGreaterThan(1e6, "Pipeline should maintain high throughput");
-            totalPipelineTime.Should().BeLessThan(5000, "Pipeline should complete within reasonable time");
+            _ = throughput.Should().BeGreaterThan(1e6, "Pipeline should maintain high throughput");
+            _ = totalPipelineTime.Should().BeLessThan(5000, "Pipeline should complete within reasonable time");
 
             // Validate data integrity through pipeline
             ValidatePipelineResults(inputData, finalResults);
@@ -342,7 +336,7 @@ public sealed class EndToEndWorkflowTests : IDisposable
         for (var i = 0; i < sampleSize; i++)
         {
             var index = random.Next(totalElements);
-            actual[index].Should().BeApproximately(expected[index], 0.01f,
+            _ = actual[index].Should().BeApproximately(expected[index], 0.01f,
                 $"Matrix element at index {index} should match expected value");
         }
     }
@@ -368,7 +362,7 @@ public sealed class EndToEndWorkflowTests : IDisposable
         var outputMean = output.Take(1000).Average();
 
         // Results should be processed but maintain reasonable relationship
-        Math.Abs(outputMean).Should().BeLessThan(Math.Abs(inputMean) * 2,
+        _ = Math.Abs(outputMean).Should().BeLessThan(Math.Abs(inputMean) * 2,
             "Pipeline should not drastically alter data statistics");
     }
 
@@ -389,19 +383,13 @@ public sealed class EndToEndWorkflowTests : IDisposable
             return new MockUnifiedBuffer<T>(elementCount);
         }
 
-        public void Dispose() { GC.SuppressFinalize(this); }
+        public void Dispose() => GC.SuppressFinalize(this);
     }
 
-    internal sealed class MockUnifiedBuffer<T> : IDisposable where T : struct
+    internal sealed class MockUnifiedBuffer<T>(int size) : IDisposable where T : struct
     {
-        public int Size { get; }
-        private readonly T[] _data;
-
-        public MockUnifiedBuffer(int size)
-        {
-            Size = size;
-            _data = new T[size];
-        }
+        public int Size { get; } = size;
+        private readonly T[] _data = new T[size];
 
         public async Task CopyFromAsync(T[] source)
         {
@@ -415,16 +403,14 @@ public sealed class EndToEndWorkflowTests : IDisposable
             Array.Copy(_data, destination, Math.Min(_data.Length, destination.Length));
         }
 
-        public void Dispose() { GC.SuppressFinalize(this); }
+        public void Dispose() => GC.SuppressFinalize(this);
     }
 
     #endregion
 
-    public void Dispose()
-    {
+    public void Dispose() =>
         // Cleanup resources
         GC.SuppressFinalize(this);
-    }
 }
 
 /// <summary>
@@ -472,5 +458,4 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
-}
 }

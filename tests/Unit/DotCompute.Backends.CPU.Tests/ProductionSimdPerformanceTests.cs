@@ -14,8 +14,8 @@ using DotCompute.Backends.CPU.Optimization;
 using Xunit.Abstractions;
 
 #pragma warning disable CA1515 // Make types internal
-namespace DotCompute.Backends.CPU
-{
+namespace DotCompute.Backends.CPU;
+
 
 /// <summary>
 /// Comprehensive production tests for SIMD performance and validation.
@@ -104,7 +104,7 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
         // Assert - Vectorized should show improvement for larger arrays
         if (arraySize >= 8192 && NativeAotOptimizations.HasAdvancedSimdSupport)
         {
-            speedup.Should().BeGreaterThan(1.1,
+            _ = speedup.Should().BeGreaterThan(1.1,
                 $"Expected at least 1.1x speedup for large arrays, got {speedup:F2}x(Vectorized: {vectorizedStopwatch.ElapsedTicks} ticks, Scalar: {scalarStopwatch.ElapsedTicks} ticks)");
         }
 
@@ -447,7 +447,7 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
                     ? diff <= tolerance
                     : diff <= tolerance * maxValue;
 
-                withinTolerance.Should().BeTrue(
+                _ = withinTolerance.Should().BeTrue(
                     $"Matrix difference at [{i},{j}]: {a[i][j]} vs {b[i][j]}, diff: {diff}, relative: {diff / maxValue:F4}");
             }
         }
@@ -594,5 +594,4 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
             }
         }
     }
-}
 }

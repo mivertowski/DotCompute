@@ -4,8 +4,8 @@
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Mock CUDA tests that simulate hardware operations without requiring actual CUDA hardware.
@@ -14,14 +14,9 @@ namespace DotCompute.Tests.Hardware
 [Trait("Category", "Mock")]
 [Trait("Category", "CudaMock")]
 [Trait("Category", "CI")]
-public class CudaSimulationTests
+public class CudaSimulationTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public CudaSimulationTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     [Fact]
     [Trait("Category", "Mock")]
@@ -51,7 +46,7 @@ public class CudaSimulationTests
         var theoreticalBandwidth = (memoryClockRateKHz / 1000.0 * memoryBusWidth) / 8.0 / 1000.0;
 
         _output.WriteLine($"Theoretical memory bandwidth: {theoreticalBandwidth:F1} GB/s");
-        theoreticalBandwidth.Should().BeGreaterThan(300, "RTX 2000 Ada Gen should have >300 GB/s theoretical bandwidth");
+        _ = theoreticalBandwidth.Should().BeGreaterThan(300, "RTX 2000 Ada Gen should have >300 GB/s theoretical bandwidth");
     }
 
     [Fact]
@@ -106,9 +101,9 @@ public class CudaSimulationTests
 
         var gridSize = (elements + blockSize - 1) / blockSize; // Ceiling division
 
-        blockSize.Should().BeGreaterThanOrEqualTo(warpSize, "Block size should be at least one warp");
-        blockSize.Should().BeLessThanOrEqualTo(maxThreadsPerBlock, "Block size should not exceed maximum");
-        (gridSize * blockSize).Should().BeGreaterThanOrEqualTo(elements, "Grid should cover all elements");
+        _ = blockSize.Should().BeGreaterThanOrEqualTo(warpSize, "Block size should be at least one warp");
+        _ = blockSize.Should().BeLessThanOrEqualTo(maxThreadsPerBlock, "Block size should not exceed maximum");
+        _ = (gridSize * blockSize).Should().BeGreaterThanOrEqualTo(elements, "Grid should cover all elements");
 
         _output.WriteLine($"Simulated launch config for {elements} elements: Grid={gridSize}, Block={blockSize}");
     }
@@ -120,11 +115,11 @@ public class CudaSimulationTests
         // Simulate compute capability validation
         var testCases = new[]
         {
-            new { Major = 8, Minor = 9, Expected = "Ada Lovelace(RTX 2000 series)" },
-            new { Major = 8, Minor = 6, Expected = "Ampere(RTX 30 series)" },
-            new { Major = 7, Minor = 5, Expected = "Turing(RTX 20 series)" },
-            new { Major = 6, Minor = 1, Expected = "Pascal(GTX 10 series)" }
-        };
+        new { Major = 8, Minor = 9, Expected = "Ada Lovelace(RTX 2000 series)" },
+        new { Major = 8, Minor = 6, Expected = "Ampere(RTX 30 series)" },
+        new { Major = 7, Minor = 5, Expected = "Turing(RTX 20 series)" },
+        new { Major = 6, Minor = 1, Expected = "Pascal(GTX 10 series)" }
+    };
 
         foreach (var testCase in testCases)
         {
@@ -146,11 +141,11 @@ public class CudaSimulationTests
     private static string[] SimulateComputeCapabilities(int major, int minor)
     {
         var capabilities = new List<string>
-        {
-            "Unified Memory",
-            "Dynamic Parallelism",
-            "Cooperative Groups"
-        };
+    {
+        "Unified Memory",
+        "Dynamic Parallelism",
+        "Cooperative Groups"
+    };
 
         if (major >= 7)
         {
@@ -169,7 +164,7 @@ public class CudaSimulationTests
             capabilities.Add("3rd Gen Tensor Cores");
         }
 
-        return capabilities.ToArray();
+        return [.. capabilities];
     }
 
     [Fact]
@@ -182,11 +177,11 @@ public class CudaSimulationTests
         // Test different access patterns
         var accessPatterns = new[]
         {
-            new { Name = "Sequential", Stride = 1, IsCoalesced = true },
-            new { Name = "Strided by 2", Stride = 2, IsCoalesced = false },
-            new { Name = "Strided by 4", Stride = 4, IsCoalesced = false },
-            new { Name = "Random", Stride = -1, IsCoalesced = false }
-        };
+        new { Name = "Sequential", Stride = 1, IsCoalesced = true },
+        new { Name = "Strided by 2", Stride = 2, IsCoalesced = false },
+        new { Name = "Strided by 4", Stride = 4, IsCoalesced = false },
+        new { Name = "Random", Stride = -1, IsCoalesced = false }
+    };
 
         foreach (var pattern in accessPatterns)
         {
@@ -217,11 +212,11 @@ public class CudaSimulationTests
         // Simulate CUDA error conditions and recovery
         var errorCodes = new[]
         {
-            new { Code = 0, Name = "CUDA_SUCCESS", IsError = false },
-            new { Code = 1, Name = "CUDA_ERROR_INVALID_VALUE", IsError = true },
-            new { Code = 2, Name = "CUDA_ERROR_OUT_OF_MEMORY", IsError = true },
-            new { Code = 700, Name = "CUDA_ERROR_ILLEGAL_ADDRESS", IsError = true }
-        };
+        new { Code = 0, Name = "CUDA_SUCCESS", IsError = false },
+        new { Code = 1, Name = "CUDA_ERROR_INVALID_VALUE", IsError = true },
+        new { Code = 2, Name = "CUDA_ERROR_OUT_OF_MEMORY", IsError = true },
+        new { Code = 700, Name = "CUDA_ERROR_ILLEGAL_ADDRESS", IsError = true }
+    };
 
         foreach (var error in errorCodes)
         {
@@ -229,7 +224,7 @@ public class CudaSimulationTests
 
             if (error.IsError)
             {
-                (error.Code != 0).Should().BeTrue();
+                _ = (error.Code != 0).Should().BeTrue();
                 _output.WriteLine($"Error {error.Code}{error.Name}): Recovery possible = {canRecover}");
             }
             else
@@ -253,5 +248,4 @@ public class CudaSimulationTests
             _ => false // Unknown errors
         };
     }
-}
 }

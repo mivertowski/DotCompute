@@ -4,23 +4,16 @@ using DotCompute.Tests.Utilities;
 using DotCompute.Tests.Utilities.TestFixtures;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Hardware-dependent tests for OpenCL devices.
 /// These tests require actual OpenCL-capable hardware(GPU, CPU, or FPGA).
 /// </summary>
-public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
+public class OpenCLHardwareTests(ITestOutputHelper output, AcceleratorTestFixture fixture) : IClassFixture<AcceleratorTestFixture>
 {
-    private readonly ITestOutputHelper _output;
-    private readonly AcceleratorTestFixture _fixture;
-
-    public OpenCLHardwareTests(ITestOutputHelper output, AcceleratorTestFixture fixture)
-    {
-        _output = output;
-        _fixture = fixture;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     [HardwareFact(AcceleratorType.OpenCL)]
     public async Task OpenCL_Platform_Detection()
@@ -93,8 +86,8 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
         _output.WriteLine("Testing OpenCL buffer operations...");
 
         const int dataSize = 1024 * 1024; // 1M elements
-        // Remove unnecessary assignment for IDE0059
-        TestDataGenerators.GenerateRandomVector(dataSize);
+                                          // Remove unnecessary assignment for IDE0059
+        _ = TestDataGenerators.GenerateRandomVector(dataSize);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -123,7 +116,7 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
         const int width = 1024;
         const int height = 1024;
         // Remove unnecessary assignment for IDE0059
-        TestDataGenerators.GeneratePatternData(width, height, PatternType.Gradient);
+        _ = TestDataGenerators.GeneratePatternData(width, height, PatternType.Gradient);
 
         // TODO: When real OpenCL backend is implemented:
         // 1. Create 2D image object
@@ -146,9 +139,9 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
         const int tileSize = 16;
 
         // Convert multidimensional arrays to jagged arrays for CA1814
-        TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
-        TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
-        TestDataGenerators.CreateJaggedArray(matrixSize, matrixSize);
+        _ = TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
+        _ = TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
+        _ = TestDataGenerators.CreateJaggedArray(matrixSize, matrixSize);
 
         // TODO: When real OpenCL backend is implemented:
         // 1. Implement tiled matrix multiplication
@@ -266,5 +259,4 @@ public class OpenCLHardwareTests : IClassFixture<AcceleratorTestFixture>
 
         await Task.CompletedTask;
     }
-}
 }

@@ -16,19 +16,15 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Integration tests for plugin system integration with core DotCompute functionality.
 /// Tests plugin loading, execution, and interaction with the core system.
 /// </summary>
-public sealed class PluginIntegrationSystemTests : IntegrationTestBase
+public sealed class PluginIntegrationSystemTests(ITestOutputHelper output) : IntegrationTestBase(output)
 {
-    public PluginIntegrationSystemTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
     [Fact]
     public async Task PluginSystem_LoadBackendPlugins_ShouldDiscoverAndLoadPlugins()
     {
@@ -42,8 +38,8 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
         var availableAccelerators = acceleratorManager.AvailableAccelerators;
 
         // Assert
-        loadedPlugins.Should().NotBeEmpty("At least CPU backend should be available");
-        availableAccelerators.Should().NotBeEmpty("Loaded plugins should provide accelerators");
+        _ = loadedPlugins.Should().NotBeEmpty("At least CPU backend should be available");
+        _ = availableAccelerators.Should().NotBeEmpty("Loaded plugins should provide accelerators");
 
         // Verify plugin-accelerator relationship
         foreach (var plugin in loadedPlugins)
@@ -73,17 +69,17 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
         // Act
         var factoryResults = new List<BackendFactoryResult>();
 
-        foreach (var factoryResult in loadedPlugins.Select(plugin => TestBackendFactory(plugin)))
+        foreach (var factoryResult in loadedPlugins.Select(TestBackendFactory))
         {
             factoryResults.Add(await factoryResult);
         }
 
         // Assert
         Assert.NotEmpty(factoryResults);
-        factoryResults.Should().AllSatisfy(result =>
+        _ = factoryResults.Should().AllSatisfy(result =>
         {
-            result.FactoryCreated.Should().BeTrue();
-            result.AcceleratorsCreated.Should().BeGreaterThanOrEqualTo(0);
+            _ = result.FactoryCreated.Should().BeTrue();
+            _ = result.AcceleratorsCreated.Should().BeGreaterThanOrEqualTo(0);
         });
     }
 
@@ -108,11 +104,11 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
 
         // Assert
         Assert.NotEmpty(executionResults);
-        executionResults.Should().AllSatisfy(result =>
+        _ = executionResults.Should().AllSatisfy(result =>
         {
-            result.Success.Should().BeTrue();
-            result.ExecutionTime.Should().BePositive();
-            result.ResultData.Should().NotBeNull();
+            _ = result.Success.Should().BeTrue();
+            _ = result.ExecutionTime.Should().BePositive();
+            _ = result.ResultData.Should().NotBeNull();
         });
 
         // Results should be consistent across backends
@@ -122,7 +118,7 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
             foreach (var result in executionResults.Skip(1))
             {
                 var resultData = result.ResultData as float[];
-                CompareFloatArrays(referenceResult!, resultData!).Should().BeTrue(
+                _ = CompareFloatArrays(referenceResult!, resultData!).Should().BeTrue(
                     "Different backends should produce equivalent results");
             }
         }
@@ -155,12 +151,12 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
         }
 
         // Assert
-        memoryResults.Should().AllSatisfy(result =>
+        _ = memoryResults.Should().AllSatisfy(result =>
         {
-            result.AllocationSuccess.Should().BeTrue();
-            result.AllocationTime.Should().BePositive();
-            result.DeallocationSuccess.Should().BeTrue();
-            result.MemoryLeaks.Should().BeFalse();
+            _ = result.AllocationSuccess.Should().BeTrue();
+            _ = result.AllocationTime.Should().BePositive();
+            _ = result.DeallocationSuccess.Should().BeTrue();
+            _ = result.MemoryLeaks.Should().BeFalse();
         });
     }
 
@@ -175,10 +171,10 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
 
         // Assert
         Assert.NotEmpty(errorResults);
-        errorResults.Should().AllSatisfy(result =>
+        _ = errorResults.Should().AllSatisfy(result =>
         {
-            result.ErrorHandled.Should().BeTrue();
-            result.SystemStability.Should().BeTrue();
+            _ = result.ErrorHandled.Should().BeTrue();
+            _ = result.SystemStability.Should().BeTrue();
         });
     }
 
@@ -216,10 +212,10 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(clientCount, results.Length);
-        results.Should().AllSatisfy(result =>
+        _ = results.Should().AllSatisfy(result =>
         {
-            result.AllOperationsSuccessful.Should().BeTrue();
-            result.Operations.Count.Should().Be(operationsPerClient);
+            _ = result.AllOperationsSuccessful.Should().BeTrue();
+            _ = result.Operations.Count.Should().Be(operationsPerClient);
         });
     }
 
@@ -234,10 +230,10 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(lifecycleResult);
-        lifecycleResult.LoadPhaseSuccess.Should().BeTrue();
-        lifecycleResult.InitializePhaseSuccess.Should().BeTrue();
-        lifecycleResult.ExecutionPhaseSuccess.Should().BeTrue();
-        lifecycleResult.CleanupPhaseSuccess.Should().BeTrue();
+        _ = lifecycleResult.LoadPhaseSuccess.Should().BeTrue();
+        _ = lifecycleResult.InitializePhaseSuccess.Should().BeTrue();
+        _ = lifecycleResult.ExecutionPhaseSuccess.Should().BeTrue();
+        _ = lifecycleResult.CleanupPhaseSuccess.Should().BeTrue();
     }
 
     [Theory]
@@ -276,10 +272,10 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
 
         // Assert
         Assert.Equal(concurrencyLevel, results.Length);
-        results.Should().AllSatisfy(result =>
+        _ = results.Should().AllSatisfy(result =>
         {
-            result.OperationTimes.Count.Should().Be(workItemsPerThread);
-            result.AverageTime.Should().BePositive();
+            _ = result.OperationTimes.Count.Should().Be(workItemsPerThread);
+            _ = result.AverageTime.Should().BePositive();
         });
 
         // Performance should not degrade significantly with increased concurrency
@@ -290,7 +286,7 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
             var maxAvg = avgTimes.Max();
 
             LoggerMessages.PerformanceRange(Logger, minAvg, maxAvg);
-            (maxAvg / minAvg).Should().BeLessThan(5.0,
+            _ = (maxAvg / minAvg).Should().BeLessThan(5.0,
                  "Performance should not degrade drastically with concurrency");
         }
     }
@@ -312,19 +308,18 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
         // Act
         var cleanupResults = new List<ResourceCleanupResult>();
 
-        foreach (var cleanupTask in accelerators.Take(2).Select(accelerator =>
-            TestResourceCleanup(accelerator)))
+        foreach (var cleanupTask in accelerators.Take(2).Select(TestResourceCleanup))
         {
             cleanupResults.Add(await cleanupTask);
         }
 
         // Assert
-        cleanupResults.Should().AllSatisfy(result =>
+        _ = cleanupResults.Should().AllSatisfy(result =>
         {
-            result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
-            result.ResourcesReleased.Should().Be(result.ResourcesAllocated);
-            result.MemoryLeaksDetected.Should().BeFalse();
-            result.CleanupSuccess.Should().BeTrue();
+            _ = result.ResourcesAllocated.Should().BeGreaterThanOrEqualTo(0);
+            _ = result.ResourcesReleased.Should().Be(result.ResourcesAllocated);
+            _ = result.MemoryLeaksDetected.Should().BeFalse();
+            _ = result.CleanupSuccess.Should().BeTrue();
         });
     }
 
@@ -495,7 +490,7 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
         // Test scenario 1: Invalid plugin loading
         try
         {
-            await pluginSystem.LoadPluginAsync("nonexistent_plugin.dll");
+            _ = await pluginSystem.LoadPluginAsync("nonexistent_plugin.dll");
             results.Add(new ErrorHandlingResult
             {
                 Scenario = "NonexistentPlugin",
@@ -673,9 +668,7 @@ public sealed class PluginIntegrationSystemTests : IntegrationTestBase
     private static float[] GenerateTestData(int size)
     {
         var random = new Random(42);
-        return Enumerable.Range(0, size)
-                        .Select(_ => (float)random.NextDouble() * 100.0f)
-                        .ToArray();
+        return [.. Enumerable.Range(0, size).Select(_ => (float)random.NextDouble() * 100.0f)];
     }
 
     private static bool CompareFloatArrays(float[] array1, float[] array2, float tolerance = 0.001f)
@@ -781,5 +774,4 @@ public sealed class ResourceCleanupResult
     public bool CleanupSuccess { get; set; }
     public bool MemoryLeaksDetected { get; set; }
     public string? Error { get; set; }
-}
 }

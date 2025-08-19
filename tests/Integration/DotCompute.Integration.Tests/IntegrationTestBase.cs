@@ -18,24 +18,18 @@ using Xunit.Abstractions;
 using MemoryOptions = DotCompute.Abstractions.MemoryOptions;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Base class for integration tests providing common infrastructure and utilities.
 /// </summary>
-public abstract class IntegrationTestBase : IAsyncLifetime
+public abstract class IntegrationTestBase(ITestOutputHelper output) : IAsyncLifetime
 {
-    protected ITestOutputHelper TestOutput { get; }
-    protected ILogger Logger { get; }
+    protected ITestOutputHelper TestOutput { get; } = output;
+    protected ILogger Logger { get; } = new TestOutputLogger(output);
     protected IServiceProvider ServiceProvider { get; private set; } = default!;
     private IHost? _host;
-
-    protected IntegrationTestBase(ITestOutputHelper output)
-    {
-        TestOutput = output;
-        Logger = new TestOutputLogger(output);
-    }
 
     public virtual async Task InitializeAsync()
     {
@@ -69,23 +63,23 @@ public abstract class IntegrationTestBase : IAsyncLifetime
             .ConfigureServices((context, services) =>
             {
                 // Configure logging
-                services.AddLogging(builder =>
+                _ = services.AddLogging(builder =>
                 {
-                    builder.AddProvider(new TestOutputLoggerProvider(TestOutput));
-                    builder.SetMinimumLevel(LogLevel.Information);
+                    _ = builder.AddProvider(new TestOutputLoggerProvider(TestOutput));
+                    _ = builder.SetMinimumLevel(LogLevel.Information);
                 });
 
                 // Add core DotCompute services  
-                services.AddSingleton<IAcceleratorProvider, HighPerformanceCpuAcceleratorProvider>();
-                services.AddSingleton<IAcceleratorManager, DefaultAcceleratorManager>();
-                services.AddSingleton<PluginSystem>();
-                services.AddSingleton<IComputeEngine, DefaultComputeEngine>();
+                _ = services.AddSingleton<IAcceleratorProvider, HighPerformanceCpuAcceleratorProvider>();
+                _ = services.AddSingleton<IAcceleratorManager, DefaultAcceleratorManager>();
+                _ = services.AddSingleton<PluginSystem>();
+                _ = services.AddSingleton<IComputeEngine, DefaultComputeEngine>();
 
                 // Skip pipeline integration for now - these are complex to mock
                 // TODO: Add proper pipeline integration when interfaces are stabilized
 
                 // Add a simple memory manager factory
-                services.AddSingleton<IMemoryManager>(sp =>
+                _ = services.AddSingleton<IMemoryManager>(sp =>
                 {
                     var acceleratorManager = sp.GetRequiredService<IAcceleratorManager>();
                     var logger = sp.GetRequiredService<ILogger<IMemoryManager>>();
@@ -165,7 +159,7 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         var elementCount = (int)(buffer.SizeInBytes / elementSize);
 
         // Validate that the buffer size is reasonable and aligned
-        if (buffer.SizeInBytes <= 0 || buffer.SizeInBytes > int.MaxValue)
+        if (buffer.SizeInBytes is <= 0 or > int.MaxValue)
         {
             throw new ArgumentException($"Invalid buffer size: {buffer.SizeInBytes}");
         }
@@ -176,8 +170,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
         }
 
         // For very large buffers, use chunked reading to avoid large memory allocations
-        const int MaxChunkSize = 16 * 1024 * 1024; // 16MB chunks
-        if (buffer.SizeInBytes > MaxChunkSize)
+        const int maxChunkSize = 16 * 1024 * 1024; // 16MB chunks
+        if (buffer.SizeInBytes > maxChunkSize)
         {
             return await ReadLargeBufferInChunksAsync<T>(buffer, elementCount, elementSize);
         }
@@ -193,8 +187,8 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     private static async Task<T[]> ReadLargeBufferInChunksAsync<T>(IMemoryBuffer buffer, int elementCount, int elementSize) where T : unmanaged
     {
         var result = new T[elementCount];
-        const int MaxChunkSize = 16 * 1024 * 1024; // 16MB chunks
-        var elementsPerChunk = MaxChunkSize / elementSize;
+        const int maxChunkSize = 16 * 1024 * 1024; // 16MB chunks
+        var elementsPerChunk = maxChunkSize / elementSize;
 
         for (var offset = 0; offset < elementCount; offset += elementsPerChunk)
         {
@@ -352,9 +346,9 @@ public abstract class IntegrationTestBase : IAsyncLifetime
     {
         return typeof(T) switch
         {
-            Type t when t == typeof(float) => TestDataGenerator.GenerateFloatArray(size).Cast<T>().ToArray(),
-            Type t when t == typeof(int) => TestDataGenerator.GenerateIntArray(size).Cast<T>().ToArray(),
-            Type t when t == typeof(double) => TestDataGenerator.GenerateDoubleArray(size).Cast<T>().ToArray(),
+            Type t when t == typeof(float) => [.. TestDataGenerator.GenerateFloatArray(size).Cast<T>()],
+            Type t when t == typeof(int) => [.. TestDataGenerator.GenerateIntArray(size).Cast<T>()],
+            Type t when t == typeof(double) => [.. TestDataGenerator.GenerateDoubleArray(size).Cast<T>()],
             _ => throw new NotSupportedException($"Test data generation not supported for type {typeof(T)}")
         };
     }
@@ -473,7 +467,7 @@ public sealed class MockPipelineStage : IPipelineStage
     public string Id { get; }
     public string Name { get; }
     public PipelineStageType Type => PipelineStageType.Sequential;
-    public IReadOnlyList<string> Dependencies { get; } = new List<string>();
+    public IReadOnlyList<string> Dependencies { get; } = [];
     public IReadOnlyDictionary<string, object> Metadata { get; }
 
     public async ValueTask<StageExecutionResult> ExecuteAsync(
@@ -507,7 +501,7 @@ public sealed class MockPipelineStage : IPipelineStage
         };
     }
 
-    public StageValidationResult Validate() => new StageValidationResult { IsValid = true };
+    public StageValidationResult Validate() => new() { IsValid = true };
 
     public IStageMetrics GetMetrics() => _metrics;
 }
@@ -575,14 +569,9 @@ public sealed class MockStageMetrics : IStageMetrics
 /// <summary>
 /// Test output logger for integration with xUnit test output.
 /// </summary>
-public sealed class TestOutputLogger : ILogger
+public sealed class TestOutputLogger(ITestOutputHelper output) : ILogger
 {
-    private readonly ITestOutputHelper _output;
-
-    public TestOutputLogger(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
 
@@ -615,37 +604,22 @@ public sealed class TestOutputLogger : ILogger
 /// <summary>
 /// Test output logger provider for dependency injection.
 /// </summary>
-public sealed class TestOutputLoggerProvider : ILoggerProvider
+public sealed class TestOutputLoggerProvider(ITestOutputHelper output) : ILoggerProvider
 {
-    private readonly ITestOutputHelper _output;
-
-    public TestOutputLoggerProvider(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     public ILogger CreateLogger(string categoryName) => new TestOutputLogger(_output);
 
-    public void Dispose()
-    {
-        GC.SuppressFinalize(this);
-        // Nothing to dispose
-    }
+    public void Dispose() => GC.SuppressFinalize(this);// Nothing to dispose
 }
 
 /// <summary>
 /// Simple memory manager for testing purposes with thread-safe tracking.
 /// </summary>
-internal sealed class SimpleMemoryManager : IMemoryManager
+internal sealed class SimpleMemoryManager(ILogger<IMemoryManager> logger) : IMemoryManager
 {
-    private readonly ILogger<IMemoryManager> _logger;
     private readonly ConcurrentBag<WeakReference<SimpleMemoryBuffer>> _allocatedBuffers = [];
     private long _totalAllocated;
-
-    public SimpleMemoryManager(ILogger<IMemoryManager> logger)
-    {
-        _logger = logger;
-    }
 
     public ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,
@@ -656,7 +630,7 @@ internal sealed class SimpleMemoryManager : IMemoryManager
         var buffer = new SimpleMemoryBuffer(sizeInBytes, options);
 #pragma warning restore CA2000
         _allocatedBuffers.Add(new WeakReference<SimpleMemoryBuffer>(buffer));
-        Interlocked.Add(ref _totalAllocated, sizeInBytes);
+        _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
 
@@ -670,9 +644,9 @@ internal sealed class SimpleMemoryManager : IMemoryManager
         var buffer = new SimpleMemoryBuffer(sizeInBytes, options);
 #pragma warning restore CA2000
         var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(source.Span);
-        sourceBytes.CopyTo(buffer._data.AsSpan());
+        sourceBytes.CopyTo(buffer.Data.AsSpan());
         _allocatedBuffers.Add(new WeakReference<SimpleMemoryBuffer>(buffer));
-        Interlocked.Add(ref _totalAllocated, sizeInBytes);
+        _ = Interlocked.Add(ref _totalAllocated, sizeInBytes);
         return ValueTask.FromResult<IMemoryBuffer>(buffer);
     }
 
@@ -702,7 +676,7 @@ internal sealed class SimpleMemoryManager : IMemoryManager
     {
         if (buffer is SimpleMemoryBuffer simpleBuffer)
         {
-            return new SimpleMemoryBuffer(simpleBuffer._data.AsMemory().Slice((int)offset, (int)length), buffer.Options);
+            return new SimpleMemoryBuffer(simpleBuffer.Data.AsMemory().Slice((int)offset, (int)length), buffer.Options);
         }
         throw new NotSupportedException("View creation only supported for SimpleMemoryBuffer");
     }
@@ -719,7 +693,7 @@ internal sealed class SimpleMemoryManager : IMemoryManager
         if (buffer is SimpleMemoryBuffer simpleBuffer)
         {
             var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(data);
-            sourceBytes.CopyTo(simpleBuffer._data.AsSpan());
+            sourceBytes.CopyTo(simpleBuffer.Data.AsSpan());
         }
         else
         {
@@ -731,10 +705,10 @@ internal sealed class SimpleMemoryManager : IMemoryManager
     {
         if (buffer is SimpleMemoryBuffer simpleBuffer)
         {
-            var bufferBytes = simpleBuffer._data.AsSpan();
+            var bufferBytes = simpleBuffer.Data.AsSpan();
             var destBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(data);
             var bytesToCopy = Math.Min(bufferBytes.Length, destBytes.Length);
-            bufferBytes.Slice(0, bytesToCopy).CopyTo(destBytes);
+            bufferBytes[..bytesToCopy].CopyTo(destBytes);
         }
         else
         {
@@ -746,7 +720,7 @@ internal sealed class SimpleMemoryManager : IMemoryManager
     {
         if (buffer is SimpleMemoryBuffer simpleBuffer)
         {
-            Interlocked.Add(ref _totalAllocated, -simpleBuffer.SizeInBytes);
+            _ = Interlocked.Add(ref _totalAllocated, -simpleBuffer.SizeInBytes);
             simpleBuffer.Dispose();
         }
     }
@@ -758,23 +732,23 @@ internal sealed class SimpleMemoryManager : IMemoryManager
 /// </summary>
 internal sealed class SimpleMemoryBuffer : IMemoryBuffer
 {
-    internal readonly byte[] _data;
+    internal readonly byte[] Data;
     private volatile bool _disposed;
     private readonly Lock _lock = new();
 
     public SimpleMemoryBuffer(long sizeInBytes, MemoryOptions options)
     {
-        _data = new byte[sizeInBytes];
+        Data = new byte[sizeInBytes];
         Options = options;
     }
 
     public SimpleMemoryBuffer(Memory<byte> data, MemoryOptions options)
     {
-        _data = data.ToArray();
+        Data = data.ToArray();
         Options = options;
     }
 
-    public long SizeInBytes => _data.Length;
+    public long SizeInBytes => Data.Length;
     public MemoryOptions Options { get; }
     public bool IsDisposed => _disposed;
 
@@ -793,7 +767,7 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer
         {
             ThrowIfDisposed();
             var sourceBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(source.Span);
-            sourceBytes.CopyTo(_data.AsSpan((int)offset));
+            sourceBytes.CopyTo(Data.AsSpan((int)offset));
             return ValueTask.CompletedTask;
         }
     }
@@ -806,18 +780,15 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer
         lock (_lock)
         {
             ThrowIfDisposed();
-            var dataSpan = _data.AsSpan((int)offset);
+            var dataSpan = Data.AsSpan((int)offset);
             var destBytes = System.Runtime.InteropServices.MemoryMarshal.Cast<T, byte>(destination.Span);
             var bytesToCopy = Math.Min(dataSpan.Length, destBytes.Length);
-            dataSpan.Slice(0, bytesToCopy).CopyTo(destBytes);
+            dataSpan[..bytesToCopy].CopyTo(destBytes);
             return ValueTask.CompletedTask;
         }
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_disposed, this);
 
     public ValueTask DisposeAsync()
     {
@@ -827,6 +798,4 @@ internal sealed class SimpleMemoryBuffer : IMemoryBuffer
             return ValueTask.CompletedTask;
         }
     }
-}
-
 }

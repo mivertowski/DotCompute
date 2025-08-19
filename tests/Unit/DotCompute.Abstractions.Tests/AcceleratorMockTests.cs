@@ -5,8 +5,8 @@ using FluentAssertions;
 
 #pragma warning disable CA2012 // Use ValueTasks correctly - NSubstitute mock setup requires storing ValueTask
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 public sealed class AcceleratorMockTests
 {
@@ -21,9 +21,9 @@ public sealed class AcceleratorMockTests
         var kernelSource = new TextKernelSource("test code", "test", KernelLanguage.CSharpIL);
         var kernelDef = new KernelDefinition("test", kernelSource, new CompilationOptions());
 
-        accelerator.Info.Returns(info);
-        accelerator.Memory.Returns(memoryManager);
-        accelerator.CompileKernelAsync(kernelDef, Arg.Any<CompilationOptions?>(), default)
+        _ = accelerator.Info.Returns(info);
+        _ = accelerator.Memory.Returns(memoryManager);
+        _ = accelerator.CompileKernelAsync(kernelDef, Arg.Any<CompilationOptions?>(), default)
             .Returns(ValueTask.FromResult(compiledKernel));
 
         // Act
@@ -32,9 +32,9 @@ public sealed class AcceleratorMockTests
         var compiled = await accelerator.CompileKernelAsync(kernelDef);
 
         // Assert
-        actualInfo.Should().BeSameAs(info);
-        memory.Should().BeSameAs(memoryManager);
-        compiled.Should().BeSameAs(compiledKernel);
+        _ = actualInfo.Should().BeSameAs(info);
+        _ = memory.Should().BeSameAs(memoryManager);
+        _ = compiled.Should().BeSameAs(compiledKernel);
     }
 
     [Fact]
@@ -72,15 +72,15 @@ public sealed class BufferMockTests
         // Arrange
         var buffer = Substitute.For<IBuffer<int>>();
         var accelerator = Substitute.For<IAccelerator>();
-        buffer.Accelerator.Returns(accelerator);
-        buffer.SizeInBytes.Returns(4096);
+        _ = buffer.Accelerator.Returns(accelerator);
+        _ = buffer.SizeInBytes.Returns(4096);
 
         // Act
         var acc = buffer.Accelerator;
         var size = buffer.SizeInBytes;
 
         // Assert
-        acc.Should().BeSameAs(accelerator);
+        _ = acc.Should().BeSameAs(accelerator);
         Assert.Equal(4096, size);
     }
 
@@ -90,7 +90,7 @@ public sealed class BufferMockTests
         // Arrange
         var source = Substitute.For<IBuffer<byte>>();
         var destination = Substitute.For<IBuffer<byte>>();
-        source.CopyToAsync(destination, default).Returns(ValueTask.CompletedTask);
+        _ = source.CopyToAsync(destination, default).Returns(ValueTask.CompletedTask);
 
         // Act
         await source.CopyToAsync(destination);
@@ -105,7 +105,7 @@ public sealed class BufferMockTests
         // Arrange
         var source = Substitute.For<IBuffer<byte>>();
         var destination = Substitute.For<IBuffer<byte>>();
-        source.CopyToAsync(0, destination, 0, 1024, default).Returns(ValueTask.CompletedTask);
+        _ = source.CopyToAsync(0, destination, 0, 1024, default).Returns(ValueTask.CompletedTask);
 
         // Act
         await source.CopyToAsync(0, destination, 0, 1024);
@@ -119,7 +119,7 @@ public sealed class BufferMockTests
     {
         // Arrange
         var buffer = Substitute.For<IBuffer<int>>();
-        buffer.FillAsync(42, default).Returns(ValueTask.CompletedTask);
+        _ = buffer.FillAsync(42, default).Returns(ValueTask.CompletedTask);
 
         // Act
         await buffer.FillAsync(42);
@@ -134,13 +134,13 @@ public sealed class BufferMockTests
         // Arrange
         var buffer = Substitute.For<IBuffer<float>>();
         var sliced = Substitute.For<IBuffer<float>>();
-        buffer.Slice(100, 200).Returns(sliced);
+        _ = buffer.Slice(100, 200).Returns(sliced);
 
         // Act
         var result = buffer.Slice(100, 200);
 
         // Assert
-        result.Should().BeSameAs(sliced);
+        _ = result.Should().BeSameAs(sliced);
     }
 
     [Fact]
@@ -149,13 +149,13 @@ public sealed class BufferMockTests
         // Arrange
         var buffer = Substitute.For<IBuffer<byte>>();
         var newBuffer = Substitute.For<IBuffer<int>>();
-        buffer.AsType<int>().Returns(newBuffer);
+        _ = buffer.AsType<int>().Returns(newBuffer);
 
         // Act
         var result = buffer.AsType<int>();
 
         // Assert
-        result.Should().BeSameAs(newBuffer);
+        _ = result.Should().BeSameAs(newBuffer);
     }
 
     [Fact]
@@ -165,7 +165,7 @@ public sealed class BufferMockTests
         var buffer = Substitute.For<IBuffer<double>>();
         // MappedMemory constructor is internal, so we can't create it directly
         // Just verify the method is callable
-        buffer.Map(MapMode.ReadWrite).Returns(default(MappedMemory<double>));
+        _ = buffer.Map(MapMode.ReadWrite).Returns(default(MappedMemory<double>));
 
         // Act
         _ = buffer.Map(MapMode.ReadWrite);
@@ -173,7 +173,7 @@ public sealed class BufferMockTests
         // Assert
         // Can't test MappedMemory properties since constructor is internal
         // Just verify the method was called
-        buffer.Received(1).Map(MapMode.ReadWrite);
+        _ = buffer.Received(1).Map(MapMode.ReadWrite);
     }
 
     [Fact]
@@ -197,7 +197,7 @@ public sealed class CompiledKernelMockTests
     {
         // Arrange
         var kernel = Substitute.For<ICompiledKernel>();
-        kernel.Name.Returns("TestKernel");
+        _ = kernel.Name.Returns("TestKernel");
 
         // Act
         var name = kernel.Name;
@@ -212,7 +212,7 @@ public sealed class CompiledKernelMockTests
         // Arrange
         var kernel = Substitute.For<ICompiledKernel>();
         var args = KernelArguments.Create(2);
-        kernel.ExecuteAsync(args, default).Returns(ValueTask.CompletedTask);
+        _ = kernel.ExecuteAsync(args, default).Returns(ValueTask.CompletedTask);
 
         // Act
         await kernel.ExecuteAsync(args);
@@ -246,14 +246,14 @@ public sealed class AcceleratorProviderMockTests
         var info2 = new AcceleratorInfo(AcceleratorType.CUDA, "GPU 1", "1.0", 8589934592L);
         var accelerator1 = Substitute.For<IAccelerator>();
         var accelerator2 = Substitute.For<IAccelerator>();
-        accelerator1.Info.Returns(info1);
-        accelerator2.Info.Returns(info2);
+        _ = accelerator1.Info.Returns(info1);
+        _ = accelerator2.Info.Returns(info2);
 
-        provider.Name.Returns("TestProvider");
-        provider.SupportedTypes.Returns([AcceleratorType.CUDA, AcceleratorType.CPU]);
-        provider.DiscoverAsync(default).Returns(ValueTask.FromResult<IEnumerable<IAccelerator>>(
+        _ = provider.Name.Returns("TestProvider");
+        _ = provider.SupportedTypes.Returns([AcceleratorType.CUDA, AcceleratorType.CPU]);
+        _ = provider.DiscoverAsync(default).Returns(ValueTask.FromResult<IEnumerable<IAccelerator>>(
             new[] { accelerator1, accelerator2 }));
-        provider.CreateAsync(info1, default).Returns(ValueTask.FromResult(accelerator1));
+        _ = provider.CreateAsync(info1, default).Returns(ValueTask.FromResult(accelerator1));
 
         // Act
         var name = provider.Name;
@@ -263,10 +263,10 @@ public sealed class AcceleratorProviderMockTests
 
         // Assert
         Assert.Equal("TestProvider", name);
-        types.Should().BeEquivalentTo(new[] { AcceleratorType.CUDA, AcceleratorType.CPU });
+        _ = types.Should().BeEquivalentTo(new[] { AcceleratorType.CUDA, AcceleratorType.CPU });
         Assert.Equal(2, discovered.Count());
-        discovered.First().Should().BeSameAs(accelerator1);
-        created.Should().BeSameAs(accelerator1);
+        _ = discovered.First().Should().BeSameAs(accelerator1);
+        _ = created.Should().BeSameAs(accelerator1);
     }
 }
 
@@ -278,16 +278,16 @@ public sealed class MemoryManagerMockTests
         // Arrange
         var memoryManager = Substitute.For<IMemoryManager>();
         var buffer = Substitute.For<IMemoryBuffer>();
-        buffer.SizeInBytes.Returns(1024);
-        memoryManager.AllocateAsync(1024, MemoryOptions.None, default)
+        _ = buffer.SizeInBytes.Returns(1024);
+        _ = memoryManager.AllocateAsync(1024, MemoryOptions.None, default)
             .Returns(ValueTask.FromResult(buffer));
 
         // Act
         var result = await memoryManager.AllocateAsync(1024);
 
         // Assert
-        result.Should().BeSameAs(buffer);
-        result.SizeInBytes.Should().Be(1024);
+        _ = result.Should().BeSameAs(buffer);
+        _ = result.SizeInBytes.Should().Be(1024);
     }
 
     [Fact]
@@ -297,14 +297,14 @@ public sealed class MemoryManagerMockTests
         var memoryManager = Substitute.For<IMemoryManager>();
         var buffer = Substitute.For<IMemoryBuffer>();
         var data = new int[] { 1, 2, 3, 4, 5 };
-        memoryManager.AllocateAndCopyAsync<int>(new ReadOnlyMemory<int>(data), MemoryOptions.None, default)
+        _ = memoryManager.AllocateAndCopyAsync<int>(new ReadOnlyMemory<int>(data), MemoryOptions.None, default)
             .Returns(ValueTask.FromResult(buffer));
 
         // Act
         var result = await memoryManager.AllocateAndCopyAsync<int>(new ReadOnlyMemory<int>(data));
 
         // Assert
-        result.Should().BeSameAs(buffer);
+        _ = result.Should().BeSameAs(buffer);
     }
 
     [Fact]
@@ -314,13 +314,13 @@ public sealed class MemoryManagerMockTests
         var memoryManager = Substitute.For<IMemoryManager>();
         var buffer = Substitute.For<IMemoryBuffer>();
         var view = Substitute.For<IMemoryBuffer>();
-        memoryManager.CreateView(buffer, 100, 200).Returns(view);
+        _ = memoryManager.CreateView(buffer, 100, 200).Returns(view);
 
         // Act
         var result = memoryManager.CreateView(buffer, 100, 200);
 
         // Assert
-        result.Should().BeSameAs(view);
+        _ = result.Should().BeSameAs(view);
     }
 }
 
@@ -334,7 +334,7 @@ public sealed class MemoryBufferMockTests
         // Arrange
         var buffer = Substitute.For<IMemoryBuffer>();
         var data = new ReadOnlyMemory<int>(array);
-        buffer.CopyFromHostAsync(data, 0, default).Returns(ValueTask.CompletedTask);
+        _ = buffer.CopyFromHostAsync(data, 0, default).Returns(ValueTask.CompletedTask);
 
         // Act
         await buffer.CopyFromHostAsync(data);
@@ -349,7 +349,7 @@ public sealed class MemoryBufferMockTests
         // Arrange
         var buffer = Substitute.For<IMemoryBuffer>();
         var data = new Memory<int>(new int[3]);
-        buffer.CopyToHostAsync(data, 0, default).Returns(ValueTask.CompletedTask);
+        _ = buffer.CopyToHostAsync(data, 0, default).Returns(ValueTask.CompletedTask);
 
         // Act
         await buffer.CopyToHostAsync(data);
@@ -360,4 +360,4 @@ public sealed class MemoryBufferMockTests
 }
 
 #pragma warning restore CA2012
-}
+

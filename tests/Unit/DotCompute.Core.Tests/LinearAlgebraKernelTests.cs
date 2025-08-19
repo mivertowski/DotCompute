@@ -8,8 +8,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Comprehensive tests for linear algebra kernels and mathematical operations.
@@ -68,7 +68,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
         var vectorB = new float[] { 1.0f, 2.0f, 3.0f };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => LinearAlgebraKernels.VectorAddAsync(null!, vectorB));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => LinearAlgebraKernels.VectorAddAsync(null!, vectorB));
     }
 
     [Fact]
@@ -78,7 +78,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
         var vectorA = new float[] { 1.0f, 2.0f, 3.0f };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => LinearAlgebraKernels.VectorAddAsync(vectorA, null!));
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(() => LinearAlgebraKernels.VectorAddAsync(vectorA, null!));
     }
 
     [Fact]
@@ -89,7 +89,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
         var vectorB = new float[] { 1.0f, 2.0f };
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() => LinearAlgebraKernels.VectorAddAsync(vectorA, vectorB));
+        _ = await Assert.ThrowsAsync<ArgumentException>(() => LinearAlgebraKernels.VectorAddAsync(vectorA, vectorB));
     }
 
     [Theory]
@@ -106,7 +106,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
         var mockResult = vectorA.Zip(vectorB, (a, b) => a * b).Sum();
         Assert.True(Math.Abs(result - mockResult) < 1e-6f);
         // Also verify against expected value
-        Assert.True(Math.Abs(result - expectedDot) < 1e-6f, 
+        Assert.True(Math.Abs(result - expectedDot) < 1e-6f,
             $"Expected dot product {expectedDot}, got {result}");
     }
 
@@ -123,7 +123,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
         var mockResult = (float)Math.Sqrt(vector.Sum(x => x * x));
         Assert.True(Math.Abs(result - mockResult) < 1e-6f);
         // Also verify against expected value
-        Assert.True(Math.Abs(result - expectedNorm) < 1e-6f, 
+        Assert.True(Math.Abs(result - expectedNorm) < 1e-6f,
             $"Expected norm {expectedNorm}, got {result}");
     }
 
@@ -195,7 +195,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
         var matrixB = new float[] { 1.0f, 2.0f, 3.0f };       // 3x1(incompatible)
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentException>(() =>
             LinearAlgebraKernels.MatrixMultiplyAsync(matrixA, matrixB, 2, 2, 1)); // 2x2 * 2x1 but matrixB is actually 3x1
     }
 
@@ -388,7 +388,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
         var roots = await LinearAlgebraKernels.FindPolynomialRootsAsync(coefficients);
 
         // Assert
-        Assert.Single(roots);
+        _ = Assert.Single(roots);
         var expectedRoot = -coefficients[1] / coefficients[0];
         Assert.True(Math.Abs(roots[0] - expectedRoot) < 1e-10f);
     }
@@ -408,7 +408,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
         foreach (var expectedRoot in expectedRoots)
         {
             var found = roots.Any(r => Math.Abs(r - expectedRoot) < 1e-3f);
-            found.Should().BeTrue($"Expected root {expectedRoot} not found in computed roots");
+            _ = found.Should().BeTrue($"Expected root {expectedRoot} not found in computed roots");
         }
     }
 
@@ -512,7 +512,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
 
         // Assert
         Assert.Equal(size1 * size1, result.Length);
-        elapsed.TotalSeconds.Should().BeLessThan(30, $"Large matrix multiplication took too long: {elapsed.TotalSeconds}s");
+        _ = elapsed.TotalSeconds.Should().BeLessThan(30, $"Large matrix multiplication took too long: {elapsed.TotalSeconds}s");
     }
 
     [Fact]
@@ -533,7 +533,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
         var results = await Task.WhenAll(task1, task2.ContinueWith(t => new float[1] { t.Result }, TaskScheduler.Default), task3, task4.ContinueWith(t => new float[1] { t.Result }, TaskScheduler.Default));
 
         // Assert
-        Assert.All(results, result => Assert.NotNull(result));
+        Assert.All(results, Assert.NotNull);
     }
 
     #endregion
@@ -543,7 +543,7 @@ public sealed class LinearAlgebraKernelTests : IDisposable
     private static Mock<IAccelerator> CreateMockAccelerator()
     {
         var mock = new Mock<IAccelerator>();
-        mock.Setup(a => a.Info).Returns(new AcceleratorInfo
+        _ = mock.Setup(a => a.Info).Returns(new AcceleratorInfo
         {
             Id = "mock_linear_algebra_device",
             Name = "Mock Linear Algebra Device",
@@ -639,16 +639,9 @@ public sealed class LinearAlgebraKernelTests : IDisposable
 /// Mock linear algebra kernels for testing purposes.
 /// In a real implementation, this would use actual GPU compute shaders/kernels.
 /// </summary>
-public sealed class LinearAlgebraKernels : IDisposable
+public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<LinearAlgebraKernels> logger) : IDisposable
 {
-    private readonly IAccelerator _accelerator;
-    private readonly ILogger<LinearAlgebraKernels> _logger;
-
-    public LinearAlgebraKernels(IAccelerator accelerator, ILogger<LinearAlgebraKernels> logger)
-    {
-        _accelerator = accelerator ?? throw new ArgumentNullException(nameof(accelerator));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
+    private readonly ILogger<LinearAlgebraKernels> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     // Vector Operations
     public static async Task<float[]> VectorAddAsync(float[] a, float[] b)
@@ -964,7 +957,7 @@ public sealed class LinearAlgebraKernels : IDisposable
         }
         // Complex roots not returned for float array
 
-        return roots.ToArray();
+        return [.. roots];
     }
 
     private static float[] SolveCubicPolynomial(float[] coefficients)
@@ -1018,7 +1011,7 @@ public sealed class LinearAlgebraKernels : IDisposable
             }
         }
 
-        return roots.ToArray();
+        return [.. roots];
     }
 
     private static float[] SolveQuarticPolynomial(float[] coefficients)
@@ -1105,7 +1098,7 @@ public sealed class LinearAlgebraKernels : IDisposable
 
         // Sort roots for consistency
         realRoots.Sort();
-        return realRoots.ToArray();
+        return [.. realRoots];
     }
 
     private static Complex EvaluatePolynomial(float[] coefficients, Complex x)
@@ -1298,12 +1291,9 @@ public sealed class LinearAlgebraKernels : IDisposable
         return result;
     }
 
-    public void Dispose()
-    {
+    public void Dispose() =>
         // Clean up resources if needed
         GC.SuppressFinalize(this);
-    }
 }
 
 #endregion
-}

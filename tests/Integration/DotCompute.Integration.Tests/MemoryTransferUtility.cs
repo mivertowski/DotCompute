@@ -7,23 +7,16 @@ using DotCompute.Abstractions;
 using DotCompute.Memory;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Utility class for advanced memory transfer operations in tests.
 /// </summary>
-public sealed class MemoryTransferUtility : IAsyncDisposable
+public sealed class MemoryTransferUtility(IMemoryManager memoryManager) : IAsyncDisposable
 {
-    private readonly AdvancedMemoryTransferEngine _transferEngine;
-    private readonly IMemoryManager _memoryManager;
+    private readonly AdvancedMemoryTransferEngine _transferEngine = new(memoryManager);
     private bool _disposed;
-
-    public MemoryTransferUtility(IMemoryManager memoryManager)
-    {
-        _memoryManager = memoryManager ?? throw new ArgumentNullException(nameof(memoryManager));
-        _transferEngine = new AdvancedMemoryTransferEngine(memoryManager);
-    }
 
     /// <summary>
     /// Performs a large dataset transfer using advanced streaming techniques.
@@ -224,5 +217,4 @@ public sealed class MemoryTransferUtility : IAsyncDisposable
 
         await _transferEngine.DisposeAsync();
     }
-}
 }

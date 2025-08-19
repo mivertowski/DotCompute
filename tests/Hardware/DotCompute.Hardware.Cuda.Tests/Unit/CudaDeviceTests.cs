@@ -9,8 +9,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Unit
-{
+namespace DotCompute.Tests.Hardware.Unit;
+
 
 /// <summary>
 /// Unit tests for CUDA device detection and properties validation
@@ -24,7 +24,7 @@ public sealed class CudaDeviceTests : IDisposable
     private readonly List<CudaAccelerator> _accelerators = [];
 
     // LoggerMessage delegate for performance
-    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError =
         LoggerMessage.Define<Exception>(
             LogLevel.Warning,
             new EventId(1, nameof(LogAcceleratorDisposeError)),
@@ -55,12 +55,12 @@ public sealed class CudaDeviceTests : IDisposable
         if (IsCudaAvailable())
         {
             createAccelerator(); // Should not throw
-            Assert.Single(_accelerators);
-            _accelerators[0].Info.Should().NotBeNull();
+            _ = Assert.Single(_accelerators);
+            _ = _accelerators[0].Info.Should().NotBeNull();
         }
         else
         {
-            createAccelerator.Should().Throw<InvalidOperationException>()
+            _ = createAccelerator.Should().Throw<InvalidOperationException>()
                 .WithMessage("*CUDA accelerator*");
         }
     }
@@ -83,17 +83,17 @@ public sealed class CudaDeviceTests : IDisposable
 
         // Assert
         Assert.NotNull(info);
-        info.Type.Should().Be("CUDA");
-        info.Name.Should().NotBeNullOrEmpty();
-        info.MemorySize.Should().BeGreaterThan(0);
-        info.ComputeUnits.Should().BeGreaterThan(0);
-        info.MaxClockFrequency.Should().BeGreaterThan(0);
-        info.ComputeCapability.Should().NotBeNull();
-        info.MaxSharedMemoryPerBlock.Should().BeGreaterThan(0);
+        _ = info.Type.Should().Be("CUDA");
+        _ = info.Name.Should().NotBeNullOrEmpty();
+        _ = info.MemorySize.Should().BeGreaterThan(0);
+        _ = info.ComputeUnits.Should().BeGreaterThan(0);
+        _ = info.MaxClockFrequency.Should().BeGreaterThan(0);
+        _ = info.ComputeCapability.Should().NotBeNull();
+        _ = info.MaxSharedMemoryPerBlock.Should().BeGreaterThan(0);
 
         // Validate CUDA-specific capabilities
-        info.Capabilities.Should().NotBeEmpty();
-        info.Capabilities.Should().ContainKeys(
+        _ = info.Capabilities.Should().NotBeEmpty();
+        _ = info.Capabilities.Should().ContainKeys(
             "ComputeCapabilityMajor",
             "ComputeCapabilityMinor",
             "SharedMemoryPerBlock",
@@ -121,11 +121,11 @@ public sealed class CudaDeviceTests : IDisposable
         if (IsCudaAvailable() && IsDeviceAvailable(deviceId))
         {
             createAccelerator(); // Should not throw
-            _accelerators.Last().Info.Should().NotBeNull();
+            _ = _accelerators.Last().Info.Should().NotBeNull();
         }
         else
         {
-            Assert.Throws<Exception>(() => createAccelerator());
+            _ = Assert.Throws<Exception>(() => createAccelerator());
         }
     }
 
@@ -148,12 +148,12 @@ public sealed class CudaDeviceTests : IDisposable
 
         // Assert
         Assert.NotNull(computeCapability);
-        computeCapability.Major.Should().BeInRange(3, 10); // Reasonable range for CUDA compute capabilities
-        computeCapability.Minor.Should().BeInRange(0, 9);
+        _ = computeCapability.Major.Should().BeInRange(3, 10); // Reasonable range for CUDA compute capabilities
+        _ = computeCapability.Minor.Should().BeInRange(0, 9);
 
         // Validate consistency with capabilities dictionary
-        capabilities!["ComputeCapabilityMajor"].Should().Be(computeCapability.Major);
-        capabilities!["ComputeCapabilityMinor"].Should().Be(computeCapability.Minor);
+        _ = capabilities!["ComputeCapabilityMajor"].Should().Be(computeCapability.Major);
+        _ = capabilities!["ComputeCapabilityMinor"].Should().Be(computeCapability.Minor);
     }
 
     [Fact]
@@ -173,12 +173,12 @@ public sealed class CudaDeviceTests : IDisposable
         var info = accelerator.Info;
 
         // Assert
-        info.MemorySize.Should().BeInRange(1_000_000_000L, 100_000_000_000L); // 1GB to 100GB reasonable range
-        info.MaxSharedMemoryPerBlock.Should().BeInRange(16_384L, 163_840L); // 16KB to 160KB typical range
+        _ = info.MemorySize.Should().BeInRange(1_000_000_000L, 100_000_000_000L); // 1GB to 100GB reasonable range
+        _ = info.MaxSharedMemoryPerBlock.Should().BeInRange(16_384L, 163_840L); // 16KB to 160KB typical range
 
         // Validate memory bandwidth calculation
         var capabilities = info.Capabilities;
-        capabilities.Should().ContainKey("MemoryBandwidth");
+        _ = capabilities.Should().ContainKey("MemoryBandwidth");
         var memoryBandwidth = Convert.ToDouble(capabilities!["MemoryBandwidth"], CultureInfo.InvariantCulture);
         Assert.True(memoryBandwidth > 0);
     }
@@ -221,7 +221,7 @@ public sealed class CudaDeviceTests : IDisposable
         var computeUnits = accelerator.Info.ComputeUnits;
 
         // Assert
-        mpCount.Should().BeInRange(1, 256); // Reasonable range for streaming multiprocessors
+        _ = mpCount.Should().BeInRange(1, 256); // Reasonable range for streaming multiprocessors
         Assert.Equal(computeUnits, mpCount); // Should match compute units
     }
 
@@ -246,9 +246,9 @@ public sealed class CudaDeviceTests : IDisposable
         var capabilities = accelerator.Info.Capabilities;
 
         // Assert
-        capabilities.Should().ContainKey(capabilityName);
+        _ = capabilities.Should().ContainKey(capabilityName);
         var value = Convert.ToInt32(capabilities![capabilityName], CultureInfo.InvariantCulture);
-        value.Should().BeInRange(minValue, maxValue,
+        _ = value.Should().BeInRange(minValue, maxValue,
             $"{capabilityName} should be within reasonable bounds");
     }
 
@@ -271,16 +271,16 @@ public sealed class CudaDeviceTests : IDisposable
         // Assert - These should be boolean values
         var booleanCapabilities = new[]
         {
-            "UnifiedAddressing",
-            "ManagedMemory",
-            "ConcurrentKernels",
-            "ECCEnabled"
-        };
+        "UnifiedAddressing",
+        "ManagedMemory",
+        "ConcurrentKernels",
+        "ECCEnabled"
+    };
 
         foreach (var cap in booleanCapabilities)
         {
-            capabilities.Should().ContainKey(cap);
-            capabilities![cap].Should().BeOfType<bool>($"{cap} should be a boolean value");
+            _ = capabilities.Should().ContainKey(cap);
+            _ = capabilities![cap].Should().BeOfType<bool>($"{cap} should be a boolean value");
         }
     }
 
@@ -303,7 +303,7 @@ public sealed class CudaDeviceTests : IDisposable
         stopwatch.Stop();
 
         // Assert - Constructor should be relatively fast
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000);
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000);
         // CUDA accelerator initialization should complete within 5 seconds
 
         _output.WriteLine($"CUDA Accelerator initialization took {stopwatch.ElapsedMilliseconds}ms");
@@ -323,7 +323,7 @@ public sealed class CudaDeviceTests : IDisposable
         _accelerators.Add(accelerator);
 
         // Act & Assert
-        Action resetAction = () => accelerator.Reset();
+        Action resetAction = accelerator.Reset;
         resetAction(); // Should not throw
     }
 
@@ -389,5 +389,4 @@ public sealed class CudaDeviceTests : IDisposable
         _loggerFactory?.Dispose();
         GC.SuppressFinalize(this);
     }
-}
 }

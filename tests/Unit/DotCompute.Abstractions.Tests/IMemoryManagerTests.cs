@@ -5,8 +5,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Abstractions.Tests
-{
+namespace DotCompute.Abstractions.Tests;
+
 
 /// <summary>
 /// Comprehensive unit tests for the IMemoryManager interface.
@@ -31,9 +31,9 @@ public sealed class IMemoryManagerTests
         const long size = 1024;
         var options = MemoryOptions.None;
 
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(size);
-        _mockBuffer.SetupGet(b => b.Options).Returns(options);
-        _mockMemoryManager.Setup(m => m.AllocateAsync(size, options, CancellationToken.None))
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(size);
+        _ = _mockBuffer.SetupGet(b => b.Options).Returns(options);
+        _ = _mockMemoryManager.Setup(m => m.AllocateAsync(size, options, CancellationToken.None))
                          .ReturnsAsync(_mockBuffer.Object);
 
         // Act
@@ -41,8 +41,8 @@ public sealed class IMemoryManagerTests
 
         // Assert
         Assert.NotNull(buffer);
-        buffer.SizeInBytes.Should().Be(size);
-        buffer.Options.Should().Be(options);
+        _ = buffer.SizeInBytes.Should().Be(size);
+        _ = buffer.Options.Should().Be(options);
         _mockMemoryManager.Verify(m => m.AllocateAsync(size, options, CancellationToken.None), Times.Once);
     }
 
@@ -50,26 +50,26 @@ public sealed class IMemoryManagerTests
     public async Task AllocateAsync_WithZeroSize_ShouldThrowArgumentException()
     {
         // Arrange
-        _mockMemoryManager.Setup(m => m.AllocateAsync(0, MemoryOptions.None, CancellationToken.None))
+        _ = _mockMemoryManager.Setup(m => m.AllocateAsync(0, MemoryOptions.None, CancellationToken.None))
                          .ThrowsAsync(new ArgumentException("Size must be positive", "sizeInBytes"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockMemoryManager.Object.AllocateAsync(0).AsTask());
-        exception.ParamName.Should().Be("sizeInBytes");
+        _ = exception.ParamName.Should().Be("sizeInBytes");
     }
 
     [Fact]
     public async Task AllocateAsync_WithNegativeSize_ShouldThrowArgumentException()
     {
         // Arrange
-        _mockMemoryManager.Setup(m => m.AllocateAsync(-1, MemoryOptions.None, CancellationToken.None))
+        _ = _mockMemoryManager.Setup(m => m.AllocateAsync(-1, MemoryOptions.None, CancellationToken.None))
                          .ThrowsAsync(new ArgumentException("Size must be positive", "sizeInBytes"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockMemoryManager.Object.AllocateAsync(-1).AsTask());
-        exception.ParamName.Should().Be("sizeInBytes");
+        _ = exception.ParamName.Should().Be("sizeInBytes");
     }
 
     [Fact]
@@ -79,11 +79,11 @@ public sealed class IMemoryManagerTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        _mockMemoryManager.Setup(m => m.AllocateAsync(1024, MemoryOptions.None, cts.Token))
+        _ = _mockMemoryManager.Setup(m => m.AllocateAsync(1024, MemoryOptions.None, cts.Token))
                          .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(
            () => _mockMemoryManager.Object.AllocateAsync(1024, cancellationToken: cts.Token).AsTask());
     }
 
@@ -99,15 +99,15 @@ public sealed class IMemoryManagerTests
     {
         // Arrange
         const long size = 2048;
-        _mockBuffer.SetupGet(b => b.Options).Returns(options);
-        _mockMemoryManager.Setup(m => m.AllocateAsync(size, options, CancellationToken.None))
+        _ = _mockBuffer.SetupGet(b => b.Options).Returns(options);
+        _ = _mockMemoryManager.Setup(m => m.AllocateAsync(size, options, CancellationToken.None))
                          .ReturnsAsync(_mockBuffer.Object);
 
         // Act
         var buffer = await _mockMemoryManager.Object.AllocateAsync(size, options);
 
         // Assert
-        buffer.Options.Should().Be(options);
+        _ = buffer.Options.Should().Be(options);
         _mockMemoryManager.Verify(m => m.AllocateAsync(size, options, CancellationToken.None), Times.Once);
     }
 
@@ -115,13 +115,13 @@ public sealed class IMemoryManagerTests
     public async Task AllocateAsync_WhenOutOfMemory_ShouldThrowMemoryException()
     {
         // Arrange
-        _mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
+        _ = _mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                          .ThrowsAsync(new MemoryException("Out of memory"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<MemoryException>(
            () => _mockMemoryManager.Object.AllocateAsync(1024).AsTask());
-        exception.Message.Should().Be("Out of memory");
+        _ = exception.Message.Should().Be("Out of memory");
     }
 
     #endregion
@@ -136,8 +136,8 @@ public sealed class IMemoryManagerTests
         var sourceMemory = new ReadOnlyMemory<float>(sourceData);
         var options = MemoryOptions.None;
 
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(sourceData.Length * sizeof(float));
-        _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(sourceMemory, options, CancellationToken.None))
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(sourceData.Length * sizeof(float));
+        _ = _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(sourceMemory, options, CancellationToken.None))
                          .ReturnsAsync(_mockBuffer.Object);
 
         // Act
@@ -145,7 +145,7 @@ public sealed class IMemoryManagerTests
 
         // Assert
         Assert.NotNull(buffer);
-        buffer.SizeInBytes.Should().Be(sourceData.Length * sizeof(float));
+        _ = buffer.SizeInBytes.Should().Be(sourceData.Length * sizeof(float));
         _mockMemoryManager.Verify(m => m.AllocateAndCopyAsync(sourceMemory, options, CancellationToken.None), Times.Once);
     }
 
@@ -155,13 +155,13 @@ public sealed class IMemoryManagerTests
         // Arrange
         var emptyData = ReadOnlyMemory<int>.Empty;
 
-        _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(emptyData, MemoryOptions.None, CancellationToken.None))
+        _ = _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(emptyData, MemoryOptions.None, CancellationToken.None))
                          .ThrowsAsync(new ArgumentException("Source data cannot be empty", "source"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockMemoryManager.Object.AllocateAndCopyAsync<int>(emptyData).AsTask());
-        exception.ParamName.Should().Be("source");
+        _ = exception.ParamName.Should().Be("source");
     }
 
     [Fact]
@@ -176,11 +176,11 @@ public sealed class IMemoryManagerTests
         var doubleBuffer = new Mock<IMemoryBuffer>();
         var byteBuffer = new Mock<IMemoryBuffer>();
 
-        _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
+        _ = _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(intBuffer.Object);
-        _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<double>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
+        _ = _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<double>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(doubleBuffer.Object);
-        _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
+        _ = _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<byte>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(byteBuffer.Object);
 
         // Act
@@ -207,8 +207,8 @@ public sealed class IMemoryManagerTests
         var parentBuffer = _mockBuffer.Object;
         var viewBuffer = new Mock<IMemoryBuffer>();
 
-        viewBuffer.SetupGet(b => b.SizeInBytes).Returns(length);
-        _mockMemoryManager.Setup(m => m.CreateView(parentBuffer, offset, length))
+        _ = viewBuffer.SetupGet(b => b.SizeInBytes).Returns(length);
+        _ = _mockMemoryManager.Setup(m => m.CreateView(parentBuffer, offset, length))
                          .Returns(viewBuffer.Object);
 
         // Act
@@ -216,7 +216,7 @@ public sealed class IMemoryManagerTests
 
         // Assert
         Assert.NotNull(view);
-        view.SizeInBytes.Should().Be(length);
+        _ = view.SizeInBytes.Should().Be(length);
         _mockMemoryManager.Verify(m => m.CreateView(parentBuffer, offset, length), Times.Once);
     }
 
@@ -224,39 +224,39 @@ public sealed class IMemoryManagerTests
     public void CreateView_WithNullBuffer_ShouldThrowArgumentNullException()
     {
         // Arrange
-        _mockMemoryManager.Setup(m => m.CreateView(null!, 0, 100))
+        _ = _mockMemoryManager.Setup(m => m.CreateView(null!, 0, 100))
                          .Throws(new ArgumentNullException("buffer"));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentNullException>(
            () => _mockMemoryManager.Object.CreateView(null!, 0, 100));
-        exception.ParamName.Should().Be("buffer");
+        _ = exception.ParamName.Should().Be("buffer");
     }
 
     [Fact]
     public void CreateView_WithNegativeOffset_ShouldThrowArgumentOutOfRangeException()
     {
         // Arrange
-        _mockMemoryManager.Setup(m => m.CreateView(_mockBuffer.Object, -1, 100))
+        _ = _mockMemoryManager.Setup(m => m.CreateView(_mockBuffer.Object, -1, 100))
                          .Throws(new ArgumentOutOfRangeException("offset"));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentOutOfRangeException>(
            () => _mockMemoryManager.Object.CreateView(_mockBuffer.Object, -1, 100));
-        exception.ParamName.Should().Be("offset");
+        _ = exception.ParamName.Should().Be("offset");
     }
 
     [Fact]
     public void CreateView_WithZeroLength_ShouldThrowArgumentException()
     {
         // Arrange
-        _mockMemoryManager.Setup(m => m.CreateView(_mockBuffer.Object, 0, 0))
+        _ = _mockMemoryManager.Setup(m => m.CreateView(_mockBuffer.Object, 0, 0))
                          .Throws(new ArgumentException("Length must be positive", "count"));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentException>(
            () => _mockMemoryManager.Object.CreateView(_mockBuffer.Object, 0, 0));
-        exception.ParamName.Should().Be("length");
+        _ = exception.ParamName.Should().Be("length");
     }
 
     #endregion
@@ -270,8 +270,8 @@ public sealed class IMemoryManagerTests
         const int count = 1000;
         const long expectedSize = count * sizeof(float);
 
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSize);
-        _mockMemoryManager.Setup(m => m.Allocate<float>(count))
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSize);
+        _ = _mockMemoryManager.Setup(m => m.Allocate<float>(count))
                          .ReturnsAsync(_mockBuffer.Object);
 
         // Act
@@ -279,7 +279,7 @@ public sealed class IMemoryManagerTests
 
         // Assert
         Assert.NotNull(buffer);
-        buffer.SizeInBytes.Should().Be(expectedSize);
+        _ = buffer.SizeInBytes.Should().Be(expectedSize);
         _mockMemoryManager.Verify(m => m.Allocate<float>(count), Times.Once);
     }
 
@@ -290,13 +290,13 @@ public sealed class IMemoryManagerTests
     public async Task Allocate_WithInvalidCount_ShouldThrowArgumentException(int invalidCount)
     {
         // Arrange
-        _mockMemoryManager.Setup(m => m.Allocate<int>(invalidCount))
+        _ = _mockMemoryManager.Setup(m => m.Allocate<int>(invalidCount))
                          .ThrowsAsync(new ArgumentException("Count must be positive", nameof(invalidCount)));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockMemoryManager.Object.Allocate<int>(invalidCount).AsTask());
-        exception.ParamName.Should().Be(nameof(invalidCount));
+        _ = exception.ParamName.Should().Be(nameof(invalidCount));
     }
 
     [Fact]
@@ -309,13 +309,13 @@ public sealed class IMemoryManagerTests
         var longBuffer = new Mock<IMemoryBuffer>();
         var doubleBuffer = new Mock<IMemoryBuffer>();
 
-        intBuffer.SetupGet(b => b.SizeInBytes).Returns(count * sizeof(int));
-        longBuffer.SetupGet(b => b.SizeInBytes).Returns(count * sizeof(long));
-        doubleBuffer.SetupGet(b => b.SizeInBytes).Returns(count * sizeof(double));
+        _ = intBuffer.SetupGet(b => b.SizeInBytes).Returns(count * sizeof(int));
+        _ = longBuffer.SetupGet(b => b.SizeInBytes).Returns(count * sizeof(long));
+        _ = doubleBuffer.SetupGet(b => b.SizeInBytes).Returns(count * sizeof(double));
 
-        _mockMemoryManager.Setup(m => m.Allocate<int>(count)).ReturnsAsync(intBuffer.Object);
-        _mockMemoryManager.Setup(m => m.Allocate<long>(count)).ReturnsAsync(longBuffer.Object);
-        _mockMemoryManager.Setup(m => m.Allocate<double>(count)).ReturnsAsync(doubleBuffer.Object);
+        _ = _mockMemoryManager.Setup(m => m.Allocate<int>(count)).ReturnsAsync(intBuffer.Object);
+        _ = _mockMemoryManager.Setup(m => m.Allocate<long>(count)).ReturnsAsync(longBuffer.Object);
+        _ = _mockMemoryManager.Setup(m => m.Allocate<double>(count)).ReturnsAsync(doubleBuffer.Object);
 
         // Act
         var intResult = await _mockMemoryManager.Object.Allocate<int>(count);
@@ -323,9 +323,9 @@ public sealed class IMemoryManagerTests
         var doubleResult = await _mockMemoryManager.Object.Allocate<double>(count);
 
         // Assert
-        intResult.SizeInBytes.Should().Be(count * sizeof(int));
-        longResult.SizeInBytes.Should().Be(count * sizeof(long));
-        doubleResult.SizeInBytes.Should().Be(count * sizeof(double));
+        _ = intResult.SizeInBytes.Should().Be(count * sizeof(int));
+        _ = longResult.SizeInBytes.Should().Be(count * sizeof(long));
+        _ = doubleResult.SizeInBytes.Should().Be(count * sizeof(double));
     }
 
     #endregion
@@ -368,7 +368,7 @@ public sealed class IMemoryManagerTests
         }
 
         Assert.NotNull(exception);
-        exception.ParamName.Should().Be("buffer");
+        _ = exception.ParamName.Should().Be("buffer");
     }
 
     [Fact]
@@ -407,7 +407,7 @@ public sealed class IMemoryManagerTests
         }
 
         Assert.NotNull(exception);
-        exception.ParamName.Should().Be("buffer");
+        _ = exception.ParamName.Should().Be("buffer");
     }
 
     [Fact]
@@ -447,13 +447,13 @@ public sealed class IMemoryManagerTests
     public void Free_WithNullBuffer_ShouldThrowArgumentNullException()
     {
         // Arrange
-        _mockMemoryManager.Setup(m => m.Free(null!))
+        _ = _mockMemoryManager.Setup(m => m.Free(null!))
                          .Throws(new ArgumentNullException("buffer"));
 
         // Act & Assert
         var exception = Assert.Throws<ArgumentNullException>(
            () => _mockMemoryManager.Object.Free(null!));
-        exception.ParamName.Should().Be("buffer");
+        _ = exception.ParamName.Should().Be("buffer");
     }
 
     [Fact]
@@ -461,7 +461,7 @@ public sealed class IMemoryManagerTests
     {
         // Arrange
         var callCount = 0;
-        _mockMemoryManager.Setup(m => m.Free(_mockBuffer.Object))
+        _ = _mockMemoryManager.Setup(m => m.Free(_mockBuffer.Object))
                          .Callback(() => callCount++);
 
         // Act
@@ -486,9 +486,9 @@ public sealed class IMemoryManagerTests
         var destinationData = new float[4];
 
         // Setup the workflow
-        _mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
+        _ = _mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(_mockBuffer.Object);
-        _mockMemoryManager.Setup(m => m.Free(_mockBuffer.Object));
+        _ = _mockMemoryManager.Setup(m => m.Free(_mockBuffer.Object));
 
         // Act
         var buffer = await _mockMemoryManager.Object.AllocateAsync(sourceData.Length * sizeof(float));
@@ -509,9 +509,9 @@ public sealed class IMemoryManagerTests
         var sourceData = new int[] { 10, 20, 30, 40, 50 };
         var destinationData = new int[5];
 
-        _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
+        _ = _mockMemoryManager.Setup(m => m.AllocateAndCopyAsync(It.IsAny<ReadOnlyMemory<int>>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(_mockBuffer.Object);
-        _mockMemoryManager.Setup(m => m.Free(_mockBuffer.Object));
+        _ = _mockMemoryManager.Setup(m => m.Free(_mockBuffer.Object));
 
         // Act
         var buffer = await _mockMemoryManager.Object.AllocateAndCopyAsync<int>(sourceData);
@@ -533,8 +533,8 @@ public sealed class IMemoryManagerTests
     {
         // Arrange
         const long largeSize = 1024L * 1024 * 1024; // 1 GB
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(largeSize);
-        _mockMemoryManager.Setup(m => m.AllocateAsync(largeSize, It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(largeSize);
+        _ = _mockMemoryManager.Setup(m => m.AllocateAsync(largeSize, It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                          .ReturnsAsync(_mockBuffer.Object);
 
         // Act
@@ -542,7 +542,7 @@ public sealed class IMemoryManagerTests
 
         // Assert
         Assert.NotNull(buffer);
-        buffer.SizeInBytes.Should().Be(largeSize);
+        _ = buffer.SizeInBytes.Should().Be(largeSize);
     }
 
     [Fact]
@@ -552,8 +552,8 @@ public sealed class IMemoryManagerTests
         const int maxCount = int.MaxValue / sizeof(int); // Maximum possible count for int array
         const long expectedSize = (long)maxCount * sizeof(int);
 
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSize);
-        _mockMemoryManager.Setup(m => m.Allocate<int>(maxCount))
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSize);
+        _ = _mockMemoryManager.Setup(m => m.Allocate<int>(maxCount))
                          .ReturnsAsync(_mockBuffer.Object);
 
         // Act
@@ -561,9 +561,8 @@ public sealed class IMemoryManagerTests
 
         // Assert
         Assert.NotNull(buffer);
-        buffer.SizeInBytes.Should().Be(expectedSize);
+        _ = buffer.SizeInBytes.Should().Be(expectedSize);
     }
 
     #endregion
-}
 }

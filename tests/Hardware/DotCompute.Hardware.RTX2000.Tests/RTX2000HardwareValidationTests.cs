@@ -5,8 +5,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Comprehensive hardware validation tests specifically for NVIDIA RTX 2000 Ada Generation GPU.
@@ -22,14 +22,14 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
     private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
-    
+
     // Logger messages
     private static readonly Action<ILogger, int, Exception?> LogCudaInitializationFailed =
         LoggerMessage.Define<int>(LogLevel.Warning, new EventId(1001), "CUDA initialization failed with error code: {ErrorCode}");
-    
+
     private static readonly Action<ILogger, string, Exception?> LogDeviceFound =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(1002), "Found device: {DeviceName}");
-    
+
     private static readonly Action<ILogger, int, Exception?> LogCudaContextCreated =
         LoggerMessage.Define<int>(LogLevel.Information, new EventId(1003), "CUDA context created successfully on device {DeviceId}");
     private IntPtr _cudaContext;
@@ -150,8 +150,8 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
 
         // RTX 2000 Ada Gen should have compute capability 8.9
-        _deviceProperties.Major.Should().Be(8, "RTX 2000 Ada Gen should have major compute capability 8");
-        _deviceProperties.Minor.Should().BeGreaterThanOrEqualTo(9, "RTX 2000 Ada Gen should have minor compute capability 9 or higher");
+        _ = _deviceProperties.Major.Should().Be(8, "RTX 2000 Ada Gen should have major compute capability 8");
+        _ = _deviceProperties.Minor.Should().BeGreaterThanOrEqualTo(9, "RTX 2000 Ada Gen should have minor compute capability 9 or higher");
 
         _output.WriteLine($"✓ Validated compute capability {_deviceProperties.Major}.{_deviceProperties.Minor}");
     }
@@ -167,19 +167,19 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         var result = CudaMemGetInfo(ref free, ref total);
 
         Assert.Equal(0, result); // Memory info query should succeed
-        total.Should().BeGreaterThan(4UL * 1024 * 1024 * 1024, "RTX 2000 Ada Gen should have more than 4GB memory");
+        _ = total.Should().BeGreaterThan(4UL * 1024 * 1024 * 1024, "RTX 2000 Ada Gen should have more than 4GB memory");
 
         // RTX 2000 Ada Gen has 8GB GDDR6 memory
         var totalGB = total / (1024.0 * 1024.0 * 1024.0);
         _output.WriteLine($"Total GPU Memory: {totalGB:F1} GB");
 
         // Allow some tolerance for system reserved memory
-        totalGB.Should().BeInRange(7.0, 8.5, "RTX 2000 Ada Gen should have approximately 8GB memory");
+        _ = totalGB.Should().BeInRange(7.0, 8.5, "RTX 2000 Ada Gen should have approximately 8GB memory");
 
         // Validate memory bandwidth characteristics
         var memoryBandwidth = CalculateTheoreticalMemoryBandwidth();
         _output.WriteLine($"Theoretical Memory Bandwidth: {memoryBandwidth:F1} GB/s");
-        memoryBandwidth.Should().BeGreaterThan(200.0, "RTX 2000 Ada Gen should have high memory bandwidth");
+        _ = memoryBandwidth.Should().BeGreaterThan(200.0, "RTX 2000 Ada Gen should have high memory bandwidth");
     }
 
     private double CalculateTheoreticalMemoryBandwidth()
@@ -239,7 +239,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
             _output.WriteLine($"Allocated {totalAllocatedMB} MB in {allocations.Count} buffers in {stopwatch.ElapsedMilliseconds} ms");
 
             // Should be able to allocate at least several GB
-            (allocations.Count > 50).Should().BeTrue();
+            _ = (allocations.Count > 50).Should().BeTrue();
         }
         finally
         {
@@ -281,8 +281,8 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
                 // Warm up
                 for (var i = 0; i < 3; i++)
                 {
-                    CudaMemcpyHtoD(devicePtr, hostHandle.AddrOfPinnedObject(), testSize);
-                    CudaMemcpyDtoH(hostHandle.AddrOfPinnedObject(), devicePtr, testSize);
+                    _ = CudaMemcpyHtoD(devicePtr, hostHandle.AddrOfPinnedObject(), testSize);
+                    _ = CudaMemcpyDtoH(hostHandle.AddrOfPinnedObject(), devicePtr, testSize);
                 }
 
                 // Measure Host to Device bandwidth
@@ -290,7 +290,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
                 for (var i = 0; i < iterations; i++)
                 {
                     result = CudaMemcpyHtoD(devicePtr, hostHandle.AddrOfPinnedObject(), testSize);
-                    result.Should().Be(0, $"H2D copy iteration {i} should succeed");
+                    _ = result.Should().Be(0, $"H2D copy iteration {i} should succeed");
                 }
                 sw.Stop();
 
@@ -302,7 +302,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
                 for (var i = 0; i < iterations; i++)
                 {
                     result = CudaMemcpyDtoH(hostHandle.AddrOfPinnedObject(), devicePtr, testSize);
-                    result.Should().Be(0, $"D2H copy iteration {i} should succeed");
+                    _ = result.Should().Be(0, $"D2H copy iteration {i} should succeed");
                 }
                 sw.Stop();
 
@@ -320,7 +320,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
                     for (var i = 0; i < iterations; i++)
                     {
                         result = CudaMemcpyDtoD(devicePtr2, devicePtr, testSize);
-                        result.Should().Be(0, $"D2D copy iteration {i} should succeed");
+                        _ = result.Should().Be(0, $"D2D copy iteration {i} should succeed");
                     }
                     sw.Stop();
 
@@ -328,9 +328,9 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
                     _output.WriteLine($"Device to Device bandwidth: {d2dBandwidth:F2} GB/s");
 
                     // Validate bandwidth expectations
-                    h2dBandwidth.Should().BeGreaterThan(10.0, "H2D bandwidth should be reasonable for PCIe");
-                    d2hBandwidth.Should().BeGreaterThan(10.0, "D2H bandwidth should be reasonable for PCIe");
-                    d2dBandwidth.Should().BeGreaterThan(100.0, "D2D bandwidth should be much higher than PCIe");
+                    _ = h2dBandwidth.Should().BeGreaterThan(10.0, "H2D bandwidth should be reasonable for PCIe");
+                    _ = d2hBandwidth.Should().BeGreaterThan(10.0, "D2H bandwidth should be reasonable for PCIe");
+                    _ = d2dBandwidth.Should().BeGreaterThan(100.0, "D2D bandwidth should be much higher than PCIe");
 
                     _output.WriteLine($"Bandwidth Summary:");
                     _output.WriteLine($"  H2D: {h2dBandwidth:F2} GB/s");
@@ -381,8 +381,8 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         _output.WriteLine($"Total threads: {totalBlocks * threadsPerBlock}");
 
         // RTX 2000 Ada Gen should have sufficient multiprocessors for good parallelism
-        smCount.Should().BeGreaterThan(20, "RTX 2000 Ada Gen should have many SMs for parallel execution");
-        maxThreadsPerSM.Should().BeGreaterThanOrEqualTo(1536, "Ada architecture should support many concurrent threads");
+        _ = smCount.Should().BeGreaterThan(20, "RTX 2000 Ada Gen should have many SMs for parallel execution");
+        _ = maxThreadsPerSM.Should().BeGreaterThanOrEqualTo(1536, "Ada architecture should support many concurrent threads");
 
         await Task.CompletedTask;
     }
@@ -409,10 +409,10 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
             for (var i = 0; i < streamCount; i++)
             {
                 var result = CudaStreamCreate(ref streams[i]);
-                result.Should().Be(0, $"Stream {i} creation should succeed");
+                _ = result.Should().Be(0, $"Stream {i} creation should succeed");
 
                 result = CudaMalloc(ref deviceBuffers[i], elementsPerStream * elementSize);
-                result.Should().Be(0, $"Buffer {i} allocation should succeed");
+                _ = result.Should().Be(0, $"Buffer {i} allocation should succeed");
 
                 hostBuffers[i] = new float[elementsPerStream];
                 for (var j = 0; j < elementsPerStream; j++)
@@ -433,14 +433,14 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
                     handles[i].AddrOfPinnedObject(),
                     elementsPerStream * elementSize,
                     streams[i]);
-                result.Should().Be(0, $"Async H2D copy for stream {i} should succeed");
+                _ = result.Should().Be(0, $"Async H2D copy for stream {i} should succeed");
             }
 
             // Synchronize all streams
             for (var i = 0; i < streamCount; i++)
             {
                 var result = CudaStreamSynchronize(streams[i]);
-                result.Should().Be(0, $"Stream {i} synchronization should succeed");
+                _ = result.Should().Be(0, $"Stream {i} synchronization should succeed");
                 handles[i].Free();
             }
 
@@ -452,7 +452,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
             var throughputMBps = totalDataMB / (stopwatch.ElapsedMilliseconds / 1000.0);
             _output.WriteLine($"Total throughput: {throughputMBps:F1} MB/s for {totalDataMB} MB");
 
-            throughputMBps.Should().BeGreaterThan(1000, "Concurrent streams should achieve high throughput");
+            _ = throughputMBps.Should().BeGreaterThan(1000, "Concurrent streams should achieve high throughput");
         }
         finally
         {
@@ -479,12 +479,12 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         // Test 1: Invalid memory allocation(too large)
         var devicePtr = IntPtr.Zero;
         var result = CudaMalloc(ref devicePtr, long.MaxValue);
-        result.Should().NotBe(0, "Excessive memory allocation should fail");
+        _ = result.Should().NotBe(0, "Excessive memory allocation should fail");
         _output.WriteLine($"Large allocation failed as expected with error code: {result}");
 
         // Test 2: Invalid memory operations
         _ = CudaFree(IntPtr.Zero);
-        result.Should().NotBe(0, "Freeing null pointer should fail");
+        _ = result.Should().NotBe(0, "Freeing null pointer should fail");
         _output.WriteLine($"Null pointer free failed as expected with error code: {result}");
 
         // Test 3: Memory access validation
@@ -548,7 +548,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         public int MemoryClockRate;
         public int MemoryBusWidth;
         public int L2CacheSize;
-        
+
         public readonly bool Equals(CudaDeviceProperties other) => Major == other.Major &&
             Minor == other.Minor &&
             TotalGlobalMem == other.TotalGlobalMem &&
@@ -559,13 +559,13 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
             MemoryClockRate == other.MemoryClockRate &&
             MemoryBusWidth == other.MemoryBusWidth &&
             L2CacheSize == other.L2CacheSize;
-            
+
         public override readonly bool Equals(object? obj) => obj is CudaDeviceProperties other && Equals(other);
-        
+
         public override readonly int GetHashCode() => HashCode.Combine(Major, Minor, TotalGlobalMem, SharedMemPerBlock, MaxThreadsPerBlock, MultiProcessorCount, MaxThreadsPerMultiProcessor, HashCode.Combine(MemoryClockRate, MemoryBusWidth, L2CacheSize));
-        
+
         public static bool operator ==(CudaDeviceProperties left, CudaDeviceProperties right) => left.Equals(right);
-        
+
         public static bool operator !=(CudaDeviceProperties left, CudaDeviceProperties right) => !left.Equals(right);
     }
 
@@ -881,5 +881,4 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
-}
 }

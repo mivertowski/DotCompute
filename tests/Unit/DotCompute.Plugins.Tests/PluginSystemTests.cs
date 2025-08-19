@@ -14,8 +14,8 @@ using NSubstitute;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Tests for the PluginSystem class covering plugin loading, unloading, and lifecycle management.
@@ -33,7 +33,7 @@ public sealed class PluginSystemTests : IDisposable
 
         // Create a minimal service provider for plugin initialization
         var services = new ServiceCollection();
-        services.AddSingleton(_logger);
+        _ = services.AddSingleton(_logger);
         var serviceProvider = services.BuildServiceProvider();
 
         _pluginSystem = new PluginSystem(_logger, serviceProvider);
@@ -45,7 +45,7 @@ public sealed class PluginSystemTests : IDisposable
     {
         // Act & Assert
         Func<PluginSystem> act = () => new PluginSystem((ILogger<PluginSystem>)null!);
-        act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
+        _ = act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public sealed class PluginSystemTests : IDisposable
 
         // Assert
         Assert.NotNull(pluginSystem);
-        pluginSystem.IsInitialized.Should().BeFalse();
+        _ = pluginSystem.IsInitialized.Should().BeFalse();
     }
 
     [Fact]
@@ -69,7 +69,7 @@ public sealed class PluginSystemTests : IDisposable
         await _pluginSystem.InitializeAsync();
 
         // Assert
-        _pluginSystem.IsInitialized.Should().BeTrue();
+        _ = _pluginSystem.IsInitialized.Should().BeTrue();
     }
 
     [Fact]
@@ -82,7 +82,7 @@ public sealed class PluginSystemTests : IDisposable
         await _pluginSystem.InitializeAsync(cts.Token);
 
         // Assert
-        _pluginSystem.IsInitialized.Should().BeTrue();
+        _ = _pluginSystem.IsInitialized.Should().BeTrue();
     }
 
     [Fact]
@@ -93,8 +93,8 @@ public sealed class PluginSystemTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        result.Should().BeSameAs(_testPlugin);
-        _pluginSystem.GetPlugin(_testPlugin.Id).Should().BeSameAs(_testPlugin);
+        _ = result.Should().BeSameAs(_testPlugin);
+        _ = _pluginSystem.GetPlugin(_testPlugin.Id).Should().BeSameAs(_testPlugin);
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public sealed class PluginSystemTests : IDisposable
         using var invalidPlugin = new InvalidTestPlugin();
 
         // Act & Assert
-        await Assert.ThrowsAsync<PluginLoadException>(() => _pluginSystem.LoadPluginAsync(invalidPlugin));
+        _ = await Assert.ThrowsAsync<PluginLoadException>(() => _pluginSystem.LoadPluginAsync(invalidPlugin));
     }
 
     [Fact]
@@ -119,21 +119,21 @@ public sealed class PluginSystemTests : IDisposable
         _pluginSystem.Dispose();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => _pluginSystem.LoadPluginAsync(_testPlugin));
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => _pluginSystem.LoadPluginAsync(_testPlugin));
     }
 
     [Fact]
     public async Task UnloadPluginAsync_WithValidPlugin_UnloadsSuccessfully()
     {
         // Arrange
-        await _pluginSystem.LoadPluginAsync(_testPlugin);
+        _ = await _pluginSystem.LoadPluginAsync(_testPlugin);
 
         // Act
         var result = await _pluginSystem.UnloadPluginAsync(_testPlugin.Id);
 
         // Assert
         Assert.True(result);
-        _pluginSystem.GetPlugin(_testPlugin.Id).Should().BeNull();
+        _ = _pluginSystem.GetPlugin(_testPlugin.Id).Should().BeNull();
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public sealed class PluginSystemTests : IDisposable
         _pluginSystem.Dispose();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => _pluginSystem.LoadPluginAsync(_testPlugin));
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => _pluginSystem.LoadPluginAsync(_testPlugin));
     }
 
     [Fact]
@@ -166,7 +166,7 @@ public sealed class PluginSystemTests : IDisposable
         var result = _pluginSystem.GetPlugin(_testPlugin.Id);
 
         // Assert
-        result.Should().BeSameAs(_testPlugin);
+        _ = result.Should().BeSameAs(_testPlugin);
     }
 
     [Fact]
@@ -189,7 +189,7 @@ public sealed class PluginSystemTests : IDisposable
         var result = _pluginSystem.GetLoadedPlugins();
 
         // Assert
-        Assert.Single(result);
+        _ = Assert.Single(result);
         Assert.Contains(_testPlugin, result);
     }
 
@@ -228,7 +228,7 @@ public sealed class PluginSystemTests : IDisposable
 
         // Assert
         Assert.NotEmpty(result);
-        result.Should().Contain(typeof(TestPlugin));
+        _ = result.Should().Contain(typeof(TestPlugin));
     }
 
     [Fact]
@@ -243,8 +243,8 @@ public sealed class PluginSystemTests : IDisposable
 
         // Assert
         Assert.Equal(10, results.Length);
-        results.Should().OnlyContain(r => r != null);
-        _pluginSystem.GetLoadedPlugins().Should().HaveCount(10);
+        _ = results.Should().OnlyContain(r => r != null);
+        _ = _pluginSystem.GetLoadedPlugins().Should().HaveCount(10);
     }
 
     [Fact]
@@ -252,12 +252,12 @@ public sealed class PluginSystemTests : IDisposable
     {
         // Arrange
         var plugin = Substitute.For<IBackendPlugin>();
-        plugin.Id.Returns("throwing-plugin");
-        plugin.Validate().Returns(callInfo => throw new InvalidOperationException("Validation failed"));
+        _ = plugin.Id.Returns("throwing-plugin");
+        _ = plugin.Validate().Returns(callInfo => throw new InvalidOperationException("Validation failed"));
 
         // Act & Assert
         var ex = await Assert.ThrowsAsync<PluginLoadException>(() => _pluginSystem.LoadPluginAsync(plugin));
-        ex.InnerException.Should().BeOfType<InvalidOperationException>();
+        _ = ex.InnerException.Should().BeOfType<InvalidOperationException>();
     }
 
     [Fact]
@@ -273,8 +273,8 @@ public sealed class PluginSystemTests : IDisposable
         _pluginSystem.Dispose();
 
         // Assert
-        plugin1.IsDisposed.Should().BeTrue();
-        plugin2.IsDisposed.Should().BeTrue();
+        _ = plugin1.IsDisposed.Should().BeTrue();
+        _ = plugin2.IsDisposed.Should().BeTrue();
     }
 
     [Fact]
@@ -304,17 +304,12 @@ public sealed class PluginSystemTests : IDisposable
     /// <summary>
     /// Test plugin implementation for testing purposes.
     /// </summary>
-    private sealed class TestPlugin : IBackendPlugin
+    private sealed class TestPlugin(string? id = null) : IBackendPlugin
     {
         private PluginState _state = PluginState.Loaded;
         private readonly PluginHealth _health = PluginHealth.Healthy;
 
-        public TestPlugin(string? id = null)
-        {
-            Id = id ?? "test-plugin";
-        }
-
-        public string Id { get; }
+        public string Id { get; } = id ?? "test-plugin";
         public string Name => "Test Plugin";
         public Version Version => new(1, 0, 0);
         public string Description => "Test plugin for unit tests";
@@ -399,10 +394,6 @@ public sealed class PluginSystemTests : IDisposable
         public string GetConfigurationSchema() => "{}";
         public Task OnConfigurationChangedAsync(IConfiguration configuration, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public PluginMetrics GetMetrics() => new();
-        public void Dispose() { 
-        
-        GC.SuppressFinalize(this);
+        public void Dispose() => GC.SuppressFinalize(this);
     }
-    }
-}
 }

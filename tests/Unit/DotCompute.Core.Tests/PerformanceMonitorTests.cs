@@ -10,8 +10,8 @@ using ExecutionParallelExecutionResult = DotCompute.Core.Execution.ParallelExecu
 using ExecutionDeviceExecutionResult = DotCompute.Core.Execution.DeviceExecutionResult;
 using ExecutionExecutionStrategyType = DotCompute.Core.Execution.ExecutionStrategyType;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Tests for the PerformanceMonitor class from DotCompute.Core.Execution.
@@ -121,7 +121,7 @@ public sealed class PerformanceMonitorTests : IDisposable
         // Assert
         Assert.NotNull(recommendation);
         Assert.NotNull(recommendation.Reasoning);
-        Assert.True(recommendation.ConfidenceScore >= 0 && recommendation.ConfidenceScore <= 1);
+        Assert.True(recommendation.ConfidenceScore is >= 0 and <= 1);
     }
 
     [Fact]
@@ -231,13 +231,13 @@ public sealed class PerformanceMonitorTests : IDisposable
             DeviceResults =
             [
                 new ExecutionDeviceExecutionResult
-                {
-                    DeviceId = "GPU_0",
-                    Success = true,
-                    ExecutionTimeMs = 145.0,
-                    ThroughputGFLOPS = 12.8,
-                    MemoryBandwidthGBps = 87.1
-                }
+            {
+                DeviceId = "GPU_0",
+                Success = true,
+                ExecutionTimeMs = 145.0,
+                ThroughputGFLOPS = 12.8,
+                MemoryBandwidthGBps = 87.1
+            }
             ],
             ErrorMessage = null
         };
@@ -252,5 +252,4 @@ public sealed class PerformanceMonitorTests : IDisposable
             GC.SuppressFinalize(this);
         }
     }
-}
 }

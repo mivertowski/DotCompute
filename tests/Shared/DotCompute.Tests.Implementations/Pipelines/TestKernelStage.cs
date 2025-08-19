@@ -2,8 +2,8 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
 
-namespace DotCompute.Tests.Implementations.Pipelines
-{
+namespace DotCompute.Tests.Implementations.Pipelines;
+
 
 /// <summary>
 /// Test implementation of a kernel pipeline stage.
@@ -19,6 +19,13 @@ public sealed class TestKernelStage : IPipelineStage
     private KernelConfiguration? _configuration;
     private int _priority;
 
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestKernelStage"/> class.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="kernel">The kernel.</param>
+    /// <exception cref="System.ArgumentNullException"></exception>
     public TestKernelStage(string name, ICompiledKernel kernel)
     {
         Id = $"kernel_{name}_{Guid.NewGuid():N}";
@@ -30,22 +37,51 @@ public sealed class TestKernelStage : IPipelineStage
         _outputMappings = [];
         _constantParameters = [];
         _metrics = new TestStageMetrics(Name);
-        Dependencies = Array.Empty<string>();
+        Dependencies = [];
         Type = PipelineStageType.Kernel;
     }
 
+    /// <summary>
+    /// Gets the stage identifier.
+    /// </summary>
     public string Id { get; }
+
+    /// <summary>
+    /// Gets the stage name.
+    /// </summary>
     public string Name { get; }
+
+    /// <summary>
+    /// Gets the stage type.
+    /// </summary>
     public PipelineStageType Type { get; }
+
+    /// <summary>
+    /// Gets the stage dependencies.
+    /// </summary>
     public IReadOnlyList<string> Dependencies { get; private set; }
+
+    /// <summary>
+    /// Gets the stage metadata.
+    /// </summary>
     public IReadOnlyDictionary<string, object> Metadata => _metadata;
 
+    /// <summary>
+    /// Configures the specified configure.
+    /// </summary>
+    /// <param name="configure">The configure.</param>
     public void Configure(Action<TestKernelStageBuilder> configure)
     {
         var builder = new TestKernelStageBuilder(this);
         configure(builder);
     }
 
+    /// <summary>
+    /// Executes the stage.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async ValueTask<StageExecutionResult> ExecuteAsync(
         PipelineExecutionContext context,
         CancellationToken cancellationToken = default)
@@ -133,7 +169,7 @@ public sealed class TestKernelStage : IPipelineStage
             args.Add(value);
         }
 
-        return new KernelArguments(args.ToArray());
+        return new KernelArguments([.. args]);
     }
 
     private Dictionary<string, object> StoreOutputs(PipelineExecutionContext context)
@@ -152,6 +188,10 @@ public sealed class TestKernelStage : IPipelineStage
         return outputs;
     }
 
+    /// <summary>
+    /// Validates the stage configuration.
+    /// </summary>
+    /// <returns></returns>
     public StageValidationResult Validate()
     {
         var errors = new List<string>();
@@ -185,6 +225,10 @@ public sealed class TestKernelStage : IPipelineStage
         };
     }
 
+    /// <summary>
+    /// Gets performance metrics for this stage.
+    /// </summary>
+    /// <returns></returns>
     public IStageMetrics GetMetrics() => _metrics;
 
     internal void SetDependencies(string[] dependencies) => Dependencies = dependencies;
@@ -205,23 +249,27 @@ public sealed class TestKernelStage : IPipelineStage
 /// <summary>
 /// Builder for configuring kernel stages.
 /// </summary>
-public sealed class TestKernelStageBuilder : IKernelStageBuilder
+public sealed class TestKernelStageBuilder(TestKernelStage stage) : IKernelStageBuilder
 {
-    private readonly TestKernelStage _stage;
-    private readonly List<string> _dependencies;
+    private readonly TestKernelStage _stage = stage;
+    private readonly List<string> _dependencies = [];
     private long[]? _globalWorkSize;
     private long[]? _localWorkSize;
 
-    public TestKernelStageBuilder(TestKernelStage stage)
-    {
-        _stage = stage;
-        _dependencies = [];
-    }
-
+    /// <summary>
+    /// Sets the stage name.
+    /// </summary>
+    /// <param name="name"></param>
+    /// <returns></returns>
     public IKernelStageBuilder WithName(string name)
         // Name is set in constructor
         => this;
 
+    /// <summary>
+    /// Sets the work size for the kernel.
+    /// </summary>
+    /// <param name="globalWorkSize"></param>
+    /// <returns></returns>
     public IKernelStageBuilder WithWorkSize(params long[] globalWorkSize)
     {
         _globalWorkSize = globalWorkSize;
@@ -229,6 +277,11 @@ public sealed class TestKernelStageBuilder : IKernelStageBuilder
         return this;
     }
 
+    /// <summary>
+    /// Sets the local work size for the kernel.
+    /// </summary>
+    /// <param name="localWorkSize"></param>
+    /// <returns></returns>
     public IKernelStageBuilder WithLocalWorkSize(params long[] localWorkSize)
     {
         _localWorkSize = localWorkSize;
@@ -236,43 +289,83 @@ public sealed class TestKernelStageBuilder : IKernelStageBuilder
         return this;
     }
 
+    /// <summary>
+    /// Maps an input from the pipeline context.
+    /// </summary>
+    /// <param name="parameterName"></param>
+    /// <param name="contextKey"></param>
+    /// <returns></returns>
     public IKernelStageBuilder MapInput(string parameterName, string contextKey)
     {
         _stage.AddInputMapping(parameterName, contextKey);
         return this;
     }
 
+    /// <summary>
+    /// Maps an output to the pipeline context.
+    /// </summary>
+    /// <param name="parameterName"></param>
+    /// <param name="contextKey"></param>
+    /// <returns></returns>
     public IKernelStageBuilder MapOutput(string parameterName, string contextKey)
     {
         _stage.AddOutputMapping(parameterName, contextKey);
         return this;
     }
 
+    /// <summary>
+    /// Sets a constant parameter value.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="parameterName"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
     public IKernelStageBuilder SetParameter<T>(string parameterName, T value)
     {
         _stage.SetParameter(parameterName, value);
         return this;
     }
 
+    /// <summary>
+    /// Adds a dependency on another stage.
+    /// </summary>
+    /// <param name="stageId"></param>
+    /// <returns></returns>
     public IKernelStageBuilder DependsOn(string stageId)
     {
         _dependencies.Add(stageId);
-        _stage.SetDependencies(_dependencies.ToArray());
+        _stage.SetDependencies([.. _dependencies]);
         return this;
     }
 
+    /// <summary>
+    /// Adds metadata to the stage.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <param name="value"></param>
+    /// <returns></returns>
     public IKernelStageBuilder WithMetadata(string key, object value)
     {
         _stage.AddMetadata(key, value);
         return this;
     }
 
+    /// <summary>
+    /// Sets memory allocation hints.
+    /// </summary>
+    /// <param name="hint"></param>
+    /// <returns></returns>
     public IKernelStageBuilder WithMemoryHint(MemoryHint hint)
     {
         _stage.AddMetadata("MemoryHint", hint);
         return this;
     }
 
+    /// <summary>
+    /// Sets execution priority.
+    /// </summary>
+    /// <param name="priority"></param>
+    /// <returns></returns>
     public IKernelStageBuilder WithPriority(int priority)
     {
         _stage.SetPriority(priority);
@@ -301,46 +394,66 @@ public sealed class TestKernelStageBuilder : IKernelStageBuilder
 /// <summary>
 /// Test implementation of stage metrics.
 /// </summary>
-public sealed class TestStageMetrics : IStageMetrics
+public sealed class TestStageMetrics(string stageName) : IStageMetrics
 {
-    private readonly string _stageName;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
     private long _executionCount;
     private long _errorCount;
     private TimeSpan _totalExecutionTime;
     private TimeSpan _minExecutionTime = TimeSpan.MaxValue;
     private TimeSpan _maxExecutionTime = TimeSpan.Zero;
     private long _totalMemoryUsage;
-    private readonly Dictionary<string, double> _customMetrics;
+    private readonly Dictionary<string, double> _customMetrics = [];
 
-    public TestStageMetrics(string stageName)
-    {
-        _stageName = stageName;
-        _customMetrics = [];
-    }
-
+    /// <summary>
+    /// Gets the total execution count.
+    /// </summary>
     public long ExecutionCount => _executionCount;
 
+    /// <summary>
+    /// Gets the average execution time.
+    /// </summary>
     public TimeSpan AverageExecutionTime
         => _executionCount > 0 ? TimeSpan.FromMilliseconds(_totalExecutionTime.TotalMilliseconds / _executionCount) : TimeSpan.Zero;
 
+    /// <summary>
+    /// Gets the minimum execution time.
+    /// </summary>
     public TimeSpan MinExecutionTime
         => _minExecutionTime == TimeSpan.MaxValue ? TimeSpan.Zero : _minExecutionTime;
 
+    /// <summary>
+    /// Gets the maximum execution time.
+    /// </summary>
     public TimeSpan MaxExecutionTime => _maxExecutionTime;
 
+    /// <summary>
+    /// Gets the total execution time.
+    /// </summary>
     public TimeSpan TotalExecutionTime => _totalExecutionTime;
 
+    /// <summary>
+    /// Gets the error count.
+    /// </summary>
     public long ErrorCount => _errorCount;
 
+    /// <summary>
+    /// Gets the success rate.
+    /// </summary>
     public double SuccessRate
         => _executionCount > 0 ? (double)(_executionCount - _errorCount) / _executionCount * 100 : 0;
 
+    /// <summary>
+    /// Gets average memory usage.
+    /// </summary>
     public long AverageMemoryUsage
         => _executionCount > 0 ? _totalMemoryUsage / _executionCount : 0;
 
     public IReadOnlyDictionary<string, double> CustomMetrics => _customMetrics;
 
+    /// <summary>
+    /// Records the execution start.
+    /// </summary>
     public void RecordExecutionStart()
     {
         lock (_lock)
@@ -349,6 +462,11 @@ public sealed class TestStageMetrics : IStageMetrics
         }
     }
 
+    /// <summary>
+    /// Records the execution success.
+    /// </summary>
+    /// <param name="duration">The duration.</param>
+    /// <param name="memoryUsed">The memory used.</param>
     public void RecordExecutionSuccess(TimeSpan duration, long memoryUsed)
     {
         lock (_lock)
@@ -364,6 +482,10 @@ public sealed class TestStageMetrics : IStageMetrics
         }
     }
 
+    /// <summary>
+    /// Records the execution error.
+    /// </summary>
+    /// <param name="duration">The duration.</param>
     public void RecordExecutionError(TimeSpan duration)
     {
         lock (_lock)
@@ -373,6 +495,11 @@ public sealed class TestStageMetrics : IStageMetrics
         }
     }
 
+    /// <summary>
+    /// Records the custom metric.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="value">The value.</param>
     public void RecordCustomMetric(string name, double value)
     {
         lock (_lock)
@@ -380,5 +507,4 @@ public sealed class TestStageMetrics : IStageMetrics
             _customMetrics[name] = value;
         }
     }
-}
 }

@@ -3,20 +3,20 @@
 
 using DotCompute.Abstractions;
 
-namespace DotCompute.Backends.Metal.Kernels
-{
+namespace DotCompute.Backends.Metal.Kernels;
+
 
 /// <summary>
 /// Provides optimized kernel implementations for Metal.
 /// </summary>
 public static class MetalOptimizedKernels
 {
-    /// <summary>
-    /// Creates a vector addition kernel optimized for Metal.
-    /// </summary>
-    public static KernelDefinition CreateVectorAddKernel()
-    {
-        var code = @"
+/// <summary>
+/// Creates a vector addition kernel optimized for Metal.
+/// </summary>
+public static KernelDefinition CreateVectorAddKernel()
+{
+    var code = @"
 kernel void vectorAdd(
     device const float* a [[buffer(0)]],
     device const float* b [[buffer(1)]],
@@ -29,37 +29,37 @@ kernel void vectorAdd(
     }
 }";
 
-        var kernelSource = new TextKernelSource(
-            code: code,
-            name: "vectorAdd",
-            language: KernelLanguage.Metal,
-            entryPoint: "vectorAdd",
-            dependencies: []
-        );
+    var kernelSource = new TextKernelSource(
+        code: code,
+        name: "vectorAdd",
+        language: KernelLanguage.Metal,
+        entryPoint: "vectorAdd",
+        dependencies: []
+    );
 
-        var compilationOptions = new CompilationOptions
-        {
-            OptimizationLevel = OptimizationLevel.Default,
-            EnableDebugInfo = false
-        };
+    var compilationOptions = new CompilationOptions
+    {
+        OptimizationLevel = OptimizationLevel.Default,
+        EnableDebugInfo = false
+    };
 
-        var definition = new KernelDefinition("vectorAdd", kernelSource, compilationOptions);
+    var definition = new KernelDefinition("vectorAdd", kernelSource, compilationOptions);
 
-        if (definition.Metadata != null)
-        {
-            definition.Metadata["paramCount"] = 4;
-            definition.Metadata["operation"] = "VectorAdd";
-        }
-
-        return definition;
+    if (definition.Metadata != null)
+    {
+        definition.Metadata["paramCount"] = 4;
+        definition.Metadata["operation"] = "VectorAdd";
     }
 
-    /// <summary>
-    /// Creates a matrix multiplication kernel optimized for Metal.
-    /// </summary>
-    public static KernelDefinition CreateMatrixMultiplyKernel()
-    {
-        var code = @"
+    return definition;
+}
+
+/// <summary>
+/// Creates a matrix multiplication kernel optimized for Metal.
+/// </summary>
+public static KernelDefinition CreateMatrixMultiplyKernel()
+{
+    var code = @"
 #include <metal_stdlib>
 #include <metal_compute>
 using namespace metal;
@@ -88,47 +88,47 @@ kernel void matrixMultiply(
     matrixC[row * N + col] = sum;
 }";
 
-        var kernelSource = new TextKernelSource(
-            code: code,
-            name: "matrixMultiply",
-            language: KernelLanguage.Metal,
-            entryPoint: "matrixMultiply",
-            dependencies: []
-        );
+    var kernelSource = new TextKernelSource(
+        code: code,
+        name: "matrixMultiply",
+        language: KernelLanguage.Metal,
+        entryPoint: "matrixMultiply",
+        dependencies: []
+    );
 
-        var compilationOptions = new CompilationOptions
-        {
-            OptimizationLevel = OptimizationLevel.Default,
-            EnableDebugInfo = false
-        };
+    var compilationOptions = new CompilationOptions
+    {
+        OptimizationLevel = OptimizationLevel.Default,
+        EnableDebugInfo = false
+    };
 
-        var definition = new KernelDefinition("matrixMultiply", kernelSource, compilationOptions);
+    var definition = new KernelDefinition("matrixMultiply", kernelSource, compilationOptions);
 
-        if (definition.Metadata != null)
-        {
-            definition.Metadata["paramCount"] = 6;
-            definition.Metadata["operation"] = "MatrixMultiply";
-            definition.Metadata["requiresTiling"] = true;
-        }
-
-        return definition;
+    if (definition.Metadata != null)
+    {
+        definition.Metadata["paramCount"] = 6;
+        definition.Metadata["operation"] = "MatrixMultiply";
+        definition.Metadata["requiresTiling"] = true;
     }
 
-    /// <summary>
-    /// Creates a parallel reduction kernel optimized for Metal.
-    /// </summary>
-    public static KernelDefinition CreateReductionKernel(ReductionOperation operation = ReductionOperation.Sum)
-    {
-        var operationCode = operation switch
-        {
-            ReductionOperation.Sum => "sum += shared[tid + s];",
-            ReductionOperation.Product => "sum *= shared[tid + s];",
-            ReductionOperation.Min => "sum = min(sum, shared[tid + s]);",
-            ReductionOperation.Max => "sum = max(sum, shared[tid + s]);",
-            _ => "sum += shared[tid + s];"
-        };
+    return definition;
+}
 
-        var code = $@"
+/// <summary>
+/// Creates a parallel reduction kernel optimized for Metal.
+/// </summary>
+public static KernelDefinition CreateReductionKernel(ReductionOperation operation = ReductionOperation.Sum)
+{
+    var operationCode = operation switch
+    {
+        ReductionOperation.Sum => "sum += shared[tid + s];",
+        ReductionOperation.Product => "sum *= shared[tid + s];",
+        ReductionOperation.Min => "sum = min(sum, shared[tid + s]);",
+        ReductionOperation.Max => "sum = max(sum, shared[tid + s]);",
+        _ => "sum += shared[tid + s];"
+    };
+
+    var code = $@"
 #include <metal_stdlib>
 #include <metal_compute>
 using namespace metal;
@@ -162,38 +162,38 @@ kernel void reduction{operation}(
     }}
 }}";
 
-        var kernelName = $"reduction{operation}";
-        var kernelSource = new TextKernelSource(
-            code: code,
-            name: kernelName,
-            language: KernelLanguage.Metal,
-            entryPoint: kernelName,
-            dependencies: []
-        );
+    var kernelName = $"reduction{operation}";
+    var kernelSource = new TextKernelSource(
+        code: code,
+        name: kernelName,
+        language: KernelLanguage.Metal,
+        entryPoint: kernelName,
+        dependencies: []
+    );
 
-        var compilationOptions = new CompilationOptions
-        {
-            OptimizationLevel = OptimizationLevel.Default,
-            EnableDebugInfo = false
-        };
+    var compilationOptions = new CompilationOptions
+    {
+        OptimizationLevel = OptimizationLevel.Default,
+        EnableDebugInfo = false
+    };
 
-        var definition = new KernelDefinition(kernelName, kernelSource, compilationOptions);
+    var definition = new KernelDefinition(kernelName, kernelSource, compilationOptions);
 
-        if (definition.Metadata != null)
-        {
-            definition.Metadata["operation"] = operation.ToString();
-            definition.Metadata["requiresSharedMemory"] = true;
-        }
-
-        return definition;
+    if (definition.Metadata != null)
+    {
+        definition.Metadata["operation"] = operation.ToString();
+        definition.Metadata["requiresSharedMemory"] = true;
     }
 
-    /// <summary>
-    /// Creates a convolution kernel optimized for Metal (useful for neural networks).
-    /// </summary>
-    public static KernelDefinition CreateConvolution2DKernel()
-    {
-        var code = @"
+    return definition;
+}
+
+/// <summary>
+/// Creates a convolution kernel optimized for Metal (useful for neural networks).
+/// </summary>
+public static KernelDefinition CreateConvolution2DKernel()
+{
+    var code = @"
 #include <metal_stdlib>
 #include <metal_compute>
 using namespace metal;
@@ -244,46 +244,46 @@ kernel void convolution2D(
     output[gid.y * params.outputWidth + gid.x] = sum + params.bias;
 }";
 
-        var kernelSource = new TextKernelSource(
-            code: code,
-            name: "convolution2D",
-            language: KernelLanguage.Metal,
-            entryPoint: "convolution2D",
-            dependencies: []
-        );
+    var kernelSource = new TextKernelSource(
+        code: code,
+        name: "convolution2D",
+        language: KernelLanguage.Metal,
+        entryPoint: "convolution2D",
+        dependencies: []
+    );
 
-        var compilationOptions = new CompilationOptions
-        {
-            OptimizationLevel = OptimizationLevel.Default,
-            EnableDebugInfo = false
-        };
+    var compilationOptions = new CompilationOptions
+    {
+        OptimizationLevel = OptimizationLevel.Default,
+        EnableDebugInfo = false
+    };
 
-        var definition = new KernelDefinition("convolution2D", kernelSource, compilationOptions);
+    var definition = new KernelDefinition("convolution2D", kernelSource, compilationOptions);
 
-        if (definition.Metadata != null)
-        {
-            definition.Metadata["operation"] = "Convolution2D";
-            definition.Metadata["requiresStructParam"] = true;
-        }
-
-        return definition;
+    if (definition.Metadata != null)
+    {
+        definition.Metadata["operation"] = "Convolution2D";
+        definition.Metadata["requiresStructParam"] = true;
     }
 
-    /// <summary>
-    /// Creates a neural network activation kernel.
-    /// </summary>
-    public static KernelDefinition CreateActivationKernel(ActivationType activation)
-    {
-        var activationCode = activation switch
-        {
-            ActivationType.ReLU => "output[gid] = fmax(value, 0.0f);",
-            ActivationType.Sigmoid => "output[gid] = 1.0f / (1.0f + exp(-value));",
-            ActivationType.Tanh => "output[gid] = tanh(value);",
-            ActivationType.LeakyReLU => "output[gid] = value > 0 ? value : alpha * value;",
-            _ => throw new NotSupportedException($"Activation {activation} not supported")
-        };
+    return definition;
+}
 
-        var code = $@"
+/// <summary>
+/// Creates a neural network activation kernel.
+/// </summary>
+public static KernelDefinition CreateActivationKernel(ActivationType activation)
+{
+    var activationCode = activation switch
+    {
+        ActivationType.ReLU => "output[gid] = fmax(value, 0.0f);",
+        ActivationType.Sigmoid => "output[gid] = 1.0f / (1.0f + exp(-value));",
+        ActivationType.Tanh => "output[gid] = tanh(value);",
+        ActivationType.LeakyReLU => "output[gid] = value > 0 ? value : alpha * value;",
+        _ => throw new NotSupportedException($"Activation {activation} not supported")
+    };
+
+    var code = $@"
 #include <metal_stdlib>
 #include <metal_compute>
 using namespace metal;
@@ -301,37 +301,37 @@ kernel void activation{activation}(
     {activationCode}
 }}";
 
-        var kernelName = $"activation{activation}";
-        var kernelSource = new TextKernelSource(
-            code: code,
-            name: kernelName,
-            language: KernelLanguage.Metal,
-            entryPoint: kernelName,
-            dependencies: []
-        );
+    var kernelName = $"activation{activation}";
+    var kernelSource = new TextKernelSource(
+        code: code,
+        name: kernelName,
+        language: KernelLanguage.Metal,
+        entryPoint: kernelName,
+        dependencies: []
+    );
 
-        var compilationOptions = new CompilationOptions
-        {
-            OptimizationLevel = OptimizationLevel.Default,
-            EnableDebugInfo = false
-        };
+    var compilationOptions = new CompilationOptions
+    {
+        OptimizationLevel = OptimizationLevel.Default,
+        EnableDebugInfo = false
+    };
 
-        var definition = new KernelDefinition(kernelName, kernelSource, compilationOptions);
+    var definition = new KernelDefinition(kernelName, kernelSource, compilationOptions);
 
-        if (definition.Metadata != null)
-        {
-            definition.Metadata["activation"] = activation.ToString();
-        }
-
-        return definition;
+    if (definition.Metadata != null)
+    {
+        definition.Metadata["activation"] = activation.ToString();
     }
 
-    /// <summary>
-    /// Creates a simple element-wise operation kernel.
-    /// </summary>
-    public static KernelDefinition CreateElementWiseKernel(string operation, string operationCode)
-    {
-        var code = $@"
+    return definition;
+}
+
+/// <summary>
+/// Creates a simple element-wise operation kernel.
+/// </summary>
+public static KernelDefinition CreateElementWiseKernel(string operation, string operationCode)
+{
+    var code = $@"
 #include <metal_stdlib>
 #include <metal_compute>
 using namespace metal;
@@ -348,29 +348,29 @@ kernel void {operation}(
     }}
 }}";
 
-        var kernelSource = new TextKernelSource(
-            code: code,
-            name: operation,
-            language: KernelLanguage.Metal,
-            entryPoint: operation,
-            dependencies: []
-        );
+    var kernelSource = new TextKernelSource(
+        code: code,
+        name: operation,
+        language: KernelLanguage.Metal,
+        entryPoint: operation,
+        dependencies: []
+    );
 
-        var compilationOptions = new CompilationOptions
-        {
-            OptimizationLevel = OptimizationLevel.Default,
-            EnableDebugInfo = false
-        };
+    var compilationOptions = new CompilationOptions
+    {
+        OptimizationLevel = OptimizationLevel.Default,
+        EnableDebugInfo = false
+    };
 
-        var definition = new KernelDefinition(operation, kernelSource, compilationOptions);
+    var definition = new KernelDefinition(operation, kernelSource, compilationOptions);
 
-        if (definition.Metadata != null)
-        {
-            definition.Metadata["operation"] = operation;
-        }
-
-        return definition;
+    if (definition.Metadata != null)
+    {
+        definition.Metadata["operation"] = operation;
     }
+
+    return definition;
+}
 }
 
 /// <summary>
@@ -378,11 +378,11 @@ kernel void {operation}(
 /// </summary>
 public enum ReductionOperation
 {
-    Sum,
-    Product,
-    Min,
-    Max,
-    Mean
+Sum,
+Product,
+Min,
+Max,
+Mean
 }
 
 /// <summary>
@@ -390,9 +390,8 @@ public enum ReductionOperation
 /// </summary>
 public enum ActivationType
 {
-    ReLU,
-    Sigmoid,
-    Tanh,
-    LeakyReLU
-}
+ReLU,
+Sigmoid,
+Tanh,
+LeakyReLU
 }

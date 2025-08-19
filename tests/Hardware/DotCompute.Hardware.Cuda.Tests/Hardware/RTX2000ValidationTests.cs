@@ -11,8 +11,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Hardware
-{
+namespace DotCompute.Tests.Hardware.Hardware;
+
 
 /// <summary>
 /// RTX 2000 series specific validation tests
@@ -26,7 +26,7 @@ public sealed class RTX2000ValidationTests : IDisposable
     private readonly List<CudaAccelerator> _accelerators = [];
 
     // LoggerMessage delegate for performance
-    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError =
         LoggerMessage.Define<Exception>(
             LogLevel.Warning,
             new EventId(1, nameof(LogAcceleratorDisposeError)),
@@ -56,8 +56,8 @@ public sealed class RTX2000ValidationTests : IDisposable
         {
             Assert.NotNull(info);
             _ = info.DeviceType.Should().Be(AcceleratorType.CUDA.ToString());
-            info.ComputeCapability.Should().NotBeNull();
-            (info.ComputeCapability!.Major >= 7).Should().BeTrue(); // RTX 2000 series has compute capability 7.5
+            _ = info.ComputeCapability.Should().NotBeNull();
+            _ = (info.ComputeCapability!.Major >= 7).Should().BeTrue(); // RTX 2000 series has compute capability 7.5
 
             _output.WriteLine($"Detected RTX 2000 series GPU: {info.Name}");
             _output.WriteLine($"Compute Capability: {info.ComputeCapability.Major}.{info.ComputeCapability.Minor}");
@@ -85,19 +85,19 @@ public sealed class RTX2000ValidationTests : IDisposable
             return;
 
         // Assert - RTX 2000 series specific features
-        info.ComputeCapability!.Major.Should().Be(7); // RTX 2000 series should have compute capability 7.x(Turing)
-        info.ComputeCapability!.Minor.Should().Be(5); // RTX 2000 series should have compute capability 7.5
+        _ = info.ComputeCapability!.Major.Should().Be(7); // RTX 2000 series should have compute capability 7.x(Turing)
+        _ = info.ComputeCapability!.Minor.Should().Be(5); // RTX 2000 series should have compute capability 7.5
 
         // Turing architecture features
-        info.Capabilities.Should().ContainKey("ConcurrentKernels");
-        info.Capabilities.Should().ContainKey("AsyncEngineCount");
-        info.Capabilities.Should().ContainKey("UnifiedAddressing");
+        _ = info.Capabilities.Should().ContainKey("ConcurrentKernels");
+        _ = info.Capabilities.Should().ContainKey("AsyncEngineCount");
+        _ = info.Capabilities.Should().ContainKey("UnifiedAddressing");
 
         var concurrentKernels = (bool)info.Capabilities!["ConcurrentKernels"];
-        concurrentKernels.Should().BeTrue(); // RTX 2000 series should support concurrent kernel execution
+        _ = concurrentKernels.Should().BeTrue(); // RTX 2000 series should support concurrent kernel execution
 
         var asyncEngines = Convert.ToInt32(info.Capabilities!["AsyncEngineCount"], CultureInfo.InvariantCulture);
-        asyncEngines.Should().BeGreaterThanOrEqualTo(2, "RTX 2000 series should have multiple async engines");
+        _ = asyncEngines.Should().BeGreaterThanOrEqualTo(2, "RTX 2000 series should have multiple async engines");
 
         _output.WriteLine($"Turing Architecture Features Verified:");
         _output.WriteLine($"  Concurrent Kernels: {concurrentKernels}");
@@ -123,13 +123,13 @@ public sealed class RTX2000ValidationTests : IDisposable
         var memoryGB = info.MemorySize / (1024.0 * 1024.0 * 1024.0);
 
         // RTX 2060: 6GB, RTX 2070: 8GB, RTX 2080: 8/11GB, RTX 2080 Ti: 11GB
-        memoryGB.Should().BeInRange(4.0, 12.0, "RTX 2000 series should have between 4GB and 12GB memory");
+        _ = memoryGB.Should().BeInRange(4.0, 12.0, "RTX 2000 series should have between 4GB and 12GB memory");
 
         var memoryBandwidth = Convert.ToDouble(info.Capabilities!["MemoryBandwidth"]!, CultureInfo.InvariantCulture);
-        memoryBandwidth.Should().BeGreaterThan(200.0, "RTX 2000 series should have >200 GB/s memory bandwidth");
+        _ = memoryBandwidth.Should().BeGreaterThan(200.0, "RTX 2000 series should have >200 GB/s memory bandwidth");
 
         var memoryBusWidth = Convert.ToInt32(info.Capabilities["MemoryBusWidth"]!, CultureInfo.InvariantCulture);
-        memoryBusWidth.Should().BeInRange(192, 384, "RTX 2000 series should have 192-384 bit memory bus");
+        _ = memoryBusWidth.Should().BeInRange(192, 384, "RTX 2000 series should have 192-384 bit memory bus");
 
         _output.WriteLine($"RTX 2000 Memory Specifications:");
         _output.WriteLine($"  Memory Size: {memoryGB:F1} GB");
@@ -154,7 +154,7 @@ public sealed class RTX2000ValidationTests : IDisposable
 
         // Assert - RTX 2000 series SM specifications
         var smCount = Convert.ToInt32(info.Capabilities!["MultiprocessorCount"]!, CultureInfo.InvariantCulture);
-        smCount.Should().BeInRange(30, 72, "RTX 2000 series should have 30-72 SMs depending on model");
+        _ = smCount.Should().BeInRange(30, 72, "RTX 2000 series should have 30-72 SMs depending on model");
         Assert.Equal(info.ComputeUnits, smCount); // SM count should match compute units
 
         var maxThreadsPerBlock = Convert.ToInt32(info.Capabilities!["MaxThreadsPerBlock"]!, CultureInfo.InvariantCulture);
@@ -190,7 +190,7 @@ public sealed class RTX2000ValidationTests : IDisposable
 
         // Assert - RTX 2000 series shared memory specifications
         var sharedMemPerBlock = info.MaxSharedMemoryPerBlock;
-        sharedMemPerBlock.Should().BeInRange(48 * 1024L, 96 * 1024L, "RTX 2000 series should support 48-96KB shared memory per block");
+        _ = sharedMemPerBlock.Should().BeInRange(48 * 1024L, 96 * 1024L, "RTX 2000 series should support 48-96KB shared memory per block");
 
         var sharedMemPerSM = Convert.ToInt64(info.Capabilities!["SharedMemoryPerBlock"]!, CultureInfo.InvariantCulture);
         Assert.Equal(sharedMemPerBlock, sharedMemPerSM); // Shared memory values should be consistent
@@ -217,10 +217,10 @@ public sealed class RTX2000ValidationTests : IDisposable
 
         // Assert - RTX 2000 series clock frequencies
         var baseClock = info.MaxClockFrequency; // in MHz
-        baseClock.Should().BeInRange(1200, 2100, "RTX 2000 series base clock should be 1200-2100 MHz");
+        _ = baseClock.Should().BeInRange(1200, 2100, "RTX 2000 series base clock should be 1200-2100 MHz");
 
         var memoryClockRate = Convert.ToInt32(info.Capabilities!["MemoryClockRate"]!, CultureInfo.InvariantCulture);
-        memoryClockRate.Should().BeInRange(6000, 8000, "RTX 2000 series memory clock should be 6000-8000 MHz effective");
+        _ = memoryClockRate.Should().BeInRange(6000, 8000, "RTX 2000 series memory clock should be 6000-8000 MHz effective");
 
         _output.WriteLine($"RTX 2000 Clock Frequencies:");
         _output.WriteLine($"  Base Clock: {baseClock} MHz");
@@ -243,8 +243,8 @@ public sealed class RTX2000ValidationTests : IDisposable
             return;
 
         // Assert - RTX 2000 series should have first-generation Tensor Cores
-        info.ComputeCapability!.Major.Should().Be(7);
-        info.ComputeCapability!.Minor.Should().Be(5);
+        _ = info.ComputeCapability!.Major.Should().Be(7);
+        _ = info.ComputeCapability!.Minor.Should().Be(5);
 
         // Note: Tensor Core availability is implicit in compute capability 7.5
         _output.WriteLine($"RTX 2000 Tensor Core Support:");
@@ -268,7 +268,7 @@ public sealed class RTX2000ValidationTests : IDisposable
             return;
 
         // Assert - RTX 2000 series should have first-generation RT Cores
-        info.ComputeCapability!.Major.Should().Be(7);
+        _ = info.ComputeCapability!.Major.Should().Be(7);
 
         // RT Cores are hardware-specific and not directly exposed via CUDA properties
         // But we can infer their presence from RTX branding and compute capability
@@ -306,7 +306,7 @@ public sealed class RTX2000ValidationTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        compiledKernel.Name.Should().Be("turing_optimized");
+        _ = compiledKernel.Name.Should().Be("turing_optimized");
 
         _output.WriteLine($"Successfully compiled Turing-optimized kernel with {optimizationLevel} optimization");
 
@@ -334,13 +334,13 @@ public sealed class RTX2000ValidationTests : IDisposable
 
         // Assert
         Assert.NotNull(stats);
-        (stats.TotalMemory > 0).Should().BeTrue();
+        _ = (stats.TotalMemory > 0).Should().BeTrue();
 
         var expectedMemoryGB = GetExpectedMemoryForRTX2000(info.Name);
         var actualMemoryGB = stats.TotalMemory / (1024.0 * 1024.0 * 1024.0);
 
         // Allow for some variance due to system reserved memory
-        actualMemoryGB.Should().BeInRange(expectedMemoryGB - 0.5, expectedMemoryGB + 0.5,
+        _ = actualMemoryGB.Should().BeInRange(expectedMemoryGB - 0.5, expectedMemoryGB + 0.5,
             $"{info.Name} should have approximately {expectedMemoryGB}GB memory");
 
         _output.WriteLine($"RTX 2000 Memory Validation:");
@@ -420,10 +420,10 @@ public sealed class RTX2000ValidationTests : IDisposable
     {
         var rtx2000Names = new[]
         {
-            "RTX 2060", "RTX 2070", "RTX 2080", "RTX 2080 Ti",
-            "GeForce RTX 2060", "GeForce RTX 2070", "GeForce RTX 2080", "GeForce RTX 2080 Ti",
-            "Quadro RTX 4000", "Quadro RTX 5000", "Quadro RTX 6000", "Quadro RTX 8000"
-        };
+        "RTX 2060", "RTX 2070", "RTX 2080", "RTX 2080 Ti",
+        "GeForce RTX 2060", "GeForce RTX 2070", "GeForce RTX 2080", "GeForce RTX 2080 Ti",
+        "Quadro RTX 4000", "Quadro RTX 5000", "Quadro RTX 6000", "Quadro RTX 8000"
+    };
 
         return rtx2000Names.Any(name => deviceName.Contains(name, StringComparison.OrdinalIgnoreCase));
     }
@@ -513,5 +513,4 @@ __global__ void turing_optimized(float* input, float* output, int n)
         _accelerators.Clear();
         _loggerFactory?.Dispose();
     }
-}
 }

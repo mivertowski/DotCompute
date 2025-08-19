@@ -64,13 +64,13 @@ internal sealed class Program
         _ = report.AppendLine(CultureInfo.InvariantCulture, $"- **Line Coverage**: {analysis.Overall.LineRate:P1} ({analysis.Overall.LinesCovered}/{analysis.Overall.LinesTotal})");
         _ = report.AppendLine(CultureInfo.InvariantCulture, $"- **Branch Coverage**: {analysis.Overall.BranchRate:P1} ({analysis.Overall.BranchesCovered}/{analysis.Overall.BranchesTotal})");
         _ = report.AppendLine();
-        
+
         if (analysis.ByProject.Count > 0)
         {
             _ = report.AppendLine("## Coverage by Project");
             _ = report.AppendLine("| Project | Line Coverage | Branch Coverage |");
             _ = report.AppendLine("|---------|---------------|-----------------|");
-            
+
             foreach (var project in analysis.ByProject.OrderBy(p => p.Key))
             {
                 var metrics = project.Value;

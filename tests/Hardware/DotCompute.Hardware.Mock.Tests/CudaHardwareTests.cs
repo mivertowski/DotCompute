@@ -4,23 +4,16 @@ using DotCompute.Tests.Utilities;
 using DotCompute.Tests.Utilities.TestFixtures;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Hardware-dependent tests for CUDA GPUs.
 /// These tests require actual NVIDIA GPU hardware and CUDA runtime.
 /// </summary>
-public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
+public class CudaHardwareTests(ITestOutputHelper output, AcceleratorTestFixture fixture) : IClassFixture<AcceleratorTestFixture>
 {
-    private readonly ITestOutputHelper _output;
-    private readonly AcceleratorTestFixture _fixture;
-
-    public CudaHardwareTests(ITestOutputHelper output, AcceleratorTestFixture fixture)
-    {
-        _output = output;
-        _fixture = fixture;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     [HardwareFact(AcceleratorType.CUDA)]
     public async Task CudaDevice_Detection_ReturnsValidDeviceInfo()
@@ -91,7 +84,7 @@ public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
 
         stopwatch.Stop();
 
-        TestDataGenerators.ValidateVectorAddition(a, b, c);
+        _ = TestDataGenerators.ValidateVectorAddition(a, b, c);
 
         _output.WriteLine($"Vector size: {vectorSize:N0}");
         _output.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds}ms");
@@ -108,9 +101,9 @@ public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
         const int matrixSize = 512;
         // Convert multidimensional arrays to jagged arrays for CA1814
         // Remove unnecessary assignments for IDE0059 by not storing unused values
-        TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
-        TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
-        TestDataGenerators.CreateJaggedArray(matrixSize, matrixSize);
+        _ = TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
+        _ = TestDataGenerators.GenerateRandomMatrix(matrixSize, matrixSize);
+        _ = TestDataGenerators.CreateJaggedArray(matrixSize, matrixSize);
 
         var stopwatch = Stopwatch.StartNew();
 
@@ -248,5 +241,4 @@ public class CudaHardwareTests : IClassFixture<AcceleratorTestFixture>
 
         await Task.CompletedTask;
     }
-}
 }

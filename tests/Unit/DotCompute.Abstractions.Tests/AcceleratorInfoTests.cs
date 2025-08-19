@@ -2,8 +2,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 public sealed class AcceleratorInfoTests
 {
@@ -20,16 +20,16 @@ public sealed class AcceleratorInfoTests
         var info = new AcceleratorInfo(type, name, driverVersion, memorySize);
 
         // Assert
-        info.Id.Should().Be($"{type}_{name}");
-        info.Name.Should().Be(name);
+        _ = info.Id.Should().Be($"{type}_{name}");
+        _ = info.Name.Should().Be(name);
         _ = info.DeviceType.Should().Be(type.ToString());
         _ = info.Type.Should().Be(type.ToString());
-        info.Vendor.Should().Be("Unknown");
-        info.DriverVersion.Should().Be(driverVersion);
-        info.TotalMemory.Should().Be(memorySize);
-        info.AvailableMemory.Should().Be(memorySize);
-        info.IsUnifiedMemory.Should().BeFalse(); // GPU is not unified
-        info.MaxThreadsPerBlock.Should().Be(1024); // Default value
+        _ = info.Vendor.Should().Be("Unknown");
+        _ = info.DriverVersion.Should().Be(driverVersion);
+        _ = info.TotalMemory.Should().Be(memorySize);
+        _ = info.AvailableMemory.Should().Be(memorySize);
+        _ = info.IsUnifiedMemory.Should().BeFalse(); // GPU is not unified
+        _ = info.MaxThreadsPerBlock.Should().Be(1024); // Default value
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public sealed class AcceleratorInfoTests
         var info = new AcceleratorInfo(type, name, driverVersion, memorySize);
 
         // Assert
-        info.IsUnifiedMemory.Should().BeTrue(); // CPU has unified memory
+        _ = info.IsUnifiedMemory.Should().BeTrue(); // CPU has unified memory
     }
 
     [Fact]
@@ -68,19 +68,19 @@ public sealed class AcceleratorInfoTests
             totalMemory, availableMemory);
 
         // Assert
-        info.Id.Should().Be($"{type}_{name}");
-        info.Name.Should().Be(name);
-        info.Vendor.Should().Be(vendor);
-        info.DriverVersion.Should().Be(driverVersion);
+        _ = info.Id.Should().Be($"{type}_{name}");
+        _ = info.Name.Should().Be(name);
+        _ = info.Vendor.Should().Be(vendor);
+        _ = info.DriverVersion.Should().Be(driverVersion);
         _ = info.DeviceType.Should().Be(type.ToString());
-        info.TotalMemory.Should().Be(totalMemory);
-        info.AvailableMemory.Should().Be(availableMemory);
-        info.MaxThreadsPerBlock.Should().Be(maxThreadsPerBlock);
-        info.MaxSharedMemoryPerBlock.Should().Be(maxSharedMemory);
-        info.ComputeCapability.Should().NotBeNull();
-        info.ComputeCapability!.Major.Should().Be(8);
+        _ = info.TotalMemory.Should().Be(totalMemory);
+        _ = info.AvailableMemory.Should().Be(availableMemory);
+        _ = info.MaxThreadsPerBlock.Should().Be(maxThreadsPerBlock);
+        _ = info.MaxSharedMemoryPerBlock.Should().Be(maxSharedMemory);
+        _ = info.ComputeCapability.Should().NotBeNull();
+        _ = info.ComputeCapability!.Major.Should().Be(8);
         // Due to floating point precision, 8.6 might produce Minor=5 instead of 6
-        info.ComputeCapability.Minor.Should().BeInRange(5, 6);
+        _ = info.ComputeCapability.Minor.Should().BeInRange(5, 6);
     }
 
     [Theory]
@@ -93,7 +93,7 @@ public sealed class AcceleratorInfoTests
         // Act & Assert
         var act = () => new AcceleratorInfo(name, vendor, driverVersion, type,
             7.5, 1024, 49152, 8589934592L, 8589934592L);
-        Assert.Throws<ArgumentException>(() => act());
+        _ = Assert.Throws<ArgumentException>(() => act());
     }
 
     [Theory]
@@ -105,7 +105,7 @@ public sealed class AcceleratorInfoTests
         // Act & Assert
         var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             computeCapability, 1024, 49152, 8589934592L, 8589934592L);
-        Assert.Throws<ArgumentOutOfRangeException>(() => act());
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Theory]
@@ -117,7 +117,7 @@ public sealed class AcceleratorInfoTests
         // Act & Assert
         var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, maxThreadsPerBlock, 49152, 8589934592L, 8589934592L);
-        Assert.Throws<ArgumentOutOfRangeException>(() => act());
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Fact]
@@ -126,7 +126,7 @@ public sealed class AcceleratorInfoTests
         // Act & Assert
         var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, 1024, -1, 8589934592L, 8589934592L);
-        Assert.Throws<ArgumentOutOfRangeException>(() => act());
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Theory]
@@ -139,7 +139,7 @@ public sealed class AcceleratorInfoTests
         // Act & Assert
         var act = () => new AcceleratorInfo("GPU", "Vendor", "1.0", AcceleratorType.CUDA,
             7.5, 1024, 49152, totalMemory, availableMemory);
-        Assert.Throws<ArgumentException>(() => act());
+        _ = Assert.Throws<ArgumentException>(() => act());
     }
 
     [Fact]
@@ -162,15 +162,15 @@ public sealed class AcceleratorInfoTests
             maxSharedMemoryPerBlock, isUnifiedMemory);
 
         // Assert
-        info.Id.Should().Be($"{type}_{name}");
-        info.Name.Should().Be(name);
-        info.DriverVersion.Should().Be(driverVersion);
-        info.TotalMemory.Should().Be(memorySize);
-        info.ComputeUnits.Should().Be(computeUnits);
-        info.MaxClockFrequency.Should().Be(maxClockFrequency);
-        info.ComputeCapability.Should().Be(computeCapability);
-        info.MaxSharedMemoryPerBlock.Should().Be(maxSharedMemoryPerBlock);
-        info.IsUnifiedMemory.Should().Be(isUnifiedMemory);
+        _ = info.Id.Should().Be($"{type}_{name}");
+        _ = info.Name.Should().Be(name);
+        _ = info.DriverVersion.Should().Be(driverVersion);
+        _ = info.TotalMemory.Should().Be(memorySize);
+        _ = info.ComputeUnits.Should().Be(computeUnits);
+        _ = info.MaxClockFrequency.Should().Be(maxClockFrequency);
+        _ = info.ComputeCapability.Should().Be(computeCapability);
+        _ = info.MaxSharedMemoryPerBlock.Should().Be(maxSharedMemoryPerBlock);
+        _ = info.IsUnifiedMemory.Should().Be(isUnifiedMemory);
     }
 
     [Fact]
@@ -181,8 +181,8 @@ public sealed class AcceleratorInfoTests
         var info = new AcceleratorInfo(AcceleratorType.CUDA, "GPU", "1.0", memorySize);
 
         // Act & Assert
-        info.MemorySize.Should().Be(memorySize);
-        info.MemorySize.Should().Be(info.TotalMemory);
+        _ = info.MemorySize.Should().Be(memorySize);
+        _ = info.MemorySize.Should().Be(info.TotalMemory);
     }
 
     [Theory]
@@ -196,7 +196,6 @@ public sealed class AcceleratorInfoTests
 
         // Act & Assert
         _ = info.Type.Should().Be(type.ToString());
-        info.Type.Should().Be(info.DeviceType);
+        _ = info.Type.Should().Be(info.DeviceType);
     }
-}
 }

@@ -1,7 +1,7 @@
 using System.Numerics;
 
-namespace DotCompute.Tests.Utilities
-{
+namespace DotCompute.Tests.Utilities;
+
 
 /// <summary>
 /// Utility class for generating test data.
@@ -161,7 +161,7 @@ public static class TestDataGenerators
         var indices = new HashSet<int>();
         while (indices.Count < nonZeroCount)
         {
-            indices.Add(random.Next(size));
+            _ = indices.Add(random.Next(size));
         }
 
         var sortedIndices = indices.OrderBy(i => i).ToArray();
@@ -266,17 +266,17 @@ public static class TestDataGenerators
         if (typeof(T) == typeof(float))
         {
             var floatData = data as float[];
-            sum = floatData!.Sum(x => Math.Abs(x));
+            sum = floatData!.Sum(Math.Abs);
         }
         else if (typeof(T) == typeof(double))
         {
             var doubleData = data as double[];
-            sum = doubleData!.Sum(x => Math.Abs(x));
+            sum = doubleData!.Sum(Math.Abs);
         }
         else if (typeof(T) == typeof(int))
         {
             var intData = data as int[];
-            sum = intData!.Sum(x => Math.Abs(x));
+            sum = intData!.Sum(Math.Abs);
         }
         else
         {
@@ -300,5 +300,4 @@ public enum PatternType
     Gradient,
     Sine,
     Gaussian
-}
 }

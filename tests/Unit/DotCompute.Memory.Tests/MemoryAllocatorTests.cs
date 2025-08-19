@@ -3,8 +3,8 @@ using FluentAssertions;
 using DotCompute.Memory;
 using Xunit;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 public sealed class MemoryAllocatorTests : IDisposable
 {
@@ -30,7 +30,7 @@ public sealed class MemoryAllocatorTests : IDisposable
 
         // Assert
         Assert.NotNull(memory);
-        memory.Memory.Length.Should().Be(1024);
+        _ = memory.Memory.Length.Should().Be(1024);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class MemoryAllocatorTests : IDisposable
     {
         // Act & Assert
         var act = () => _allocator.Allocate<int>(0);
-        Assert.Throws<ArgumentOutOfRangeException>(() => act());
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public sealed class MemoryAllocatorTests : IDisposable
 
         // Assert
         Assert.NotNull(memory);
-        memory.Memory.Length.Should().Be(1024);
+        _ = memory.Memory.Length.Should().Be(1024);
         // Alignment is handled internally
     }
 
@@ -66,7 +66,7 @@ public sealed class MemoryAllocatorTests : IDisposable
 
         // Assert
         Assert.NotNull(memory);
-        memory.Memory.Length.Should().Be(1024);
+        _ = memory.Memory.Length.Should().Be(1024);
     }
 
     [Fact]
@@ -77,7 +77,7 @@ public sealed class MemoryAllocatorTests : IDisposable
 
         // Assert
         Assert.NotNull(memory);
-        memory.Memory.Length.Should().Be(1024);
+        _ = memory.Memory.Length.Should().Be(1024);
     }
 
     [Fact]
@@ -87,7 +87,7 @@ public sealed class MemoryAllocatorTests : IDisposable
         var memory = _allocator.Allocate<int>(1024);
 
         // Act & Assert
-        var act = () => memory.Dispose();
+        var act = memory.Dispose;
         act(); // Should not throw
     }
 
@@ -103,7 +103,7 @@ public sealed class MemoryAllocatorTests : IDisposable
         var allocatedBytes = _allocator.TotalAllocatedBytes;
 
         // Assert
-        allocatedBytes.Should().BeGreaterThanOrEqualTo(initialBytes + 3072);
+        _ = allocatedBytes.Should().BeGreaterThanOrEqualTo(initialBytes + 3072);
     }
 
     [Fact]
@@ -134,8 +134,8 @@ public sealed class MemoryAllocatorTests : IDisposable
         }
 
         // Assert - All should be valid
-        memories.Should().OnlyContain(m => m != null && m.Memory.Length > 0);
-        _allocator.TotalAllocations.Should().BeGreaterThanOrEqualTo(10);
+        _ = memories.Should().OnlyContain(m => m != null && m.Memory.Length > 0);
+        _ = _allocator.TotalAllocations.Should().BeGreaterThanOrEqualTo(10);
 
         // Cleanup
         foreach (var memory in memories)
@@ -168,7 +168,6 @@ public sealed class MemoryAllocatorTests : IDisposable
 
         // Act & Assert
         var act = () => allocator.Allocate<int>(256);
-        Assert.Throws<ObjectDisposedException>(() => act());
+        _ = Assert.Throws<ObjectDisposedException>(() => act());
     }
-}
 }

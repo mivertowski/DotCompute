@@ -7,294 +7,294 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Execution
-{
+namespace DotCompute.Linq.Execution;
+
 
 /// <summary>
 /// Implements caching for compiled query plans and results.
 /// </summary>
 public class QueryCache : IQueryCache
 {
-    private readonly ConcurrentDictionary<string, CacheEntry> _cache = new();
-    private readonly ILogger<QueryCache> _logger;
-    private readonly QueryCacheOptions _options;
-    private long _hits;
-    private long _misses;
+private readonly ConcurrentDictionary<string, CacheEntry> _cache = new();
+private readonly ILogger<QueryCache> _logger;
+private readonly QueryCacheOptions _options;
+private long _hits;
+private long _misses;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="QueryCache"/> class.
-    /// </summary>
-    /// <param name="options">The cache options.</param>
-    /// <param name="logger">The logger instance.</param>
-    public QueryCache(QueryCacheOptions options, ILogger<QueryCache> logger)
+/// <summary>
+/// Initializes a new instance of the <see cref="QueryCache"/> class.
+/// </summary>
+/// <param name="options">The cache options.</param>
+/// <param name="logger">The logger instance.</param>
+public QueryCache(QueryCacheOptions options, ILogger<QueryCache> logger)
+{
+    _options = options ?? throw new ArgumentNullException(nameof(options));
+    _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+}
+
+/// <inheritdoc/>
+public string GenerateKey(Expression expression)
+{
+    ArgumentNullException.ThrowIfNull(expression);
+
+    // Generate a unique key based on the expression structure
+    var keyBuilder = new ExpressionKeyBuilder();
+    var keyString = keyBuilder.BuildKey(expression);
+    
+    // Hash the key for consistent length
+    var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(keyString));
+    var key = Convert.ToBase64String(hashBytes);
+    
+    _logger.LogDebug("Generated cache key {Key} for expression type {ExpressionType}",
+        key, expression.NodeType);
+    
+    return key;
+}
+
+/// <inheritdoc/>
+public bool TryGet(string key, out object? result)
+{
+    ArgumentNullException.ThrowIfNull(key);
+
+    if (_cache.TryGetValue(key, out var entry))
     {
-        _options = options ?? throw new ArgumentNullException(nameof(options));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
-    /// <inheritdoc/>
-    public string GenerateKey(Expression expression)
-    {
-        ArgumentNullException.ThrowIfNull(expression);
-
-        // Generate a unique key based on the expression structure
-        var keyBuilder = new ExpressionKeyBuilder();
-        var keyString = keyBuilder.BuildKey(expression);
-        
-        // Hash the key for consistent length
-        var hashBytes = SHA256.HashData(Encoding.UTF8.GetBytes(keyString));
-        var key = Convert.ToBase64String(hashBytes);
-        
-        _logger.LogDebug("Generated cache key {Key} for expression type {ExpressionType}",
-            key, expression.NodeType);
-        
-        return key;
-    }
-
-    /// <inheritdoc/>
-    public bool TryGet(string key, out object? result)
-    {
-        ArgumentNullException.ThrowIfNull(key);
-
-        if (_cache.TryGetValue(key, out var entry))
+        // Check if entry has expired
+        if (_options.EnableExpiration && DateTime.UtcNow > entry.ExpirationTime)
         {
-            // Check if entry has expired
-            if (_options.EnableExpiration && DateTime.UtcNow > entry.ExpirationTime)
-            {
-                _logger.LogDebug("Cache entry {Key} has expired", key);
-                _cache.TryRemove(key, out _);
-                result = null;
-                Interlocked.Increment(ref _misses);
-                return false;
-            }
-
-            // Update access time for LRU
-            entry.LastAccessTime = DateTime.UtcNow;
-            entry.AccessCount++;
-            
-            result = entry.Value;
-            Interlocked.Increment(ref _hits);
-            
-            _logger.LogDebug("Cache hit for key {Key}", key);
-            return true;
+            _logger.LogDebug("Cache entry {Key} has expired", key);
+            _cache.TryRemove(key, out _);
+            result = null;
+            Interlocked.Increment(ref _misses);
+            return false;
         }
 
-        result = null;
-        Interlocked.Increment(ref _misses);
+        // Update access time for LRU
+        entry.LastAccessTime = DateTime.UtcNow;
+        entry.AccessCount++;
         
-        _logger.LogDebug("Cache miss for key {Key}", key);
-        return false;
+        result = entry.Value;
+        Interlocked.Increment(ref _hits);
+        
+        _logger.LogDebug("Cache hit for key {Key}", key);
+        return true;
     }
 
-    /// <inheritdoc/>
-    public void Set(string key, object? result)
+    result = null;
+    Interlocked.Increment(ref _misses);
+    
+    _logger.LogDebug("Cache miss for key {Key}", key);
+    return false;
+}
+
+/// <inheritdoc/>
+public void Set(string key, object? result)
+{
+    ArgumentNullException.ThrowIfNull(key);
+
+    // Check cache size limit
+    if (_options.MaxEntries > 0 && _cache.Count >= _options.MaxEntries)
     {
-        ArgumentNullException.ThrowIfNull(key);
+        EvictLeastRecentlyUsed();
+    }
 
-        // Check cache size limit
-        if (_options.MaxEntries > 0 && _cache.Count >= _options.MaxEntries)
-        {
-            EvictLeastRecentlyUsed();
-        }
+    var entry = new CacheEntry
+    {
+        Key = key,
+        Value = result,
+        CreationTime = DateTime.UtcNow,
+        LastAccessTime = DateTime.UtcNow,
+        ExpirationTime = _options.EnableExpiration 
+            ? DateTime.UtcNow.Add(_options.DefaultExpiration) 
+            : DateTime.MaxValue,
+        Size = EstimateObjectSize(result)
+    };
 
-        var entry = new CacheEntry
+    _cache[key] = entry;
+    
+    _logger.LogDebug("Cached result for key {Key}, size: {Size} bytes", key, entry.Size);
+}
+
+/// <inheritdoc/>
+public void Clear()
+{
+    _cache.Clear();
+    _hits = 0;
+    _misses = 0;
+    
+    _logger.LogInformation("Query cache cleared");
+}
+
+/// <inheritdoc/>
+public CacheStatistics GetStatistics()
+{
+    var totalSize = _cache.Values.Sum(e => e.Size);
+    
+    return new CacheStatistics
+    {
+        Hits = _hits,
+        Misses = _misses,
+        EntryCount = _cache.Count,
+        TotalSizeBytes = totalSize
+    };
+}
+
+private void EvictLeastRecentlyUsed()
+{
+    if (_cache.IsEmpty)
+        return;
+
+    // Find the least recently used entry
+    var lruEntry = _cache.Values
+        .OrderBy(e => e.LastAccessTime)
+        .ThenBy(e => e.AccessCount)
+        .FirstOrDefault();
+
+    if (lruEntry != null)
+    {
+        _cache.TryRemove(lruEntry.Key, out _);
+        _logger.LogDebug("Evicted cache entry {Key} (LRU)", lruEntry.Key);
+    }
+}
+
+private static long EstimateObjectSize(object? obj)
+{
+    if (obj == null)
+        return 0;
+
+    var type = obj.GetType();
+    
+    // Estimate size based on type
+    if (type.IsPrimitive)
+    {
+        return type.Name switch
         {
-            Key = key,
-            Value = result,
-            CreationTime = DateTime.UtcNow,
-            LastAccessTime = DateTime.UtcNow,
-            ExpirationTime = _options.EnableExpiration 
-                ? DateTime.UtcNow.Add(_options.DefaultExpiration) 
-                : DateTime.MaxValue,
-            Size = EstimateObjectSize(result)
+            "Boolean" => sizeof(bool),
+            "Byte" => sizeof(byte),
+            "SByte" => sizeof(sbyte),
+            "Int16" => sizeof(short),
+            "UInt16" => sizeof(ushort),
+            "Int32" => sizeof(int),
+            "UInt32" => sizeof(uint),
+            "Int64" => sizeof(long),
+            "UInt64" => sizeof(ulong),
+            "Single" => sizeof(float),
+            "Double" => sizeof(double),
+            "Decimal" => sizeof(decimal),
+            "Char" => sizeof(char),
+            _ => IntPtr.Size
         };
-
-        _cache[key] = entry;
-        
-        _logger.LogDebug("Cached result for key {Key}, size: {Size} bytes", key, entry.Size);
     }
 
-    /// <inheritdoc/>
-    public void Clear()
+    if (type == typeof(string))
     {
-        _cache.Clear();
-        _hits = 0;
-        _misses = 0;
-        
-        _logger.LogInformation("Query cache cleared");
+        return ((string)obj).Length * sizeof(char) + IntPtr.Size;
     }
 
-    /// <inheritdoc/>
-    public CacheStatistics GetStatistics()
+    if (type.IsArray)
     {
-        var totalSize = _cache.Values.Sum(e => e.Size);
-        
-        return new CacheStatistics
-        {
-            Hits = _hits,
-            Misses = _misses,
-            EntryCount = _cache.Count,
-            TotalSizeBytes = totalSize
-        };
+        var array = (Array)obj;
+        var elementType = type.GetElementType()!;
+        var elementSize = EstimateObjectSize(Activator.CreateInstance(elementType));
+        return array.Length * elementSize + IntPtr.Size;
     }
 
-    private void EvictLeastRecentlyUsed()
+    // For complex objects, use a rough estimate
+    return 1024; // 1KB default
+}
+
+/// <summary>
+/// Represents a cached entry.
+/// </summary>
+private class CacheEntry
+{
+    public string Key { get; set; } = string.Empty;
+    public object? Value { get; set; }
+    public DateTime CreationTime { get; set; }
+    public DateTime LastAccessTime { get; set; }
+    public DateTime ExpirationTime { get; set; }
+    public int AccessCount { get; set; }
+    public long Size { get; set; }
+}
+
+/// <summary>
+/// Builds unique keys for expression trees.
+/// </summary>
+private class ExpressionKeyBuilder : ExpressionVisitor
+{
+    private readonly StringBuilder _keyBuilder = new();
+
+    public string BuildKey(Expression expression)
     {
-        if (_cache.IsEmpty)
-            return;
-
-        // Find the least recently used entry
-        var lruEntry = _cache.Values
-            .OrderBy(e => e.LastAccessTime)
-            .ThenBy(e => e.AccessCount)
-            .FirstOrDefault();
-
-        if (lruEntry != null)
-        {
-            _cache.TryRemove(lruEntry.Key, out _);
-            _logger.LogDebug("Evicted cache entry {Key} (LRU)", lruEntry.Key);
-        }
+        _keyBuilder.Clear();
+        Visit(expression);
+        return _keyBuilder.ToString();
     }
 
-    private static long EstimateObjectSize(object? obj)
+    public override Expression? Visit(Expression? node)
     {
-        if (obj == null)
-            return 0;
-
-        var type = obj.GetType();
-        
-        // Estimate size based on type
-        if (type.IsPrimitive)
+        if (node == null)
         {
-            return type.Name switch
-            {
-                "Boolean" => sizeof(bool),
-                "Byte" => sizeof(byte),
-                "SByte" => sizeof(sbyte),
-                "Int16" => sizeof(short),
-                "UInt16" => sizeof(ushort),
-                "Int32" => sizeof(int),
-                "UInt32" => sizeof(uint),
-                "Int64" => sizeof(long),
-                "UInt64" => sizeof(ulong),
-                "Single" => sizeof(float),
-                "Double" => sizeof(double),
-                "Decimal" => sizeof(decimal),
-                "Char" => sizeof(char),
-                _ => IntPtr.Size
-            };
+            _keyBuilder.Append("null");
+            return null;
         }
 
-        if (type == typeof(string))
-        {
-            return ((string)obj).Length * sizeof(char) + IntPtr.Size;
-        }
-
-        if (type.IsArray)
-        {
-            var array = (Array)obj;
-            var elementType = type.GetElementType()!;
-            var elementSize = EstimateObjectSize(Activator.CreateInstance(elementType));
-            return array.Length * elementSize + IntPtr.Size;
-        }
-
-        // For complex objects, use a rough estimate
-        return 1024; // 1KB default
+        _keyBuilder.Append($"{node.NodeType}:{node.Type.Name}:");
+        return base.Visit(node);
     }
 
-    /// <summary>
-    /// Represents a cached entry.
-    /// </summary>
-    private class CacheEntry
+    protected override Expression VisitConstant(ConstantExpression node)
     {
-        public string Key { get; set; } = string.Empty;
-        public object? Value { get; set; }
-        public DateTime CreationTime { get; set; }
-        public DateTime LastAccessTime { get; set; }
-        public DateTime ExpirationTime { get; set; }
-        public int AccessCount { get; set; }
-        public long Size { get; set; }
+        _keyBuilder.Append($"Const:{node.Value?.GetHashCode() ?? 0}:");
+        return base.VisitConstant(node);
     }
 
-    /// <summary>
-    /// Builds unique keys for expression trees.
-    /// </summary>
-    private class ExpressionKeyBuilder : ExpressionVisitor
+    protected override Expression VisitParameter(ParameterExpression node)
     {
-        private readonly StringBuilder _keyBuilder = new();
-
-        public string BuildKey(Expression expression)
-        {
-            _keyBuilder.Clear();
-            Visit(expression);
-            return _keyBuilder.ToString();
-        }
-
-        public override Expression? Visit(Expression? node)
-        {
-            if (node == null)
-            {
-                _keyBuilder.Append("null");
-                return null;
-            }
-
-            _keyBuilder.Append($"{node.NodeType}:{node.Type.Name}:");
-            return base.Visit(node);
-        }
-
-        protected override Expression VisitConstant(ConstantExpression node)
-        {
-            _keyBuilder.Append($"Const:{node.Value?.GetHashCode() ?? 0}:");
-            return base.VisitConstant(node);
-        }
-
-        protected override Expression VisitParameter(ParameterExpression node)
-        {
-            _keyBuilder.Append($"Param:{node.Name}:");
-            return base.VisitParameter(node);
-        }
-
-        protected override Expression VisitMember(MemberExpression node)
-        {
-            _keyBuilder.Append($"Member:{node.Member.Name}:");
-            return base.VisitMember(node);
-        }
-
-        protected override Expression VisitMethodCall(MethodCallExpression node)
-        {
-            _keyBuilder.Append(System.Globalization.CultureInfo.InvariantCulture, $"Method:{node.Method.Name}:");
-            foreach (var arg in node.Arguments)
-            {
-                Visit(arg);
-            }
-            return node;
-        }
-
-        protected override Expression VisitBinary(BinaryExpression node)
-        {
-            _keyBuilder.Append($"Binary:{node.NodeType}:");
-            Visit(node.Left);
-            Visit(node.Right);
-            return node;
-        }
-
-        protected override Expression VisitUnary(UnaryExpression node)
-        {
-            _keyBuilder.Append($"Unary:{node.NodeType}:");
-            return base.VisitUnary(node);
-        }
-
-        protected override Expression VisitLambda<T>(Expression<T> node)
-        {
-            _keyBuilder.Append($"Lambda:{node.Parameters.Count}:");
-            foreach (var param in node.Parameters)
-            {
-                Visit(param);
-            }
-            Visit(node.Body);
-            return node;
-        }
+        _keyBuilder.Append($"Param:{node.Name}:");
+        return base.VisitParameter(node);
     }
+
+    protected override Expression VisitMember(MemberExpression node)
+    {
+        _keyBuilder.Append($"Member:{node.Member.Name}:");
+        return base.VisitMember(node);
+    }
+
+    protected override Expression VisitMethodCall(MethodCallExpression node)
+    {
+        _keyBuilder.Append(System.Globalization.CultureInfo.InvariantCulture, $"Method:{node.Method.Name}:");
+        foreach (var arg in node.Arguments)
+        {
+            Visit(arg);
+        }
+        return node;
+    }
+
+    protected override Expression VisitBinary(BinaryExpression node)
+    {
+        _keyBuilder.Append($"Binary:{node.NodeType}:");
+        Visit(node.Left);
+        Visit(node.Right);
+        return node;
+    }
+
+    protected override Expression VisitUnary(UnaryExpression node)
+    {
+        _keyBuilder.Append($"Unary:{node.NodeType}:");
+        return base.VisitUnary(node);
+    }
+
+    protected override Expression VisitLambda<T>(Expression<T> node)
+    {
+        _keyBuilder.Append($"Lambda:{node.Parameters.Count}:");
+        foreach (var param in node.Parameters)
+        {
+            Visit(param);
+        }
+        Visit(node.Body);
+        return node;
+    }
+}
 }
 
 /// <summary>
@@ -302,28 +302,28 @@ public class QueryCache : IQueryCache
 /// </summary>
 public class QueryCacheOptions
 {
-    /// <summary>
-    /// Gets or sets the maximum number of entries in the cache.
-    /// </summary>
-    public int MaxEntries { get; set; } = 1000;
+/// <summary>
+/// Gets or sets the maximum number of entries in the cache.
+/// </summary>
+public int MaxEntries { get; set; } = 1000;
 
-    /// <summary>
-    /// Gets or sets a value indicating whether to enable expiration.
-    /// </summary>
-    public bool EnableExpiration { get; set; } = true;
+/// <summary>
+/// Gets or sets a value indicating whether to enable expiration.
+/// </summary>
+public bool EnableExpiration { get; set; } = true;
 
-    /// <summary>
-    /// Gets or sets the default expiration time for cache entries.
-    /// </summary>
-    public TimeSpan DefaultExpiration { get; set; } = TimeSpan.FromHours(1);
+/// <summary>
+/// Gets or sets the default expiration time for cache entries.
+/// </summary>
+public TimeSpan DefaultExpiration { get; set; } = TimeSpan.FromHours(1);
 
-    /// <summary>
-    /// Gets or sets the maximum total size of the cache in bytes.
-    /// </summary>
-    public long MaxSizeBytes { get; set; } = 100 * 1024 * 1024; // 100MB
+/// <summary>
+/// Gets or sets the maximum total size of the cache in bytes.
+/// </summary>
+public long MaxSizeBytes { get; set; } = 100 * 1024 * 1024; // 100MB
 
-    /// <summary>
-    /// Gets or sets a value indicating whether to enable cache statistics.
-    /// </summary>
-    public bool EnableStatistics { get; set; } = true;
-}}
+/// <summary>
+/// Gets or sets a value indicating whether to enable cache statistics.
+/// </summary>
+public bool EnableStatistics { get; set; } = true;
+}

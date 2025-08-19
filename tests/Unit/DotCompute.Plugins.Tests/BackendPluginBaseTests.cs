@@ -8,8 +8,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Tests for the BackendPluginBase class covering plugin lifecycle, state management, and metrics.
@@ -24,7 +24,7 @@ public sealed class BackendPluginBaseTests : IDisposable
     public BackendPluginBaseTests()
     {
         var services = new ServiceCollection();
-        services.AddLogging();
+        _ = services.AddLogging();
         _serviceProvider = services.BuildServiceProvider();
 
         _configuration = new ConfigurationBuilder()
@@ -41,9 +41,9 @@ public sealed class BackendPluginBaseTests : IDisposable
     public void InitialState_IsCorrect()
     {
         // Assert
-        _plugin.State.Should().Be(PluginState.Unknown);
-        _plugin.Health.Should().Be(PluginHealth.Unknown);
-        _plugin.IsLoaded.Should().BeFalse();
+        _ = _plugin.State.Should().Be(PluginState.Unknown);
+        _ = _plugin.Health.Should().Be(PluginHealth.Unknown);
+        _ = _plugin.IsLoaded.Should().BeFalse();
     }
 
     [Fact]
@@ -53,8 +53,8 @@ public sealed class BackendPluginBaseTests : IDisposable
         await _plugin.InitializeAsync(_serviceProvider);
 
         // Assert
-        _plugin.State.Should().Be(PluginState.Initialized);
-        _plugin.Health.Should().Be(PluginHealth.Healthy);
+        _ = _plugin.State.Should().Be(PluginState.Initialized);
+        _ = _plugin.Health.Should().Be(PluginHealth.Healthy);
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public sealed class BackendPluginBaseTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.InitializeAsync(null!));
-        exception.Message.Should().Contain("Cannot initialize plugin in state");
+        _ = exception.Message.Should().Contain("Cannot initialize plugin in state");
     }
 
     [Fact]
@@ -83,10 +83,10 @@ public sealed class BackendPluginBaseTests : IDisposable
         _plugin.ThrowOnInitialize = true;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.InitializeAsync(null!));
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.InitializeAsync(null!));
 
-        _plugin.State.Should().Be(PluginState.Failed);
-        _plugin.Health.Should().Be(PluginHealth.Critical);
+        _ = _plugin.State.Should().Be(PluginState.Failed);
+        _ = _plugin.Health.Should().Be(PluginHealth.Critical);
     }
 
     [Fact]
@@ -99,16 +99,14 @@ public sealed class BackendPluginBaseTests : IDisposable
         await _plugin.StartAsync();
 
         // Assert
-        _plugin.State.Should().Be(PluginState.Running);
-        _plugin.IsLoaded.Should().BeTrue();
+        _ = _plugin.State.Should().Be(PluginState.Running);
+        _ = _plugin.IsLoaded.Should().BeTrue();
     }
 
     [Fact]
-    public async Task StartAsync_FromInvalidState_ThrowsInvalidOperationException()
-    {
+    public async Task StartAsync_FromInvalidState_ThrowsInvalidOperationException() =>
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.StartAsync());
-    }
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.StartAsync());
 
     [Fact]
     public async Task StartAsync_WhenOnStartThrows_SetsStateToFailed()
@@ -118,10 +116,10 @@ public sealed class BackendPluginBaseTests : IDisposable
         _plugin.ThrowOnStart = true;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.StartAsync());
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.StartAsync());
 
-        _plugin.State.Should().Be(PluginState.Failed);
-        _plugin.Health.Should().Be(PluginHealth.Critical);
+        _ = _plugin.State.Should().Be(PluginState.Failed);
+        _ = _plugin.Health.Should().Be(PluginHealth.Critical);
     }
 
     [Fact]
@@ -135,14 +133,14 @@ public sealed class BackendPluginBaseTests : IDisposable
         await _plugin.StopAsync();
 
         // Assert
-        _plugin.State.Should().Be(PluginState.Stopped);
+        _ = _plugin.State.Should().Be(PluginState.Stopped);
     }
 
     [Fact]
     public async Task StopAsync_WhenNotRunning_ShouldNotThrow()
     {
         // Act & Assert
-        await FluentActions.Invoking(() => _plugin.StopAsync())
+        _ = await FluentActions.Invoking(() => _plugin.StopAsync())
             .Should().NotThrowAsync();
     }
 
@@ -155,9 +153,9 @@ public sealed class BackendPluginBaseTests : IDisposable
         _plugin.ThrowOnStop = true;
 
         // Act & Assert
-        await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.InitializeAsync(null!));
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.InitializeAsync(null!));
 
-        _plugin.State.Should().Be(PluginState.Failed);
+        _ = _plugin.State.Should().Be(PluginState.Failed);
     }
 
     [Fact]
@@ -168,8 +166,8 @@ public sealed class BackendPluginBaseTests : IDisposable
 
         // Assert
         Assert.NotNull(result);
-        result.IsValid.Should().BeTrue();
-        result.Errors.Should().BeEmpty();
+        _ = result.IsValid.Should().BeTrue();
+        _ = result.Errors.Should().BeEmpty();
     }
 
     [Fact]
@@ -182,8 +180,8 @@ public sealed class BackendPluginBaseTests : IDisposable
         var result = plugin.Validate();
 
         // Assert
-        result.IsValid.Should().BeFalse();
-        result.Errors.Should().Contain("Plugin ID is required");
+        _ = result.IsValid.Should().BeFalse();
+        _ = result.Errors.Should().Contain("Plugin ID is required");
     }
 
     [Fact]
@@ -196,7 +194,7 @@ public sealed class BackendPluginBaseTests : IDisposable
         await _plugin.OnConfigurationChangedAsync(_configuration);
 
         // Assert
-        _plugin.LastConfiguration.Should().BeSameAs(_configuration);
+        _ = _plugin.LastConfiguration.Should().BeSameAs(_configuration);
     }
 
     [Fact]
@@ -204,7 +202,7 @@ public sealed class BackendPluginBaseTests : IDisposable
     {
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentNullException>(() => _plugin.OnConfigurationChangedAsync(null!));
-        exception.ParamName.Should().Be("configuration");
+        _ = exception.ParamName.Should().Be("configuration");
     }
 
     [Fact]
@@ -225,8 +223,8 @@ public sealed class BackendPluginBaseTests : IDisposable
 
         // Assert
         Assert.NotNull(metrics);
-        metrics.Timestamp.Should().BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(5));
-        metrics.Uptime.Should().Be(TimeSpan.Zero); // Not running
+        _ = metrics.Timestamp.Should().BeCloseTo(DateTime.UtcNow, precision: TimeSpan.FromSeconds(5));
+        _ = metrics.Uptime.Should().Be(TimeSpan.Zero); // Not running
     }
 
     [Fact]
@@ -252,8 +250,8 @@ public sealed class BackendPluginBaseTests : IDisposable
 
         // Assert
         var metrics = _plugin.GetMetrics();
-        metrics.RequestCount.Should().Be(1);
-        metrics.AverageResponseTime.Should().Be(100.0);
+        _ = metrics.RequestCount.Should().Be(1);
+        _ = metrics.AverageResponseTime.Should().Be(100.0);
     }
 
     [Fact]
@@ -264,7 +262,7 @@ public sealed class BackendPluginBaseTests : IDisposable
 
         // Assert
         var metrics = _plugin.GetMetrics();
-        metrics.ErrorCount.Should().Be(1);
+        _ = metrics.ErrorCount.Should().Be(1);
     }
 
     [Fact]
@@ -275,7 +273,7 @@ public sealed class BackendPluginBaseTests : IDisposable
 
         // Assert
         var metrics = _plugin.GetMetrics();
-        metrics.MemoryUsage.Should().Be(1024 * 1024);
+        _ = metrics.MemoryUsage.Should().Be(1024 * 1024);
     }
 
     [Fact]
@@ -286,7 +284,7 @@ public sealed class BackendPluginBaseTests : IDisposable
 
         // Assert
         var metrics = _plugin.GetMetrics();
-        metrics.CpuUsage.Should().Be(75.5);
+        _ = metrics.CpuUsage.Should().Be(75.5);
     }
 
     [Fact]
@@ -294,10 +292,10 @@ public sealed class BackendPluginBaseTests : IDisposable
     {
         // Act & Assert
         _plugin.TestUpdateCpuUsage(-10);
-        _plugin.GetMetrics().CpuUsage.Should().Be(0);
+        _ = _plugin.GetMetrics().CpuUsage.Should().Be(0);
 
         _plugin.TestUpdateCpuUsage(150);
-        _plugin.GetMetrics().CpuUsage.Should().Be(100);
+        _ = _plugin.GetMetrics().CpuUsage.Should().Be(100);
     }
 
     [Fact]
@@ -308,8 +306,8 @@ public sealed class BackendPluginBaseTests : IDisposable
 
         // Assert
         var metrics = _plugin.GetMetrics();
-        metrics.CustomMetrics.Should().ContainKey("CustomValue");
-        metrics.CustomMetrics["CustomValue"].Should().Be(42);
+        _ = metrics.CustomMetrics.Should().ContainKey("CustomValue");
+        _ = metrics.CustomMetrics["CustomValue"].Should().Be(42);
     }
 
     [Fact]
@@ -319,7 +317,7 @@ public sealed class BackendPluginBaseTests : IDisposable
         await _plugin.LoadAsync(_serviceProvider);
 
         // Assert
-        _plugin.State.Should().Be(PluginState.Running);
+        _ = _plugin.State.Should().Be(PluginState.Running);
     }
 
     [Fact]
@@ -332,7 +330,7 @@ public sealed class BackendPluginBaseTests : IDisposable
         await _plugin.UnloadAsync();
 
         // Assert
-        _plugin.State.Should().Be(PluginState.Stopped);
+        _ = _plugin.State.Should().Be(PluginState.Stopped);
     }
 
     [Fact]
@@ -353,8 +351,8 @@ public sealed class BackendPluginBaseTests : IDisposable
         // Assert
         Assert.True(eventRaised);
         Assert.NotNull(eventArgs);
-        eventArgs!.NewState.Should().Be(PluginState.Initializing);
-        eventArgs.OldState.Should().Be(PluginState.Unknown);
+        _ = eventArgs!.NewState.Should().Be(PluginState.Initializing);
+        _ = eventArgs.OldState.Should().Be(PluginState.Unknown);
     }
 
     [Fact]
@@ -377,8 +375,8 @@ public sealed class BackendPluginBaseTests : IDisposable
         // Assert
         Assert.True(eventRaised);
         Assert.NotNull(eventArgs);
-        eventArgs!.Exception.Should().BeSameAs(exception);
-        eventArgs.Context.Should().Be("Test context");
+        _ = eventArgs!.Exception.Should().BeSameAs(exception);
+        _ = eventArgs.Context.Should().Be("Test context");
     }
 
     [Fact]
@@ -399,8 +397,8 @@ public sealed class BackendPluginBaseTests : IDisposable
         // Assert
         Assert.True(eventRaised);
         Assert.NotNull(eventArgs);
-        eventArgs!.NewHealth.Should().Be(PluginHealth.Degraded);
-        eventArgs.OldHealth.Should().Be(PluginHealth.Unknown);
+        _ = eventArgs!.NewHealth.Should().Be(PluginHealth.Degraded);
+        _ = eventArgs.OldHealth.Should().Be(PluginHealth.Unknown);
     }
 
     [Fact]
@@ -414,7 +412,7 @@ public sealed class BackendPluginBaseTests : IDisposable
         _plugin.Dispose();
 
         // Assert
-        _plugin.State.Should().Be(PluginState.Unloaded);
+        _ = _plugin.State.Should().Be(PluginState.Unloaded);
     }
 
     [Fact]
@@ -436,13 +434,13 @@ public sealed class BackendPluginBaseTests : IDisposable
         _plugin.Dispose();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.InitializeAsync(null!));
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.InitializeAsync(null!));
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.InitializeAsync(null!));
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.InitializeAsync(null!));
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.InitializeAsync(null!));
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.InitializeAsync(null!));
 
-        await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.InitializeAsync(null!));
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() => _plugin.InitializeAsync(null!));
     }
 
     public void Dispose()
@@ -467,14 +465,9 @@ public sealed class BackendPluginBaseTests : IDisposable
     /// <summary>
     /// Test implementation of BackendPluginBase for testing purposes.
     /// </summary>
-    private sealed class TestBackendPlugin : BackendPluginBase
+    private sealed class TestBackendPlugin(string? id = null) : BackendPluginBase
     {
-        private readonly string _id;
-
-        public TestBackendPlugin(string? id = null)
-        {
-            _id = id ?? "test-backend-plugin";
-        }
+        private readonly string _id = id ?? "test-backend-plugin";
 
         public override string Id => _id;
         public override string Name => "Test Backend Plugin";
@@ -531,5 +524,4 @@ public sealed class BackendPluginBaseTests : IDisposable
         public void TestChangeHealth(PluginHealth newHealth) => Health = newHealth;
         public void TestRaiseError(Exception exception, string context) => OnError(exception, context);
     }
-}
 }

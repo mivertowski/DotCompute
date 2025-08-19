@@ -11,8 +11,8 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Unit
-{
+namespace DotCompute.Tests.Hardware.Unit;
+
 
 /// <summary>
 /// Unit tests for CUDA kernel compilation functionality
@@ -27,13 +27,13 @@ public sealed class CudaKernelCompilerTests : IDisposable
     private readonly List<ICompiledKernel> _compiledKernels = [];
 
     // LoggerMessage delegates for performance
-    private static readonly Action<ILogger, Exception, Exception?> LogKernelDisposeError = 
+    private static readonly Action<ILogger, Exception, Exception?> LogKernelDisposeError =
         LoggerMessage.Define<Exception>(
             LogLevel.Warning,
             new EventId(1, nameof(LogKernelDisposeError)),
             "Error disposing compiled kernel: {Exception}");
 
-    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError = 
+    private static readonly Action<ILogger, Exception, Exception?> LogAcceleratorDisposeError =
         LoggerMessage.Define<Exception>(
             LogLevel.Warning,
             new EventId(2, nameof(LogAcceleratorDisposeError)),
@@ -64,7 +64,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        compiledKernel.Name.Should().Be("vector_add");
+        _ = compiledKernel.Name.Should().Be("vector_add");
     }
 
     [Fact]
@@ -90,7 +90,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        compiledKernel.Name.Should().Be("vector_add");
+        _ = compiledKernel.Name.Should().Be("vector_add");
     }
 
     [Fact]
@@ -116,7 +116,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        compiledKernel.Name.Should().Be("vector_add");
+        _ = compiledKernel.Name.Should().Be("vector_add");
     }
 
     [Theory]
@@ -157,7 +157,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Act & Assert
         var compileAction = async () => await accelerator.CompileKernelAsync(kernelDefinition);
-        await compileAction.Should().ThrowAsync<InvalidOperationException>()
+        _ = await compileAction.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("*Failed to compile CUDA kernel*");
     }
 
@@ -179,7 +179,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        compiledKernel.Name.Should().Be("math_kernel");
+        _ = compiledKernel.Name.Should().Be("math_kernel");
     }
 
     [Fact]
@@ -200,7 +200,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        compiledKernel.Name.Should().Be("shared_memory_kernel");
+        _ = compiledKernel.Name.Should().Be("shared_memory_kernel");
     }
 
     [Fact]
@@ -221,7 +221,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        compiledKernel.Name.Should().Be("custom_kernel");
+        _ = compiledKernel.Name.Should().Be("custom_kernel");
     }
 
     [Fact]
@@ -245,7 +245,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
+        _ = stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000,
             "Kernel compilation should complete within 10 seconds");
 
         _output.WriteLine($"Kernel compilation took {stopwatch.ElapsedMilliseconds}ms");
@@ -278,7 +278,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
         // Assert
         Assert.NotNull(compiledKernel1);
         Assert.NotNull(compiledKernel2);
-        (stopwatch2.ElapsedMilliseconds < stopwatch1.ElapsedMilliseconds + 100).Should().BeTrue(
+        _ = (stopwatch2.ElapsedMilliseconds < stopwatch1.ElapsedMilliseconds + 100).Should().BeTrue(
             "Cached compilation should be faster or similar to first compilation");
 
         _output.WriteLine($"First compilation: {stopwatch1.ElapsedMilliseconds}ms, Second: {stopwatch2.ElapsedMilliseconds}ms");
@@ -302,7 +302,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Assert
         Assert.NotNull(compiledKernel);
-        compiledKernel.Name.Should().Be("matrix_multiply");
+        _ = compiledKernel.Name.Should().Be("matrix_multiply");
     }
 
     [Fact]
@@ -343,7 +343,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Act & Assert
         var compileAction = async () => await accelerator.CompileKernelAsync(null!);
-        await Assert.ThrowsAsync<ArgumentNullException>(async () => await compileAction());
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(async () => await compileAction());
     }
 
     [Fact]
@@ -365,7 +365,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Act & Assert
         var compileAction = async () => await accelerator.CompileKernelAsync(kernelDefinition);
-        await Assert.ThrowsAsync<InvalidOperationException>(async () => await compileAction());
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(async () => await compileAction());
     }
 
     [Fact]
@@ -392,7 +392,7 @@ public sealed class CudaKernelCompilerTests : IDisposable
 
         // Assert
         Assert.Equal(5, compiledKernels.Length);
-        compiledKernels.Should().AllSatisfy(k => k.Should().NotBeNull());
+        _ = compiledKernels.Should().AllSatisfy(k => k.Should().NotBeNull());
     }
 
     // Helper Methods
@@ -591,5 +591,4 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
         _accelerators.Clear();
         _loggerFactory?.Dispose();
     }
-}
 }

@@ -5,8 +5,8 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.X86;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 /// <summary>
 /// Benchmarks for SIMD operations performance on CPU backend.
@@ -514,4 +514,4 @@ internal sealed class SimdOperationsBenchmarks
         var supported = results.Count(kvp => kvp.Value);
         _output[0] = supported;
     }
-}}
+}

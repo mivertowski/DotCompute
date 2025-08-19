@@ -4,8 +4,8 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Integration tests for backend implementations
@@ -51,7 +51,7 @@ public sealed class BackendIntegrationTests : CoverageTestBase
         // Arrange
         Skip.IfNot(IsHardwareAvailable(type.ToString()), $"{type} hardware not available");
 
-        _hardwareSimulator.AddAccelerator(type, $"Test {type} Device");
+        _ = _hardwareSimulator.AddAccelerator(type, $"Test {type} Device");
         var accelerator = _hardwareSimulator.GetAccelerators(type).First();
 
         // Act
@@ -114,17 +114,17 @@ public sealed class BackendIntegrationTests : CoverageTestBase
         var accelerator = _hardwareSimulator.GetAccelerators(AcceleratorType.CPU).First();
 
         // Act & Assert - Invalid kernel
-        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        _ = await Assert.ThrowsAsync<InvalidOperationException>(async () =>
         {
             _hardwareSimulator.SimulateFailure(AcceleratorType.CPU, "Test failure");
-            await accelerator.ExecuteKernelAsync("invalid kernel", [], CancellationToken);
+            _ = await accelerator.ExecuteKernelAsync("invalid kernel", [], CancellationToken);
         });
 
         // Reset for next test
         _hardwareSimulator.ResetFailures();
 
         // Act & Assert - Out of memory
-        Assert.Throws<OutOfMemoryException>(() =>
+        _ = Assert.Throws<OutOfMemoryException>(() =>
             accelerator.AllocateMemory((int)accelerator.Info.TotalMemory + 1));
     }
 
@@ -225,7 +225,7 @@ public sealed class BackendIntegrationTests : CoverageTestBase
         cts.CancelAfter(TimeSpan.FromMilliseconds(100));
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(async () =>
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(async () =>
             await accelerator.ExecuteKernelAsync("long_running_kernel", [], cts.Token));
     }
 
@@ -247,7 +247,7 @@ public sealed class BackendIntegrationTests : CoverageTestBase
         return
         [
             new int[] { 1, 2, 3, 4, 5 },
-            new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f }
+        new float[] { 1.0f, 2.0f, 3.0f, 4.0f, 5.0f }
         ];
     }
 }
@@ -274,5 +274,4 @@ public sealed class HardwareIntegrationTestsFixture : IDisposable
     {
         // Cleanup shared resources
     }
-}
 }

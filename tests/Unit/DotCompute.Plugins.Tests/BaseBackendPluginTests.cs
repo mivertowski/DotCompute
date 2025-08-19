@@ -9,8 +9,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Plugins.Tests
-{
+namespace DotCompute.Plugins.Tests;
+
 
 /// <summary>
 /// Tests for the BaseBackendPlugin abstract class.
@@ -100,7 +100,7 @@ public sealed class BaseBackendPluginTests
         // Verify the named wrapper is registered
         var namedAccelerator = serviceProvider.GetService<IAccelerator>();
         Assert.NotNull(namedAccelerator);
-        Assert.IsType<NamedAcceleratorWrapper>(namedAccelerator);
+        _ = Assert.IsType<NamedAcceleratorWrapper>(namedAccelerator);
         var wrapper = (NamedAcceleratorWrapper)namedAccelerator;
         Assert.Equal("test", wrapper.Name);
     }
@@ -112,10 +112,10 @@ public sealed class BaseBackendPluginTests
         using var plugin = new TestBackendPlugin();
         var services = new ServiceCollection();
         var configData = new Dictionary<string, string>
-        {
-            {"TestBackend:Options:EnableTestFeature", "false"},
-            {"TestBackend:Options:MaxTestItems", "250"}
-        };
+    {
+        {"TestBackend:Options:EnableTestFeature", "false"},
+        {"TestBackend:Options:MaxTestItems", "250"}
+    };
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(configData!)
             .Build();
@@ -137,7 +137,7 @@ public sealed class BaseBackendPluginTests
         // Arrange
         using var plugin = new TestBackendPlugin();
         var services = new ServiceCollection();
-        services.AddLogging();
+        _ = services.AddLogging();
         var configuration = new ConfigurationBuilder().Build();
 
         plugin.ConfigureServices(services, configuration);
@@ -157,7 +157,7 @@ public sealed class BaseBackendPluginTests
         // Arrange
         using var plugin = new TestBackendPlugin();
         var services = new ServiceCollection();
-        services.AddLogging();
+        _ = services.AddLogging();
         var configuration = new ConfigurationBuilder().Build();
 
         plugin.ConfigureServices(services, configuration);
@@ -178,7 +178,7 @@ public sealed class BaseBackendPluginTests
         // Arrange
         using var plugin = new TestBackendPlugin();
         var services = new ServiceCollection();
-        services.AddLogging();
+        _ = services.AddLogging();
         var configuration = new ConfigurationBuilder().Build();
 
         plugin.ConfigureServices(services, configuration);
@@ -219,8 +219,8 @@ public sealed class NamedAcceleratorWrapperTests
     {
         // Arrange
         var mockAccelerator = new Mock<IAccelerator>();
-        mockAccelerator.SetupGet(x => x.Type).Returns(AcceleratorType.GPU);
-        mockAccelerator.SetupGet(x => x.Info).Returns(Mock.Of<AcceleratorInfo>());
+        _ = mockAccelerator.SetupGet(x => x.Type).Returns(AcceleratorType.GPU);
+        _ = mockAccelerator.SetupGet(x => x.Info).Returns(Mock.Of<AcceleratorInfo>());
 
         // Act
         var wrapper = new NamedAcceleratorWrapper("test-accelerator", mockAccelerator.Object);
@@ -238,7 +238,7 @@ public sealed class NamedAcceleratorWrapperTests
         var mockAccelerator = Mock.Of<IAccelerator>();
 
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() => new NamedAcceleratorWrapper(null!, mockAccelerator));
+        _ = Assert.Throws<ArgumentNullException>(() => new NamedAcceleratorWrapper(null!, mockAccelerator));
     }
 
     [Fact]
@@ -254,7 +254,7 @@ public sealed class NamedAcceleratorWrapperTests
         var mockCompiledKernel = Mock.Of<ICompiledKernel>();
         var kernelDefinition = Mock.Of<KernelDefinition>();
 
-        mockAccelerator
+        _ = mockAccelerator
             .Setup(x => x.CompileKernelAsync(It.IsAny<KernelDefinition>(), It.IsAny<CompilationOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockCompiledKernel);
 
@@ -295,5 +295,4 @@ public sealed class NamedAcceleratorWrapperTests
         // Assert
         mockAccelerator.Verify(x => x.DisposeAsync(), Times.Once);
     }
-}
 }

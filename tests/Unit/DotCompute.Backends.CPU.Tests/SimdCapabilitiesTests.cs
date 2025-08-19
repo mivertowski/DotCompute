@@ -9,8 +9,8 @@ using DotCompute.Backends.CPU.Intrinsics;
 using Xunit.Abstractions;
 
 #pragma warning disable CA1515 // Make types internal
-namespace DotCompute.Backends.CPU
-{
+namespace DotCompute.Backends.CPU;
+
 
 /// <summary>
 /// Tests for SIMD capabilities detection and reporting.
@@ -163,5 +163,4 @@ public sealed class SimdCapabilitiesTests(ITestOutputHelper output)
             _output.WriteLine($"Vector<T> operations work correctly with size {vectorSize}");
         }
     }
-}
 }

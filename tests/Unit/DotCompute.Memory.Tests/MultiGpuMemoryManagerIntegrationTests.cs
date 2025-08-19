@@ -3,12 +3,11 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Core.Execution;
-using DotCompute.Tests.Utilities;
+using DotCompute.Tests.Mocks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests
-{
+namespace DotCompute.Tests;
 
 /// <summary>
 /// Integration tests for MultiGpuMemoryManager with real P2P scenarios.
@@ -29,9 +28,9 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         [
 #pragma warning disable CA2000 // Dispose objects before losing scope
             new MockAccelerator(name: "cuda-gpu-0", type: AcceleratorType.CUDA),
-            new MockAccelerator(name: "cuda-gpu-1", type: AcceleratorType.CUDA),
-            new MockAccelerator(name: "rocm-gpu-0", type: AcceleratorType.GPU),
-            new MockAccelerator(name: "cpu-device-0", type: AcceleratorType.CPU)
+        new MockAccelerator(name: "cuda-gpu-1", type: AcceleratorType.CUDA),
+        new MockAccelerator(name: "rocm-gpu-0", type: AcceleratorType.GPU),
+        new MockAccelerator(name: "cpu-device-0", type: AcceleratorType.CPU)
 #pragma warning restore CA2000 // Dispose objects before losing scope
         ];
     }
@@ -72,7 +71,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         var targetDevice = _devices[1]; // CUDA GPU 1
 
         // Enable P2P first
-        await _memoryManager.EnablePeerToPeerAsync(sourceDevice, targetDevice);
+        _ = await _memoryManager.EnablePeerToPeerAsync(sourceDevice, targetDevice);
 
         // Create source buffer
         using var sourceBuffer = await CreateMockBuffer<float>(sourceDevice, 1024);
@@ -94,7 +93,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         var sourceDevice = _devices[0];
         var targetDevice = _devices[1];
 
-        await _memoryManager.EnablePeerToPeerAsync(sourceDevice, targetDevice);
+        _ = await _memoryManager.EnablePeerToPeerAsync(sourceDevice, targetDevice);
 
         using var sourceBuffer = await CreateMockBuffer<float>(sourceDevice, 1024);
         using var targetBuffer = await CreateMockBuffer<float>(targetDevice, 1024);
@@ -146,7 +145,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         var device1 = _devices[0];
         var device2 = _devices[1];
 
-        await _memoryManager.EnablePeerToPeerAsync(device1, device2);
+        _ = await _memoryManager.EnablePeerToPeerAsync(device1, device2);
 
         using var buffer1 = await CreateMockBuffer<float>(device1, 1024);
         using var buffer2 = await CreateMockBuffer<float>(device2, 1024);
@@ -172,7 +171,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         var device1 = _devices[0];
         var device2 = _devices[1];
 
-        await _memoryManager.EnablePeerToPeerAsync(device1, device2);
+        _ = await _memoryManager.EnablePeerToPeerAsync(device1, device2);
 
         using var buffer1 = await CreateMockBuffer<float>(device1, 2048);
         using var buffer2 = await CreateMockBuffer<float>(device2, 2048);
@@ -228,7 +227,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         var device1 = _devices[0];
         var device2 = _devices[1];
 
-        await _memoryManager.EnablePeerToPeerAsync(device1, device2);
+        _ = await _memoryManager.EnablePeerToPeerAsync(device1, device2);
 
         // Create large buffers(simulating large dataset)
         using var sourceBuffer = await CreateMockBuffer<float>(device1, 16 * 1024 * 1024); // 64MB
@@ -253,7 +252,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         var device2 = _devices[1];
 
         // Act
-        await _memoryManager.EnablePeerToPeerAsync(device1, device2);
+        _ = await _memoryManager.EnablePeerToPeerAsync(device1, device2);
         var stats = _memoryManager.GetMemoryStatistics();
 
         // Assert
@@ -273,7 +272,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         var device1 = _devices[0];
         var device2 = _devices[1];
 
-        await _memoryManager.EnablePeerToPeerAsync(device1, device2);
+        _ = await _memoryManager.EnablePeerToPeerAsync(device1, device2);
 
         var buffers1 = new IBuffer<float>[5];
         var buffers2 = new IBuffer<float>[5];
@@ -318,7 +317,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         var device1 = _devices[0];
         var device2 = _devices[1];
 
-        await _memoryManager.EnablePeerToPeerAsync(device1, device2);
+        _ = await _memoryManager.EnablePeerToPeerAsync(device1, device2);
 
         using var sourceBuffer = await CreateMockBuffer<float>(device1, 1024);
         using var targetBuffer = await CreateMockBuffer<float>(device2, 1024);
@@ -327,7 +326,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         cts.CancelAfter(TimeSpan.FromMilliseconds(1)); // Cancel very quickly
 
         // Act & Assert
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
+        _ = await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
             await _memoryManager.TransferBufferAsync(sourceBuffer, targetBuffer, 0, 0, 1024, cts.Token));
     }
 
@@ -367,7 +366,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         await disposedBuffer.DisposeAsync();
 
         // Act & Assert - should handle disposed buffer gracefully
-        await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(async () =>
             await _memoryManager.TransferBufferAsync(disposedBuffer, validBuffer));
     }
 
@@ -395,21 +394,14 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
     /// <summary>
     /// Mock buffer implementation for testing.
     /// </summary>
-    private sealed class MockBuffer<T> : IBuffer<T> where T : unmanaged
+    private sealed class MockBuffer<T>(IMemoryBuffer memoryBuffer, IAccelerator accelerator, int length) : IBuffer<T> where T : unmanaged
     {
-        private readonly IMemoryBuffer _memoryBuffer;
+        private readonly IMemoryBuffer _memoryBuffer = memoryBuffer;
         private bool _disposed;
 
-        public MockBuffer(IMemoryBuffer memoryBuffer, IAccelerator accelerator, int length)
-        {
-            _memoryBuffer = memoryBuffer;
-            Accelerator = accelerator;
-            Length = length;
-        }
-
-        public int Length { get; }
+        public int Length { get; } = length;
         public long SizeInBytes => _memoryBuffer.SizeInBytes;
-        public IAccelerator Accelerator { get; }
+        public IAccelerator Accelerator { get; } = accelerator;
         public static MemoryType MemoryType => MemoryType.DeviceLocal;
         public Abstractions.MemoryOptions Options => _memoryBuffer.Options;
         public bool IsDisposed => _disposed;
@@ -538,5 +530,4 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
             }
         }
     }
-}
 }

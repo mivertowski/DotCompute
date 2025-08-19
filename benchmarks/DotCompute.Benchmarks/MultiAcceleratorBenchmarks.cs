@@ -5,8 +5,8 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 /// <summary>
 /// Benchmarks for multi-accelerator scaling and coordination performance.
@@ -50,7 +50,7 @@ internal sealed class MultiAcceleratorBenchmarks : IDisposable
         }
 
         await _acceleratorManager.InitializeAsync();
-        _accelerators = (await _acceleratorManager.GetAcceleratorsAsync()).Take(AcceleratorCount).ToList();
+        _accelerators = [.. (await _acceleratorManager.GetAcceleratorsAsync()).Take(AcceleratorCount)];
 
         SetupTestData();
     }
@@ -472,4 +472,4 @@ internal sealed class MultiAcceleratorBenchmarks : IDisposable
         }
         GC.SuppressFinalize(this);
     }
-}}
+}

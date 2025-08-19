@@ -11,14 +11,14 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Performance
-{
+namespace DotCompute.Tests.Performance;
+
 
 /// <summary>
 /// Performance benchmark tests for coverage analysis
 /// </summary>
 [ExcludeFromCodeCoverage]
-public sealed class CoverageBenchmarkTests : PerformanceBenchmarkBase
+public sealed class CoverageBenchmarkTests(ITestOutputHelper output) : PerformanceBenchmarkBase(output)
 {
     // LoggerMessage delegates for improved performance
     private static readonly Action<Microsoft.Extensions.Logging.ILogger, Exception?> LogMemoryAllocationCompleted =
@@ -49,10 +49,6 @@ public sealed class CoverageBenchmarkTests : PerformanceBenchmarkBase
         LoggerMessage.Define<double>(LogLevel.Information, new EventId(7, "MemoryPressureImpact"),
             "Memory pressure impact: {Impact:F2}x slowdown");
 
-    public CoverageBenchmarkTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
     [Fact]
     public async Task MemoryAllocation_Performance_MeetsRequirements()
     {
@@ -70,8 +66,8 @@ public sealed class CoverageBenchmarkTests : PerformanceBenchmarkBase
         LogAllocationEfficiency(Logger, result.AllocationEfficiency, null);
 
         // Assert performance requirements
-        result.AverageAllocTimeMs.Should().BeLessThan(10.0, "Memory allocation should be under 10ms average");
-        result.AllocationEfficiency.Should().BeGreaterThan(100, "Allocation efficiency should be > 100 bytes/ms");
+        _ = result.AverageAllocTimeMs.Should().BeLessThan(10.0, "Memory allocation should be under 10ms average");
+        _ = result.AllocationEfficiency.Should().BeGreaterThan(100, "Allocation efficiency should be > 100 bytes/ms");
     }
 
     [Fact]
@@ -80,10 +76,10 @@ public sealed class CoverageBenchmarkTests : PerformanceBenchmarkBase
         // Benchmark kernel compilation performance
         var kernelSources = new[]
         {
-            "kernel void simple() { }",
-            "kernel void vectorAdd(global float* a, global float* b, global float* c) { int i = get_global_id(0); c[i] = a[i] + b[i]; }",
-            GenerateComplexKernel()
-        };
+        "kernel void simple() { }",
+        "kernel void vectorAdd(global float* a, global float* b, global float* c) { int i = get_global_id(0); c[i] = a[i] + b[i]; }",
+        GenerateComplexKernel()
+    };
 
         foreach (var kernel in kernelSources)
         {
@@ -115,7 +111,7 @@ public sealed class CoverageBenchmarkTests : PerformanceBenchmarkBase
             LogDataTransferBenchmark(Logger, size, bandwidthMBps, null);
 
             // Assert minimum bandwidth requirements
-            bandwidthMBps.Should().BeGreaterThan(10.0, $"Data transfer bandwidth should be > 10 MB/s, got {bandwidthMBps:F2}");
+            _ = bandwidthMBps.Should().BeGreaterThan(10.0, $"Data transfer bandwidth should be > 10 MB/s, got {bandwidthMBps:F2}");
         }
     }
 
@@ -145,7 +141,7 @@ public sealed class CoverageBenchmarkTests : PerformanceBenchmarkBase
             // Assert reasonable scaling efficiency
             if (concurrency > 1)
             {
-                efficiency.Should().BeGreaterThan(0.7 * concurrency,
+                _ = efficiency.Should().BeGreaterThan(0.7 * concurrency,
                     $"Concurrency efficiency should be > 70% of ideal, got {efficiency / concurrency * 100:F1}%");
             }
         }
@@ -188,7 +184,7 @@ public sealed class CoverageBenchmarkTests : PerformanceBenchmarkBase
             LogMemoryPressureImpact(Logger, performanceImpact, null);
 
             // Assert reasonable performance degradation
-            performanceImpact.Should().BeLessThan(3.0, $"Memory pressure impact should be < 3x, got {performanceImpact:F2}x");
+            _ = performanceImpact.Should().BeLessThan(3.0, $"Memory pressure impact should be < 3x, got {performanceImpact:F2}x");
         }
         finally
         {
@@ -273,15 +269,8 @@ kernel void matrixMultiply(
     /// <summary>
     /// Test memory buffer for benchmarking
     /// </summary>
-    private sealed class TestMemoryBuffer : IDisposable
+    private sealed class TestMemoryBuffer(int size) : IDisposable
     {
-        private readonly byte[] _buffer;
-
-        public TestMemoryBuffer(int size)
-        {
-            _buffer = new byte[size];
-        }
-
         public void Dispose()
         {
             // Nothing to dispose for test buffer
@@ -315,14 +304,9 @@ public class SimpleBenchmark
 /// xUnit logger for BenchmarkDotNet
 /// </summary>
 [ExcludeFromCodeCoverage]
-public sealed class XunitLogger : BdnLogger
+public sealed class XunitLogger(ITestOutputHelper output) : BdnLogger
 {
-    private readonly ITestOutputHelper _output;
-
-    public XunitLogger(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     public string Id => "xunit";
     public int Priority => 0;
@@ -334,5 +318,4 @@ public sealed class XunitLogger : BdnLogger
     public void WriteLine(LogKind logKind, string text) => _output.WriteLine($"[{logKind}] {text}");
 
     public void Flush() { }
-}
 }

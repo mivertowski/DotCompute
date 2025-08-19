@@ -3,8 +3,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
-namespace DotCompute.Tests.Mocks
-{
+namespace DotCompute.Tests.Mocks;
+
 
 /// <summary>
 /// Mock accelerator implementation for testing without hardware dependencies.
@@ -137,10 +137,7 @@ public sealed partial class MockAccelerator : IAccelerator
         LogResetDeviceFailureSimulation(_logger);
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_isDisposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, this);
 
     [LoggerMessage(Level = LogLevel.Debug, Message = "Created MockAccelerator {deviceId} ({deviceName}) with {totalMemory} bytes memory")]
     private static partial void LogCreatedMockAccelerator(ILogger logger, string deviceId, string deviceName, long totalMemory);
@@ -223,8 +220,8 @@ public sealed class MockMemoryManager : IMemoryManager, IDisposable
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
 
-        int sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
-        IMemoryBuffer buffer = await AllocateAsync(sizeInBytes, options, cancellationToken);
+        var sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken);
         await buffer.CopyFromHostAsync(source, 0, cancellationToken);
         return buffer;
     }
@@ -245,7 +242,7 @@ public sealed class MockMemoryManager : IMemoryManager, IDisposable
 
     public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
     {
-        int sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
+        var sizeInBytes = count * System.Runtime.CompilerServices.Unsafe.SizeOf<T>();
         return AllocateAsync(sizeInBytes);
     }
 
@@ -254,7 +251,7 @@ public sealed class MockMemoryManager : IMemoryManager, IDisposable
         if (buffer is MockMemoryBuffer mockBuffer)
         {
             // Simulate copying data to the mock buffer
-            ReadOnlySpan<byte> bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
+            var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
             bytes.CopyTo(mockBuffer.GetData().AsSpan());
         }
     }
@@ -264,7 +261,7 @@ public sealed class MockMemoryManager : IMemoryManager, IDisposable
         if (buffer is MockMemoryBuffer mockBuffer)
         {
             // Simulate copying data from the mock buffer
-            Span<byte> bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
+            var bytes = System.Runtime.InteropServices.MemoryMarshal.AsBytes(data);
             mockBuffer.GetData().AsSpan()[..bytes.Length].CopyTo(bytes);
         }
     }
@@ -315,7 +312,7 @@ public sealed class MockMemoryBuffer : IMemoryBuffer, IDisposable
     {
         ThrowIfDisposed();
 
-        int sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        var sizeInBytes = source.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
         if (offset < 0 || offset + sizeInBytes > SizeInBytes)
             throw new ArgumentOutOfRangeException(nameof(offset));
 
@@ -330,7 +327,7 @@ public sealed class MockMemoryBuffer : IMemoryBuffer, IDisposable
     {
         ThrowIfDisposed();
 
-        int sizeInBytes = destination.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
+        var sizeInBytes = destination.Length * System.Runtime.InteropServices.Marshal.SizeOf<T>();
         if (offset < 0 || offset + sizeInBytes > SizeInBytes)
             throw new ArgumentOutOfRangeException(nameof(offset));
 
@@ -355,10 +352,7 @@ public sealed class MockMemoryBuffer : IMemoryBuffer, IDisposable
         return ValueTask.CompletedTask;
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_isDisposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, this);
 
     // For testing purposes - direct access to data
     public byte[] GetData() => _data;
@@ -422,4 +416,4 @@ public sealed class MockMemoryBufferView : IMemoryBuffer, IDisposable
         GC.SuppressFinalize(this);
         return ValueTask.CompletedTask;
     }
-}}
+}

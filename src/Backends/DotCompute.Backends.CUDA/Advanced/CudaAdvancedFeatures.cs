@@ -8,8 +8,8 @@ using DotCompute.Backends.CUDA.Memory;
 using DotCompute.Core.Kernels;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Backends.CUDA.Advanced
-{
+namespace DotCompute.Backends.CUDA.Advanced;
+
 
 /// <summary>
 /// Advanced CUDA features for RTX 2000 Ada: Cooperative Groups, Dynamic Parallelism, Unified Memory
@@ -26,6 +26,12 @@ public sealed class CudaAdvancedFeatures : IDisposable
     private readonly Timer _optimizationTimer;
     private bool _disposed;
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="logger"></param>
+    /// <exception cref="ArgumentNullException"></exception>
     public CudaAdvancedFeatures(
         CudaContext context,
         ILogger<CudaAdvancedFeatures> logger)
@@ -83,31 +89,31 @@ public sealed class CudaAdvancedFeatures : IDisposable
         {
             DeviceName = _deviceProperties.Name,
             ComputeCapability = $"{_deviceProperties.Major}.{_deviceProperties.Minor}",
-            
+
             // Cooperative Groups
             CooperativeLaunch = _deviceProperties.CooperativeLaunch != 0,
             CooperativeMultiDeviceLaunch = _deviceProperties.CooperativeMultiDeviceLaunch != 0,
-            
+
             // Dynamic Parallelism (requires SM 3.5+)
-            DynamicParallelism = _deviceProperties.Major > 3 || 
+            DynamicParallelism = _deviceProperties.Major > 3 ||
                                 (_deviceProperties.Major == 3 && _deviceProperties.Minor >= 5),
-            
+
             // Unified Memory
             UnifiedAddressing = _deviceProperties.UnifiedAddressing != 0,
             ManagedMemory = _deviceProperties.ManagedMemory != 0,
             ConcurrentManagedAccess = _deviceProperties.ConcurrentManagedAccess != 0,
             PageableMemoryAccess = _deviceProperties.PageableMemoryAccess != 0,
-            
+
             // Tensor Cores (Ada Lovelace: SM 8.9)
             TensorCores = _deviceProperties.Major >= 8,
             TensorCoreGeneration = DetermineTensorCoreGeneration(),
-            
+
             // Memory and Performance
             L2CacheSize = _deviceProperties.L2CacheSize,
             SharedMemoryPerBlock = _deviceProperties.SharedMemPerBlock,
             SharedMemoryPerMultiprocessor = _deviceProperties.SharedMemPerMultiprocessor,
             MaxSharedMemoryPerBlockOptin = _deviceProperties.SharedMemPerBlockOptin,
-            
+
             // Advanced features
             StreamPriorities = _deviceProperties.StreamPrioritiesSupported != 0,
             GlobalL1Cache = _deviceProperties.GlobalL1CacheSupported != 0,
@@ -177,7 +183,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
             }
 
             var endTime = DateTimeOffset.UtcNow;
-            
+
             return new CudaOptimizationResult
             {
                 Success = true,
@@ -279,7 +285,7 @@ public sealed class CudaAdvancedFeatures : IDisposable
     private double EstimatePerformanceGain(List<string> optimizations)
     {
         double gain = 1.0;
-        
+
         foreach (var optimization in optimizations)
         {
             gain *= optimization switch
@@ -326,11 +332,11 @@ public sealed class CudaAdvancedFeatures : IDisposable
     {
         var metrics = new[]
         {
-            _cooperativeGroups.GetMetrics().EfficiencyScore,
-            _dynamicParallelism.GetMetrics().EfficiencyScore,
-            _unifiedMemory.GetMetrics().EfficiencyScore,
-            _tensorCores.GetMetrics().EfficiencyScore
-        };
+        _cooperativeGroups.GetMetrics().EfficiencyScore,
+        _dynamicParallelism.GetMetrics().EfficiencyScore,
+        _unifiedMemory.GetMetrics().EfficiencyScore,
+        _tensorCores.GetMetrics().EfficiencyScore
+    };
 
         return metrics.Where(m => m > 0).DefaultIfEmpty(0.5).Average();
     }
@@ -365,6 +371,9 @@ public sealed class CudaAdvancedFeatures : IDisposable
         }
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     public void Dispose()
     {
         if (!_disposed)
@@ -386,36 +395,106 @@ public sealed class CudaAdvancedFeatures : IDisposable
 /// </summary>
 public sealed class CudaFeatureSupport
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public string DeviceName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// 
+    /// </summary>
     public string ComputeCapability { get; set; } = string.Empty;
-    
+
     // Cooperative Groups
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool CooperativeLaunch { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool CooperativeMultiDeviceLaunch { get; set; }
-    
+
     // Dynamic Parallelism
+    /// <summary>
+    /// 
+    /// </summary>
     public bool DynamicParallelism { get; set; }
-    
+
     // Unified Memory
+    /// <summary>
+    /// 
+    /// </summary>
     public bool UnifiedAddressing { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool ManagedMemory { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool ConcurrentManagedAccess { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool PageableMemoryAccess { get; set; }
-    
+
     // Tensor Cores
+    /// <summary>
+    /// 
+    /// </summary>
     public bool TensorCores { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public string TensorCoreGeneration { get; set; } = string.Empty;
-    
+
     // Memory and Performance
+    /// <summary>
+    /// 
+    /// </summary>
     public int L2CacheSize { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public ulong SharedMemoryPerBlock { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public ulong SharedMemoryPerMultiprocessor { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public ulong MaxSharedMemoryPerBlockOptin { get; set; }
-    
+
     // Advanced features
+    /// <summary>
+    /// 
+    /// </summary>
     public bool StreamPriorities { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool GlobalL1Cache { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool LocalL1Cache { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool ComputePreemption { get; set; }
 }
 
@@ -424,13 +503,44 @@ public sealed class CudaFeatureSupport
 /// </summary>
 public sealed class CudaAdaOptimizationOptions
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public bool EnableTensorCores { get; set; } = true;
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool EnableCooperativeGroups { get; set; } = true;
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool EnableUnifiedMemoryOptimization { get; set; } = true;
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool EnableDynamicParallelism { get; set; } = false; // More conservative default
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool EnableL2CacheOptimization { get; set; } = true;
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool EnableSharedMemoryOptimization { get; set; } = true;
+
+    /// <summary>
+    /// 
+    /// </summary>
     public bool EnableWarpSpecialization { get; set; } = true;
+
+    /// <summary>
+    /// 
+    /// </summary>
     public CudaOptimizationProfile Profile { get; set; } = CudaOptimizationProfile.Balanced;
 }
 
@@ -439,11 +549,34 @@ public sealed class CudaAdaOptimizationOptions
 /// </summary>
 public enum CudaOptimizationProfile
 {
+    /// <summary>
+    /// 
+    /// </summary>
     Conservative,   // Safe optimizations only
+
+    /// <summary>
+    /// 
+    /// </summary>
     Balanced,      // Good balance of performance and stability
+
+    /// <summary>
+    /// 
+    /// </summary>
     Aggressive,    // Maximum performance optimizations
+
+    /// <summary>
+    /// 
+    /// </summary>
     MachineLearning, // ML/AI specific optimizations
+
+    /// <summary>
+    /// 
+    /// </summary>
     HighThroughput, // Optimize for throughput over latency
+
+    /// <summary>
+    /// 
+    /// </summary>
     LowLatency     // Optimize for latency over throughput
 }
 
@@ -452,11 +585,34 @@ public enum CudaOptimizationProfile
 /// </summary>
 public sealed class CudaOptimizationResult
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public bool Success { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public List<string> OptimizationsApplied { get; set; } = [];
+
+    /// <summary>
+    /// 
+    /// </summary>
     public TimeSpan OptimizationTime { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public double PerformanceGain { get; set; } = 1.0;
+
+    /// <summary>
+    /// 
+    /// </summary>
     public List<string> Recommendations { get; set; } = [];
+
+    /// <summary>
+    /// 
+    /// </summary>
     public string? ErrorMessage { get; set; }
 }
 
@@ -465,10 +621,29 @@ public sealed class CudaOptimizationResult
 /// </summary>
 public enum CudaMemoryAccessPattern
 {
+    /// <summary>
+    /// 
+    /// </summary>
     Sequential,     // Sequential access
+
+    /// <summary>
+    /// 
+    /// </summary>
     Random,         // Random access
+
+    /// <summary>
+    /// 
+    /// </summary>
     Streaming,      // One-time streaming access
+
+    /// <summary>
+    /// 
+    /// </summary>
     Temporal,       // Repeated access to same data
+
+    /// <summary>
+    /// 
+    /// </summary>
     Spatial         // Access to nearby memory locations
 }
 
@@ -477,11 +652,34 @@ public enum CudaMemoryAccessPattern
 /// </summary>
 public enum CudaMemoryUsageHint
 {
+    /// <summary>
+    /// 
+    /// </summary>
     ReadMostly,     // Data is mostly read
+
+    /// <summary>
+    /// 
+    /// </summary>
     WriteMostly,    // Data is mostly written
+
+    /// <summary>
+    /// 
+    /// </summary>
     ReadWrite,      // Equal read/write access
+
+    /// <summary>
+    /// 
+    /// </summary>
     Temporary,      // Short-lived data
+
+    /// <summary>
+    /// 
+    /// </summary>
     Persistent,     // Long-lived data
+
+    /// <summary>
+    /// 
+    /// </summary>
     Shared          // Shared between devices
 }
 
@@ -490,38 +688,115 @@ public enum CudaMemoryUsageHint
 /// </summary>
 public sealed class CudaAdvancedFeatureMetrics
 {
+
+    /// <summary>
+    /// 
+    /// </summary>
     public CudaCooperativeGroupsMetrics CooperativeGroupsMetrics { get; set; } = new();
+
+    /// <summary>
+    /// 
+    /// </summary>
     public CudaDynamicParallelismMetrics DynamicParallelismMetrics { get; set; } = new();
+
+    /// <summary>
+    /// 
+    /// </summary>
     public CudaUnifiedMemoryMetrics UnifiedMemoryMetrics { get; set; } = new();
+
+    /// <summary>
+    /// 
+    /// </summary>
     public CudaTensorCoreMetrics TensorCoreMetrics { get; set; } = new();
+
+    /// <summary>
+    /// 
+    /// </summary>
     public double OverallEfficiency { get; set; }
 }
 
 // Placeholder metrics classes that would be implemented by the respective managers
+
+/// <summary>
+/// 
+/// </summary>
 public sealed class CudaCooperativeGroupsMetrics
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public double EfficiencyScore { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public int ActiveGroups { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public double SynchronizationOverhead { get; set; }
 }
 
+/// <summary>
+/// 
+/// </summary>
 public sealed class CudaDynamicParallelismMetrics
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public double EfficiencyScore { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public int ChildKernelLaunches { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public double LaunchOverhead { get; set; }
 }
 
+/// <summary>
+/// 
+/// </summary>
 public sealed class CudaUnifiedMemoryMetrics
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public double EfficiencyScore { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public ulong PageFaults { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public double MigrationOverhead { get; set; }
 }
 
+/// <summary>
+/// 
+/// </summary>
 public sealed class CudaTensorCoreMetrics
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public double EfficiencyScore { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public double Utilization { get; set; }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public double ThroughputTFLOPS { get; set; }
-}}
+}

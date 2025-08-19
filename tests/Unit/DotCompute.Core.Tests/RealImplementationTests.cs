@@ -1,28 +1,22 @@
 using Xunit;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Utilities.Kernels;
 using Xunit.Abstractions;
-using DotCompute.Tests.Utilities.Accelerators;
-using DotCompute.Tests.Utilities.Memory;
+using DotCompute.Tests.Implementations.Accelerators;
+using DotCompute.Tests.Implementations.Memory;
+using DotCompute.Tests.Implementations.Kernels;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Integration tests using real test implementations instead of mocks.
 /// These tests demonstrate actual memory operations and kernel execution
 /// without requiring GPU hardware.
 /// </summary>
-public sealed class RealImplementationTests : IAsyncLifetime
+public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLifetime
 {
-    private readonly ITestOutputHelper _output;
+    private readonly ITestOutputHelper _output = output;
     private TestCpuAccelerator _accelerator = default!;
     private TestMemoryManager _memoryManager = default!;
-
-    public RealImplementationTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
     public Task InitializeAsync()
     {
@@ -350,5 +344,4 @@ public sealed class RealImplementationTests : IAsyncLifetime
         await bufferResult.DisposeAsync();
         await vectorAddKernel.DisposeAsync();
     }
-}
 }

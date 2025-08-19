@@ -16,21 +16,16 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// High-concurrency stress tests for the DotCompute integration layer.
 /// Tests race conditions, deadlocks, resource contention, and system limits.
 /// </summary>
-public sealed class ConcurrencyStressTests : IntegrationTestBase
+public sealed class ConcurrencyStressTests(ITestOutputHelper output) : IntegrationTestBase(output)
 {
     private ILogger<ConcurrencyStressTests>? _logger;
-
-    public ConcurrencyStressTests(ITestOutputHelper output) : base(output)
-    {
-        // Don't access ServiceProvider in constructor - it's not initialized yet
-    }
 
     private new async Task InitializeAsync()
     {
@@ -128,10 +123,10 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         var completedTask = await Task.WhenAny(allTasks, timeoutTask);
 
         // Assert
-        completedTask.Should().NotBe(timeoutTask); // Operations should complete without deadlock
-        allTasks.IsCompletedSuccessfully.Should().BeTrue();
-        exceptions.Should().BeEmpty("No exceptions should occur during concurrent operations");
-        completedOperations.Count.Should().Be(threadCount * operationsPerThread);
+        _ = completedTask.Should().NotBe(timeoutTask); // Operations should complete without deadlock
+        _ = allTasks.IsCompletedSuccessfully.Should().BeTrue();
+        _ = exceptions.Should().BeEmpty("No exceptions should occur during concurrent operations");
+        _ = completedOperations.Count.Should().Be(threadCount * operationsPerThread);
 
         _logger?.LogInformation("Completed {OperationCount} concurrent memory operations", completedOperations.Count);
     }
@@ -171,14 +166,14 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         await Task.WhenAll(tasks);
 
         // Assert
-        allocations.Should().NotBeEmpty("Some allocations should succeed");
+        _ = allocations.Should().NotBeEmpty("Some allocations should succeed");
 
         if (!exceptions.IsEmpty)
         {
             // Under memory pressure, we expect specific exception types
             foreach (var ex in exceptions)
             {
-                (ex is OutOfMemoryException ||
+                _ = (ex is OutOfMemoryException ||
                   ex is InvalidOperationException ||
                   ex is ArgumentException).Should().BeTrue($"Expected memory-related exception, got {ex.GetType().Name}");
             }
@@ -287,9 +282,9 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         await Task.WhenAll(tasks);
 
         // Assert
-        exceptions.Should().BeEmpty("Concurrent kernel execution should not cause exceptions");
-        results.Count.Should().Be(kernelCount);
-        results.Should().OnlyContain(r => r.Success, "All kernels should execute correctly");
+        _ = exceptions.Should().BeEmpty("Concurrent kernel execution should not cause exceptions");
+        _ = results.Count.Should().Be(kernelCount);
+        _ = results.Should().OnlyContain(r => r.Success, "All kernels should execute correctly");
 
         _logger?.LogInformation("Successfully executed {Count} concurrent kernels",
             results.Count(r => r.Success));
@@ -390,10 +385,10 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         var completedTask = await Task.WhenAny(allTasks, timeoutTask);
 
         // Assert
-        completedTask.Should().NotBe(timeoutTask); // Should not deadlock under resource contention
-        allTasks.IsCompletedSuccessfully.Should().BeTrue();
-        exceptions.Should().BeEmpty("Resource contention should be handled gracefully");
-        completedComponents.Count.Should().Be(componentCount);
+        _ = completedTask.Should().NotBe(timeoutTask); // Should not deadlock under resource contention
+        _ = allTasks.IsCompletedSuccessfully.Should().BeTrue();
+        _ = exceptions.Should().BeEmpty("Resource contention should be handled gracefully");
+        _ = completedComponents.Count.Should().Be(componentCount);
     }
 
     #endregion
@@ -468,8 +463,8 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         }
 
         // Assert
-        successCount.Should().BeGreaterThan(0, "Should succeed with some allocations");
-        recoverySuccess.Should().BeTrue();
+        _ = successCount.Should().BeGreaterThan(0, "Should succeed with some allocations");
+        _ = recoverySuccess.Should().BeTrue();
 
         _logger?.LogInformation("Successfully allocated {SuccessCount} buffers before hitting limits", successCount);
     }
@@ -523,15 +518,15 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
 
         // Note: Using mock memory statistics for now 
         // In a real implementation, these would track actual allocations
-        stats.AllocationCount.Should().BeGreaterThanOrEqualTo(0,
+        _ = stats.AllocationCount.Should().BeGreaterThanOrEqualTo(0,
             "Allocation count should be non-negative");
-        stats.UsedMemory.Should().BeGreaterThanOrEqualTo(0,
+        _ = stats.UsedMemory.Should().BeGreaterThanOrEqualTo(0,
             "Used memory should be non-negative");
-        stats.AllocatedMemory.Should().BeGreaterThanOrEqualTo(0,
+        _ = stats.AllocatedMemory.Should().BeGreaterThanOrEqualTo(0,
             "Allocated memory should be non-negative");
 
-        allAllocations.Count.Should().Be(expectedTotalAllocations);
-        allDeallocations.Count.Should().Be(expectedTotalDeallocations);
+        _ = allAllocations.Count.Should().Be(expectedTotalAllocations);
+        _ = allDeallocations.Count.Should().Be(expectedTotalDeallocations);
 
         // Cleanup remaining buffers
         var remainingBuffers = allAllocations.Except(allDeallocations);
@@ -549,6 +544,4 @@ public sealed class ConcurrencyStressTests : IntegrationTestBase
         await acceleratorManager.InitializeAsync();
         return acceleratorManager.Default;
     }
-}
-
 }

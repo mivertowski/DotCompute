@@ -12,8 +12,8 @@ using FluentAssertions;
 
 #pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Integration tests for memory transfer scenarios including host-to-device,
@@ -53,7 +53,7 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         transferStopwatch.Stop();
 
         // Assert
-        retrievedData.Should().BeEquivalentTo(originalData, options => options.WithStrictOrdering());
+        _ = retrievedData.Should().BeEquivalentTo(originalData, options => options.WithStrictOrdering());
 
         var transferredMB = (size * sizeof(float) * 2) / 1024.0 / 1024.0; // Round trip
         var bandwidthMBps = transferredMB / transferStopwatch.Elapsed.TotalSeconds;
@@ -61,7 +61,7 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Host-Device transfer: {Size} elements, {Bandwidth:F2} MB/s, Options: {Options}",
             size, bandwidthMBps, options);
 
-        bandwidthMBps.Should().BeGreaterThan(10, "Transfer bandwidth should be reasonable");
+        _ = bandwidthMBps.Should().BeGreaterThan(10, "Transfer bandwidth should be reasonable");
     }
 
     [Fact]
@@ -85,15 +85,15 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel
+            {
+                Name = "memory_copy",
+                SourceCode = KernelSources.MemoryCopy,
+                CompilationOptions = new CompilationOptions
                 {
-                    Name = "memory_copy",
-                    SourceCode = KernelSources.MemoryCopy,
-                    CompilationOptions = new CompilationOptions
-                    {
-                        OptimizationLevel = OptimizationLevel.Maximum,
-                        EnableMemoryCoalescing = true
-                    }
+                    OptimizationLevel = OptimizationLevel.Maximum,
+                    EnableMemoryCoalescing = true
                 }
+            }
             ],
             Inputs =
             [
@@ -106,17 +106,17 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             ExecutionStages =
             [
                 new WorkflowExecutionStage
+            {
+                Name = "copy_stage",
+                Order = 1,
+                KernelName = "memory_copy",
+                ExecutionOptions = new ExecutionOptions
                 {
-                    Name = "copy_stage",
-                    Order = 1,
-                    KernelName = "memory_copy",
-                    ExecutionOptions = new ExecutionOptions
-                    {
-                        GlobalWorkSize = [dataSize],
-                        LocalWorkSize = [Math.Min(256, dataSize)]
-                    },
-                    ArgumentNames = ["source", "destination"]
-                }
+                    GlobalWorkSize = [dataSize],
+                    LocalWorkSize = [Math.Min(256, dataSize)]
+                },
+                ArgumentNames = ["source", "destination"]
+            }
             ]
         };
 
@@ -124,10 +124,10 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         transferStopwatch.Stop();
 
         // Assert
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
         var copiedData = (float[])result.Results["destination"];
 
-        copiedData.Should().BeEquivalentTo(sourceData, options => options.WithStrictOrdering());
+        _ = copiedData.Should().BeEquivalentTo(sourceData, options => options.WithStrictOrdering());
 
         var transferredMB = (dataSize * sizeof(float)) / 1024.0 / 1024.0;
         var bandwidthMBps = transferredMB / transferStopwatch.Elapsed.TotalSeconds;
@@ -135,7 +135,7 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         Logger.LogInformation("Device-to-device transfer: {Size} elements, {Bandwidth:F2} MB/s",
             dataSize, bandwidthMBps);
 
-        bandwidthMBps.Should().BeGreaterThan(50, "Device-to-device transfers should be faster than host transfers");
+        _ = bandwidthMBps.Should().BeGreaterThan(50, "Device-to-device transfers should be faster than host transfers");
     }
 
     [Fact]
@@ -152,15 +152,15 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel
-                {
-                    Name = "p2p_scatter",
-                    SourceCode = KernelSources.P2PScatter
-                },
-                new WorkflowKernel
-                {
-                    Name = "p2p_gather",
-                    SourceCode = KernelSources.P2PGather
-                }
+            {
+                Name = "p2p_scatter",
+                SourceCode = KernelSources.P2PScatter
+            },
+            new WorkflowKernel
+            {
+                Name = "p2p_gather",
+                SourceCode = KernelSources.P2PGather
+            }
             ],
             Inputs =
             [
@@ -173,34 +173,34 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             IntermediateBuffers =
             [
                 new WorkflowIntermediateBuffer
-                {
-                    Name = "device0_chunk",
-                    SizeInBytes =(dataSize / 2) * sizeof(float)
-                },
-                new WorkflowIntermediateBuffer
-                {
-                    Name = "device1_chunk",
-                    SizeInBytes =(dataSize / 2) * sizeof(float)
-                }
+            {
+                Name = "device0_chunk",
+                SizeInBytes =(dataSize / 2) * sizeof(float)
+            },
+            new WorkflowIntermediateBuffer
+            {
+                Name = "device1_chunk",
+                SizeInBytes =(dataSize / 2) * sizeof(float)
+            }
             ],
             ExecutionStages =
             [
                 new WorkflowExecutionStage
-                {
-                    Name = "scatter_stage",
-                    Order = 1,
-                    KernelName = "p2p_scatter",
-                    ArgumentNames = ["data", "device0_chunk", "device1_chunk"],
-                    Parameters = new Dictionary<string, object> { ["chunk_size"] = dataSize / 2 }
-                },
-                new WorkflowExecutionStage
-                {
-                    Name = "gather_stage",
-                    Order = 2,
-                    KernelName = "p2p_gather",
-                    ArgumentNames = ["device0_chunk", "device1_chunk", "result"],
-                    Parameters = new Dictionary<string, object> { ["chunk_size"] = dataSize / 2 }
-                }
+            {
+                Name = "scatter_stage",
+                Order = 1,
+                KernelName = "p2p_scatter",
+                ArgumentNames = ["data", "device0_chunk", "device1_chunk"],
+                Parameters = new Dictionary<string, object> { ["chunk_size"] = dataSize / 2 }
+            },
+            new WorkflowExecutionStage
+            {
+                Name = "gather_stage",
+                Order = 2,
+                KernelName = "p2p_gather",
+                ArgumentNames = ["device0_chunk", "device1_chunk", "result"],
+                Parameters = new Dictionary<string, object> { ["chunk_size"] = dataSize / 2 }
+            }
             ]
         };
 
@@ -208,12 +208,12 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("P2PTransfer", p2pWorkflow);
 
         // Assert
-        result.Success.Should().BeTrue();
-        result.ExecutionResults.Count.Should().Be(2);
-        result.ExecutionResults.Values.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        _ = result.Success.Should().BeTrue();
+        _ = result.ExecutionResults.Count.Should().Be(2);
+        _ = result.ExecutionResults.Values.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         var finalResult = (float[])result.Results["result"];
-        finalResult.Should().BeEquivalentTo(originalData, options => options.WithStrictOrdering());
+        _ = finalResult.Should().BeEquivalentTo(originalData, options => options.WithStrictOrdering());
 
         LogPerformanceMetrics("P2PTransfer", result.Duration, dataSize);
     }
@@ -232,8 +232,8 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel { Name = "increment", SourceCode = KernelSources.IncrementKernel },
-                new WorkflowKernel { Name = "multiply", SourceCode = KernelSources.MultiplyKernel },
-                new WorkflowKernel { Name = "validate", SourceCode = KernelSources.ValidateKernel }
+            new WorkflowKernel { Name = "multiply", SourceCode = KernelSources.MultiplyKernel },
+            new WorkflowKernel { Name = "validate", SourceCode = KernelSources.ValidateKernel }
             ],
             Inputs =
             [
@@ -242,41 +242,41 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             Outputs =
             [
                 new WorkflowOutput { Name = "final_result", Size = dataSize },
-                new WorkflowOutput { Name = "validation", Size = 1 }
+            new WorkflowOutput { Name = "validation", Size = 1 }
             ],
             IntermediateBuffers =
             [
                 new WorkflowIntermediateBuffer
-                {
-                    Name = "shared_buffer",
-                    SizeInBytes = dataSize * sizeof(float),
-                    Options = MemoryOptions.Cached
-                }
+            {
+                Name = "shared_buffer",
+                SizeInBytes = dataSize * sizeof(float),
+                Options = MemoryOptions.Cached
+            }
             ],
             ExecutionStages =
             [
                 new WorkflowExecutionStage
-                {
-                    Name = "init_stage",
-                    Order = 1,
-                    KernelName = "increment", // Copy and increment
-                    ArgumentNames = ["data", "shared_buffer"]
-                },
-                new WorkflowExecutionStage
-                {
-                    Name = "process_stage",
-                    Order = 2,
-                    KernelName = "multiply", // Multiply in place
-                    ArgumentNames = ["shared_buffer", "shared_buffer"],
-                    Parameters = new Dictionary<string, object> { ["factor"] = 2.0f }
-                },
-                new WorkflowExecutionStage
-                {
-                    Name = "finalize_stage",
-                    Order = 3,
-                    KernelName = "validate", // Validate and copy to final
-                    ArgumentNames = ["shared_buffer", "final_result", "validation"]
-                }
+            {
+                Name = "init_stage",
+                Order = 1,
+                KernelName = "increment", // Copy and increment
+                ArgumentNames = ["data", "shared_buffer"]
+            },
+            new WorkflowExecutionStage
+            {
+                Name = "process_stage",
+                Order = 2,
+                KernelName = "multiply", // Multiply in place
+                ArgumentNames = ["shared_buffer", "shared_buffer"],
+                Parameters = new Dictionary<string, object> { ["factor"] = 2.0f }
+            },
+            new WorkflowExecutionStage
+            {
+                Name = "finalize_stage",
+                Order = 3,
+                KernelName = "validate", // Validate and copy to final
+                ArgumentNames = ["shared_buffer", "final_result", "validation"]
+            }
             ]
         };
 
@@ -284,7 +284,7 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("MemoryCoherency", coherencyWorkflow);
 
         // Assert
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
 
         var finalResult = (float[])result.Results["final_result"];
         var validation = (float[])result.Results["validation"];
@@ -293,10 +293,10 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         for (var i = 0; i < Math.Min(100, dataSize); i++)
         {
             var expected = (initialData[i] + 1.0f) * 2.0f;
-            finalResult[i].Should().BeApproximately(expected, 0.001f);
+            _ = finalResult[i].Should().BeApproximately(expected, 0.001f);
         }
 
-        validation[0].Should().Be(1.0f); // Validation should pass
+        _ = validation[0].Should().Be(1.0f); // Validation should pass
 
         LogPerformanceMetrics("MemoryCoherency", result.Duration, dataSize * 3);
     }
@@ -350,7 +350,7 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
 
             for (var i = 0; i < datasets.Length; i++)
             {
-                results[i].Should().BeEquivalentTo(datasets[i],
+                _ = results[i].Should().BeEquivalentTo(datasets[i],
                     options => options.WithStrictOrdering());
             }
 
@@ -398,7 +398,7 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             stopwatch.Stop();
             allocationTimes.Add(stopwatch.Elapsed.TotalMilliseconds);
 
-            retrieved.Should().BeEquivalentTo(data, options => options.WithStrictOrdering());
+            _ = retrieved.Should().BeEquivalentTo(data, options => options.WithStrictOrdering());
 
             // Small delay to allow memory pooling to take effect
             await Task.Delay(1);
@@ -413,7 +413,7 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
 
         // Later allocations should be faster due to memory pooling
         //(In a real implementation with actual memory pooling)
-        (avgLaterAllocations < avgEarlyAllocations * 1.5).Should().BeTrue(
+        _ = (avgLaterAllocations < avgEarlyAllocations * 1.5).Should().BeTrue(
             "Memory pooling should improve allocation performance");
     }
 
@@ -448,7 +448,7 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             transferStopwatch.Stop();
 
             // Assert
-            retrieved.Should().BeEquivalentTo(largeData, options => options.WithStrictOrdering());
+            _ = retrieved.Should().BeEquivalentTo(largeData, options => options.WithStrictOrdering());
 
             var transferredMB = (largeSize * sizeof(float) * 2) / 1024.0 / 1024.0;
             var bandwidthMBps = transferredMB / transferStopwatch.Elapsed.TotalSeconds;
@@ -456,7 +456,7 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             Logger.LogInformation("Large fragmented transfer: {Size} elements, {Bandwidth:F2} MB/s",
                 largeSize, bandwidthMBps);
 
-            bandwidthMBps.Should().BeGreaterThan(5, "Should handle fragmented large transfers");
+            _ = bandwidthMBps.Should().BeGreaterThan(5, "Should handle fragmented large transfers");
         }
         finally
         {
@@ -481,15 +481,15 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             Kernels =
             [
                 new WorkflowKernel
+            {
+                Name = "aligned_access",
+                SourceCode = KernelSources.AlignedMemoryAccess,
+                CompilationOptions = new CompilationOptions
                 {
-                    Name = "aligned_access",
-                    SourceCode = KernelSources.AlignedMemoryAccess,
-                    CompilationOptions = new CompilationOptions
-                    {
-                        OptimizationLevel = OptimizationLevel.Maximum,
-                        EnableMemoryCoalescing = true
-                    }
+                    OptimizationLevel = OptimizationLevel.Maximum,
+                    EnableMemoryCoalescing = true
                 }
+            }
             ],
             Inputs =
             [
@@ -502,17 +502,17 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
             ExecutionStages =
             [
                 new WorkflowExecutionStage
+            {
+                Name = "aligned_stage",
+                Order = 1,
+                KernelName = "aligned_access",
+                ExecutionOptions = new ExecutionOptions
                 {
-                    Name = "aligned_stage",
-                    Order = 1,
-                    KernelName = "aligned_access",
-                    ExecutionOptions = new ExecutionOptions
-                    {
-                        GlobalWorkSize = [dataSize / 4], // Process 4 elements per thread
-                        LocalWorkSize = [64]
-                    },
-                    ArgumentNames = ["input", "output"]
-                }
+                    GlobalWorkSize = [dataSize / 4], // Process 4 elements per thread
+                    LocalWorkSize = [64]
+                },
+                ArgumentNames = ["input", "output"]
+            }
             ]
         };
 
@@ -520,20 +520,20 @@ public sealed class MemoryTransferIntegrationTests : ComputeWorkflowTestBase
         var result = await ExecuteComputeWorkflowAsync("MemoryAlignment", alignmentWorkflow);
 
         // Assert
-        result.Success.Should().BeTrue();
+        _ = result.Success.Should().BeTrue();
 
         var output = (float[])result.Results["output"];
-        output.Length.Should().Be(dataSize);
+        _ = output.Length.Should().Be(dataSize);
 
         // Verify aligned memory access produced correct results
-        output.Should().NotContain(float.NaN);
-        output.Should().NotContain(float.PositiveInfinity);
-        output.Should().NotContain(float.NegativeInfinity);
+        _ = output.Should().NotContain(float.NaN);
+        _ = output.Should().NotContain(float.PositiveInfinity);
+        _ = output.Should().NotContain(float.NegativeInfinity);
 
         // Performance should be good due to memory alignment
         if (result.Metrics != null)
         {
-            result.Metrics.ThroughputMBps.Should().BeGreaterThan(30,
+            _ = result.Metrics.ThroughputMBps.Should().BeGreaterThan(30,
                 "Aligned memory access should show good performance");
         }
 
@@ -612,5 +612,4 @@ __kernel void aligned_access(__global const float4* input, __global float4* outp
     
     output[gid] = data;
 }";
-}
 }

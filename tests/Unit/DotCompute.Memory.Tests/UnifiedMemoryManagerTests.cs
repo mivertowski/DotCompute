@@ -6,8 +6,8 @@ using DotCompute.Memory;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Tests for the UnifiedMemoryManager class.
@@ -28,7 +28,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
     public void Constructor_WithNullBaseMemoryManager_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Assert.Throws<ArgumentNullException>(() =>
+        _ = Assert.Throws<ArgumentNullException>(() =>
             new UnifiedMemoryManager(null!));
     }
 
@@ -39,7 +39,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         const int length = 256; // 1024 bytes / 4 bytes per int
         var mockDeviceBuffer = Mock.Of<IMemoryBuffer>(b => b.SizeInBytes == length * sizeof(int));
 
-        _baseMemoryManagerMock
+        _ = _baseMemoryManagerMock
             .Setup(m => m.AllocateAsync(length * sizeof(int), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockDeviceBuffer);
 
@@ -48,7 +48,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
 
         // Assert
         Assert.NotNull(buffer);
-        Assert.IsType<UnifiedBuffer<int>>(buffer);
+        _ = Assert.IsType<UnifiedBuffer<int>>(buffer);
         Assert.Equal(length * sizeof(int), buffer.SizeInBytes);
         Assert.Equal(length, buffer.Length);
     }
@@ -61,12 +61,12 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         var options = DotCompute.Memory.MemoryOptions.HostVisible | DotCompute.Memory.MemoryOptions.Cached;
         var mockDeviceBuffer = Mock.Of<IMemoryBuffer>();
 
-        _baseMemoryManagerMock
+        _ = _baseMemoryManagerMock
             .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockDeviceBuffer);
 
         // Act
-        await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(length, options);
+        _ = await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(length, options);
 
         // Assert - Note: The method doesn't directly pass memory options to the base manager currently
         // This test verifies that the method can be called with options without throwing
@@ -79,7 +79,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
     public async Task CreateUnifiedBufferAsync_WithZeroLength_ThrowsArgumentOutOfRangeException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(0).AsTask());
     }
 
@@ -87,7 +87,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
     public async Task CreateUnifiedBufferAsync_WithNegativeLength_ThrowsArgumentOutOfRangeException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(-1).AsTask());
     }
 
@@ -97,7 +97,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         // Arrange
         const int length = 256;
         var testData = new int[length];
-        new Random(42).Next();
+        _ = new Random(42).Next();
         for (var i = 0; i < length; i++)
         {
             testData[i] = i * 2;
@@ -131,12 +131,12 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         // Setup mock to return a device buffer when AllocateAsync is called
         // This needs to handle both the initial allocation and any subsequent allocations
         var mockDeviceBuffer = new Mock<IMemoryBuffer>();
-        mockDeviceBuffer.Setup(b => b.SizeInBytes).Returns(length * sizeof(float));
-        mockDeviceBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+        _ = mockDeviceBuffer.Setup(b => b.SizeInBytes).Returns(length * sizeof(float));
+        _ = mockDeviceBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
             .Returns(ValueTask.CompletedTask);
 
         // Use a callback to verify the mock is being called and return the buffer
-        _baseMemoryManagerMock
+        _ = _baseMemoryManagerMock
             .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
             .Callback<long, DotCompute.Abstractions.MemoryOptions, CancellationToken>((size, options, ct) =>
             {
@@ -193,8 +193,8 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         const int length2 = 256;
 
         // Act
-        await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(length1);
-        await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(length2);
+        _ = await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(length1);
+        _ = await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(length2);
 
         var stats = _unifiedMemoryManager.GetStats();
 
@@ -237,7 +237,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         await _unifiedMemoryManager.DisposeAsync();
 
         // Assert - After disposal, the manager should not allow further operations
-        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() =>
             _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(50).AsTask());
     }
 
@@ -248,7 +248,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         await _unifiedMemoryManager.DisposeAsync();
 
         // Act & Assert
-        await Assert.ThrowsAsync<ObjectDisposedException>(() =>
+        _ = await Assert.ThrowsAsync<ObjectDisposedException>(() =>
             _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(256).AsTask());
     }
 
@@ -256,8 +256,8 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
     public async Task HandleMemoryPressureAsync_WithValidPressure_CompletesSuccessfully()
     {
         // Arrange
-        await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(100);
-        await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(200);
+        _ = await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(100);
+        _ = await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(200);
 
         // Act & Assert - Should complete without throwing
         await _unifiedMemoryManager.HandleMemoryPressureAsync(0.5);
@@ -269,9 +269,9 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
     public async Task HandleMemoryPressureAsync_WithInvalidPressure_ThrowsArgumentOutOfRangeException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             _unifiedMemoryManager.HandleMemoryPressureAsync(-0.1).AsTask());
-        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
+        _ = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() =>
             _unifiedMemoryManager.HandleMemoryPressureAsync(1.1).AsTask());
     }
 
@@ -279,8 +279,8 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
     public async Task CompactAsync_ReturnsNonNegativeValue()
     {
         // Arrange
-        await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(100);
-        await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(200);
+        _ = await _unifiedMemoryManager.CreateUnifiedBufferAsync<int>(100);
+        _ = await _unifiedMemoryManager.CreateUnifiedBufferAsync<float>(200);
 
         // Act
         var bytesReleased = await _unifiedMemoryManager.CompactAsync();
@@ -298,5 +298,4 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
             GC.SuppressFinalize(this);
         }
     }
-}
 }

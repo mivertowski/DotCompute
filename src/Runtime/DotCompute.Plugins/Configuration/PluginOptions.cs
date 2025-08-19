@@ -3,106 +3,105 @@
 
 using System.Collections.ObjectModel;
 
-namespace DotCompute.Plugins.Configuration
+namespace DotCompute.Plugins.Configuration;
+
+/// <summary>
+/// Options for the plugin system.
+/// </summary>
+public class PluginOptions
 {
     /// <summary>
-    /// Options for the plugin system.
+    /// Gets or sets the directory to scan for plugins.
     /// </summary>
-    public class PluginOptions
+    public string? PluginsDirectory { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to enable hot reload.
+    /// </summary>
+    public bool EnableHotReload { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to load plugins in isolation.
+    /// </summary>
+    public bool IsolatePlugins { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the list of shared assemblies.
+    /// </summary>
+    public Collection<string> SharedAssemblies { get; internal set; } =
+    [
+        "DotCompute.Core",
+        "DotCompute.Plugins",
+        "Microsoft.Extensions.DependencyInjection.Abstractions",
+        "Microsoft.Extensions.Logging.Abstractions",
+        "Microsoft.Extensions.Configuration.Abstractions"
+    ];
+
+    /// <summary>
+    /// Gets or sets configured plugins.
+    /// </summary>
+    public Dictionary<string, PluginConfig> Plugins { get; internal set; } = [];
+
+    /// <summary>
+    /// Gets or sets the maximum number of concurrent plugin loads.
+    /// </summary>
+    public int MaxConcurrentLoads { get; set; } = 4;
+
+    /// <summary>
+    /// Gets or sets the timeout for plugin loading operations.
+    /// </summary>
+    public TimeSpan LoadTimeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    private Collection<string> _pluginDirectories = [];
+
+    /// <summary>
+    /// Gets or sets the directories to scan for plugins.
+    /// </summary>
+    public Collection<string> PluginDirectories
     {
-        /// <summary>
-        /// Gets or sets the directory to scan for plugins.
-        /// </summary>
-        public string? PluginsDirectory { get; set; }
-
-        /// <summary>
-        /// Gets or sets whether to enable hot reload.
-        /// </summary>
-        public bool EnableHotReload { get; set; }
-
-        /// <summary>
-        /// Gets or sets whether to load plugins in isolation.
-        /// </summary>
-        public bool IsolatePlugins { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets the list of shared assemblies.
-        /// </summary>
-        public Collection<string> SharedAssemblies { get; internal set; } =
-        [
-            "DotCompute.Core",
-            "DotCompute.Plugins",
-            "Microsoft.Extensions.DependencyInjection.Abstractions",
-            "Microsoft.Extensions.Logging.Abstractions",
-            "Microsoft.Extensions.Configuration.Abstractions"
-        ];
-
-        /// <summary>
-        /// Gets or sets configured plugins.
-        /// </summary>
-        public Dictionary<string, PluginConfig> Plugins { get; internal set; } = [];
-
-        /// <summary>
-        /// Gets or sets the maximum number of concurrent plugin loads.
-        /// </summary>
-        public int MaxConcurrentLoads { get; set; } = 4;
-
-        /// <summary>
-        /// Gets or sets the timeout for plugin loading operations.
-        /// </summary>
-        public TimeSpan LoadTimeout { get; set; } = TimeSpan.FromSeconds(30);
-
-        private Collection<string> _pluginDirectories = [];
-
-        /// <summary>
-        /// Gets or sets the directories to scan for plugins.
-        /// </summary>
-        public Collection<string> PluginDirectories
-        {
-            get => _pluginDirectories;
-            internal set => _pluginDirectories = value ?? [];
-        }
-
-        /// <summary>
-        /// Gets or sets whether the plugin system is initialized.
-        /// </summary>
-        public bool IsInitialized { get; set; }
+        get => _pluginDirectories;
+        internal set => _pluginDirectories = value ?? [];
     }
 
     /// <summary>
-    /// Configuration for a specific plugin.
+    /// Gets or sets whether the plugin system is initialized.
     /// </summary>
-    public class PluginConfig
+    public bool IsInitialized { get; set; }
+}
+
+/// <summary>
+/// Configuration for a specific plugin.
+/// </summary>
+public class PluginConfig
+{
+    private string _assemblyPath = "";
+    private string _typeName = "";
+
+    /// <summary>
+    /// Gets or sets the plugin assembly path.
+    /// </summary>
+    public string AssemblyPath
     {
-        private string _assemblyPath = "";
-        private string _typeName = "";
-
-        /// <summary>
-        /// Gets or sets the plugin assembly path.
-        /// </summary>
-        public string AssemblyPath
-        {
-            get => _assemblyPath;
-            set => _assemblyPath = value ?? "";
-        }
-
-        /// <summary>
-        /// Gets or sets the plugin type name.
-        /// </summary>
-        public string TypeName
-        {
-            get => _typeName;
-            set => _typeName = value ?? "";
-        }
-
-        /// <summary>
-        /// Gets or sets whether the plugin is enabled.
-        /// </summary>
-        public bool Enabled { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets plugin-specific settings.
-        /// </summary>
-        public Dictionary<string, object> Settings { get; internal set; } = [];
+        get => _assemblyPath;
+        set => _assemblyPath = value ?? "";
     }
+
+    /// <summary>
+    /// Gets or sets the plugin type name.
+    /// </summary>
+    public string TypeName
+    {
+        get => _typeName;
+        set => _typeName = value ?? "";
+    }
+
+    /// <summary>
+    /// Gets or sets whether the plugin is enabled.
+    /// </summary>
+    public bool Enabled { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets plugin-specific settings.
+    /// </summary>
+    public Dictionary<string, object> Settings { get; internal set; } = [];
 }

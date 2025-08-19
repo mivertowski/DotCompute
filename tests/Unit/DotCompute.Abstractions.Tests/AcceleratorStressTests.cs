@@ -6,8 +6,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Stress tests and edge cases for accelerator abstractions.
@@ -33,10 +33,10 @@ public sealed class AcceleratorStressTests
             true
         );
 
-        info.Type.Should().Be("GPU");
-        info.Name.Should().Contain("Long Name");
-        info.TotalMemory.Should().Be(long.MaxValue);
-        info.ComputeUnits.Should().Be(int.MaxValue);
+        _ = info.Type.Should().Be("GPU");
+        _ = info.Name.Should().Contain("Long Name");
+        _ = info.TotalMemory.Should().Be(long.MaxValue);
+        _ = info.ComputeUnits.Should().Be(int.MaxValue);
     }
 
     [Fact]
@@ -55,9 +55,9 @@ public sealed class AcceleratorStressTests
             false
         );
 
-        info.Name.Should().Be("A");
-        info.TotalMemory.Should().Be(1);
-        info.ComputeUnits.Should().Be(1);
+        _ = info.Name.Should().Be("A");
+        _ = info.TotalMemory.Should().Be(1);
+        _ = info.ComputeUnits.Should().Be(1);
     }
 
     [Theory]
@@ -98,12 +98,12 @@ public sealed class AcceleratorStressTests
     public void MemoryOptions_WithAllFlags_ShouldWork(MemoryOptions memoryOptions)
     {
         // Act & Assert - Test that enum values are defined and work correctly
-        Enum.IsDefined<MemoryOptions>(memoryOptions).Should().BeTrue();
+        _ = Enum.IsDefined<MemoryOptions>(memoryOptions).Should().BeTrue();
 
         // Test flag combinations
         var combined = MemoryOptions.ReadOnly | MemoryOptions.HostVisible;
-        combined.Should().HaveFlag(MemoryOptions.ReadOnly);
-        combined.Should().HaveFlag(MemoryOptions.HostVisible);
+        _ = combined.Should().HaveFlag(MemoryOptions.ReadOnly);
+        _ = combined.Should().HaveFlag(MemoryOptions.HostVisible);
     }
 
     [Theory]
@@ -116,12 +116,12 @@ public sealed class AcceleratorStressTests
         // Act & Assert - Verify flags are proper powers of 2(except None)
         if (option == MemoryOptions.None)
         {
-            ((int)option).Should().Be(0);
+            _ = ((int)option).Should().Be(0);
         }
         else
         {
             var value = (int)option;
-            ((value > 0) && ((value & (value - 1)) == 0)).Should().BeTrue();
+            _ = ((value > 0) && ((value & (value - 1)) == 0)).Should().BeTrue();
         }
     }
 
@@ -132,9 +132,9 @@ public sealed class AcceleratorStressTests
         var combined = MemoryOptions.ReadOnly | MemoryOptions.HostVisible;
 
         // Assert
-        combined.Should().HaveFlag(MemoryOptions.ReadOnly);
-        combined.Should().HaveFlag(MemoryOptions.HostVisible);
-        combined.Should().NotHaveFlag(MemoryOptions.WriteOnly);
+        _ = combined.Should().HaveFlag(MemoryOptions.ReadOnly);
+        _ = combined.Should().HaveFlag(MemoryOptions.HostVisible);
+        _ = combined.Should().NotHaveFlag(MemoryOptions.WriteOnly);
     }
 
     #endregion
@@ -158,10 +158,10 @@ public sealed class AcceleratorStressTests
         };
 
         // Assert
-        options.OptimizationLevel.Should().Be(level);
-        options.EnableDebugInfo.Should().Be(level == OptimizationLevel.Debug);
-        options.FastMath.Should().Be(level == OptimizationLevel.Aggressive);
-        options.UnrollLoops.Should().Be(level != OptimizationLevel.None);
+        _ = options.OptimizationLevel.Should().Be(level);
+        _ = options.EnableDebugInfo.Should().Be(level == OptimizationLevel.Debug);
+        _ = options.FastMath.Should().Be(level == OptimizationLevel.Aggressive);
+        _ = options.UnrollLoops.Should().Be(level != OptimizationLevel.None);
     }
 
     [Fact]
@@ -177,10 +177,10 @@ public sealed class AcceleratorStressTests
         };
 
         // Assert
-        options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
-        options.EnableDebugInfo.Should().BeTrue();
-        options.FastMath.Should().BeTrue();
-        options.UnrollLoops.Should().BeTrue();
+        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.Maximum);
+        _ = options.EnableDebugInfo.Should().BeTrue();
+        _ = options.FastMath.Should().BeTrue();
+        _ = options.UnrollLoops.Should().BeTrue();
     }
 
     [Fact]
@@ -196,10 +196,10 @@ public sealed class AcceleratorStressTests
         };
 
         // Assert
-        options.OptimizationLevel.Should().Be(OptimizationLevel.None);
-        options.EnableDebugInfo.Should().BeFalse();
-        options.FastMath.Should().BeFalse();
-        options.UnrollLoops.Should().BeFalse();
+        _ = options.OptimizationLevel.Should().Be(OptimizationLevel.None);
+        _ = options.EnableDebugInfo.Should().BeFalse();
+        _ = options.FastMath.Should().BeFalse();
+        _ = options.UnrollLoops.Should().BeFalse();
     }
 
     #endregion
@@ -221,11 +221,11 @@ public sealed class AcceleratorStressTests
         var args = new KernelArguments(argArray);
 
         // Assert
-        args.Length.Should().Be(maxArgs);
+        _ = args.Length.Should().Be(maxArgs);
 
         for (var i = 0; i < maxArgs; i++)
         {
-            args.Get(i).Should().Be(i);
+            _ = args.Get(i).Should().Be(i);
         }
     }
 
@@ -240,11 +240,11 @@ public sealed class AcceleratorStressTests
         var args = new KernelArguments(largeArray, largeString, int.MaxValue, long.MaxValue);
 
         // Assert
-        args.Get(0).Should().BeSameAs(largeArray);
-        args.Get(1).Should().Be(largeString);
-        args.Get(2).Should().Be(int.MaxValue);
-        args.Get(3).Should().Be(long.MaxValue);
-        args.Length.Should().Be(4);
+        _ = args.Get(0).Should().BeSameAs(largeArray);
+        _ = args.Get(1).Should().Be(largeString);
+        _ = args.Get(2).Should().Be(int.MaxValue);
+        _ = args.Get(3).Should().Be(long.MaxValue);
+        _ = args.Length.Should().Be(4);
     }
 
     [Fact]
@@ -259,9 +259,9 @@ public sealed class AcceleratorStressTests
         args.Set(1, "second");
 
         // Assert
-        args.Get(0).Should().Be("updated");
-        args.Get(1).Should().Be("second");
-        args.Length.Should().Be(2);
+        _ = args.Get(0).Should().Be("updated");
+        _ = args.Get(1).Should().Be("second");
+        _ = args.Length.Should().Be(2);
     }
 
     [Fact]
@@ -271,9 +271,9 @@ public sealed class AcceleratorStressTests
         var args = new KernelArguments(null!, "");
 
         // Assert
-        args.Get(0).Should().BeNull();
-        args.Get(1).Should().Be("");
-        args.Length.Should().Be(2);
+        _ = args.Get(0).Should().BeNull();
+        _ = args.Get(1).Should().Be("");
+        _ = args.Length.Should().Be(2);
     }
 
     [Theory]
@@ -288,8 +288,8 @@ public sealed class AcceleratorStressTests
         var args = new KernelArguments(value);
 
         // Assert
-        args.Get(0).Should().Be(value);
-        args.Length.Should().Be(1);
+        _ = args.Get(0).Should().Be(value);
+        _ = args.Length.Should().Be(1);
     }
 
     [Fact]
@@ -298,14 +298,14 @@ public sealed class AcceleratorStressTests
         // Arrange
         var specialValues = new[]
         {
-            "value.with.dots",
-            "value-with-dashes",
-            "value_with_underscores",
-            "value with spaces",
-            "value@with#special$characters%",
-            "πvalue", // Unicode
-            "🔑value" // Emoji
-        };
+        "value.with.dots",
+        "value-with-dashes",
+        "value_with_underscores",
+        "value with spaces",
+        "value@with#special$characters%",
+        "πvalue", // Unicode
+        "🔑value" // Emoji
+    };
 
         // Act
         var args = new KernelArguments(specialValues);
@@ -313,10 +313,10 @@ public sealed class AcceleratorStressTests
         // Assert
         for (var i = 0; i < specialValues.Length; i++)
         {
-            args.Get(i).Should().Be(specialValues[i]);
+            _ = args.Get(i).Should().Be(specialValues[i]);
         }
 
-        args.Length.Should().Be(specialValues.Length);
+        _ = args.Length.Should().Be(specialValues.Length);
     }
 
     [Fact]
@@ -329,8 +329,8 @@ public sealed class AcceleratorStressTests
         var args = new KernelArguments(longValue);
 
         // Assert
-        args.Get(0).Should().Be(longValue);
-        args.Length.Should().Be(1);
+        _ = args.Get(0).Should().Be(longValue);
+        _ = args.Length.Should().Be(1);
     }
 
     #endregion
@@ -353,14 +353,14 @@ public sealed class AcceleratorStressTests
         var memory = new DeviceMemory(handle, size);
 
         // Assert
-        memory.Size.Should().Be(size);
+        _ = memory.Size.Should().Be(size);
         if (size > 0)
         {
-            memory.IsValid.Should().BeTrue();
+            _ = memory.IsValid.Should().BeTrue();
         }
         else
         {
-            memory.IsValid.Should().BeFalse();
+            _ = memory.IsValid.Should().BeFalse();
         }
     }
 
@@ -372,7 +372,7 @@ public sealed class AcceleratorStressTests
         try
         {
             var memory = new DeviceMemory(IntPtr.Zero, int.MaxValue);
-            memory.Size.Should().Be(int.MaxValue);
+            _ = memory.Size.Should().Be(int.MaxValue);
         }
         catch (OutOfMemoryException)
         {
@@ -389,7 +389,7 @@ public sealed class AcceleratorStressTests
     {
         // Act & Assert
         var act = () => new DeviceMemory(IntPtr.Zero, -1);
-        Assert.Throws<ArgumentOutOfRangeException>(() => act());
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Fact]
@@ -398,21 +398,21 @@ public sealed class AcceleratorStressTests
         // Arrange & Act - Test various memory sizes
         var memories = new[]
         {
-            new DeviceMemory(IntPtr.Zero, 0),     // Empty memory
-            new DeviceMemory(new IntPtr(1000), 1),     // Single byte
-            new DeviceMemory(new IntPtr(1000), 999),   // Almost 1KB
-            new DeviceMemory(new IntPtr(1000), 998),   // Middle size
-            new DeviceMemory(new IntPtr(1000), 1),     // Single byte again
-            new DeviceMemory(new IntPtr(1000), 500)    // Half KB
-        };
+        new DeviceMemory(IntPtr.Zero, 0),     // Empty memory
+        new DeviceMemory(new IntPtr(1000), 1),     // Single byte
+        new DeviceMemory(new IntPtr(1000), 999),   // Almost 1KB
+        new DeviceMemory(new IntPtr(1000), 998),   // Middle size
+        new DeviceMemory(new IntPtr(1000), 1),     // Single byte again
+        new DeviceMemory(new IntPtr(1000), 500)    // Half KB
+    };
 
         // Assert
-        memories[0].Size.Should().Be(0);
-        memories[1].Size.Should().Be(1);
-        memories[2].Size.Should().Be(999);
-        memories[3].Size.Should().Be(998);
-        memories[4].Size.Should().Be(1);
-        memories[5].Size.Should().Be(500);
+        _ = memories[0].Size.Should().Be(0);
+        _ = memories[1].Size.Should().Be(1);
+        _ = memories[2].Size.Should().Be(999);
+        _ = memories[3].Size.Should().Be(998);
+        _ = memories[4].Size.Should().Be(1);
+        _ = memories[5].Size.Should().Be(500);
     }
 
     [Fact]
@@ -423,11 +423,11 @@ public sealed class AcceleratorStressTests
         var act2 = () => new DeviceMemory(IntPtr.Zero, -1);     // Negative size
 
         // Only negative size should throw
-        Assert.Throws<ArgumentOutOfRangeException>(() => act2());
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => act2());
 
         // Invalid handles are allowed(they just result in invalid memory)
         var invalidMemory = new DeviceMemory(IntPtr.Zero, 0);
-        invalidMemory.IsValid.Should().BeFalse();
+        _ = invalidMemory.IsValid.Should().BeFalse();
     }
 
     #endregion
@@ -444,8 +444,8 @@ public sealed class AcceleratorStressTests
         var exception = new AcceleratorException(longMessage);
 
         // Assert
-        exception.Message.Should().Be(longMessage);
-        exception.Message.Length.Should().Be(10000);
+        _ = exception.Message.Should().Be(longMessage);
+        _ = exception.Message.Length.Should().Be(10000);
     }
 
     [Fact]
@@ -458,8 +458,8 @@ public sealed class AcceleratorStressTests
         var exception = new AcceleratorException("Outer error", innerException);
 
         // Assert
-        exception.InnerException.Should().BeSameAs(innerException);
-        exception.Message.Should().Be("Outer error");
+        _ = exception.InnerException.Should().BeSameAs(innerException);
+        _ = exception.Message.Should().Be("Outer error");
     }
 
     [Fact]
@@ -472,7 +472,7 @@ public sealed class AcceleratorStressTests
         var exception = new MemoryException(message);
 
         // Assert
-        exception.Message.Should().Be(message);
+        _ = exception.Message.Should().Be(message);
     }
 
     #endregion
@@ -520,8 +520,8 @@ public sealed class AcceleratorStressTests
         await Task.WhenAll(tasks);
 
         // Assert
-        exceptions.Should().BeEmpty("Concurrent access should be thread-safe");
-        argumentsList.Count.Should().Be(threadCount * operationsPerThread);
+        _ = exceptions.Should().BeEmpty("Concurrent access should be thread-safe");
+        _ = argumentsList.Count.Should().Be(threadCount * operationsPerThread);
     }
 
     [Fact]
@@ -564,11 +564,10 @@ public sealed class AcceleratorStressTests
         await Task.WhenAll(tasks);
 
         // Assert
-        exceptions.Should().BeEmpty("Concurrent memory creation should be thread-safe");
-        memories.Should().NotBeEmpty("Should have created some memories");
-        memories.Count.Should().Be(threadCount * memoriesPerThread);
+        _ = exceptions.Should().BeEmpty("Concurrent memory creation should be thread-safe");
+        _ = memories.Should().NotBeEmpty("Should have created some memories");
+        _ = memories.Count.Should().Be(threadCount * memoriesPerThread);
     }
 
     #endregion
-}
 }

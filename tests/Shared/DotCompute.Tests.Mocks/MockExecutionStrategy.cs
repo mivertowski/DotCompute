@@ -1,7 +1,7 @@
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Mocks
-{
+namespace DotCompute.Tests.Mocks;
+
 
 /// <summary>
 /// Mock execution strategy for testing parallel execution without real hardware.
@@ -56,7 +56,7 @@ public sealed class MockParallelExecutionStrategy : IDisposable
         ThrowIfDisposed();
         ArgumentNullException.ThrowIfNull(tasks);
 
-        List<ExecutionTask<T>> taskList = tasks.ToList();
+        var taskList = tasks.ToList();
         if (taskList.Count == 0)
             return Enumerable.Empty<T>();
 
@@ -65,7 +65,7 @@ public sealed class MockParallelExecutionStrategy : IDisposable
         // Use SemaphoreSlim to limit concurrency
         using SemaphoreSlim semaphore = new(MaxConcurrency, MaxConcurrency);
 
-        IEnumerable<Task<T>> executionTasks = taskList.Select(async task =>
+        var executionTasks = taskList.Select(async task =>
         {
             await semaphore.WaitAsync(cancellationToken);
             try
@@ -74,7 +74,7 @@ public sealed class MockParallelExecutionStrategy : IDisposable
             }
             finally
             {
-                semaphore.Release();
+                _ = semaphore.Release();
             }
         });
 
@@ -83,14 +83,14 @@ public sealed class MockParallelExecutionStrategy : IDisposable
 
     public void SetMetric(string key, object value) => _metrics[key] = value;
 
-    public object? GetMetric(string key) => _metrics.TryGetValue(key, out object? value) ? value : null;
+    public object? GetMetric(string key) => _metrics.TryGetValue(key, out var value) ? value : null;
 
     public void Dispose()
     {
         if (_isDisposed)
             return;
 
-        foreach (IAccelerator accelerator in _accelerators)
+        foreach (var accelerator in _accelerators)
         {
             if (accelerator is IDisposable disposable)
             {
@@ -103,10 +103,7 @@ public sealed class MockParallelExecutionStrategy : IDisposable
         _isDisposed = true;
     }
 
-    private void ThrowIfDisposed()
-    {
-        ObjectDisposedException.ThrowIf(_isDisposed, this);
-    }
+    private void ThrowIfDisposed() => ObjectDisposedException.ThrowIf(_isDisposed, this);
 }
 
 /// <summary>
@@ -159,7 +156,7 @@ public sealed class MockLoadBalancer
         if (_accelerators.Count == 0)
             throw new InvalidOperationException("No accelerators available");
 
-        IAccelerator accelerator = _accelerators[_nextIndex % _accelerators.Count];
+        var accelerator = _accelerators[_nextIndex % _accelerators.Count];
         _nextIndex++;
         return accelerator;
     }
@@ -213,10 +210,10 @@ public sealed class MockAcceleratorManager : IAcceleratorManager
         await Task.Delay(10, cancellationToken);
 
         // Discover accelerators from providers
-        foreach (IAcceleratorProvider provider in _providers)
+        foreach (var provider in _providers)
         {
-            IEnumerable<IAccelerator> discovered = await provider.DiscoverAsync(cancellationToken);
-            foreach (IAccelerator accelerator in discovered)
+            var discovered = await provider.DiscoverAsync(cancellationToken);
+            foreach (var accelerator in discovered)
             {
                 if (!_accelerators.Any(a => a.Info.Id == accelerator.Info.Id))
                 {
@@ -248,7 +245,7 @@ public sealed class MockAcceleratorManager : IAcceleratorManager
     {
         ArgumentNullException.ThrowIfNull(criteria);
 
-        IEnumerable<IAccelerator> query = _accelerators.AsEnumerable();
+        var query = _accelerators.AsEnumerable();
 
         if (criteria.PreferredType.HasValue)
         {
@@ -298,7 +295,7 @@ public sealed class MockAcceleratorManager : IAcceleratorManager
         ArgumentNullException.ThrowIfNull(accelerator);
 
         // For mock, create a simple context
-        int deviceId = _accelerators.IndexOf(accelerator);
+        var deviceId = _accelerators.IndexOf(accelerator);
         if (deviceId < 0)
             throw new ArgumentException("Accelerator not managed by this manager", nameof(accelerator));
 
@@ -335,7 +332,7 @@ public sealed class MockAcceleratorManager : IAcceleratorManager
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
 
-        IEnumerable<IAccelerator> result = GetAcceleratorsByType(type);
+        var result = GetAcceleratorsByType(type);
         return Task.FromResult(result);
     }
 
@@ -343,7 +340,7 @@ public sealed class MockAcceleratorManager : IAcceleratorManager
     {
         ObjectDisposedException.ThrowIf(_isDisposed, this);
 
-        IAccelerator? result = type.HasValue
+        var result = type.HasValue
             ? SelectBest(new DotCompute.Abstractions.AcceleratorSelectionCriteria { PreferredType = type.Value })
             : _accelerators.FirstOrDefault();
 
@@ -355,7 +352,7 @@ public sealed class MockAcceleratorManager : IAcceleratorManager
         if (_isDisposed)
             return;
 
-        foreach (IAccelerator accelerator in _accelerators)
+        foreach (var accelerator in _accelerators)
         {
             if (accelerator is IAsyncDisposable asyncDisposable)
             {
@@ -383,7 +380,7 @@ public sealed class MockAcceleratorManager : IAcceleratorManager
     public void RemoveAccelerator(IAccelerator accelerator)
     {
         ArgumentNullException.ThrowIfNull(accelerator);
-        _accelerators.Remove(accelerator);
+        _ = _accelerators.Remove(accelerator);
     }
 
     public void ClearAccelerators() => _accelerators.Clear();
@@ -430,7 +427,7 @@ public sealed class MockKernelManager
     {
         if (string.IsNullOrEmpty(name))
             return null;
-        return _kernels.TryGetValue(name, out MockKernelReference? kernel) ? kernel : null;
+        return _kernels.TryGetValue(name, out var kernel) ? kernel : null;
     }
 
     public bool HasKernel(string name) => !string.IsNullOrEmpty(name) && _kernels.ContainsKey(name);
@@ -439,11 +436,11 @@ public sealed class MockKernelManager
     {
         if (!string.IsNullOrEmpty(name))
         {
-            _kernels.Remove(name);
+            _ = _kernels.Remove(name);
         }
     }
 
     public void Clear() => _kernels.Clear();
 
     public IEnumerable<string> KernelNames => _kernels.Keys;
-}}
+}

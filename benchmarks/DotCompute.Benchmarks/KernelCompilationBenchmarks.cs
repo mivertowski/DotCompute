@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging.Abstractions;
 using System.Globalization;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 [MemoryDiagnoser]
 [SimpleJob(RuntimeMoniker.Net90)]
@@ -150,5 +150,4 @@ internal sealed class KernelCompilationBenchmarks : IDisposable
         Cleanup().GetAwaiter().GetResult();
         GC.SuppressFinalize(this);
     }
-}
 }

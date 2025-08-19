@@ -2,8 +2,8 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests.Utilities.TestFixtures
-{
+namespace DotCompute.Tests.Utilities.TestFixtures;
+
 
 /// <summary>
 /// Shared test fixture for accelerator-based tests.
@@ -160,14 +160,9 @@ public sealed class AcceleratorTestFixture : IAsyncLifetime
 /// Attribute to skip tests when specific hardware is not available.
 /// </summary>
 [AttributeUsage(AttributeTargets.Method | AttributeTargets.Class)]
-public sealed class RequiresHardwareAttribute : Attribute
+public sealed class RequiresHardwareAttribute(AcceleratorType requiredType) : Attribute
 {
-    public RequiresHardwareAttribute(AcceleratorType requiredType)
-    {
-        RequiredType = requiredType;
-    }
-
-    public AcceleratorType RequiredType { get; }
+    public AcceleratorType RequiredType { get; } = requiredType;
 
     public bool IsAvailable()
     {
@@ -188,7 +183,7 @@ public sealed class RequiresHardwareAttribute : Attribute
 public sealed class HardwareTheoryAttribute : TheoryAttribute
 {
     private readonly AcceleratorType _requiredType;
-    
+
     /// <summary>
     /// Gets the required accelerator type.
     /// </summary>
@@ -225,5 +220,4 @@ public sealed class HardwareFactAttribute : FactAttribute
             Skip = $"Test requires {requiredType} hardware which is not available";
         }
     }
-}
 }

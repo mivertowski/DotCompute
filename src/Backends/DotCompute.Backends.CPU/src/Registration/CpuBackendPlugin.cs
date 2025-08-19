@@ -21,8 +21,8 @@ using IAccelerator = DotCompute.Abstractions.IAccelerator;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Plugin lifecycle logging is minimal and not performance-critical
 
-namespace DotCompute.Backends.CPU.Registration
-{
+namespace DotCompute.Backends.CPU.Registration;
+
 
 /// <summary>
 /// Plugin implementation for the CPU backend.
@@ -30,83 +30,83 @@ namespace DotCompute.Backends.CPU.Registration
 /// </summary>
 public sealed class CpuBackendPlugin : BaseBackendPlugin<CpuAccelerator, CpuAcceleratorOptions>
 {
-    /// <inheritdoc/>
-    public override string Id => "dotcompute.backends.cpu";
+/// <inheritdoc/>
+public override string Id => "dotcompute.backends.cpu";
 
-    /// <inheritdoc/>
-    public override string Name => "DotCompute CPU Backend";
+/// <inheritdoc/>
+public override string Name => "DotCompute CPU Backend";
 
-    /// <inheritdoc/>
-    public override Version Version => new(1, 0, 0);
+/// <inheritdoc/>
+public override Version Version => new(1, 0, 0);
 
-    /// <inheritdoc/>
-    public override string Description => "High-performance CPU backend with SIMD vectorization support";
+/// <inheritdoc/>
+public override string Description => "High-performance CPU backend with SIMD vectorization support";
 
-    /// <inheritdoc/>
-    public override string Author => "Michael Ivertowski";
+/// <inheritdoc/>
+public override string Author => "Michael Ivertowski";
 
-    /// <inheritdoc/>
-    public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable | PluginCapabilities.HotReloadable;
+/// <inheritdoc/>
+public override PluginCapabilities Capabilities => PluginCapabilities.ComputeBackend | PluginCapabilities.Scalable | PluginCapabilities.HotReloadable;
 
-    /// <inheritdoc/>
-    protected override string AcceleratorName => "cpu";
+/// <inheritdoc/>
+protected override string AcceleratorName => "cpu";
 
-    /// <inheritdoc/>
-    protected override string ConfigurationSectionName => "CpuBackend";
+/// <inheritdoc/>
+protected override string ConfigurationSectionName => "CpuBackend";
 
-    /// <inheritdoc/>
-    protected override void ConfigureBackendOptions(IServiceCollection services, IConfiguration configuration)
-    {
-        // Configure CPU accelerator options
+/// <inheritdoc/>
+protected override void ConfigureBackendOptions(IServiceCollection services, IConfiguration configuration)
+{
+    // Configure CPU accelerator options
 #pragma warning disable IL2026, IL3050 // Suppress AOT and trimming warnings for configuration binding
-        services.Configure<CpuAcceleratorOptions>(options =>
-            configuration.GetSection("CpuBackend:Accelerator").Bind(options));
-        
-        // Also configure thread pool options specific to CPU backend
-        services.Configure<CpuThreadPoolOptions>(options =>
-            configuration.GetSection("CpuBackend:ThreadPool").Bind(options));
+    services.Configure<CpuAcceleratorOptions>(options =>
+        configuration.GetSection("CpuBackend:Accelerator").Bind(options));
+    
+    // Also configure thread pool options specific to CPU backend
+    services.Configure<CpuThreadPoolOptions>(options =>
+        configuration.GetSection("CpuBackend:ThreadPool").Bind(options));
 #pragma warning restore IL2026, IL3050
+}
+
+/// <inheritdoc/>
+protected override void RegisterAccelerator(IServiceCollection services, IConfiguration configuration)
+{
+    // Register the CPU accelerator
+    services.TryAddSingleton<CpuAccelerator>();
+}
+
+
+/// <inheritdoc/>
+protected override void OnValidate(PluginValidationResult result)
+{
+    base.OnValidate(result);
+
+    // Validate CPU availability
+    if (Environment.ProcessorCount <= 0)
+    {
+        result.IsValid = false;
+        result.Errors.Add("No CPU cores detected");
     }
 
-    /// <inheritdoc/>
-    protected override void RegisterAccelerator(IServiceCollection services, IConfiguration configuration)
+    // Check SIMD support
+    try
     {
-        // Register the CPU accelerator
-        services.TryAddSingleton<CpuAccelerator>();
-    }
-
-
-    /// <inheritdoc/>
-    protected override void OnValidate(PluginValidationResult result)
-    {
-        base.OnValidate(result);
-
-        // Validate CPU availability
-        if (Environment.ProcessorCount <= 0)
+        var simdInfo = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.GetSummary();
+        if (simdInfo.SupportedInstructionSets.Count == 0)
         {
-            result.IsValid = false;
-            result.Errors.Add("No CPU cores detected");
-        }
-
-        // Check SIMD support
-        try
-        {
-            var simdInfo = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.GetSummary();
-            if (simdInfo.SupportedInstructionSets.Count == 0)
-            {
-                result.Warnings.Add("No SIMD instruction sets detected - performance may be reduced");
-            }
-        }
-        catch (Exception ex)
-        {
-            result.Warnings.Add($"Failed to detect SIMD capabilities: {ex.Message}");
+            result.Warnings.Add("No SIMD instruction sets detected - performance may be reduced");
         }
     }
-
-    /// <inheritdoc/>
-    public override string GetConfigurationSchema()
+    catch (Exception ex)
     {
-        return @"
+        result.Warnings.Add($"Failed to detect SIMD capabilities: {ex.Message}");
+    }
+}
+
+/// <inheritdoc/>
+public override string GetConfigurationSchema()
+{
+    return @"
 {
   ""$schema"": ""http://json-schema.org/draft-07/schema#"",
   ""type"": ""object"",
@@ -138,30 +138,30 @@ public sealed class CpuBackendPlugin : BaseBackendPlugin<CpuAccelerator, CpuAcce
     }
   }
 }";
-    }
+}
 
-    /// <inheritdoc/>
-    protected override void OnUpdateMetrics(PluginMetrics metrics)
+/// <inheritdoc/>
+protected override void OnUpdateMetrics(PluginMetrics metrics)
+{
+    base.OnUpdateMetrics(metrics);
+
+    // Add CPU-specific metrics
+    metrics.CustomMetrics["ProcessorCount"] = Environment.ProcessorCount;
+    metrics.CustomMetrics["WorkingSet"] = Environment.WorkingSet;
+    metrics.CustomMetrics["Is64BitProcess"] = Environment.Is64BitProcess;
+
+    // Get SIMD capabilities
+    try
     {
-        base.OnUpdateMetrics(metrics);
-
-        // Add CPU-specific metrics
-        metrics.CustomMetrics["ProcessorCount"] = Environment.ProcessorCount;
-        metrics.CustomMetrics["WorkingSet"] = Environment.WorkingSet;
-        metrics.CustomMetrics["Is64BitProcess"] = Environment.Is64BitProcess;
-
-        // Get SIMD capabilities
-        try
-        {
-            var simdInfo = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.GetSummary();
-            metrics.CustomMetrics["SimdVectorWidth"] = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.PreferredVectorWidth;
-            metrics.CustomMetrics["SimdInstructionSets"] = simdInfo.SupportedInstructionSets.Count;
-        }
-        catch
-        {
-            // Ignore errors in metrics collection
-        }
+        var simdInfo = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.GetSummary();
+        metrics.CustomMetrics["SimdVectorWidth"] = DotCompute.Backends.CPU.Intrinsics.SimdCapabilities.PreferredVectorWidth;
+        metrics.CustomMetrics["SimdInstructionSets"] = simdInfo.SupportedInstructionSets.Count;
     }
+    catch
+    {
+        // Ignore errors in metrics collection
+    }
+}
 }
 
 /// <summary>
@@ -169,52 +169,52 @@ public sealed class CpuBackendPlugin : BaseBackendPlugin<CpuAccelerator, CpuAcce
 /// </summary>
 public static class CpuBackendPluginExtensions
 {
-    /// <summary>
-    /// Adds the CPU backend to the service collection.
-    /// </summary>
-    public static IServiceCollection AddCpuBackend(
-        this IServiceCollection services,
-        Action<CpuAcceleratorOptions>? configureAccelerator = null,
-        Action<CpuThreadPoolOptions>? configureThreadPool = null)
+/// <summary>
+/// Adds the CPU backend to the service collection.
+/// </summary>
+public static IServiceCollection AddCpuBackend(
+    this IServiceCollection services,
+    Action<CpuAcceleratorOptions>? configureAccelerator = null,
+    Action<CpuThreadPoolOptions>? configureThreadPool = null)
+{
+    // Register options
+    if (configureAccelerator != null)
     {
-        // Register options
-        if (configureAccelerator != null)
-        {
-            services.Configure(configureAccelerator);
-        }
-        else
-        {
-            services.Configure<CpuAcceleratorOptions>(options => { });
-        }
-
-        if (configureThreadPool != null)
-        {
-            services.Configure(configureThreadPool);
-        }
-        else
-        {
-            services.Configure<CpuThreadPoolOptions>(options => { });
-        }
-
-        // Register the CPU accelerator
-        services.TryAddSingleton<CpuAccelerator>();
-
-        // Register as IAccelerator with a factory that includes the backend name
-        services.AddSingleton<IAccelerator>(provider =>
-        {
-            var accelerator = provider.GetRequiredService<CpuAccelerator>();
-            return new Plugins.Core.NamedAcceleratorWrapper("cpu", accelerator);
-        });
-
-        return services;
+        services.Configure(configureAccelerator);
+    }
+    else
+    {
+        services.Configure<CpuAcceleratorOptions>(options => { });
     }
 
-    /// <summary>
-    /// Adds the CPU backend with default configuration.
-    /// </summary>
-    public static IServiceCollection AddCpuBackend(this IServiceCollection services) => services.AddCpuBackend(null, null);
+    if (configureThreadPool != null)
+    {
+        services.Configure(configureThreadPool);
+    }
+    else
+    {
+        services.Configure<CpuThreadPoolOptions>(options => { });
+    }
+
+    // Register the CPU accelerator
+    services.TryAddSingleton<CpuAccelerator>();
+
+    // Register as IAccelerator with a factory that includes the backend name
+    services.AddSingleton<IAccelerator>(provider =>
+    {
+        var accelerator = provider.GetRequiredService<CpuAccelerator>();
+        return new Plugins.Core.NamedAcceleratorWrapper("cpu", accelerator);
+    });
+
+    return services;
+}
+
+/// <summary>
+/// Adds the CPU backend with default configuration.
+/// </summary>
+public static IServiceCollection AddCpuBackend(this IServiceCollection services) => services.AddCpuBackend(null, null);
 }
 
 
 #pragma warning restore CA1848
-}
+

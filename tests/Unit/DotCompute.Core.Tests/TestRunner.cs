@@ -3,21 +3,16 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Test runner that demonstrates real implementations working together
 /// without mocks - this is a simplified integration test approach
 /// </summary>
-public sealed class TestRunner
+public sealed class TestRunner(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public TestRunner(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     [Fact]
     public async Task RealMemoryOperations_EndToEnd_Test()
@@ -65,7 +60,7 @@ public sealed class TestRunner
                 }
             }
 
-            copySuccessful.Should().BeTrue();
+            _ = copySuccessful.Should().BeTrue();
             _output.WriteLine("Memory copy successful and verified!");
         }
         finally
@@ -102,7 +97,7 @@ public sealed class TestRunner
         // Execute "kernel" using parallel CPU execution
         await Task.Run(() =>
         {
-            Parallel.For(0, problemSize, i =>
+            _ = Parallel.For(0, problemSize, i =>
             {
                 // Simulate a compute-intensive kernel
                 output[i] = MathF.Sqrt(inputA[i] * inputA[i] + inputB[i] * inputB[i]);
@@ -127,7 +122,7 @@ public sealed class TestRunner
             }
         }
 
-        hasValidOutput.Should().BeTrue();
+        _ = hasValidOutput.Should().BeTrue();
         _output.WriteLine("Kernel output validated successfully!");
     }
 
@@ -183,9 +178,9 @@ public sealed class TestRunner
         });
 
         // Verify pipeline output
-        var pipelineValid = stage3Result.All(val => val >= 0 && val <= 255);
+        var pipelineValid = stage3Result.All(val => val is >= 0 and <= 255);
 
-        pipelineValid.Should().BeTrue();
+        _ = pipelineValid.Should().BeTrue();
         _output.WriteLine("Pipeline execution completed successfully!");
     }
 
@@ -226,8 +221,8 @@ public sealed class TestRunner
         _output.WriteLine($"Name: {acceleratorInfo.Name}");
         _output.WriteLine($"SIMD Width: {acceleratorInfo.SimdWidth} bits");
 
-        processorCount.Should().BeGreaterThan(0, "No processors detected");
-        acceleratorInfo.MemorySize.Should().BeGreaterThan(0, "No memory detected");
+        _ = processorCount.Should().BeGreaterThan(0, "No processors detected");
+        _ = acceleratorInfo.MemorySize.Should().BeGreaterThan(0, "No memory detected");
 
         await Task.CompletedTask;
     }
@@ -277,7 +272,7 @@ public sealed class TestRunner
             }
         }
 
-        allCompleted.Should().BeTrue();
+        _ = allCompleted.Should().BeTrue();
         _output.WriteLine("All concurrent tasks validated!");
     }
 
@@ -296,5 +291,4 @@ public sealed class TestRunner
 
         return data;
     }
-}
 }

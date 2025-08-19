@@ -3,8 +3,8 @@ using System.Diagnostics;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Implementations.Memory;
 
-namespace DotCompute.Tests.Implementations.Accelerators
-{
+namespace DotCompute.Tests.Implementations.Accelerators;
+
 
 /// <summary>
 /// Test CPU-based accelerator implementation for testing without GPU hardware.
@@ -80,23 +80,13 @@ public sealed class TestCpuAccelerator : IAccelerator
 /// <summary>
 /// Test implementation of a compiled kernel.
 /// </summary>
-public sealed class TestCompiledKernel : ICompiledKernel
+public sealed class TestCompiledKernel(string name, byte[] code, CompilationOptions options) : ICompiledKernel
 {
-    private readonly byte[] _code;
-    private readonly CompilationOptions _options;
-    private readonly Stopwatch _executionTimer;
+    private readonly Stopwatch _executionTimer = new();
     private long _executionCount;
     private bool _disposed;
 
-    public TestCompiledKernel(string name, byte[] code, CompilationOptions options)
-    {
-        Name = name;
-        _code = code;
-        _options = options;
-        _executionTimer = new Stopwatch();
-    }
-
-    public string Name { get; }
+    public string Name { get; } = name;
 
     public async ValueTask ExecuteAsync(
         KernelArguments arguments,
@@ -112,7 +102,7 @@ public sealed class TestCompiledKernel : ICompiledKernel
             // Simulate different execution patterns based on kernel name
             var iterations = Name.Contains("simple", StringComparison.OrdinalIgnoreCase) ? 100 : 1000;
 
-            Parallel.For(0, iterations, new ParallelOptions
+            _ = Parallel.For(0, iterations, new ParallelOptions
             {
                 CancellationToken = cancellationToken,
                 MaxDegreeOfParallelism = Environment.ProcessorCount
@@ -128,7 +118,7 @@ public sealed class TestCompiledKernel : ICompiledKernel
         }, cancellationToken);
 
         _executionTimer.Stop();
-        Interlocked.Increment(ref _executionCount);
+        _ = Interlocked.Increment(ref _executionCount);
     }
 
     public long ExecutionCount => _executionCount;
@@ -146,5 +136,4 @@ public sealed class TestCompiledKernel : ICompiledKernel
             GC.SuppressFinalize(this);
         }
     }
-}
 }

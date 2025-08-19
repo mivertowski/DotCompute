@@ -5,8 +5,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Abstractions.Tests
-{
+namespace DotCompute.Abstractions.Tests;
+
 
 /// <summary>
 /// Comprehensive unit tests for the MappedMemory&lt;T&gt; struct.
@@ -43,8 +43,8 @@ public sealed class MappedMemoryTests
         var actualMemory = mappedMemory.Memory;
 
         // Assert
-        actualMemory.Length.Should().Be(sourceData.Length);
-        actualMemory.Span.ToArray().Should().BeEquivalentTo(sourceData);
+        _ = actualMemory.Length.Should().Be(sourceData.Length);
+        _ = actualMemory.Span.ToArray().Should().BeEquivalentTo(sourceData);
     }
 
     [Fact]
@@ -94,8 +94,8 @@ public sealed class MappedMemoryTests
         var span = mappedMemory.Span;
 
         // Assert
-        span.Length.Should().Be(sourceData.Length);
-        span.ToArray().Should().BeEquivalentTo(sourceData);
+        _ = span.Length.Should().Be(sourceData.Length);
+        _ = span.ToArray().Should().BeEquivalentTo(sourceData);
     }
 
     [Fact]
@@ -113,12 +113,12 @@ public sealed class MappedMemoryTests
         span[2] = 77.0f;
 
         // Assert
-        mappedMemory.Memory.Span[0].Should().Be(99.0f);
-        mappedMemory.Memory.Span[1].Should().Be(88.0f);
-        mappedMemory.Memory.Span[2].Should().Be(77.0f);
-        sourceData[0].Should().Be(99.0f); // Original array should be modified too
-        sourceData[1].Should().Be(88.0f);
-        sourceData[2].Should().Be(77.0f);
+        _ = mappedMemory.Memory.Span[0].Should().Be(99.0f);
+        _ = mappedMemory.Memory.Span[1].Should().Be(88.0f);
+        _ = mappedMemory.Memory.Span[2].Should().Be(77.0f);
+        _ = sourceData[0].Should().Be(99.0f); // Original array should be modified too
+        _ = sourceData[1].Should().Be(88.0f);
+        _ = sourceData[2].Should().Be(77.0f);
     }
 
     #endregion
@@ -137,9 +137,9 @@ public sealed class MappedMemoryTests
         var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, mode);
 
         // Assert
-        mappedMemory.Memory.Length.Should().Be(2);
-        mappedMemory.Mode.Should().Be(mode);
-        mappedMemory.Span.Length.Should().Be(2);
+        _ = mappedMemory.Memory.Length.Should().Be(2);
+        _ = mappedMemory.Mode.Should().Be(mode);
+        _ = mappedMemory.Span.Length.Should().Be(2);
     }
 
     [Fact]
@@ -153,9 +153,9 @@ public sealed class MappedMemoryTests
         var mappedMemory = CreateMappedMemory(_mockBuffer.Object, emptyMemory, mode);
 
         // Assert
-        mappedMemory.Memory.Length.Should().Be(0);
-        mappedMemory.Mode.Should().Be(mode);
-        mappedMemory.Span.Length.Should().Be(0);
+        _ = mappedMemory.Memory.Length.Should().Be(0);
+        _ = mappedMemory.Mode.Should().Be(mode);
+        _ = mappedMemory.Span.Length.Should().Be(0);
     }
 
     [Fact]
@@ -170,9 +170,9 @@ public sealed class MappedMemoryTests
         var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, mode);
 
         // Assert
-        mappedMemory.Memory.Length.Should().Be(1000000);
-        mappedMemory.Mode.Should().Be(mode);
-        mappedMemory.Span.Length.Should().Be(1000000);
+        _ = mappedMemory.Memory.Length.Should().Be(1000000);
+        _ = mappedMemory.Mode.Should().Be(mode);
+        _ = mappedMemory.Span.Length.Should().Be(1000000);
     }
 
     #endregion
@@ -215,9 +215,9 @@ public sealed class MappedMemoryTests
         mappedMemory.Dispose();
 
         // Assert - Memory should still be accessible
-        mappedMemory.Memory.Length.Should().Be(3);
-        mappedMemory.Span.Length.Should().Be(3);
-        mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
+        _ = mappedMemory.Memory.Length.Should().Be(3);
+        _ = mappedMemory.Span.Length.Should().Be(3);
+        _ = mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
     }
 
     #endregion
@@ -232,9 +232,9 @@ public sealed class MappedMemoryTests
         var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act & Assert
-        mappedMemory.Equals(mappedMemory).Should().BeTrue();
-        mappedMemory.Equals(mappedMemory).Should().BeTrue();
-        (!mappedMemory.Equals(null)).Should().BeTrue();
+        _ = mappedMemory.Equals(mappedMemory).Should().BeTrue();
+        _ = mappedMemory.Equals(mappedMemory).Should().BeTrue();
+        _ = (!mappedMemory.Equals(null)).Should().BeTrue();
     }
 
     [Fact]
@@ -250,9 +250,9 @@ public sealed class MappedMemoryTests
         var mappedMemory2 = CreateMappedMemory(_mockBuffer.Object, memory2, mode);
 
         // Act & Assert
-        mappedMemory1.Equals(mappedMemory2).Should().BeTrue();
-        (mappedMemory1 == mappedMemory2).Should().BeTrue();
-        (mappedMemory1 != mappedMemory2).Should().BeFalse();
+        _ = mappedMemory1.Equals(mappedMemory2).Should().BeTrue();
+        _ = (mappedMemory1 == mappedMemory2).Should().BeTrue();
+        _ = (mappedMemory1 != mappedMemory2).Should().BeFalse();
     }
 
     [Fact]
@@ -267,9 +267,9 @@ public sealed class MappedMemoryTests
         var mappedMemory2 = CreateMappedMemory(mockBuffer2.Object, memory, mode);
 
         // Act & Assert
-        mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
-        (mappedMemory1 == mappedMemory2).Should().BeFalse();
-        (mappedMemory1 != mappedMemory2).Should().BeTrue();
+        _ = mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
+        _ = (mappedMemory1 == mappedMemory2).Should().BeFalse();
+        _ = (mappedMemory1 != mappedMemory2).Should().BeTrue();
     }
 
     [Fact]
@@ -281,9 +281,9 @@ public sealed class MappedMemoryTests
         var mappedMemory2 = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.Write);
 
         // Act & Assert
-        mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
-        (mappedMemory1 == mappedMemory2).Should().BeFalse();
-        (mappedMemory1 != mappedMemory2).Should().BeTrue();
+        _ = mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
+        _ = (mappedMemory1 == mappedMemory2).Should().BeFalse();
+        _ = (mappedMemory1 != mappedMemory2).Should().BeTrue();
     }
 
     [Fact]
@@ -298,9 +298,9 @@ public sealed class MappedMemoryTests
         var mappedMemory2 = CreateMappedMemory(_mockBuffer.Object, memory2, mode);
 
         // Act & Assert
-        mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
-        (mappedMemory1 == mappedMemory2).Should().BeFalse();
-        (mappedMemory1 != mappedMemory2).Should().BeTrue();
+        _ = mappedMemory1.Equals(mappedMemory2).Should().BeFalse();
+        _ = (mappedMemory1 == mappedMemory2).Should().BeFalse();
+        _ = (mappedMemory1 != mappedMemory2).Should().BeTrue();
     }
 
     [Fact]
@@ -311,7 +311,7 @@ public sealed class MappedMemoryTests
         var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite);
 
         // Act & Assert
-        mappedMemory.Equals(null).Should().BeFalse();
+        _ = mappedMemory.Equals(null).Should().BeFalse();
     }
 
     [Fact]
@@ -323,7 +323,7 @@ public sealed class MappedMemoryTests
         var otherObject = "not a mapped memory";
 
         // Act & Assert
-        mappedMemory.Equals(otherObject).Should().BeFalse();
+        _ = mappedMemory.Equals(otherObject).Should().BeFalse();
     }
 
     #endregion
@@ -381,7 +381,7 @@ public sealed class MappedMemoryTests
         var hashCode2 = mappedMemory2.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        _ = hashCode1.Should().NotBe(hashCode2);
     }
 
     [Fact]
@@ -397,7 +397,7 @@ public sealed class MappedMemoryTests
         var hashCode2 = mappedMemory2.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        _ = hashCode1.Should().NotBe(hashCode2);
     }
 
     #endregion
@@ -422,14 +422,14 @@ public sealed class MappedMemoryTests
         var byteMappedMemory = CreateMappedMemory(byteBuffer.Object, byteMemory, MapMode.Write);
 
         // Assert
-        intMappedMemory.Memory.Length.Should().Be(3);
-        intMappedMemory.Mode.Should().Be(MapMode.ReadWrite);
+        _ = intMappedMemory.Memory.Length.Should().Be(3);
+        _ = intMappedMemory.Mode.Should().Be(MapMode.ReadWrite);
 
-        doubleMappedMemory.Memory.Length.Should().Be(3);
-        doubleMappedMemory.Mode.Should().Be(MapMode.Read);
+        _ = doubleMappedMemory.Memory.Length.Should().Be(3);
+        _ = doubleMappedMemory.Mode.Should().Be(MapMode.Read);
 
-        byteMappedMemory.Memory.Length.Should().Be(3);
-        byteMappedMemory.Mode.Should().Be(MapMode.Write);
+        _ = byteMappedMemory.Memory.Length.Should().Be(3);
+        _ = byteMappedMemory.Mode.Should().Be(MapMode.Write);
     }
 
     #endregion
@@ -443,7 +443,7 @@ public sealed class MappedMemoryTests
         var type = typeof(MappedMemory<float>);
 
         // Assert
-        Assert.IsAssignableFrom<IDisposable>(type);
+        _ = Assert.IsAssignableFrom<IDisposable>(type);
     }
 
     [Fact]
@@ -453,7 +453,7 @@ public sealed class MappedMemoryTests
         var type = typeof(MappedMemory<float>);
 
         // Assert
-        type.Should().BeAssignableTo<IEquatable<MappedMemory<float>>>();
+        _ = type.Should().BeAssignableTo<IEquatable<MappedMemory<float>>>();
     }
 
     #endregion
@@ -469,8 +469,8 @@ public sealed class MappedMemoryTests
         // Act & Assert(should not throw)
         using (var mappedMemory = CreateMappedMemory(_mockBuffer.Object, memory, MapMode.ReadWrite))
         {
-            mappedMemory.Memory.Length.Should().Be(10);
-            mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
+            _ = mappedMemory.Memory.Length.Should().Be(10);
+            _ = mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
         } // Dispose called here
     }
 
@@ -486,9 +486,9 @@ public sealed class MappedMemoryTests
         var mappedMemory = CreateMappedMemory(_mockBuffer.Object, emptyMemory, MapMode.ReadWrite);
 
         // Act & Assert
-        mappedMemory.Memory.Length.Should().Be(0);
-        mappedMemory.Span.Length.Should().Be(0);
-        mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
+        _ = mappedMemory.Memory.Length.Should().Be(0);
+        _ = mappedMemory.Span.Length.Should().Be(0);
+        _ = mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
 
         // Should not throw when disposed
         mappedMemory.Dispose();
@@ -503,11 +503,11 @@ public sealed class MappedMemoryTests
         var mappedMemory = CreateMappedMemory(_mockBuffer.Object, slicedMemory, MapMode.ReadWrite);
 
         // Act & Assert
-        mappedMemory.Memory.Length.Should().Be(3);
-        mappedMemory.Span.Length.Should().Be(3);
-        mappedMemory.Span[0].Should().Be(2.0f);
-        mappedMemory.Span[1].Should().Be(3.0f);
-        mappedMemory.Span[2].Should().Be(4.0f);
+        _ = mappedMemory.Memory.Length.Should().Be(3);
+        _ = mappedMemory.Span.Length.Should().Be(3);
+        _ = mappedMemory.Span[0].Should().Be(2.0f);
+        _ = mappedMemory.Span[1].Should().Be(3.0f);
+        _ = mappedMemory.Span[2].Should().Be(4.0f);
     }
 
     [Fact]
@@ -522,8 +522,8 @@ public sealed class MappedMemoryTests
         mappedMemory.Span[1] = 999.0f;
 
         // Assert
-        sourceData[1].Should().Be(999.0f);
-        mappedMemory.Memory.Span[1].Should().Be(999.0f);
+        _ = sourceData[1].Should().Be(999.0f);
+        _ = mappedMemory.Memory.Span[1].Should().Be(999.0f);
     }
 
     [Fact]
@@ -537,9 +537,9 @@ public sealed class MappedMemoryTests
         var mappedMemory = CreateMappedMemory(null!, memory, MapMode.ReadWrite);
 
         // Act & Assert
-        mappedMemory.Memory.Length.Should().Be(2);
-        mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
-        mappedMemory.Span.Length.Should().Be(2);
+        _ = mappedMemory.Memory.Length.Should().Be(2);
+        _ = mappedMemory.Mode.Should().Be(MapMode.ReadWrite);
+        _ = mappedMemory.Span.Length.Should().Be(2);
     }
 
     #endregion
@@ -571,12 +571,11 @@ public sealed class MappedMemoryTests
             }));
         }
 
-        System.Threading.Tasks.Task.WaitAll(tasks.ToArray());
+        System.Threading.Tasks.Task.WaitAll([.. tasks]);
 
         // Assert - No exceptions should be thrown
-        tasks.Should().AllSatisfy(t => t.IsCompletedSuccessfully.Should().BeTrue());
+        _ = tasks.Should().AllSatisfy(t => t.IsCompletedSuccessfully.Should().BeTrue());
     }
 
     #endregion
-}
 }

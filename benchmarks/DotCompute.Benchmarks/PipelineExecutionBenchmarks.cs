@@ -6,8 +6,8 @@ using DotCompute.Core.Pipelines;
 using Microsoft.Extensions.Logging.Abstractions;
 using System.Diagnostics.CodeAnalysis;
 
-namespace DotCompute.Benchmarks
-{
+namespace DotCompute.Benchmarks;
+
 
 /// <summary>
 /// Benchmarks for pipeline orchestration overhead and execution performance.
@@ -170,7 +170,7 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
             MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
             Device = (DotCompute.Core.IComputeDevice)_accelerator
         };
-        await pipeline.ExecuteAsync(context);
+        _ = await pipeline.ExecuteAsync(context);
 
         // Read back results
         await outputBuffer.CopyToHostAsync<float>(_outputData);
@@ -187,11 +187,11 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
         // Add stages with memory optimization
         for (var stage = 0; stage < PipelineStages; stage++)
         {
-            pipelineBuilder.AddStage(CreateOptimizedProcessingStage(stage));
+            _ = pipelineBuilder.AddStage(CreateOptimizedProcessingStage(stage));
         }
 
         // Enable memory optimization
-        pipelineBuilder.WithOptimization(opts =>
+        _ = pipelineBuilder.WithOptimization(opts =>
         {
             opts.EnableMemoryOptimization = true;
             opts.EnableBufferReuse = true;
@@ -208,7 +208,7 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
             MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
             Device = (DotCompute.Core.IComputeDevice)_accelerator
         };
-        await pipeline.ExecuteAsync(context);
+        _ = await pipeline.ExecuteAsync(context);
         await outputBuffer.CopyToHostAsync<float>(_outputData);
 
         _buffers.Add(inputBuffer);
@@ -255,7 +255,7 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
                     MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
                     Device = (DotCompute.Core.IComputeDevice)_accelerator
                 };
-                await pipeline.ExecuteAsync(context);
+                _ = await pipeline.ExecuteAsync(context);
                 await outputBuffer.CopyToHostAsync<float>(_outputData);
 
                 lock (_buffers)
@@ -277,10 +277,10 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
         // Add stages with error handling
         for (var stage = 0; stage < PipelineStages; stage++)
         {
-            pipelineBuilder.AddStage(CreateErrorSafeProcessingStage(stage));
+            _ = pipelineBuilder.AddStage(CreateErrorSafeProcessingStage(stage));
         }
 
-        pipelineBuilder.WithErrorHandler((ex, ctx) => ErrorHandlingResult.Retry);
+        _ = pipelineBuilder.WithErrorHandler((ex, ctx) => ErrorHandlingResult.Retry);
         var pipeline = pipelineBuilder.Build();
 
         var inputBuffer = await _memoryManager.AllocateAndCopyAsync<float>(_inputData);
@@ -294,7 +294,7 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
                 MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
                 Device = (DotCompute.Core.IComputeDevice)_accelerator
             };
-            await pipeline.ExecuteAsync(context);
+            _ = await pipeline.ExecuteAsync(context);
             await outputBuffer.CopyToHostAsync<float>(_outputData);
         }
         catch (Exception ex)
@@ -347,8 +347,8 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
         var chunkSize = DataSize / streamChunks;
 
         var pipelineBuilder = new KernelPipelineBuilder();
-        pipelineBuilder.AddStage(CreateStreamingProcessingStage());
-        pipelineBuilder.WithOptimization(opts =>
+        _ = pipelineBuilder.AddStage(CreateStreamingProcessingStage());
+        _ = pipelineBuilder.WithOptimization(opts =>
         {
             opts.EnableStreaming = true;
         });
@@ -372,7 +372,7 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
                     MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
                     Device = (DotCompute.Core.IComputeDevice)_accelerator
                 };
-                await pipeline.ExecuteAsync(context);
+                _ = await pipeline.ExecuteAsync(context);
 
                 var resultChunk = new float[chunkSize];
                 await outputBuffer.CopyToHostAsync<float>(resultChunk);
@@ -442,7 +442,7 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
                 MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)_memoryManager,
                 Device = (DotCompute.Core.IComputeDevice)_accelerator
             };
-            await pipeline.ExecuteAsync(context);
+            _ = await pipeline.ExecuteAsync(context);
 
             await inputBuffer.DisposeAsync();
             await outputBuffer.DisposeAsync();
@@ -481,27 +481,16 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
 }
 
 // Helper classes for pipeline stages
-internal sealed class SimplePipelineStage : IPipelineStage
+internal sealed class SimplePipelineStage(string name, Func<IMemoryBuffer, IMemoryBuffer, object, Task> executeFunc) : IPipelineStage
 {
-    private readonly Func<IMemoryBuffer, IMemoryBuffer, object, Task> _executeFunc;
-    private readonly SimpleStageMetrics _metrics;
+    private readonly Func<IMemoryBuffer, IMemoryBuffer, object, Task> _executeFunc = executeFunc;
+    private readonly SimpleStageMetrics _metrics = new();
 
-    public SimplePipelineStage(string name, Func<IMemoryBuffer, IMemoryBuffer, object, Task> executeFunc)
-    {
-        Id = Guid.NewGuid().ToString();
-        Name = name;
-        Type = PipelineStageType.Custom;
-        Dependencies = Array.Empty<string>();
-        Metadata = new Dictionary<string, object>();
-        _executeFunc = executeFunc;
-        _metrics = new SimpleStageMetrics();
-    }
-
-    public string Id { get; }
-    public string Name { get; }
-    public PipelineStageType Type { get; }
-    public IReadOnlyList<string> Dependencies { get; }
-    public IReadOnlyDictionary<string, object> Metadata { get; }
+    public string Id { get; } = Guid.NewGuid().ToString();
+    public string Name { get; } = name;
+    public PipelineStageType Type { get; } = PipelineStageType.Custom;
+    public IReadOnlyList<string> Dependencies { get; } = Array.Empty<string>();
+    public IReadOnlyDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
 
     public async ValueTask<StageExecutionResult> ExecuteAsync(
         PipelineExecutionContext context,
@@ -897,4 +886,4 @@ internal sealed class SimpleStageMetrics : IStageMetrics
             _customMetrics[key] = value;
         }
     }
-}}
+}

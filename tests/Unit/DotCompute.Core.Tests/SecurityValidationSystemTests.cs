@@ -7,8 +7,8 @@ using Moq;
 using Xunit;
 using System.Collections.ObjectModel;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 /// <summary>
 /// Comprehensive tests for the kernel security validation system.
@@ -155,24 +155,22 @@ __global__ void memory_bomb_kernel(float* data, int size) {
     {
         // Arrange
         var memoryAccesses = new List<MemoryAccessPattern>
-        {
-            new MemoryAccessPattern
-            {
-                BufferName = "input",
-                AccessType = MemoryAccessType.Read,
-                IndexExpression = "blockIdx.x * blockDim.x + threadIdx.x",
-                IsWithinBounds = true,
-                EstimatedOffset = 0
-            },
-            new MemoryAccessPattern
-            {
-                BufferName = "output",
-                AccessType = MemoryAccessType.Write,
-                IndexExpression = "blockIdx.x * blockDim.x + threadIdx.x",
-                IsWithinBounds = true,
-                EstimatedOffset = 0
-            }
-        };
+    {
+        new() {
+            BufferName = "input",
+            AccessType = MemoryAccessType.Read,
+            IndexExpression = "blockIdx.x * blockDim.x + threadIdx.x",
+            IsWithinBounds = true,
+            EstimatedOffset = 0
+        },
+        new() {
+            BufferName = "output",
+            AccessType = MemoryAccessType.Write,
+            IndexExpression = "blockIdx.x * blockDim.x + threadIdx.x",
+            IsWithinBounds = true,
+            EstimatedOffset = 0
+        }
+    };
         var bufferSizes = new Dictionary<string, long>
         {
             ["input"] = 1024 * 1024,
@@ -192,16 +190,15 @@ __global__ void memory_bomb_kernel(float* data, int size) {
     {
         // Arrange
         var memoryAccesses = new List<MemoryAccessPattern>
-        {
-            new MemoryAccessPattern
-            {
-                BufferName = "data",
-                AccessType = MemoryAccessType.Write,
-                IndexExpression = "blockIdx.x * blockDim.x + threadIdx.x + 999999",
-                IsWithinBounds = false,
-                EstimatedOffset = 999999
-            }
-        };
+    {
+        new() {
+            BufferName = "data",
+            AccessType = MemoryAccessType.Write,
+            IndexExpression = "blockIdx.x * blockDim.x + threadIdx.x + 999999",
+            IsWithinBounds = false,
+            EstimatedOffset = 999999
+        }
+    };
         var bufferSizes = new Dictionary<string, long>
         {
             ["data"] = 1024
@@ -495,11 +492,9 @@ __global__ void complex_security_test_kernel(float* input, float* output,
 
     #endregion
 
-    public void Dispose()
-    {
+    public void Dispose() =>
         // Clean up any resources if needed
         GC.SuppressFinalize(this);
-    }
 }
 
 #region Mock Security Classes
@@ -507,15 +502,8 @@ __global__ void complex_security_test_kernel(float* input, float* output,
 /// <summary>
 /// Mock security validator for testing purposes.
 /// </summary>
-public sealed class SecurityValidator
+public sealed class SecurityValidator(ILogger<SecurityValidator> logger)
 {
-    private readonly ILogger<SecurityValidator> _logger;
-
-    public SecurityValidator(ILogger<SecurityValidator> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-    }
-
     public static async Task<SecurityValidationResult> ValidateKernelSecurityAsync(
         GeneratedKernel kernel, SecurityValidationOptions options)
     {
@@ -718,12 +706,12 @@ public sealed class SecurityValidator
         {
             IsSecure = issues.FindAll(i => i.Severity >= SecurityThreatLevel.High).Count == 0
         };
-        
+
         foreach (var issue in issues)
         {
             result.CryptographicIssues.Add(issue);
         }
-        
+
         return result;
     }
 
@@ -759,12 +747,12 @@ public sealed class SecurityValidator
         {
             IsSecure = risks.Count == 0
         };
-        
+
         foreach (var risk in risks)
         {
             result.DataLeakageRisks.Add(risk);
         }
-        
+
         return result;
     }
 }
@@ -934,4 +922,3 @@ public sealed class DataLeakageRisk
 public enum DataLeakageType { SensitiveDataExposure, LoggingSensitiveData, UnencryptedTransmission }
 
 #endregion
-}

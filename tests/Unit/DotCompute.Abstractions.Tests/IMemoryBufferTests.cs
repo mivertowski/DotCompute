@@ -5,8 +5,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Abstractions.Tests
-{
+namespace DotCompute.Abstractions.Tests;
+
 
 /// <summary>
 /// Comprehensive unit tests for the IMemoryBuffer interface.
@@ -27,7 +27,7 @@ public sealed class IMemoryBufferTests
     {
         // Arrange
         const long expectedSize = 4096;
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSize);
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(expectedSize);
 
         // Act
         var size = _mockBuffer.Object.SizeInBytes;
@@ -45,7 +45,7 @@ public sealed class IMemoryBufferTests
     public void SizeInBytes_ShouldSupportDifferentSizes(long size)
     {
         // Arrange
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(size);
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(size);
 
         // Act
         var actualSize = _mockBuffer.Object.SizeInBytes;
@@ -59,7 +59,7 @@ public sealed class IMemoryBufferTests
     {
         // Arrange
         var expectedOptions = MemoryOptions.ReadOnly | MemoryOptions.HostVisible;
-        _mockBuffer.SetupGet(b => b.Options).Returns(expectedOptions);
+        _ = _mockBuffer.SetupGet(b => b.Options).Returns(expectedOptions);
 
         // Act
         var options = _mockBuffer.Object.Options;
@@ -79,7 +79,7 @@ public sealed class IMemoryBufferTests
     public void Options_ShouldSupportAllMemoryOptions(MemoryOptions options)
     {
         // Arrange
-        _mockBuffer.SetupGet(b => b.Options).Returns(options);
+        _ = _mockBuffer.SetupGet(b => b.Options).Returns(options);
 
         // Act
         var actualOptions = _mockBuffer.Object.Options;
@@ -92,7 +92,7 @@ public sealed class IMemoryBufferTests
     public void IsDisposed_WhenNotDisposed_ShouldReturnFalse()
     {
         // Arrange
-        _mockBuffer.SetupGet(b => b.IsDisposed).Returns(false);
+        _ = _mockBuffer.SetupGet(b => b.IsDisposed).Returns(false);
 
         // Act
         var isDisposed = _mockBuffer.Object.IsDisposed;
@@ -105,7 +105,7 @@ public sealed class IMemoryBufferTests
     public void IsDisposed_WhenDisposed_ShouldReturnTrue()
     {
         // Arrange
-        _mockBuffer.SetupGet(b => b.IsDisposed).Returns(true);
+        _ = _mockBuffer.SetupGet(b => b.IsDisposed).Returns(true);
 
         // Act
         var isDisposed = _mockBuffer.Object.IsDisposed;
@@ -126,7 +126,7 @@ public sealed class IMemoryBufferTests
         var sourceMemory = new ReadOnlyMemory<float>(sourceData);
         const long offset = 0;
 
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, offset, CancellationToken.None))
+        _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, offset, CancellationToken.None))
                   .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -144,7 +144,7 @@ public sealed class IMemoryBufferTests
         var sourceMemory = new ReadOnlyMemory<double>(sourceData);
         const long offset = 256;
 
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, offset, CancellationToken.None))
+        _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, offset, CancellationToken.None))
                   .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -163,11 +163,11 @@ public sealed class IMemoryBufferTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, 0, cts.Token))
+        _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, 0, cts.Token))
                   .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(
            () => _mockBuffer.Object.CopyFromHostAsync(sourceMemory, cancellationToken: cts.Token).AsTask());
     }
 
@@ -177,7 +177,7 @@ public sealed class IMemoryBufferTests
         // Arrange
         var emptyMemory = ReadOnlyMemory<byte>.Empty;
 
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(emptyMemory, 0, CancellationToken.None))
+        _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(emptyMemory, 0, CancellationToken.None))
                   .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -194,13 +194,13 @@ public sealed class IMemoryBufferTests
         var sourceData = new float[] { 1.0f };
         var sourceMemory = new ReadOnlyMemory<float>(sourceData);
 
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+        _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
                   .ThrowsAsync(new ObjectDisposedException("Buffer has been disposed"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ObjectDisposedException>(
            () => _mockBuffer.Object.CopyFromHostAsync(sourceMemory).AsTask());
-        exception.Message.Should().Be("Buffer has been disposed");
+        _ = exception.Message.Should().Be("Buffer has been disposed");
     }
 
     [Fact]
@@ -210,13 +210,13 @@ public sealed class IMemoryBufferTests
         var sourceData = new int[] { 1, 2, 3 };
         var sourceMemory = new ReadOnlyMemory<int>(sourceData);
 
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, -1, CancellationToken.None))
+        _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, -1, CancellationToken.None))
                   .ThrowsAsync(new ArgumentOutOfRangeException("offset"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
            () => _mockBuffer.Object.CopyFromHostAsync(sourceMemory, -1).AsTask());
-        exception.ParamName.Should().Be("offset");
+        _ = exception.ParamName.Should().Be("offset");
     }
 
     [Theory]
@@ -232,7 +232,7 @@ public sealed class IMemoryBufferTests
         {
             var data = new int[] { 1, 2, 3 };
             var memory = new ReadOnlyMemory<int>(data);
-            _mockBuffer.Setup(b => b.CopyFromHostAsync(memory, 0, CancellationToken.None))
+            _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(memory, 0, CancellationToken.None))
                       .Returns(ValueTask.CompletedTask);
 
             await _mockBuffer.Object.CopyFromHostAsync(memory);
@@ -242,7 +242,7 @@ public sealed class IMemoryBufferTests
         {
             var data = new float[] { 1.0f, 2.0f, 3.0f };
             var memory = new ReadOnlyMemory<float>(data);
-            _mockBuffer.Setup(b => b.CopyFromHostAsync(memory, 0, CancellationToken.None))
+            _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(memory, 0, CancellationToken.None))
                       .Returns(ValueTask.CompletedTask);
 
             await _mockBuffer.Object.CopyFromHostAsync(memory);
@@ -263,7 +263,7 @@ public sealed class IMemoryBufferTests
         var destinationMemory = new Memory<float>(destinationData);
         const long offset = 0;
 
-        _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, offset, CancellationToken.None))
+        _ = _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, offset, CancellationToken.None))
                   .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -281,7 +281,7 @@ public sealed class IMemoryBufferTests
         var destinationMemory = new Memory<double>(destinationData);
         const long offset = 512;
 
-        _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, offset, CancellationToken.None))
+        _ = _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, offset, CancellationToken.None))
                   .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -300,11 +300,11 @@ public sealed class IMemoryBufferTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, 0, cts.Token))
+        _ = _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, 0, cts.Token))
                   .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(
            () => _mockBuffer.Object.CopyToHostAsync(destinationMemory, cancellationToken: cts.Token).AsTask());
     }
 
@@ -314,7 +314,7 @@ public sealed class IMemoryBufferTests
         // Arrange
         var emptyMemory = Memory<byte>.Empty;
 
-        _mockBuffer.Setup(b => b.CopyToHostAsync(emptyMemory, 0, CancellationToken.None))
+        _ = _mockBuffer.Setup(b => b.CopyToHostAsync(emptyMemory, 0, CancellationToken.None))
                   .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -331,13 +331,13 @@ public sealed class IMemoryBufferTests
         var destinationData = new float[1];
         var destinationMemory = new Memory<float>(destinationData);
 
-        _mockBuffer.Setup(b => b.CopyToHostAsync(It.IsAny<Memory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+        _ = _mockBuffer.Setup(b => b.CopyToHostAsync(It.IsAny<Memory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
                   .ThrowsAsync(new ObjectDisposedException("Buffer has been disposed"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ObjectDisposedException>(
            () => _mockBuffer.Object.CopyToHostAsync(destinationMemory).AsTask());
-        exception.Message.Should().Be("Buffer has been disposed");
+        _ = exception.Message.Should().Be("Buffer has been disposed");
     }
 
     [Fact]
@@ -347,13 +347,13 @@ public sealed class IMemoryBufferTests
         var destinationData = new int[3];
         var destinationMemory = new Memory<int>(destinationData);
 
-        _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, -1, CancellationToken.None))
+        _ = _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, -1, CancellationToken.None))
                   .ThrowsAsync(new ArgumentOutOfRangeException("offset"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
            () => _mockBuffer.Object.CopyToHostAsync(destinationMemory, -1).AsTask());
-        exception.ParamName.Should().Be("offset");
+        _ = exception.ParamName.Should().Be("offset");
     }
 
     #endregion
@@ -378,7 +378,7 @@ public sealed class IMemoryBufferTests
     public async Task DisposeAsync_ShouldComplete()
     {
         // Arrange
-        _mockBuffer.Setup(b => b.DisposeAsync())
+        _ = _mockBuffer.Setup(b => b.DisposeAsync())
                   .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -393,7 +393,7 @@ public sealed class IMemoryBufferTests
     {
         // Arrange
         var callCount = 0;
-        _mockBuffer.Setup(b => b.Dispose())
+        _ = _mockBuffer.Setup(b => b.Dispose())
                   .Callback(() => callCount++);
 
         // Act
@@ -411,7 +411,7 @@ public sealed class IMemoryBufferTests
     {
         // Arrange
         var callCount = 0;
-        _mockBuffer.Setup(b => b.DisposeAsync())
+        _ = _mockBuffer.Setup(b => b.DisposeAsync())
                   .Callback(() => callCount++)
                   .Returns(ValueTask.CompletedTask);
 
@@ -436,7 +436,7 @@ public sealed class IMemoryBufferTests
         var type = typeof(IMemoryBuffer);
 
         // Assert
-        Assert.IsAssignableFrom<IAsyncDisposable>(type);
+        _ = Assert.IsAssignableFrom<IAsyncDisposable>(type);
     }
 
     [Fact]
@@ -446,7 +446,7 @@ public sealed class IMemoryBufferTests
         var type = typeof(IMemoryBuffer);
 
         // Assert
-        Assert.IsAssignableFrom<IDisposable>(type);
+        _ = Assert.IsAssignableFrom<IDisposable>(type);
     }
 
     #endregion
@@ -463,14 +463,14 @@ public sealed class IMemoryBufferTests
         var sourceMemory = new ReadOnlyMemory<float>(sourceData);
         var destinationMemory = new Memory<float>(destinationData);
 
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(bufferSize);
-        _mockBuffer.SetupGet(b => b.Options).Returns(MemoryOptions.None);
-        _mockBuffer.SetupGet(b => b.IsDisposed).Returns(false);
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, 0, CancellationToken.None))
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(bufferSize);
+        _ = _mockBuffer.SetupGet(b => b.Options).Returns(MemoryOptions.None);
+        _ = _mockBuffer.SetupGet(b => b.IsDisposed).Returns(false);
+        _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, 0, CancellationToken.None))
                   .Returns(ValueTask.CompletedTask);
-        _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, 0, CancellationToken.None))
+        _ = _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, 0, CancellationToken.None))
                   .Returns(ValueTask.CompletedTask);
-        _mockBuffer.Setup(b => b.DisposeAsync())
+        _ = _mockBuffer.Setup(b => b.DisposeAsync())
                   .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -503,12 +503,12 @@ public sealed class IMemoryBufferTests
         var disposedProperty = type.GetProperty(nameof(IMemoryBuffer.IsDisposed));
 
         // Assert
-        sizeProperty!.CanRead.Should().BeTrue();
-        sizeProperty.CanWrite.Should().BeFalse();
-        optionsProperty!.CanRead.Should().BeTrue();
-        optionsProperty.CanWrite.Should().BeFalse();
-        disposedProperty!.CanRead.Should().BeTrue();
-        disposedProperty.CanWrite.Should().BeFalse();
+        _ = sizeProperty!.CanRead.Should().BeTrue();
+        _ = sizeProperty.CanWrite.Should().BeFalse();
+        _ = optionsProperty!.CanRead.Should().BeTrue();
+        _ = optionsProperty.CanWrite.Should().BeFalse();
+        _ = disposedProperty!.CanRead.Should().BeTrue();
+        _ = disposedProperty.CanWrite.Should().BeFalse();
     }
 
     #endregion
@@ -522,14 +522,14 @@ public sealed class IMemoryBufferTests
         var largeData = new byte[2048];
         var sourceMemory = new ReadOnlyMemory<byte>(largeData);
 
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(1024); // Buffer smaller than data
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, 0, CancellationToken.None))
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(1024); // Buffer smaller than data
+        _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, 0, CancellationToken.None))
                   .ThrowsAsync(new ArgumentException("Data size exceeds buffer capacity"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockBuffer.Object.CopyFromHostAsync(sourceMemory).AsTask());
-        exception.Message.Should().Be("Data size exceeds buffer capacity");
+        _ = exception.Message.Should().Be("Data size exceeds buffer capacity");
     }
 
     [Fact]
@@ -539,14 +539,14 @@ public sealed class IMemoryBufferTests
         var smallDestination = new byte[512];
         var destinationMemory = new Memory<byte>(smallDestination);
 
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(1024); // Buffer larger than destination
-        _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, 0, CancellationToken.None))
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(1024); // Buffer larger than destination
+        _ = _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, 0, CancellationToken.None))
                   .ThrowsAsync(new ArgumentException("Destination too small for buffer data"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
            () => _mockBuffer.Object.CopyToHostAsync(destinationMemory).AsTask());
-        exception.Message.Should().Be("Destination too small for buffer data");
+        _ = exception.Message.Should().Be("Destination too small for buffer data");
     }
 
     [Fact]
@@ -559,20 +559,20 @@ public sealed class IMemoryBufferTests
         const long bufferSize = 1024;
         const long invalidOffset = 2048;
 
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(bufferSize);
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, invalidOffset, CancellationToken.None))
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(bufferSize);
+        _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(sourceMemory, invalidOffset, CancellationToken.None))
                   .ThrowsAsync(new ArgumentOutOfRangeException("offset"));
-        _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, invalidOffset, CancellationToken.None))
+        _ = _mockBuffer.Setup(b => b.CopyToHostAsync(destinationMemory, invalidOffset, CancellationToken.None))
                   .ThrowsAsync(new ArgumentOutOfRangeException("offset"));
 
         // Act & Assert
         var exception1 = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
            () => _mockBuffer.Object.CopyFromHostAsync(sourceMemory, invalidOffset).AsTask());
-        exception1.ParamName.Should().Be("offset");
+        _ = exception1.ParamName.Should().Be("offset");
 
         var exception2 = await Assert.ThrowsAsync<ArgumentOutOfRangeException>(
            () => _mockBuffer.Object.CopyToHostAsync(destinationMemory, invalidOffset).AsTask());
-        exception2.ParamName.Should().Be("offset");
+        _ = exception2.ParamName.Should().Be("offset");
     }
 
     #endregion
@@ -587,20 +587,20 @@ public sealed class IMemoryBufferTests
         var sourceMemory = new ReadOnlyMemory<float>(data);
         var destinationMemory = new Memory<float>(data);
 
-        _mockBuffer.SetupGet(b => b.IsDisposed).Returns(true);
-        _mockBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+        _ = _mockBuffer.SetupGet(b => b.IsDisposed).Returns(true);
+        _ = _mockBuffer.Setup(b => b.CopyFromHostAsync(It.IsAny<ReadOnlyMemory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
                   .ThrowsAsync(new ObjectDisposedException(nameof(IMemoryBuffer)));
-        _mockBuffer.Setup(b => b.CopyToHostAsync(It.IsAny<Memory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
+        _ = _mockBuffer.Setup(b => b.CopyToHostAsync(It.IsAny<Memory<float>>(), It.IsAny<long>(), It.IsAny<CancellationToken>()))
                   .ThrowsAsync(new ObjectDisposedException(nameof(IMemoryBuffer)));
 
         // Act & Assert
         var exception1 = await Assert.ThrowsAsync<ObjectDisposedException>(
            () => _mockBuffer.Object.CopyFromHostAsync(sourceMemory).AsTask());
-        exception1.ObjectName.Should().Be(nameof(IMemoryBuffer));
+        _ = exception1.ObjectName.Should().Be(nameof(IMemoryBuffer));
 
         var exception2 = await Assert.ThrowsAsync<ObjectDisposedException>(
            () => _mockBuffer.Object.CopyToHostAsync(destinationMemory).AsTask());
-        exception2.ObjectName.Should().Be(nameof(IMemoryBuffer));
+        _ = exception2.ObjectName.Should().Be(nameof(IMemoryBuffer));
     }
 
     [Fact]
@@ -613,9 +613,9 @@ public sealed class IMemoryBufferTests
         const long size = 1024;
         var options = MemoryOptions.ReadOnly;
 
-        _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(size);
-        _mockBuffer.SetupGet(b => b.Options).Returns(options);
-        _mockBuffer.SetupGet(b => b.IsDisposed).Returns(true);
+        _ = _mockBuffer.SetupGet(b => b.SizeInBytes).Returns(size);
+        _ = _mockBuffer.SetupGet(b => b.Options).Returns(options);
+        _ = _mockBuffer.SetupGet(b => b.IsDisposed).Returns(true);
 
         // Act
         var actualSize = _mockBuffer.Object.SizeInBytes;
@@ -629,5 +629,4 @@ public sealed class IMemoryBufferTests
     }
 
     #endregion
-}
 }

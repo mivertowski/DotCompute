@@ -3,23 +3,18 @@ using DotCompute.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Utilities.TestFixtures
-{
+namespace DotCompute.Tests.Utilities.TestFixtures;
+
 
 /// <summary>
 /// Shared test fixture for memory-related tests.
 /// </summary>
-public sealed class MemoryTestFixture : IAsyncLifetime, IDisposable
+public sealed class MemoryTestFixture(ITestOutputHelper? output = null) : IAsyncLifetime, IDisposable
 {
     private readonly List<IMemoryBuffer> _allocatedBuffers = [];
-    private readonly ITestOutputHelper? _output;
+    private readonly ITestOutputHelper? _output = output;
     private readonly IMemoryManager? _memoryManager = null;
     private bool _disposed;
-
-    public MemoryTestFixture(ITestOutputHelper? output = null)
-    {
-        _output = output;
-    }
 
     /// <summary>
     /// Gets the memory manager.
@@ -168,7 +163,7 @@ public sealed class MemoryTestFixture : IAsyncLifetime, IDisposable
                 }
                 finally
                 {
-                    semaphore.Release();
+                    _ = semaphore.Release();
                 }
             }));
         }
@@ -235,5 +230,4 @@ public sealed class MemoryStressTestResult
 
     public double AllocationsPerSecond
         => Duration.TotalSeconds > 0 ? SuccessfulAllocations / Duration.TotalSeconds : 0;
-}
 }

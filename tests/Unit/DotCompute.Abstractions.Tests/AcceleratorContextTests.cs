@@ -4,8 +4,8 @@
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Abstractions.Tests
-{
+namespace DotCompute.Abstractions.Tests;
+
 
 /// <summary>
 /// Comprehensive unit tests for the AcceleratorContext struct.
@@ -25,9 +25,9 @@ public sealed class AcceleratorContextTests
         var context = new AcceleratorContext(handle, deviceId);
 
         // Assert
-        context.Handle.Should().Be(handle);
-        context.DeviceId.Should().Be(deviceId);
-        context.IsValid.Should().BeTrue();
+        _ = context.Handle.Should().Be(handle);
+        _ = context.DeviceId.Should().Be(deviceId);
+        _ = context.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -37,9 +37,9 @@ public sealed class AcceleratorContextTests
         var context = new AcceleratorContext(IntPtr.Zero, 0);
 
         // Assert
-        context.Handle.Should().Be(IntPtr.Zero);
-        context.DeviceId.Should().Be(0);
-        context.IsValid.Should().BeFalse();
+        _ = context.Handle.Should().Be(IntPtr.Zero);
+        _ = context.DeviceId.Should().Be(0);
+        _ = context.IsValid.Should().BeFalse();
     }
 
     [Fact]
@@ -53,9 +53,9 @@ public sealed class AcceleratorContextTests
         var context = new AcceleratorContext(handle, negativeDeviceId);
 
         // Assert
-        context.Handle.Should().Be(handle);
-        context.DeviceId.Should().Be(negativeDeviceId);
-        context.IsValid.Should().BeTrue(); // Valid because handle is non-zero
+        _ = context.Handle.Should().Be(handle);
+        _ = context.DeviceId.Should().Be(negativeDeviceId);
+        _ = context.IsValid.Should().BeTrue(); // Valid because handle is non-zero
     }
 
     [Theory]
@@ -72,9 +72,9 @@ public sealed class AcceleratorContextTests
         var context = new AcceleratorContext(handle, deviceId);
 
         // Assert
-        context.Handle.Should().Be(handle);
-        context.DeviceId.Should().Be(deviceId);
-        context.IsValid.Should().Be(handle != IntPtr.Zero);
+        _ = context.Handle.Should().Be(handle);
+        _ = context.DeviceId.Should().Be(deviceId);
+        _ = context.IsValid.Should().Be(handle != IntPtr.Zero);
     }
 
     #endregion
@@ -163,9 +163,9 @@ public sealed class AcceleratorContextTests
         var invalidContext = AcceleratorContext.Invalid;
 
         // Assert
-        invalidContext.Handle.Should().Be(IntPtr.Zero);
-        invalidContext.DeviceId.Should().Be(-1);
-        invalidContext.IsValid.Should().BeFalse();
+        _ = invalidContext.Handle.Should().Be(IntPtr.Zero);
+        _ = invalidContext.DeviceId.Should().Be(-1);
+        _ = invalidContext.IsValid.Should().BeFalse();
     }
 
     [Fact]
@@ -177,7 +177,7 @@ public sealed class AcceleratorContextTests
 
         // Assert
         Assert.Equal(invalid2, invalid1);
-        invalid1.Equals(invalid2).Should().BeTrue();
+        _ = invalid1.Equals(invalid2).Should().BeTrue();
     }
 
     #endregion
@@ -191,9 +191,9 @@ public sealed class AcceleratorContextTests
         var context = new AcceleratorContext(new IntPtr(0x1000), 5);
 
         // Act & Assert
-        context.Equals(context).Should().BeTrue();
-        context.Equals(context).Should().BeTrue();
-        (!context.Equals(null)).Should().BeTrue();
+        _ = context.Equals(context).Should().BeTrue();
+        _ = context.Equals(context).Should().BeTrue();
+        _ = (!context.Equals(null)).Should().BeTrue();
     }
 
     [Fact]
@@ -206,9 +206,9 @@ public sealed class AcceleratorContextTests
         var context2 = new AcceleratorContext(handle, deviceId);
 
         // Act & Assert
-        context1.Equals(context2).Should().BeTrue();
-        (context1 == context2).Should().BeTrue();
-        (context1 != context2).Should().BeFalse();
+        _ = context1.Equals(context2).Should().BeTrue();
+        _ = (context1 == context2).Should().BeTrue();
+        _ = (context1 != context2).Should().BeFalse();
     }
 
     [Fact]
@@ -219,9 +219,9 @@ public sealed class AcceleratorContextTests
         var context2 = new AcceleratorContext(new IntPtr(0x2000), 5);
 
         // Act & Assert
-        context1.Equals(context2).Should().BeFalse();
-        (context1 == context2).Should().BeFalse();
-        (context1 != context2).Should().BeTrue();
+        _ = context1.Equals(context2).Should().BeFalse();
+        _ = (context1 == context2).Should().BeFalse();
+        _ = (context1 != context2).Should().BeTrue();
     }
 
     [Fact]
@@ -233,9 +233,9 @@ public sealed class AcceleratorContextTests
         var context2 = new AcceleratorContext(handle, 10);
 
         // Act & Assert
-        context1.Equals(context2).Should().BeFalse();
-        (context1 == context2).Should().BeFalse();
-        (context1 != context2).Should().BeTrue();
+        _ = context1.Equals(context2).Should().BeFalse();
+        _ = (context1 == context2).Should().BeFalse();
+        _ = (context1 != context2).Should().BeTrue();
     }
 
     [Fact]
@@ -246,9 +246,9 @@ public sealed class AcceleratorContextTests
         var context2 = new AcceleratorContext(new IntPtr(0x2000), 10);
 
         // Act & Assert
-        context1.Equals(context2).Should().BeFalse();
-        (context1 == context2).Should().BeFalse();
-        (context1 != context2).Should().BeTrue();
+        _ = context1.Equals(context2).Should().BeFalse();
+        _ = (context1 == context2).Should().BeFalse();
+        _ = (context1 != context2).Should().BeTrue();
     }
 
     [Fact]
@@ -258,7 +258,7 @@ public sealed class AcceleratorContextTests
         var context = new AcceleratorContext(new IntPtr(0x1000), 5);
 
         // Act & Assert
-        context.Equals(null).Should().BeFalse();
+        _ = context.Equals(null).Should().BeFalse();
     }
 
     [Fact]
@@ -269,7 +269,7 @@ public sealed class AcceleratorContextTests
         var otherObject = "not a context";
 
         // Act & Assert
-        context.Equals(otherObject).Should().BeFalse();
+        _ = context.Equals(otherObject).Should().BeFalse();
     }
 
     [Fact]
@@ -281,7 +281,7 @@ public sealed class AcceleratorContextTests
         object boxedContext2 = context2;
 
         // Act & Assert
-        context1.Equals(boxedContext2).Should().BeTrue();
+        _ = context1.Equals(boxedContext2).Should().BeTrue();
     }
 
     #endregion
@@ -334,7 +334,7 @@ public sealed class AcceleratorContextTests
         var hashCode2 = context2.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        _ = hashCode1.Should().NotBe(hashCode2);
     }
 
     [Fact]
@@ -349,7 +349,7 @@ public sealed class AcceleratorContextTests
         var hashCode2 = context2.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        _ = hashCode1.Should().NotBe(hashCode2);
     }
 
     [Fact]
@@ -365,7 +365,7 @@ public sealed class AcceleratorContextTests
         var hashCode2 = context2.GetHashCode();
 
         // Assert
-        hashCode1.Should().NotBe(hashCode2);
+        _ = hashCode1.Should().NotBe(hashCode2);
     }
 
     #endregion
@@ -384,7 +384,7 @@ public sealed class AcceleratorContextTests
         var result = context.ToString();
 
         // Assert
-        result.Should().Be("AcceleratorContext(Device=42, Handle=1234)");
+        _ = result.Should().Be("AcceleratorContext(Device=42, Handle=1234)");
     }
 
     [Fact]
@@ -397,7 +397,7 @@ public sealed class AcceleratorContextTests
         var result = context.ToString();
 
         // Assert
-        result.Should().Be("AcceleratorContext(Invalid)");
+        _ = result.Should().Be("AcceleratorContext(Invalid)");
     }
 
     [Fact]
@@ -410,7 +410,7 @@ public sealed class AcceleratorContextTests
         var result = context.ToString();
 
         // Assert
-        result.Should().Be("AcceleratorContext(Invalid)");
+        _ = result.Should().Be("AcceleratorContext(Invalid)");
     }
 
     [Fact]
@@ -425,7 +425,7 @@ public sealed class AcceleratorContextTests
         var result = context.ToString();
 
         // Assert
-        result.Should().Be("AcceleratorContext(Device=0, Handle=DEADBEEF)");
+        _ = result.Should().Be("AcceleratorContext(Device=0, Handle=DEADBEEF)");
     }
 
     [Theory]
@@ -456,7 +456,7 @@ public sealed class AcceleratorContextTests
         var type = typeof(AcceleratorContext);
 
         // Assert
-        type.Should().BeAssignableTo<IEquatable<AcceleratorContext>>();
+        _ = type.Should().BeAssignableTo<IEquatable<AcceleratorContext>>();
     }
 
     #endregion
@@ -470,9 +470,9 @@ public sealed class AcceleratorContextTests
         var context = new AcceleratorContext(new IntPtr(long.MaxValue), int.MaxValue);
 
         // Assert
-        context.Handle.Should().Be(new IntPtr(long.MaxValue));
-        context.DeviceId.Should().Be(int.MaxValue);
-        context.IsValid.Should().BeTrue();
+        _ = context.Handle.Should().Be(new IntPtr(long.MaxValue));
+        _ = context.DeviceId.Should().Be(int.MaxValue);
+        _ = context.IsValid.Should().BeTrue();
     }
 
     [Fact]
@@ -482,9 +482,9 @@ public sealed class AcceleratorContextTests
         var context = new AcceleratorContext(new IntPtr(long.MinValue), int.MinValue);
 
         // Assert
-        context.Handle.Should().Be(new IntPtr(long.MinValue));
-        context.DeviceId.Should().Be(int.MinValue);
-        context.IsValid.Should().BeTrue(); // Non-zero handle
+        _ = context.Handle.Should().Be(new IntPtr(long.MinValue));
+        _ = context.DeviceId.Should().Be(int.MinValue);
+        _ = context.IsValid.Should().BeTrue(); // Non-zero handle
     }
 
     [Fact]
@@ -493,12 +493,12 @@ public sealed class AcceleratorContextTests
         // Arrange
         var contexts = new[]
         {
-            new AcceleratorContext(new IntPtr(0x1000), 1),
-            new AcceleratorContext(new IntPtr(0x2000), 1),
-            new AcceleratorContext(new IntPtr(0x1000), 2),
-            new AcceleratorContext(new IntPtr(0x2000), 2),
-            AcceleratorContext.Invalid
-        };
+        new AcceleratorContext(new IntPtr(0x1000), 1),
+        new AcceleratorContext(new IntPtr(0x2000), 1),
+        new AcceleratorContext(new IntPtr(0x1000), 2),
+        new AcceleratorContext(new IntPtr(0x2000), 2),
+        AcceleratorContext.Invalid
+    };
 
         // Act & Assert - Each context should only equal itself
         for (var i = 0; i < contexts.Length; i++)
@@ -507,11 +507,11 @@ public sealed class AcceleratorContextTests
             {
                 if (i == j)
                 {
-                    contexts[i].Should().Be(contexts[j]);
+                    _ = contexts[i].Should().Be(contexts[j]);
                 }
                 else
                 {
-                    contexts[i].Should().NotBe(contexts[j]);
+                    _ = contexts[i].Should().NotBe(contexts[j]);
                 }
             }
         }
@@ -523,17 +523,17 @@ public sealed class AcceleratorContextTests
         // Test various edge cases for IsValid property
         var testCases = new[]
         {
-           (IntPtr.Zero, false),
-           (new IntPtr(1), true),
-           (new IntPtr(-1), true),
-           (new IntPtr(long.MaxValue), true),
-           (new IntPtr(long.MinValue), true)
-        };
+       (IntPtr.Zero, false),
+       (new IntPtr(1), true),
+       (new IntPtr(-1), true),
+       (new IntPtr(long.MaxValue), true),
+       (new IntPtr(long.MinValue), true)
+    };
 
         foreach (var (handle, expectedValid) in testCases)
         {
             var context = new AcceleratorContext(handle, 0);
-            context.IsValid.Should().Be(expectedValid); // Handle validity check
+            _ = context.IsValid.Should().Be(expectedValid); // Handle validity check
         }
     }
 
@@ -559,18 +559,18 @@ public sealed class AcceleratorContextTests
                 var toString = context.ToString();
                 var hashCode = context.GetHashCode();
 
-                handle.Should().Be(new IntPtr(0x12345678));
+                _ = handle.Should().Be(new IntPtr(0x12345678));
                 Assert.Equal(42, deviceId);
                 Assert.True(isValid);
-                toString.Should().Be("AcceleratorContext(Device=42, Handle=12345678)");
-                hashCode.Should().Be(context.GetHashCode());
+                _ = toString.Should().Be("AcceleratorContext(Device=42, Handle=12345678)");
+                _ = hashCode.Should().Be(context.GetHashCode());
             }));
         }
 
-        System.Threading.Tasks.Task.WaitAll(tasks.ToArray());
+        System.Threading.Tasks.Task.WaitAll([.. tasks]);
 
         // Assert - No exceptions should be thrown
-        tasks.Should().AllSatisfy(t => t.IsCompletedSuccessfully.Should().BeTrue());
+        _ = tasks.Should().AllSatisfy(t => t.IsCompletedSuccessfully.Should().BeTrue());
     }
 
     #endregion
@@ -586,10 +586,10 @@ public sealed class AcceleratorContextTests
         var context3 = new AcceleratorContext(new IntPtr(0x2000), 5);
 
         // Act & Assert
-        (context1 == context2).Should().BeTrue();
-        (context1 == context3).Should().BeFalse();
+        _ = (context1 == context2).Should().BeTrue();
+        _ = (context1 == context3).Should().BeFalse();
 #pragma warning disable CS1718 // Comparison made to same variable
-        (context1 == context1).Should().BeTrue();
+        _ = (context1 == context1).Should().BeTrue();
 #pragma warning restore CS1718
     }
 
@@ -602,13 +602,12 @@ public sealed class AcceleratorContextTests
         var context3 = new AcceleratorContext(new IntPtr(0x2000), 5);
 
         // Act & Assert
-        (context1 != context2).Should().BeFalse();
-        (context1 != context3).Should().BeTrue();
+        _ = (context1 != context2).Should().BeFalse();
+        _ = (context1 != context3).Should().BeTrue();
 #pragma warning disable CS1718 // Comparison made to same variable
-        (context1 != context1).Should().BeFalse();
+        _ = (context1 != context1).Should().BeFalse();
 #pragma warning restore CS1718
     }
 
     #endregion
-}
 }

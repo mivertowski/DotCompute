@@ -7,239 +7,239 @@ using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Accelerators;
 using DotCompute.Backends.Metal.Native;
 
-namespace DotCompute.Backends.Metal.Memory
-{
+namespace DotCompute.Backends.Metal.Memory;
+
 
 /// <summary>
 /// Memory manager for Metal GPU memory allocation and management.
 /// </summary>
 public sealed class MetalMemoryManager(IntPtr device, MetalAcceleratorOptions options) : IMemoryManager
 {
-    private readonly IntPtr _device = device;
-    private readonly MetalAcceleratorOptions _options = options ?? throw new ArgumentNullException(nameof(options));
-    private readonly ConcurrentDictionary<IMemoryBuffer, MetalMemoryBuffer> _allocations = new();
-    private long _totalAllocated;
-    private int _disposed;
+private readonly IntPtr _device = device;
+private readonly MetalAcceleratorOptions _options = options ?? throw new ArgumentNullException(nameof(options));
+private readonly ConcurrentDictionary<IMemoryBuffer, MetalMemoryBuffer> _allocations = new();
+private long _totalAllocated;
+private int _disposed;
 
-    /// <inheritdoc/>
-    public async ValueTask<IMemoryBuffer> AllocateAsync(
-        long sizeInBytes,
-        MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default)
+/// <inheritdoc/>
+public async ValueTask<IMemoryBuffer> AllocateAsync(
+    long sizeInBytes,
+    MemoryOptions options = MemoryOptions.None,
+    CancellationToken cancellationToken = default)
+{
+    if (sizeInBytes <= 0)
     {
-        if (sizeInBytes <= 0)
-        {
-            throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size must be positive.");
-        }
-
-        if (sizeInBytes > _options.MaxMemoryAllocation)
-        {
-            throw new ArgumentOutOfRangeException(nameof(sizeInBytes),
-                $"Requested size {sizeInBytes} exceeds maximum allocation size {_options.MaxMemoryAllocation}.");
-        }
-
-        ObjectDisposedException.ThrowIf(_disposed > 0, this);
-
-        return await Task.Run(() =>
-        {
-            // Determine storage mode based on options
-            var storageMode = GetStorageMode(options);
-
-            // Create Metal buffer
-            var buffer = MetalNative.CreateBuffer(_device, (nuint)sizeInBytes, storageMode);
-            if (buffer == IntPtr.Zero)
-            {
-                throw new InvalidOperationException($"Failed to allocate Metal buffer of size {sizeInBytes}.");
-            }
-
-            // Create memory buffer wrapper
-            var memoryBuffer = new MetalMemoryBuffer(buffer, sizeInBytes, options, storageMode, this);
-
-            // Track allocation
-            if (!_allocations.TryAdd(memoryBuffer, memoryBuffer))
-            {
-                MetalNative.ReleaseBuffer(buffer);
-                throw new InvalidOperationException("Failed to track memory allocation.");
-            }
-
-            Interlocked.Add(ref _totalAllocated, sizeInBytes);
-
-            return memoryBuffer;
-        }, cancellationToken).ConfigureAwait(false);
+        throw new ArgumentOutOfRangeException(nameof(sizeInBytes), "Size must be positive.");
     }
 
-    /// <inheritdoc/>
-    public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
-        ReadOnlyMemory<T> source,
-        MemoryOptions options = MemoryOptions.None,
-        CancellationToken cancellationToken = default) where T : unmanaged
+    if (sizeInBytes > _options.MaxMemoryAllocation)
     {
-        var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
-        var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
-
-        try
-        {
-            await buffer.CopyFromHostAsync(source, 0, cancellationToken).ConfigureAwait(false);
-            return buffer;
-        }
-        catch
-        {
-            await buffer.DisposeAsync().ConfigureAwait(false);
-            throw;
-        }
+        throw new ArgumentOutOfRangeException(nameof(sizeInBytes),
+            $"Requested size {sizeInBytes} exceeds maximum allocation size {_options.MaxMemoryAllocation}.");
     }
 
-    /// <inheritdoc/>
-    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+    ObjectDisposedException.ThrowIf(_disposed > 0, this);
+
+    return await Task.Run(() =>
     {
-        ArgumentNullException.ThrowIfNull(buffer);
+        // Determine storage mode based on options
+        var storageMode = GetStorageMode(options);
 
-        if (!_allocations.TryGetValue(buffer, out var metalBuffer))
+        // Create Metal buffer
+        var buffer = MetalNative.CreateBuffer(_device, (nuint)sizeInBytes, storageMode);
+        if (buffer == IntPtr.Zero)
         {
-            throw new ArgumentException("Buffer was not allocated by this manager.", nameof(buffer));
+            throw new InvalidOperationException($"Failed to allocate Metal buffer of size {sizeInBytes}.");
         }
 
-        if (offset < 0 || offset >= metalBuffer.SizeInBytes)
+        // Create memory buffer wrapper
+        var memoryBuffer = new MetalMemoryBuffer(buffer, sizeInBytes, options, storageMode, this);
+
+        // Track allocation
+        if (!_allocations.TryAdd(memoryBuffer, memoryBuffer))
         {
-            throw new ArgumentOutOfRangeException(nameof(offset));
+            MetalNative.ReleaseBuffer(buffer);
+            throw new InvalidOperationException("Failed to track memory allocation.");
         }
 
-        if (length < 0 || offset + length > metalBuffer.SizeInBytes)
-        {
-            throw new ArgumentOutOfRangeException(nameof(length));
-        }
+        Interlocked.Add(ref _totalAllocated, sizeInBytes);
 
-        return new MetalMemoryBufferView(metalBuffer, offset, length);
+        return memoryBuffer;
+    }, cancellationToken).ConfigureAwait(false);
+}
+
+/// <inheritdoc/>
+public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
+    ReadOnlyMemory<T> source,
+    MemoryOptions options = MemoryOptions.None,
+    CancellationToken cancellationToken = default) where T : unmanaged
+{
+    var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
+    var buffer = await AllocateAsync(sizeInBytes, options, cancellationToken).ConfigureAwait(false);
+
+    try
+    {
+        await buffer.CopyFromHostAsync(source, 0, cancellationToken).ConfigureAwait(false);
+        return buffer;
+    }
+    catch
+    {
+        await buffer.DisposeAsync().ConfigureAwait(false);
+        throw;
+    }
+}
+
+/// <inheritdoc/>
+public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+{
+    ArgumentNullException.ThrowIfNull(buffer);
+
+    if (!_allocations.TryGetValue(buffer, out var metalBuffer))
+    {
+        throw new ArgumentException("Buffer was not allocated by this manager.", nameof(buffer));
     }
 
-    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    if (offset < 0 || offset >= metalBuffer.SizeInBytes)
     {
-        var elementSize = Unsafe.SizeOf<T>();
-        var sizeInBytes = count * elementSize;
-        return AllocateAsync(sizeInBytes);
+        throw new ArgumentOutOfRangeException(nameof(offset));
     }
 
-    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    if (length < 0 || offset + length > metalBuffer.SizeInBytes)
     {
-        ArgumentNullException.ThrowIfNull(buffer);
-        ObjectDisposedException.ThrowIf(_disposed > 0, this);
-        
-        if (!_allocations.TryGetValue(buffer, out var metalBuffer))
-        {
-            throw new ArgumentException("Buffer was not allocated by this manager.", nameof(buffer));
-        }
-        
-        var elementSize = Unsafe.SizeOf<T>();
-        var sizeInBytes = data.Length * elementSize;
-        
-        if (sizeInBytes > buffer.SizeInBytes)
-        {
-            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
-        }
-
-        unsafe
-        {
-            var contents = MetalNative.GetBufferContents(metalBuffer.Buffer);
-            if (contents == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Failed to get buffer contents.");
-            }
-
-            fixed (T* dataPtr = data)
-            {
-                System.Buffer.MemoryCopy(dataPtr, contents.ToPointer(), buffer.SizeInBytes, sizeInBytes);
-            }
-
-            // For managed storage mode, mark the range as modified
-            if (metalBuffer.StorageMode == MetalStorageMode.Managed)
-            {
-                MetalNative.DidModifyRange(metalBuffer.Buffer, 0, sizeInBytes);
-            }
-        }
+        throw new ArgumentOutOfRangeException(nameof(length));
     }
 
-    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    return new MetalMemoryBufferView(metalBuffer, offset, length);
+}
+
+public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+{
+    var elementSize = Unsafe.SizeOf<T>();
+    var sizeInBytes = count * elementSize;
+    return AllocateAsync(sizeInBytes);
+}
+
+public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+{
+    ArgumentNullException.ThrowIfNull(buffer);
+    ObjectDisposedException.ThrowIf(_disposed > 0, this);
+    
+    if (!_allocations.TryGetValue(buffer, out var metalBuffer))
     {
-        ArgumentNullException.ThrowIfNull(buffer);
-        ObjectDisposedException.ThrowIf(_disposed > 0, this);
-        
-        if (!_allocations.TryGetValue(buffer, out var metalBuffer))
-        {
-            throw new ArgumentException("Buffer was not allocated by this manager.", nameof(buffer));
-        }
-        
-        var elementSize = Unsafe.SizeOf<T>();
-        var sizeInBytes = data.Length * elementSize;
-        
-        if (sizeInBytes > buffer.SizeInBytes)
-        {
-            throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
-        }
-
-        unsafe
-        {
-            var contents = MetalNative.GetBufferContents(metalBuffer.Buffer);
-            if (contents == IntPtr.Zero)
-            {
-                throw new InvalidOperationException("Failed to get buffer contents.");
-            }
-
-            fixed (T* dataPtr = data)
-            {
-                System.Buffer.MemoryCopy(contents.ToPointer(), dataPtr, sizeInBytes, sizeInBytes);
-            }
-        }
+        throw new ArgumentException("Buffer was not allocated by this manager.", nameof(buffer));
+    }
+    
+    var elementSize = Unsafe.SizeOf<T>();
+    var sizeInBytes = data.Length * elementSize;
+    
+    if (sizeInBytes > buffer.SizeInBytes)
+    {
+        throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
     }
 
-    public void Free(IMemoryBuffer buffer)
+    unsafe
     {
-        ArgumentNullException.ThrowIfNull(buffer);
-        
-        if (_allocations.TryRemove(buffer, out var metalBuffer))
+        var contents = MetalNative.GetBufferContents(metalBuffer.Buffer);
+        if (contents == IntPtr.Zero)
         {
-            metalBuffer.Dispose();
+            throw new InvalidOperationException("Failed to get buffer contents.");
+        }
+
+        fixed (T* dataPtr = data)
+        {
+            System.Buffer.MemoryCopy(dataPtr, contents.ToPointer(), buffer.SizeInBytes, sizeInBytes);
+        }
+
+        // For managed storage mode, mark the range as modified
+        if (metalBuffer.StorageMode == MetalStorageMode.Managed)
+        {
+            MetalNative.DidModifyRange(metalBuffer.Buffer, 0, sizeInBytes);
         }
     }
+}
 
-    public long GetAllocatedMemory() => Interlocked.Read(ref _totalAllocated);
-
-    public async ValueTask DisposeAsync()
+public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+{
+    ArgumentNullException.ThrowIfNull(buffer);
+    ObjectDisposedException.ThrowIf(_disposed > 0, this);
+    
+    if (!_allocations.TryGetValue(buffer, out var metalBuffer))
     {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0)
-        {
-            return;
-        }
-
-        // Free all remaining allocations
-        foreach (var allocation in _allocations.Values)
-        {
-            await allocation.DisposeAsync().ConfigureAwait(false);
-        }
-        _allocations.Clear();
+        throw new ArgumentException("Buffer was not allocated by this manager.", nameof(buffer));
+    }
+    
+    var elementSize = Unsafe.SizeOf<T>();
+    var sizeInBytes = data.Length * elementSize;
+    
+    if (sizeInBytes > buffer.SizeInBytes)
+    {
+        throw new ArgumentException("Data size exceeds buffer capacity", nameof(data));
     }
 
-    internal void OnMemoryFreed(MetalMemoryBuffer memory)
+    unsafe
     {
-        _allocations.TryRemove(memory, out _);
-        Interlocked.Add(ref _totalAllocated, -memory.SizeInBytes);
-    }
-
-    private static MetalStorageMode GetStorageMode(MemoryOptions options)
-    {
-        // Determine optimal storage mode based on options
-        if (options.HasFlag(MemoryOptions.HostVisible))
+        var contents = MetalNative.GetBufferContents(metalBuffer.Buffer);
+        if (contents == IntPtr.Zero)
         {
-            return MetalStorageMode.Shared; // Unified memory (most common on Apple Silicon)
+            throw new InvalidOperationException("Failed to get buffer contents.");
         }
 
-        if (options.HasFlag(MemoryOptions.Cached))
+        fixed (T* dataPtr = data)
         {
-            return MetalStorageMode.Managed; // Managed memory with explicit synchronization
+            System.Buffer.MemoryCopy(contents.ToPointer(), dataPtr, sizeInBytes, sizeInBytes);
         }
-
-        // Default to private GPU memory for best performance
-        return MetalStorageMode.Private;
     }
+}
+
+public void Free(IMemoryBuffer buffer)
+{
+    ArgumentNullException.ThrowIfNull(buffer);
+    
+    if (_allocations.TryRemove(buffer, out var metalBuffer))
+    {
+        metalBuffer.Dispose();
+    }
+}
+
+public long GetAllocatedMemory() => Interlocked.Read(ref _totalAllocated);
+
+public async ValueTask DisposeAsync()
+{
+    if (Interlocked.Exchange(ref _disposed, 1) != 0)
+    {
+        return;
+    }
+
+    // Free all remaining allocations
+    foreach (var allocation in _allocations.Values)
+    {
+        await allocation.DisposeAsync().ConfigureAwait(false);
+    }
+    _allocations.Clear();
+}
+
+internal void OnMemoryFreed(MetalMemoryBuffer memory)
+{
+    _allocations.TryRemove(memory, out _);
+    Interlocked.Add(ref _totalAllocated, -memory.SizeInBytes);
+}
+
+private static MetalStorageMode GetStorageMode(MemoryOptions options)
+{
+    // Determine optimal storage mode based on options
+    if (options.HasFlag(MemoryOptions.HostVisible))
+    {
+        return MetalStorageMode.Shared; // Unified memory (most common on Apple Silicon)
+    }
+
+    if (options.HasFlag(MemoryOptions.Cached))
+    {
+        return MetalStorageMode.Managed; // Managed memory with explicit synchronization
+    }
+
+    // Default to private GPU memory for best performance
+    return MetalStorageMode.Private;
+}
 }
 
 /// <summary>
@@ -247,148 +247,148 @@ public sealed class MetalMemoryManager(IntPtr device, MetalAcceleratorOptions op
 /// </summary>
 internal sealed class MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryOptions options, MetalStorageMode storageMode, MetalMemoryManager manager) : IMemoryBuffer
 {
-    private readonly MetalMemoryManager _manager = manager;
-    private readonly MetalStorageMode _storageMode = storageMode;
-    private int _disposed;
+private readonly MetalMemoryManager _manager = manager;
+private readonly MetalStorageMode _storageMode = storageMode;
+private int _disposed;
 
-    public IntPtr Buffer { get; } = buffer;
+public IntPtr Buffer { get; } = buffer;
 
-    public long SizeInBytes { get; } = sizeInBytes;
+public long SizeInBytes { get; } = sizeInBytes;
 
-    public MemoryOptions Options { get; } = options;
+public MemoryOptions Options { get; } = options;
 
-    public bool IsDisposed => _disposed > 0;
+public bool IsDisposed => _disposed > 0;
 
-    public MetalStorageMode StorageMode => _storageMode;
+public MetalStorageMode StorageMode => _storageMode;
 
-    public async ValueTask CopyFromHostAsync<T>(
-        ReadOnlyMemory<T> source,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
+public async ValueTask CopyFromHostAsync<T>(
+    ReadOnlyMemory<T> source,
+    long offset = 0,
+    CancellationToken cancellationToken = default) where T : unmanaged
+{
+    ObjectDisposedException.ThrowIf(_disposed > 0, this);
+
+    if (offset < 0 || offset >= SizeInBytes)
     {
-        ObjectDisposedException.ThrowIf(_disposed > 0, this);
-
-        if (offset < 0 || offset >= SizeInBytes)
-        {
-            throw new ArgumentOutOfRangeException(nameof(offset));
-        }
-
-        var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
-        if (offset + sizeInBytes > SizeInBytes)
-        {
-            throw new ArgumentException("Source data exceeds buffer size.");
-        }
-
-        await Task.Run(() =>
-        {
-            unsafe
-            {
-                var contents = MetalNative.GetBufferContents(Buffer);
-                if (contents == IntPtr.Zero)
-                {
-                    throw new InvalidOperationException("Failed to get buffer contents.");
-                }
-
-                using var handle = source.Pin();
-                var sourcePtr = new IntPtr(handle.Pointer);
-                var destPtr = IntPtr.Add(contents, (int)offset);
-
-                System.Buffer.MemoryCopy(sourcePtr.ToPointer(), destPtr.ToPointer(), SizeInBytes - offset, sizeInBytes);
-
-                // For managed storage mode, mark the range as modified
-                if (_storageMode == MetalStorageMode.Managed)
-                {
-                    MetalNative.DidModifyRange(Buffer, offset, sizeInBytes);
-                }
-            }
-        }, cancellationToken).ConfigureAwait(false);
+        throw new ArgumentOutOfRangeException(nameof(offset));
     }
 
-    public async ValueTask CopyToHostAsync<T>(
-        Memory<T> destination,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged
+    var sizeInBytes = source.Length * Unsafe.SizeOf<T>();
+    if (offset + sizeInBytes > SizeInBytes)
     {
-        ObjectDisposedException.ThrowIf(_disposed > 0, this);
-
-        if (offset < 0 || offset >= SizeInBytes)
-        {
-            throw new ArgumentOutOfRangeException(nameof(offset));
-        }
-
-        var sizeInBytes = destination.Length * Unsafe.SizeOf<T>();
-        if (offset + sizeInBytes > SizeInBytes)
-        {
-            throw new ArgumentException("Requested range exceeds buffer size.");
-        }
-
-        await Task.Run(() =>
-        {
-            unsafe
-            {
-                var contents = MetalNative.GetBufferContents(Buffer);
-                if (contents == IntPtr.Zero)
-                {
-                    throw new InvalidOperationException("Failed to get buffer contents.");
-                }
-
-                using var handle = destination.Pin();
-                var destPtr = new IntPtr(handle.Pointer);
-                var sourcePtr = IntPtr.Add(contents, (int)offset);
-
-                System.Buffer.MemoryCopy(sourcePtr.ToPointer(), destPtr.ToPointer(), sizeInBytes, sizeInBytes);
-            }
-        }, cancellationToken).ConfigureAwait(false);
+        throw new ArgumentException("Source data exceeds buffer size.");
     }
 
-    public async ValueTask DisposeAsync()
+    await Task.Run(() =>
     {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        unsafe
         {
-            return;
-        }
-
-        await Task.Run(() =>
-        {
-            if (Buffer != IntPtr.Zero)
+            var contents = MetalNative.GetBufferContents(Buffer);
+            if (contents == IntPtr.Zero)
             {
-                MetalNative.ReleaseBuffer(Buffer);
+                throw new InvalidOperationException("Failed to get buffer contents.");
             }
-            _manager.OnMemoryFreed(this);
-        }).ConfigureAwait(false);
 
-        GC.SuppressFinalize(this);
+            using var handle = source.Pin();
+            var sourcePtr = new IntPtr(handle.Pointer);
+            var destPtr = IntPtr.Add(contents, (int)offset);
+
+            System.Buffer.MemoryCopy(sourcePtr.ToPointer(), destPtr.ToPointer(), SizeInBytes - offset, sizeInBytes);
+
+            // For managed storage mode, mark the range as modified
+            if (_storageMode == MetalStorageMode.Managed)
+            {
+                MetalNative.DidModifyRange(Buffer, offset, sizeInBytes);
+            }
+        }
+    }, cancellationToken).ConfigureAwait(false);
+}
+
+public async ValueTask CopyToHostAsync<T>(
+    Memory<T> destination,
+    long offset = 0,
+    CancellationToken cancellationToken = default) where T : unmanaged
+{
+    ObjectDisposedException.ThrowIf(_disposed > 0, this);
+
+    if (offset < 0 || offset >= SizeInBytes)
+    {
+        throw new ArgumentOutOfRangeException(nameof(offset));
     }
 
-    public void Dispose()
+    var sizeInBytes = destination.Length * Unsafe.SizeOf<T>();
+    if (offset + sizeInBytes > SizeInBytes)
     {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0)
-        {
-            return;
-        }
-
-        try
-        {
-            // Dispose synchronously - simplified approach for sync dispose
-            if (Buffer != IntPtr.Zero)
-            {
-                MetalNative.ReleaseBuffer(Buffer);
-            }
-            _manager.OnMemoryFreed(this);
-        }
-        finally
-        {
-            GC.SuppressFinalize(this);
-        }
+        throw new ArgumentException("Requested range exceeds buffer size.");
     }
 
-    ~MetalMemoryBuffer()
+    await Task.Run(() =>
     {
-        if (_disposed == 0 && Buffer != IntPtr.Zero)
+        unsafe
+        {
+            var contents = MetalNative.GetBufferContents(Buffer);
+            if (contents == IntPtr.Zero)
+            {
+                throw new InvalidOperationException("Failed to get buffer contents.");
+            }
+
+            using var handle = destination.Pin();
+            var destPtr = new IntPtr(handle.Pointer);
+            var sourcePtr = IntPtr.Add(contents, (int)offset);
+
+            System.Buffer.MemoryCopy(sourcePtr.ToPointer(), destPtr.ToPointer(), sizeInBytes, sizeInBytes);
+        }
+    }, cancellationToken).ConfigureAwait(false);
+}
+
+public async ValueTask DisposeAsync()
+{
+    if (Interlocked.Exchange(ref _disposed, 1) != 0)
+    {
+        return;
+    }
+
+    await Task.Run(() =>
+    {
+        if (Buffer != IntPtr.Zero)
         {
             MetalNative.ReleaseBuffer(Buffer);
         }
+        _manager.OnMemoryFreed(this);
+    }).ConfigureAwait(false);
+
+    GC.SuppressFinalize(this);
+}
+
+public void Dispose()
+{
+    if (Interlocked.Exchange(ref _disposed, 1) != 0)
+    {
+        return;
     }
+
+    try
+    {
+        // Dispose synchronously - simplified approach for sync dispose
+        if (Buffer != IntPtr.Zero)
+        {
+            MetalNative.ReleaseBuffer(Buffer);
+        }
+        _manager.OnMemoryFreed(this);
+    }
+    finally
+    {
+        GC.SuppressFinalize(this);
+    }
+}
+
+~MetalMemoryBuffer()
+{
+    if (_disposed == 0 && Buffer != IntPtr.Zero)
+    {
+        MetalNative.ReleaseBuffer(Buffer);
+    }
+}
 }
 
 /// <summary>
@@ -397,31 +397,30 @@ internal sealed class MetalMemoryBuffer(IntPtr buffer, long sizeInBytes, MemoryO
 internal sealed class MetalMemoryBufferView(MetalMemoryBuffer parent, long offset, long length) : IMemoryBuffer
 {
 #pragma warning disable CA2213 // Disposable fields should be disposed - View doesn't own parent buffer
-    private readonly MetalMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
+private readonly MetalMemoryBuffer _parent = parent ?? throw new ArgumentNullException(nameof(parent));
 #pragma warning restore CA2213
-    private readonly long _offset = offset;
+private readonly long _offset = offset;
 
-    public long SizeInBytes { get; } = length;
+public long SizeInBytes { get; } = length;
 
-    public MemoryOptions Options => _parent.Options;
+public MemoryOptions Options => _parent.Options;
 
-    public bool IsDisposed => _parent.IsDisposed;
+public bool IsDisposed => _parent.IsDisposed;
 
-    public ValueTask CopyFromHostAsync<T>(
-        ReadOnlyMemory<T> source,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
+public ValueTask CopyFromHostAsync<T>(
+    ReadOnlyMemory<T> source,
+    long offset = 0,
+    CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
 
-    public ValueTask CopyToHostAsync<T>(
-        Memory<T> destination,
-        long offset = 0,
-        CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
+public ValueTask CopyToHostAsync<T>(
+    Memory<T> destination,
+    long offset = 0,
+    CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask; // Views don't own the underlying buffer
+public ValueTask DisposeAsync() => ValueTask.CompletedTask; // Views don't own the underlying buffer
 
-    public void Dispose()
-    {
-        // Views don't own the underlying buffer, so nothing to dispose
-    }
+public void Dispose()
+{
+    // Views don't own the underlying buffer, so nothing to dispose
 }
 }

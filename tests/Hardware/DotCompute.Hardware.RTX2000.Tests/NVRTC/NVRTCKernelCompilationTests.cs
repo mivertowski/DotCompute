@@ -6,8 +6,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.NVRTC
-{
+namespace DotCompute.Tests.Hardware.NVRTC;
+
 
 /// <summary>
 /// Tests for NVRTC(NVIDIA Runtime Compilation) on RTX 2000 Ada Generation GPU.
@@ -21,7 +21,7 @@ public sealed class NVRTCKernelCompilationTests : IDisposable
     private readonly ITestOutputHelper _output;
 #pragma warning disable CA1823 // Unused field - Logger for future use
     private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
-    
+
     // Logger messages
     private static readonly Action<ILogger, string, Exception?> LogNvrtcOperation =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(5001), "NVRTC operation: {Operation}");
@@ -109,10 +109,10 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             // Set compilation options for RTX 2000 Ada Gen(compute capability 8.9)
             var options = new[]
             {
-                "--gpu-architecture=compute_89",
-                "--device-c",
-                "--std=c++17"
-            };
+            "--gpu-architecture=compute_89",
+            "--device-c",
+            "--std=c++17"
+        };
 
             // Compile the program
             result = NvrtcCompileProgram(program, options.Length, options);
@@ -122,11 +122,11 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             {
                 // Get compilation log
                 long logSize = 0;
-                NvrtcGetProgramLogSize(program, ref logSize);
+                _ = NvrtcGetProgramLogSize(program, ref logSize);
                 if (logSize > 0)
                 {
                     var log = new byte[logSize];
-                    NvrtcGetProgramLog(program, log);
+                    _ = NvrtcGetProgramLog(program, log);
                     var logString = Encoding.ASCII.GetString(log).TrimEnd('\0');
                     _output.WriteLine($"Compilation log:\n{logString}");
                 }
@@ -147,7 +147,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
 
             var ptxString = Encoding.ASCII.GetString(ptx).TrimEnd('\0');
             _output.WriteLine($"Generated PTX{ptxSize} bytes)");
-            _output.WriteLine($"PTX preview: {ptxString.Substring(0, Math.Min(200, ptxString.Length))}...");
+            _output.WriteLine($"PTX preview: {ptxString[..Math.Min(200, ptxString.Length)]}...");
 
             // Validate PTX contains expected elements
             Assert.Contains("vectorAdd", ptxString, StringComparison.Ordinal); // "PTX should contain the kernel name";
@@ -250,10 +250,10 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             // Prepare kernel parameters
             var kernelParams = new IntPtr[]
             {
-                Marshal.AllocHGlobal(IntPtr.Size),
-                Marshal.AllocHGlobal(IntPtr.Size),
-                Marshal.AllocHGlobal(IntPtr.Size),
-                Marshal.AllocHGlobal(sizeof(int))
+            Marshal.AllocHGlobal(IntPtr.Size),
+            Marshal.AllocHGlobal(IntPtr.Size),
+            Marshal.AllocHGlobal(IntPtr.Size),
+            Marshal.AllocHGlobal(sizeof(int))
             };
 
             try
@@ -307,7 +307,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                     for (var i = 0; i < Math.Min(10, N); i++)
                     {
                         var expected = h_a[i] + h_b[i];
-                        h_c[i].Should().Be(expected, $"Result at index {i} should be correct");
+                        _ = h_c[i].Should().Be(expected, $"Result at index {i} should be correct");
                     }
 
                     _output.WriteLine($"Vector addition completed successfully. Sample results:");
@@ -433,15 +433,15 @@ extern ""C"" __global__ void fastMatrixMul(
             // Use aggressive optimization options for RTX 2000 Ada Gen
             var options = new[]
             {
-                "--gpu-architecture=compute_89",
-                "--use_fast_math",
-                "--extra-device-vectorization",
-                "--maxrregcount=64",
-                "--ftz=true",
-                "--prec-div=false",
-                "--prec-sqrt=false",
-                "--fmad=true"
-            };
+            "--gpu-architecture=compute_89",
+            "--use_fast_math",
+            "--extra-device-vectorization",
+            "--maxrregcount=64",
+            "--ftz=true",
+            "--prec-div=false",
+            "--prec-sqrt=false",
+            "--fmad=true"
+        };
 
             var sw = Stopwatch.StartNew();
             result = NvrtcCompileProgram(program, options.Length, options);
@@ -450,11 +450,11 @@ extern ""C"" __global__ void fastMatrixMul(
             if (result != 0)
             {
                 long logSize = 0;
-                NvrtcGetProgramLogSize(program, ref logSize);
+                _ = NvrtcGetProgramLogSize(program, ref logSize);
                 if (logSize > 0)
                 {
                     var log = new byte[logSize];
-                    NvrtcGetProgramLog(program, log);
+                    _ = NvrtcGetProgramLog(program, log);
                     var logString = Encoding.ASCII.GetString(log).TrimEnd('\0');
                     _output.WriteLine($"Compilation log:\n{logString}");
                 }
@@ -542,8 +542,8 @@ extern ""C"" __global__ void benchmark(float* data, int n)
         _output.WriteLine($"  Max: {maxTime} ms");
 
         // NVRTC should compile simple kernels reasonably quickly
-        averageTime.Should().BeLessThan(1000, "Average compilation time should be under 1 second");
-        maxTime.Should().BeLessThan(2000, "Maximum compilation time should be under 2 seconds");
+        _ = averageTime.Should().BeLessThan(1000, "Average compilation time should be under 1 second");
+        _ = maxTime.Should().BeLessThan(2000, "Maximum compilation time should be under 2 seconds");
 
         await Task.CompletedTask;
     }
@@ -689,5 +689,4 @@ internal sealed class SkipException : Exception
     public SkipException() : base() { }
     public SkipException(string reason) : base(reason) { }
     public SkipException(string message, Exception innerException) : base(message, innerException) { }
-}
 }

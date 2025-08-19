@@ -12,8 +12,8 @@ using DotCompute.Backends.CPU.Kernels;
 using Xunit.Abstractions;
 
 #pragma warning disable CA1515 // Make types internal
-namespace DotCompute.Backends.CPU
-{
+namespace DotCompute.Backends.CPU;
+
 
 /// <summary>
 /// Integration tests validating the enhanced SIMD kernels work correctly
@@ -33,14 +33,14 @@ public sealed class SimdIntegrationTests(ITestOutputHelper output)
         _output.WriteLine($"Supported instruction sets: {string.Join(", ", capabilities.SupportedInstructionSets)}");
 
         // Validate capabilities detection
-        capabilities.IsHardwareAccelerated.Should().BeTrue();
-        capabilities.PreferredVectorWidth.Should().BeGreaterThanOrEqualTo(128, "Vector width should be at least 128-bit");
+        _ = capabilities.IsHardwareAccelerated.Should().BeTrue();
+        _ = capabilities.PreferredVectorWidth.Should().BeGreaterThanOrEqualTo(128, "Vector width should be at least 128-bit");
         Assert.NotEmpty(capabilities.SupportedInstructionSets);
 
         // Platform-specific validation
         if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
         {
-            capabilities.SupportsSse2.Should().BeTrue();
+            _ = capabilities.SupportsSse2.Should().BeTrue();
         }
         else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
         {
@@ -82,7 +82,7 @@ public sealed class SimdIntegrationTests(ITestOutputHelper output)
             var actual = result[i];
             var error = Math.Abs(expected - actual);
 
-            error.Should().BeLessThan(1e-6f, $"FMA result mismatch at index {i}: expected {expected}, got {actual}");
+            _ = error.Should().BeLessThan(1e-6f, $"FMA result mismatch at index {i}: expected {expected}, got {actual}");
         }
 
         _output.WriteLine("✓ FMA implementation works correctly with existing infrastructure");
@@ -158,12 +158,12 @@ public sealed class SimdIntegrationTests(ITestOutputHelper output)
         // Test ARM NEON operations
         var operations = new[]
         {
-            NeonOperation.Add,
-            NeonOperation.Multiply,
-            NeonOperation.MultiplyAdd,
-            NeonOperation.Maximum,
-            NeonOperation.Minimum
-        };
+        NeonOperation.Add,
+        NeonOperation.Multiply,
+        NeonOperation.MultiplyAdd,
+        NeonOperation.Maximum,
+        NeonOperation.Minimum
+    };
 
         foreach (var operation in operations)
         {
@@ -336,7 +336,7 @@ public sealed class SimdIntegrationTests(ITestOutputHelper output)
         for (var i = 0; i < result.Length; i++)
         {
             var error = Math.Abs(expected[i] - result[i]);
-            error.Should().BeLessThan(1e-4f, $"Matrix multiply result mismatch at index {i}: expected {expected[i]}, got {result[i]}");
+            _ = error.Should().BeLessThan(1e-4f, $"Matrix multiply result mismatch at index {i}: expected {expected[i]}, got {result[i]}");
         }
 
         _output.WriteLine("✓ Matrix multiplication achieves correct linear algebra results");
@@ -371,7 +371,7 @@ public sealed class SimdIntegrationTests(ITestOutputHelper output)
         var error = Math.Abs(expectedSum - actualSum);
         var relativeError = error / Math.Abs(expectedSum);
 
-        (relativeError < 1e-5).Should().BeTrue($"Horizontal reduction error too large: expected {expectedSum}, got {actualSum}, relative error {relativeError}");
+        _ = (relativeError < 1e-5).Should().BeTrue($"Horizontal reduction error too large: expected {expectedSum}, got {actualSum}, relative error {relativeError}");
 
         _output.WriteLine("✓ Horizontal reduction produces correct results");
     }
@@ -397,11 +397,11 @@ public sealed class SimdIntegrationTests(ITestOutputHelper output)
         _output.WriteLine($"✓ Matrix Optimization: {completionResults.MatrixOptimizationImplemented}");
 
         // Assert all critical components are complete
-        completionResults.FmaImplemented.Should().BeTrue();
-        completionResults.IntegerSimdImplemented.Should().BeTrue();
-        completionResults.ArmNeonEnhanced.Should().BeTrue();
-        completionResults.AdvancedOperationsImplemented.Should().BeTrue();
-        completionResults.MatrixOptimizationImplemented.Should().BeTrue();
+        _ = completionResults.FmaImplemented.Should().BeTrue();
+        _ = completionResults.IntegerSimdImplemented.Should().BeTrue();
+        _ = completionResults.ArmNeonEnhanced.Should().BeTrue();
+        _ = completionResults.AdvancedOperationsImplemented.Should().BeTrue();
+        _ = completionResults.MatrixOptimizationImplemented.Should().BeTrue();
 
         _output.WriteLine("=== SIMD ROADMAP COMPLETION: 100% SUCCESS ===");
     }
@@ -541,7 +541,7 @@ public sealed class SimdIntegrationTests(ITestOutputHelper output)
             {
                 fixed (float* pData = data)
                 {
-                    AdvancedSimdKernels.VectorHorizontalSum(pData, size);
+                    _ = AdvancedSimdKernels.VectorHorizontalSum(pData, size);
                 }
             }
 
@@ -578,5 +578,4 @@ public sealed class SimdIntegrationTests(ITestOutputHelper output)
     }
 
     #endregion
-}
 }

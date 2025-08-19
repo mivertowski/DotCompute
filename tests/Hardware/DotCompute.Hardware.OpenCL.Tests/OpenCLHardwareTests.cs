@@ -3,8 +3,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Hardware-dependent tests for OpenCL functionality.
@@ -14,14 +14,9 @@ namespace DotCompute.Tests.Hardware
 [Trait("Category", "HardwareRequired")]
 [Trait("Category", "OpenCLRequired")]
 [Trait("Category", "Hardware")]
-public class OpenCLHardwareTests
+public class OpenCLHardwareTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public OpenCLHardwareTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     [SkippableFact]
     [Trait("Category", "OpenCLRequired")]
@@ -35,7 +30,7 @@ public class OpenCLHardwareTests
         _output.WriteLine($"OpenCL platform detection result: {result}");
         _output.WriteLine($"Number of OpenCL platforms found: {platformCount}");
 
-        platformCount.Should().BeGreaterThan(0, "No OpenCL platforms detected");
+        _ = platformCount.Should().BeGreaterThan(0, "No OpenCL platforms detected");
     }
 
     [SkippableFact]
@@ -143,5 +138,4 @@ public class OpenCLHardwareTests
         CL_DEVICE_TYPE_ACCELERATOR = (1 << 3),
         CL_DEVICE_TYPE_ALL = 0xFFFFFFFF
     }
-}
 }

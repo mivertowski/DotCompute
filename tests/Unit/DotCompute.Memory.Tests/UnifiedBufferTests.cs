@@ -5,8 +5,8 @@ using DotCompute.Memory;
 using NSubstitute;
 using Xunit;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 public sealed class UnifiedBufferTests : IDisposable
 {
@@ -28,8 +28,8 @@ public sealed class UnifiedBufferTests : IDisposable
         using var buffer = new UnifiedBuffer<int>(_memoryManager, 1024);
 
         // Assert
-        buffer.Length.Should().Be(1024);
-        buffer.SizeInBytes.Should().Be(1024 * sizeof(int));
+        _ = buffer.Length.Should().Be(1024);
+        _ = buffer.SizeInBytes.Should().Be(1024 * sizeof(int));
     }
 
     [Fact]
@@ -37,7 +37,7 @@ public sealed class UnifiedBufferTests : IDisposable
     {
         // Act & Assert
         var act = () => new UnifiedBuffer<int>(_memoryManager, 0);
-        Assert.Throws<ArgumentOutOfRangeException>(() => act());
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public sealed class UnifiedBufferTests : IDisposable
     {
         // Act & Assert
         var act = () => new UnifiedBuffer<int>(null!, 1024);
-        Assert.Throws<ArgumentNullException>(() => act());
+        _ = Assert.Throws<ArgumentNullException>(() => act());
     }
 
     [Fact]
@@ -58,11 +58,11 @@ public sealed class UnifiedBufferTests : IDisposable
         using var buffer = new UnifiedBuffer<int>(_memoryManager, data);
 
         // Assert
-        buffer.Length.Should().Be(5);
+        _ = buffer.Length.Should().Be(5);
         var span = buffer.AsSpan();
         for (var i = 0; i < data.Length; i++)
         {
-            span[i].Should().Be(data[i]);
+            _ = span[i].Should().Be(data[i]);
         }
     }
 
@@ -76,7 +76,7 @@ public sealed class UnifiedBufferTests : IDisposable
         var span = buffer.AsSpan();
 
         // Assert
-        span.Length.Should().Be(10);
+        _ = span.Length.Should().Be(10);
     }
 
     [Fact]
@@ -86,7 +86,7 @@ public sealed class UnifiedBufferTests : IDisposable
         using var buffer = new UnifiedBuffer<int>(_memoryManager, 10);
 
         // Assert - Buffer is allocated on host at creation
-        buffer.State.Should().Be(BufferState.HostOnly);
+        _ = buffer.State.Should().Be(BufferState.HostOnly);
 
         // Act - Write to span
         var span = buffer.AsSpan();
@@ -103,7 +103,7 @@ public sealed class UnifiedBufferTests : IDisposable
         using var buffer = new UnifiedBuffer<int>(_memoryManager, 10);
 
         // Assert
-        buffer.IsOnHost.Should().BeTrue();
+        _ = buffer.IsOnHost.Should().BeTrue();
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public sealed class UnifiedBufferTests : IDisposable
         using var buffer = new UnifiedBuffer<int>(_memoryManager, 10);
 
         // Assert
-        buffer.IsOnDevice.Should().BeFalse();
+        _ = buffer.IsOnDevice.Should().BeFalse();
     }
 
     [Fact]
@@ -128,7 +128,7 @@ public sealed class UnifiedBufferTests : IDisposable
         await buffer.CopyToAsync(destination);
 
         // Assert
-        destination.Should().BeEquivalentTo(sourceData);
+        _ = destination.Should().BeEquivalentTo(sourceData);
     }
 
     [Fact]
@@ -146,7 +146,7 @@ public sealed class UnifiedBufferTests : IDisposable
         var destSpan = destination.AsSpan();
         for (var i = 0; i < sourceData.Length; i++)
         {
-            destSpan[i].Should().Be(sourceData[i]);
+            _ = destSpan[i].Should().Be(sourceData[i]);
         }
     }
 
@@ -180,7 +180,7 @@ public sealed class UnifiedBufferTests : IDisposable
         using var buffer = new UnifiedBuffer<int>(_memoryManager, 10);
 
         // Act & Assert
-        buffer.Accelerator.Should().BeNull();
+        _ = buffer.Accelerator.Should().BeNull();
     }
 
     [Fact]
@@ -190,7 +190,7 @@ public sealed class UnifiedBufferTests : IDisposable
         using var buffer = new UnifiedBuffer<int>(_memoryManager, 10);
 
         // Act & Assert
-        buffer.Options.Should().Be(DotCompute.Abstractions.MemoryOptions.None);
+        _ = buffer.Options.Should().Be(DotCompute.Abstractions.MemoryOptions.None);
     }
 
     [Fact]
@@ -200,7 +200,7 @@ public sealed class UnifiedBufferTests : IDisposable
         using var buffer = new UnifiedBuffer<int>(_memoryManager, 10);
 
         // Act & Assert
-        buffer.IsDirty.Should().BeFalse();
+        _ = buffer.IsDirty.Should().BeFalse();
     }
 
     [Fact]
@@ -223,9 +223,8 @@ public sealed class UnifiedBufferTests : IDisposable
         // Assert
         for (var i = 0; i < 5; i++)
         {
-            span1[i].Should().Be(i);
-            span2[i].Should().Be(i * 10);
+            _ = span1[i].Should().Be(i);
+            _ = span2[i].Should().Be(i * 10);
         }
     }
-}
 }

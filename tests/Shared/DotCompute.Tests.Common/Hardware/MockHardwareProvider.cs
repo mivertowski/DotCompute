@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Common.Hardware
-{
+namespace DotCompute.Tests.Common.Hardware;
+
 
 /// <summary>
 /// Mock hardware provider for testing without actual hardware dependencies.
@@ -135,8 +135,8 @@ public sealed class MockHardwareProvider : IHardwareProvider
             return false;
         }
 
-        _devices.Remove(device);
-        _devicesByType[device.Type].Remove(device);
+        _ = _devices.Remove(device);
+        _ = _devicesByType[device.Type].Remove(device);
 
         _logger.LogDebug("Removed mock device: {DeviceId}", deviceId);
         return true;
@@ -314,5 +314,4 @@ public enum HardwareConfiguration
 
     /// <summary>Minimal single device configuration.</summary>
     Minimal
-}
 }

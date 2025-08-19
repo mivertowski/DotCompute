@@ -10,8 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Comprehensive real hardware tests for CUDA backend on RTX 2000 Ada Gen
@@ -26,67 +26,67 @@ public sealed class CudaRealHardwareFullSystemTests : IDisposable
     private bool _disposed;
 
     // LoggerMessage delegates for performance
-    private static readonly Action<ILogger, string, Exception?> LogDetectedDevice = 
+    private static readonly Action<ILogger, string, Exception?> LogDetectedDevice =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(1, nameof(LogDetectedDevice)),
             "Detected CUDA device: {DeviceName}");
 
-    private static readonly Action<ILogger, string, Exception?> LogComputeCapability = 
+    private static readonly Action<ILogger, string, Exception?> LogComputeCapability =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(2, nameof(LogComputeCapability)),
             "Compute capability: {ComputeCapability}");
 
-    private static readonly Action<ILogger, long, double, Exception?> LogTotalMemory = 
+    private static readonly Action<ILogger, long, double, Exception?> LogTotalMemory =
         LoggerMessage.Define<long, double>(
             LogLevel.Information,
             new EventId(3, nameof(LogTotalMemory)),
             "Total memory: {TotalMemory:N0} bytes ({MemoryGB:F2} GB)");
 
-    private static readonly Action<ILogger, int, Exception?> LogVectorAdditionTest = 
+    private static readonly Action<ILogger, int, Exception?> LogVectorAdditionTest =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(4, nameof(LogVectorAdditionTest)),
             "Vector addition test passed for {ElementCount} elements");
 
-    private static readonly Action<ILogger, int, int, Exception?> LogMatrixMultiplicationTest = 
+    private static readonly Action<ILogger, int, int, Exception?> LogMatrixMultiplicationTest =
         LoggerMessage.Define<int, int>(
             LogLevel.Information,
             new EventId(5, nameof(LogMatrixMultiplicationTest)),
             "Matrix multiplication test passed for {Size}x{Size} matrices");
 
-    private static readonly Action<ILogger, Exception?> LogTestingLargeMemory = 
+    private static readonly Action<ILogger, Exception?> LogTestingLargeMemory =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(6, nameof(LogTestingLargeMemory)),
             "Testing large memory allocations");
 
-    private static readonly Action<ILogger, double, Exception?> LogLargeMemoryTest = 
+    private static readonly Action<ILogger, double, Exception?> LogLargeMemoryTest =
         LoggerMessage.Define<double>(
             LogLevel.Information,
             new EventId(7, nameof(LogLargeMemoryTest)),
             "Large memory allocation test passed: {AllocationMB:F1} MB");
 
-    private static readonly Action<ILogger, int, Exception?> LogConcurrentKernelCompleted = 
+    private static readonly Action<ILogger, int, Exception?> LogConcurrentKernelCompleted =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(8, nameof(LogConcurrentKernelCompleted)),
             "Concurrent kernel {Index} completed successfully");
 
-    private static readonly Action<ILogger, int, Exception?> LogAllConcurrentKernelsCompleted = 
+    private static readonly Action<ILogger, int, Exception?> LogAllConcurrentKernelsCompleted =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(9, nameof(LogAllConcurrentKernelsCompleted)),
             "All {Count} concurrent kernels completed successfully");
 
-    private static readonly Action<ILogger, string, long, long, Exception?> LogOptimizationLevel = 
+    private static readonly Action<ILogger, string, long, long, Exception?> LogOptimizationLevel =
         LoggerMessage.Define<string, long, long>(
             LogLevel.Information,
             new EventId(10, nameof(LogOptimizationLevel)),
             "Optimization {Level}: Compile={CompileMs}ms, Execute={ExecuteMs}ms");
 
-    private static readonly Action<ILogger, Exception?> LogDeviceValidationPassed = 
+    private static readonly Action<ILogger, Exception?> LogDeviceValidationPassed =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(11, nameof(LogDeviceValidationPassed)),
@@ -124,7 +124,7 @@ public sealed class CudaRealHardwareFullSystemTests : IDisposable
 
         // Verify compute capability is 8.9 for RTX 2000 Ada Gen
         Assert.NotNull(info.ComputeCapability);
-        info.ComputeCapability.Major.Should().BeGreaterThanOrEqualTo(8,
+        _ = info.ComputeCapability.Major.Should().BeGreaterThanOrEqualTo(8,
             $"Expected compute capability 8.x or higher, got {info.ComputeCapability}");
 
         // RTX 2000 Ada Gen should have compute capability 8.9
@@ -134,8 +134,8 @@ public sealed class CudaRealHardwareFullSystemTests : IDisposable
             Assert.Equal(9, info.ComputeCapability.Minor);
         }
 
-        info.TotalMemory.Should().BeGreaterThan(0, "Device should have memory");
-        info.ComputeUnits.Should().BeGreaterThan(0, "Device should have compute units");
+        _ = info.TotalMemory.Should().BeGreaterThan(0, "Device should have memory");
+        _ = info.ComputeUnits.Should().BeGreaterThan(0, "Device should have compute units");
     }
 
     [SkippableFact]
@@ -433,10 +433,10 @@ extern ""C"" __global__ void simpleAdd(float* data, float value, int n)
         // Test different optimization levels
         var optimizationLevels = new[]
         {
-            OptimizationLevel.None,
-            OptimizationLevel.Default,
-            OptimizationLevel.Maximum
-        };
+        OptimizationLevel.None,
+        OptimizationLevel.Default,
+        OptimizationLevel.Maximum
+    };
 
         var kernelSource = @"
 extern ""C"" __global__ void computeIntensive(float* input, float* output, int n)
@@ -506,13 +506,13 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
         var info = _accelerator.Info;
 
         // RTX 2000 Ada Gen expected specifications
-        (info.TotalMemory >= 6L * 1024 * 1024 * 1024).Should().BeTrue( // At least 6GB
+        _ = (info.TotalMemory >= 6L * 1024 * 1024 * 1024).Should().BeTrue( // At least 6GB
             $"Expected at least 6GB memory, got {info.TotalMemory / (1024.0 * 1024 * 1024):F1}GB");
 
-        info.ComputeUnits.Should().BeGreaterThanOrEqualTo(20, // At least 20 SMs
+        _ = info.ComputeUnits.Should().BeGreaterThanOrEqualTo(20, // At least 20 SMs
             $"Expected at least 20 compute units, got {info.ComputeUnits}");
 
-        info.MaxClockFrequency.Should().BeGreaterThan(1000, // > 1GHz
+        _ = info.MaxClockFrequency.Should().BeGreaterThan(1000, // > 1GHz
             $"Expected clock > 1GHz, got {info.MaxClockFrequency}MHz");
 
         // Verify CUDA capabilities are available
@@ -559,5 +559,4 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
         _loggerFactory?.Dispose();
         _disposed = true;
     }
-}
 }

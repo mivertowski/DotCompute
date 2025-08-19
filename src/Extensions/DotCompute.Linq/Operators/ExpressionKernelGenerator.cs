@@ -6,190 +6,190 @@ using System.Text;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Linq.Operators
-{
+namespace DotCompute.Linq.Operators;
+
 
 /// <summary>
 /// Generates GPU kernels from LINQ expressions with advanced optimization support.
 /// </summary>
 public class ExpressionKernelGenerator
 {
-    private readonly KernelGenerationContext _context;
-    private readonly ILogger _logger;
-    private readonly Dictionary<ExpressionType, IExpressionHandler> _handlers;
+private readonly KernelGenerationContext _context;
+private readonly ILogger _logger;
+private readonly Dictionary<ExpressionType, IExpressionHandler> _handlers;
 
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ExpressionKernelGenerator"/> class.
-    /// </summary>
-    /// <param name="context">The generation context.</param>
-    /// <param name="logger">The logger instance.</param>
-    public ExpressionKernelGenerator(KernelGenerationContext context, ILogger logger)
+/// <summary>
+/// Initializes a new instance of the <see cref="ExpressionKernelGenerator"/> class.
+/// </summary>
+/// <param name="context">The generation context.</param>
+/// <param name="logger">The logger instance.</param>
+public ExpressionKernelGenerator(KernelGenerationContext context, ILogger logger)
+{
+    _context = context ?? throw new ArgumentNullException(nameof(context));
+    _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    _handlers = new Dictionary<ExpressionType, IExpressionHandler>();
+    
+    InitializeHandlers();
+}
+
+/// <summary>
+/// Generates a kernel from an expression tree.
+/// </summary>
+/// <param name="expression">The expression to generate from.</param>
+/// <param name="accelerator">The target accelerator.</param>
+/// <returns>A generated kernel.</returns>
+public GeneratedKernel Generate(Expression expression, IAccelerator accelerator)
+{
+    ArgumentNullException.ThrowIfNull(expression);
+    ArgumentNullException.ThrowIfNull(accelerator);
+
+    _logger.LogDebug("Generating kernel from expression {ExpressionType}", expression.NodeType);
+
+    var kernelName = GenerateKernelName(expression);
+    var parameters = ExtractParameters(expression);
+    var sourceCode = GenerateSourceCode(expression, accelerator);
+
+    var kernel = new GeneratedKernel
     {
-        _context = context ?? throw new ArgumentNullException(nameof(context));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        _handlers = new Dictionary<ExpressionType, IExpressionHandler>();
-        
-        InitializeHandlers();
+        Name = kernelName,
+        Source = sourceCode,
+        Language = SelectTargetLanguage(accelerator),
+        Parameters = parameters,
+        RequiredWorkGroupSize = CalculateWorkGroupSize(expression),
+        SharedMemorySize = CalculateSharedMemorySize(expression),
+        OptimizationMetadata = ExtractOptimizationMetadata(expression),
+        SourceExpression = expression
+    };
+
+    _logger.LogInformation("Generated kernel '{KernelName}' with {ParameterCount} parameters", 
+        kernelName, parameters.Length);
+
+    return kernel;
+}
+
+private void InitializeHandlers()
+{
+    _handlers[ExpressionType.Call] = new MethodCallHandler();
+    _handlers[ExpressionType.Lambda] = new LambdaHandler();
+    _handlers[ExpressionType.Add] = new BinaryOperationHandler();
+    _handlers[ExpressionType.Subtract] = new BinaryOperationHandler();
+    _handlers[ExpressionType.Multiply] = new BinaryOperationHandler();
+    _handlers[ExpressionType.Divide] = new BinaryOperationHandler();
+    _handlers[ExpressionType.Equal] = new ComparisonHandler();
+    _handlers[ExpressionType.NotEqual] = new ComparisonHandler();
+    _handlers[ExpressionType.LessThan] = new ComparisonHandler();
+    _handlers[ExpressionType.LessThanOrEqual] = new ComparisonHandler();
+    _handlers[ExpressionType.GreaterThan] = new ComparisonHandler();
+    _handlers[ExpressionType.GreaterThanOrEqual] = new ComparisonHandler();
+}
+
+private string GenerateKernelName(Expression expression)
+{
+    var baseType = expression.NodeType.ToString().ToLowerInvariant();
+    var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
+    var hash = expression.ToString().GetHashCode().ToString("X");
+    return $"generated_kernel_{baseType}_{timestamp}_{hash}";
+}
+
+private GeneratedKernelParameter[] ExtractParameters(Expression expression)
+{
+    var parameters = new List<GeneratedKernelParameter>();
+    var visitor = new ParameterExtractionVisitor(parameters);
+    visitor.Visit(expression);
+
+    // Add standard parameters
+    parameters.Add(new GeneratedKernelParameter
+    {
+        Name = "output",
+        Type = expression.Type,
+        IsOutput = true,
+        IsInput = false
+    });
+
+    parameters.Add(new GeneratedKernelParameter
+    {
+        Name = "size",
+        Type = typeof(int),
+        IsInput = true,
+        IsOutput = false
+    });
+
+    return parameters.ToArray();
+}
+
+private string GenerateSourceCode(Expression expression, IAccelerator accelerator)
+{
+    var generator = new KernelSourceGenerator(accelerator.Type);
+    return generator.GenerateFromExpression(expression, _context);
+}
+
+private Core.Kernels.KernelLanguage SelectTargetLanguage(IAccelerator accelerator)
+{
+    return accelerator.Type switch
+    {
+        AcceleratorType.CUDA => Core.Kernels.KernelLanguage.CUDA,
+        AcceleratorType.OpenCL => Core.Kernels.KernelLanguage.OpenCL,
+        AcceleratorType.Metal => Core.Kernels.KernelLanguage.Metal,
+        AcceleratorType.CPU => Core.Kernels.KernelLanguage.CSharp,
+        _ => Core.Kernels.KernelLanguage.CSharp
+    };
+}
+
+private int[] CalculateWorkGroupSize(Expression expression)
+{
+    // Use context work group dimensions or calculate based on expression complexity
+    if (_context.WorkGroupDimensions != null && _context.WorkGroupDimensions.Length >= 3)
+    {
+        return _context.WorkGroupDimensions;
     }
 
-    /// <summary>
-    /// Generates a kernel from an expression tree.
-    /// </summary>
-    /// <param name="expression">The expression to generate from.</param>
-    /// <param name="accelerator">The target accelerator.</param>
-    /// <returns>A generated kernel.</returns>
-    public GeneratedKernel Generate(Expression expression, IAccelerator accelerator)
+    // Default work group size based on expression complexity
+    var complexity = CalculateComplexity(expression);
+    var workGroupSize = Math.Min(256, Math.Max(32, complexity * 8));
+    
+    return [workGroupSize, 1, 1];
+}
+
+private int CalculateSharedMemorySize(Expression expression)
+{
+    // Calculate shared memory requirements based on context and expression
+    if (_context.UseSharedMemory)
     {
-        ArgumentNullException.ThrowIfNull(expression);
-        ArgumentNullException.ThrowIfNull(accelerator);
-
-        _logger.LogDebug("Generating kernel from expression {ExpressionType}", expression.NodeType);
-
-        var kernelName = GenerateKernelName(expression);
-        var parameters = ExtractParameters(expression);
-        var sourceCode = GenerateSourceCode(expression, accelerator);
-
-        var kernel = new GeneratedKernel
-        {
-            Name = kernelName,
-            Source = sourceCode,
-            Language = SelectTargetLanguage(accelerator),
-            Parameters = parameters,
-            RequiredWorkGroupSize = CalculateWorkGroupSize(expression),
-            SharedMemorySize = CalculateSharedMemorySize(expression),
-            OptimizationMetadata = ExtractOptimizationMetadata(expression),
-            SourceExpression = expression
-        };
-
-        _logger.LogInformation("Generated kernel '{KernelName}' with {ParameterCount} parameters", 
-            kernelName, parameters.Length);
-
-        return kernel;
-    }
-
-    private void InitializeHandlers()
-    {
-        _handlers[ExpressionType.Call] = new MethodCallHandler();
-        _handlers[ExpressionType.Lambda] = new LambdaHandler();
-        _handlers[ExpressionType.Add] = new BinaryOperationHandler();
-        _handlers[ExpressionType.Subtract] = new BinaryOperationHandler();
-        _handlers[ExpressionType.Multiply] = new BinaryOperationHandler();
-        _handlers[ExpressionType.Divide] = new BinaryOperationHandler();
-        _handlers[ExpressionType.Equal] = new ComparisonHandler();
-        _handlers[ExpressionType.NotEqual] = new ComparisonHandler();
-        _handlers[ExpressionType.LessThan] = new ComparisonHandler();
-        _handlers[ExpressionType.LessThanOrEqual] = new ComparisonHandler();
-        _handlers[ExpressionType.GreaterThan] = new ComparisonHandler();
-        _handlers[ExpressionType.GreaterThanOrEqual] = new ComparisonHandler();
-    }
-
-    private string GenerateKernelName(Expression expression)
-    {
-        var baseType = expression.NodeType.ToString().ToLowerInvariant();
-        var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
-        var hash = expression.ToString().GetHashCode().ToString("X");
-        return $"generated_kernel_{baseType}_{timestamp}_{hash}";
-    }
-
-    private GeneratedKernelParameter[] ExtractParameters(Expression expression)
-    {
-        var parameters = new List<GeneratedKernelParameter>();
-        var visitor = new ParameterExtractionVisitor(parameters);
-        visitor.Visit(expression);
-
-        // Add standard parameters
-        parameters.Add(new GeneratedKernelParameter
-        {
-            Name = "output",
-            Type = expression.Type,
-            IsOutput = true,
-            IsInput = false
-        });
-
-        parameters.Add(new GeneratedKernelParameter
-        {
-            Name = "size",
-            Type = typeof(int),
-            IsInput = true,
-            IsOutput = false
-        });
-
-        return parameters.ToArray();
-    }
-
-    private string GenerateSourceCode(Expression expression, IAccelerator accelerator)
-    {
-        var generator = new KernelSourceGenerator(accelerator.Type);
-        return generator.GenerateFromExpression(expression, _context);
-    }
-
-    private Core.Kernels.KernelLanguage SelectTargetLanguage(IAccelerator accelerator)
-    {
-        return accelerator.Type switch
-        {
-            AcceleratorType.CUDA => Core.Kernels.KernelLanguage.CUDA,
-            AcceleratorType.OpenCL => Core.Kernels.KernelLanguage.OpenCL,
-            AcceleratorType.Metal => Core.Kernels.KernelLanguage.Metal,
-            AcceleratorType.CPU => Core.Kernels.KernelLanguage.CSharp,
-            _ => Core.Kernels.KernelLanguage.CSharp
-        };
-    }
-
-    private int[] CalculateWorkGroupSize(Expression expression)
-    {
-        // Use context work group dimensions or calculate based on expression complexity
-        if (_context.WorkGroupDimensions != null && _context.WorkGroupDimensions.Length >= 3)
-        {
-            return _context.WorkGroupDimensions;
-        }
-
-        // Default work group size based on expression complexity
         var complexity = CalculateComplexity(expression);
-        var workGroupSize = Math.Min(256, Math.Max(32, complexity * 8));
-        
-        return [workGroupSize, 1, 1];
+        return Math.Min(48 * 1024, complexity * 1024); // Max 48KB shared memory
     }
+    
+    return 0;
+}
 
-    private int CalculateSharedMemorySize(Expression expression)
+private Dictionary<string, object> ExtractOptimizationMetadata(Expression expression)
+{
+    var metadata = new Dictionary<string, object>
     {
-        // Calculate shared memory requirements based on context and expression
-        if (_context.UseSharedMemory)
-        {
-            var complexity = CalculateComplexity(expression);
-            return Math.Min(48 * 1024, complexity * 1024); // Max 48KB shared memory
-        }
-        
-        return 0;
-    }
+        ["ComplexityScore"] = CalculateComplexity(expression),
+        ["UseSharedMemory"] = _context.UseSharedMemory,
+        ["UseVectorTypes"] = _context.UseVectorTypes,
+        ["Precision"] = _context.Precision.ToString(),
+        ["GeneratedAt"] = DateTime.UtcNow,
+        ["ExpressionType"] = expression.NodeType.ToString()
+    };
 
-    private Dictionary<string, object> ExtractOptimizationMetadata(Expression expression)
+    // Add fusion metadata if available
+    var fusionMetadata = Expressions.FusionMetadataStore.Instance.GetMetadata(expression.ToString());
+    if (fusionMetadata != null)
     {
-        var metadata = new Dictionary<string, object>
-        {
-            ["ComplexityScore"] = CalculateComplexity(expression),
-            ["UseSharedMemory"] = _context.UseSharedMemory,
-            ["UseVectorTypes"] = _context.UseVectorTypes,
-            ["Precision"] = _context.Precision.ToString(),
-            ["GeneratedAt"] = DateTime.UtcNow,
-            ["ExpressionType"] = expression.NodeType.ToString()
-        };
-
-        // Add fusion metadata if available
-        var fusionMetadata = Expressions.FusionMetadataStore.Instance.GetMetadata(expression.ToString());
-        if (fusionMetadata != null)
-        {
-            metadata["FusionData"] = fusionMetadata;
-        }
-
-        return metadata;
+        metadata["FusionData"] = fusionMetadata;
     }
 
-    private static int CalculateComplexity(Expression expression)
-    {
-        var visitor = new ComplexityCalculationVisitor();
-        visitor.Visit(expression);
-        return visitor.Complexity;
-    }
+    return metadata;
+}
+
+private static int CalculateComplexity(Expression expression)
+{
+    var visitor = new ComplexityCalculationVisitor();
+    visitor.Visit(expression);
+    return visitor.Complexity;
+}
 }
 
 /// <summary>
@@ -197,49 +197,49 @@ public class ExpressionKernelGenerator
 /// </summary>
 internal class ParameterExtractionVisitor : ExpressionVisitor
 {
-    private readonly List<GeneratedKernelParameter> _parameters;
-    private readonly HashSet<string> _seenNames = new();
+private readonly List<GeneratedKernelParameter> _parameters;
+private readonly HashSet<string> _seenNames = new();
 
-    public ParameterExtractionVisitor(List<GeneratedKernelParameter> parameters)
+public ParameterExtractionVisitor(List<GeneratedKernelParameter> parameters)
+{
+    _parameters = parameters;
+}
+
+protected override Expression VisitParameter(ParameterExpression node)
+{
+    if (!_seenNames.Contains(node.Name!))
     {
-        _parameters = parameters;
+        _parameters.Add(new GeneratedKernelParameter
+        {
+            Name = node.Name!,
+            Type = node.Type,
+            IsInput = true,
+            IsOutput = false
+        });
+        _seenNames.Add(node.Name!);
     }
+    return base.VisitParameter(node);
+}
 
-    protected override Expression VisitParameter(ParameterExpression node)
+protected override Expression VisitConstant(ConstantExpression node)
+{
+    if (node.Value != null)
     {
-        if (!_seenNames.Contains(node.Name!))
+        var paramName = $"const_{_parameters.Count}";
+        if (!_seenNames.Contains(paramName))
         {
             _parameters.Add(new GeneratedKernelParameter
             {
-                Name = node.Name!,
+                Name = paramName,
                 Type = node.Type,
                 IsInput = true,
                 IsOutput = false
             });
-            _seenNames.Add(node.Name!);
+            _seenNames.Add(paramName);
         }
-        return base.VisitParameter(node);
     }
-
-    protected override Expression VisitConstant(ConstantExpression node)
-    {
-        if (node.Value != null)
-        {
-            var paramName = $"const_{_parameters.Count}";
-            if (!_seenNames.Contains(paramName))
-            {
-                _parameters.Add(new GeneratedKernelParameter
-                {
-                    Name = paramName,
-                    Type = node.Type,
-                    IsInput = true,
-                    IsOutput = false
-                });
-                _seenNames.Add(paramName);
-            }
-        }
-        return base.VisitConstant(node);
-    }
+    return base.VisitConstant(node);
+}
 }
 
 /// <summary>
@@ -247,31 +247,31 @@ internal class ParameterExtractionVisitor : ExpressionVisitor
 /// </summary>
 internal class ComplexityCalculationVisitor : ExpressionVisitor
 {
-    public int Complexity { get; private set; }
+public int Complexity { get; private set; }
 
-    protected override Expression VisitBinary(BinaryExpression node)
-    {
-        Complexity += 2;
-        return base.VisitBinary(node);
-    }
+protected override Expression VisitBinary(BinaryExpression node)
+{
+    Complexity += 2;
+    return base.VisitBinary(node);
+}
 
-    protected override Expression VisitUnary(UnaryExpression node)
-    {
-        Complexity += 1;
-        return base.VisitUnary(node);
-    }
+protected override Expression VisitUnary(UnaryExpression node)
+{
+    Complexity += 1;
+    return base.VisitUnary(node);
+}
 
-    protected override Expression VisitMethodCall(MethodCallExpression node)
-    {
-        Complexity += 3;
-        return base.VisitMethodCall(node);
-    }
+protected override Expression VisitMethodCall(MethodCallExpression node)
+{
+    Complexity += 3;
+    return base.VisitMethodCall(node);
+}
 
-    protected override Expression VisitConditional(ConditionalExpression node)
-    {
-        Complexity += 5;
-        return base.VisitConditional(node);
-    }
+protected override Expression VisitConditional(ConditionalExpression node)
+{
+    Complexity += 5;
+    return base.VisitConditional(node);
+}
 }
 
 
@@ -280,27 +280,27 @@ internal class ComplexityCalculationVisitor : ExpressionVisitor
 /// </summary>
 internal class MethodCallHandler : IExpressionHandler
 {
-    public bool CanHandle(Expression expression)
-    {
-        return expression.NodeType == ExpressionType.Call;
-    }
+public bool CanHandle(Expression expression)
+{
+    return expression.NodeType == ExpressionType.Call;
+}
 
-    public string Handle(Expression expression, KernelGenerationContext context)
+public string Handle(Expression expression, KernelGenerationContext context)
+{
+    if (expression is MethodCallExpression methodCall)
     {
-        if (expression is MethodCallExpression methodCall)
+        var methodName = methodCall.Method.Name;
+        return methodName switch
         {
-            var methodName = methodCall.Method.Name;
-            return methodName switch
-            {
-                "Select" => "/* Map operation */",
-                "Where" => "/* Filter operation */",
-                "Sum" => "/* Reduce operation */",
-                "Average" => "/* Average operation */",
-                _ => $"/* Method: {methodName} */"
-            };
-        }
-        return "/* Unknown method call */";
+            "Select" => "/* Map operation */",
+            "Where" => "/* Filter operation */",
+            "Sum" => "/* Reduce operation */",
+            "Average" => "/* Average operation */",
+            _ => $"/* Method: {methodName} */"
+        };
     }
+    return "/* Unknown method call */";
+}
 }
 
 /// <summary>
@@ -308,15 +308,15 @@ internal class MethodCallHandler : IExpressionHandler
 /// </summary>
 internal class LambdaHandler : IExpressionHandler
 {
-    public bool CanHandle(Expression expression)
-    {
-        return expression.NodeType == ExpressionType.Lambda;
-    }
+public bool CanHandle(Expression expression)
+{
+    return expression.NodeType == ExpressionType.Lambda;
+}
 
-    public string Handle(Expression expression, KernelGenerationContext context)
-    {
-        return "/* Lambda expression */";
-    }
+public string Handle(Expression expression, KernelGenerationContext context)
+{
+    return "/* Lambda expression */";
+}
 }
 
 /// <summary>
@@ -324,27 +324,27 @@ internal class LambdaHandler : IExpressionHandler
 /// </summary>
 internal class BinaryOperationHandler : IExpressionHandler
 {
-    public bool CanHandle(Expression expression)
-    {
-        return expression.NodeType is ExpressionType.Add or ExpressionType.Subtract 
-                                   or ExpressionType.Multiply or ExpressionType.Divide;
-    }
+public bool CanHandle(Expression expression)
+{
+    return expression.NodeType is ExpressionType.Add or ExpressionType.Subtract 
+                               or ExpressionType.Multiply or ExpressionType.Divide;
+}
 
-    public string Handle(Expression expression, KernelGenerationContext context)
+public string Handle(Expression expression, KernelGenerationContext context)
+{
+    if (expression is BinaryExpression binary)
     {
-        if (expression is BinaryExpression binary)
+        return binary.NodeType switch
         {
-            return binary.NodeType switch
-            {
-                ExpressionType.Add => "/* Addition */",
-                ExpressionType.Subtract => "/* Subtraction */",
-                ExpressionType.Multiply => "/* Multiplication */",
-                ExpressionType.Divide => "/* Division */",
-                _ => $"/* Binary operation: {binary.NodeType} */"
-            };
-        }
-        return "/* Unknown binary operation */";
+            ExpressionType.Add => "/* Addition */",
+            ExpressionType.Subtract => "/* Subtraction */",
+            ExpressionType.Multiply => "/* Multiplication */",
+            ExpressionType.Divide => "/* Division */",
+            _ => $"/* Binary operation: {binary.NodeType} */"
+        };
     }
+    return "/* Unknown binary operation */";
+}
 }
 
 /// <summary>
@@ -352,28 +352,28 @@ internal class BinaryOperationHandler : IExpressionHandler
 /// </summary>
 internal class ComparisonHandler : IExpressionHandler
 {
-    public bool CanHandle(Expression expression)
-    {
-        return expression.NodeType is ExpressionType.Equal or ExpressionType.NotEqual
-                                   or ExpressionType.LessThan or ExpressionType.LessThanOrEqual
-                                   or ExpressionType.GreaterThan or ExpressionType.GreaterThanOrEqual;
-    }
+public bool CanHandle(Expression expression)
+{
+    return expression.NodeType is ExpressionType.Equal or ExpressionType.NotEqual
+                               or ExpressionType.LessThan or ExpressionType.LessThanOrEqual
+                               or ExpressionType.GreaterThan or ExpressionType.GreaterThanOrEqual;
+}
 
-    public string Handle(Expression expression, KernelGenerationContext context)
+public string Handle(Expression expression, KernelGenerationContext context)
+{
+    if (expression is BinaryExpression binary)
     {
-        if (expression is BinaryExpression binary)
+        return binary.NodeType switch
         {
-            return binary.NodeType switch
-            {
-                ExpressionType.Equal => "/* Equality comparison */",
-                ExpressionType.NotEqual => "/* Inequality comparison */",
-                ExpressionType.LessThan => "/* Less than comparison */",
-                ExpressionType.LessThanOrEqual => "/* Less than or equal comparison */",
-                ExpressionType.GreaterThan => "/* Greater than comparison */",
-                ExpressionType.GreaterThanOrEqual => "/* Greater than or equal comparison */",
-                _ => $"/* Comparison: {binary.NodeType} */"
-            };
-        }
-        return "/* Unknown comparison */";
+            ExpressionType.Equal => "/* Equality comparison */",
+            ExpressionType.NotEqual => "/* Inequality comparison */",
+            ExpressionType.LessThan => "/* Less than comparison */",
+            ExpressionType.LessThanOrEqual => "/* Less than or equal comparison */",
+            ExpressionType.GreaterThan => "/* Greater than comparison */",
+            ExpressionType.GreaterThanOrEqual => "/* Greater than or equal comparison */",
+            _ => $"/* Comparison: {binary.NodeType} */"
+        };
     }
-}}
+    return "/* Unknown comparison */";
+}
+}

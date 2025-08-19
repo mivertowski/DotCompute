@@ -13,19 +13,15 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration
-{
+namespace DotCompute.Tests.Integration;
+
 
 /// <summary>
 /// Integration tests for multi-accelerator scenarios.
 /// Tests workload distribution across multiple compute devices.
 /// </summary>
-public sealed class MultiAcceleratorTests : IntegrationTestBase
+public sealed class MultiAcceleratorTests(ITestOutputHelper output) : IntegrationTestBase(output)
 {
-    public MultiAcceleratorTests(ITestOutputHelper output) : base(output)
-    {
-    }
-
     [Fact]
     public async Task MultiAccelerator_WorkloadDistribution_ShouldDistributeAcrossDevices()
     {
@@ -46,12 +42,12 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
 
         // Act
         var results = await DistributeWorkloadAcrossAccelerators(
-            availableAccelerators.Take(2).ToList(),
+            [.. availableAccelerators.Take(2)],
             inputData);
 
         // Assert
         Assert.Collection(results, r => Assert.True(r.Success), r => Assert.True(r.Success));
-        results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        _ = results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         var totalProcessed = results.Sum(r => r.ProcessedItems);
         Assert.Equal(totalWorkItems, totalProcessed);
@@ -76,22 +72,22 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
 
         // Act
         var results = await LoadBalanceWorkload(
-            availableAccelerators.ToList(),
+            [.. availableAccelerators],
             inputData);
 
         // Assert
         Assert.NotEmpty(results);
-        results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        _ = results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         // Verify work distribution is reasonable(no device should have 0 or all work)
         var workDistribution = results.Select(r => r.ProcessedItems).ToList();
-        workDistribution.Should().AllSatisfy(items => items.Should().BeGreaterThan(0));
+        _ = workDistribution.Should().AllSatisfy(items => items.Should().BeGreaterThan(0));
 
         if (workDistribution.Count > 1)
         {
             var maxWork = workDistribution.Max();
             var minWork = workDistribution.Min();
-            (maxWork - minWork).Should().BeLessThan(totalWorkItems / 2); // Reasonable distribution
+            _ = (maxWork - minWork).Should().BeLessThan(totalWorkItems / 2); // Reasonable distribution
         }
     }
 
@@ -114,16 +110,16 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
 
         // Act
         var coherenceResults = await TestMemoryCoherence(
-            accelerators.Take(2).ToList(),
+            [.. accelerators.Take(2)],
             sharedData);
 
         // Assert
         Assert.NotEmpty(coherenceResults);
-        coherenceResults.Should().AllSatisfy(r => r.DataIntegrity.Should().BeTrue());
+        _ = coherenceResults.Should().AllSatisfy(r => r.DataIntegrity.Should().BeTrue());
 
         // All accelerators should see the same final data
         var finalStates = coherenceResults.Select(r => r.FinalChecksum).Distinct().ToList();
-        Assert.Single(finalStates); // All accelerators should see consistent data
+        _ = Assert.Single(finalStates); // All accelerators should see consistent data
     }
 
     [Fact]
@@ -146,14 +142,14 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
         var concurrentResults = await ExecuteConcurrentWorkloads(
-            accelerators.ToList(),
+            [.. accelerators],
             inputData,
             workItemsPerAccelerator);
         stopwatch.Stop();
 
         // Assert
-        concurrentResults.Should().HaveCount(accelerators.Count);
-        concurrentResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        _ = concurrentResults.Should().HaveCount(accelerators.Count);
+        _ = concurrentResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         // Concurrent execution should be faster than sequential
         var totalExecutionTime = stopwatch.Elapsed;
@@ -183,13 +179,13 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
 
         // Act - Simulate failure of one accelerator
         var faultTolerantResults = await ExecuteWithSimulatedFailure(
-            accelerators.ToList(),
+            [.. accelerators],
             inputData,
             failureIndex: 1);
 
         // Assert
         Assert.NotEmpty(faultTolerantResults);
-        faultTolerantResults.Count(r => r.Success).Should().BeGreaterThanOrEqualTo(accelerators.Count - 1);
+        _ = faultTolerantResults.Count(r => r.Success).Should().BeGreaterThanOrEqualTo(accelerators.Count - 1);
 
         var totalProcessed = faultTolerantResults
             .Where(r => r.Success)
@@ -229,13 +225,13 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
 
         // Assert
         Assert.Collection(heterogeneousResults, r => Assert.True(r.Success), r => Assert.True(r.Success));
-        heterogeneousResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        _ = heterogeneousResults.Should().AllSatisfy(r => r.Success.Should().BeTrue());
 
         // Results should be equivalent regardless of backend
         var results1 = heterogeneousResults[0].Results;
         var results2 = heterogeneousResults[1].Results;
 
-        CompareComputeResults(results1, results2).Should().BeTrue(
+        _ = CompareComputeResults(results1, results2).Should().BeTrue(
             "Different backend types should produce equivalent results");
     }
 
@@ -264,13 +260,13 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
 
         // Assert
         Assert.NotNull(transferResults);
-        transferResults.Success.Should().BeTrue();
-        transferResults.TransferTime.Should().BePositive();
-        transferResults.DataIntegrity.Should().BeTrue();
+        _ = transferResults.Success.Should().BeTrue();
+        _ = transferResults.TransferTime.Should().BePositive();
+        _ = transferResults.DataIntegrity.Should().BeTrue();
 
         if (transferResults.DirectTransferSupported)
         {
-            transferResults.TransferTime.Should().BeLessThan(TimeSpan.FromSeconds(1),
+            _ = transferResults.TransferTime.Should().BeLessThan(TimeSpan.FromSeconds(1),
                 "P2P transfer should be reasonably fast");
         }
     }
@@ -313,7 +309,7 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
         });
 
         var taskResults = await Task.WhenAll(tasks);
-        return taskResults.ToList();
+        return [.. taskResults];
     }
 
     private async Task<List<AcceleratorResult>> LoadBalanceWorkload(
@@ -332,7 +328,7 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
             var weight = weights[index];
             var allocatedItems = (int)(inputData.Length * weight / totalWeight);
             var workData = inputData[processedItems..(processedItems + allocatedItems)];
-            Interlocked.Add(ref processedItems, allocatedItems);
+            _ = Interlocked.Add(ref processedItems, allocatedItems);
 
             try
             {
@@ -358,7 +354,7 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
             }
         });
 
-        return (await Task.WhenAll(tasks)).ToList();
+        return [.. (await Task.WhenAll(tasks))];
     }
 
     private async Task<List<CoherenceResult>> TestMemoryCoherence(
@@ -400,7 +396,7 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
             }
         });
 
-        return (await Task.WhenAll(tasks)).ToList();
+        return [.. (await Task.WhenAll(tasks))];
     }
 
     private async Task<List<AcceleratorResult>> ExecuteConcurrentWorkloads(
@@ -442,7 +438,7 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
             }
         });
 
-        return (await Task.WhenAll(tasks)).ToList();
+        return [.. (await Task.WhenAll(tasks))];
     }
 
     private async Task<List<AcceleratorResult>> ExecuteWithSimulatedFailure(
@@ -497,7 +493,7 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
             }
         });
 
-        return (await Task.WhenAll(tasks)).ToList();
+        return [.. (await Task.WhenAll(tasks))];
     }
 
     private async Task<List<AcceleratorResult>> ExecuteHeterogeneousWorkload(
@@ -535,7 +531,7 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
             }
         });
 
-        return (await Task.WhenAll(tasks)).ToList();
+        return [.. (await Task.WhenAll(tasks))];
     }
 
     private async Task<PeerToPeerResult> TestPeerToPeerTransfer(
@@ -586,9 +582,7 @@ public sealed class MultiAcceleratorTests : IntegrationTestBase
     private static float[] GenerateTestData(int size)
     {
         var random = new Random(42);
-        return Enumerable.Range(0, size)
-                        .Select(_ => (float)random.NextDouble() * 100.0f)
-                        .ToArray();
+        return [.. Enumerable.Range(0, size).Select(_ => (float)random.NextDouble() * 100.0f)];
     }
 
     private static double GetAcceleratorWeight(IAccelerator accelerator)
@@ -741,5 +735,4 @@ public class PeerToPeerResult
     public bool DataIntegrity { get; set; }
     public bool DirectTransferSupported { get; set; }
     public string? Error { get; set; }
-}
 }

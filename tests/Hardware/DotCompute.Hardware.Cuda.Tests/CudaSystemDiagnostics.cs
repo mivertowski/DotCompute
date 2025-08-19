@@ -10,8 +10,8 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Comprehensive system diagnostics for CUDA backend
@@ -26,301 +26,301 @@ public sealed class CudaSystemDiagnostics : IDisposable
     private bool _disposed;
 
     // LoggerMessage delegates for performance
-    private static readonly Action<ILogger, Exception?> LogCudaRuntimeSystemDiagnostics = 
+    private static readonly Action<ILogger, Exception?> LogCudaRuntimeSystemDiagnostics =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(1, nameof(LogCudaRuntimeSystemDiagnostics)),
             "=== CUDA Runtime System Diagnostics ===");
 
-    private static readonly Action<ILogger, int, int, Exception?> LogCudaRuntimeVersion = 
+    private static readonly Action<ILogger, int, int, Exception?> LogCudaRuntimeVersion =
         LoggerMessage.Define<int, int>(
             LogLevel.Information,
             new EventId(2, nameof(LogCudaRuntimeVersion)),
             "CUDA Runtime Version: {Major}.{Minor}");
 
-    private static readonly Action<ILogger, int, int, Exception?> LogCudaDriverVersion = 
+    private static readonly Action<ILogger, int, int, Exception?> LogCudaDriverVersion =
         LoggerMessage.Define<int, int>(
             LogLevel.Information,
             new EventId(3, nameof(LogCudaDriverVersion)),
             "CUDA Driver Version: {Major}.{Minor}");
 
-    private static readonly Action<ILogger, int, Exception?> LogCudaDevicesFound = 
+    private static readonly Action<ILogger, int, Exception?> LogCudaDevicesFound =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(4, nameof(LogCudaDevicesFound)),
             "CUDA Devices Found: {DeviceCount}");
 
-    private static readonly Action<ILogger, int, string, Exception?> LogDeviceInfo = 
+    private static readonly Action<ILogger, int, string, Exception?> LogDeviceInfo =
         LoggerMessage.Define<int, string>(
             LogLevel.Information,
             new EventId(5, nameof(LogDeviceInfo)),
             "Device {Id}: {Name}");
 
-    private static readonly Action<ILogger, int, int, Exception?> LogComputeCapability = 
+    private static readonly Action<ILogger, int, int, Exception?> LogComputeCapability =
         LoggerMessage.Define<int, int>(
             LogLevel.Information,
             new EventId(6, nameof(LogComputeCapability)),
             "  Compute Capability: {Major}.{Minor}");
 
-    private static readonly Action<ILogger, ulong, double, Exception?> LogGlobalMemory = 
+    private static readonly Action<ILogger, ulong, double, Exception?> LogGlobalMemory =
         LoggerMessage.Define<ulong, double>(
             LogLevel.Information,
             new EventId(7, nameof(LogGlobalMemory)),
             "  Global Memory: {Memory:N0} bytes ({MemoryGB:F1} GB)");
 
-    private static readonly Action<ILogger, int, Exception?> LogMultiprocessors = 
+    private static readonly Action<ILogger, int, Exception?> LogMultiprocessors =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(8, nameof(LogMultiprocessors)),
             "  Multiprocessors: {SMs}");
 
-    private static readonly Action<ILogger, int, Exception?> LogMaxThreadsPerBlock = 
+    private static readonly Action<ILogger, int, Exception?> LogMaxThreadsPerBlock =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(9, nameof(LogMaxThreadsPerBlock)),
             "  Max Threads per Block: {MaxThreads}");
 
-    private static readonly Action<ILogger, ulong, Exception?> LogSharedMemoryPerBlock = 
+    private static readonly Action<ILogger, ulong, Exception?> LogSharedMemoryPerBlock =
         LoggerMessage.Define<ulong>(
             LogLevel.Information,
             new EventId(10, nameof(LogSharedMemoryPerBlock)),
             "  Shared Memory per Block: {SharedMem:N0} bytes");
 
-    private static readonly Action<ILogger, int, Exception?> LogWarpSize = 
+    private static readonly Action<ILogger, int, Exception?> LogWarpSize =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(11, nameof(LogWarpSize)),
             "  Warp Size: {WarpSize}");
 
-    private static readonly Action<ILogger, int, Exception?> LogClockRate = 
+    private static readonly Action<ILogger, int, Exception?> LogClockRate =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(12, nameof(LogClockRate)),
             "  Clock Rate: {ClockRate} kHz");
 
-    private static readonly Action<ILogger, int, Exception?> LogMemoryClock = 
+    private static readonly Action<ILogger, int, Exception?> LogMemoryClock =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(13, nameof(LogMemoryClock)),
             "  Memory Clock: {MemoryClock} kHz");
 
-    private static readonly Action<ILogger, int, Exception?> LogMemoryBusWidth = 
+    private static readonly Action<ILogger, int, Exception?> LogMemoryBusWidth =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(14, nameof(LogMemoryBusWidth)),
             "  Memory Bus Width: {BusWidth} bits");
 
-    private static readonly Action<ILogger, bool, Exception?> LogEccEnabled = 
+    private static readonly Action<ILogger, bool, Exception?> LogEccEnabled =
         LoggerMessage.Define<bool>(
             LogLevel.Information,
             new EventId(15, nameof(LogEccEnabled)),
             "  ECC Enabled: {ECC}");
 
-    private static readonly Action<ILogger, bool, Exception?> LogUnifiedAddressing = 
+    private static readonly Action<ILogger, bool, Exception?> LogUnifiedAddressing =
         LoggerMessage.Define<bool>(
             LogLevel.Information,
             new EventId(16, nameof(LogUnifiedAddressing)),
             "  Unified Addressing: {UVA}");
 
-    private static readonly Action<ILogger, bool, Exception?> LogConcurrentKernels = 
+    private static readonly Action<ILogger, bool, Exception?> LogConcurrentKernels =
         LoggerMessage.Define<bool>(
             LogLevel.Information,
             new EventId(17, nameof(LogConcurrentKernels)),
             "  Concurrent Kernels: {ConcurrentKernels}");
 
-    private static readonly Action<ILogger, int, int, Exception?> LogNvrtcAvailable = 
+    private static readonly Action<ILogger, int, int, Exception?> LogNvrtcAvailable =
         LoggerMessage.Define<int, int>(
             LogLevel.Information,
             new EventId(18, nameof(LogNvrtcAvailable)),
             "NVRTC Available: Version {Major}.{Minor}");
 
-    private static readonly Action<ILogger, Exception?> LogNvrtcNotAvailable = 
+    private static readonly Action<ILogger, Exception?> LogNvrtcNotAvailable =
         LoggerMessage.Define(
             LogLevel.Warning,
             new EventId(19, nameof(LogNvrtcNotAvailable)),
             "NVRTC Not Available - kernel compilation may not work");
 
-    private static readonly Action<ILogger, Exception?> LogAcceleratorInformation = 
+    private static readonly Action<ILogger, Exception?> LogAcceleratorInformation =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(20, nameof(LogAcceleratorInformation)),
             "=== Accelerator Information ===");
 
-    private static readonly Action<ILogger, string, Exception?> LogAcceleratorType = 
+    private static readonly Action<ILogger, string, Exception?> LogAcceleratorType =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(21, nameof(LogAcceleratorType)),
             "Accelerator Type: {Type}");
 
-    private static readonly Action<ILogger, string, Exception?> LogDeviceName = 
+    private static readonly Action<ILogger, string, Exception?> LogDeviceName =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(22, nameof(LogDeviceName)),
             "Device Name: {Name}");
 
-    private static readonly Action<ILogger, string, Exception?> LogDriverVersion = 
+    private static readonly Action<ILogger, string, Exception?> LogDriverVersion =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(23, nameof(LogDriverVersion)),
             "Driver Version: {Version}");
 
-    private static readonly Action<ILogger, long, Exception?> LogTotalMemory = 
+    private static readonly Action<ILogger, long, Exception?> LogTotalMemory =
         LoggerMessage.Define<long>(
             LogLevel.Information,
             new EventId(24, nameof(LogTotalMemory)),
             "Total Memory: {Memory:N0} bytes");
 
-    private static readonly Action<ILogger, int, Exception?> LogComputeUnits = 
+    private static readonly Action<ILogger, int, Exception?> LogComputeUnits =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(25, nameof(LogComputeUnits)),
             "Compute Units: {Units}");
 
-    private static readonly Action<ILogger, int, Exception?> LogMaxClock = 
+    private static readonly Action<ILogger, int, Exception?> LogMaxClock =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(26, nameof(LogMaxClock)),
             "Max Clock: {Clock} MHz");
 
-    private static readonly Action<ILogger, string, Exception?> LogComputeCapabilityInfo = 
+    private static readonly Action<ILogger, string, Exception?> LogComputeCapabilityInfo =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(27, nameof(LogComputeCapabilityInfo)),
             "Compute Capability: {Capability}");
 
-    private static readonly Action<ILogger, bool, Exception?> LogUnifiedMemory = 
+    private static readonly Action<ILogger, bool, Exception?> LogUnifiedMemory =
         LoggerMessage.Define<bool>(
             LogLevel.Information,
             new EventId(28, nameof(LogUnifiedMemory)),
             "Unified Memory: {Unified}");
 
-    private static readonly Action<ILogger, string, string, Exception?> LogCapability = 
+    private static readonly Action<ILogger, string, string, Exception?> LogCapability =
         LoggerMessage.Define<string, string>(
             LogLevel.Information,
             new EventId(29, nameof(LogCapability)),
             "  {Capability}: {Value}");
 
-    private static readonly Action<ILogger, Exception?> LogMemoryManagerDiagnostics = 
+    private static readonly Action<ILogger, Exception?> LogMemoryManagerDiagnostics =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(30, nameof(LogMemoryManagerDiagnostics)),
             "=== Memory Manager Diagnostics ===");
 
-    private static readonly Action<ILogger, Exception?> LogMemoryManagerTest = 
+    private static readonly Action<ILogger, Exception?> LogMemoryManagerTest =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(31, nameof(LogMemoryManagerTest)),
             "Memory Manager Test - Testing various allocation sizes");
 
-    private static readonly Action<ILogger, long, Exception?> LogAllocatingSize = 
+    private static readonly Action<ILogger, long, Exception?> LogAllocatingSize =
         LoggerMessage.Define<long>(
             LogLevel.Information,
             new EventId(32, nameof(LogAllocatingSize)),
             "Allocating {Size:N0} bytes");
 
-    private static readonly Action<ILogger, long, Exception?> LogCopyOperationsVerified = 
+    private static readonly Action<ILogger, long, Exception?> LogCopyOperationsVerified =
         LoggerMessage.Define<long>(
             LogLevel.Information,
             new EventId(33, nameof(LogCopyOperationsVerified)),
             "  Copy operations verified for {Size:N0} bytes");
 
-    private static readonly Action<ILogger, Exception?> LogFillOperationSkipped = 
+    private static readonly Action<ILogger, Exception?> LogFillOperationSkipped =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(34, nameof(LogFillOperationSkipped)),
             "  Fill operation test skipped (not available in new API)");
 
-    private static readonly Action<ILogger, Exception?> LogSlicingVerified = 
+    private static readonly Action<ILogger, Exception?> LogSlicingVerified =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(35, nameof(LogSlicingVerified)),
             "  Slicing verified");
 
-    private static readonly Action<ILogger, Exception?> LogMemoryAllocationTestsCompleted = 
+    private static readonly Action<ILogger, Exception?> LogMemoryAllocationTestsCompleted =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(36, nameof(LogMemoryAllocationTestsCompleted)),
             "Memory allocation tests completed successfully");
 
-    private static readonly Action<ILogger, Exception?> LogKernelCompilerDiagnostics = 
+    private static readonly Action<ILogger, Exception?> LogKernelCompilerDiagnostics =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(37, nameof(LogKernelCompilerDiagnostics)),
             "=== Kernel Compiler Diagnostics ===");
 
-    private static readonly Action<ILogger, string, Exception?> LogCompilingWithOptimization = 
+    private static readonly Action<ILogger, string, Exception?> LogCompilingWithOptimization =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(38, nameof(LogCompilingWithOptimization)),
             "Compiling with optimization level: {Level}");
 
-    private static readonly Action<ILogger, long, Exception?> LogCompilationSuccessful = 
+    private static readonly Action<ILogger, long, Exception?> LogCompilationSuccessful =
         LoggerMessage.Define<long>(
             LogLevel.Information,
             new EventId(39, nameof(LogCompilationSuccessful)),
             "  Compilation successful in {Time}ms");
 
-    private static readonly Action<ILogger, Exception?> LogExecutionAndVerificationSuccessful = 
+    private static readonly Action<ILogger, Exception?> LogExecutionAndVerificationSuccessful =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(40, nameof(LogExecutionAndVerificationSuccessful)),
             "  Execution and verification successful");
 
-    private static readonly Action<ILogger, Exception?> LogLaunchConfigurationDiagnostics = 
+    private static readonly Action<ILogger, Exception?> LogLaunchConfigurationDiagnostics =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(41, nameof(LogLaunchConfigurationDiagnostics)),
             "=== Launch Configuration Diagnostics ===");
 
-    private static readonly Action<ILogger, int, Exception?> LogProblemSize = 
+    private static readonly Action<ILogger, int, Exception?> LogProblemSize =
         LoggerMessage.Define<int>(
             LogLevel.Information,
             new EventId(42, nameof(LogProblemSize)),
             "Problem Size {Size:N0}:");
 
-    private static readonly Action<ILogger, uint, uint, uint, Exception?> LogGrid = 
+    private static readonly Action<ILogger, uint, uint, uint, Exception?> LogGrid =
         LoggerMessage.Define<uint, uint, uint>(
             LogLevel.Information,
             new EventId(43, nameof(LogGrid)),
             "  Grid: ({X}, {Y}, {Z})");
 
-    private static readonly Action<ILogger, uint, uint, uint, Exception?> LogBlock = 
+    private static readonly Action<ILogger, uint, uint, uint, Exception?> LogBlock =
         LoggerMessage.Define<uint, uint, uint>(
             LogLevel.Information,
             new EventId(44, nameof(LogBlock)),
             "  Block: ({X}, {Y}, {Z})");
 
-    private static readonly Action<ILogger, ulong, Exception?> LogTotalThreads = 
+    private static readonly Action<ILogger, ulong, Exception?> LogTotalThreads =
         LoggerMessage.Define<ulong>(
             LogLevel.Information,
             new EventId(45, nameof(LogTotalThreads)),
             "  Total Threads: {Threads:N0}");
 
-    private static readonly Action<ILogger, Exception?> LogExecutionSuccessfulAndVerified = 
+    private static readonly Action<ILogger, Exception?> LogExecutionSuccessfulAndVerified =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(46, nameof(LogExecutionSuccessfulAndVerified)),
             "  Execution successful and verified");
 
-    private static readonly Action<ILogger, Exception?> LogErrorHandlingDiagnostics = 
+    private static readonly Action<ILogger, Exception?> LogErrorHandlingDiagnostics =
         LoggerMessage.Define(
             LogLevel.Information,
             new EventId(47, nameof(LogErrorHandlingDiagnostics)),
             "=== Error Handling Diagnostics ===");
 
-    private static readonly Action<ILogger, string, Exception?> LogCompilationErrorHandled = 
+    private static readonly Action<ILogger, string, Exception?> LogCompilationErrorHandled =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(48, nameof(LogCompilationErrorHandled)),
             "Compilation error handled correctly: {Message}");
 
-    private static readonly Action<ILogger, string, Exception?> LogMemoryAllocationErrorHandled = 
+    private static readonly Action<ILogger, string, Exception?> LogMemoryAllocationErrorHandled =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(49, nameof(LogMemoryAllocationErrorHandled)),
             "Memory allocation error handled correctly: {Message}");
 
-    private static readonly Action<ILogger, string, Exception?> LogExecutionErrorHandled = 
+    private static readonly Action<ILogger, string, Exception?> LogExecutionErrorHandled =
         LoggerMessage.Define<string>(
             LogLevel.Information,
             new EventId(50, nameof(LogExecutionErrorHandled)),
@@ -436,10 +436,10 @@ public sealed class CudaSystemDiagnostics : IDisposable
         var caps = info.Capabilities;
         var expectedCapabilities = new[]
         {
-            "ComputeCapabilityMajor", "ComputeCapabilityMinor", "SharedMemoryPerBlock",
-            "ConstantMemory", "MultiprocessorCount", "MaxThreadsPerBlock",
-            "WarpSize", "ClockRate", "MemoryClockRate"
-        };
+        "ComputeCapabilityMajor", "ComputeCapabilityMinor", "SharedMemoryPerBlock",
+        "ConstantMemory", "MultiprocessorCount", "MaxThreadsPerBlock",
+        "WarpSize", "ClockRate", "MemoryClockRate"
+    };
 
         foreach (var expectedCap in expectedCapabilities)
         {
@@ -623,7 +623,7 @@ extern ""C"" __global__ void configTest(int* data, int n)
 
                 // Verify configuration covers the problem
                 var totalThreads = config.GridX * config.BlockX;
-                (totalThreads >= problemSize).Should().BeTrue(
+                _ = (totalThreads >= problemSize).Should().BeTrue(
                     $"Configuration doesn't cover problem size: {totalThreads} < {problemSize}");
 
                 // Test execution with this configuration
@@ -725,5 +725,4 @@ extern ""C"" __global__ void invalidKernel(float* data)
         _loggerFactory?.Dispose();
         _disposed = true;
     }
-}
 }

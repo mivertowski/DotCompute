@@ -2,30 +2,24 @@ using Xunit;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Utilities.Kernels;
 using Xunit.Abstractions;
-using DotCompute.Tests.Utilities.Accelerators;
+using DotCompute.Tests.Implementations.Kernels;
+using DotCompute.Tests.Implementations.Accelerators;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
 
 /// <summary>
 /// Advanced integration tests demonstrating real implementations working together
 /// in complex scenarios without requiring GPU hardware.
 /// </summary>
-public sealed class AdvancedIntegrationTests : IAsyncLifetime
+public sealed class AdvancedIntegrationTests(ITestOutputHelper output) : IAsyncLifetime
 {
-    private readonly ITestOutputHelper _output;
+    private readonly ITestOutputHelper _output = output;
     private readonly TestAcceleratorManager _acceleratorManager = default!;
     private readonly TestKernelExecutor _kernelExecutor = default!;
     private readonly TestCudaKernelCompiler _cudaCompiler = default!;
     private readonly TestOpenCLKernelCompiler _openClCompiler = default!;
     private readonly TestDirectComputeCompiler _directComputeCompiler = default!;
-
-    public AdvancedIntegrationTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
 
 #pragma warning disable CA2000 // Dispose objects before losing scope - test objects disposed in DisposeAsync
     public async Task InitializeAsync()
@@ -497,5 +491,4 @@ public sealed class AdvancedIntegrationTests : IAsyncLifetime
         _output.WriteLine($"    Assembly size: {hlslResult.Assembly.Length} chars");
         _output.WriteLine($"    Compile time: {_directComputeCompiler.AverageCompilationTimeMs:F2}ms");
     }
-}
 }

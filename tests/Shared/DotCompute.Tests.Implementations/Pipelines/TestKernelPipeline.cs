@@ -2,8 +2,8 @@ using System.Diagnostics;
 using DotCompute.Core.Pipelines;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Implementations.Pipelines
-{
+namespace DotCompute.Tests.Implementations.Pipelines;
+
 
 /// <summary>
 /// Test implementation of a kernel pipeline.
@@ -92,7 +92,7 @@ public sealed class TestKernelPipeline : IKernelPipeline
 
                 foreach (var (stage, result) in stagesToExecute.Zip(results))
                 {
-                    executedStages.Add(stage.Id);
+                    _ = executedStages.Add(stage.Id);
                     stageResults.Add(result);
 
                     if (result.Success)
@@ -397,8 +397,8 @@ public sealed class TestKernelPipeline : IKernelPipeline
 
     private bool HasCircularDependencyDFS(string stageId, HashSet<string> visited, HashSet<string> recursionStack)
     {
-        visited.Add(stageId);
-        recursionStack.Add(stageId);
+        _ = visited.Add(stageId);
+        _ = recursionStack.Add(stageId);
 
         var stage = _stages.FirstOrDefault(s => s.Id == stageId);
         if (stage != null)
@@ -419,7 +419,7 @@ public sealed class TestKernelPipeline : IKernelPipeline
             }
         }
 
-        recursionStack.Remove(stageId);
+        _ = recursionStack.Remove(stageId);
         return false;
     }
 
@@ -462,5 +462,4 @@ public sealed class TestKernelPipeline : IKernelPipeline
         _stages.Clear();
         GC.SuppressFinalize(this);
     }
-}
 }

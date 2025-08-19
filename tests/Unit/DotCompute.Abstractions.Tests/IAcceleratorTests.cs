@@ -5,8 +5,8 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Abstractions.Tests
-{
+namespace DotCompute.Abstractions.Tests;
+
 
 /// <summary>
 /// Comprehensive unit tests for the IAccelerator interface.
@@ -32,7 +32,7 @@ public sealed class IAcceleratorTests
     public void Info_Property_ShouldReturnAcceleratorInfo()
     {
         // Arrange
-        _mockAccelerator.SetupGet(a => a.Info).Returns(_testAcceleratorInfo);
+        _ = _mockAccelerator.SetupGet(a => a.Info).Returns(_testAcceleratorInfo);
 
         // Act
         var info = _mockAccelerator.Object.Info;
@@ -40,8 +40,8 @@ public sealed class IAcceleratorTests
         // Assert
         Assert.NotNull(info);
         Assert.Equal(_testAcceleratorInfo, info);
-        info.Name.Should().Be("Test Device");
-        info.DeviceType.Should().Be("Test");
+        _ = info.Name.Should().Be("Test Device");
+        _ = info.DeviceType.Should().Be("Test");
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public sealed class IAcceleratorTests
     {
         // Arrange
         var expectedType = AcceleratorType.CUDA;
-        _mockAccelerator.SetupGet(a => a.Type).Returns(expectedType);
+        _ = _mockAccelerator.SetupGet(a => a.Type).Returns(expectedType);
 
         // Act
         var type = _mockAccelerator.Object.Type;
@@ -62,7 +62,7 @@ public sealed class IAcceleratorTests
     public void Memory_Property_ShouldReturnMemoryManager()
     {
         // Arrange
-        _mockAccelerator.SetupGet(a => a.Memory).Returns(_mockMemoryManager.Object);
+        _ = _mockAccelerator.SetupGet(a => a.Memory).Returns(_mockMemoryManager.Object);
 
         // Act
         var memory = _mockAccelerator.Object.Memory;
@@ -76,15 +76,15 @@ public sealed class IAcceleratorTests
     public void Context_Property_ShouldReturnAcceleratorContext()
     {
         // Arrange
-        _mockAccelerator.SetupGet(a => a.Context).Returns(_testContext);
+        _ = _mockAccelerator.SetupGet(a => a.Context).Returns(_testContext);
 
         // Act
         var context = _mockAccelerator.Object.Context;
 
         // Assert
         Assert.Equal(_testContext, context);
-        context.IsValid.Should().BeTrue();
-        context.DeviceId.Should().Be(0);
+        _ = context.IsValid.Should().BeTrue();
+        _ = context.DeviceId.Should().Be(0);
     }
 
     #endregion
@@ -99,8 +99,8 @@ public sealed class IAcceleratorTests
         var kernelSource = new TextKernelSource("__global__ void test() { }", "test", KernelLanguage.Cuda);
         var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
 
-        mockCompiledKernel.SetupGet(k => k.Name).Returns("test");
-        _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, CancellationToken.None))
+        _ = mockCompiledKernel.SetupGet(k => k.Name).Returns("test");
+        _ = _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, CancellationToken.None))
                        .ReturnsAsync(mockCompiledKernel.Object);
 
         // Act
@@ -108,7 +108,7 @@ public sealed class IAcceleratorTests
 
         // Assert
         Assert.NotNull(result);
-        result.Name.Should().Be("test");
+        _ = result.Name.Should().Be("test");
         _mockAccelerator.Verify(a => a.CompileKernelAsync(definition, null, CancellationToken.None), Times.Once);
     }
 
@@ -125,8 +125,8 @@ public sealed class IAcceleratorTests
             EnableDebugInfo = true
         };
 
-        mockCompiledKernel.SetupGet(k => k.Name).Returns("test");
-        _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, options, CancellationToken.None))
+        _ = mockCompiledKernel.SetupGet(k => k.Name).Returns("test");
+        _ = _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, options, CancellationToken.None))
                        .ReturnsAsync(mockCompiledKernel.Object);
 
         // Act
@@ -146,11 +146,11 @@ public sealed class IAcceleratorTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, cts.Token))
+        _ = _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(
             () => _mockAccelerator.Object.CompileKernelAsync(definition, cancellationToken: cts.Token).AsTask());
     }
 
@@ -158,11 +158,11 @@ public sealed class IAcceleratorTests
     public async Task CompileKernelAsync_WithNullDefinition_ShouldThrowArgumentNullException()
     {
         // Arrange
-        _mockAccelerator.Setup(a => a.CompileKernelAsync(null!, null, CancellationToken.None))
+        _ = _mockAccelerator.Setup(a => a.CompileKernelAsync(null!, null, CancellationToken.None))
                        .ThrowsAsync(new ArgumentNullException("definition"));
 
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(
+        _ = await Assert.ThrowsAsync<ArgumentNullException>(
             () => _mockAccelerator.Object.CompileKernelAsync(null!).AsTask());
     }
 
@@ -173,13 +173,13 @@ public sealed class IAcceleratorTests
         var kernelSource = new TextKernelSource("invalid code", "test", KernelLanguage.Cuda);
         var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
 
-        _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, CancellationToken.None))
+        _ = _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, CancellationToken.None))
                        .ThrowsAsync(new AcceleratorException("Compilation failed"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AcceleratorException>(
             () => _mockAccelerator.Object.CompileKernelAsync(definition).AsTask());
-        exception.Message.Should().Be("Compilation failed");
+        _ = exception.Message.Should().Be("Compilation failed");
     }
 
     #endregion
@@ -190,7 +190,7 @@ public sealed class IAcceleratorTests
     public async Task SynchronizeAsync_ShouldCompleteSuccessfully()
     {
         // Arrange
-        _mockAccelerator.Setup(a => a.SynchronizeAsync(CancellationToken.None))
+        _ = _mockAccelerator.Setup(a => a.SynchronizeAsync(CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -207,11 +207,11 @@ public sealed class IAcceleratorTests
         using var cts = new CancellationTokenSource();
         await cts.CancelAsync();
 
-        _mockAccelerator.Setup(a => a.SynchronizeAsync(cts.Token))
+        _ = _mockAccelerator.Setup(a => a.SynchronizeAsync(cts.Token))
                        .ThrowsAsync(new OperationCanceledException());
 
         // Act & Assert
-        await Assert.ThrowsAsync<OperationCanceledException>(
+        _ = await Assert.ThrowsAsync<OperationCanceledException>(
            () => _mockAccelerator.Object.SynchronizeAsync(cts.Token).AsTask());
     }
 
@@ -219,13 +219,13 @@ public sealed class IAcceleratorTests
     public async Task SynchronizeAsync_WhenDeviceError_ShouldThrowAcceleratorException()
     {
         // Arrange
-        _mockAccelerator.Setup(a => a.SynchronizeAsync(CancellationToken.None))
+        _ = _mockAccelerator.Setup(a => a.SynchronizeAsync(CancellationToken.None))
                        .ThrowsAsync(new AcceleratorException("Device synchronization failed"));
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<AcceleratorException>(
            () => _mockAccelerator.Object.SynchronizeAsync().AsTask());
-        exception.Message.Should().Be("Device synchronization failed");
+        _ = exception.Message.Should().Be("Device synchronization failed");
     }
 
     #endregion
@@ -236,7 +236,7 @@ public sealed class IAcceleratorTests
     public async Task DisposeAsync_ShouldCompleteSuccessfully()
     {
         // Arrange
-        _mockAccelerator.Setup(a => a.DisposeAsync())
+        _ = _mockAccelerator.Setup(a => a.DisposeAsync())
                        .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -250,7 +250,7 @@ public sealed class IAcceleratorTests
     public async Task DisposeAsync_MultipleCallsShouldBeIdempotent()
     {
         // Arrange
-        _mockAccelerator.Setup(a => a.DisposeAsync())
+        _ = _mockAccelerator.Setup(a => a.DisposeAsync())
                        .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -273,7 +273,7 @@ public sealed class IAcceleratorTests
         var type = typeof(IAccelerator);
 
         // Assert
-        Assert.IsAssignableFrom<IAsyncDisposable>(type);
+        _ = Assert.IsAssignableFrom<IAsyncDisposable>(type);
     }
 
     [Fact]
@@ -284,15 +284,15 @@ public sealed class IAcceleratorTests
         var kernelSource = new TextKernelSource("__global__ void test() { }", "test", KernelLanguage.Cuda);
         var definition = new KernelDefinition("test", kernelSource, new CompilationOptions());
 
-        _mockAccelerator.SetupGet(a => a.Info).Returns(_testAcceleratorInfo);
-        _mockAccelerator.SetupGet(a => a.Type).Returns(AcceleratorType.CUDA);
-        _mockAccelerator.SetupGet(a => a.Memory).Returns(_mockMemoryManager.Object);
-        _mockAccelerator.SetupGet(a => a.Context).Returns(_testContext);
-        _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, CancellationToken.None))
+        _ = _mockAccelerator.SetupGet(a => a.Info).Returns(_testAcceleratorInfo);
+        _ = _mockAccelerator.SetupGet(a => a.Type).Returns(AcceleratorType.CUDA);
+        _ = _mockAccelerator.SetupGet(a => a.Memory).Returns(_mockMemoryManager.Object);
+        _ = _mockAccelerator.SetupGet(a => a.Context).Returns(_testContext);
+        _ = _mockAccelerator.Setup(a => a.CompileKernelAsync(definition, null, CancellationToken.None))
                        .ReturnsAsync(mockCompiledKernel.Object);
-        _mockAccelerator.Setup(a => a.SynchronizeAsync(CancellationToken.None))
+        _ = _mockAccelerator.Setup(a => a.SynchronizeAsync(CancellationToken.None))
                        .Returns(ValueTask.CompletedTask);
-        _mockAccelerator.Setup(a => a.DisposeAsync())
+        _ = _mockAccelerator.Setup(a => a.DisposeAsync())
                        .Returns(ValueTask.CompletedTask);
 
         // Act
@@ -309,7 +309,7 @@ public sealed class IAcceleratorTests
         Assert.NotNull(info);
         Assert.Equal(AcceleratorType.CUDA, type);
         Assert.NotNull(memory);
-        context.IsValid.Should().BeTrue();
+        _ = context.IsValid.Should().BeTrue();
         Assert.NotNull(kernel);
 
         // Verify all methods were called
@@ -331,7 +331,7 @@ public sealed class IAcceleratorTests
     public void Type_Property_ShouldSupportAllAcceleratorTypes(AcceleratorType acceleratorType)
     {
         // Arrange
-        _mockAccelerator.SetupGet(a => a.Type).Returns(acceleratorType);
+        _ = _mockAccelerator.SetupGet(a => a.Type).Returns(acceleratorType);
 
         // Act
         var type = _mockAccelerator.Object.Type;
@@ -351,16 +351,15 @@ public sealed class IAcceleratorTests
         var contextProperty = type.GetProperty(nameof(IAccelerator.Context));
 
         // Assert
-        infoProperty!.CanRead.Should().BeTrue();
-        infoProperty.CanWrite.Should().BeFalse();
-        typeProperty!.CanRead.Should().BeTrue();
-        typeProperty.CanWrite.Should().BeFalse();
-        memoryProperty!.CanRead.Should().BeTrue();
-        memoryProperty.CanWrite.Should().BeFalse();
-        contextProperty!.CanRead.Should().BeTrue();
-        contextProperty.CanWrite.Should().BeFalse();
+        _ = infoProperty!.CanRead.Should().BeTrue();
+        _ = infoProperty.CanWrite.Should().BeFalse();
+        _ = typeProperty!.CanRead.Should().BeTrue();
+        _ = typeProperty.CanWrite.Should().BeFalse();
+        _ = memoryProperty!.CanRead.Should().BeTrue();
+        _ = memoryProperty.CanWrite.Should().BeFalse();
+        _ = contextProperty!.CanRead.Should().BeTrue();
+        _ = contextProperty.CanWrite.Should().BeFalse();
     }
 
     #endregion
-}
 }

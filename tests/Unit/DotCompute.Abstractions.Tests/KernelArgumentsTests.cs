@@ -2,8 +2,8 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit
-{
+namespace DotCompute.Tests.Unit;
+
 
 public sealed class KernelArgumentsTests
 {
@@ -14,7 +14,7 @@ public sealed class KernelArgumentsTests
         var args = KernelArguments.Create(5);
 
         // Assert
-        args.Length.Should().Be(5);
+        _ = args.Length.Should().Be(5);
     }
 
     [Fact]
@@ -32,9 +32,9 @@ public sealed class KernelArgumentsTests
         args.Set(2, testArray);
 
         // Assert
-        args.Get(0).Should().Be(testValue);
-        args.Get(1).Should().Be(testString);
-        args.Get(2).Should().BeEquivalentTo(testArray);
+        _ = args.Get(0).Should().Be(testValue);
+        _ = args.Get(1).Should().Be(testString);
+        _ = args.Get(2).Should().BeEquivalentTo(testArray);
     }
 
     [Fact]
@@ -45,7 +45,7 @@ public sealed class KernelArgumentsTests
 
         // Act & Assert
         var act = () => args.Get(5);
-        Assert.Throws<ArgumentOutOfRangeException>(() => act());
+        _ = Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public sealed class KernelArgumentsTests
 
         // Act & Assert
         var act = () => args.Get(0);
-        Assert.Throws<InvalidOperationException>(() => act());
+        _ = Assert.Throws<InvalidOperationException>(() => act());
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public sealed class KernelArgumentsTests
         var args = new KernelArguments();
 
         // Assert
-        args.Length.Should().Be(0);
+        _ = args.Length.Should().Be(0);
     }
 
     [Fact]
@@ -79,7 +79,7 @@ public sealed class KernelArgumentsTests
         args.Set(0, null!);
 
         // Assert
-        args.Get(0).Should().BeNull();
+        _ = args.Get(0).Should().BeNull();
     }
 
     [Fact]
@@ -97,12 +97,12 @@ public sealed class KernelArgumentsTests
         args.Set(5, 3.14159265359);
 
         // Assert
-        args.Get(0).Should().Be((byte)255);
-        args.Get(1).Should().Be((short)32767);
-        args.Get(2).Should().Be(2147483647);
-        args.Get(3).Should().Be(9223372036854775807L);
-        args.Get(4).Should().Be(3.14f);
-        args.Get(5).Should().Be(3.14159265359);
+        _ = args.Get(0).Should().Be((byte)255);
+        _ = args.Get(1).Should().Be((short)32767);
+        _ = args.Get(2).Should().Be(2147483647);
+        _ = args.Get(3).Should().Be(9223372036854775807L);
+        _ = args.Get(4).Should().Be(3.14f);
+        _ = args.Get(5).Should().Be(3.14159265359);
     }
 
     [Theory]
@@ -116,7 +116,7 @@ public sealed class KernelArgumentsTests
         var args = KernelArguments.Create(capacity);
 
         // Assert
-        args.Length.Should().Be(capacity);
+        _ = args.Length.Should().Be(capacity);
     }
 
     [Fact]
@@ -134,9 +134,8 @@ public sealed class KernelArgumentsTests
         args.Set(2, stringValue);
 
         // Assert
-        args.Get(0).Should().Be(intValue);
-        args.Get(1).Should().Be(floatValue);
-        args.Get(2).Should().Be(stringValue);
+        _ = args.Get(0).Should().Be(intValue);
+        _ = args.Get(1).Should().Be(floatValue);
+        _ = args.Get(2).Should().Be(stringValue);
     }
-}
 }

@@ -4,8 +4,8 @@
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware
-{
+namespace DotCompute.Tests.Hardware;
+
 
 /// <summary>
 /// Mock OpenCL tests that simulate hardware operations without requiring actual OpenCL runtime.
@@ -14,14 +14,9 @@ namespace DotCompute.Tests.Hardware
 [Trait("Category", "Mock")]
 [Trait("Category", "OpenCLMock")]
 [Trait("Category", "CI")]
-public class OpenCLSimulationTests
+public class OpenCLSimulationTests(ITestOutputHelper output)
 {
-    private readonly ITestOutputHelper _output;
-
-    public OpenCLSimulationTests(ITestOutputHelper output)
-    {
-        _output = output;
-    }
+    private readonly ITestOutputHelper _output = output;
 
     [Fact]
     [Trait("Category", "Mock")]
@@ -48,11 +43,11 @@ public class OpenCLSimulationTests
         // Simulate common OpenCL platforms
         var expectedPlatforms = new[]
         {
-            new { Name = "NVIDIA CUDA", Vendor = "NVIDIA Corporation", HasGPU = true },
-            new { Name = "AMD Accelerated Parallel Processing", Vendor = "Advanced Micro Devices, Inc.", HasGPU = true },
-            new { Name = "Intel(R) OpenCL", Vendor = "Intel Corporation", HasGPU = false },
-            new { Name = "Portable Computing Language", Vendor = "pocl", HasGPU = false }
-        };
+        new { Name = "NVIDIA CUDA", Vendor = "NVIDIA Corporation", HasGPU = true },
+        new { Name = "AMD Accelerated Parallel Processing", Vendor = "Advanced Micro Devices, Inc.", HasGPU = true },
+        new { Name = "Intel(R) OpenCL", Vendor = "Intel Corporation", HasGPU = false },
+        new { Name = "Portable Computing Language", Vendor = "pocl", HasGPU = false }
+    };
 
         foreach (var platform in expectedPlatforms)
         {
@@ -90,25 +85,25 @@ public class OpenCLSimulationTests
         // Simulate OpenCL kernel compilation without runtime
         var kernelSources = new[]
         {
-            new
-            {
-                Name = "VectorAdd",
-                Source = "__kernel void vector_add(__global float* a, __global float* b, __global float* c, int n) { int gid = get_global_id(0); if(gid < n) c[gid] = a[gid] + b[gid]; }",
-                IsValid = true
-            },
-            new
-            {
-                Name = "MatrixMultiply",
-                Source = "__kernel void matrix_mul(__global float* a, __global float* b, __global float* c, int n) { int row = get_global_id(0); int col = get_global_id(1); float sum = 0; for(int k = 0; k < n; k++) sum += a[row*n+k] * b[k*n+col]; c[row*n+col] = sum; }",
-                IsValid = true
-            },
-            new
-            {
-                Name = "InvalidSyntax",
-                Source = "__kernel void bad_kernel( { invalid syntax }",
-                IsValid = false
-            }
-        };
+        new
+        {
+            Name = "VectorAdd",
+            Source = "__kernel void vector_add(__global float* a, __global float* b, __global float* c, int n) { int gid = get_global_id(0); if(gid < n) c[gid] = a[gid] + b[gid]; }",
+            IsValid = true
+        },
+        new
+        {
+            Name = "MatrixMultiply",
+            Source = "__kernel void matrix_mul(__global float* a, __global float* b, __global float* c, int n) { int row = get_global_id(0); int col = get_global_id(1); float sum = 0; for(int k = 0; k < n; k++) sum += a[row*n+k] * b[k*n+col]; c[row*n+col] = sum; }",
+            IsValid = true
+        },
+        new
+        {
+            Name = "InvalidSyntax",
+            Source = "__kernel void bad_kernel( { invalid syntax }",
+            IsValid = false
+        }
+    };
 
         foreach (var kernel in kernelSources)
         {
@@ -138,7 +133,7 @@ public class OpenCLSimulationTests
         var hasOpenBrace = source.Contains('{', StringComparison.Ordinal);
         var hasCloseBrace = source.Contains('}', StringComparison.Ordinal);
         var hasInvalidSyntax = source.Contains("invalid syntax", StringComparison.Ordinal) || source.Contains("bad_kernel(", StringComparison.Ordinal);
-        
+
         if (hasKernel && hasOpenBrace && hasCloseBrace && !hasInvalidSyntax)
         {
             // Simulate successful compilation
@@ -158,10 +153,10 @@ public class OpenCLSimulationTests
         // Simulate work group size optimization for different device types
         var devices = new[]
         {
-            new { Type = "GPU", MaxWorkGroupSize = 1024, PreferredMultiple = 32 }, // NVIDIA-like
-            new { Type = "GPU_AMD", MaxWorkGroupSize = 256, PreferredMultiple = 64 }, // AMD-like
-            new { Type = "CPU", MaxWorkGroupSize = 8, PreferredMultiple = 1 } // CPU
-        };
+        new { Type = "GPU", MaxWorkGroupSize = 1024, PreferredMultiple = 32 }, // NVIDIA-like
+        new { Type = "GPU_AMD", MaxWorkGroupSize = 256, PreferredMultiple = 64 }, // AMD-like
+        new { Type = "CPU", MaxWorkGroupSize = 8, PreferredMultiple = 1 } // CPU
+    };
 
         const int globalSize = 10000;
 
@@ -170,10 +165,10 @@ public class OpenCLSimulationTests
             var optimalWorkGroupSize = SimulateOptimalWorkGroupSize(globalSize, device.MaxWorkGroupSize, device.PreferredMultiple);
             var numWorkGroups = (globalSize + optimalWorkGroupSize - 1) / optimalWorkGroupSize;
 
-            optimalWorkGroupSize.Should().BeLessThanOrEqualTo(device.MaxWorkGroupSize, "Work group size should not exceed maximum");
-            (optimalWorkGroupSize % device.PreferredMultiple == 0 || device.PreferredMultiple == 1).Should().BeTrue(
+            _ = optimalWorkGroupSize.Should().BeLessThanOrEqualTo(device.MaxWorkGroupSize, "Work group size should not exceed maximum");
+            _ = (optimalWorkGroupSize % device.PreferredMultiple == 0 || device.PreferredMultiple == 1).Should().BeTrue(
                         "Work group size should be multiple of preferred size");
-            (numWorkGroups * optimalWorkGroupSize).Should().BeGreaterThanOrEqualTo(globalSize, "Should cover all work items");
+            _ = (numWorkGroups * optimalWorkGroupSize).Should().BeGreaterThanOrEqualTo(globalSize, "Should cover all work items");
 
             _output.WriteLine($"{device.Type}: Optimal work group size = {optimalWorkGroupSize}, Groups = {numWorkGroups}");
         }
@@ -202,10 +197,10 @@ public class OpenCLSimulationTests
         var transferSizes = new[] { 1024, 1024 * 1024, 100 * 1024 * 1024 }; // 1KB, 1MB, 100MB
         var deviceTypes = new[]
         {
-            new { Name = "GPU_PCIe_Gen3", BandwidthGBps = 12.0 },
-            new { Name = "GPU_PCIe_Gen4", BandwidthGBps = 24.0 },
-            new { Name = "CPU_Memory", BandwidthGBps = 50.0 }
-        };
+        new { Name = "GPU_PCIe_Gen3", BandwidthGBps = 12.0 },
+        new { Name = "GPU_PCIe_Gen4", BandwidthGBps = 24.0 },
+        new { Name = "CPU_Memory", BandwidthGBps = 50.0 }
+    };
 
         foreach (var device in deviceTypes)
         {
@@ -246,27 +241,27 @@ public class OpenCLSimulationTests
         // Simulate different OpenCL device capabilities
         var devices = new[]
         {
-            new MockOpenCLDevice
-            {
-                Name = "NVIDIA RTX 2000",
-                Type = "GPU",
-                OpenCLVersion = "1.2",
-                Extensions = new[] { "cl_khr_gl_sharing", "cl_khr_byte_addressable_store", "cl_nv_device_attribute_query" },
-                GlobalMemMB = 8192,
-                LocalMemKB = 48,
-                ComputeUnits = 28
-            },
-            new MockOpenCLDevice
-            {
-                Name = "Intel Core i7",
-                Type = "CPU",
-                OpenCLVersion = "2.1",
-                Extensions = new[] { "cl_khr_icd", "cl_khr_global_int32_base_atomics", "cl_intel_subgroups" },
-                GlobalMemMB = 16384,
-                LocalMemKB = 32,
-                ComputeUnits = 8
-            }
-        };
+        new MockOpenCLDevice
+        {
+            Name = "NVIDIA RTX 2000",
+            Type = "GPU",
+            OpenCLVersion = "1.2",
+            Extensions = new[] { "cl_khr_gl_sharing", "cl_khr_byte_addressable_store", "cl_nv_device_attribute_query" },
+            GlobalMemMB = 8192,
+            LocalMemKB = 48,
+            ComputeUnits = 28
+        },
+        new MockOpenCLDevice
+        {
+            Name = "Intel Core i7",
+            Type = "CPU",
+            OpenCLVersion = "2.1",
+            Extensions = new[] { "cl_khr_icd", "cl_khr_global_int32_base_atomics", "cl_intel_subgroups" },
+            GlobalMemMB = 16384,
+            LocalMemKB = 32,
+            ComputeUnits = 8
+        }
+    };
 
         foreach (var device in devices)
         {
@@ -275,7 +270,7 @@ public class OpenCLSimulationTests
             Assert.Equal(device.OpenCLVersion, capabilities.OpenCLVersion);
             Assert.Equal(device.GlobalMemMB, capabilities.GlobalMemoryMB);
             Assert.Equal(device.ComputeUnits, capabilities.ComputeUnits);
-            capabilities.Extensions.Length.Should().BeGreaterThan(0, "Should have at least one extension");
+            _ = capabilities.Extensions.Length.Should().BeGreaterThan(0, "Should have at least one extension");
 
             _output.WriteLine($"Device: {device.Name}({device.Type})");
             _output.WriteLine($"  OpenCL: {capabilities.OpenCLVersion}");
@@ -286,10 +281,7 @@ public class OpenCLSimulationTests
     }
 
     private static (string OpenCLVersion, int GlobalMemoryMB, int LocalMemoryKB, int ComputeUnits, string[] Extensions)
-        SimulateDeviceQuery(MockOpenCLDevice device)
-    {
-        return (device.OpenCLVersion, device.GlobalMemMB, device.LocalMemKB, device.ComputeUnits, device.Extensions);
-    }
+        SimulateDeviceQuery(MockOpenCLDevice device) => (device.OpenCLVersion, device.GlobalMemMB, device.LocalMemKB, device.ComputeUnits, device.Extensions);
 
     private sealed class MockOpenCLDevice
     {
@@ -309,13 +301,13 @@ public class OpenCLSimulationTests
         // Test OpenCL error code mapping
         var errorMappings = new[]
         {
-            new { Code = 0, Name = "CL_SUCCESS", IsCritical = false },
-            new { Code = -1, Name = "CL_DEVICE_NOT_FOUND", IsCritical = true },
-            new { Code = -2, Name = "CL_DEVICE_NOT_AVAILABLE", IsCritical = true },
-            new { Code = -5, Name = "CL_OUT_OF_RESOURCES", IsCritical = false },
-            new { Code = -6, Name = "CL_OUT_OF_HOST_MEMORY", IsCritical = false },
-            new { Code = -11, Name = "CL_BUILD_PROGRAM_FAILURE", IsCritical = false }
-        };
+        new { Code = 0, Name = "CL_SUCCESS", IsCritical = false },
+        new { Code = -1, Name = "CL_DEVICE_NOT_FOUND", IsCritical = true },
+        new { Code = -2, Name = "CL_DEVICE_NOT_AVAILABLE", IsCritical = true },
+        new { Code = -5, Name = "CL_OUT_OF_RESOURCES", IsCritical = false },
+        new { Code = -6, Name = "CL_OUT_OF_HOST_MEMORY", IsCritical = false },
+        new { Code = -11, Name = "CL_BUILD_PROGRAM_FAILURE", IsCritical = false }
+    };
 
         foreach (var error in errorMappings)
         {
@@ -356,5 +348,4 @@ public class OpenCLSimulationTests
             _ => false
         };
     }
-}
 }

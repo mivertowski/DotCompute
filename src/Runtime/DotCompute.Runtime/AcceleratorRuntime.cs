@@ -6,8 +6,8 @@ using DotCompute.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Runtime
-{
+namespace DotCompute.Runtime;
+
 
 /// <summary>
 /// Main runtime for accelerator management and execution
@@ -15,158 +15,157 @@ namespace DotCompute.Runtime
 [SuppressMessage("Performance", "CA1848:Use the LoggerMessage delegates", Justification = "Simple logging in runtime layer")]
 public class AcceleratorRuntime(IServiceProvider serviceProvider, ILogger<AcceleratorRuntime> logger) : IDisposable, IAsyncDisposable
 {
-    private readonly IServiceProvider _serviceProvider = serviceProvider;
-    private readonly ILogger<AcceleratorRuntime> _logger = logger;
-    private readonly List<IAccelerator> _accelerators = [];
-    private readonly SemaphoreSlim _disposeLock = new(1, 1);
-    private bool _disposed;
+private readonly IServiceProvider _serviceProvider = serviceProvider;
+private readonly ILogger<AcceleratorRuntime> _logger = logger;
+private readonly List<IAccelerator> _accelerators = [];
+private readonly SemaphoreSlim _disposeLock = new(1, 1);
+private bool _disposed;
 
-    /// <summary>
-    /// Initialize the runtime and discover available accelerators
-    /// </summary>
-    public async Task InitializeAsync()
+/// <summary>
+/// Initialize the runtime and discover available accelerators
+/// </summary>
+public async Task InitializeAsync()
+{
+    _logger.LogInformation("Initializing DotCompute Runtime...");
+
+    // Discover and register accelerators
+    await DiscoverAcceleratorsAsync().ConfigureAwait(false);
+
+    _logger.LogInformation("Runtime initialized successfully. Found {Count} accelerators.", _accelerators.Count);
+}
+
+/// <summary>
+/// Get all available accelerators
+/// </summary>
+public IReadOnlyList<IAccelerator> GetAccelerators() => _accelerators.AsReadOnly();
+
+/// <summary>
+/// Get accelerator by type
+/// </summary>
+public IAccelerator? GetAccelerator(string deviceType) => _accelerators.FirstOrDefault(a => a.Info.DeviceType == deviceType);
+
+private Task DiscoverAcceleratorsAsync()
+{
+    _logger.LogDebug("Discovering available accelerators...");
+
+    // Get the accelerator manager from DI
+    var acceleratorManager = _serviceProvider.GetRequiredService<IAcceleratorManager>();
+
+    // Get all available accelerators
+    var availableAccelerators = acceleratorManager.AvailableAccelerators;
+
+    foreach (var accelerator in availableAccelerators)
     {
-        _logger.LogInformation("Initializing DotCompute Runtime...");
-
-        // Discover and register accelerators
-        await DiscoverAcceleratorsAsync().ConfigureAwait(false);
-
-        _logger.LogInformation("Runtime initialized successfully. Found {Count} accelerators.", _accelerators.Count);
+        _accelerators.Add(accelerator);
+        _logger.LogInformation("Discovered {Type} accelerator: {Name}", accelerator.Info.DeviceType, accelerator.Info.Name);
     }
 
-    /// <summary>
-    /// Get all available accelerators
-    /// </summary>
-    public IReadOnlyList<IAccelerator> GetAccelerators() => _accelerators.AsReadOnly();
-
-    /// <summary>
-    /// Get accelerator by type
-    /// </summary>
-    public IAccelerator? GetAccelerator(string deviceType) => _accelerators.FirstOrDefault(a => a.Info.DeviceType == deviceType);
-
-    private Task DiscoverAcceleratorsAsync()
+    if (_accelerators.Count == 0)
     {
-        _logger.LogDebug("Discovering available accelerators...");
-
-        // Get the accelerator manager from DI
-        var acceleratorManager = _serviceProvider.GetRequiredService<IAcceleratorManager>();
-
-        // Get all available accelerators
-        var availableAccelerators = acceleratorManager.AvailableAccelerators;
-
-        foreach (var accelerator in availableAccelerators)
-        {
-            _accelerators.Add(accelerator);
-            _logger.LogInformation("Discovered {Type} accelerator: {Name}", accelerator.Info.DeviceType, accelerator.Info.Name);
-        }
-
-        if (_accelerators.Count == 0)
-        {
-            _logger.LogWarning("No accelerators discovered. This may indicate a configuration issue.");
-        }
-
-        return Task.CompletedTask;
+        _logger.LogWarning("No accelerators discovered. This may indicate a configuration issue.");
     }
 
-    /// <summary>
-    /// Disposes of the runtime and all managed accelerators asynchronously
-    /// </summary>
-    public async ValueTask DisposeAsync()
+    return Task.CompletedTask;
+}
+
+/// <summary>
+/// Disposes of the runtime and all managed accelerators asynchronously
+/// </summary>
+public async ValueTask DisposeAsync()
+{
+    await DisposeAsyncCoreAsync().ConfigureAwait(false);
+    Dispose(disposing: false);
+    GC.SuppressFinalize(this);
+}
+
+/// <summary>
+/// Disposes of the runtime and all managed accelerators synchronously
+/// </summary>
+public void Dispose()
+{
+    Dispose(disposing: true);
+    GC.SuppressFinalize(this);
+}
+
+/// <summary>
+/// Protected implementation of Dispose pattern
+/// </summary>
+protected virtual void Dispose(bool disposing)
+{
+    if (_disposed)
     {
-        await DisposeAsyncCoreAsync().ConfigureAwait(false);
-        Dispose(disposing: false);
-        GC.SuppressFinalize(this);
+        return;
     }
 
-    /// <summary>
-    /// Disposes of the runtime and all managed accelerators synchronously
-    /// </summary>
-    public void Dispose()
-    {
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-
-    /// <summary>
-    /// Protected implementation of Dispose pattern
-    /// </summary>
-    protected virtual void Dispose(bool disposing)
+    _disposeLock.Wait();
+    try
     {
         if (_disposed)
         {
             return;
         }
 
-        _disposeLock.Wait();
-        try
+        if (disposing)
         {
-            if (_disposed)
-            {
-                return;
-            }
+            // Dispose managed resources synchronously
+            // Note: We're intentionally not disposing accelerators here
+            // to avoid sync-over-async. Use DisposeAsync for proper cleanup.
+            _logger.LogInformation("Disposing AcceleratorRuntime. For proper cleanup, use DisposeAsync().");
 
-            if (disposing)
-            {
-                // Dispose managed resources synchronously
-                // Note: We're intentionally not disposing accelerators here
-                // to avoid sync-over-async. Use DisposeAsync for proper cleanup.
-                _logger.LogInformation("Disposing AcceleratorRuntime. For proper cleanup, use DisposeAsync().");
-
-                // Clear the list but don't dispose accelerators synchronously
-                _accelerators.Clear();
-
-                // Dispose the semaphore
-                _disposeLock?.Dispose();
-            }
-
-            _disposed = true;
-        }
-        finally
-        {
-            if (!_disposed)
-            {
-                _disposeLock?.Release();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Protected async implementation of Dispose pattern
-    /// </summary>
-    protected virtual async ValueTask DisposeAsyncCoreAsync()
-    {
-        if (_disposed)
-        {
-            return;
-        }
-
-        await _disposeLock.WaitAsync().ConfigureAwait(false);
-        try
-        {
-            if (_disposed)
-            {
-                return;
-            }
-
-            // Dispose all accelerators asynchronously
-            var disposeTasks = _accelerators
-                .Where(a => a != null)
-                .Select(a => a.DisposeAsync().AsTask())
-                .ToArray();
-
-            if (disposeTasks.Length > 0)
-            {
-                _logger.LogInformation("Disposing {Count} accelerators...", disposeTasks.Length);
-                await Task.WhenAll(disposeTasks).ConfigureAwait(false);
-            }
-
+            // Clear the list but don't dispose accelerators synchronously
             _accelerators.Clear();
-            _disposed = true;
+
+            // Dispose the semaphore
+            _disposeLock?.Dispose();
         }
-        finally
+
+        _disposed = true;
+    }
+    finally
+    {
+        if (!_disposed)
         {
             _disposeLock?.Release();
         }
+    }
+}
+
+/// <summary>
+/// Protected async implementation of Dispose pattern
+/// </summary>
+protected virtual async ValueTask DisposeAsyncCoreAsync()
+{
+    if (_disposed)
+    {
+        return;
+    }
+
+    await _disposeLock.WaitAsync().ConfigureAwait(false);
+    try
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        // Dispose all accelerators asynchronously
+        var disposeTasks = _accelerators
+            .Where(a => a != null)
+            .Select(a => a.DisposeAsync().AsTask())
+            .ToArray();
+
+        if (disposeTasks.Length > 0)
+        {
+            _logger.LogInformation("Disposing {Count} accelerators...", disposeTasks.Length);
+            await Task.WhenAll(disposeTasks).ConfigureAwait(false);
+        }
+
+        _accelerators.Clear();
+        _disposed = true;
+    }
+    finally
+    {
+        _disposeLock?.Release();
     }
 }
 }

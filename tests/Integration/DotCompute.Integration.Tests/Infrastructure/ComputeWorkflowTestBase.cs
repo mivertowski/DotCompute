@@ -15,8 +15,8 @@ using Xunit.Abstractions;
 
 #pragma warning disable CA1848 // Use LoggerMessage delegates - suppressed for test infrastructure
 
-namespace DotCompute.Tests.Integration.Infrastructure
-{
+namespace DotCompute.Tests.Integration.Infrastructure;
+
 
 /// <summary>
 /// Base class for compute workflow integration tests with comprehensive testing infrastructure.
@@ -340,7 +340,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
             }
         }
 
-        return arguments.ToArray();
+        return [.. arguments];
     }
 
     /// <summary>
@@ -423,9 +423,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
 
         public static float[] GenerateFloatArray(int size, float min = 0f, float max = 100f)
         {
-            return Enumerable.Range(0, size)
-                            .Select(_ => min + ((float)Random.NextDouble() * (max - min)))
-                            .ToArray();
+            return [.. Enumerable.Range(0, size).Select(_ => min + ((float)Random.NextDouble() * (max - min)))];
         }
 
         public static float[] GenerateGaussianArray(int size, float mean = 0f, float stdDev = 1f)
@@ -474,22 +472,22 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
 public class ComputeWorkflowDefinition
 {
     public string Name { get; set; } = string.Empty;
-    
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Collection<WorkflowKernel> Kernels { get; set; } = [];
-    
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Collection<WorkflowInput> Inputs { get; set; } = [];
-    
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Collection<WorkflowOutput> Outputs { get; set; } = [];
-    
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Collection<WorkflowIntermediateBuffer> IntermediateBuffers { get; set; } = [];
-    
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Collection<WorkflowExecutionStage> ExecutionStages { get; set; } = [];
-    
+
     public bool ContinueOnError { get; set; }
 }
 
@@ -547,10 +545,10 @@ public class WorkflowExecutionResult
     public TimeSpan Duration { get; set; }
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Dictionary<string, KernelCompilationResult> CompilationResults { get; set; } = [];
-    
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Dictionary<string, StageExecutionResult> ExecutionResults { get; set; } = [];
-    
+
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Microsoft.Usage", "CA2227:CollectionPropertiesShouldBeReadOnly")]
     public Dictionary<string, object> Results { get; set; } = [];
     public ValidationResult? Validation { get; set; }
@@ -712,5 +710,4 @@ public interface IComputeEngine
 {
     public ValueTask<ICompiledKernel> CompileKernelAsync(string source, string name, CompilationOptions options, CancellationToken cancellationToken);
     public ValueTask ExecuteAsync(ICompiledKernel kernel, object[] arguments, ComputeBackendType backend, ExecutionOptions options, CancellationToken cancellationToken);
-}
 }
