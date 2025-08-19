@@ -17,6 +17,14 @@ public sealed class TestMemoryManager : IMemoryManager, IDisposable
     private long _totalAllocated;
     private long _peakAllocated;
 
+    /// <summary>
+    /// Allocates memory on the accelerator.
+    /// </summary>
+    /// <param name="sizeInBytes"></param>
+    /// <param name="options"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="System.ArgumentOutOfRangeException">sizeInBytes - Size must be positive</exception>
     public async ValueTask<IMemoryBuffer> AllocateAsync(
         long sizeInBytes,
         MemoryOptions options = MemoryOptions.None,
@@ -47,6 +55,14 @@ public sealed class TestMemoryManager : IMemoryManager, IDisposable
         return memBuffer;
     }
 
+    /// <summary>
+    /// Allocates memory and copies data from host.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="source"></param>
+    /// <param name="options"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(
         ReadOnlyMemory<T> source,
         MemoryOptions options = MemoryOptions.None,
@@ -58,6 +74,19 @@ public sealed class TestMemoryManager : IMemoryManager, IDisposable
         return buffer;
     }
 
+    /// <summary>
+    /// Creates a view over existing memory.
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="offset"></param>
+    /// <param name="length"></param>
+    /// <returns></returns>
+    /// <exception cref="System.ArgumentException">Buffer must be a TestMemoryBuffer - buffer</exception>
+    /// <exception cref="System.ArgumentOutOfRangeException">
+    /// offset
+    /// or
+    /// length
+    /// </exception>
     public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
     {
         if (buffer is not TestMemoryBuffer testBuffer)
@@ -78,6 +107,14 @@ public sealed class TestMemoryManager : IMemoryManager, IDisposable
         return new TestMemoryView(testBuffer, offset, length);
     }
 
+    /// <summary>
+    /// Allocates memory for a specific number of elements.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="count">The number of elements to allocate.</param>
+    /// <returns>
+    /// A memory buffer for the allocated elements.
+    /// </returns>
     public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
     {
         var elementSize = Marshal.SizeOf<T>();
@@ -85,6 +122,17 @@ public sealed class TestMemoryManager : IMemoryManager, IDisposable
         return AllocateAsync(sizeInBytes);
     }
 
+    /// <summary>
+    /// Copies data from host memory to a device buffer.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="buffer">The destination buffer.</param>
+    /// <param name="data">The source data span.</param>
+    /// <exception cref="System.ArgumentException">
+    /// Buffer must be a TestMemoryBuffer - buffer
+    /// or
+    /// Data size exceeds buffer capacity - data
+    /// </exception>
     public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
     {
         if (buffer is not TestMemoryBuffer testBuffer)
@@ -110,6 +158,17 @@ public sealed class TestMemoryManager : IMemoryManager, IDisposable
         }
     }
 
+    /// <summary>
+    /// Copies data from a device buffer to host memory.
+    /// </summary>
+    /// <typeparam name="T">The element type.</typeparam>
+    /// <param name="data">The destination data span.</param>
+    /// <param name="buffer">The source buffer.</param>
+    /// <exception cref="System.ArgumentException">
+    /// Buffer must be a TestMemoryBuffer - buffer
+    /// or
+    /// Data size exceeds buffer capacity - data
+    /// </exception>
     public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
     {
         if (buffer is not TestMemoryBuffer testBuffer)
@@ -135,6 +194,11 @@ public sealed class TestMemoryManager : IMemoryManager, IDisposable
         }
     }
 
+    /// <summary>
+    /// Frees a memory buffer.
+    /// </summary>
+    /// <param name="buffer">The buffer to free.</param>
+    /// <exception cref="System.ArgumentException">Buffer must be a TestMemoryBuffer - buffer</exception>
     public void Free(IMemoryBuffer buffer)
     {
         if (buffer is TestMemoryBuffer testBuffer)
@@ -155,10 +219,33 @@ public sealed class TestMemoryManager : IMemoryManager, IDisposable
         }
     }
 
+    /// <summary>
+    /// Gets the total allocated.
+    /// </summary>
+    /// <value>
+    /// The total allocated.
+    /// </value>
     public long TotalAllocated => _totalAllocated;
+
+    /// <summary>
+    /// Gets the peak allocated.
+    /// </summary>
+    /// <value>
+    /// The peak allocated.
+    /// </value>
     public long PeakAllocated => _peakAllocated;
+
+    /// <summary>
+    /// Gets the allocation count.
+    /// </summary>
+    /// <value>
+    /// The allocation count.
+    /// </value>
     public int AllocationCount => _allocations.Count;
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         foreach (var buffer in _allocations.Values)
@@ -196,11 +283,38 @@ public sealed class TestMemoryBuffer : IMemoryBuffer, IDisposable
         _buffer = buffer;
     }
 
+    /// <summary>
+    /// Gets the handle.
+    /// </summary>
+    /// <value>
+    /// The handle.
+    /// </value>
     public IntPtr Handle { get; }
+
+    /// <summary>
+    /// Gets the size of the buffer in bytes.
+    /// </summary>
     public long SizeInBytes { get; }
+
+    /// <summary>
+    /// Gets the memory flags.
+    /// </summary>
     public MemoryOptions Options { get; }
+
+    /// <summary>
+    /// Gets whether the buffer has been disposed.
+    /// </summary>
     public bool IsDisposed => _disposed;
 
+    /// <summary>
+    /// Copies data from host memory to this buffer.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="source"></param>
+    /// <param name="offset"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="System.ArgumentOutOfRangeException">offset</exception>
     public async ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
@@ -228,6 +342,15 @@ public sealed class TestMemoryBuffer : IMemoryBuffer, IDisposable
         }, cancellationToken);
     }
 
+    /// <summary>
+    /// Copies data from this buffer to host memory.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="destination"></param>
+    /// <param name="offset"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="System.ArgumentOutOfRangeException">offset</exception>
     public async ValueTask CopyToHostAsync<T>(
         Memory<T> destination,
         long offset = 0,
@@ -255,12 +378,22 @@ public sealed class TestMemoryBuffer : IMemoryBuffer, IDisposable
         }, cancellationToken);
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or
+    /// resetting unmanaged resources asynchronously.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous dispose operation.
+    /// </returns>
     public async ValueTask DisposeAsync()
     {
         await Task.Yield();
         Dispose();
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         if (!_disposed)
@@ -292,25 +425,62 @@ public sealed class TestMemoryView : IMemoryBuffer
         Options = parent.Options;
     }
 
+    /// <summary>
+    /// Gets the size of the buffer in bytes.
+    /// </summary>
     public long SizeInBytes { get; }
+
+    /// <summary>
+    /// Gets the memory flags.
+    /// </summary>
     public MemoryOptions Options { get; }
+
+    /// <summary>
+    /// Gets whether the buffer has been disposed.
+    /// </summary>
     public bool IsDisposed => false; // Views don't manage disposal directly
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         // Views don't manage disposal directly - parent buffer handles this
     }
 
+    /// <summary>
+    /// Copies data from host memory to this buffer.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="source"></param>
+    /// <param name="offset"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public ValueTask CopyFromHostAsync<T>(
         ReadOnlyMemory<T> source,
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyFromHostAsync(source, _offset + offset, cancellationToken);
 
+    /// <summary>
+    /// Copies data from this buffer to host memory.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="destination"></param>
+    /// <param name="offset"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public ValueTask CopyToHostAsync<T>(
         Memory<T> destination,
         long offset = 0,
         CancellationToken cancellationToken = default) where T : unmanaged => _parent.CopyToHostAsync(destination, _offset + offset, cancellationToken);
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or
+    /// resetting unmanaged resources asynchronously.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous dispose operation.
+    /// </returns>
     public ValueTask DisposeAsync()
         // Views don't own the memory, so nothing to dispose
         => ValueTask.CompletedTask;

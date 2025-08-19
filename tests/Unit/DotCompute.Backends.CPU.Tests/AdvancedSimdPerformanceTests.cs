@@ -471,10 +471,7 @@ public sealed class AdvancedSimdPerformanceTests(ITestOutputHelper output)
         }
 
         // Measure scalar matrix multiplication
-        var scalarTime = MeasureTime(() =>
-        {
-            MatrixMultiplyScalar(a, b, scalarResult, size);
-        }, 5);
+        var scalarTime = MeasureTime(() => MatrixMultiplyScalar(a, b, scalarResult, size), 5);
 
         // Measure optimized SIMD matrix multiplication
         var simdTime = MeasureTime(() =>

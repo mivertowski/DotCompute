@@ -278,7 +278,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
 
         await bufferResult.CopyToHostAsync<float>(_output);
 
-        _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
+        _buffers.AddRange([bufferA, bufferB, bufferResult]);
     }
 
     private async Task ExecuteVectorMultiply()
@@ -292,7 +292,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
 
         await bufferResult.CopyToHostAsync<float>(_output);
 
-        _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
+        _buffers.AddRange([bufferA, bufferB, bufferResult]);
     }
 
     private async Task ExecuteDotProduct()
@@ -313,7 +313,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
         // Final reduction on CPU
         _output[0] = partialResults.Sum();
 
-        _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
+        _buffers.AddRange([bufferA, bufferB, bufferResult]);
     }
 
     private async Task ExecuteMatrixMultiply()
@@ -334,7 +334,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
         var result = new float[matrixSize * matrixSize];
         await bufferResult.CopyToHostAsync<float>(result);
 
-        _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
+        _buffers.AddRange([bufferA, bufferB, bufferResult]);
     }
 
     private async Task ExecuteReduction()
@@ -353,7 +353,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
 
         _output[0] = partialResults.Sum();
 
-        _buffers.AddRange(new[] { bufferInput, bufferResult });
+        _buffers.AddRange([bufferInput, bufferResult]);
     }
 
     private async Task ExecuteConvolution()
@@ -371,7 +371,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
         var result = new float[DataSize - filterSize + 1];
         await bufferResult.CopyToHostAsync<float>(result);
 
-        _buffers.AddRange(new[] { bufferInput, bufferFilter, bufferResult });
+        _buffers.AddRange([bufferInput, bufferFilter, bufferResult]);
     }
 
     [Benchmark]
@@ -434,7 +434,7 @@ internal sealed class ComputeKernelsBenchmarks : IDisposable
         await bufferC.CopyToHostAsync<float>(_output);
         await bufferD.CopyFromHostAsync<float>(_output);
 
-        _buffers.AddRange(new[] { bufferA, bufferB, bufferC, bufferD });
+        _buffers.AddRange([bufferA, bufferB, bufferC, bufferD]);
     }
 
     public void Dispose()

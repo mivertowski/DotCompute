@@ -15,8 +15,15 @@ public sealed class TestCpuAccelerator : IAccelerator
     private readonly ConcurrentDictionary<string, TestCompiledKernel> _compiledKernels;
     private bool _disposed;
 
+    /// <summary>
+    /// Gets the accelerator context.
+    /// </summary>
     public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestCpuAccelerator"/> class.
+    /// </summary>
+    /// <param name="name">The name.</param>
     public TestCpuAccelerator(string name = "Test CPU Accelerator")
     {
         Info = new AcceleratorInfo
@@ -39,10 +46,29 @@ public sealed class TestCpuAccelerator : IAccelerator
         _compiledKernels = new ConcurrentDictionary<string, TestCompiledKernel>();
     }
 
+    /// <summary>
+    /// Gets device information.
+    /// </summary>
     public AcceleratorInfo Info { get; }
+
+    /// <summary>
+    /// Gets the accelerator type.
+    /// </summary>
     public AcceleratorType Type => AcceleratorType.CPU;
+
+    /// <summary>
+    /// Gets memory manager for this accelerator.
+    /// </summary>
     public IMemoryManager Memory => _memoryManager;
 
+    /// <summary>
+    /// Compiles a kernel for execution.
+    /// </summary>
+    /// <param name="definition"></param>
+    /// <param name="options"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="System.ArgumentNullException"></exception>
     public async ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
@@ -61,8 +87,20 @@ public sealed class TestCpuAccelerator : IAccelerator
         return kernel;
     }
 
+    /// <summary>
+    /// Synchronizes all pending operations.
+    /// </summary>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async ValueTask SynchronizeAsync(CancellationToken cancellationToken = default) => await Task.Yield(); // Simulate synchronization
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or
+    /// resetting unmanaged resources asynchronously.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous dispose operation.
+    /// </returns>
     public async ValueTask DisposeAsync()
     {
         if (!_disposed)
@@ -74,6 +112,9 @@ public sealed class TestCpuAccelerator : IAccelerator
         }
     }
 
+    /// <summary>
+    /// Releases unmanaged and - optionally - managed resources.
+    /// </summary>
     public void Dispose() => DisposeAsync().AsTask().Wait();
 }
 
@@ -88,8 +129,17 @@ public sealed class TestCompiledKernel(string name, byte[] code, CompilationOpti
     private long _executionCount;
     private bool _disposed;
 
+    /// <summary>
+    /// Gets the kernel name.
+    /// </summary>
     public string Name { get; } = name;
 
+    /// <summary>
+    /// Executes the kernel with given arguments.
+    /// </summary>
+    /// <param name="arguments"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async ValueTask ExecuteAsync(
         KernelArguments arguments,
         CancellationToken cancellationToken = default)
@@ -123,12 +173,39 @@ public sealed class TestCompiledKernel(string name, byte[] code, CompilationOpti
         _ = Interlocked.Increment(ref _executionCount);
     }
 
+    /// <summary>
+    /// Gets the execution count.
+    /// </summary>
+    /// <value>
+    /// The execution count.
+    /// </value>
     public long ExecutionCount => _executionCount;
+
+    /// <summary>
+    /// Gets the total execution time.
+    /// </summary>
+    /// <value>
+    /// The total execution time.
+    /// </value>
     public TimeSpan TotalExecutionTime => _executionTimer.Elapsed;
+
+    /// <summary>
+    /// Gets the average execution time ms.
+    /// </summary>
+    /// <value>
+    /// The average execution time ms.
+    /// </value>
     public double AverageExecutionTimeMs => _executionCount > 0
         ? _executionTimer.Elapsed.TotalMilliseconds / _executionCount
         : 0;
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or
+    /// resetting unmanaged resources asynchronously.
+    /// </summary>
+    /// <returns>
+    /// A task that represents the asynchronous dispose operation.
+    /// </returns>
     public async ValueTask DisposeAsync()
     {
         if (!_disposed)

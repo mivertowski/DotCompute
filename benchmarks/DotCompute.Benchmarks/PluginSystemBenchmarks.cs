@@ -82,7 +82,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
     [Benchmark]
     public async Task AsyncPluginInitialization()
     {
-        var plugins = new List<TestPluginInterface>();
+        var plugins = new List<ITestPluginInterface>();
 
         // Load plugins first
         for (var i = 0; i < PluginCount; i++)
@@ -92,10 +92,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
         }
 
         // Initialize all plugins asynchronously
-        var initTasks = plugins.Select(async plugin =>
-        {
-            await Task.Run(() => plugin.Initialize());
-        });
+        var initTasks = plugins.Select(async plugin => await Task.Run(() => plugin.Initialize()));
 
         await Task.WhenAll(initTasks);
 
@@ -105,7 +102,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
     [Benchmark]
     public void PluginDiscovery()
     {
-        var discoveredPlugins = new List<TestPluginInterface>();
+        var discoveredPlugins = new List<ITestPluginInterface>();
 
         // Simulate plugin discovery from different sources
         var discoveryTasks = Enumerable.Range(0, PluginCount).Select(i =>
@@ -132,7 +129,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
     [Benchmark]
     public void DependencyResolution()
     {
-        var plugins = new List<TestPluginInterface>();
+        var plugins = new List<ITestPluginInterface>();
 
         // Create plugins with dependencies
         for (var i = 0; i < PluginCount; i++)
@@ -155,7 +152,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
     [Benchmark]
     public void PluginLifecycleManagement()
     {
-        var plugins = new List<TestPluginInterface>();
+        var plugins = new List<ITestPluginInterface>();
 
         // Load plugins
         for (var i = 0; i < PluginCount; i++)
@@ -186,7 +183,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
     [Benchmark]
     public void ConcurrentPluginLoading()
     {
-        var plugins = new List<TestPluginInterface>();
+        var plugins = new List<ITestPluginInterface>();
         var loadTasks = new List<Task>();
 
         for (var i = 0; i < PluginCount; i++)
@@ -211,7 +208,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
     public double PluginLoadingThroughput()
     {
         var start = DateTime.UtcNow;
-        var plugins = new List<TestPluginInterface>();
+        var plugins = new List<ITestPluginInterface>();
 
         for (var i = 0; i < PluginCount; i++)
         {
@@ -233,7 +230,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
         GC.SuppressFinalize(this);
     }
 
-    private static TestPluginInterface CreatePlugin(string type, int index)
+    private static ITestPluginInterface CreatePlugin(string type, int index)
     {
         return type switch
         {
@@ -252,11 +249,11 @@ internal sealed class PluginSystemBenchmarks : IDisposable
         };
     }
 
-    private static List<TestPluginInterface> ResolveDependencies(List<TestPluginInterface> plugins)
+    private static List<ITestPluginInterface> ResolveDependencies(List<ITestPluginInterface> plugins)
     {
         // Simple dependency resolution simulation
-        var resolved = new List<TestPluginInterface>();
-        var remaining = new List<TestPluginInterface>(plugins);
+        var resolved = new List<ITestPluginInterface>();
+        var remaining = new List<ITestPluginInterface>(plugins);
 
         while (remaining.Count > 0)
         {
@@ -287,7 +284,7 @@ internal sealed class PluginSystemBenchmarks : IDisposable
 }
 
 // Simplified test plugin interfaces and implementations
-internal interface TestPluginInterface : IDisposable
+internal interface ITestPluginInterface : IDisposable
 {
     public string Name { get; }
     public string Description { get; }
@@ -298,7 +295,7 @@ internal interface TestPluginInterface : IDisposable
     public void DoWork();
 }
 
-internal abstract class TestPluginBase : TestPluginInterface
+internal abstract class TestPluginBase : ITestPluginInterface
 {
     public string Name { get; protected set; } = string.Empty;
     public string Description { get; protected set; } = string.Empty;
@@ -370,7 +367,7 @@ internal sealed class ComplexTestPlugin : TestPluginBase
 
 internal sealed class DependentTestPlugin : TestPluginBase
 {
-    public string[] Dependencies { get; set; } = Array.Empty<string>();
+    public string[] Dependencies { get; set; } = [];
 
     public DependentTestPlugin(string name, string description)
     {

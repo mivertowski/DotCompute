@@ -348,10 +348,7 @@ internal sealed class PipelineExecutionBenchmarks : IDisposable
 
         var pipelineBuilder = new KernelPipelineBuilder();
         _ = pipelineBuilder.AddStage(CreateStreamingProcessingStage());
-        _ = pipelineBuilder.WithOptimization(opts =>
-        {
-            opts.EnableStreaming = true;
-        });
+        _ = pipelineBuilder.WithOptimization(opts => opts.EnableStreaming = true);
 
         var pipeline = pipelineBuilder.Build();
 
@@ -489,7 +486,7 @@ internal sealed class SimplePipelineStage(string name, Func<IMemoryBuffer, IMemo
     public string Id { get; } = Guid.NewGuid().ToString();
     public string Name { get; } = name;
     public PipelineStageType Type { get; } = PipelineStageType.Custom;
-    public IReadOnlyList<string> Dependencies { get; } = Array.Empty<string>();
+    public IReadOnlyList<string> Dependencies { get; } = [];
     public IReadOnlyDictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
 
     public async ValueTask<StageExecutionResult> ExecuteAsync(
@@ -564,7 +561,7 @@ internal sealed class OptimizedPipelineStage : IPipelineStage
         Id = Guid.NewGuid().ToString();
         Name = name;
         Type = PipelineStageType.Custom;
-        Dependencies = Array.Empty<string>();
+        Dependencies = [];
         Metadata = new Dictionary<string, object> { ["Optimized"] = true, ["BufferReuse"] = true };
         _executeFunc = executeFunc;
         _metrics = new SimpleStageMetrics();
@@ -657,7 +654,7 @@ internal sealed class ErrorSafePipelineStage : IPipelineStage
         Id = Guid.NewGuid().ToString();
         Name = name;
         Type = PipelineStageType.Custom;
-        Dependencies = Array.Empty<string>();
+        Dependencies = [];
         Metadata = new Dictionary<string, object> { ["ErrorSafe"] = true };
         _executeFunc = executeFunc;
         _metrics = new SimpleStageMetrics();
@@ -746,7 +743,7 @@ internal sealed class StreamingPipelineStage : IPipelineStage
         Id = Guid.NewGuid().ToString();
         Name = name;
         Type = PipelineStageType.Custom;
-        Dependencies = Array.Empty<string>();
+        Dependencies = [];
         Metadata = new Dictionary<string, object> { ["Streaming"] = true, ["ChunkProcessing"] = true };
         _executeFunc = executeFunc;
         _metrics = new SimpleStageMetrics();

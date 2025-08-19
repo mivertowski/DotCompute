@@ -17,11 +17,46 @@ public sealed class TestKernelExecutor(int maxConcurrentExecutions = 4)
     private TimeSpan _totalExecutionTime;
     private bool _disposed;
 
+    /// <summary>
+    /// Gets the total executions.
+    /// </summary>
+    /// <value>
+    /// The total executions.
+    /// </value>
     public long TotalExecutions => _totalExecutions;
+
+    /// <summary>
+    /// Gets the total execution time.
+    /// </summary>
+    /// <value>
+    /// The total execution time.
+    /// </value>
     public TimeSpan TotalExecutionTime => _totalExecutionTime;
+
+    /// <summary>
+    /// Gets the queued executions.
+    /// </summary>
+    /// <value>
+    /// The queued executions.
+    /// </value>
     public int QueuedExecutions => _executionQueue.Count;
+
+    /// <summary>
+    /// Gets the statistics.
+    /// </summary>
+    /// <value>
+    /// The statistics.
+    /// </value>
     public IReadOnlyDictionary<string, KernelStatistics> Statistics => _statistics;
 
+    /// <summary>
+    /// Executes the asynchronous.
+    /// </summary>
+    /// <param name="kernel">The kernel.</param>
+    /// <param name="arguments">The arguments.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
     public async Task<KernelExecutionResult> ExecuteAsync(
         ICompiledKernel kernel,
         KernelArguments arguments,
@@ -267,6 +302,10 @@ public sealed class TestKernelExecutor(int maxConcurrentExecutions = 4)
         stats.LastExecutionTime = execution.CompletedAt ?? DateTime.UtcNow;
     }
 
+    /// <summary>
+    /// Waits for completion asynchronous.
+    /// </summary>
+    /// <param name="cancellationToken">The cancellation token.</param>
     public async Task WaitForCompletionAsync(CancellationToken cancellationToken = default)
     {
         while (!_executionQueue.IsEmpty)
@@ -275,6 +314,9 @@ public sealed class TestKernelExecutor(int maxConcurrentExecutions = 4)
         }
     }
 
+    /// <summary>
+    /// Releases unmanaged and - optionally - managed resources.
+    /// </summary>
     public void Dispose()
     {
         if (!_disposed)
@@ -290,12 +332,60 @@ public sealed class TestKernelExecutor(int maxConcurrentExecutions = 4)
 /// </summary>
 public sealed class KernelExecution
 {
+    /// <summary>
+    /// Gets or sets the identifier.
+    /// </summary>
+    /// <value>
+    /// The identifier.
+    /// </value>
     public Guid Id { get; set; }
+
+    /// <summary>
+    /// Gets or sets the name of the kernel.
+    /// </summary>
+    /// <value>
+    /// The name of the kernel.
+    /// </value>
     public string KernelName { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets the arguments.
+    /// </summary>
+    /// <value>
+    /// The arguments.
+    /// </value>
     public KernelArguments Arguments { get; set; }
+
+    /// <summary>
+    /// Gets or sets the configuration.
+    /// </summary>
+    /// <value>
+    /// The configuration.
+    /// </value>
     public KernelConfiguration Configuration { get; set; }
+
+    /// <summary>
+    /// Gets or sets the queued at.
+    /// </summary>
+    /// <value>
+    /// The queued at.
+    /// </value>
     public DateTime QueuedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the started at.
+    /// </summary>
+    /// <value>
+    /// The started at.
+    /// </value>
     public DateTime? StartedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the completed at.
+    /// </summary>
+    /// <value>
+    /// The completed at.
+    /// </value>
     public DateTime? CompletedAt { get; set; }
 }
 
@@ -304,12 +394,60 @@ public sealed class KernelExecution
 /// </summary>
 public sealed class KernelExecutionResult
 {
+    /// <summary>
+    /// Gets or sets a value indicating whether this <see cref="KernelExecutionResult"/> is success.
+    /// </summary>
+    /// <value>
+    ///   <c>true</c> if success; otherwise, <c>false</c>.
+    /// </value>
     public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the execution time ms.
+    /// </summary>
+    /// <value>
+    /// The execution time ms.
+    /// </value>
     public double ExecutionTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the threads executed.
+    /// </summary>
+    /// <value>
+    /// The threads executed.
+    /// </value>
     public int ThreadsExecuted { get; set; }
+
+    /// <summary>
+    /// Gets or sets the memory used.
+    /// </summary>
+    /// <value>
+    /// The memory used.
+    /// </value>
     public long MemoryUsed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the throughput.
+    /// </summary>
+    /// <value>
+    /// The throughput.
+    /// </value>
     public double Throughput { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    /// <value>
+    /// The error message.
+    /// </value>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the type of the error.
+    /// </summary>
+    /// <value>
+    /// The type of the error.
+    /// </value>
     public string? ErrorType { get; set; }
 }
 
@@ -318,20 +456,101 @@ public sealed class KernelExecutionResult
 /// </summary>
 public sealed class KernelStatistics
 {
+    /// <summary>
+    /// Gets or sets the name of the kernel.
+    /// </summary>
+    /// <value>
+    /// The name of the kernel.
+    /// </value>
     public string KernelName { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets the execution count.
+    /// </summary>
+    /// <value>
+    /// The execution count.
+    /// </value>
     public long ExecutionCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the successful executions.
+    /// </summary>
+    /// <value>
+    /// The successful executions.
+    /// </value>
     public long SuccessfulExecutions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the failed executions.
+    /// </summary>
+    /// <value>
+    /// The failed executions.
+    /// </value>
     public long FailedExecutions { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total execution time.
+    /// </summary>
+    /// <value>
+    /// The total execution time.
+    /// </value>
     public TimeSpan TotalExecutionTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum execution time ms.
+    /// </summary>
+    /// <value>
+    /// The minimum execution time ms.
+    /// </value>
     public double MinExecutionTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum execution time ms.
+    /// </summary>
+    /// <value>
+    /// The maximum execution time ms.
+    /// </value>
     public double MaxExecutionTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total threads executed.
+    /// </summary>
+    /// <value>
+    /// The total threads executed.
+    /// </value>
     public long TotalThreadsExecuted { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total memory used.
+    /// </summary>
+    /// <value>
+    /// The total memory used.
+    /// </value>
     public long TotalMemoryUsed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last execution time.
+    /// </summary>
+    /// <value>
+    /// The last execution time.
+    /// </value>
     public DateTime LastExecutionTime { get; set; }
 
+    /// <summary>
+    /// Gets the average execution time ms.
+    /// </summary>
+    /// <value>
+    /// The average execution time ms.
+    /// </value>
     public double AverageExecutionTimeMs
         => ExecutionCount > 0 ? TotalExecutionTime.TotalMilliseconds / ExecutionCount : 0;
 
+    /// <summary>
+    /// Gets the success rate.
+    /// </summary>
+    /// <value>
+    /// The success rate.
+    /// </value>
     public double SuccessRate
         => ExecutionCount > 0 ? (double)SuccessfulExecutions / ExecutionCount * 100 : 0;
 }

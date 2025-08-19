@@ -188,7 +188,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         var result = new float[DataSize * 2];
         await outputBuffer.CopyToHostAsync<float>(result);
 
-        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+        _buffers.AddRange([inputBuffer, outputBuffer]);
     }
 
     private async Task SimulateFFTKernel(IMemoryBuffer input, IMemoryBuffer output)
@@ -278,7 +278,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
 
         await outputBuffer.CopyToHostAsync<float>(_outputData);
 
-        _buffers.AddRange(new[] { inputBuffer, kernelBuffer, outputBuffer });
+        _buffers.AddRange([inputBuffer, kernelBuffer, outputBuffer]);
     }
 
     private async Task SimulateConvolutionKernel(IMemoryBuffer input, IMemoryBuffer kernel,
@@ -338,7 +338,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         var result = new float[DataSize];
         await outputBuffer.CopyToHostAsync<float>(result);
 
-        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+        _buffers.AddRange([inputBuffer, outputBuffer]);
     }
 
     private async Task SimulateQuickSortKernel(IMemoryBuffer input, IMemoryBuffer output)
@@ -382,7 +382,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         var result = new float[DataSize];
         await outputBuffer.CopyToHostAsync<float>(result);
 
-        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+        _buffers.AddRange([inputBuffer, outputBuffer]);
     }
 
     private async Task SimulateImageBlurKernel(IMemoryBuffer input, IMemoryBuffer output, int imageSize)
@@ -449,7 +449,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         var result = new float[actualSize];
         await outputBuffer.CopyToHostAsync<float>(result);
 
-        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+        _buffers.AddRange([inputBuffer, outputBuffer]);
     }
 
     private static async Task SimulateMatrixDecompositionKernel(IMemoryBuffer input, IMemoryBuffer output, int matrixSize)
@@ -529,7 +529,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         var complexity = numSimulations * numSteps;
         await Task.Delay(Math.Max(1, complexity / 50000));
 
-        _buffers.AddRange(new[] { pathBuffer, resultBuffer });
+        _buffers.AddRange([pathBuffer, resultBuffer]);
     }
 
     [SuppressMessage("Security", "CA5394:Do not use insecure randomness", Justification = "Used for benchmark data generation only")]
@@ -553,7 +553,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         var complexity = imageSize * imageSize * kernelSize * kernelSize;
         await Task.Delay(Math.Max(1, complexity / 100000));
 
-        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+        _buffers.AddRange([inputBuffer, outputBuffer]);
     }
 
     [Benchmark]
@@ -615,7 +615,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         var executionTime = (int)(complexity / 100000);
         await Task.Delay(Math.Max(1, executionTime));
 
-        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+        _buffers.AddRange([inputBuffer, outputBuffer]);
     }
 
     [Benchmark]
@@ -640,7 +640,7 @@ internal sealed class RealWorldAlgorithmsBenchmarks : IDisposable
         var executionTime = iterations / 100000;
         await Task.Delay(Math.Max(1, executionTime));
 
-        _buffers.AddRange(new[] { inputBuffer, outputBuffer });
+        _buffers.AddRange([inputBuffer, outputBuffer]);
     }
 
     public void Dispose()

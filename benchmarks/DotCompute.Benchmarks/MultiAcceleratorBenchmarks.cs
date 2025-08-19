@@ -442,7 +442,9 @@ internal sealed class MultiAcceleratorBenchmarks : IDisposable
         await Task.WhenAll(tasks);
     }
 
+#pragma warning disable IDE0060 // Remove unused parameter
     private static async Task SimulateProcessingWork(IAccelerator accelerator, IMemoryBuffer buffer)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         // Simulate computational work on the accelerator
         await Task.Delay(10); // Base processing time

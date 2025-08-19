@@ -158,7 +158,7 @@ internal struct MemoryProfile
     public int Gen1Collections { get; set; }
     public int Gen2Collections { get; set; }
 
-    public override string ToString() => $"Allocated: {BytesAllocated:N0} bytes, GC: Gen0={Gen0Collections}, Gen1={Gen1Collections}, Gen2={Gen2Collections}";
+    public override readonly string ToString() => $"Allocated: {BytesAllocated:N0} bytes, GC: Gen0={Gen0Collections}, Gen1={Gen1Collections}, Gen2={Gen2Collections}";
 }
 
 internal struct PerformanceStatistics
@@ -171,7 +171,7 @@ internal struct PerformanceStatistics
     public double P95 { get; set; }
     public double P99 { get; set; }
 
-    public override string ToString() => $"Min={Min:F2}ms, Max={Max:F2}ms, Mean={Mean:F2}ms, Median={Median:F2}ms, StdDev={StdDev:F2}ms, P95={P95:F2}ms, P99={P99:F2}ms";
+    public override readonly string ToString() => $"Min={Min:F2}ms, Max={Max:F2}ms, Mean={Mean:F2}ms, Median={Median:F2}ms, StdDev={StdDev:F2}ms, P95={P95:F2}ms, P99={P99:F2}ms";
 }
 
 internal struct ProcessMemoryInfo
@@ -186,7 +186,7 @@ internal struct ProcessMemoryInfo
     public int ThreadCount { get; set; }
     public int HandleCount { get; set; }
 
-    public override string ToString()
+    public override readonly string ToString()
     {
         return $@"
 Working Set: {WorkingSet / (1024 * 1024):N0} MB

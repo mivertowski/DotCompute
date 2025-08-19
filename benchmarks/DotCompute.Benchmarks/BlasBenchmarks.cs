@@ -26,8 +26,15 @@ namespace DotCompute.Benchmarks;
 [ThreadingDiagnoser]
 public sealed class BlasBenchmarks : IDisposable
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <seealso cref="BenchmarkDotNet.Configs.ManualConfig" />
     public sealed class BlasConfig : ManualConfig
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="BlasConfig"/> class.
+        /// </summary>
         public BlasConfig()
         {
             _ = AddJob(Job.Default
@@ -56,12 +63,27 @@ public sealed class BlasBenchmarks : IDisposable
     private CudaMemoryBuffer? _gpuMatrixB;
     private CudaMemoryBuffer? _gpuMatrixC;
 
+    /// <summary>
+    /// Gets or sets the size of the vector.
+    /// </summary>
+    /// <value>
+    /// The size of the vector.
+    /// </value>
     [Params(1000, 10000, 100000, 1000000)]
     public int VectorSize { get; set; }
 
+    /// <summary>
+    /// Gets or sets the size of the matrix.
+    /// </summary>
+    /// <value>
+    /// The size of the matrix.
+    /// </value>
     [Params(128, 256, 512, 1024)]
     public int MatrixSize { get; set; }
 
+    /// <summary>
+    /// Setups this instance.
+    /// </summary>
     [GlobalSetup]
     public void Setup()
     {
@@ -147,6 +169,10 @@ public sealed class BlasBenchmarks : IDisposable
 
     #region BLAS Level 1 Benchmarks
 
+    /// <summary>
+    /// Dots the product cpu scalar.
+    /// </summary>
+    /// <returns></returns>
     [Benchmark(Baseline = true)]
     public float DotProduct_CPU_Scalar()
     {
@@ -158,6 +184,10 @@ public sealed class BlasBenchmarks : IDisposable
         return result;
     }
 
+    /// <summary>
+    /// Dots the product cpu simd.
+    /// </summary>
+    /// <returns></returns>
     [Benchmark]
     public float DotProduct_CPU_SIMD()
     {
@@ -186,6 +216,10 @@ public sealed class BlasBenchmarks : IDisposable
         return result;
     }
 
+    /// <summary>
+    /// Dots the product gpu cu blas.
+    /// </summary>
+    /// <returns></returns>
     [Benchmark]
     public float DotProduct_GPU_cuBLAS()
     {
@@ -197,6 +231,9 @@ public sealed class BlasBenchmarks : IDisposable
         return _cublas.DotAsync(_gpuVectorA, _gpuVectorB).Result;
     }
 
+    /// <summary>
+    /// Axpies the cpu scalar.
+    /// </summary>
     [Benchmark]
     public void AXPY_CPU_Scalar()
     {
@@ -207,6 +244,9 @@ public sealed class BlasBenchmarks : IDisposable
         }
     }
 
+    /// <summary>
+    /// Axpies the cpu simd.
+    /// </summary>
     [Benchmark]
     public void AXPY_CPU_SIMD()
     {
@@ -229,6 +269,9 @@ public sealed class BlasBenchmarks : IDisposable
         }
     }
 
+    /// <summary>
+    /// Axpies the gpu cu blas.
+    /// </summary>
     [Benchmark]
     public void AXPY_GPU_cuBLAS()
     {
@@ -247,6 +290,9 @@ public sealed class BlasBenchmarks : IDisposable
 
     #region BLAS Level 2 Benchmarks
 
+    /// <summary>
+    /// Gemvs the cpu scalar.
+    /// </summary>
     [Benchmark]
     public void GEMV_CPU_Scalar()
     {
@@ -264,6 +310,9 @@ public sealed class BlasBenchmarks : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gemvs the cpu simd.
+    /// </summary>
     [Benchmark]
     public void GEMV_CPU_SIMD()
     {
@@ -297,6 +346,10 @@ public sealed class BlasBenchmarks : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gemvs the gpu cu blas.
+    /// </summary>
+    /// <exception cref="System.InvalidOperationException"></exception>
     [Benchmark]
     public void GEMV_GPU_cuBLAS()
     {
@@ -319,6 +372,9 @@ public sealed class BlasBenchmarks : IDisposable
 
     #region BLAS Level 3 Benchmarks
 
+    /// <summary>
+    /// Gemms the cpu scalar.
+    /// </summary>
     [Benchmark]
     public void GEMM_CPU_Scalar()
     {
@@ -337,6 +393,9 @@ public sealed class BlasBenchmarks : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gemms the cpu blocked.
+    /// </summary>
     [Benchmark]
     public void GEMM_CPU_Blocked()
     {
@@ -368,6 +427,9 @@ public sealed class BlasBenchmarks : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gemms the gpu cu blas.
+    /// </summary>
     [Benchmark]
     public void GEMM_GPU_cuBLAS()
     {
@@ -383,6 +445,9 @@ public sealed class BlasBenchmarks : IDisposable
         }
     }
 
+    /// <summary>
+    /// Gemms the gpu cu blas tensor cores.
+    /// </summary>
     [Benchmark]
     public void GEMM_GPU_cuBLAS_TensorCores()
     {
@@ -403,6 +468,9 @@ public sealed class BlasBenchmarks : IDisposable
 
     #region Performance Analysis
 
+    /// <summary>
+    /// Measures the gpu memory bandwidth.
+    /// </summary>
     [Benchmark]
     public void MeasureGpuMemoryBandwidth()
     {
@@ -430,6 +498,9 @@ public sealed class BlasBenchmarks : IDisposable
         deviceBuffer?.Dispose();
     }
 
+    /// <summary>
+    /// Measures the kernel launch overhead.
+    /// </summary>
     [Benchmark]
     public void MeasureKernelLaunchOverhead()
     {
@@ -457,6 +528,9 @@ public sealed class BlasBenchmarks : IDisposable
 
     #endregion
 
+    /// <summary>
+    /// Cleanups this instance.
+    /// </summary>
     [GlobalCleanup]
     public void Cleanup()
     {
@@ -467,6 +541,9 @@ public sealed class BlasBenchmarks : IDisposable
         _gpuMatrixC?.Dispose();
     }
 
+    /// <summary>
+    /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+    /// </summary>
     public void Dispose()
     {
         Cleanup();

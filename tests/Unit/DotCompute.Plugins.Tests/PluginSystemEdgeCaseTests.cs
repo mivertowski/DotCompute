@@ -617,10 +617,8 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         _ = mock.Setup(p => p.GetMetrics()).Returns(new PluginMetrics());
         _ = mock.Setup(p => p.InitializeAsync(It.IsAny<IServiceProvider>(), It.IsAny<CancellationToken>()))
             .Returns(async (IServiceProvider sp, CancellationToken ct) =>
-            {
                 // Simulate long initialization
-                await Task.Delay(TimeSpan.FromSeconds(10), ct);
-            });
+                await Task.Delay(TimeSpan.FromSeconds(10), ct));
 
         using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(100));
 

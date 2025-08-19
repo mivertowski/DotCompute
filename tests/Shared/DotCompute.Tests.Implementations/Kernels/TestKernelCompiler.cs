@@ -17,23 +17,72 @@ public abstract class TestKernelCompilerBase
     private long _compilationCount;
     private TimeSpan _totalCompilationTime;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestKernelCompilerBase"/> class.
+    /// </summary>
     protected TestKernelCompilerBase()
     {
         _compilationCache = new ConcurrentDictionary<string, CompiledKernelInfo>();
         _diagnostics = [];
     }
 
+    /// <summary>
+    /// Gets the supported language.
+    /// </summary>
+    /// <value>
+    /// The supported language.
+    /// </value>
     public abstract KernelLanguage SupportedLanguage { get; }
+
+    /// <summary>
+    /// Gets the name of the compiler.
+    /// </summary>
+    /// <value>
+    /// The name of the compiler.
+    /// </value>
     public abstract string CompilerName { get; }
 
+    /// <summary>
+    /// Gets the compilation count.
+    /// </summary>
+    /// <value>
+    /// The compilation count.
+    /// </value>
     public long CompilationCount => _compilationCount;
+
+    /// <summary>
+    /// Gets the total compilation time.
+    /// </summary>
+    /// <value>
+    /// The total compilation time.
+    /// </value>
     public TimeSpan TotalCompilationTime => _totalCompilationTime;
+
+    /// <summary>
+    /// Gets the average compilation time ms.
+    /// </summary>
+    /// <value>
+    /// The average compilation time ms.
+    /// </value>
     public double AverageCompilationTimeMs => _compilationCount > 0
         ? _totalCompilationTime.TotalMilliseconds / _compilationCount
         : 0;
 
+    /// <summary>
+    /// Gets the diagnostics.
+    /// </summary>
+    /// <value>
+    /// The diagnostics.
+    /// </value>
     public IReadOnlyList<CompilationDiagnostic> Diagnostics => _diagnostics.AsReadOnly();
 
+    /// <summary>
+    /// Compiles the internal asynchronous.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
     protected virtual async Task<CompiledKernelInfo> CompileInternalAsync(
         IKernelSource source,
         CompilationOptions options,
@@ -82,8 +131,20 @@ public abstract class TestKernelCompilerBase
         return info;
     }
 
+    /// <summary>
+    /// Generates the pseudo assembly.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <returns></returns>
     protected abstract string GeneratePseudoAssembly(IKernelSource source, CompilationOptions options);
 
+    /// <summary>
+    /// Generates the cache key.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <returns></returns>
     protected static string GenerateCacheKey(IKernelSource source, CompilationOptions options)
     {
         var builder = new StringBuilder();
@@ -99,8 +160,14 @@ public abstract class TestKernelCompilerBase
         return builder.ToString();
     }
 
+    /// <summary>
+    /// Clears the cache.
+    /// </summary>
     public void ClearCache() => _compilationCache.Clear();
 
+    /// <summary>
+    /// Clears the diagnostics.
+    /// </summary>
     public void ClearDiagnostics() => _diagnostics.Clear();
 }
 
@@ -109,9 +176,30 @@ public abstract class TestKernelCompilerBase
 /// </summary>
 public sealed class TestCudaKernelCompiler : TestKernelCompilerBase
 {
+    /// <summary>
+    /// Gets the supported language.
+    /// </summary>
+    /// <value>
+    /// The supported language.
+    /// </value>
     public override KernelLanguage SupportedLanguage => KernelLanguage.Cuda;
+
+    /// <summary>
+    /// Gets the name of the compiler.
+    /// </summary>
+    /// <value>
+    /// The name of the compiler.
+    /// </value>
     public override string CompilerName => "Test CUDA Compiler(nvcc simulator)";
 
+    /// <summary>
+    /// Compiles the asynchronous.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
+    /// <exception cref="System.ArgumentException">Unsupported language: {source.Language}. Expected CUDA or PTX. - source</exception>
     public async Task<CompiledKernelInfo> CompileAsync(
         IKernelSource source,
         CompilationOptions options,
@@ -125,6 +213,12 @@ public sealed class TestCudaKernelCompiler : TestKernelCompilerBase
         return await CompileInternalAsync(source, options, cancellationToken);
     }
 
+    /// <summary>
+    /// Generates the pseudo assembly.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <returns></returns>
     protected override string GeneratePseudoAssembly(IKernelSource source, CompilationOptions options)
     {
         var assembly = new StringBuilder();
@@ -175,9 +269,30 @@ public sealed class TestCudaKernelCompiler : TestKernelCompilerBase
 /// </summary>
 public sealed class TestOpenCLKernelCompiler : TestKernelCompilerBase
 {
+    /// <summary>
+    /// Gets the supported language.
+    /// </summary>
+    /// <value>
+    /// The supported language.
+    /// </value>
     public override KernelLanguage SupportedLanguage => KernelLanguage.OpenCL;
+
+    /// <summary>
+    /// Gets the name of the compiler.
+    /// </summary>
+    /// <value>
+    /// The name of the compiler.
+    /// </value>
     public override string CompilerName => "Test OpenCL Compiler";
 
+    /// <summary>
+    /// Compiles the asynchronous.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
+    /// <exception cref="System.ArgumentException">Unsupported language: {source.Language}. Expected OpenCL or SPIRV. - source</exception>
     public async Task<CompiledKernelInfo> CompileAsync(
         IKernelSource source,
         CompilationOptions options,
@@ -191,6 +306,12 @@ public sealed class TestOpenCLKernelCompiler : TestKernelCompilerBase
         return await CompileInternalAsync(source, options, cancellationToken);
     }
 
+    /// <summary>
+    /// Generates the pseudo assembly.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <returns></returns>
     protected override string GeneratePseudoAssembly(IKernelSource source, CompilationOptions options)
     {
         var assembly = new StringBuilder();
@@ -236,9 +357,30 @@ public sealed class TestOpenCLKernelCompiler : TestKernelCompilerBase
 /// </summary>
 public sealed class TestDirectComputeCompiler : TestKernelCompilerBase
 {
+    /// <summary>
+    /// Gets the supported language.
+    /// </summary>
+    /// <value>
+    /// The supported language.
+    /// </value>
     public override KernelLanguage SupportedLanguage => KernelLanguage.HLSL;
+
+    /// <summary>
+    /// Gets the name of the compiler.
+    /// </summary>
+    /// <value>
+    /// The name of the compiler.
+    /// </value>
     public override string CompilerName => "Test DirectCompute Compiler(dxc simulator)";
 
+    /// <summary>
+    /// Compiles the asynchronous.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns></returns>
+    /// <exception cref="System.ArgumentException">Unsupported language: {source.Language}. Expected HLSL. - source</exception>
     public async Task<CompiledKernelInfo> CompileAsync(
         IKernelSource source,
         CompilationOptions options,
@@ -252,6 +394,12 @@ public sealed class TestDirectComputeCompiler : TestKernelCompilerBase
         return await CompileInternalAsync(source, options, cancellationToken);
     }
 
+    /// <summary>
+    /// Generates the pseudo assembly.
+    /// </summary>
+    /// <param name="source">The source.</param>
+    /// <param name="options">The options.</param>
+    /// <returns></returns>
     protected override string GeneratePseudoAssembly(IKernelSource source, CompilationOptions options)
     {
         var assembly = new StringBuilder();
@@ -297,11 +445,52 @@ public sealed class TestDirectComputeCompiler : TestKernelCompilerBase
 /// </summary>
 public sealed class CompiledKernelInfo
 {
+    /// <summary>
+    /// Gets or sets the name.
+    /// </summary>
+    /// <value>
+    /// The name.
+    /// </value>
     public string Name { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets the entry point.
+    /// </summary>
+    /// <value>
+    /// The entry point.
+    /// </value>
     public string EntryPoint { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets the assembly.
+    /// </summary>
+    /// <value>
+    /// The assembly.
+    /// </value>
     public string Assembly { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets the compiled at.
+    /// </summary>
+    /// <value>
+    /// The compiled at.
+    /// </value>
     public DateTime CompiledAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the options.
+    /// </summary>
+    /// <value>
+    /// The options.
+    /// </value>
     public CompilationOptions Options { get; set; } = new();
+
+    /// <summary>
+    /// Gets the metadata.
+    /// </summary>
+    /// <value>
+    /// The metadata.
+    /// </value>
     public Dictionary<string, object> Metadata { get; init; } = [];
 }
 
@@ -310,9 +499,36 @@ public sealed class CompiledKernelInfo
 /// </summary>
 public sealed class CompilationDiagnostic
 {
+    /// <summary>
+    /// Gets or sets the level.
+    /// </summary>
+    /// <value>
+    /// The level.
+    /// </value>
     public DiagnosticLevel Level { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    /// <value>
+    /// The message.
+    /// </value>
     public string Message { get; set; } = "";
+
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    /// <value>
+    /// The timestamp.
+    /// </value>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the location.
+    /// </summary>
+    /// <value>
+    /// The location.
+    /// </value>
     public string? Location { get; set; }
 }
 
@@ -321,7 +537,18 @@ public sealed class CompilationDiagnostic
 /// </summary>
 public enum DiagnosticLevel
 {
+    /// <summary>
+    /// The information
+    /// </summary>
     Info,
+
+    /// <summary>
+    /// The warning
+    /// </summary>
     Warning,
+
+    /// <summary>
+    /// The error
+    /// </summary>
     Error
 }

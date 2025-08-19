@@ -13,6 +13,12 @@ public sealed class TestCustomStage : IPipelineStage
     private readonly Dictionary<string, object> _metadata;
     private readonly TestStageMetrics _metrics;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestCustomStage"/> class.
+    /// </summary>
+    /// <param name="name">The name.</param>
+    /// <param name="executeFunc">The execute function.</param>
+    /// <exception cref="System.ArgumentNullException"></exception>
     public TestCustomStage(
         string name,
         Func<PipelineExecutionContext, CancellationToken, ValueTask<StageExecutionResult>> executeFunc)
@@ -23,16 +29,41 @@ public sealed class TestCustomStage : IPipelineStage
         _executeFunc = executeFunc;
         _metadata = [];
         _metrics = new TestStageMetrics(Name);
-        Dependencies = Array.Empty<string>();
+        Dependencies = [];
         Type = PipelineStageType.Custom;
     }
 
+    /// <summary>
+    /// Gets the stage identifier.
+    /// </summary>
     public string Id { get; }
+
+    /// <summary>
+    /// Gets the stage name.
+    /// </summary>
     public string Name { get; }
+
+    /// <summary>
+    /// Gets the stage type.
+    /// </summary>
     public PipelineStageType Type { get; }
+
+    /// <summary>
+    /// Gets the stage dependencies.
+    /// </summary>
     public IReadOnlyList<string> Dependencies { get; private set; }
+
+    /// <summary>
+    /// Gets the stage metadata.
+    /// </summary>
     public IReadOnlyDictionary<string, object> Metadata => _metadata;
 
+    /// <summary>
+    /// Executes the stage.
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     public async ValueTask<StageExecutionResult> ExecuteAsync(
         PipelineExecutionContext context,
         CancellationToken cancellationToken = default)
@@ -132,7 +163,7 @@ public sealed class TestBranchStage : IPipelineStage
         _falseBranch = falseBranch;
         _metadata = [];
         _metrics = new TestStageMetrics(Name);
-        Dependencies = Array.Empty<string>();
+        Dependencies = [];
         Type = PipelineStageType.Branch;
     }
 
@@ -279,7 +310,7 @@ public sealed class TestLoopStage : IPipelineStage
         _body = body;
         _metadata = [];
         _metrics = new TestStageMetrics(Name);
-        Dependencies = Array.Empty<string>();
+        Dependencies = [];
         Type = PipelineStageType.Loop;
         _maxIterations = maxIterations;
     }

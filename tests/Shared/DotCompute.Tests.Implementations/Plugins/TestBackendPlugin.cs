@@ -26,25 +26,25 @@ public sealed class TestBackendPlugin(string pluginType = "TestBackend", PluginC
     private bool _disposed;
 
     // Logger message delegates for performance
-    private static readonly Action<ILogger, string, Exception?> LogPluginInitialized =
+    private static readonly Action<ILogger, string, Exception?> _logPluginInitialized =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(1, "PluginInitialized"), "Plugin {PluginId} initialized successfully");
 
-    private static readonly Action<ILogger, string, Exception?> LogPluginStarted =
+    private static readonly Action<ILogger, string, Exception?> _logPluginStarted =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(2, "PluginStarted"), "Plugin {PluginId} started");
 
-    private static readonly Action<ILogger, string, Exception?> LogPluginStopped =
+    private static readonly Action<ILogger, string, Exception?> _logPluginStopped =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(3, "PluginStopped"), "Plugin {PluginId} stopped");
 
-    private static readonly Action<ILogger, string, Exception?> LogConfigurationChanged =
+    private static readonly Action<ILogger, string, Exception?> _logConfigurationChanged =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(4, "ConfigurationChanged"), "Configuration changed for plugin {PluginId}");
 
-    private static readonly Action<ILogger, string, Exception?> LogPluginInitializationFailed =
+    private static readonly Action<ILogger, string, Exception?> _logPluginInitializationFailed =
         LoggerMessage.Define<string>(LogLevel.Error, new EventId(101, "PluginInitializationFailed"), "Failed to initialize plugin {PluginId}");
 
-    private static readonly Action<ILogger, string, Exception?> LogPluginStartFailed =
+    private static readonly Action<ILogger, string, Exception?> _logPluginStartFailed =
         LoggerMessage.Define<string>(LogLevel.Error, new EventId(102, "PluginStartFailed"), "Failed to start plugin {PluginId}");
 
-    private static readonly Action<ILogger, string, Exception?> LogPluginStopError =
+    private static readonly Action<ILogger, string, Exception?> _logPluginStopError =
         LoggerMessage.Define<string>(LogLevel.Error, new EventId(103, "PluginStopError"), "Error stopping plugin {PluginId}");
 
     public string Id { get; } = $"test.backend.{pluginType.ToUpperInvariant()}";
@@ -119,12 +119,12 @@ public sealed class TestBackendPlugin(string pluginType = "TestBackend", PluginC
             ChangeHealth(PluginHealth.Healthy, "Plugin initialized successfully");
 
             if (_logger != null)
-                LogPluginInitialized(_logger, Id, null);
+                _logPluginInitialized(_logger, Id, null);
         }
         catch (Exception ex)
         {
             if (_logger != null)
-                LogPluginInitializationFailed(_logger, Id, ex);
+                _logPluginInitializationFailed(_logger, Id, ex);
             ChangeState(PluginState.Failed, $"Initialization failed: {ex.Message}");
             ChangeHealth(PluginHealth.Critical, "Initialization failure");
             OnErrorOccurred(ex, "InitializeAsync");
@@ -155,12 +155,12 @@ public sealed class TestBackendPlugin(string pluginType = "TestBackend", PluginC
             ChangeHealth(PluginHealth.Healthy, "Plugin is running");
 
             if (_logger != null)
-                LogPluginStarted(_logger, Id, null);
+                _logPluginStarted(_logger, Id, null);
         }
         catch (Exception ex)
         {
             if (_logger != null)
-                LogPluginStartFailed(_logger, Id, ex);
+                _logPluginStartFailed(_logger, Id, ex);
             ChangeState(PluginState.Failed, $"Start failed: {ex.Message}");
             ChangeHealth(PluginHealth.Critical, "Start failure");
             OnErrorOccurred(ex, "StartAsync");
@@ -188,12 +188,12 @@ public sealed class TestBackendPlugin(string pluginType = "TestBackend", PluginC
             ChangeHealth(PluginHealth.Unknown, "Plugin is stopped");
 
             if (_logger != null)
-                LogPluginStopped(_logger, Id, null);
+                _logPluginStopped(_logger, Id, null);
         }
         catch (Exception ex)
         {
             if (_logger != null)
-                LogPluginStopError(_logger, Id, ex);
+                _logPluginStopError(_logger, Id, ex);
             OnErrorOccurred(ex, "StopAsync");
             throw;
         }
@@ -276,7 +276,7 @@ public sealed class TestBackendPlugin(string pluginType = "TestBackend", PluginC
         _configuration = configuration;
 
         if (_logger != null)
-            LogConfigurationChanged(_logger, Id, null);
+            _logConfigurationChanged(_logger, Id, null);
 
         // Simulate configuration reload
         await Task.Delay(1, cancellationToken);

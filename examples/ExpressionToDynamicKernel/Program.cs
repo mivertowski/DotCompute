@@ -15,30 +15,31 @@ using Microsoft.Extensions.Logging;
 /// </summary>
 internal sealed class Program
 {
-    private static readonly int[] SampleNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-    private static readonly int[] IntTestData = [1, 2, 3];
-    private static readonly float[] FloatTestData = [1.0f, 2.0f, 3.0f];
-    private static readonly double[] DoubleTestData = [1.0, 2.0, 3.0];
+    private static readonly int[] _sampleNumbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    private static readonly int[] _intTestData = [1, 2, 3];
+    private static readonly float[] _floatTestData = [1.0f, 2.0f, 3.0f];
+    private static readonly double[] _doubleTestData = [1.0, 2.0, 3.0];
 
     // Logger message delegates for performance
-    private static readonly Action<ILogger, Exception> LogExpressionFusionError =
+    private static readonly Action<ILogger, Exception> _logExpressionFusionError =
         LoggerMessage.Define(LogLevel.Error, new EventId(1001, "ExpressionFusionError"),
             "Error in expression fusion demo");
 
-    private static readonly Action<ILogger, Exception> LogTypeInferenceError =
+    private static readonly Action<ILogger, Exception> _logTypeInferenceError =
         LoggerMessage.Define(LogLevel.Error, new EventId(1002, "TypeInferenceError"),
             "Error in type inference demo");
 
-    private static readonly Action<ILogger, Exception> LogResourceEstimationError =
+    private static readonly Action<ILogger, Exception> _logResourceEstimationError =
         LoggerMessage.Define(LogLevel.Error, new EventId(1003, "ResourceEstimationError"),
             "Error in resource estimation demo");
 
-    private static readonly Action<ILogger, Exception> LogDynamicCompilationError =
+    private static readonly Action<ILogger, Exception> _logDynamicCompilationError =
         LoggerMessage.Define(LogLevel.Error, new EventId(1004, "DynamicCompilationError"),
             "Error in dynamic compilation demo");
+
     [RequiresUnreferencedCode("This application demonstrates LINQ providers that may require unreferenced code")]
     [RequiresDynamicCode("This application demonstrates dynamic LINQ compilation that requires dynamic code generation")]
-    private static async Task Main(string[] args)
+    private static async Task Main()
     {
         // Setup logging
         using var loggerFactory = LoggerFactory.Create(builder =>
@@ -74,7 +75,7 @@ internal sealed class Program
         var options = new DotCompute.Linq.Compilation.CompilationOptions { EnableOperatorFusion = true };
 
         // Create sample data
-        var numbers = SampleNumbers.AsQueryable();
+        var numbers = _sampleNumbers.AsQueryable();
 
         try
         {
@@ -105,7 +106,7 @@ internal sealed class Program
         }
         catch (Exception ex)
         {
-            LogExpressionFusionError(logger, ex);
+            _logExpressionFusionError(logger, ex);
             Console.WriteLine($"Error: {ex.Message}");
         }
 
@@ -127,9 +128,9 @@ internal sealed class Program
         try
         {
             // Create expressions with different types
-            var intData = IntTestData.AsQueryable();
-            var floatData = FloatTestData.AsQueryable();
-            var doubleData = DoubleTestData.AsQueryable();
+            var intData = _intTestData.AsQueryable();
+            var floatData = _floatTestData.AsQueryable();
+            var doubleData = _doubleTestData.AsQueryable();
 
             var computeIntQuery = intData.AsComputeQueryable(accelerator);
             var computeFloatQuery = floatData.AsComputeQueryable(accelerator);
@@ -166,7 +167,7 @@ internal sealed class Program
         }
         catch (Exception ex)
         {
-            LogTypeInferenceError(logger, ex);
+            _logTypeInferenceError(logger, ex);
             Console.WriteLine($"Error: {ex.Message}");
         }
 
@@ -220,7 +221,7 @@ internal sealed class Program
         }
         catch (Exception ex)
         {
-            LogResourceEstimationError(logger, ex);
+            _logResourceEstimationError(logger, ex);
             Console.WriteLine($"Error: {ex.Message}");
         }
 
@@ -274,7 +275,7 @@ internal sealed class Program
         }
         catch (Exception ex)
         {
-            LogDynamicCompilationError(logger, ex);
+            _logDynamicCompilationError(logger, ex);
             Console.WriteLine($"Error: {ex.Message}");
         }
         finally

@@ -186,7 +186,7 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
         // Copy result back
         await bufferResult.CopyToHostAsync<float>(output);
 
-        _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
+        _buffers.AddRange([bufferA, bufferB, bufferResult]);
     }
 
     private async Task ExecuteMatrixMultiplication(IAccelerator accelerator, float[] output)
@@ -215,7 +215,7 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
         // Copy to output (pad if necessary)
         Array.Copy(result, 0, output, 0, Math.Min(result.Length, output.Length));
 
-        _buffers.AddRange(new[] { bufferA, bufferB, bufferResult });
+        _buffers.AddRange([bufferA, bufferB, bufferResult]);
     }
 
     private async Task ExecuteReduction(IAccelerator accelerator, float[] output)
@@ -231,7 +231,7 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
         await bufferResult.CopyToHostAsync<float>(result);
         output[0] = result[0];
 
-        _buffers.AddRange(new[] { bufferInput, bufferResult });
+        _buffers.AddRange([bufferInput, bufferResult]);
     }
 
     private async Task ExecuteConvolution(IAccelerator accelerator, float[] output)
@@ -254,10 +254,12 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
         // Copy to output
         Array.Copy(result, 0, output, 0, Math.Min(result.Length, output.Length));
 
-        _buffers.AddRange(new[] { bufferInput, bufferFilter, bufferResult });
+        _buffers.AddRange([bufferInput, bufferFilter, bufferResult]);
     }
 
+#pragma warning disable IDE0060 // Remove unused parameter
     private async Task SimulateKernelExecution(IAccelerator accelerator, string kernelType, IMemoryBuffer[] buffers, int baseExecutionTime = 10)
+#pragma warning restore IDE0060 // Remove unused parameter
     {
         // Simulate different execution characteristics for different backends
         int executionTime;
@@ -361,7 +363,7 @@ internal sealed class BackendComparisonBenchmarks : IDisposable
         var args = new KernelArguments(bufferA, bufferResult, DataSize);
         await cpuKernel.ExecuteAsync(args);
 
-        _buffers.AddRange(new[] { bufferA, bufferResult });
+        _buffers.AddRange([bufferA, bufferResult]);
 
         await cpuKernel.DisposeAsync();
         if (gpuKernel != null)
