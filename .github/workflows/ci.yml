@@ -55,9 +55,9 @@ jobs:
     - name: Build solution
       run: dotnet build --no-restore --configuration Release
 
-    - name: Run tests
+    - name: Run CI tests (Mock/Unit tests only)
       run: |
-        dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=detailed" --collect:"XPlat Code Coverage" --results-directory ./TestResults -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+        dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=test-results.trx" --logger "console;verbosity=detailed" --collect:"XPlat Code Coverage" --results-directory ./TestResults --settings tests/ci-test.runsettings -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
       continue-on-error: true
       shell: bash
 
@@ -77,6 +77,61 @@ jobs:
       with:
         name: coverage-reports
         path: ./TestResults/**/coverage.cobertura.xml
+        retention-days: 7
+
+  # ================================================================
+  # HARDWARE TESTS (Manual/Optional)
+  # ================================================================
+  hardware-tests:
+    name: Hardware Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 60
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-hardware-tests]')
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v5
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.NUGET_PACKAGES }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.*.props', '**/Directory.*.targets') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build solution
+      run: dotnet build --no-restore --configuration Release
+
+    - name: Run hardware tests
+      run: |
+        dotnet test --no-build --configuration Release --verbosity normal --logger "trx;LogFileName=hardware-test-results.trx" --logger "console;verbosity=detailed" --collect:"XPlat Code Coverage" --results-directory ./TestResults --settings tests/hardware-only-test.runsettings
+      continue-on-error: true
+      shell: bash
+
+    - name: Upload hardware test results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: hardware-test-results-${{ matrix.os }}
+        path: |
+          ./TestResults/**/*.trx
+          ./TestResults/**/*.xml
         retention-days: 7
 
   # ================================================================

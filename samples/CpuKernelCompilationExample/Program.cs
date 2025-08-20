@@ -122,13 +122,7 @@ internal sealed class Program
             EnableDebugInfo = false
         };
 
-        var textKernelSource = new TextKernelSource(
-            code: kernelSource,
-            name: "vector_add",
-            language: KernelLanguage.CSharpIL,
-            entryPoint: "vector_add");
-
-        var kernelDefinition = new KernelDefinition("vector_add", textKernelSource, compilationOptions);
+        var kernelDefinition = new KernelDefinition("vector_add", kernelSource, "vector_add");
 
         var stopwatch = Stopwatch.StartNew();
         await using var compiledKernel = await accelerator.CompileKernelAsync(kernelDefinition, compilationOptions);
@@ -213,13 +207,7 @@ internal sealed class Program
             
             c[row * width + col] = sum;";
 
-        var textKernelSource = new TextKernelSource(
-            code: kernelSource,
-            name: "matrix_multiply",
-            language: KernelLanguage.CSharpIL,
-            entryPoint: "matrix_multiply");
-
-        var kernelDefinition = new KernelDefinition("matrix_multiply", textKernelSource, new CompilationOptions());
+        var kernelDefinition = new KernelDefinition("matrix_multiply", kernelSource, "matrix_multiply");
 
         await using var compiledKernel = await accelerator.CompileKernelAsync(kernelDefinition);
         LogMatrixKernelCompiled(logger, null);
@@ -231,13 +219,8 @@ internal sealed class Program
     {
         LogOptimizationHeader(logger, null);
 
-        var textKernelSource = new TextKernelSource(
-            code: "c[i] = sqrt(a[i] * a[i] + b[i] * b[i]);",
-            name: "complex_math",
-            language: KernelLanguage.CSharpIL,
-            entryPoint: "complex_math");
-
-        var kernelDefinition = new KernelDefinition("complex_math", textKernelSource, new CompilationOptions());
+        var kernelSource = "c[i] = sqrt(a[i] * a[i] + b[i] * b[i]);";
+        var kernelDefinition = new KernelDefinition("complex_math", kernelSource, "complex_math");
 
         var optimizationLevels = new[]
         {
@@ -535,9 +518,9 @@ internal sealed class MockCompiledKernel(string name) : ICompiledKernel
         // For demonstration, if this is a vector addition kernel, perform the operation
         if (Name == "vector_add" && arguments.Length >= 3)
         {
-            if (arguments.Get(0) is MockMemoryBuffer bufferA &&
-                arguments.Get(1) is MockMemoryBuffer &&
-                arguments.Get(2) is MockMemoryBuffer)
+            if (arguments.Get<object>(0) is MockMemoryBuffer bufferA &&
+                arguments.Get<object>(1) is MockMemoryBuffer &&
+                arguments.Get<object>(2) is MockMemoryBuffer)
             {
                 // Simple mock vector addition simulation
                 // In a real implementation, this would perform actual computation

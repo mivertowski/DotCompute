@@ -20,6 +20,10 @@ namespace DotCompute.Tests.Hardware.Integration;
 /// <summary>
 /// Performance benchmarks and tests for CUDA backend operations
 /// </summary>
+[Trait("Category", "HardwareRequired")]
+[Trait("Category", "CudaRequired")]
+[Trait("Hardware", "CUDA")]
+[Trait("Category", "Performance")]
 [Collection("CUDA Hardware Tests")]
 public sealed class CudaPerformanceTests : IDisposable
 {

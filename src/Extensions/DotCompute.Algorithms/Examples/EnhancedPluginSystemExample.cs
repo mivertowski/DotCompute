@@ -411,14 +411,15 @@ internal class MockAccelerator : IAccelerator
         16L * 1024 * 1024 * 1024 // 16 GB
     );
 
-    public IMemoryManager Memory => throw new NotImplementedException("Mock accelerator - not implemented");
+    public IMemoryManager Memory => new MockMemoryManager();
 
     public ValueTask<ICompiledKernel> CompileKernelAsync(
         KernelDefinition definition,
         CompilationOptions? options = null,
         CancellationToken cancellationToken = default)
     {
-        throw new NotImplementedException("Mock accelerator - not implemented");
+        var mockKernel = new MockCompiledKernel(definition);
+        return ValueTask.FromResult<ICompiledKernel>(mockKernel);
     }
 
     public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
@@ -430,5 +431,97 @@ internal class MockAccelerator : IAccelerator
 
     public ValueTask DisposeAsync() => ValueTask.CompletedTask;
 }
+
+/// <summary>
+/// Mock memory manager for demonstration purposes.
+/// </summary>
+internal class MockMemoryManager : IMemoryManager
+{
+    private readonly Dictionary<int, MockMemoryBuffer> _buffers = new();
+    private int _nextBufferId = 1;
+
+    public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+    {
+        var buffer = new MockMemoryBuffer(_nextBufferId++, sizeInBytes, options);
+        _buffers[buffer.Id] = buffer;
+        return ValueTask.FromResult<IMemoryBuffer>(buffer);
+    }
+
+    public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        var buffer = new MockMemoryBuffer(_nextBufferId++, source.Length * sizeof(int), options);
+        _buffers[buffer.Id] = buffer;
+        return ValueTask.FromResult<IMemoryBuffer>(buffer);
+    }
+
+    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+    {
+        var viewBuffer = new MockMemoryBuffer(_nextBufferId++, length, buffer.Options);
+        _buffers[viewBuffer.Id] = viewBuffer;
+        return viewBuffer;
+    }
+
+    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        var buffer = new MockMemoryBuffer(_nextBufferId++, count * sizeof(int), MemoryOptions.None);
+        _buffers[buffer.Id] = buffer;
+        return ValueTask.FromResult<IMemoryBuffer>(buffer);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        // Mock implementation - do nothing
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        // Mock implementation - do nothing
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        if (buffer is MockMemoryBuffer mockBuffer)
+        {
+            _buffers.Remove(mockBuffer.Id);
+        }
+        buffer?.Dispose();
+    }
+
+    public void Dispose() => _buffers.Clear();
+    public ValueTask DisposeAsync() { Dispose(); return ValueTask.CompletedTask; }
+}
+
+/// <summary>
+/// Mock memory buffer implementation.
+/// </summary>
+internal class MockMemoryBuffer(int id, long size, MemoryOptions options) : IMemoryBuffer
+{
+    public int Id { get; } = id;
+    public long SizeInBytes { get; } = size;
+    public MemoryOptions Options { get; } = options;
+
+    public ValueTask<Memory<byte>> GetMemoryAsync(CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(new Memory<byte>(new byte[SizeInBytes]));
+    }
+
+    public void Dispose() { }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+
+/// <summary>
+/// Mock compiled kernel for demonstration purposes.
+/// </summary>
+internal class MockCompiledKernel(KernelDefinition definition) : ICompiledKernel
+{
+    public string Name => definition.Name;
+    public KernelDefinition Definition => definition;
+    public bool IsValid => true;
+
+    public void Dispose() { }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
 #endif
 }}

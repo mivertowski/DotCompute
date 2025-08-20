@@ -14,7 +14,7 @@ public partial class MetalBackend
 [LoggerMessage(
     EventId = 1000,
     Level = LogLevel.Warning,
-    Message = "Metal device {DeviceIndex} requires macOS 11.0 or higher. Current: {OSVersion}")]
+    Message = "Metal device {DeviceIndex} requires macOS 10.13 or higher for compute shader support. Current: {OSVersion}")]
 private static partial void LogMacOSVersionWarning(ILogger logger, int deviceIndex, Version osVersion);
 
 [LoggerMessage(

@@ -547,7 +547,12 @@ public sealed partial class KernelManager : IDisposable
             OptimizationLevel = DotCompute.Abstractions.OptimizationLevel.Default
         };
 
-        return new KernelDefinition(generatedKernel.Name, kernelSource, compilationOptions);
+        return new KernelDefinition
+        {
+            Name = generatedKernel.Name,
+            Source = kernelSource.Code ?? kernelSource.ToString() ?? "",
+            EntryPoint = generatedKernel.EntryPoint
+        };
     }
 
     /// <summary>
@@ -578,7 +583,7 @@ public sealed partial class KernelManager : IDisposable
             OptimizationLevel = ConvertOptimizationLevel(options.OptimizationLevel),
             EnableDebugInfo = options.GenerateDebugInfo,
             FastMath = options.EnableFastMath,
-            AdditionalFlags = options.AdditionalFlags?.ToArray(),
+            AdditionalFlags = options.AdditionalFlags?.ToList() ?? new List<string>(),
             Defines = options.Defines
         };
     }

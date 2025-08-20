@@ -19,6 +19,10 @@ namespace DotCompute.Tests.Hardware.Integration;
 /// <summary>
 /// Integration tests for CUDA host-device memory transfer operations
 /// </summary>
+[Trait("Category", "HardwareRequired")]
+[Trait("Category", "CudaRequired")]
+[Trait("Hardware", "CUDA")]
+[Trait("Category", "Integration")]
 [Collection("CUDA Hardware Tests")]
 public sealed class CudaMemoryTransferTests : IDisposable
 {

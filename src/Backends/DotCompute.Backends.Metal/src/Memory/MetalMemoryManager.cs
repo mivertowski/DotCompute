@@ -42,14 +42,28 @@ public async ValueTask<IMemoryBuffer> AllocateAsync(
 
     return await Task.Run(() =>
     {
-        // Determine storage mode based on options
+        // Determine optimal storage mode based on device and options
         var storageMode = GetStorageMode(options);
 
-        // Create Metal buffer
-        var buffer = MetalNative.CreateBuffer(_device, (nuint)sizeInBytes, storageMode);
+        // Check memory pressure and adjust if needed
+        CheckMemoryPressure(sizeInBytes);
+
+        // Create Metal buffer with optimal alignment
+        var alignedSize = AlignMemorySize(sizeInBytes);
+        var buffer = MetalNative.CreateBuffer(_device, (nuint)alignedSize, storageMode);
+        
         if (buffer == IntPtr.Zero)
         {
-            throw new InvalidOperationException($"Failed to allocate Metal buffer of size {sizeInBytes}.");
+            // Try to free some memory and retry once
+            TriggerMemoryCleanup();
+            buffer = MetalNative.CreateBuffer(_device, (nuint)alignedSize, storageMode);
+            
+            if (buffer == IntPtr.Zero)
+            {
+                throw new InvalidOperationException(
+                    $"Failed to allocate Metal buffer of size {sizeInBytes} (aligned to {alignedSize}). "
+                    + "Consider reducing memory usage or freeing unused buffers.");
+            }
         }
 
         // Create memory buffer wrapper
@@ -203,6 +217,44 @@ public void Free(IMemoryBuffer buffer)
 
 public long GetAllocatedMemory() => Interlocked.Read(ref _totalAllocated);
 
+private void CheckMemoryPressure(long requestedSize)
+{
+    var currentTotal = Interlocked.Read(ref _totalAllocated);
+    var deviceInfo = MetalNative.GetDeviceInfo(_device);
+    var maxMemory = deviceInfo.HasUnifiedMemory 
+        ? (long)deviceInfo.RecommendedMaxWorkingSetSize 
+        : (long)deviceInfo.MaxBufferLength;
+    
+    // Check if allocation would exceed 80% of available memory
+    if (currentTotal + requestedSize > maxMemory * 0.8)
+    {
+        // Log warning about high memory usage
+        System.Diagnostics.Debug.WriteLine(
+            $"Warning: High memory usage detected. Current: {currentTotal:N0}, Requested: {requestedSize:N0}, Limit: {maxMemory:N0}");
+    }
+}
+
+private static long AlignMemorySize(long size)
+{
+    // Align to 256-byte boundaries for optimal performance
+    const long alignment = 256;
+    return (size + alignment - 1) & ~(alignment - 1);
+}
+
+private void TriggerMemoryCleanup()
+{
+    // Force garbage collection to clean up any disposed buffers
+    GC.Collect();
+    GC.WaitForPendingFinalizers();
+    
+    // Remove any disposed allocations from tracking
+    var disposedBuffers = _allocations.Keys.Where(buffer => buffer.IsDisposed).ToList();
+    foreach (var buffer in disposedBuffers)
+    {
+        _allocations.TryRemove(buffer, out _);
+    }
+}
+
 public async ValueTask DisposeAsync()
 {
     if (Interlocked.Exchange(ref _disposed, 1) != 0)
@@ -224,21 +276,46 @@ internal void OnMemoryFreed(MetalMemoryBuffer memory)
     Interlocked.Add(ref _totalAllocated, -memory.SizeInBytes);
 }
 
-private static MetalStorageMode GetStorageMode(MemoryOptions options)
+private MetalStorageMode GetStorageMode(MemoryOptions options)
 {
-    // Determine optimal storage mode based on options
-    if (options.HasFlag(MemoryOptions.HostVisible))
+    // Get device info to determine if we have unified memory (Apple Silicon)
+    var deviceInfo = MetalNative.GetDeviceInfo(_device);
+    var hasUnifiedMemory = deviceInfo.HasUnifiedMemory;
+    
+    // On Apple Silicon with unified memory, prefer shared storage for efficiency
+    if (hasUnifiedMemory)
     {
-        return MetalStorageMode.Shared; // Unified memory (most common on Apple Silicon)
+        // Shared memory is optimal on Apple Silicon - no copying needed
+        if (options.HasFlag(MemoryOptions.HostVisible) || options == MemoryOptions.None)
+        {
+            return MetalStorageMode.Shared;
+        }
+        
+        // For write-only or private access, still prefer shared on unified memory systems
+        if (options.HasFlag(MemoryOptions.WriteOnly))
+        {
+            return MetalStorageMode.Shared;
+        }
+        
+        // Private can be useful for temporary GPU-only data
+        return MetalStorageMode.Private;
     }
-
-    if (options.HasFlag(MemoryOptions.Cached))
+    else
     {
-        return MetalStorageMode.Managed; // Managed memory with explicit synchronization
+        // On Intel Macs with discrete graphics, use managed or private memory
+        if (options.HasFlag(MemoryOptions.HostVisible))
+        {
+            return MetalStorageMode.Managed; // Managed memory with explicit sync
+        }
+        
+        if (options.HasFlag(MemoryOptions.Cached))
+        {
+            return MetalStorageMode.Managed; // Cached managed memory
+        }
+        
+        // Default to private GPU memory for best performance on discrete GPUs
+        return MetalStorageMode.Private;
     }
-
-    // Default to private GPU memory for best performance
-    return MetalStorageMode.Private;
 }
 }
 

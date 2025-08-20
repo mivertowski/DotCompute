@@ -16,6 +16,10 @@ namespace DotCompute.Tests.Hardware;
 /// <summary>
 /// Comprehensive real hardware tests for CUDA backend on RTX 2000 Ada Gen
 /// </summary>
+[Trait("Category", "HardwareRequired")]
+[Trait("Category", "CudaRequired")]
+[Trait("Hardware", "CUDA")]
+[Trait("Category", "Integration")]
 [Collection("Hardware")]
 public sealed class CudaRealHardwareFullSystemTests : IDisposable
 {

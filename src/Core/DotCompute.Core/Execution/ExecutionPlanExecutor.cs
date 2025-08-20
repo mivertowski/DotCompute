@@ -736,19 +736,17 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
     private static KernelArguments CreateKernelArguments<T>(DataParallelDeviceTask<T> deviceTask) where T : unmanaged
     {
         // Create kernel arguments from device task inputs and outputs
-        var argCount = deviceTask.InputBuffers.Length + deviceTask.OutputBuffers.Length + 1; // +1 for element count
-        var args = KernelArguments.Create(argCount);
+        var args = new KernelArguments();
 
-        int argIndex = 0;
         foreach (var buffer in deviceTask.InputBuffers)
         {
-            args.Set(argIndex++, buffer);
+            args.Add(buffer);
         }
         foreach (var buffer in deviceTask.OutputBuffers)
         {
-            args.Set(argIndex++, buffer);
+            args.Add(buffer);
         }
-        args.Set(argIndex, deviceTask.ElementCount);
+        args.Add(deviceTask.ElementCount);
 
         return args;
     }
@@ -756,17 +754,15 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
     private static KernelArguments CreateLayerKernelArguments<T>(ModelLayer<T> layer) where T : unmanaged
     {
         // Create kernel arguments from layer inputs and outputs
-        var argCount = layer.InputTensors.Length + layer.OutputTensors.Length;
-        var args = KernelArguments.Create(argCount);
+        var args = new KernelArguments();
 
-        int argIndex = 0;
         foreach (var tensor in layer.InputTensors)
         {
-            args.Set(argIndex++, tensor.Buffer ?? new object()); // Fallback for null buffers
+            args.Add(tensor.Buffer ?? new object()); // Fallback for null buffers
         }
         foreach (var tensor in layer.OutputTensors)
         {
-            args.Set(argIndex++, tensor.Buffer ?? new object());
+            args.Add(tensor.Buffer ?? new object());
         }
 
         return args;
@@ -775,19 +771,17 @@ public sealed class ExecutionPlanExecutor : IAsyncDisposable
     private static KernelArguments CreateStageKernelArguments<T>(PipelineStage<T> stage, int microbatchIndex) where T : unmanaged
     {
         // Create kernel arguments from stage inputs and outputs for specific microbatch
-        var argCount = stage.InputBuffers.Length + stage.OutputBuffers.Length + 1; // +1 for microbatch index
-        var args = KernelArguments.Create(argCount);
+        var args = new KernelArguments();
 
-        int argIndex = 0;
         foreach (var buffer in stage.InputBuffers)
         {
-            args.Set(argIndex++, buffer);
+            args.Add(buffer);
         }
         foreach (var buffer in stage.OutputBuffers)
         {
-            args.Set(argIndex++, buffer);
+            args.Add(buffer);
         }
-        args.Set(argIndex, microbatchIndex);
+        args.Add(microbatchIndex);
 
         return args;
     }

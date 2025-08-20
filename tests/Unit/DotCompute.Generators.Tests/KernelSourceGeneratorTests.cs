@@ -364,15 +364,15 @@ public class TestIncrementalGeneratorInitializationContext : IncrementalGenerato
 {
     public List<IncrementalValueProvider<object>> SyntaxProviders { get; } = new();
 
-    public IncrementalValueProvider<Compilation> CompilationProvider => throw new NotImplementedException();
+    public IncrementalValueProvider<Compilation> CompilationProvider => new TestIncrementalValueProvider<Compilation>();
     
-    public IncrementalValueProvider<AnalyzerConfigOptionsProvider> AnalyzerConfigOptionsProvider => throw new NotImplementedException();
+    public IncrementalValueProvider<AnalyzerConfigOptionsProvider> AnalyzerConfigOptionsProvider => new TestIncrementalValueProvider<AnalyzerConfigOptionsProvider>();
     
-    public IncrementalValueProvider<AdditionalTextsProvider> AdditionalTextsProvider => throw new NotImplementedException();
+    public IncrementalValueProvider<AdditionalTextsProvider> AdditionalTextsProvider => new TestIncrementalValueProvider<AdditionalTextsProvider>();
     
-    public IncrementalValueProvider<MetadataReferencesProvider> MetadataReferencesProvider => throw new NotImplementedException();
+    public IncrementalValueProvider<MetadataReferencesProvider> MetadataReferencesProvider => new TestIncrementalValueProvider<MetadataReferencesProvider>();
     
-    public IncrementalValueProvider<ParseOptionsProvider> ParseOptionsProvider => throw new NotImplementedException();
+    public IncrementalValueProvider<ParseOptionsProvider> ParseOptionsProvider => new TestIncrementalValueProvider<ParseOptionsProvider>();
 
     public void RegisterSourceOutput<TSource>(IncrementalValueProvider<TSource> source, Action<SourceProductionContext, TSource> action)
     {
@@ -429,6 +429,67 @@ public class TestIncrementalValueProvider<T> : IncrementalValueProvider<T>
         Func<T, TOther, TResult> selector)
     {
         return new TestIncrementalValueProvider<TResult>();
+    }
+}
+
+/// <summary>
+/// Test implementation of IncrementalValueProvider for testing incremental generators
+/// </summary>
+public class TestIncrementalValueProvider<T> : IncrementalValueProvider<T>
+{
+    public IncrementalValueProvider<TResult> Select<TResult>(Func<T, TResult> selector)
+    {
+        return new TestIncrementalValueProvider<TResult>();
+    }
+
+    public IncrementalValueProvider<TResult> Where<TResult>(Func<T, bool> predicate)
+    {
+        return new TestIncrementalValueProvider<TResult>();
+    }
+
+    public IncrementalValuesProvider<TResult> SelectMany<TResult>(Func<T, IncrementalValuesProvider<TResult>> selector)
+    {
+        return new TestIncrementalValuesProvider<TResult>();
+    }
+
+    public IncrementalValueProvider<TResult> Combine<TOther, TResult>(
+        IncrementalValueProvider<TOther> other,
+        Func<T, TOther, TResult> selector)
+    {
+        return new TestIncrementalValueProvider<TResult>();
+    }
+}
+
+/// <summary>
+/// Test implementation of IncrementalValuesProvider for testing incremental generators
+/// </summary>
+public class TestIncrementalValuesProvider<T> : IncrementalValuesProvider<T>
+{
+    public IncrementalValuesProvider<TResult> Select<TResult>(Func<T, TResult> selector)
+    {
+        return new TestIncrementalValuesProvider<TResult>();
+    }
+
+    public IncrementalValuesProvider<T> Where(Func<T, bool> predicate)
+    {
+        return new TestIncrementalValuesProvider<T>();
+    }
+
+    public IncrementalValueProvider<ImmutableArray<T>> Collect()
+    {
+        return new TestIncrementalValueProvider<ImmutableArray<T>>();
+    }
+
+    public IncrementalValuesProvider<TResult> SelectMany<TResult>(Func<T, IncrementalValuesProvider<TResult>> selector)
+    {
+        return new TestIncrementalValuesProvider<TResult>();
+    }
+
+    public IncrementalValuesProvider<TResult> Combine<TOther, TResult>(
+        IncrementalValueProvider<TOther> other,
+        Func<T, TOther, TResult> selector)
+    {
+        return new TestIncrementalValuesProvider<TResult>();
     }
 }
 }

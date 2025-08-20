@@ -4,6 +4,7 @@
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Memory;
 using DotCompute.Backends.Metal.Native;
+using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
@@ -21,12 +22,14 @@ IntPtr commandQueue,
 int maxTotalThreadsPerThreadgroup,
 (int x, int y, int z) threadExecutionWidth,
 CompilationMetadata metadata,
-ILogger logger) : ICompiledKernel
+ILogger logger,
+MetalCommandBufferPool? commandBufferPool = null) : ICompiledKernel
 {
 private readonly KernelDefinition _definition = definition ?? throw new ArgumentNullException(nameof(definition));
 private readonly IntPtr _pipelineState = pipelineState;
 private readonly IntPtr _commandQueue = commandQueue;
 private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+private readonly MetalCommandBufferPool? _commandBufferPool = commandBufferPool;
 private readonly int _maxTotalThreadsPerThreadgroup = maxTotalThreadsPerThreadgroup;
 private readonly (int x, int y, int z) _threadExecutionWidth = threadExecutionWidth;
 private readonly CompilationMetadata _metadata = metadata;
@@ -46,11 +49,19 @@ public async ValueTask ExecuteAsync(
 
     _logger.LogTrace("Executing Metal kernel: {Name}", Name);
 
-    // Create command buffer
-    var commandBuffer = MetalNative.CreateCommandBuffer(_commandQueue);
-    if (commandBuffer == IntPtr.Zero)
+    // Get command buffer from pool or create new one
+    IntPtr commandBuffer;
+    if (_commandBufferPool != null)
     {
-        throw new InvalidOperationException("Failed to create command buffer");
+        commandBuffer = _commandBufferPool.GetCommandBuffer();
+    }
+    else
+    {
+        commandBuffer = MetalNative.CreateCommandBuffer(_commandQueue);
+        if (commandBuffer == IntPtr.Zero)
+        {
+            throw new InvalidOperationException("Failed to create command buffer");
+        }
     }
 
     try
@@ -117,7 +128,14 @@ public async ValueTask ExecuteAsync(
     }
     finally
     {
-        MetalNative.ReleaseCommandBuffer(commandBuffer);
+        if (_commandBufferPool != null)
+        {
+            _commandBufferPool.ReturnCommandBuffer(commandBuffer);
+        }
+        else
+        {
+            MetalNative.ReleaseCommandBuffer(commandBuffer);
+        }
     }
 }
 

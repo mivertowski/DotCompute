@@ -145,7 +145,7 @@ internal class HighPerformanceCpuAccelerator : IAccelerator
         try
         {
             // Parse kernel source and create optimized implementation
-            var sourceCode = System.Text.Encoding.UTF8.GetString(definition.Code);
+            var sourceCode = definition.Code ?? "";
             var kernelInfo = _kernelParser.ParseKernel(sourceCode, definition.EntryPoint ?? "main");
             var optimizedKernel = CreateOptimizedKernel(kernelInfo, options);
 

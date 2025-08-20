@@ -605,7 +605,7 @@ public sealed class ParallelExecutionStrategy : IAsyncDisposable
         var executionKernel = new DotCompute.Core.Execution.ManagedCompiledKernel(
             kernelsCompiledKernel.Name,
             device,
-            new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 0, new KernelConfiguration(new Dim3(1), new Dim3(1))));
+            new CompiledKernel { Name = kernelsCompiledKernel.Name });
         kernelCache.AddKernel(device, executionKernel);
 
         return executionKernel;

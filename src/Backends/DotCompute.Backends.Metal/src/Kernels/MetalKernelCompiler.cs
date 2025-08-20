@@ -6,7 +6,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.Metal.Native;
+using DotCompute.Backends.Metal.Utilities;
 using Microsoft.Extensions.Logging;
+using AbstractionsValidationResult = DotCompute.Abstractions.ValidationResult;
+using MetalValidationResult = DotCompute.Backends.Metal.Utilities.ValidationResult;
 
 #pragma warning disable CA1848 // Use the LoggerMessage delegates - Metal backend has dynamic logging requirements
 
@@ -16,11 +19,12 @@ namespace DotCompute.Backends.Metal.Kernels;
 /// <summary>
 /// Compiles kernels to Metal Shading Language and creates compute pipeline states.
 /// </summary>
-public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILogger logger) : IKernelCompiler, IDisposable
+public sealed class MetalKernelCompiler(IntPtr device, IntPtr commandQueue, ILogger logger, MetalCommandBufferPool? commandBufferPool = null) : IKernelCompiler, IDisposable
 {
 private readonly IntPtr _device = device;
 private readonly IntPtr _commandQueue = commandQueue;
 private readonly ILogger _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+private readonly MetalCommandBufferPool? _commandBufferPool = commandBufferPool;
 private readonly Dictionary<string, IntPtr> _libraryCache = [];
 private readonly SemaphoreSlim _compilationSemaphore = new(1, 1);
 private int _disposed;
@@ -86,31 +90,31 @@ public async ValueTask<ICompiledKernel> CompileAsync(
 }
 
 /// <inheritdoc/>
-public ValidationResult Validate(KernelDefinition definition)
+public AbstractionsValidationResult Validate(KernelDefinition definition)
 {
     if (definition == null)
     {
-        return ValidationResult.Failure("Kernel definition cannot be null");
+        return AbstractionsValidationResult.Failure("Kernel definition cannot be null");
     }
 
     if (string.IsNullOrWhiteSpace(definition.Name))
     {
-        return ValidationResult.Failure("Kernel name cannot be empty");
+        return AbstractionsValidationResult.Failure("Kernel name cannot be empty");
     }
 
     if (definition.Code == null || definition.Code.Length == 0)
     {
-        return ValidationResult.Failure("Kernel code cannot be empty");
+        return AbstractionsValidationResult.Failure("Kernel code cannot be empty");
     }
 
     // Check if this looks like Metal code or binary
     var codeString = Encoding.UTF8.GetString(definition.Code);
     if (!codeString.Contains("kernel", StringComparison.Ordinal) && !codeString.Contains("metal", StringComparison.Ordinal) && !IsBinaryCode(definition.Code))
     {
-        return ValidationResult.Failure("Code does not appear to be valid Metal shader language or compiled binary");
+        return AbstractionsValidationResult.Failure("Code does not appear to be valid Metal shader language or compiled binary");
     }
 
-    return ValidationResult.Success();
+    return AbstractionsValidationResult.Success();
 }
 
 private static string ExtractMetalCode(KernelDefinition definition)
@@ -158,12 +162,12 @@ private async Task<IntPtr> CompileMetalCodeAsync(string code, string kernelName,
         // Create compile options
         var compileOptions = MetalNative.CreateCompileOptions();
 
-        // Set optimization level
-        var enableFastMath = options.OptimizationLevel >= OptimizationLevel.Default;
-        MetalNative.SetCompileOptionsFastMath(compileOptions, enableFastMath);
-
-        // Set language version
-        MetalNative.SetCompileOptionsLanguageVersion(compileOptions, MetalLanguageVersion.Metal30);
+        // Configure optimization settings
+        ConfigureOptimizationOptions(compileOptions, options, kernelName);
+        
+        // Set language version based on system capabilities
+        var languageVersion = GetOptimalLanguageVersion();
+        MetalNative.SetCompileOptionsLanguageVersion(compileOptions, languageVersion);
 
         try
         {
@@ -228,7 +232,7 @@ private MetalCompiledKernel CreateCompiledKernel(KernelDefinition definition, In
 
         // Get kernel characteristics
         var maxThreadsPerThreadgroup = MetalNative.GetMaxTotalThreadsPerThreadgroup(pipelineState);
-        var threadExecutionWidth = MetalNative.GetThreadExecutionWidth(pipelineState);
+        var threadExecutionWidth = MetalNative.GetThreadExecutionWidthTuple(pipelineState);
 
         var metadata = new CompilationMetadata
         {
@@ -244,7 +248,8 @@ private MetalCompiledKernel CreateCompiledKernel(KernelDefinition definition, In
             maxThreadsPerThreadgroup,
             threadExecutionWidth,
             metadata,
-            _logger);
+            _logger,
+            _commandBufferPool);
     }
     finally
     {
@@ -276,5 +281,77 @@ public void Dispose()
 
     _compilationSemaphore?.Dispose();
     GC.SuppressFinalize(this);
+}
+
+private void ConfigureOptimizationOptions(IntPtr compileOptions, CompilationOptions options, string kernelName)
+{
+    // Configure fast math based on optimization level
+    var enableFastMath = options.OptimizationLevel >= OptimizationLevel.Default;
+    if (options.FastMath || enableFastMath)
+    {
+        MetalNative.SetCompileOptionsFastMath(compileOptions, true);
+        _logger.LogTrace("Enabled fast math optimizations for kernel: {KernelName}", kernelName);
+    }
+
+    // Additional optimization hints could be set here based on the options
+    if (options.OptimizationLevel == OptimizationLevel.Maximum)
+    {
+        _logger.LogTrace("Maximum optimization level requested for kernel: {KernelName}", kernelName);
+        // Metal doesn't expose many additional optimization flags through the public API
+        // but we can log this for debugging purposes
+    }
+}
+
+private static MetalLanguageVersion GetOptimalLanguageVersion()
+{
+    // Determine the best Metal language version based on system capabilities
+    try
+    {
+        var osVersion = Environment.OSVersion.Version;
+        
+        // macOS 13.0+ supports Metal 3.1
+        if (osVersion.Major >= 13 || (osVersion.Major == 13 && osVersion.Minor >= 0))
+        {
+            return MetalLanguageVersion.Metal31;
+        }
+        
+        // macOS 12.0+ supports Metal 3.0
+        if (osVersion.Major >= 12 || (osVersion.Major == 12 && osVersion.Minor >= 0))
+        {
+            return MetalLanguageVersion.Metal30;
+        }
+        
+        // macOS 11.0+ supports Metal 2.4
+        if (osVersion.Major >= 11 || (osVersion.Major == 11 && osVersion.Minor >= 0))
+        {
+            return MetalLanguageVersion.Metal24;
+        }
+        
+        // macOS 10.15+ supports Metal 2.3
+        if (osVersion.Major >= 10 && osVersion.Minor >= 15)
+        {
+            return MetalLanguageVersion.Metal23;
+        }
+        
+        // macOS 10.14+ supports Metal 2.1
+        if (osVersion.Major >= 10 && osVersion.Minor >= 14)
+        {
+            return MetalLanguageVersion.Metal21;
+        }
+        
+        // macOS 10.13+ supports Metal 2.0
+        if (osVersion.Major >= 10 && osVersion.Minor >= 13)
+        {
+            return MetalLanguageVersion.Metal20;
+        }
+        
+        // Fallback to Metal 1.2 for older systems
+        return MetalLanguageVersion.Metal12;
+    }
+    catch
+    {
+        // If we can't determine OS version, use a safe default
+        return MetalLanguageVersion.Metal20;
+    }
 }
 }

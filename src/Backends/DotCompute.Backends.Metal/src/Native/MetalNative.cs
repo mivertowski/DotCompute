@@ -143,7 +143,14 @@ public static partial void ReleasePipelineState(IntPtr pipelineState);
 public static partial int GetMaxTotalThreadsPerThreadgroup(IntPtr pipelineState);
 
 [LibraryImport(LibraryName, SetLastError = false, EntryPoint = "DCMetal_GetThreadExecutionWidth")]
-public static partial (int x, int y, int z) GetThreadExecutionWidth(IntPtr pipelineState);
+public static partial void GetThreadExecutionWidth(IntPtr pipelineState, out int x, out int y, out int z);
+
+// Convenience method that returns tuple
+public static (int x, int y, int z) GetThreadExecutionWidthTuple(IntPtr pipelineState)
+{
+    GetThreadExecutionWidth(pipelineState, out int x, out int y, out int z);
+    return (x, y, z);
+}
 
 #endregion
 

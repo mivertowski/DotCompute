@@ -7,6 +7,7 @@
 
 using DotCompute.Abstractions;
 using DotCompute.Plugins.Core;
+using DotCompute.Plugins.Interfaces;
 using DotCompute.Tests.Integration.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -542,7 +543,7 @@ namespace MaliciousPlugin
 
         protected override Task<IBackendFactory> CreateBackendFactoryAsync()
         {
-            throw new NotImplementedException();
+            return Task.FromResult<IBackendFactory>(new BaseBackendFactory());
         }
     }
 }";
@@ -580,7 +581,7 @@ namespace DependentPlugin
 
         protected override Task<IBackendFactory> CreateBackendFactoryAsync()
         {
-            throw new NotImplementedException();
+            return Task.FromResult<IBackendFactory>(new DependentBackendFactory());
         }
     }
 }";
@@ -640,7 +641,7 @@ namespace ConfigurablePlugin
 
         protected override Task<IBackendFactory> CreateBackendFactoryAsync()
         {
-            throw new NotImplementedException();
+            return Task.FromResult<IBackendFactory>(new ConfigurableBackendFactory());
         }
     }
 }";
@@ -682,7 +683,7 @@ namespace FaultyPlugin
 
         protected override Task<IBackendFactory> CreateBackendFactoryAsync()
         {
-            throw new NotImplementedException();
+            return Task.FromResult<IBackendFactory>(new FaultyBackendFactory());
         }
     }
 }";
@@ -925,4 +926,211 @@ __kernel void baseline_compute(__global const float* input, __global float* outp
     
     output[gid] = data;
 }";
+
+    // Test Backend Factory implementations for plugin testing
+    internal class TestBackendFactory : IBackendFactory
+    {
+        public string Name => "Test Backend";
+        public string Description => "Test Backend for Plugin Testing";
+        public Version Version => new(1, 0, 0);
+
+        public bool IsAvailable() => true;
+        public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Test Backend")];
+        public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Test Backend");
+        public BackendCapabilities GetCapabilities() => new BackendCapabilities();
+    }
+
+    internal class MatrixBackendFactory : IBackendFactory
+    {
+        public string Name => "Matrix Backend";
+        public string Description => "Matrix Backend for Plugin Testing";
+        public Version Version => new(1, 0, 0);
+
+        public bool IsAvailable() => true;
+        public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Matrix Backend")];
+        public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Matrix Backend");
+        public BackendCapabilities GetCapabilities() => new BackendCapabilities();
+    }
+
+    internal class BaseBackendFactory : IBackendFactory
+    {
+        public string Name => "Base Backend";
+        public string Description => "Base Backend for Plugin Testing";
+        public Version Version => new(1, 0, 0);
+
+        public bool IsAvailable() => true;
+        public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Base Backend")];
+        public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Base Backend");
+        public BackendCapabilities GetCapabilities() => new BackendCapabilities();
+    }
+
+    internal class DependentBackendFactory : IBackendFactory
+    {
+        public string Name => "Dependent Backend";
+        public string Description => "Dependent Backend for Plugin Testing";
+        public Version Version => new(1, 0, 0);
+
+        public bool IsAvailable() => true;
+        public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Dependent Backend")];
+        public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Dependent Backend");
+        public BackendCapabilities GetCapabilities() => new BackendCapabilities();
+    }
+
+    internal class ConfigurableBackendFactory : IBackendFactory
+    {
+        public string Name => "Configurable Backend";
+        public string Description => "Configurable Backend for Plugin Testing";
+        public Version Version => new(1, 0, 0);
+
+        public bool IsAvailable() => true;
+        public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Configurable Backend")];
+        public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Configurable Backend");
+        public BackendCapabilities GetCapabilities() => new BackendCapabilities();
+    }
+
+    internal class FaultyBackendFactory : IBackendFactory
+    {
+        public string Name => "Faulty Backend";
+        public string Description => "Faulty Backend for Plugin Testing";
+        public Version Version => new(1, 0, 0);
+
+        public bool IsAvailable() => true;
+        public IEnumerable<IAccelerator> CreateAccelerators() => [new TestMockAccelerator("Faulty Backend")];
+        public IAccelerator? CreateDefaultAccelerator() => new TestMockAccelerator("Faulty Backend");
+        public BackendCapabilities GetCapabilities() => new BackendCapabilities();
+    }
+
+    /// <summary>
+    /// Mock accelerator for integration testing.
+    /// </summary>
+    internal class TestMockAccelerator : IAccelerator
+    {
+        public AcceleratorInfo Info { get; }
+        public AcceleratorType Type => AcceleratorType.CPU;
+        public AcceleratorContext Context { get; } = default!;
+        public IMemoryManager Memory => new TestMockMemoryManager();
+
+        public TestMockAccelerator(string name)
+        {
+            Info = new AcceleratorInfo { Id = "test", Name = name, DeviceType = "CPU", Vendor = "Test" };
+        }
+
+        public ValueTask<ICompiledKernel> CompileKernelAsync(
+            KernelDefinition definition,
+            CompilationOptions? options = null,
+            CancellationToken cancellationToken = default)
+        {
+            var kernel = new TestMockCompiledKernel(definition);
+            return ValueTask.FromResult<ICompiledKernel>(kernel);
+        }
+
+        public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        public void Dispose() { }
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Mock memory manager for integration testing.
+    /// </summary>
+    internal class TestMockMemoryManager : IMemoryManager
+    {
+        public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+        {
+            var buffer = new TestMockMemoryBuffer(sizeInBytes, options);
+            return ValueTask.FromResult<IMemoryBuffer>(buffer);
+        }
+
+        public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            var buffer = new TestMockMemoryBuffer(source.Length * sizeof(int), options);
+            return ValueTask.FromResult<IMemoryBuffer>(buffer);
+        }
+
+        public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+        {
+            return new TestMockMemoryBuffer(length, buffer.Options);
+        }
+
+        public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+        {
+            var buffer = new TestMockMemoryBuffer(count * sizeof(int), MemoryOptions.None);
+            return ValueTask.FromResult<IMemoryBuffer>(buffer);
+        }
+
+        public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+        {
+            // Mock implementation - do nothing
+        }
+
+        public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+        {
+            // Mock implementation - do nothing
+        }
+
+        public void Free(IMemoryBuffer buffer)
+        {
+            buffer?.Dispose();
+        }
+
+        public void Dispose() { }
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
+    /// <summary>
+    /// Mock memory buffer for integration testing.
+    /// </summary>
+    internal class TestMockMemoryBuffer(long size, MemoryOptions options) : IMemoryBuffer
+    {
+        public long SizeInBytes { get; } = size;
+        public MemoryOptions Options { get; } = options;
+        public bool IsDisposed { get; private set; }
+
+        public ValueTask<Memory<byte>> GetMemoryAsync(CancellationToken cancellationToken = default)
+        {
+            return ValueTask.FromResult(new Memory<byte>(new byte[SizeInBytes]));
+        }
+
+        public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        public void Dispose()
+        {
+            IsDisposed = true;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            Dispose();
+            return ValueTask.CompletedTask;
+        }
+    }
+
+
+    /// <summary>
+    /// Mock compiled kernel for integration testing.
+    /// </summary>
+    internal class TestMockCompiledKernel(KernelDefinition definition) : ICompiledKernel
+    {
+        public string Name => definition.Name;
+
+        public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+        {
+            return ValueTask.CompletedTask;
+        }
+
+        public void Dispose() { }
+        public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    }
+
 }

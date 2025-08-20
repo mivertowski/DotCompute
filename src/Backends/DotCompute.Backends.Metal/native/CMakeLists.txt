@@ -1,24 +1,32 @@
 cmake_minimum_required(VERSION 3.20)
-project(DotComputeMetal LANGUAGES CXX OBJCXX)
+project(DotComputeMetal LANGUAGES CXX OBJCXX VERSION 1.0.0)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_OSX_DEPLOYMENT_TARGET "10.14")
+set(CMAKE_OBJCXX_STANDARD 17)
+set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
+
+# Set deployment target for Metal support
+if(CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "10.13")
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "10.13")
+    message(STATUS "Setting minimum macOS deployment target to 10.13 for Metal support")
+endif()
 
 # Find required frameworks
 find_library(METAL_FRAMEWORK Metal REQUIRED)
-find_library(METALKIT_FRAMEWORK MetalKit REQUIRED)
-find_library(METALPERFORMANCESHADERS_FRAMEWORK MetalPerformanceShaders REQUIRED)
 find_library(FOUNDATION_FRAMEWORK Foundation REQUIRED)
 
-# Source files
+# MetalKit and MPS are optional - they may not be available on all systems
+find_library(METALKIT_FRAMEWORK MetalKit)
+find_library(METALPERFORMANCESHADERS_FRAMEWORK MetalPerformanceShaders)
+
+if(NOT METAL_FRAMEWORK)
+    message(FATAL_ERROR "Metal framework not found - ensure you're running on macOS 10.11 or later")
+endif()
+
+# Source files - only include the main implementation
 set(SOURCES
     src/DCMetalDevice.mm
-    src/DCMetalBuffer.mm
-    src/DCMetalCompiler.mm
-    src/DCMetalCommandQueue.mm
-    src/DCMetalKernel.mm
-    src/DCMetalInterop.cpp
 )
 
 # Create shared library
@@ -30,27 +38,46 @@ target_include_directories(DotComputeMetal PRIVATE
 )
 
 # Link frameworks
-target_link_libraries(DotComputeMetal
+target_link_libraries(DotComputeMetal PRIVATE
     ${METAL_FRAMEWORK}
-    ${METALKIT_FRAMEWORK}
-    ${METALPERFORMANCESHADERS_FRAMEWORK}
     ${FOUNDATION_FRAMEWORK}
 )
 
-# Compiler flags
+# Link optional frameworks if available
+if(METALKIT_FRAMEWORK)
+    target_link_libraries(DotComputeMetal PRIVATE ${METALKIT_FRAMEWORK})
+    target_compile_definitions(DotComputeMetal PRIVATE HAVE_METALKIT=1)
+endif()
+
+if(METALPERFORMANCESHADERS_FRAMEWORK)
+    target_link_libraries(DotComputeMetal PRIVATE ${METALPERFORMANCESHADERS_FRAMEWORK})
+    target_compile_definitions(DotComputeMetal PRIVATE HAVE_MPS=1)
+endif()
+
+# Compiler flags for Objective-C++
 target_compile_options(DotComputeMetal PRIVATE
-    -Wall
-    -Wextra
-    -fPIC
-    -O3
-    -fvisibility=hidden
+    -fobjc-arc                  # Enable ARC
+    -Wall                       # Enable warnings
+    -Wextra                     # Extra warnings
+    -Wno-unused-parameter       # Disable unused parameter warnings
+    -fPIC                       # Position independent code
+    -fvisibility=hidden         # Hide symbols by default
+    $<$<CONFIG:Release>:-O3>    # Optimize for release
+    $<$<CONFIG:Debug>:-g>       # Debug symbols for debug builds
 )
 
-# Export only C API symbols
+# Set target properties
 set_target_properties(DotComputeMetal PROPERTIES
+    OUTPUT_NAME "DotComputeMetal"
+    SUFFIX ".dylib"
+    VERSION ${PROJECT_VERSION}
+    SOVERSION ${PROJECT_VERSION_MAJOR}
     CXX_VISIBILITY_PRESET hidden
     OBJCXX_VISIBILITY_PRESET hidden
     VISIBILITY_INLINES_HIDDEN ON
+    MACOSX_RPATH ON
+    INSTALL_RPATH "@loader_path;@rpath"
+    BUILD_WITH_INSTALL_RPATH TRUE
 )
 
 # Installation
@@ -64,4 +91,18 @@ add_custom_command(TARGET DotComputeMetal POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy
     $<TARGET_FILE:DotComputeMetal>
     ${CMAKE_CURRENT_SOURCE_DIR}/../libDotComputeMetal.dylib
+    COMMENT "Copying libDotComputeMetal.dylib to parent directory"
 )
+
+# Print build information
+message(STATUS "Building DotCompute Metal Backend:")
+message(STATUS "  Version: ${PROJECT_VERSION}")
+message(STATUS "  Deployment Target: ${CMAKE_OSX_DEPLOYMENT_TARGET}")
+message(STATUS "  Metal Framework: ${METAL_FRAMEWORK}")
+message(STATUS "  Foundation Framework: ${FOUNDATION_FRAMEWORK}")
+if(METALKIT_FRAMEWORK)
+    message(STATUS "  MetalKit Framework: ${METALKIT_FRAMEWORK}")
+endif()
+if(METALPERFORMANCESHADERS_FRAMEWORK)
+    message(STATUS "  MPS Framework: ${METALPERFORMANCESHADERS_FRAMEWORK}")
+endif()

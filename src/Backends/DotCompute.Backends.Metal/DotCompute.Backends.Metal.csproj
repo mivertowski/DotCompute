@@ -48,24 +48,41 @@
     <PackageReference Include="Microsoft.Extensions.Options" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.8" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.8" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.8" />
     <PackageReference Include="Microsoft.NET.ILLink.Tasks" Version="9.0.8" />
   </ItemGroup>
 
   <!-- Native Metal library references -->
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX')) AND Exists('native/libDotComputeMetal.dylib')">
-    <None Include="native/libDotComputeMetal.dylib">
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <None Include="libDotComputeMetal.dylib" Condition="Exists('libDotComputeMetal.dylib')">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <Link>libDotComputeMetal.dylib</Link>
+      <Link>runtimes/osx/native/libDotComputeMetal.dylib</Link>
+    </None>
+    <None Include="native/libDotComputeMetal.dylib" Condition="!Exists('libDotComputeMetal.dylib') AND Exists('native/libDotComputeMetal.dylib')">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>runtimes/osx/native/libDotComputeMetal.dylib</Link>
     </None>
   </ItemGroup>
   
-  <!-- Placeholder when native library is not available -->
-  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX')) AND !Exists('native/libDotComputeMetal.dylib')">
-    <Content Include="native/README.md" Condition="Exists('native/README.md')">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
+  <!-- Build targets for native library -->
+  <Target Name="BuildNativeLibrary" BeforeTargets="BeforeBuild" Condition="$([MSBuild]::IsOSPlatform('OSX')) AND !Exists('libDotComputeMetal.dylib') AND !Exists('native/libDotComputeMetal.dylib')">
+    <Message Text="Building Metal native library..." Importance="high" />
+    <Exec Command="cd native &amp;&amp; chmod +x build.sh &amp;&amp; ./build.sh $(Configuration)" 
+          IgnoreExitCode="false" 
+          ContinueOnError="false" />
+  </Target>
+  
+  <!-- Clean target for native library -->
+  <Target Name="CleanNativeLibrary" BeforeTargets="BeforeClean" Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <ItemGroup>
+      <NativeFilesToDelete Include="libDotComputeMetal.dylib" />
+      <NativeFilesToDelete Include="native/libDotComputeMetal.dylib" />
+      <NativeFilesToDelete Include="native/build/**" />
+    </ItemGroup>
+    <Delete Files="@(NativeFilesToDelete)" ContinueOnError="true" />
+    <RemoveDir Directories="native/build" ContinueOnError="true" />
+  </Target>
 
 </Project>

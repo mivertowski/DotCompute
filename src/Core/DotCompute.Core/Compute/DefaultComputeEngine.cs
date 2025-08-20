@@ -134,11 +134,12 @@ public class DefaultComputeEngine : IComputeEngine
         );
 
         // Create kernel definition
-        var definition = new KernelDefinition(
-            entryPoint ?? "kernel",
-            kernelSourceImpl,
-            options ?? new CompilationOptions()
-        );
+        var definition = new KernelDefinition
+        {
+            Name = entryPoint ?? "kernel",
+            Source = kernelSourceImpl.Code ?? kernelSourceImpl.ToString() ?? "",
+            EntryPoint = entryPoint ?? "kernel"
+        };
 
         // Compile the kernel
         var compiledKernel = await accelerator.CompileKernelAsync(definition, options, cancellationToken);

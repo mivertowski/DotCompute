@@ -82,6 +82,9 @@ typedef struct {
 // Callbacks
 typedef void (*DCMetalCommandBufferCompletionHandler)(DCMetalCommandBufferStatus status);
 
+// System Detection
+bool DCMetal_IsMetalSupported(void);
+
 // Device Management
 DCMetalDevice DCMetal_CreateSystemDefaultDevice(void);
 DCMetalDevice DCMetal_CreateDeviceAtIndex(int index);
@@ -115,6 +118,7 @@ void DCMetal_SetCompileOptionsFastMath(DCMetalCompileOptions options, bool enabl
 void DCMetal_SetCompileOptionsLanguageVersion(DCMetalCompileOptions options, DCMetalLanguageVersion version);
 void DCMetal_ReleaseCompileOptions(DCMetalCompileOptions options);
 DCMetalLibrary DCMetal_CompileLibrary(DCMetalDevice device, const char* source, DCMetalCompileOptions options, DCMetalError* error);
+DCMetalLibrary DCMetal_CreateLibraryWithSource(DCMetalDevice device, const char* source);
 void DCMetal_ReleaseLibrary(DCMetalLibrary library);
 DCMetalFunction DCMetal_GetFunction(DCMetalLibrary library, const char* name);
 void DCMetal_ReleaseFunction(DCMetalFunction function);

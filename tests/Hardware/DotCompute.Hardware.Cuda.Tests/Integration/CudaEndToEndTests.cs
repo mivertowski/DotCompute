@@ -18,6 +18,10 @@ namespace DotCompute.Tests.Hardware.Integration;
 /// <summary>
 /// End-to-end integration tests for the complete CUDA pipeline
 /// </summary>
+[Trait("Category", "HardwareRequired")]
+[Trait("Category", "CudaRequired")]
+[Trait("Hardware", "CUDA")]
+[Trait("Category", "Integration")]
 [Collection("CUDA Hardware Tests")]
 public sealed class CudaEndToEndTests : IDisposable
 {

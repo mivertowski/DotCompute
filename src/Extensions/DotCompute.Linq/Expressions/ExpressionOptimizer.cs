@@ -539,9 +539,9 @@ internal class FusedMethodInfo : MethodInfo
     }
 
     // Minimal implementation for other required members
-    public override ICustomAttributeProvider ReturnTypeCustomAttributes => throw new NotImplementedException();
+    public override ICustomAttributeProvider ReturnTypeCustomAttributes => new EmptyCustomAttributeProvider();
     public override MethodAttributes Attributes => MethodAttributes.Static | MethodAttributes.Public;
-    public override RuntimeMethodHandle MethodHandle => throw new NotImplementedException();
+    public override RuntimeMethodHandle MethodHandle => default;
     public override MethodInfo GetBaseDefinition() => this;
     public override object[] GetCustomAttributes(bool inherit) => [];
     public override object[] GetCustomAttributes(Type attributeType, bool inherit) => [];
@@ -586,5 +586,15 @@ internal static class FusionMetadataStore
     {
         _store.Value!.Clear();
     }
+}
+
+/// <summary>
+/// Empty custom attribute provider implementation for fused methods
+/// </summary>
+internal class EmptyCustomAttributeProvider : ICustomAttributeProvider
+{
+    public object[] GetCustomAttributes(bool inherit) => [];
+    public object[] GetCustomAttributes(Type attributeType, bool inherit) => [];
+    public bool IsDefined(Type attributeType, bool inherit) => false;
 }
 }

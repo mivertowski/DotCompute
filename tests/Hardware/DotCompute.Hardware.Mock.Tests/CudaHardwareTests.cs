@@ -11,6 +11,10 @@ namespace DotCompute.Tests.Hardware;
 /// Hardware-dependent tests for CUDA GPUs.
 /// These tests require actual NVIDIA GPU hardware and CUDA runtime.
 /// </summary>
+[Trait("Category", "Mock")]
+[Trait("Category", "Hardware")]
+[Trait("Hardware", "CUDA")]
+[Collection("Hardware")]
 public class CudaHardwareTests(ITestOutputHelper output, AcceleratorTestFixture fixture) : IClassFixture<AcceleratorTestFixture>
 {
     private readonly ITestOutputHelper _output = output;

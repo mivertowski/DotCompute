@@ -176,7 +176,13 @@ public static Task PluginDIExample()
 /// </summary>
 public static Task HostedServiceExample()
 {
-    throw new NotImplementedException("HostedServiceExample requires Microsoft.Extensions.Hosting package");
+    // This example requires Microsoft.Extensions.Hosting package
+    // Uncomment and install the package to enable this functionality
+    
+    Console.WriteLine("HostedServiceExample: Microsoft.Extensions.Hosting package required");
+    Console.WriteLine("Install with: dotnet add package Microsoft.Extensions.Hosting");
+    
+    return Task.CompletedTask;
     /*
     var host = Microsoft.Extensions.Hosting.Host.CreateDefaultBuilder()
         .ConfigureServices((context, services) =>
@@ -501,6 +507,142 @@ public ValueTask<IEnumerable<IAccelerator>> DiscoverAsync(CancellationToken canc
 
 public ValueTask<IAccelerator> CreateAsync(AcceleratorInfo info, CancellationToken cancellationToken = default)
 {
-    throw new NotImplementedException("Custom accelerator creation not implemented in this example");
+    // For this example, we'll create a simple mock accelerator
+    var mockAccelerator = new ExampleMockAccelerator(info);
+    return ValueTask.FromResult<IAccelerator>(mockAccelerator);
 }
 }
+
+/// <summary>
+/// Example mock accelerator implementation for DI demonstration.
+/// </summary>
+internal class ExampleMockAccelerator : IAccelerator
+{
+    public AcceleratorInfo Info { get; }
+    public AcceleratorType Type => AcceleratorType.CPU;
+    public AcceleratorContext Context { get; } = default!;
+    public IMemoryManager Memory => new ExampleMockMemoryManager();
+
+    public ExampleMockAccelerator(AcceleratorInfo info)
+    {
+        Info = info;
+    }
+
+    public ValueTask<ICompiledKernel> CompileKernelAsync(
+        KernelDefinition definition,
+        CompilationOptions? options = null,
+        CancellationToken cancellationToken = default)
+    {
+        var mockKernel = new ExampleMockCompiledKernel(definition);
+        return ValueTask.FromResult<ICompiledKernel>(mockKernel);
+    }
+
+    public ValueTask SynchronizeAsync(CancellationToken cancellationToken = default)
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose() { }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+/// <summary>
+/// Example mock memory manager for DI demonstration.
+/// </summary>
+internal class ExampleMockMemoryManager : IMemoryManager
+{
+    public ValueTask<IMemoryBuffer> AllocateAsync(long sizeInBytes, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default)
+    {
+        var buffer = new ExampleMockMemoryBuffer(sizeInBytes, options);
+        return ValueTask.FromResult<IMemoryBuffer>(buffer);
+    }
+
+    public ValueTask<IMemoryBuffer> AllocateAndCopyAsync<T>(ReadOnlyMemory<T> source, MemoryOptions options = MemoryOptions.None, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        var buffer = new ExampleMockMemoryBuffer(source.Length * sizeof(int), options);
+        return ValueTask.FromResult<IMemoryBuffer>(buffer);
+    }
+
+    public IMemoryBuffer CreateView(IMemoryBuffer buffer, long offset, long length)
+    {
+        return new ExampleMockMemoryBuffer(length, buffer.Options);
+    }
+
+    public ValueTask<IMemoryBuffer> Allocate<T>(int count) where T : unmanaged
+    {
+        var buffer = new ExampleMockMemoryBuffer(count * sizeof(int), MemoryOptions.None);
+        return ValueTask.FromResult<IMemoryBuffer>(buffer);
+    }
+
+    public void CopyToDevice<T>(IMemoryBuffer buffer, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        // Mock implementation - do nothing
+    }
+
+    public void CopyFromDevice<T>(Span<T> data, IMemoryBuffer buffer) where T : unmanaged
+    {
+        // Mock implementation - do nothing
+    }
+
+    public void Free(IMemoryBuffer buffer)
+    {
+        buffer?.Dispose();
+    }
+
+    public void Dispose() { }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+
+/// <summary>
+/// Example mock memory buffer for DI demonstration.
+/// </summary>
+internal class ExampleMockMemoryBuffer(long size, MemoryOptions options) : IMemoryBuffer
+{
+    public long SizeInBytes { get; } = size;
+    public MemoryOptions Options { get; } = options;
+    public bool IsDisposed { get; private set; }
+
+    public ValueTask<Memory<byte>> GetMemoryAsync(CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(new Memory<byte>(new byte[SizeInBytes]));
+    }
+
+    public ValueTask CopyFromHostAsync<T>(ReadOnlyMemory<T> source, long offset, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask CopyToHostAsync<T>(Memory<T> destination, long offset, CancellationToken cancellationToken = default) where T : unmanaged
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose()
+    {
+        IsDisposed = true;
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        Dispose();
+        return ValueTask.CompletedTask;
+    }
+}
+
+
+/// <summary>
+/// Example mock compiled kernel for DI demonstration.
+/// </summary>
+internal class ExampleMockCompiledKernel(KernelDefinition definition) : ICompiledKernel
+{
+    public string Name => definition.Name;
+
+    public ValueTask ExecuteAsync(KernelArguments arguments, CancellationToken cancellationToken = default)
+    {
+        return ValueTask.CompletedTask;
+    }
+
+    public void Dispose() { }
+    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+}
+

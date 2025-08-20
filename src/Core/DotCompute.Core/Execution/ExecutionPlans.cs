@@ -2179,7 +2179,7 @@ public sealed class ExecutionPlanGenerator
         return new ManagedCompiledKernel(
             kernelName,
             device,
-            new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 0, new KernelConfiguration(new Dim3(1), new Dim3(1))));
+            new CompiledKernel { Name = kernelName });
     }
 
     private async Task<(string stageName, ManagedCompiledKernel kernel)> CompileStageKernelAsync(string kernelName, string stageName, IAccelerator device, CancellationToken cancellationToken)
@@ -2187,7 +2187,7 @@ public sealed class ExecutionPlanGenerator
         var kernel = new ManagedCompiledKernel(
             kernelName,
             device,
-            new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 0, new KernelConfiguration(new Dim3(1), new Dim3(1))));
+            new CompiledKernel { Name = kernelName });
         await Task.CompletedTask.ConfigureAwait(false);
         return (stageName, kernel);
     }
