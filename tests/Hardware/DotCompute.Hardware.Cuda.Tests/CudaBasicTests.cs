@@ -10,7 +10,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.Cuda.Tests;
 
 
 /// <summary>
@@ -192,8 +192,8 @@ extern ""C"" __global__ void addOne(float* data, int n)
 }";
 
         var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Default };
-        var kernelSource = new TextKernelSource(kernelSourceCode, "addOne", DotCompute.Abstractions.KernelLanguage.Cuda, "addOne");
-        var definition = new KernelDefinition("addOne", kernelSource.Code, kernelSource.EntryPoint);
+        var kernelSource = new TextKernelSource(kernelSourceCode, "addOne", Abstractions.KernelLanguage.Cuda, "addOne");
+        var definition = new KernelDefinition("addOne", kernelSource, options);
 
         var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
         Assert.NotNull(compiledKernel);
@@ -233,9 +233,9 @@ extern ""C"" __global__ void multiply(float* data, float factor, int n)
     }
 }";
 
-            var kernelSourceObj = new TextKernelSource(kernelSource, "multiply", DotCompute.Abstractions.KernelLanguage.Cuda, "multiply");
+            var kernelSourceObj = new TextKernelSource(kernelSource, "multiply", Abstractions.KernelLanguage.Cuda, "multiply");
             var options = new CompilationOptions();
-            var definition = new KernelDefinition("multiply", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+            var definition = new KernelDefinition("multiply", kernelSourceObj, options);
             var compiledKernel = await _accelerator.CompileKernelAsync(definition);
 
             const float FACTOR = 2.5f;
@@ -280,9 +280,9 @@ extern ""C"" __global__ void testConfig(int* data, int n)
     }
 }";
 
-        var kernelSource = new TextKernelSource(kernelSourceCode, "testConfig", DotCompute.Abstractions.KernelLanguage.Cuda, "testConfig");
+        var kernelSource = new TextKernelSource(kernelSourceCode, "testConfig", Abstractions.KernelLanguage.Cuda, "testConfig");
         var options = new CompilationOptions();
-        var definition = new KernelDefinition("testConfig", kernelSource.Code, kernelSource.EntryPoint);
+        var definition = new KernelDefinition("testConfig", kernelSource, options);
         var compiledKernel = await _accelerator.CompileKernelAsync(definition) as CudaCompiledKernel;
         Assert.NotNull(compiledKernel);
 

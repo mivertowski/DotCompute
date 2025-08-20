@@ -3,7 +3,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Integration;
+namespace DotCompute.Hardware.RTX2000.Tests.Integration;
 
 
 /// <summary>
@@ -31,8 +31,8 @@ public sealed class EndToEndWorkflowTests(ITestOutputHelper output) : IDisposabl
         try
         {
             // Simple CUDA availability check
-            return System.IO.File.Exists("/usr/local/cuda/bin/nvcc") ||
-                   System.IO.File.Exists("C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.0\\bin\\nvcc.exe");
+            return File.Exists("/usr/local/cuda/bin/nvcc") ||
+                   File.Exists("C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v12.0\\bin\\nvcc.exe");
         }
         catch
         {
@@ -100,7 +100,7 @@ public sealed class EndToEndWorkflowTests(ITestOutputHelper output) : IDisposabl
 
             // Performance validation
             var elementsPerSecond = vectorSize / (kernelExecutionTime / 1000.0);
-            var bandwidth = (vectorSize * 3 * sizeof(float)) / (kernelExecutionTime / 1000.0) / (1024 * 1024 * 1024);
+            var bandwidth = vectorSize * 3 * sizeof(float) / (kernelExecutionTime / 1000.0) / (1024 * 1024 * 1024);
 
             _output.WriteLine($"Performance metrics:");
             _output.WriteLine($"  Elements/sec: {elementsPerSecond:E2}");
@@ -408,7 +408,9 @@ public sealed class EndToEndWorkflowTests(ITestOutputHelper output) : IDisposabl
 
     #endregion
 
-    public void Dispose() => GC.SuppressFinalize(this);
+    public void Dispose()
+        // Cleanup resources
+        => GC.SuppressFinalize(this);
 }
 
 /// <summary>

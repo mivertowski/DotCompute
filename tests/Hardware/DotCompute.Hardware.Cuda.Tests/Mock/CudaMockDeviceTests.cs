@@ -10,7 +10,7 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Mock;
+namespace DotCompute.Hardware.Cuda.Tests.Mock;
 
 
 /// <summary>
@@ -150,7 +150,7 @@ public sealed class CudaMockDeviceTests : IDisposable
         _ = (mockStats.AllocationCount > 0).Should().BeTrue();
         _ = (mockStats.PeakMemory >= mockStats.UsedMemory).Should().BeTrue();
 
-        var utilizationPercent = (mockStats.UsedMemory * 100.0) / mockStats.TotalMemory;
+        var utilizationPercent = mockStats.UsedMemory * 100.0 / mockStats.TotalMemory;
         _output.WriteLine($"Mock Memory Usage: {utilizationPercent:F1}% ({mockStats.UsedMemory / (1024 * 1024 * 1024)}GB / {mockStats.TotalMemory / (1024 * 1024 * 1024)}GB)");
     }
 
@@ -226,7 +226,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
         _ = mockCompilationResult.CompilerLog.Should().NotBeNull();
 
         // Simulate PTX output
-        var ptxString = System.Text.Encoding.UTF8.GetString(mockCompilationResult.CompiledCode);
+        var ptxString = Encoding.UTF8.GetString(mockCompilationResult.CompiledCode);
         Assert.Contains(".version", ptxString, StringComparison.Ordinal); // "Mock PTX should contain version directive";
         Assert.Contains(".entry", ptxString, StringComparison.Ordinal); // "Mock PTX should contain entry directive";
 
@@ -462,7 +462,7 @@ __global__ void mock_kernel(float* input, float* output, int n)
         return new MockCompilationResult
         {
             Success = true,
-            CompiledCode = System.Text.Encoding.UTF8.GetBytes(mockPtx),
+            CompiledCode = Encoding.UTF8.GetBytes(mockPtx),
             CompilationTime = TimeSpan.FromMilliseconds(totalCompileTimeMs),
             CompilerLog = $"Compilation successful with {optimization} optimization",
             ErrorMessage = null

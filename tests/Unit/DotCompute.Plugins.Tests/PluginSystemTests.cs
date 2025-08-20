@@ -14,7 +14,7 @@ using NSubstitute;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Plugins.Tests;
 
 
 /// <summary>
@@ -44,7 +44,7 @@ public sealed class PluginSystemTests : IDisposable
     public void Constructor_WithNullLogger_ThrowsArgumentNullException()
     {
         // Act & Assert
-        Func<PluginSystem> act = () => new PluginSystem((ILogger<PluginSystem>)null!);
+        Func<PluginSystem> act = () => new PluginSystem(null!);
         _ = act.Should().Throw<ArgumentNullException>().WithParameterName("logger");
     }
 

@@ -4,7 +4,7 @@
 using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities.TestInfrastructure;
+namespace DotCompute.Tests.Common.TestInfrastructure;
 
 
 /// <summary>

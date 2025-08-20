@@ -7,7 +7,7 @@ using Moq;
 using Xunit;
 using CoreMemory = DotCompute.Core.Memory;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 
 /// <summary>
@@ -76,7 +76,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
 
         _ = _memoryManagerMock
             .Setup(m => m.CreateBufferAsync<byte>(elementCount, CoreMemory.MemoryLocation.Host, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Mock.Of<Abstractions.IBuffer<byte>>());
+            .ReturnsAsync(Mock.Of<IBuffer<byte>>());
 
         // Act
         var buffer = await _memoryManagerMock.Object.CreateBufferAsync<byte>(elementCount, CoreMemory.MemoryLocation.Host);
@@ -113,7 +113,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
 
         _ = _memoryManagerMock
             .Setup(m => m.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device, CoreMemory.MemoryAccess.ReadWrite, It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Mock.Of<Abstractions.IBuffer<int>>());
+            .ReturnsAsync(Mock.Of<IBuffer<int>>());
 
         // Act
         var buffer = await _memoryManagerMock.Object.CreateBufferAsync<int>(100, CoreMemory.MemoryLocation.Device);
@@ -150,7 +150,7 @@ public sealed class MemoryManagerEdgeCaseTests : IDisposable
     public void GetStatistics_ShouldReturnMemoryStatistics()
     {
         // Arrange
-        var mockStats = Mock.Of<DotCompute.Abstractions.IMemoryStatistics>();
+        var mockStats = Mock.Of<IMemoryStatistics>();
         // GetStatistics method likely has different return type - check interface compatibility
         // _memoryManagerMock.Setup(m => m.GetStatistics()).Returns(mockStats);
 

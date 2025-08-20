@@ -4,7 +4,7 @@
 using System.Globalization;
 using Xunit;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.Cuda.Tests;
 
 
 /// <summary>
@@ -46,16 +46,16 @@ public sealed class CudaTestFixture : IDisposable
         try
         {
             // Check CUDA availability
-            var result = DotCompute.Backends.CUDA.Native.CudaRuntime.cudaGetDeviceCount(out var deviceCount);
-            IsCudaAvailable = result == DotCompute.Backends.CUDA.Native.CudaError.Success && deviceCount > 0;
+            var result = Backends.CUDA.Native.CudaRuntime.cudaGetDeviceCount(out var deviceCount);
+            IsCudaAvailable = result == Backends.CUDA.Native.CudaError.Success && deviceCount > 0;
             DeviceCount = deviceCount;
 
             if (IsCudaAvailable)
             {
                 // Get primary device properties
-                var props = new DotCompute.Backends.CUDA.Native.CudaDeviceProperties();
-                var propResult = DotCompute.Backends.CUDA.Native.CudaRuntime.cudaGetDeviceProperties(ref props, 0);
-                if (propResult == DotCompute.Backends.CUDA.Native.CudaError.Success)
+                var props = new Backends.CUDA.Native.CudaDeviceProperties();
+                var propResult = Backends.CUDA.Native.CudaRuntime.cudaGetDeviceProperties(ref props, 0);
+                if (propResult == Backends.CUDA.Native.CudaError.Success)
                 {
                     PrimaryDeviceName = props.Name;
                     ComputeCapability = new Version(props.Major, props.Minor);
@@ -63,7 +63,7 @@ public sealed class CudaTestFixture : IDisposable
             }
 
             // Check NVRTC availability
-            IsNvrtcAvailable = DotCompute.Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
+            IsNvrtcAvailable = Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
 
             // Set test environment flags
             Environment.SetEnvironmentVariable("DOTCOMPUTE_CUDA_TESTS_AVAILABLE", IsCudaAvailable.ToString());

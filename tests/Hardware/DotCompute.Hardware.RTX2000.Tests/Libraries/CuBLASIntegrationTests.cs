@@ -5,7 +5,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Libraries;
+namespace DotCompute.Hardware.RTX2000.Tests.Libraries;
 
 
 /// <summary>
@@ -26,8 +26,8 @@ public sealed class CuBLASIntegrationTests : IDisposable
     private static readonly Action<ILogger, string, Exception?> LogCuBlasOperation =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(4001), "cuBLAS operation: {Operation}");
 #pragma warning restore CA1823
-    private IntPtr _cudaContext;
-    private IntPtr _cublasHandle;
+    private nint _cudaContext;
+    private nint _cublasHandle;
     private bool _cublasInitialized;
 
     public CuBLASIntegrationTests(ITestOutputHelper output)
@@ -84,7 +84,7 @@ public sealed class CuBLASIntegrationTests : IDisposable
     {
         Skip.IfNot(_cublasInitialized, "cuBLAS not available");
 
-        _ = _cublasHandle.Should().NotBe(IntPtr.Zero, "cuBLAS handle should be valid");
+        _ = _cublasHandle.Should().NotBe(nint.Zero, "cuBLAS handle should be valid");
 
         // Test basic cuBLAS functionality
         var result = CublasSetPointerMode(_cublasHandle, CublasPointerMode.CUBLAS_POINTER_MODE_HOST);
@@ -102,7 +102,7 @@ public sealed class CuBLASIntegrationTests : IDisposable
         const int vectorSize = 1000000; // 1M elements
         const float expectedDot = 333332833333.0f; // Precalculated for test data
 
-        IntPtr d_x = IntPtr.Zero, d_y = IntPtr.Zero;
+        nint d_x = nint.Zero, d_y = nint.Zero;
 
         try
         {
@@ -158,7 +158,7 @@ public sealed class CuBLASIntegrationTests : IDisposable
             _ = relativeError.Should().BeLessThan(1e-5f, "Dot product should be accurate within floating-point precision");
 
             // Performance validation - should be much faster than CPU
-            var elementsPerSecond = vectorSize / ((sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency) / 1e6);
+            var elementsPerSecond = vectorSize / (sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency / 1e6);
             _output.WriteLine($"Performance: {elementsPerSecond:E2} elements/second");
 
             _ = elementsPerSecond.Should().BeGreaterThan(1e8, "cuBLAS should achieve high throughput");
@@ -167,9 +167,9 @@ public sealed class CuBLASIntegrationTests : IDisposable
         }
         finally
         {
-            if (d_x != IntPtr.Zero)
+            if (d_x != nint.Zero)
                 _ = CudaFree(d_x);
-            if (d_y != IntPtr.Zero)
+            if (d_y != nint.Zero)
                 _ = CudaFree(d_y);
         }
 
@@ -186,7 +186,7 @@ public sealed class CuBLASIntegrationTests : IDisposable
         const float alpha = 1.0f;
         const float beta = 0.0f;
 
-        IntPtr d_A = IntPtr.Zero, d_x = IntPtr.Zero, d_y = IntPtr.Zero;
+        nint d_A = nint.Zero, d_x = nint.Zero, d_y = nint.Zero;
 
         try
         {
@@ -293,11 +293,11 @@ public sealed class CuBLASIntegrationTests : IDisposable
         }
         finally
         {
-            if (d_A != IntPtr.Zero)
+            if (d_A != nint.Zero)
                 _ = CudaFree(d_A);
-            if (d_x != IntPtr.Zero)
+            if (d_x != nint.Zero)
                 _ = CudaFree(d_x);
-            if (d_y != IntPtr.Zero)
+            if (d_y != nint.Zero)
                 _ = CudaFree(d_y);
         }
 
@@ -313,7 +313,7 @@ public sealed class CuBLASIntegrationTests : IDisposable
         const float alpha = 1.0f;
         const float beta = 0.0f;
 
-        IntPtr d_A = IntPtr.Zero, d_B = IntPtr.Zero, d_C = IntPtr.Zero;
+        nint d_A = nint.Zero, d_B = nint.Zero, d_C = nint.Zero;
 
         try
         {
@@ -447,11 +447,11 @@ public sealed class CuBLASIntegrationTests : IDisposable
         }
         finally
         {
-            if (d_A != IntPtr.Zero)
+            if (d_A != nint.Zero)
                 _ = CudaFree(d_A);
-            if (d_B != IntPtr.Zero)
+            if (d_B != nint.Zero)
                 _ = CudaFree(d_B);
-            if (d_C != IntPtr.Zero)
+            if (d_C != nint.Zero)
                 _ = CudaFree(d_C);
         }
 
@@ -472,7 +472,7 @@ public sealed class CuBLASIntegrationTests : IDisposable
         var matrixSizeBytes = matrixElements * sizeof(float);
         var totalSizeBytes = matrixSizeBytes * batchSize;
 
-        IntPtr d_A = IntPtr.Zero, d_B = IntPtr.Zero, d_C = IntPtr.Zero;
+        nint d_A = nint.Zero, d_B = nint.Zero, d_C = nint.Zero;
 
         try
         {
@@ -518,27 +518,27 @@ public sealed class CuBLASIntegrationTests : IDisposable
             _output.WriteLine($"Performing batched matrix multiplication: {batchSize} matrices of {matrixSize}x{matrixSize}");
 
             // Create arrays of device pointers for batched operation
-            var h_A_array = new IntPtr[batchSize];
-            var h_B_array = new IntPtr[batchSize];
-            var h_C_array = new IntPtr[batchSize];
+            var h_A_array = new nint[batchSize];
+            var h_B_array = new nint[batchSize];
+            var h_C_array = new nint[batchSize];
 
             for (var i = 0; i < batchSize; i++)
             {
-                h_A_array[i] = new IntPtr(d_A.ToInt64() + i * matrixSizeBytes);
-                h_B_array[i] = new IntPtr(d_B.ToInt64() + i * matrixSizeBytes);
-                h_C_array[i] = new IntPtr(d_C.ToInt64() + i * matrixSizeBytes);
+                h_A_array[i] = new nint(d_A.ToInt64() + i * matrixSizeBytes);
+                h_B_array[i] = new nint(d_B.ToInt64() + i * matrixSizeBytes);
+                h_C_array[i] = new nint(d_C.ToInt64() + i * matrixSizeBytes);
             }
 
             // Copy pointer arrays to device
-            IntPtr d_A_array = IntPtr.Zero, d_B_array = IntPtr.Zero, d_C_array = IntPtr.Zero;
+            nint d_A_array = nint.Zero, d_B_array = nint.Zero, d_C_array = nint.Zero;
 
-            result = CudaMalloc(ref d_A_array, batchSize * IntPtr.Size);
+            result = CudaMalloc(ref d_A_array, batchSize * nint.Size);
             Assert.Equal(0, result); // Device pointer array A allocation should succeed;
 
-            result = CudaMalloc(ref d_B_array, batchSize * IntPtr.Size);
+            result = CudaMalloc(ref d_B_array, batchSize * nint.Size);
             Assert.Equal(0, result); // Device pointer array B allocation should succeed;
 
-            result = CudaMalloc(ref d_C_array, batchSize * IntPtr.Size);
+            result = CudaMalloc(ref d_C_array, batchSize * nint.Size);
             Assert.Equal(0, result); // Device pointer array C allocation should succeed;
 
             var h_A_array_handle = GCHandle.Alloc(h_A_array, GCHandleType.Pinned);
@@ -547,13 +547,13 @@ public sealed class CuBLASIntegrationTests : IDisposable
 
             try
             {
-                result = CudaMemcpyHtoD(d_A_array, h_A_array_handle.AddrOfPinnedObject(), batchSize * IntPtr.Size);
+                result = CudaMemcpyHtoD(d_A_array, h_A_array_handle.AddrOfPinnedObject(), batchSize * nint.Size);
                 Assert.Equal(0, result); // Device pointer array A copy should succeed;
 
-                result = CudaMemcpyHtoD(d_B_array, h_B_array_handle.AddrOfPinnedObject(), batchSize * IntPtr.Size);
+                result = CudaMemcpyHtoD(d_B_array, h_B_array_handle.AddrOfPinnedObject(), batchSize * nint.Size);
                 Assert.Equal(0, result); // Device pointer array B copy should succeed;
 
-                result = CudaMemcpyHtoD(d_C_array, h_C_array_handle.AddrOfPinnedObject(), batchSize * IntPtr.Size);
+                result = CudaMemcpyHtoD(d_C_array, h_C_array_handle.AddrOfPinnedObject(), batchSize * nint.Size);
                 Assert.Equal(0, result); // Device pointer array C copy should succeed;
 
                 // Perform batched matrix multiplication
@@ -600,21 +600,21 @@ public sealed class CuBLASIntegrationTests : IDisposable
                 h_B_array_handle.Free();
                 h_C_array_handle.Free();
 
-                if (d_A_array != IntPtr.Zero)
+                if (d_A_array != nint.Zero)
                     _ = CudaFree(d_A_array);
-                if (d_B_array != IntPtr.Zero)
+                if (d_B_array != nint.Zero)
                     _ = CudaFree(d_B_array);
-                if (d_C_array != IntPtr.Zero)
+                if (d_C_array != nint.Zero)
                     _ = CudaFree(d_C_array);
             }
         }
         finally
         {
-            if (d_A != IntPtr.Zero)
+            if (d_A != nint.Zero)
                 _ = CudaFree(d_A);
-            if (d_B != IntPtr.Zero)
+            if (d_B != nint.Zero)
                 _ = CudaFree(d_B);
-            if (d_C != IntPtr.Zero)
+            if (d_C != nint.Zero)
                 _ = CudaFree(d_C);
         }
 
@@ -623,16 +623,16 @@ public sealed class CuBLASIntegrationTests : IDisposable
 
     public void Dispose()
     {
-        if (_cublasHandle != IntPtr.Zero)
+        if (_cublasHandle != nint.Zero)
         {
             _ = CublasDestroy(_cublasHandle);
-            _cublasHandle = IntPtr.Zero;
+            _cublasHandle = nint.Zero;
         }
 
-        if (_cudaContext != IntPtr.Zero)
+        if (_cudaContext != nint.Zero)
         {
             _ = CudaCtxDestroy(_cudaContext);
-            _cudaContext = IntPtr.Zero;
+            _cudaContext = nint.Zero;
         }
 
         _cublasInitialized = false;
@@ -648,11 +648,11 @@ public sealed class CuBLASIntegrationTests : IDisposable
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
-    private static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+    private static extern int CudaCtxCreate(ref nint ctx, uint flags, int dev);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
-    private static extern int CudaCtxDestroy(IntPtr ctx);
+    private static extern int CudaCtxDestroy(nint ctx);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize", ExactSpelling = true)]
@@ -660,58 +660,58 @@ public sealed class CuBLASIntegrationTests : IDisposable
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
-    private static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+    private static extern int CudaMalloc(ref nint dptr, long bytesize);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
-    private static extern int CudaFree(IntPtr dptr);
+    private static extern int CudaFree(nint dptr);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+    private static extern int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+    private static extern int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount);
 
     // cuBLAS API
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("cublas64_12", EntryPoint = "cublasCreate_v2", ExactSpelling = true)]
-    private static extern CublasStatus CublasCreate(ref IntPtr handle);
+    private static extern CublasStatus CublasCreate(ref nint handle);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("cublas64_12", EntryPoint = "cublasDestroy_v2", ExactSpelling = true)]
-    private static extern CublasStatus CublasDestroy(IntPtr handle);
+    private static extern CublasStatus CublasDestroy(nint handle);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("cublas64_12", EntryPoint = "cublasGetVersion_v2", ExactSpelling = true)]
-    private static extern CublasStatus CublasGetVersion(IntPtr handle, ref int version);
+    private static extern CublasStatus CublasGetVersion(nint handle, ref int version);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("cublas64_12", EntryPoint = "cublasSetPointerMode_v2", ExactSpelling = true)]
-    private static extern CublasStatus CublasSetPointerMode(IntPtr handle, CublasPointerMode mode);
+    private static extern CublasStatus CublasSetPointerMode(nint handle, CublasPointerMode mode);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("cublas64_12", EntryPoint = "cublasSdot_v2", ExactSpelling = true)]
-    private static extern CublasStatus CublasSdot(IntPtr handle, int n, IntPtr x, int incx, IntPtr y, int incy, ref float result);
+    private static extern CublasStatus CublasSdot(nint handle, int n, nint x, int incx, nint y, int incy, ref float result);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("cublas64_12", EntryPoint = "cublasSgemv_v2", ExactSpelling = true)]
-    private static extern CublasStatus CublasSgemv(IntPtr handle, CublasOperation trans,
-        int m, int n, ref float alpha, IntPtr A, int lda, IntPtr x, int incx,
-        ref float beta, IntPtr y, int incy);
+    private static extern CublasStatus CublasSgemv(nint handle, CublasOperation trans,
+        int m, int n, ref float alpha, nint A, int lda, nint x, int incx,
+        ref float beta, nint y, int incy);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("cublas64_12", EntryPoint = "cublasSgemm_v2", ExactSpelling = true)]
-    private static extern CublasStatus CublasSgemm(IntPtr handle, CublasOperation transa, CublasOperation transb,
-        int m, int n, int k, ref float alpha, IntPtr A, int lda, IntPtr B, int ldb,
-        ref float beta, IntPtr C, int ldc);
+    private static extern CublasStatus CublasSgemm(nint handle, CublasOperation transa, CublasOperation transb,
+        int m, int n, int k, ref float alpha, nint A, int lda, nint B, int ldb,
+        ref float beta, nint C, int ldc);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("cublas64_12", EntryPoint = "cublasSgemmBatched", ExactSpelling = true)]
-    private static extern CublasStatus CublasSgemmBatched(IntPtr handle, CublasOperation transa, CublasOperation transb,
-        int m, int n, int k, ref float alpha, IntPtr Aarray, int lda, IntPtr Barray, int ldb,
-        ref float beta, IntPtr Carray, int ldc, int batchCount);
+    private static extern CublasStatus CublasSgemmBatched(nint handle, CublasOperation transa, CublasOperation transb,
+        int m, int n, int k, ref float alpha, nint Aarray, int lda, nint Barray, int ldb,
+        ref float beta, nint Carray, int ldc, int batchCount);
 
     // cuBLAS enums
     internal enum CublasStatus

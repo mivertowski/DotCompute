@@ -10,7 +10,7 @@ using ExecutionParallelExecutionResult = DotCompute.Core.Execution.ParallelExecu
 using ExecutionDeviceExecutionResult = DotCompute.Core.Execution.DeviceExecutionResult;
 using ExecutionExecutionStrategyType = DotCompute.Core.Execution.ExecutionStrategyType;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 
 /// <summary>

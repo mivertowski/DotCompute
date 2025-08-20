@@ -3,7 +3,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Mock;
+namespace DotCompute.Hardware.Mock.Tests;
 
 /// <summary>
 /// Comprehensive mock validation tests to ensure hardware mocks work correctly
@@ -109,7 +109,7 @@ public class HardwareMockValidationTests
         var result = new float[vectorSize];
 
         // Initialize test data
-        for (int i = 0; i < vectorSize; i++)
+        for (var i = 0; i < vectorSize; i++)
         {
             a[i] = i;
             b[i] = i * 2;
@@ -120,7 +120,7 @@ public class HardwareMockValidationTests
         // Simulate GPU kernel execution on CPU
         await Task.Run(() =>
         {
-            for (int i = 0; i < vectorSize; i++)
+            for (var i = 0; i < vectorSize; i++)
             {
                 result[i] = a[i] + b[i];
             }
@@ -129,7 +129,7 @@ public class HardwareMockValidationTests
         stopwatch.Stop();
 
         // Verify results
-        for (int i = 0; i < vectorSize; i++)
+        for (var i = 0; i < vectorSize; i++)
         {
             result[i].Should().Be(a[i] + b[i], $"result[{i}] should equal a[{i}] + b[{i}]");
         }
@@ -151,7 +151,7 @@ public class HardwareMockValidationTests
         var result = new float[matrixSize][];
         
         // Initialize jagged arrays
-        for (int i = 0; i < matrixSize; i++)
+        for (var i = 0; i < matrixSize; i++)
         {
             a[i] = new float[matrixSize];
             b[i] = new float[matrixSize];
@@ -160,9 +160,9 @@ public class HardwareMockValidationTests
 
         // Initialize matrices
         var random = new Random(42);
-        for (int i = 0; i < matrixSize; i++)
+        for (var i = 0; i < matrixSize; i++)
         {
-            for (int j = 0; j < matrixSize; j++)
+            for (var j = 0; j < matrixSize; j++)
             {
                 a[i][j] = (float)random.NextDouble();
                 b[i][j] = (float)random.NextDouble();
@@ -174,12 +174,12 @@ public class HardwareMockValidationTests
         // Simulate GPU matrix multiplication on CPU
         await Task.Run(() =>
         {
-            for (int i = 0; i < matrixSize; i++)
+            for (var i = 0; i < matrixSize; i++)
             {
-                for (int j = 0; j < matrixSize; j++)
+                for (var j = 0; j < matrixSize; j++)
                 {
                     float sum = 0;
-                    for (int k = 0; k < matrixSize; k++)
+                    for (var k = 0; k < matrixSize; k++)
                     {
                         sum += a[i][k] * b[k][j];
                     }
@@ -191,10 +191,10 @@ public class HardwareMockValidationTests
         stopwatch.Stop();
 
         // Basic validation - check that result is not all zeros
-        bool hasNonZeroResults = false;
-        for (int i = 0; i < matrixSize && !hasNonZeroResults; i++)
+        var hasNonZeroResults = false;
+        for (var i = 0; i < matrixSize && !hasNonZeroResults; i++)
         {
-            for (int j = 0; j < matrixSize && !hasNonZeroResults; j++)
+            for (var j = 0; j < matrixSize && !hasNonZeroResults; j++)
             {
                 if (Math.Abs(result[i][j]) > 1e-6)
                 {
@@ -207,7 +207,7 @@ public class HardwareMockValidationTests
 
         _output.WriteLine($"Matrix size: {matrixSize}x{matrixSize}");
         _output.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds}ms");
-        var gflops = (2.0 * matrixSize * matrixSize * matrixSize) / (stopwatch.Elapsed.TotalSeconds * 1e9);
+        var gflops = 2.0 * matrixSize * matrixSize * matrixSize / (stopwatch.Elapsed.TotalSeconds * 1e9);
         _output.WriteLine($"Simulated GFLOPS: {gflops:F2}");
     }
 
@@ -236,12 +236,12 @@ public class HardwareMockValidationTests
         stopwatch.Stop();
 
         // Verify data integrity
-        for (int i = 0; i < dataSize; i++)
+        for (var i = 0; i < dataSize; i++)
         {
             resultData[i].Should().Be(hostData[i], $"Data integrity check failed at index {i}");
         }
 
-        var bandwidth = (dataSize * 2) / (stopwatch.Elapsed.TotalSeconds * 1024 * 1024); // MB/s
+        var bandwidth = dataSize * 2 / (stopwatch.Elapsed.TotalSeconds * 1024 * 1024); // MB/s
         _output.WriteLine($"Data size: {dataSize / 1024}KB");
         _output.WriteLine($"Transfer time: {stopwatch.Elapsed.TotalMicroseconds:F0}μs");
         _output.WriteLine($"Simulated bandwidth: {bandwidth:F2} MB/s");

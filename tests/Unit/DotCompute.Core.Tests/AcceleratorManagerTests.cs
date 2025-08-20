@@ -5,7 +5,7 @@ using DotCompute.Core.Compute;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 
 public sealed class AcceleratorManagerTests

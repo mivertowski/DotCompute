@@ -5,7 +5,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.P2P;
+namespace DotCompute.Hardware.RTX2000.Tests.P2P;
 
 
 /// <summary>
@@ -26,7 +26,7 @@ public sealed class MultiGPUP2PTests : IDisposable
     private static readonly Action<ILogger, string, Exception?> LogP2POperation =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(6001), "P2P operation: {Operation}");
 #pragma warning restore CA1823
-    private readonly List<IntPtr> _cudaContexts;
+    private readonly List<nint> _cudaContexts;
     private readonly List<int> _deviceIds;
     private bool _p2pCapable;
     private int _deviceCount;
@@ -64,7 +64,7 @@ public sealed class MultiGPUP2PTests : IDisposable
             // Initialize contexts for each device
             for (var i = 0; i < Math.Min(_deviceCount, 4); i++) // Limit to 4 devices for testing
             {
-                var context = IntPtr.Zero;
+                var context = nint.Zero;
                 result = CudaCtxCreate(ref context, 0, i);
 
                 if (result == 0)
@@ -209,7 +209,7 @@ public sealed class MultiGPUP2PTests : IDisposable
         const int dataSize = 1024 * 1024; // 1MB
         const int elementCount = dataSize / sizeof(float);
 
-        IntPtr device0Buffer = IntPtr.Zero, device1Buffer = IntPtr.Zero;
+        nint device0Buffer = nint.Zero, device1Buffer = nint.Zero;
 
         try
         {
@@ -254,7 +254,7 @@ public sealed class MultiGPUP2PTests : IDisposable
                 _output.WriteLine($"P2P transfer completed in {sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency:F1} μs");
 
                 // Calculate transfer bandwidth
-                var transferBandwidth = (dataSize / (1024.0 * 1024.0 * 1024.0)) / ((sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency) / 1e6);
+                var transferBandwidth = dataSize / (1024.0 * 1024.0 * 1024.0) / (sw.ElapsedTicks * 1000000.0 / Stopwatch.Frequency / 1e6);
                 _output.WriteLine($"P2P transfer bandwidth: {transferBandwidth:F2} GB/s");
 
                 // Validate data integrity by copying back from device 1
@@ -291,12 +291,12 @@ public sealed class MultiGPUP2PTests : IDisposable
         }
         finally
         {
-            if (device0Buffer != IntPtr.Zero)
+            if (device0Buffer != nint.Zero)
             {
                 _ = CudaCtxSetCurrent(_cudaContexts[0]);
                 _ = CudaFree(device0Buffer);
             }
-            if (device1Buffer != IntPtr.Zero)
+            if (device1Buffer != nint.Zero)
             {
                 _ = CudaCtxSetCurrent(_cudaContexts[1]);
                 _ = CudaFree(device1Buffer);
@@ -317,7 +317,7 @@ public sealed class MultiGPUP2PTests : IDisposable
         _output.WriteLine($"Distributing workload across {_deviceIds.Count} GPUs");
         _output.WriteLine($"Total work: {totalWorkSize} elements, {elementsPerGPU} per GPU");
 
-        var gpuBuffers = new IntPtr[_deviceIds.Count];
+        var gpuBuffers = new nint[_deviceIds.Count];
         var gpuTasks = new Task[_deviceIds.Count];
         var completionTimes = new double[_deviceIds.Count];
 
@@ -387,7 +387,7 @@ public sealed class MultiGPUP2PTests : IDisposable
             var averageTime = completionTimes.Average();
             var maxTime = completionTimes.Max();
             var minTime = completionTimes.Min();
-            var workloadEfficiency = (averageTime / maxTime) * 100;
+            var workloadEfficiency = averageTime / maxTime * 100;
 
             _output.WriteLine($"Multi-GPU workload distribution results:");
             _output.WriteLine($"  Total time: {totalTime:F2} ms");
@@ -407,7 +407,7 @@ public sealed class MultiGPUP2PTests : IDisposable
             // Cleanup
             for (var gpu = 0; gpu < _deviceIds.Count; gpu++)
             {
-                if (gpuBuffers[gpu] != IntPtr.Zero)
+                if (gpuBuffers[gpu] != nint.Zero)
                 {
                     _ = CudaCtxSetCurrent(_cudaContexts[gpu]);
                     _ = CudaFree(gpuBuffers[gpu]);
@@ -427,7 +427,7 @@ public sealed class MultiGPUP2PTests : IDisposable
 
         _output.WriteLine($"Testing aggregated memory bandwidth across {_deviceIds.Count} GPUs");
 
-        var gpuBuffers = new IntPtr[_deviceIds.Count];
+        var gpuBuffers = new nint[_deviceIds.Count];
         var hostBuffers = new byte[_deviceIds.Count][];
         var bandwidthResults = new double[_deviceIds.Count];
 
@@ -481,7 +481,7 @@ public sealed class MultiGPUP2PTests : IDisposable
                         }
                         sw.Stop();
 
-                        var bandwidth = ((long)transferSize * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                        var bandwidth = (long)transferSize * iterations / (1024.0 * 1024.0 * 1024.0) / sw.Elapsed.TotalSeconds;
                         bandwidthResults[capturedGpu] = bandwidth;
 
                         _output.WriteLine($"GPU {capturedGpu} bandwidth: {bandwidth:F2} GB/s");
@@ -498,7 +498,7 @@ public sealed class MultiGPUP2PTests : IDisposable
 
             var totalBandwidth = bandwidthResults.Sum();
             var averageBandwidth = bandwidthResults.Average();
-            var parallelEfficiency = (totalBandwidth / (bandwidthResults.Max() * _deviceIds.Count)) * 100;
+            var parallelEfficiency = totalBandwidth / (bandwidthResults.Max() * _deviceIds.Count) * 100;
 
             _output.WriteLine($"Multi-GPU memory bandwidth results:");
             _output.WriteLine($"  Total aggregated bandwidth: {totalBandwidth:F2} GB/s");
@@ -516,7 +516,7 @@ public sealed class MultiGPUP2PTests : IDisposable
             // Cleanup
             for (var gpu = 0; gpu < _deviceIds.Count; gpu++)
             {
-                if (gpuBuffers[gpu] != IntPtr.Zero)
+                if (gpuBuffers[gpu] != nint.Zero)
                 {
                     _ = CudaCtxSetCurrent(_cudaContexts[gpu]);
                     _ = CudaFree(gpuBuffers[gpu]);
@@ -525,7 +525,7 @@ public sealed class MultiGPUP2PTests : IDisposable
         }
     }
 
-    private static async Task SimulateComputeWorkload(IntPtr buffer, int elementCount, int gpuId)
+    private static async Task SimulateComputeWorkload(nint buffer, int elementCount, int gpuId)
     {
         // Simulate compute-intensive operations
         const int computeIterations = 1000;
@@ -567,7 +567,7 @@ public sealed class MultiGPUP2PTests : IDisposable
         // Destroy contexts
         foreach (var context in _cudaContexts)
         {
-            if (context != IntPtr.Zero)
+            if (context != nint.Zero)
             {
                 _ = CudaCtxDestroy(context);
             }
@@ -598,15 +598,15 @@ public sealed class MultiGPUP2PTests : IDisposable
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
-    private static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+    private static extern int CudaCtxCreate(ref nint ctx, uint flags, int dev);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
-    private static extern int CudaCtxDestroy(IntPtr ctx);
+    private static extern int CudaCtxDestroy(nint ctx);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxSetCurrent", ExactSpelling = true)]
-    private static extern int CudaCtxSetCurrent(IntPtr ctx);
+    private static extern int CudaCtxSetCurrent(nint ctx);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize", ExactSpelling = true)]
@@ -614,31 +614,31 @@ public sealed class MultiGPUP2PTests : IDisposable
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxEnablePeerAccess", ExactSpelling = true)]
-    private static extern int CudaCtxEnablePeerAccess(IntPtr peerContext, uint flags);
+    private static extern int CudaCtxEnablePeerAccess(nint peerContext, uint flags);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxDisablePeerAccess", ExactSpelling = true)]
-    private static extern int CudaCtxDisablePeerAccess(IntPtr peerContext);
+    private static extern int CudaCtxDisablePeerAccess(nint peerContext);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
-    private static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+    private static extern int CudaMalloc(ref nint dptr, long bytesize);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
-    private static extern int CudaFree(IntPtr dptr);
+    private static extern int CudaFree(nint dptr);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+    private static extern int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+    private static extern int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyPeer", ExactSpelling = true)]
-    private static extern int CudaMemcpyPeer(IntPtr dstDevice, IntPtr dstContext, IntPtr srcDevice, IntPtr srcContext, long byteCount);
+    private static extern int CudaMemcpyPeer(nint dstDevice, nint dstContext, nint srcDevice, nint srcContext, long byteCount);
 
     #endregion
 }

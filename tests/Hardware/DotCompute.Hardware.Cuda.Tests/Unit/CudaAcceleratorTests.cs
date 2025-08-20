@@ -10,7 +10,7 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Unit;
+namespace DotCompute.Hardware.Cuda.Tests.Unit;
 
 
 /// <summary>
@@ -476,7 +476,7 @@ __global__ void test_kernel(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "test_kernel",
-            Code = kernelSource,
+            Code = Encoding.UTF8.GetBytes(kernelSource),
             EntryPoint = "test_kernel"
         };
     }

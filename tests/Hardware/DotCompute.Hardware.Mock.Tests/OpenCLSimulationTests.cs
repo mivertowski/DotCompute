@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.Mock.Tests;
 
 
 /// <summary>
@@ -214,7 +214,7 @@ public class OpenCLSimulationTests(ITestOutputHelper output)
                 _output.WriteLine($"  {sizeStr}: {transferTime:F2}ms");
 
                 // Validate transfer time makes sense
-                var expectedTimeMs = (size / 1024.0 / 1024.0 / 1024.0) / device.BandwidthGBps * 1000;
+                var expectedTimeMs = size / 1024.0 / 1024.0 / 1024.0 / device.BandwidthGBps * 1000;
                 Assert.True(Math.Abs(transferTime - expectedTimeMs) < 0.5,
                            $"Transfer time should be close to expected: {expectedTimeMs:F2}ms vs {transferTime:F2}ms");
             }

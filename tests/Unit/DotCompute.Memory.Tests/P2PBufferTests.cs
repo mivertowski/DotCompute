@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests;
+namespace DotCompute.Memory.Tests;
 
 /// <summary>
 /// Comprehensive tests for P2P buffer functionality including type-aware transfers.
@@ -220,7 +220,7 @@ public sealed class P2PBufferTests : IDisposable
 
         // Act & Assert
         _ = await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            buffer.CopyToAsync((IBuffer<float>)null!).AsTask());
+            buffer.CopyToAsync(null!).AsTask());
     }
 
     [Fact]

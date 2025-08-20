@@ -6,7 +6,7 @@ using DotCompute.Backends.CPU.Accelerators;
 using DotCompute.Backends.CPU.Threading;
 using DotCompute.Backends.CPU.Tests.Helpers;
 
-namespace DotCompute.Backends.CPU.Tests.Constructor;
+namespace DotCompute.Backends.CPU.Tests;
 
 
 /// <summary>

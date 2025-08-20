@@ -12,8 +12,9 @@ using System.Diagnostics;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Tests.Integration;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Integration.Tests;
 
 
 /// <summary>
@@ -57,7 +58,7 @@ public sealed class PerformanceBenchmarkTests(ITestOutputHelper output) : Integr
         Assert.True(elementsPerSecond > 1_000_000);
 
         // Memory bandwidth utilization
-        var bytesPerSecond = (vectorSize * sizeof(float) * 3) / benchmarkResult.ExecutionTime.TotalSeconds; // 3 arrays: A, B, Result
+        var bytesPerSecond = vectorSize * sizeof(float) * 3 / benchmarkResult.ExecutionTime.TotalSeconds; // 3 arrays: A, B, Result
         var mbPerSecond = bytesPerSecond / (1024 * 1024);
         benchmarkResult.MemoryBandwidthMBs = mbPerSecond;
 
@@ -254,7 +255,7 @@ public sealed class PerformanceBenchmarkTests(ITestOutputHelper output) : Integr
         Assert.NotNull(benchmarkResult);
         _ = benchmarkResult.Success.Should().BeTrue();
 
-        var pixelsPerSecond = (imageWidth * imageHeight) / benchmarkResult.ExecutionTime.TotalSeconds;
+        var pixelsPerSecond = imageWidth * imageHeight / benchmarkResult.ExecutionTime.TotalSeconds;
         var megapixelsPerSecond = pixelsPerSecond / 1_000_000.0;
 
         LoggerMessages.ImageProcessingPerformance(Logger, megapixelsPerSecond);

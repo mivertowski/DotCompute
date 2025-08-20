@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using DotCompute.Memory;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Memory.Tests;
 
 
 /// <summary>
@@ -79,7 +79,7 @@ public sealed class MemoryAllocatorEdgeCaseTests : IDisposable
     [InlineData(7)]
     public void AllocateAligned_WithInvalidAlignment_ShouldThrowArgumentException(int alignment)
     {
-        if ((alignment & (alignment - 1)) != 0) // Not power of 2
+        if ((alignment & alignment - 1) != 0) // Not power of 2
         {
             // Act & Assert
             var act = () => _allocator.AllocateAligned<int>(256, alignment);

@@ -1,9 +1,9 @@
 using System.Diagnostics;
-using DotCompute.Tests.Utilities;
-using DotCompute.Tests.Utilities.TestFixtures;
+using DotCompute.Tests.Common;
+using DotCompute.Tests.Common.TestFixtures;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.Mock.Tests;
 
 
 /// <summary>
@@ -100,7 +100,7 @@ public class PerformanceBenchmarks(ITestOutputHelper output, AcceleratorTestFixt
 
         stopwatch.Stop();
 
-        var gflops = (flops * iterations) / (stopwatch.Elapsed.TotalSeconds * 1e9);
+        var gflops = flops * iterations / (stopwatch.Elapsed.TotalSeconds * 1e9);
         var bandwidth = 3L * matrixSize * matrixSize * sizeof(float) * iterations / (stopwatch.Elapsed.TotalSeconds * 1e9);
 
         _output.WriteLine($"CPU Results:");
@@ -246,7 +246,7 @@ public class PerformanceBenchmarks(ITestOutputHelper output, AcceleratorTestFixt
         for (var i = 0; i < parallelism; i++)
         {
             var start = i * chunkSize;
-            var end = (i == parallelism - 1) ? workSize : (i + 1) * chunkSize;
+            var end = i == parallelism - 1 ? workSize : (i + 1) * chunkSize;
 
             tasks[i] = Task.Run(() =>
             {

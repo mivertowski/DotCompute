@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Plugins.Tests;
 
 
 /// <summary>
@@ -104,7 +104,9 @@ public sealed class BackendPluginBaseTests : IDisposable
     }
 
     [Fact]
-    public async Task StartAsync_FromInvalidState_ThrowsInvalidOperationException() => _ = await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.StartAsync());
+    public async Task StartAsync_FromInvalidState_ThrowsInvalidOperationException()
+        // Act & Assert
+        => _ = await Assert.ThrowsAsync<InvalidOperationException>(() => _plugin.StartAsync());
 
     [Fact]
     public async Task StartAsync_WhenOnStartThrows_SetsStateToFailed()

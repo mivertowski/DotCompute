@@ -5,7 +5,7 @@ using DotCompute.Plugins.Configuration;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Plugins.Tests;
 
 
 /// <summary>

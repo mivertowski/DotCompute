@@ -5,7 +5,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.RTX2000.Tests;
 
 
 /// <summary>
@@ -32,7 +32,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
 
     private static readonly Action<ILogger, int, Exception?> LogCudaContextCreated =
         LoggerMessage.Define<int>(LogLevel.Information, new EventId(1003), "CUDA context created successfully on device {DeviceId}");
-    private IntPtr _cudaContext;
+    private nint _cudaContext;
     private bool _cudaInitialized;
     private int _deviceId;
     private CudaDeviceProperties _deviceProperties;
@@ -190,7 +190,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         var effectiveClockMHz = memoryClockMHz * 2; // DDR
         var busWidthBits = _deviceProperties.MemoryBusWidth;
 
-        return (effectiveClockMHz * busWidthBits) / 8.0 / 1000.0; // Convert to GB/s
+        return effectiveClockMHz * busWidthBits / 8.0 / 1000.0; // Convert to GB/s
     }
 
     [SkippableFact]
@@ -205,7 +205,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         const long allocationSizeMB = 64; // 64 MB per allocation
         const long allocationSize = allocationSizeMB * 1024 * 1024;
 
-        var allocations = new List<IntPtr>();
+        var allocations = new List<nint>();
         var stopwatch = Stopwatch.StartNew();
 
         try
@@ -213,7 +213,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
             // Allocate multiple buffers
             for (var i = 0; i < allocationCount; i++)
             {
-                var devicePtr = IntPtr.Zero;
+                var devicePtr = nint.Zero;
                 var result = CudaMalloc(ref devicePtr, allocationSize);
 
                 if (result == 0)
@@ -268,7 +268,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         var hostData = new byte[testSize];
         new Random(42).NextBytes(hostData);
 
-        var devicePtr = IntPtr.Zero;
+        var devicePtr = nint.Zero;
 
         try
         {
@@ -294,7 +294,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
                 }
                 sw.Stop();
 
-                var h2dBandwidth = ((long)testSize * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                var h2dBandwidth = (long)testSize * iterations / (1024.0 * 1024.0 * 1024.0) / sw.Elapsed.TotalSeconds;
                 _output.WriteLine($"Host to Device bandwidth: {h2dBandwidth:F2} GB/s");
 
                 // Measure Device to Host bandwidth
@@ -306,11 +306,11 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
                 }
                 sw.Stop();
 
-                var d2hBandwidth = ((long)testSize * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                var d2hBandwidth = (long)testSize * iterations / (1024.0 * 1024.0 * 1024.0) / sw.Elapsed.TotalSeconds;
                 _output.WriteLine($"Device to Host bandwidth: {d2hBandwidth:F2} GB/s");
 
                 // Measure Device to Device bandwidth
-                var devicePtr2 = IntPtr.Zero;
+                var devicePtr2 = nint.Zero;
                 result = CudaMalloc(ref devicePtr2, testSize);
                 Assert.Equal(0, result); // Second memory allocation should succeed;
 
@@ -324,7 +324,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
                     }
                     sw.Stop();
 
-                    var d2dBandwidth = ((long)testSize * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                    var d2dBandwidth = (long)testSize * iterations / (1024.0 * 1024.0 * 1024.0) / sw.Elapsed.TotalSeconds;
                     _output.WriteLine($"Device to Device bandwidth: {d2dBandwidth:F2} GB/s");
 
                     // Validate bandwidth expectations
@@ -349,7 +349,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         }
         finally
         {
-            if (devicePtr != IntPtr.Zero)
+            if (devicePtr != nint.Zero)
             {
                 _ = CudaFree(devicePtr);
             }
@@ -399,8 +399,8 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         const int elementsPerStream = 1024 * 1024; // 1M elements
         const int elementSize = sizeof(float);
 
-        var streams = new IntPtr[streamCount];
-        var deviceBuffers = new IntPtr[streamCount];
+        var streams = new nint[streamCount];
+        var deviceBuffers = new nint[streamCount];
         var hostBuffers = new float[streamCount][];
 
         try
@@ -448,7 +448,7 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
             _output.WriteLine($"Concurrent operations completed in {stopwatch.ElapsedMilliseconds} ms");
 
             // Verify that concurrent execution was faster than sequential would be
-            var totalDataMB = (streamCount * elementsPerStream * elementSize) / (1024 * 1024);
+            var totalDataMB = streamCount * elementsPerStream * elementSize / (1024 * 1024);
             var throughputMBps = totalDataMB / (stopwatch.ElapsedMilliseconds / 1000.0);
             _output.WriteLine($"Total throughput: {throughputMBps:F1} MB/s for {totalDataMB} MB");
 
@@ -459,9 +459,9 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
             // Cleanup
             for (var i = 0; i < streamCount; i++)
             {
-                if (streams[i] != IntPtr.Zero)
+                if (streams[i] != nint.Zero)
                     _ = CudaStreamDestroy(streams[i]);
-                if (deviceBuffers[i] != IntPtr.Zero)
+                if (deviceBuffers[i] != nint.Zero)
                     _ = CudaFree(deviceBuffers[i]);
             }
         }
@@ -477,13 +477,13 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
 
         // Test 1: Invalid memory allocation(too large)
-        var devicePtr = IntPtr.Zero;
+        var devicePtr = nint.Zero;
         var result = CudaMalloc(ref devicePtr, long.MaxValue);
         _ = result.Should().NotBe(0, "Excessive memory allocation should fail");
         _output.WriteLine($"Large allocation failed as expected with error code: {result}");
 
         // Test 2: Invalid memory operations
-        _ = CudaFree(IntPtr.Zero);
+        _ = CudaFree(nint.Zero);
         _ = result.Should().NotBe(0, "Freeing null pointer should fail");
         _output.WriteLine($"Null pointer free failed as expected with error code: {result}");
 
@@ -524,10 +524,10 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
 
     public void Dispose()
     {
-        if (_cudaContext != IntPtr.Zero)
+        if (_cudaContext != nint.Zero)
         {
             _ = CudaCtxDestroy(_cudaContext);
-            _cudaContext = IntPtr.Zero;
+            _cudaContext = nint.Zero;
         }
         _cudaInitialized = false;
         GC.SuppressFinalize(this);
@@ -592,11 +592,11 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
-            public static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+            public static extern int CudaCtxCreate(ref nint ctx, uint flags, int dev);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
-            public static extern int CudaCtxDestroy(IntPtr ctx);
+            public static extern int CudaCtxDestroy(nint ctx);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemGetInfo_v2", ExactSpelling = true)]
@@ -604,39 +604,39 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
-            public static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+            public static extern int CudaMalloc(ref nint dptr, long bytesize);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
-            public static extern int CudaFree(IntPtr dptr);
+            public static extern int CudaFree(nint dptr);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
-            public static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+            public static extern int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
-            public static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+            public static extern int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoD_v2")]
-            public static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
+            public static extern int CudaMemcpyDtoD(nint dstDevice, nint srcDevice, long byteCount);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyHtoDAsync_v2")]
-            public static extern int CudaMemcpyHtoDAsync(IntPtr dstDevice, IntPtr srcHost, long byteCount, IntPtr stream);
+            public static extern int CudaMemcpyHtoDAsync(nint dstDevice, nint srcHost, long byteCount, nint stream);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuStreamCreate")]
-            public static extern int CudaStreamCreate(ref IntPtr stream, uint flags);
+            public static extern int CudaStreamCreate(ref nint stream, uint flags);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuStreamDestroy_v2")]
-            public static extern int CudaStreamDestroy(IntPtr stream);
+            public static extern int CudaStreamDestroy(nint stream);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuStreamSynchronize")]
-            public static extern int CudaStreamSynchronize(IntPtr stream);
+            public static extern int CudaStreamSynchronize(nint stream);
         }
 
         internal static class Linux
@@ -659,11 +659,11 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
-            public static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+            public static extern int CudaCtxCreate(ref nint ctx, uint flags, int dev);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
-            public static extern int CudaCtxDestroy(IntPtr ctx);
+            public static extern int CudaCtxDestroy(nint ctx);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemGetInfo_v2", ExactSpelling = true)]
@@ -671,39 +671,39 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
-            public static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+            public static extern int CudaMalloc(ref nint dptr, long bytesize);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
-            public static extern int CudaFree(IntPtr dptr);
+            public static extern int CudaFree(nint dptr);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
-            public static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+            public static extern int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
-            public static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+            public static extern int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoD_v2")]
-            public static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
+            public static extern int CudaMemcpyDtoD(nint dstDevice, nint srcDevice, long byteCount);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoDAsync_v2")]
-            public static extern int CudaMemcpyHtoDAsync(IntPtr dstDevice, IntPtr srcHost, long byteCount, IntPtr stream);
+            public static extern int CudaMemcpyHtoDAsync(nint dstDevice, nint srcHost, long byteCount, nint stream);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuStreamCreate")]
-            public static extern int CudaStreamCreate(ref IntPtr stream, uint flags);
+            public static extern int CudaStreamCreate(ref nint stream, uint flags);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuStreamDestroy_v2")]
-            public static extern int CudaStreamDestroy(IntPtr stream);
+            public static extern int CudaStreamDestroy(nint stream);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuStreamSynchronize")]
-            public static extern int CudaStreamSynchronize(IntPtr stream);
+            public static extern int CudaStreamSynchronize(nint stream);
         }
     }
 
@@ -728,12 +728,12 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaDeviceGetAttribute(ref value, attrib, dev) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev)
+    private static int CudaCtxCreate(ref nint ctx, uint flags, int dev)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaCtxCreate(ref ctx, flags, dev) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaCtxCreate(ref ctx, flags, dev) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaCtxDestroy(IntPtr ctx)
+    private static int CudaCtxDestroy(nint ctx)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaCtxDestroy(ctx) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaCtxDestroy(ctx) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
@@ -743,47 +743,47 @@ public sealed class RTX2000HardwareValidationTests : IDisposable
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMemGetInfo(ref free, ref total) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMalloc(ref IntPtr dptr, long bytesize)
+    private static int CudaMalloc(ref nint dptr, long bytesize)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMalloc(ref dptr, bytesize) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMalloc(ref dptr, bytesize) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaFree(IntPtr dptr)
+    private static int CudaFree(nint dptr)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaFree(dptr) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaFree(dptr) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount)
+    private static int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyHtoD(dstDevice, srcHost, byteCount) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMemcpyHtoD(dstDevice, srcHost, byteCount) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount)
+    private static int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyDtoH(dstHost, srcDevice, byteCount) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMemcpyDtoH(dstHost, srcDevice, byteCount) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount)
+    private static int CudaMemcpyDtoD(nint dstDevice, nint srcDevice, long byteCount)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyDtoD(dstDevice, srcDevice, byteCount) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMemcpyDtoD(dstDevice, srcDevice, byteCount) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaMemcpyHtoDAsync(IntPtr dstDevice, IntPtr srcHost, long byteCount, IntPtr stream)
+    private static int CudaMemcpyHtoDAsync(nint dstDevice, nint srcHost, long byteCount, nint stream)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaMemcpyHtoDAsync(dstDevice, srcHost, byteCount, stream) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaMemcpyHtoDAsync(dstDevice, srcHost, byteCount, stream) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaStreamCreate(ref IntPtr stream)
+    private static int CudaStreamCreate(ref nint stream)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaStreamCreate(ref stream, 0) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaStreamCreate(ref stream, 0) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaStreamDestroy(IntPtr stream)
+    private static int CudaStreamDestroy(nint stream)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaStreamDestroy(stream) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaStreamDestroy(stream) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");
 
-    private static int CudaStreamSynchronize(IntPtr stream)
+    private static int CudaStreamSynchronize(nint stream)
         => RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? CudaNative.Windows.CudaStreamSynchronize(stream) :
         RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? CudaNative.Linux.CudaStreamSynchronize(stream) :
         throw new PlatformNotSupportedException("CUDA is not supported on this platform");

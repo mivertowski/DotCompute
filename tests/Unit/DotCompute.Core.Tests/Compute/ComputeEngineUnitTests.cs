@@ -1,12 +1,12 @@
 using Xunit;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Utilities.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Tests.Common.TestInfrastructure;
 
-namespace DotCompute.Tests.Unit.Compute;
+namespace DotCompute.Core.Tests.Compute;
 
 
 /// <summary>
@@ -374,7 +374,7 @@ public sealed class ComputeEngineUnitTests : CoverageTestBase
     /// <summary>
     /// Default implementation for testing
     /// </summary>
-    private sealed class DefaultComputeEngine(IAcceleratorManager acceleratorManager, ILogger<ComputeEngineUnitTests.DefaultComputeEngine> logger) : IComputeEngine
+    private sealed class DefaultComputeEngine(IAcceleratorManager acceleratorManager, ILogger<DefaultComputeEngine> logger) : IComputeEngine
     {
         private readonly IAcceleratorManager _acceleratorManager = acceleratorManager ?? throw new ArgumentNullException(nameof(acceleratorManager));
         private bool _disposed;

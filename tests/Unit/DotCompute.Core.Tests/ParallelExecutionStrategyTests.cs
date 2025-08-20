@@ -13,7 +13,7 @@ using CommunicationBackend = DotCompute.Core.Execution.CommunicationBackend;
 using MemoryOptimizationLevel = DotCompute.Core.Execution.MemoryOptimizationLevel;
 using StealingStrategy = DotCompute.Core.Execution.StealingStrategy;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 
 /// <summary>
@@ -141,7 +141,7 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
 
         // Act & Assert
         _ = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _strategy.ExecuteDataParallelAsync("test_kernel", inputBuffers, Array.Empty<DotCompute.Abstractions.IBuffer<float>>(), options.ToRealDataParallelOptions()).AsTask());
+            _strategy.ExecuteDataParallelAsync("test_kernel", inputBuffers, Array.Empty<IBuffer<float>>(), options.ToRealDataParallelOptions()).AsTask());
     }
 
     [Fact]
@@ -372,7 +372,7 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
         };
 
         // Act
-        var result = await _strategy.ExecuteWithWorkStealingAsync<float>("large_workload", workload, options.ToRealWorkStealingOptions());
+        var result = await _strategy.ExecuteWithWorkStealingAsync("large_workload", workload, options.ToRealWorkStealingOptions());
 
         // Assert
         Assert.NotNull(result);
@@ -409,7 +409,7 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
 
             // Setup Memory property to return a mock IMemoryManager
             var mockMemoryManager = new Mock<IMemoryManager>();
-            _ = mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
+            _ = mockMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(() =>
                 {
                     var mockBuffer = new Mock<IMemoryBuffer>();
@@ -442,7 +442,7 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
 
         // Setup Memory property for CPU accelerator
         var cpuMemoryManager = new Mock<IMemoryManager>();
-        _ = cpuMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
+        _ = cpuMemoryManager.Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<MemoryOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(() =>
             {
                 var mockBuffer = new Mock<IMemoryBuffer>();
@@ -477,22 +477,22 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
             It.IsAny<Type>(),
             It.IsAny<IAccelerator>(),
             It.IsAny<KernelGenerationContext>(),
-            It.IsAny<DotCompute.Core.Kernels.CompilationOptions>(),
+            It.IsAny<Kernels.CompilationOptions>(),
             It.IsAny<CancellationToken>()))
             .ReturnsAsync((string kernelName, Type[] inputTypes, Type outputType, IAccelerator device,
-                          KernelGenerationContext context, DotCompute.Core.Kernels.CompilationOptions options, CancellationToken ct) =>
+                          KernelGenerationContext context, Kernels.CompilationOptions options, CancellationToken ct) =>
             {
                 // Create a concrete instance since ManagedCompiledKernel has required properties
-                return new DotCompute.Core.Kernels.ManagedCompiledKernel
+                return new Kernels.ManagedCompiledKernel
                 {
                     Name = kernelName,
                     Binary = [0x01, 0x02, 0x03], // Dummy binary data
                     Parameters =
                     [
-                        new DotCompute.Core.Kernels.KernelParameter { Name = "input", Type = typeof(float), IsInput = true, IsOutput = false },
-                    new DotCompute.Core.Kernels.KernelParameter { Name = "output", Type = typeof(float), IsInput = false, IsOutput = true }
+                        new Kernels.KernelParameter { Name = "input", Type = typeof(float), IsInput = true, IsOutput = false },
+                    new Kernels.KernelParameter { Name = "output", Type = typeof(float), IsInput = false, IsOutput = true }
                     ],
-                    Handle = IntPtr.Zero,
+                    Handle = nint.Zero,
                     RequiredWorkGroupSize = [256, 1, 1],
                     SharedMemorySize = 1024
                 };
@@ -500,7 +500,7 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
 
         // Setup ExecuteKernelAsync to return successful results
         _ = _mockKernelManager.Setup(m => m.ExecuteKernelAsync(
-            It.IsAny<DotCompute.Core.Kernels.ManagedCompiledKernel>(),
+            It.IsAny<Kernels.ManagedCompiledKernel>(),
             It.IsAny<KernelArgument[]>(),
             It.IsAny<IAccelerator>(),
             It.IsAny<KernelExecutionConfig>(),
@@ -523,13 +523,13 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
             });
     }
 
-    private static DotCompute.Abstractions.IBuffer<T>[] CreateMockBuffers<T>(int elementCount, int bufferCount) where T : unmanaged
+    private static IBuffer<T>[] CreateMockBuffers<T>(int elementCount, int bufferCount) where T : unmanaged
     {
-        var buffers = new DotCompute.Abstractions.IBuffer<T>[bufferCount];
+        var buffers = new IBuffer<T>[bufferCount];
 
         for (var i = 0; i < bufferCount; i++)
         {
-            var mock = new Mock<DotCompute.Abstractions.IBuffer<T>>();
+            var mock = new Mock<IBuffer<T>>();
             _ = mock.Setup(b => b.SizeInBytes).Returns(elementCount * System.Runtime.InteropServices.Marshal.SizeOf<T>());
             // Note: IBuffer<T> doesn't have IsDisposed property, it implements IAsyncDisposable
             buffers[i] = mock.Object;
@@ -542,11 +542,11 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
     {
         // Create actual ManagedCompiledKernel instances instead of mocking them
         var mockAccelerator = Mock.Of<IAccelerator>();
-        using var compiledKernel = new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 1024, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
-        var kernel1 = new DotCompute.Core.Execution.ManagedCompiledKernel("linear_kernel", mockAccelerator, compiledKernel);
+        var compiledKernel = new CompiledKernel(Guid.NewGuid(), nint.Zero, 1024, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
+        var kernel1 = new Execution.ManagedCompiledKernel("linear_kernel", mockAccelerator, compiledKernel);
 
-        using var compiledKernel2 = new CompiledKernel(Guid.NewGuid(), IntPtr.Zero, 512, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
-        var kernel2 = new DotCompute.Core.Execution.ManagedCompiledKernel("relu_kernel", mockAccelerator, compiledKernel2);
+        var compiledKernel2 = new CompiledKernel(Guid.NewGuid(), nint.Zero, 512, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
+        var kernel2 = new Execution.ManagedCompiledKernel("relu_kernel", mockAccelerator, compiledKernel2);
 
         return new ModelParallelWorkload<T>
         {
@@ -605,7 +605,7 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
                     Id = i,
                     InputBuffers = CreateMockBuffers<T>(64, 1),
                     OutputBuffers = CreateMockBuffers<T>(64, 1),
-                    EstimatedProcessingTimeMs = (i % 10) + 1
+                    EstimatedProcessingTimeMs = i % 10 + 1
                 })]
         };
     }
@@ -620,7 +620,7 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
                     Id = i,
                     InputBuffers = CreateMockBuffers<T>(32, 1),
                     OutputBuffers = CreateMockBuffers<T>(32, 1),
-                    EstimatedProcessingTimeMs = (i % 50) + 1
+                    EstimatedProcessingTimeMs = i % 50 + 1
                 })]
         };
     }
@@ -664,28 +664,28 @@ public sealed class TestDataParallelismOptions
         };
     }
 
-    private static DotCompute.Core.Execution.SynchronizationStrategy ConvertSyncStrategy(SynchronizationStrategy strategy)
+    private static SynchronizationStrategy ConvertSyncStrategy(SynchronizationStrategy strategy)
     {
         return strategy switch
         {
-            SynchronizationStrategy.EventBased => DotCompute.Core.Execution.SynchronizationStrategy.EventBased,
-            SynchronizationStrategy.Barrier => DotCompute.Core.Execution.SynchronizationStrategy.Barrier,
-            SynchronizationStrategy.LockFree => DotCompute.Core.Execution.SynchronizationStrategy.LockFree,
-            SynchronizationStrategy.HostBased => DotCompute.Core.Execution.SynchronizationStrategy.HostBased,
-            _ => DotCompute.Core.Execution.SynchronizationStrategy.EventBased
+            SynchronizationStrategy.EventBased => SynchronizationStrategy.EventBased,
+            SynchronizationStrategy.Barrier => SynchronizationStrategy.Barrier,
+            SynchronizationStrategy.LockFree => SynchronizationStrategy.LockFree,
+            SynchronizationStrategy.HostBased => SynchronizationStrategy.HostBased,
+            _ => SynchronizationStrategy.EventBased
         };
     }
 
-    private static DotCompute.Core.Execution.LoadBalancingStrategy ConvertLoadBalancingStrategy(LoadBalancingStrategy strategy)
+    private static LoadBalancingStrategy ConvertLoadBalancingStrategy(LoadBalancingStrategy strategy)
     {
         return strategy switch
         {
-            LoadBalancingStrategy.RoundRobin => DotCompute.Core.Execution.LoadBalancingStrategy.RoundRobin,
-            LoadBalancingStrategy.Weighted => DotCompute.Core.Execution.LoadBalancingStrategy.Weighted,
-            LoadBalancingStrategy.Adaptive => DotCompute.Core.Execution.LoadBalancingStrategy.Adaptive,
-            LoadBalancingStrategy.Dynamic => DotCompute.Core.Execution.LoadBalancingStrategy.Dynamic,
-            LoadBalancingStrategy.Manual => DotCompute.Core.Execution.LoadBalancingStrategy.Manual,
-            _ => DotCompute.Core.Execution.LoadBalancingStrategy.RoundRobin
+            LoadBalancingStrategy.RoundRobin => LoadBalancingStrategy.RoundRobin,
+            LoadBalancingStrategy.Weighted => LoadBalancingStrategy.Weighted,
+            LoadBalancingStrategy.Adaptive => LoadBalancingStrategy.Adaptive,
+            LoadBalancingStrategy.Dynamic => LoadBalancingStrategy.Dynamic,
+            LoadBalancingStrategy.Manual => LoadBalancingStrategy.Manual,
+            _ => LoadBalancingStrategy.RoundRobin
         };
     }
 }
@@ -697,9 +697,9 @@ public sealed class ModelParallelismOptions
 
     public static TestDataParallelismOptions ToRealDataParallelOptions() => new();
 
-    public DotCompute.Core.Execution.ModelParallelismOptions ToRealModelParallelOptions()
+    public Execution.ModelParallelismOptions ToRealModelParallelOptions()
     {
-        return new DotCompute.Core.Execution.ModelParallelismOptions
+        return new Execution.ModelParallelismOptions
         {
             CommunicationBackend = CommunicationBackend,
             MemoryOptimization = MemoryOptimization
@@ -714,9 +714,9 @@ public sealed class PipelineParallelismOptions
 
     public static TestDataParallelismOptions ToRealDataParallelOptions() => new();
 
-    public DotCompute.Core.Execution.PipelineParallelismOptions ToRealPipelineOptions()
+    public Execution.PipelineParallelismOptions ToRealPipelineOptions()
     {
-        return new DotCompute.Core.Execution.PipelineParallelismOptions
+        return new Execution.PipelineParallelismOptions
         {
             MicrobatchSize = MicrobatchSize
         };
@@ -730,9 +730,9 @@ public sealed class WorkStealingOptions
 
     public static TestDataParallelismOptions ToRealDataParallelOptions() => new();
 
-    public DotCompute.Core.Execution.WorkStealingOptions ToRealWorkStealingOptions()
+    public Execution.WorkStealingOptions ToRealWorkStealingOptions()
     {
-        return new DotCompute.Core.Execution.WorkStealingOptions
+        return new Execution.WorkStealingOptions
         {
             StealingStrategy = StealingStrategy,
             WorkQueueDepth = WorkItemGranularity

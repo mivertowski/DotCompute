@@ -7,7 +7,7 @@ using Moq;
 using Xunit;
 using System.Collections.ObjectModel;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 
 /// <summary>
@@ -414,26 +414,26 @@ __global__ void leaky_kernel(char* password, char* output) {
 
     #region Helper Methods
 
-    private static GeneratedKernel CreateKernelWithCode(string sourceCode, DotCompute.Abstractions.KernelLanguage language = DotCompute.Abstractions.KernelLanguage.Cuda)
+    private static GeneratedKernel CreateKernelWithCode(string sourceCode, Abstractions.KernelLanguage language = Abstractions.KernelLanguage.Cuda)
     {
         return new GeneratedKernel
         {
             Name = "test_kernel",
             Source = sourceCode,
             Language = ConvertKernelLanguage(language),
-            Parameters = Array.Empty<DotCompute.Core.Kernels.KernelParameter>()
+            Parameters = Array.Empty<KernelParameter>()
         };
     }
 
-    private static DotCompute.Core.Kernels.KernelLanguage ConvertKernelLanguage(DotCompute.Abstractions.KernelLanguage language)
+    private static KernelLanguage ConvertKernelLanguage(Abstractions.KernelLanguage language)
     {
         return language switch
         {
-            DotCompute.Abstractions.KernelLanguage.Cuda => DotCompute.Core.Kernels.KernelLanguage.CUDA,
-            DotCompute.Abstractions.KernelLanguage.OpenCL => DotCompute.Core.Kernels.KernelLanguage.OpenCL,
-            DotCompute.Abstractions.KernelLanguage.Metal => DotCompute.Core.Kernels.KernelLanguage.Metal,
-            DotCompute.Abstractions.KernelLanguage.HLSL => DotCompute.Core.Kernels.KernelLanguage.DirectCompute,
-            _ => DotCompute.Core.Kernels.KernelLanguage.CUDA
+            Abstractions.KernelLanguage.Cuda => KernelLanguage.CUDA,
+            Abstractions.KernelLanguage.OpenCL => KernelLanguage.OpenCL,
+            Abstractions.KernelLanguage.Metal => KernelLanguage.Metal,
+            Abstractions.KernelLanguage.HLSL => KernelLanguage.DirectCompute,
+            _ => KernelLanguage.CUDA
         };
     }
 
@@ -492,7 +492,9 @@ __global__ void complex_security_test_kernel(float* input, float* output,
 
     #endregion
 
-    public void Dispose() => GC.SuppressFinalize(this);
+    public void Dispose()
+        // Clean up any resources if needed
+        => GC.SuppressFinalize(this);
 }
 
 #region Mock Security Classes

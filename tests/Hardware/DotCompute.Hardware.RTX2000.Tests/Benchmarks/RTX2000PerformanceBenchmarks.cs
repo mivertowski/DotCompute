@@ -6,7 +6,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.Benchmarks;
+namespace DotCompute.Hardware.RTX2000.Tests.Benchmarks;
 
 
 /// <summary>
@@ -21,19 +21,19 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
 {
     private readonly ITestOutputHelper _output;
 #pragma warning disable CA1823 // Unused field - Logger for future use
-    private static readonly ILogger Logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
+    private static readonly ILogger _logger = Microsoft.Extensions.Logging.Abstractions.NullLogger.Instance;
 #pragma warning restore CA1823
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
+    private static readonly JsonSerializerOptions _jsonOptions = new() { WriteIndented = true };
 
     // Logger messages
 #pragma warning disable CA1823 // Unused field - Logger messages for future use
-    private static readonly Action<ILogger, string, Exception?> LogBenchmarkStart =
+    private static readonly Action<ILogger, string, Exception?> _logBenchmarkStart =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(3001), "Starting benchmark: {BenchmarkName}");
 
-    private static readonly Action<ILogger, double, Exception?> LogBandwidthResult =
+    private static readonly Action<ILogger, double, Exception?> _logBandwidthResult =
         LoggerMessage.Define<double>(LogLevel.Information, new EventId(3002), "Bandwidth measurement: {Bandwidth} GB/s");
 #pragma warning restore CA1823
-    private IntPtr _cudaContext;
+    private nint _cudaContext;
     private bool _cudaInitialized;
     private readonly PerformanceBaseline _baseline;
 
@@ -111,7 +111,7 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
         var hostData = new byte[size];
         new Random(42).NextBytes(hostData);
 
-        IntPtr d_ptr1 = IntPtr.Zero, d_ptr2 = IntPtr.Zero;
+        nint d_ptr1 = nint.Zero, d_ptr2 = nint.Zero;
 
         try
         {
@@ -136,7 +136,7 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
                     _ = CudaMemcpyHtoD(d_ptr1, hostHandle.AddrOfPinnedObject(), size);
                 }
                 sw.Stop();
-                var h2dBandwidth = (size * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                var h2dBandwidth = size * iterations / (1024.0 * 1024.0 * 1024.0) / sw.Elapsed.TotalSeconds;
 
                 // Measure D2H
                 sw.Restart();
@@ -145,7 +145,7 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
                     _ = CudaMemcpyDtoH(hostHandle.AddrOfPinnedObject(), d_ptr1, size);
                 }
                 sw.Stop();
-                var d2hBandwidth = (size * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                var d2hBandwidth = size * iterations / (1024.0 * 1024.0 * 1024.0) / sw.Elapsed.TotalSeconds;
 
                 // Measure D2D
                 sw.Restart();
@@ -154,7 +154,7 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
                     _ = CudaMemcpyDtoD(d_ptr2, d_ptr1, size);
                 }
                 sw.Stop();
-                var d2dBandwidth = (size * iterations / (1024.0 * 1024.0 * 1024.0)) / sw.Elapsed.TotalSeconds;
+                var d2dBandwidth = size * iterations / (1024.0 * 1024.0 * 1024.0) / sw.Elapsed.TotalSeconds;
 
                 return new BandwidthMeasurement { H2D = h2dBandwidth, D2H = d2hBandwidth, D2D = d2dBandwidth };
             }
@@ -165,9 +165,9 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
         }
         finally
         {
-            if (d_ptr1 != IntPtr.Zero)
+            if (d_ptr1 != nint.Zero)
                 _ = CudaFree(d_ptr1);
-            if (d_ptr2 != IntPtr.Zero)
+            if (d_ptr2 != nint.Zero)
                 _ = CudaFree(d_ptr2);
         }
     }
@@ -181,7 +181,7 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
         const string emptyKernel = @"extern ""C"" __global__ void emptyKernel() { }";
 
         // Compile empty kernel for overhead measurement
-        IntPtr program = IntPtr.Zero, module = IntPtr.Zero, kernel = IntPtr.Zero;
+        nint program = nint.Zero, module = nint.Zero, kernel = nint.Zero;
 
         try
         {
@@ -207,7 +207,7 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
             // Warm-up launches
             for (var i = 0; i < 100; i++)
             {
-                _ = CuLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+                _ = CuLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, nint.Zero, nint.Zero, nint.Zero);
             }
             _ = CudaCtxSynchronize();
 
@@ -215,7 +215,7 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
             var sw = Stopwatch.StartNew();
             for (var i = 0; i < launchCount; i++)
             {
-                result = CuLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+                result = CuLaunchKernel(kernel, 1, 1, 1, 1, 1, 1, 0, nint.Zero, nint.Zero, nint.Zero);
                 _ = result.Should().Be(0, $"Kernel launch {i} should succeed");
             }
             _ = CudaCtxSynchronize();
@@ -231,9 +231,9 @@ public sealed class RTX2000PerformanceBenchmarks : IDisposable
         }
         finally
         {
-            if (module != IntPtr.Zero)
+            if (module != nint.Zero)
                 _ = CuModuleUnload(module);
-            if (program != IntPtr.Zero)
+            if (program != nint.Zero)
                 _ = NvrtcDestroyProgram(ref program);
         }
 
@@ -261,8 +261,8 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
         const int dataSize = 1024 * 1024; // 1M elements
         const int computeIterations = 1000;
 
-        IntPtr program = IntPtr.Zero, module = IntPtr.Zero, kernel = IntPtr.Zero;
-        var deviceData = IntPtr.Zero;
+        nint program = nint.Zero, module = nint.Zero, kernel = nint.Zero;
+        var deviceData = nint.Zero;
 
         try
         {
@@ -293,7 +293,7 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
             var hostData = new float[dataSize];
             for (var i = 0; i < dataSize; i++)
             {
-                hostData[i] = (float)(i % 100) / 100.0f;
+                hostData[i] = i % 100 / 100.0f;
             }
 
             var hostHandle = GCHandle.Alloc(hostData, GCHandleType.Pinned);
@@ -308,9 +308,9 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
             }
 
             // Prepare kernel parameters
-            var kernelParams = new IntPtr[]
+            var kernelParams = new nint[]
             {
-            Marshal.AllocHGlobal(IntPtr.Size),
+            Marshal.AllocHGlobal(nint.Size),
             Marshal.AllocHGlobal(sizeof(int)),
             Marshal.AllocHGlobal(sizeof(int))
             };
@@ -321,7 +321,7 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
                 Marshal.WriteInt32(kernelParams[1], dataSize);
                 Marshal.WriteInt32(kernelParams[2], computeIterations);
 
-                var kernelParamsPtr = Marshal.AllocHGlobal(kernelParams.Length * IntPtr.Size);
+                var kernelParamsPtr = Marshal.AllocHGlobal(kernelParams.Length * nint.Size);
                 try
                 {
                     Marshal.Copy(kernelParams, 0, kernelParamsPtr, kernelParams.Length);
@@ -334,9 +334,9 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
                     result = CuLaunchKernel(
                         kernel,
                        (uint)gridSize, 1, 1,
-                       (uint)blockSize, 1, 1,
-                        0, IntPtr.Zero,
-                        kernelParamsPtr, IntPtr.Zero);
+                       blockSize, 1, 1,
+                        0, nint.Zero,
+                        kernelParamsPtr, nint.Zero);
                     Assert.Equal(0, result);
 
                     _ = CudaCtxSynchronize();
@@ -368,11 +368,11 @@ extern ""C"" __global__ void computeIntensive(float* data, int n, int iterations
         }
         finally
         {
-            if (deviceData != IntPtr.Zero)
+            if (deviceData != nint.Zero)
                 _ = CudaFree(deviceData);
-            if (module != IntPtr.Zero)
+            if (module != nint.Zero)
                 _ = CuModuleUnload(module);
-            if (program != IntPtr.Zero)
+            if (program != nint.Zero)
                 _ = NvrtcDestroyProgram(ref program);
         }
 
@@ -396,8 +396,8 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
 
         const int arraySize = 1024 * 1024; // 1M elements for cache miss testing
 
-        IntPtr program = IntPtr.Zero, module = IntPtr.Zero, kernel = IntPtr.Zero;
-        IntPtr deviceData = IntPtr.Zero, deviceIndices = IntPtr.Zero, deviceResults = IntPtr.Zero;
+        nint program = nint.Zero, module = nint.Zero, kernel = nint.Zero;
+        nint deviceData = nint.Zero, deviceIndices = nint.Zero, deviceResults = nint.Zero;
 
         try
         {
@@ -458,11 +458,11 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
             }
 
             // Measure latency
-            var kernelParams = new IntPtr[]
+            var kernelParams = new nint[]
             {
-            Marshal.AllocHGlobal(IntPtr.Size),
-            Marshal.AllocHGlobal(IntPtr.Size),
-            Marshal.AllocHGlobal(IntPtr.Size),
+            Marshal.AllocHGlobal(nint.Size),
+            Marshal.AllocHGlobal(nint.Size),
+            Marshal.AllocHGlobal(nint.Size),
             Marshal.AllocHGlobal(sizeof(int))
             };
 
@@ -473,7 +473,7 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
                 Marshal.WriteIntPtr(kernelParams[2], deviceResults);
                 Marshal.WriteInt32(kernelParams[3], arraySize);
 
-                var kernelParamsPtr = Marshal.AllocHGlobal(kernelParams.Length * IntPtr.Size);
+                var kernelParamsPtr = Marshal.AllocHGlobal(kernelParams.Length * nint.Size);
                 try
                 {
                     Marshal.Copy(kernelParams, 0, kernelParamsPtr, kernelParams.Length);
@@ -482,17 +482,17 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
                     var gridSize = (arraySize + blockSize - 1) / blockSize;
 
                     // Warm up
-                    _ = CuLaunchKernel(kernel, (uint)gridSize, 1, 1, (uint)blockSize, 1, 1, 0, IntPtr.Zero, kernelParamsPtr, IntPtr.Zero);
+                    _ = CuLaunchKernel(kernel, (uint)gridSize, 1, 1, blockSize, 1, 1, 0, nint.Zero, kernelParamsPtr, nint.Zero);
                     _ = CudaCtxSynchronize();
 
                     // Measure
                     var sw = Stopwatch.StartNew();
-                    result = CuLaunchKernel(kernel, (uint)gridSize, 1, 1, (uint)blockSize, 1, 1, 0, IntPtr.Zero, kernelParamsPtr, IntPtr.Zero);
+                    result = CuLaunchKernel(kernel, (uint)gridSize, 1, 1, blockSize, 1, 1, 0, nint.Zero, kernelParamsPtr, nint.Zero);
                     Assert.Equal(0, result);
                     _ = CudaCtxSynchronize();
                     sw.Stop();
 
-                    var averageLatency = (sw.Elapsed.TotalNanoseconds) / arraySize;
+                    var averageLatency = sw.Elapsed.TotalNanoseconds / arraySize;
                     _output.WriteLine($"Average memory access latency: {averageLatency:F2} ns");
 
                     // GDDR6 should provide reasonable latency for random access
@@ -515,15 +515,15 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
         }
         finally
         {
-            if (deviceData != IntPtr.Zero)
+            if (deviceData != nint.Zero)
                 _ = CudaFree(deviceData);
-            if (deviceIndices != IntPtr.Zero)
+            if (deviceIndices != nint.Zero)
                 _ = CudaFree(deviceIndices);
-            if (deviceResults != IntPtr.Zero)
+            if (deviceResults != nint.Zero)
                 _ = CudaFree(deviceResults);
-            if (module != IntPtr.Zero)
+            if (module != nint.Zero)
                 _ = CuModuleUnload(module);
-            if (program != IntPtr.Zero)
+            if (program != nint.Zero)
                 _ = NvrtcDestroyProgram(ref program);
         }
 
@@ -551,16 +551,16 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
 
         // Save baseline to file for future regression testing
         var baselinePath = "/tmp/rtx2000_performance_baseline.json";
-        await System.IO.File.WriteAllTextAsync(baselinePath, baselineJson);
+        await File.WriteAllTextAsync(baselinePath, baselineJson);
         _output.WriteLine($"Baseline saved to: {baselinePath}");
     }
 
     public void Dispose()
     {
-        if (_cudaContext != IntPtr.Zero)
+        if (_cudaContext != nint.Zero)
         {
             _ = CudaCtxDestroy(_cudaContext);
-            _cudaContext = IntPtr.Zero;
+            _cudaContext = nint.Zero;
         }
         _cudaInitialized = false;
         GC.SuppressFinalize(this);
@@ -576,9 +576,9 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
         public double MemoryLatencyNs { get; set; }
         public DateTime Timestamp { get; set; } = DateTime.UtcNow;
 
-        public string ToJson() =>
+        public string ToJson()
 #pragma warning disable IL2026, IL3050 // JsonSerializer AOT warnings - test code only
-            JsonSerializer.Serialize(this, JsonOptions);
+            => JsonSerializer.Serialize(this, _jsonOptions);
 #pragma warning restore IL2026, IL3050
 
 
@@ -625,11 +625,11 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
-    private static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+    private static extern int CudaCtxCreate(ref nint ctx, uint flags, int dev);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
-    private static extern int CudaCtxDestroy(IntPtr ctx);
+    private static extern int CudaCtxDestroy(nint ctx);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize", ExactSpelling = true)]
@@ -637,45 +637,45 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
-    private static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+    private static extern int CudaMalloc(ref nint dptr, long bytesize);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
-    private static extern int CudaFree(IntPtr dptr);
+    private static extern int CudaFree(nint dptr);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+    private static extern int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+    private static extern int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoD_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
+    private static extern int CudaMemcpyDtoD(nint dstDevice, nint srcDevice, long byteCount);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuModuleLoadData", ExactSpelling = true)]
-    private static extern int CuModuleLoadData(ref IntPtr module, byte[] image);
+    private static extern int CuModuleLoadData(ref nint module, byte[] image);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuModuleUnload", ExactSpelling = true)]
-    private static extern int CuModuleUnload(IntPtr module);
+    private static extern int CuModuleUnload(nint module);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuModuleGetFunction", ExactSpelling = true)]
-    private static extern int CuModuleGetFunction(ref IntPtr hfunc, IntPtr hmod, byte[] name);
+    private static extern int CuModuleGetFunction(ref nint hfunc, nint hmod, byte[] name);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuLaunchKernel", ExactSpelling = true)]
-    private static extern int CuLaunchKernel(IntPtr f, uint gridDimX, uint gridDimY, uint gridDimZ,
-        uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, IntPtr hStream,
-        IntPtr kernelParams, IntPtr extra);
+    private static extern int CuLaunchKernel(nint f, uint gridDimX, uint gridDimY, uint gridDimZ,
+        uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, nint hStream,
+        nint kernelParams, nint extra);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCreateProgram", ExactSpelling = true, CharSet = CharSet.Ansi)]
-    private static extern int NvrtcCreateProgram(ref IntPtr prog,
+    private static extern int NvrtcCreateProgram(ref nint prog,
         [MarshalAs(UnmanagedType.LPStr)] string src,
         [MarshalAs(UnmanagedType.LPStr)] string name,
         int numHeaders,
@@ -684,19 +684,19 @@ extern ""C"" __global__ void measureLatency(float* data, int* indices, float* re
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcDestroyProgram", ExactSpelling = true)]
-    private static extern int NvrtcDestroyProgram(ref IntPtr prog);
+    private static extern int NvrtcDestroyProgram(ref nint prog);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCompileProgram", ExactSpelling = true)]
-    private static extern int NvrtcCompileProgram(IntPtr prog, int numOptions, string[] options);
+    private static extern int NvrtcCompileProgram(nint prog, int numOptions, string[] options);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTXSize", ExactSpelling = true)]
-    private static extern int NvrtcGetPTXSize(IntPtr prog, ref long ptxSizeRet);
+    private static extern int NvrtcGetPTXSize(nint prog, ref long ptxSizeRet);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTX", ExactSpelling = true)]
-    private static extern int NvrtcGetPTX(IntPtr prog, byte[] ptx);
+    private static extern int NvrtcGetPTX(nint prog, byte[] ptx);
 
     #endregion
 }

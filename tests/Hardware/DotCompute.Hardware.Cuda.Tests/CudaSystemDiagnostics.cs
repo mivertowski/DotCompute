@@ -10,7 +10,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.Cuda.Tests;
 
 
 /// <summary>
@@ -354,14 +354,14 @@ public sealed class CudaSystemDiagnostics : IDisposable
         if (runtimeResult == CudaError.Success)
         {
             var runtimeMajor = runtimeVersion / 1000;
-            var runtimeMinor = (runtimeVersion % 1000) / 10;
+            var runtimeMinor = runtimeVersion % 1000 / 10;
             LogCudaRuntimeVersion(_logger, runtimeMajor, runtimeMinor, null);
         }
 
         if (driverResult == CudaError.Success)
         {
             var driverMajor = driverVersion / 1000;
-            var driverMinor = (driverVersion % 1000) / 10;
+            var driverMinor = driverVersion % 1000 / 10;
             LogCudaDriverVersion(_logger, driverMajor, driverMinor, null);
         }
 
@@ -526,8 +526,8 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
     }
 }";
 
-        var kernelSource = new TextKernelSource(cudaSource, "testKernel", DotCompute.Abstractions.KernelLanguage.Cuda, "testKernel");
-        var definition = new KernelDefinition("testKernel", kernelSource.Code, kernelSource.EntryPoint);
+        var kernelSource = new TextKernelSource(cudaSource, "testKernel", Abstractions.KernelLanguage.Cuda, "testKernel");
+        var definition = new KernelDefinition("testKernel", kernelSource, new CompilationOptions());
 
         // Test different optimization levels
         var optimizationLevels = Enum.GetValues<OptimizationLevel>();
@@ -602,8 +602,8 @@ extern ""C"" __global__ void configTest(int* data, int n)
     }
 }";
 
-        var kernelSourceObj = new TextKernelSource(kernelSource, "configTest", DotCompute.Abstractions.KernelLanguage.Cuda, "configTest");
-        var definition = new KernelDefinition("configTest", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+        var kernelSourceObj = new TextKernelSource(kernelSource, "configTest", Abstractions.KernelLanguage.Cuda, "configTest");
+        var definition = new KernelDefinition("configTest", kernelSourceObj, new CompilationOptions());
         var compiledKernel = await _accelerator.CompileKernelAsync(definition) as CudaCompiledKernel;
         Assert.NotNull(compiledKernel);
 
@@ -676,8 +676,8 @@ extern ""C"" __global__ void invalidKernel(float* data)
     undeclared_variable = data[threadIdx.x]; // This should cause compilation error
 }";
 
-        var kernelSourceObj = new TextKernelSource(invalidKernelSource, "invalidKernel", DotCompute.Abstractions.KernelLanguage.Cuda, "invalidKernel");
-        var definition = new KernelDefinition("invalidKernel", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+        var kernelSourceObj = new TextKernelSource(invalidKernelSource, "invalidKernel", Abstractions.KernelLanguage.Cuda, "invalidKernel");
+        var definition = new KernelDefinition("invalidKernel", kernelSourceObj, new CompilationOptions());
 
         var compilationException = await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await _accelerator.CompileKernelAsync(definition));
@@ -697,8 +697,8 @@ extern ""C"" __global__ void invalidKernel(float* data)
 
         // Test execution error handling(null arguments)
         var validSource = @"extern ""C"" __global__ void validKernel(float* data, int n) { }";
-        var validKernelSource = new TextKernelSource(validSource, "validKernel", DotCompute.Abstractions.KernelLanguage.Cuda, "validKernel");
-        var validDefinition = new KernelDefinition("validKernel", validKernelSource.Code, validKernelSource.EntryPoint);
+        var validKernelSource = new TextKernelSource(validSource, "validKernel", Abstractions.KernelLanguage.Cuda, "validKernel");
+        var validDefinition = new KernelDefinition("validKernel", validKernelSource, new CompilationOptions());
         var validKernel = await _accelerator.CompileKernelAsync(validDefinition);
 
         try

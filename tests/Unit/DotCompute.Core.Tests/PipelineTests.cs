@@ -6,7 +6,7 @@ using DotCompute.Core.Pipelines;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 
 /// <summary>

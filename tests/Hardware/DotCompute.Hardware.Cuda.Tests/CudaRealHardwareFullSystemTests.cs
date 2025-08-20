@@ -10,16 +10,12 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.Cuda.Tests;
 
 
 /// <summary>
 /// Comprehensive real hardware tests for CUDA backend on RTX 2000 Ada Gen
 /// </summary>
-[Trait("Category", "HardwareRequired")]
-[Trait("Category", "CudaRequired")]
-[Trait("Hardware", "CUDA")]
-[Trait("Category", "Integration")]
 [Collection("Hardware")]
 public sealed class CudaRealHardwareFullSystemTests : IDisposable
 {
@@ -181,8 +177,8 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                 EnableDebugInfo = false
             };
 
-            var kernelSourceObj = new TextKernelSource(kernelSource, "vectorAdd", DotCompute.Abstractions.KernelLanguage.Cuda, "vectorAdd");
-            var kernelDefinition = new KernelDefinition("vectorAdd", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+            var kernelSourceObj = new TextKernelSource(kernelSource, "vectorAdd", Abstractions.KernelLanguage.Cuda, "vectorAdd");
+            var kernelDefinition = new KernelDefinition("vectorAdd", kernelSourceObj, options);
 
             // Compile kernel
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
@@ -257,8 +253,8 @@ extern ""C"" __global__ void matrixMul(float* A, float* B, float* C, int size)
                 EnableDebugInfo = false
             };
 
-            var kernelSourceObj = new TextKernelSource(kernelSource, "matrixMul", DotCompute.Abstractions.KernelLanguage.Cuda, "matrixMul");
-            var kernelDefinition = new KernelDefinition("matrixMul", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+            var kernelSourceObj = new TextKernelSource(kernelSource, "matrixMul", Abstractions.KernelLanguage.Cuda, "matrixMul");
+            var kernelDefinition = new KernelDefinition("matrixMul", kernelSourceObj, options);
 
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
 
@@ -373,8 +369,8 @@ extern ""C"" __global__ void simpleAdd(float* data, float value, int n)
     }
 }";
 
-            var kernelSourceObj = new TextKernelSource(kernelSource, "simpleAdd", DotCompute.Abstractions.KernelLanguage.Cuda, "simpleAdd");
-            var kernelDefinition = new KernelDefinition("simpleAdd", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+            var kernelSourceObj = new TextKernelSource(kernelSource, "simpleAdd", Abstractions.KernelLanguage.Cuda, "simpleAdd");
+            var kernelDefinition = new KernelDefinition("simpleAdd", kernelSourceObj, new CompilationOptions());
 
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
 
@@ -466,14 +462,14 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
 
             foreach (var optLevel in optimizationLevels)
             {
-                var kernelSourceObj = new TextKernelSource(kernelSource, "computeIntensive", DotCompute.Abstractions.KernelLanguage.Cuda, "computeIntensive");
+                var kernelSourceObj = new TextKernelSource(kernelSource, "computeIntensive", Abstractions.KernelLanguage.Cuda, "computeIntensive");
                 var options = new CompilationOptions
                 {
                     OptimizationLevel = optLevel,
                     EnableDebugInfo = false
                 };
 
-                var kernelDefinition = new KernelDefinition($"computeIntensive_{optLevel}", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+                var kernelDefinition = new KernelDefinition($"computeIntensive_{optLevel}", kernelSourceObj, options);
 
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);

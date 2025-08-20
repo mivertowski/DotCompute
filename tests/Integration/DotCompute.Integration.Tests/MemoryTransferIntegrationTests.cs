@@ -3,12 +3,12 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Integration.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Integration.Tests.Infrastructure;
 
 #pragma warning disable CA1848 // Use LoggerMessage delegates - will be migrated in future iteration
 

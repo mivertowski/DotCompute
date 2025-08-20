@@ -6,7 +6,7 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Abstractions.Tests;
 
 
 /// <summary>
@@ -98,7 +98,7 @@ public sealed class AcceleratorStressTests
     public void MemoryOptions_WithAllFlags_ShouldWork(MemoryOptions memoryOptions)
     {
         // Act & Assert - Test that enum values are defined and work correctly
-        _ = Enum.IsDefined<MemoryOptions>(memoryOptions).Should().BeTrue();
+        _ = Enum.IsDefined(memoryOptions).Should().BeTrue();
 
         // Test flag combinations
         var combined = MemoryOptions.ReadOnly | MemoryOptions.HostVisible;
@@ -121,7 +121,7 @@ public sealed class AcceleratorStressTests
         else
         {
             var value = (int)option;
-            _ = ((value > 0) && ((value & (value - 1)) == 0)).Should().BeTrue();
+            _ = (value > 0 && (value & value - 1) == 0).Should().BeTrue();
         }
     }
 
@@ -349,7 +349,7 @@ public sealed class AcceleratorStressTests
     public void DeviceMemory_WithVariousSizes_ShouldWork(int size)
     {
         // Act
-        var handle = size > 0 ? new IntPtr(0x1000) : IntPtr.Zero; // Valid handle for non-zero sizes
+        var handle = size > 0 ? new nint(0x1000) : nint.Zero; // Valid handle for non-zero sizes
         var memory = new DeviceMemory(handle, size);
 
         // Assert
@@ -371,7 +371,7 @@ public sealed class AcceleratorStressTests
         // Act & Assert
         try
         {
-            var memory = new DeviceMemory(IntPtr.Zero, int.MaxValue);
+            var memory = new DeviceMemory(nint.Zero, int.MaxValue);
             _ = memory.Size.Should().Be(int.MaxValue);
         }
         catch (OutOfMemoryException)
@@ -388,7 +388,7 @@ public sealed class AcceleratorStressTests
     public void DeviceMemory_WithNegativeSize_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert
-        var act = () => new DeviceMemory(IntPtr.Zero, -1);
+        var act = () => new DeviceMemory(nint.Zero, -1);
         _ = Assert.Throws<ArgumentOutOfRangeException>(() => act());
     }
 
@@ -398,12 +398,12 @@ public sealed class AcceleratorStressTests
         // Arrange & Act - Test various memory sizes
         var memories = new[]
         {
-        new DeviceMemory(IntPtr.Zero, 0),     // Empty memory
-        new DeviceMemory(new IntPtr(1000), 1),     // Single byte
-        new DeviceMemory(new IntPtr(1000), 999),   // Almost 1KB
-        new DeviceMemory(new IntPtr(1000), 998),   // Middle size
-        new DeviceMemory(new IntPtr(1000), 1),     // Single byte again
-        new DeviceMemory(new IntPtr(1000), 500)    // Half KB
+        new DeviceMemory(nint.Zero, 0),     // Empty memory
+        new DeviceMemory(new nint(1000), 1),     // Single byte
+        new DeviceMemory(new nint(1000), 999),   // Almost 1KB
+        new DeviceMemory(new nint(1000), 998),   // Middle size
+        new DeviceMemory(new nint(1000), 1),     // Single byte again
+        new DeviceMemory(new nint(1000), 500)    // Half KB
     };
 
         // Assert
@@ -419,14 +419,14 @@ public sealed class AcceleratorStressTests
     public void DeviceMemory_WithInvalidParameters_ShouldThrowArgumentOutOfRangeException()
     {
         // Act & Assert - Test invalid memory creation
-        var act1 = () => new DeviceMemory(new IntPtr(-1), 10);  // Invalid handle is allowed, negative size is not
-        var act2 = () => new DeviceMemory(IntPtr.Zero, -1);     // Negative size
+        var act1 = () => new DeviceMemory(new nint(-1), 10);  // Invalid handle is allowed, negative size is not
+        var act2 = () => new DeviceMemory(nint.Zero, -1);     // Negative size
 
         // Only negative size should throw
         _ = Assert.Throws<ArgumentOutOfRangeException>(() => act2());
 
         // Invalid handles are allowed(they just result in invalid memory)
-        var invalidMemory = new DeviceMemory(IntPtr.Zero, 0);
+        var invalidMemory = new DeviceMemory(nint.Zero, 0);
         _ = invalidMemory.IsValid.Should().BeFalse();
     }
 
@@ -502,9 +502,9 @@ public sealed class AcceleratorStressTests
                         argumentsList.Add(args);
 
                         // Verify the values were set correctly
-                        if (!value.Equals(args.Get(0)) ||
-                            !threadId.Equals(args.Get(1)) ||
-                            !i.Equals(args.Get(2)))
+                        if (!args.Get(0).Equals(value) ||
+                            !args.Get(1).Equals(threadId) ||
+                            !args.Get(2).Equals(i))
                         {
                             exceptions.Add(new InvalidOperationException(
                                 $"Value mismatch in arguments for thread {threadId}, operation {i}"));
@@ -541,7 +541,7 @@ public sealed class AcceleratorStressTests
                 {
                     for (var i = 0; i < memoriesPerThread; i++)
                     {
-                        var handle = new IntPtr(threadId * 1000 + i);
+                        var handle = new nint(threadId * 1000 + i);
                         var size = threadId * 10 + i * 2;
 
                         var memory = new DeviceMemory(handle, size);

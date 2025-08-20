@@ -1,20 +1,16 @@
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Utilities;
-using DotCompute.Tests.Utilities.TestFixtures;
+using DotCompute.Tests.Common;
+using DotCompute.Tests.Common.TestFixtures;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.Mock.Tests;
 
 
 /// <summary>
 /// Hardware-dependent tests for CUDA GPUs.
 /// These tests require actual NVIDIA GPU hardware and CUDA runtime.
 /// </summary>
-[Trait("Category", "Mock")]
-[Trait("Category", "Hardware")]
-[Trait("Hardware", "CUDA")]
-[Collection("Hardware")]
 public class CudaHardwareTests(ITestOutputHelper output, AcceleratorTestFixture fixture) : IClassFixture<AcceleratorTestFixture>
 {
     private readonly ITestOutputHelper _output = output;
@@ -123,7 +119,7 @@ public class CudaHardwareTests(ITestOutputHelper output, AcceleratorTestFixture 
 
         _output.WriteLine($"Matrix size: {matrixSize}x{matrixSize}");
         _output.WriteLine($"Execution time: {stopwatch.ElapsedMilliseconds}ms");
-        _output.WriteLine($"GFLOPS: {(2.0 * matrixSize * matrixSize * matrixSize / stopwatch.Elapsed.TotalSeconds * 1e-9):F2}");
+        _output.WriteLine($"GFLOPS: {2.0 * matrixSize * matrixSize * matrixSize / stopwatch.Elapsed.TotalSeconds * 1e-9:F2}");
     }
 
     [HardwareFact(AcceleratorType.CUDA)]

@@ -7,7 +7,7 @@ using DotCompute.Abstractions;
 using DotCompute.Memory;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Integration.Tests;
 
 
 /// <summary>

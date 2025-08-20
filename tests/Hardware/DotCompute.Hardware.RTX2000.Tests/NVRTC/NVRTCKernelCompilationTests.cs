@@ -6,7 +6,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.NVRTC;
+namespace DotCompute.Hardware.RTX2000.Tests.NVRTC;
 
 
 /// <summary>
@@ -26,7 +26,7 @@ public sealed class NVRTCKernelCompilationTests : IDisposable
     private static readonly Action<ILogger, string, Exception?> LogNvrtcOperation =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(5001), "NVRTC operation: {Operation}");
 #pragma warning restore CA1823
-    private IntPtr _cudaContext;
+    private nint _cudaContext;
     private bool _cudaInitialized;
     private bool _nvrtcAvailable;
 
@@ -96,7 +96,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
     }
 }";
 
-        var program = IntPtr.Zero;
+        var program = nint.Zero;
 
         try
         {
@@ -155,7 +155,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         }
         finally
         {
-            if (program != IntPtr.Zero)
+            if (program != nint.Zero)
             {
                 _ = NvrtcDestroyProgram(ref program);
             }
@@ -181,10 +181,10 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         const int N = 1024;
         const int size = N * sizeof(float);
 
-        var program = IntPtr.Zero;
-        var module = IntPtr.Zero;
-        var kernel = IntPtr.Zero;
-        IntPtr d_a = IntPtr.Zero, d_b = IntPtr.Zero, d_c = IntPtr.Zero;
+        var program = nint.Zero;
+        var module = nint.Zero;
+        var kernel = nint.Zero;
+        nint d_a = nint.Zero, d_b = nint.Zero, d_c = nint.Zero;
 
         try
         {
@@ -248,11 +248,11 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             }
 
             // Prepare kernel parameters
-            var kernelParams = new IntPtr[]
+            var kernelParams = new nint[]
             {
-            Marshal.AllocHGlobal(IntPtr.Size),
-            Marshal.AllocHGlobal(IntPtr.Size),
-            Marshal.AllocHGlobal(IntPtr.Size),
+            Marshal.AllocHGlobal(nint.Size),
+            Marshal.AllocHGlobal(nint.Size),
+            Marshal.AllocHGlobal(nint.Size),
             Marshal.AllocHGlobal(sizeof(int))
             };
 
@@ -263,7 +263,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                 Marshal.WriteIntPtr(kernelParams[2], d_c);
                 Marshal.WriteInt32(kernelParams[3], N);
 
-                var kernelParamsPtr = Marshal.AllocHGlobal(kernelParams.Length * IntPtr.Size);
+                var kernelParamsPtr = Marshal.AllocHGlobal(kernelParams.Length * nint.Size);
                 try
                 {
                     Marshal.Copy(kernelParams, 0, kernelParamsPtr, kernelParams.Length);
@@ -276,11 +276,11 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
                     result = CuLaunchKernel(
                         kernel,
                        (uint)gridSize, 1, 1,    // grid dimensions
-                       (uint)blockSize, 1, 1,   // block dimensions
+                       blockSize, 1, 1,   // block dimensions
                         0,                       // shared memory
-                        IntPtr.Zero,            // stream
+                        nint.Zero,            // stream
                         kernelParamsPtr,        // parameters
-                        IntPtr.Zero             // extra parameters
+                        nint.Zero             // extra parameters
                     );
                     Assert.Equal(0, result); // Kernel launch should succeed;
 
@@ -332,15 +332,15 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         finally
         {
             // Cleanup
-            if (d_a != IntPtr.Zero)
+            if (d_a != nint.Zero)
                 _ = CudaFree(d_a);
-            if (d_b != IntPtr.Zero)
+            if (d_b != nint.Zero)
                 _ = CudaFree(d_b);
-            if (d_c != IntPtr.Zero)
+            if (d_c != nint.Zero)
                 _ = CudaFree(d_c);
-            if (module != IntPtr.Zero)
+            if (module != nint.Zero)
                 _ = CuModuleUnload(module);
-            if (program != IntPtr.Zero)
+            if (program != nint.Zero)
                 _ = NvrtcDestroyProgram(ref program);
         }
 
@@ -423,7 +423,7 @@ extern ""C"" __global__ void fastMatrixMul(
     }
 }";
 
-        var program = IntPtr.Zero;
+        var program = nint.Zero;
 
         try
         {
@@ -479,7 +479,7 @@ extern ""C"" __global__ void fastMatrixMul(
         }
         finally
         {
-            if (program != IntPtr.Zero)
+            if (program != nint.Zero)
             {
                 _ = NvrtcDestroyProgram(ref program);
             }
@@ -507,7 +507,7 @@ extern ""C"" __global__ void benchmark(float* data, int n)
 
         for (var run = 0; run < compilationRuns; run++)
         {
-            var program = IntPtr.Zero;
+            var program = nint.Zero;
 
             try
             {
@@ -525,7 +525,7 @@ extern ""C"" __global__ void benchmark(float* data, int n)
             }
             finally
             {
-                if (program != IntPtr.Zero)
+                if (program != nint.Zero)
                 {
                     _ = NvrtcDestroyProgram(ref program);
                 }
@@ -550,10 +550,10 @@ extern ""C"" __global__ void benchmark(float* data, int n)
 
     public void Dispose()
     {
-        if (_cudaContext != IntPtr.Zero)
+        if (_cudaContext != nint.Zero)
         {
             _ = CudaCtxDestroy(_cudaContext);
-            _cudaContext = IntPtr.Zero;
+            _cudaContext = nint.Zero;
         }
         _cudaInitialized = false;
         GC.SuppressFinalize(this);
@@ -568,11 +568,11 @@ extern ""C"" __global__ void benchmark(float* data, int n)
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
-    private static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+    private static extern int CudaCtxCreate(ref nint ctx, uint flags, int dev);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
-    private static extern int CudaCtxDestroy(IntPtr ctx);
+    private static extern int CudaCtxDestroy(nint ctx);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize", ExactSpelling = true)]
@@ -580,42 +580,42 @@ extern ""C"" __global__ void benchmark(float* data, int n)
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
-    private static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+    private static extern int CudaMalloc(ref nint dptr, long bytesize);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
-    private static extern int CudaFree(IntPtr dptr);
+    private static extern int CudaFree(nint dptr);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+    private static extern int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+    private static extern int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuModuleLoadData", ExactSpelling = true)]
-    private static extern int CuModuleLoadData(ref IntPtr module, byte[] image);
+    private static extern int CuModuleLoadData(ref nint module, byte[] image);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuModuleUnload", ExactSpelling = true)]
-    private static extern int CuModuleUnload(IntPtr module);
+    private static extern int CuModuleUnload(nint module);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuModuleGetFunction", ExactSpelling = true)]
-    private static extern int CuModuleGetFunction(ref IntPtr hfunc, IntPtr hmod, byte[] name);
+    private static extern int CuModuleGetFunction(ref nint hfunc, nint hmod, byte[] name);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuLaunchKernel", ExactSpelling = true)]
     private static extern int CuLaunchKernel(
-        IntPtr f,
+        nint f,
         uint gridDimX, uint gridDimY, uint gridDimZ,
         uint blockDimX, uint blockDimY, uint blockDimZ,
         uint sharedMemBytes,
-        IntPtr hStream,
-        IntPtr kernelParams,
-        IntPtr extra);
+        nint hStream,
+        nint kernelParams,
+        nint extra);
 
     // NVRTC API
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
@@ -625,7 +625,7 @@ extern ""C"" __global__ void benchmark(float* data, int n)
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCreateProgram", ExactSpelling = true, CharSet = CharSet.Ansi)]
     private static extern int NvrtcCreateProgram(
-        ref IntPtr prog,
+        ref nint prog,
         [MarshalAs(UnmanagedType.LPStr)] string src,
         [MarshalAs(UnmanagedType.LPStr)] string name,
         int numHeaders,
@@ -634,27 +634,27 @@ extern ""C"" __global__ void benchmark(float* data, int n)
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcDestroyProgram", ExactSpelling = true)]
-    private static extern int NvrtcDestroyProgram(ref IntPtr prog);
+    private static extern int NvrtcDestroyProgram(ref nint prog);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCompileProgram", ExactSpelling = true)]
-    private static extern int NvrtcCompileProgram(IntPtr prog, int numOptions, string[] options);
+    private static extern int NvrtcCompileProgram(nint prog, int numOptions, string[] options);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTXSize", ExactSpelling = true)]
-    private static extern int NvrtcGetPTXSize(IntPtr prog, ref long ptxSizeRet);
+    private static extern int NvrtcGetPTXSize(nint prog, ref long ptxSizeRet);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTX", ExactSpelling = true)]
-    private static extern int NvrtcGetPTX(IntPtr prog, [Out] byte[] ptx);
+    private static extern int NvrtcGetPTX(nint prog, [Out] byte[] ptx);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetProgramLogSize", ExactSpelling = true)]
-    private static extern int NvrtcGetProgramLogSize(IntPtr prog, ref long logSizeRet);
+    private static extern int NvrtcGetProgramLogSize(nint prog, ref long logSizeRet);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetProgramLog", ExactSpelling = true)]
-    private static extern int NvrtcGetProgramLog(IntPtr prog, [Out] byte[] log);
+    private static extern int NvrtcGetProgramLog(nint prog, [Out] byte[] log);
 
     #endregion
 }

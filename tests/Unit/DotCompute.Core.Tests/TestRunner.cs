@@ -3,7 +3,7 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 
 /// <summary>
@@ -259,7 +259,7 @@ public sealed class TestRunner(ITestOutputHelper output)
 
         _output.WriteLine($"Concurrent execution completed in {stopwatch.ElapsedMilliseconds}ms");
         _output.WriteLine($"Total operations: {numTasks * workPerTask:N0}");
-        _output.WriteLine($"Throughput: {(numTasks * workPerTask) / stopwatch.Elapsed.TotalSeconds:F0} ops/sec");
+        _output.WriteLine($"Throughput: {numTasks * workPerTask / stopwatch.Elapsed.TotalSeconds:F0} ops/sec");
 
         // Verify all tasks completed
         var allCompleted = true;

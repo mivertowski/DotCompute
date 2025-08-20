@@ -6,7 +6,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using AbstractionsMemory = DotCompute.Abstractions;
 
-namespace DotCompute.Tests.Utilities;
+namespace DotCompute.Tests.Common;
 
 
 /// <summary>
@@ -93,7 +93,7 @@ public sealed class MemoryMonitor : IDisposable
         var start = _snapshots[0];
         var end = _snapshots[^1];
 
-        return (end.GCGen0Collections - start.GCGen0Collections) +
+        return end.GCGen0Collections - start.GCGen0Collections +
                (end.GCGen1Collections - start.GCGen1Collections) +
                (end.GCGen2Collections - start.GCGen2Collections);
     }
@@ -198,7 +198,7 @@ public sealed class MemoryPerformanceBenchmark
                 Iterations = iterations,
                 TotalTimeMs = stopwatch.ElapsedMilliseconds,
                 OperationsPerSecond = iterations / (stopwatch.ElapsedMilliseconds / 1000.0),
-                ThroughputMBps = (bufferSize * iterations) / (1024.0 * 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0)
+                ThroughputMBps = bufferSize * iterations / (1024.0 * 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0)
             };
 
             _results.Add(result);
@@ -236,7 +236,7 @@ public sealed class MemoryPerformanceBenchmark
                 Iterations = iterations,
                 TotalTimeMs = stopwatch.ElapsedMilliseconds,
                 OperationsPerSecond = iterations / (stopwatch.ElapsedMilliseconds / 1000.0),
-                ThroughputMBps = (bufferSize * iterations) / (1024.0 * 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0)
+                ThroughputMBps = bufferSize * iterations / (1024.0 * 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0)
             };
 
             _results.Add(result);
@@ -271,7 +271,7 @@ public sealed class MemoryPerformanceBenchmark
                 Iterations = iterations,
                 TotalTimeMs = stopwatch.ElapsedMilliseconds,
                 OperationsPerSecond = iterations / (stopwatch.ElapsedMilliseconds / 1000.0),
-                ThroughputMBps = (bufferSize * iterations) / (1024.0 * 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0)
+                ThroughputMBps = bufferSize * iterations / (1024.0 * 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0)
             };
 
             _results.Add(result);

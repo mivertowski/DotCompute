@@ -11,7 +11,7 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Plugins.Tests;
 
 
 /// <summary>
@@ -29,7 +29,7 @@ public sealed class PluginSystemEdgeCaseTests : IDisposable
         var services = new ServiceCollection();
         _loggerMock = new Mock<ILogger<PluginSystem>>();
         _ = services.AddSingleton(_loggerMock.Object);
-        _ = services.AddSingleton<PluginSystem>(provider =>
+        _ = services.AddSingleton(provider =>
             new PluginSystem(_loggerMock.Object, provider));
 
         _serviceProvider = services.BuildServiceProvider();

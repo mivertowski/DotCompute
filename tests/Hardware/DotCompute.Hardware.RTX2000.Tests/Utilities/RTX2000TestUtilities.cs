@@ -2,7 +2,7 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Utilities;
+namespace DotCompute.Hardware.RTX2000.Tests.Utilities;
 
 
 /// <summary>
@@ -95,7 +95,7 @@ public static class RTX2000TestUtilities
     internal static async Task<KernelExecutionResult> MeasureKernelExecution(
         CompiledKernel kernel,
         KernelLaunchParameters launchParams,
-        IntPtr[] parameters,
+        nint[] parameters,
         int warmupRuns = 3,
         int measurementRuns = 10)
     {
@@ -145,7 +145,7 @@ public static class RTX2000TestUtilities
         int preferredBlockSize = 256)
     {
         // Ensure block size is a multiple of warp size(32)
-        var blockSize = Math.Min(maxThreadsPerBlock, ((preferredBlockSize + 31) / 32) * 32);
+        var blockSize = Math.Min(maxThreadsPerBlock, (preferredBlockSize + 31) / 32 * 32);
         var gridSize = (problemSize + blockSize - 1) / blockSize;
 
         return new KernelLaunchParameters
@@ -349,7 +349,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         };
     }
 
-    private static async Task ExecuteKernel(CompiledKernel kernel, KernelLaunchParameters launchParams, IntPtr[] parameters)
+    private static async Task ExecuteKernel(CompiledKernel kernel, KernelLaunchParameters launchParams, nint[] parameters)
         // Mock kernel execution
         => await Task.Delay(1);
 
@@ -394,8 +394,8 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
         public string Source { get; set; } = string.Empty;
         public string[] CompilationOptions { get; set; } = Array.Empty<string>();
         public bool IsCompiled { get; set; }
-        public IntPtr ModuleHandle { get; set; }
-        public IntPtr FunctionHandle { get; set; }
+        public nint ModuleHandle { get; set; }
+        public nint FunctionHandle { get; set; }
 
         public bool Equals(CompiledKernel? other)
         {

@@ -4,7 +4,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.Cuda.Tests;
 
 
 /// <summary>
@@ -18,7 +18,7 @@ namespace DotCompute.Tests.Hardware;
 public sealed class CudaRealHardwareTests : IDisposable
 {
     private readonly ITestOutputHelper _output;
-    private IntPtr _cudaContext;
+    private nint _cudaContext;
     private bool _cudaInitialized;
 
     public CudaRealHardwareTests(ITestOutputHelper output)
@@ -117,12 +117,12 @@ public sealed class CudaRealHardwareTests : IDisposable
         Skip.IfNot(_cudaInitialized, "CUDA not available on this system");
 
         const int size = 1024 * 1024; // 1 MB
-        var devicePtr = IntPtr.Zero;
+        var devicePtr = nint.Zero;
 
         // Allocate memory on device
         var result = CudaMalloc(ref devicePtr, size);
         Assert.Equal(0, result);
-        Assert.NotEqual(IntPtr.Zero, devicePtr);
+        Assert.NotEqual(nint.Zero, devicePtr);
 
         _output.WriteLine($"Allocated {size} bytes on GPU at address: 0x{devicePtr:X}");
 
@@ -151,7 +151,7 @@ public sealed class CudaRealHardwareTests : IDisposable
             hostData[i] = (float)random.NextDouble() * 100;
         }
 
-        var devicePtr = IntPtr.Zero;
+        var devicePtr = nint.Zero;
 
         try
         {
@@ -195,7 +195,7 @@ public sealed class CudaRealHardwareTests : IDisposable
         }
         finally
         {
-            if (devicePtr != IntPtr.Zero)
+            if (devicePtr != nint.Zero)
             {
                 _ = CudaFree(devicePtr);
             }
@@ -224,7 +224,7 @@ public sealed class CudaRealHardwareTests : IDisposable
             h_b[i] = i * 2;
         }
 
-        IntPtr d_a = IntPtr.Zero, d_b = IntPtr.Zero, d_result = IntPtr.Zero;
+        nint d_a = nint.Zero, d_b = nint.Zero, d_result = nint.Zero;
 
         try
         {
@@ -273,11 +273,11 @@ public sealed class CudaRealHardwareTests : IDisposable
         }
         finally
         {
-            if (d_a != IntPtr.Zero)
+            if (d_a != nint.Zero)
                 _ = CudaFree(d_a);
-            if (d_b != IntPtr.Zero)
+            if (d_b != nint.Zero)
                 _ = CudaFree(d_b);
-            if (d_result != IntPtr.Zero)
+            if (d_result != nint.Zero)
                 _ = CudaFree(d_result);
         }
 
@@ -297,7 +297,7 @@ public sealed class CudaRealHardwareTests : IDisposable
         var hostData = new byte[size];
         new Random(42).NextBytes(hostData);
 
-        var devicePtr = IntPtr.Zero;
+        var devicePtr = nint.Zero;
 
         try
         {
@@ -320,7 +320,7 @@ public sealed class CudaRealHardwareTests : IDisposable
                 }
                 sw.Stop();
 
-                var h2dBandwidth = (size * iterations / 1024.0 / 1024.0 / 1024.0) / (sw.Elapsed.TotalSeconds);
+                var h2dBandwidth = size * iterations / 1024.0 / 1024.0 / 1024.0 / sw.Elapsed.TotalSeconds;
                 _output.WriteLine($"Host to Device bandwidth: {h2dBandwidth:F2} GB/s");
                 _ = h2dBandwidth.Should().BeGreaterThan(1.0, "H2D bandwidth should be at least 1 GB/s");
 
@@ -333,7 +333,7 @@ public sealed class CudaRealHardwareTests : IDisposable
                 }
                 sw.Stop();
 
-                var d2hBandwidth = (size * iterations / 1024.0 / 1024.0 / 1024.0) / (sw.Elapsed.TotalSeconds);
+                var d2hBandwidth = size * iterations / 1024.0 / 1024.0 / 1024.0 / sw.Elapsed.TotalSeconds;
                 _output.WriteLine($"Device to Host bandwidth: {d2hBandwidth:F2} GB/s");
                 _ = d2hBandwidth.Should().BeGreaterThan(1.0, "D2H bandwidth should be at least 1 GB/s");
             }
@@ -344,7 +344,7 @@ public sealed class CudaRealHardwareTests : IDisposable
         }
         finally
         {
-            if (devicePtr != IntPtr.Zero)
+            if (devicePtr != nint.Zero)
             {
                 _ = CudaFree(devicePtr);
             }
@@ -353,10 +353,10 @@ public sealed class CudaRealHardwareTests : IDisposable
 
     public void Dispose()
     {
-        if (_cudaContext != IntPtr.Zero)
+        if (_cudaContext != nint.Zero)
         {
             _ = CudaCtxDestroy(_cudaContext);
-            _cudaContext = IntPtr.Zero;
+            _cudaContext = nint.Zero;
         }
         _cudaInitialized = false;
     }
@@ -382,11 +382,11 @@ public sealed class CudaRealHardwareTests : IDisposable
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuCtxCreate_v2")]
-            public static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+            public static extern int CudaCtxCreate(ref nint ctx, uint flags, int dev);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuCtxDestroy_v2")]
-            public static extern int CudaCtxDestroy(IntPtr ctx);
+            public static extern int CudaCtxDestroy(nint ctx);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemGetInfo_v2")]
@@ -394,23 +394,23 @@ public sealed class CudaRealHardwareTests : IDisposable
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemAlloc_v2")]
-            public static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+            public static extern int CudaMalloc(ref nint dptr, long bytesize);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemFree_v2")]
-            public static extern int CudaFree(IntPtr dptr);
+            public static extern int CudaFree(nint dptr);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyHtoD_v2")]
-            public static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+            public static extern int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoH_v2")]
-            public static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+            public static extern int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("nvcuda.dll", EntryPoint = "cuMemcpyDtoD_v2")]
-            public static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
+            public static extern int CudaMemcpyDtoD(nint dstDevice, nint srcDevice, long byteCount);
         }
 
         // Linux CUDA methods
@@ -430,11 +430,11 @@ public sealed class CudaRealHardwareTests : IDisposable
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuCtxCreate_v2")]
-            public static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+            public static extern int CudaCtxCreate(ref nint ctx, uint flags, int dev);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuCtxDestroy_v2")]
-            public static extern int CudaCtxDestroy(IntPtr ctx);
+            public static extern int CudaCtxDestroy(nint ctx);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemGetInfo_v2")]
@@ -442,23 +442,23 @@ public sealed class CudaRealHardwareTests : IDisposable
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemAlloc_v2")]
-            public static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+            public static extern int CudaMalloc(ref nint dptr, long bytesize);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemFree_v2")]
-            public static extern int CudaFree(IntPtr dptr);
+            public static extern int CudaFree(nint dptr);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyHtoD_v2")]
-            public static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+            public static extern int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoH_v2")]
-            public static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+            public static extern int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount);
 
             [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
             [DllImport("libcuda.so.1", EntryPoint = "cuMemcpyDtoD_v2")]
-            public static extern int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount);
+            public static extern int CudaMemcpyDtoD(nint dstDevice, nint srcDevice, long byteCount);
         }
     }
 
@@ -493,7 +493,7 @@ public sealed class CudaRealHardwareTests : IDisposable
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
     }
 
-    private static int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev)
+    private static int CudaCtxCreate(ref nint ctx, uint flags, int dev)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaCtxCreate(ref ctx, flags, dev);
@@ -503,7 +503,7 @@ public sealed class CudaRealHardwareTests : IDisposable
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
     }
 
-    private static int CudaCtxDestroy(IntPtr ctx)
+    private static int CudaCtxDestroy(nint ctx)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaCtxDestroy(ctx);
@@ -523,7 +523,7 @@ public sealed class CudaRealHardwareTests : IDisposable
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
     }
 
-    private static int CudaMalloc(ref IntPtr dptr, long bytesize)
+    private static int CudaMalloc(ref nint dptr, long bytesize)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaMalloc(ref dptr, bytesize);
@@ -533,7 +533,7 @@ public sealed class CudaRealHardwareTests : IDisposable
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
     }
 
-    private static int CudaFree(IntPtr dptr)
+    private static int CudaFree(nint dptr)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaFree(dptr);
@@ -543,7 +543,7 @@ public sealed class CudaRealHardwareTests : IDisposable
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
     }
 
-    private static int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount)
+    private static int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaMemcpyHtoD(dstDevice, srcHost, byteCount);
@@ -553,7 +553,7 @@ public sealed class CudaRealHardwareTests : IDisposable
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
     }
 
-    private static int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount)
+    private static int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaMemcpyDtoH(dstHost, srcDevice, byteCount);
@@ -563,7 +563,7 @@ public sealed class CudaRealHardwareTests : IDisposable
             throw new PlatformNotSupportedException("CUDA is not supported on this platform");
     }
 
-    private static int CudaMemcpyDtoD(IntPtr dstDevice, IntPtr srcDevice, long byteCount)
+    private static int CudaMemcpyDtoD(nint dstDevice, nint srcDevice, long byteCount)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             return CudaNative.Windows.CudaMemcpyDtoD(dstDevice, srcDevice, byteCount);

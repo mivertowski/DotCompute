@@ -9,7 +9,6 @@ using System.Collections.Concurrent;
 using DotCompute.Abstractions;
 using DotCompute.Core.Compute;
 using DotCompute.Plugins.Core;
-using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,8 +16,10 @@ using Xunit;
 using Xunit.Abstractions;
 using MemoryOptions = DotCompute.Abstractions.MemoryOptions;
 using DotCompute.Core.Pipelines;
+using DotCompute.Tests.Integration;
+using DotCompute.Tests.Common;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Integration.Tests;
 
 
 /// <summary>
@@ -397,8 +398,8 @@ public abstract class IntegrationTestBase(ITestOutputHelper output) : IAsyncLife
         return new PipelineExecutionContext
         {
             Inputs = inputs ?? [],
-            Device = (DotCompute.Core.IComputeDevice)ServiceProvider.GetRequiredService<IAcceleratorManager>().Default,
-            MemoryManager = (DotCompute.Core.Pipelines.IPipelineMemoryManager)ServiceProvider.GetRequiredService<IMemoryManager>(),
+            Device = (Core.IComputeDevice)ServiceProvider.GetRequiredService<IAcceleratorManager>().Default,
+            MemoryManager = (IPipelineMemoryManager)ServiceProvider.GetRequiredService<IMemoryManager>(),
             Options = new PipelineExecutionOptions
             {
                 ContinueOnError = false,

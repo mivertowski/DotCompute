@@ -12,8 +12,9 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Tests.Integration;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Integration.Tests;
 
 
 /// <summary>
@@ -281,7 +282,7 @@ public sealed class MultiAcceleratorTests(ITestOutputHelper output) : Integratio
         var tasks = accelerators.Select(async (accelerator, index) =>
         {
             var startIndex = index * workItemsPerAccelerator;
-            var endIndex = (index == accelerators.Count - 1) ? inputData.Length : (index + 1) * workItemsPerAccelerator;
+            var endIndex = index == accelerators.Count - 1 ? inputData.Length : (index + 1) * workItemsPerAccelerator;
             var workData = inputData[startIndex..endIndex];
 
             try
@@ -354,7 +355,7 @@ public sealed class MultiAcceleratorTests(ITestOutputHelper output) : Integratio
             }
         });
 
-        return [.. (await Task.WhenAll(tasks))];
+        return [.. await Task.WhenAll(tasks)];
     }
 
     private async Task<List<CoherenceResult>> TestMemoryCoherence(
@@ -396,7 +397,7 @@ public sealed class MultiAcceleratorTests(ITestOutputHelper output) : Integratio
             }
         });
 
-        return [.. (await Task.WhenAll(tasks))];
+        return [.. await Task.WhenAll(tasks)];
     }
 
     private async Task<List<AcceleratorResult>> ExecuteConcurrentWorkloads(
@@ -438,7 +439,7 @@ public sealed class MultiAcceleratorTests(ITestOutputHelper output) : Integratio
             }
         });
 
-        return [.. (await Task.WhenAll(tasks))];
+        return [.. await Task.WhenAll(tasks)];
     }
 
     private async Task<List<AcceleratorResult>> ExecuteWithSimulatedFailure(
@@ -493,7 +494,7 @@ public sealed class MultiAcceleratorTests(ITestOutputHelper output) : Integratio
             }
         });
 
-        return [.. (await Task.WhenAll(tasks))];
+        return [.. await Task.WhenAll(tasks)];
     }
 
     private async Task<List<AcceleratorResult>> ExecuteHeterogeneousWorkload(
@@ -531,7 +532,7 @@ public sealed class MultiAcceleratorTests(ITestOutputHelper output) : Integratio
             }
         });
 
-        return [.. (await Task.WhenAll(tasks))];
+        return [.. await Task.WhenAll(tasks)];
     }
 
     private async Task<PeerToPeerResult> TestPeerToPeerTransfer(

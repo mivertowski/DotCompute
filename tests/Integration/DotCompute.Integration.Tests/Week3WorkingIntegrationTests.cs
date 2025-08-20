@@ -12,7 +12,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Integration.Tests;
 
 
 /// <summary>
@@ -34,7 +34,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
 
         // Act - Complete memory lifecycle
         var stopwatch = Stopwatch.StartNew();
-        var buffer = await CreateInputBuffer<float>(memoryManager, testData);
+        var buffer = await CreateInputBuffer(memoryManager, testData);
         var readData = await ReadBufferAsync<float>(buffer);
         await buffer.DisposeAsync();
         stopwatch.Stop();
@@ -60,7 +60,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
 
         // Act
         var stopwatch = Stopwatch.StartNew();
-        var buffer = await CreateInputBuffer<float>(memoryManager, testData);
+        var buffer = await CreateInputBuffer(memoryManager, testData);
         var readData = await ReadBufferAsync<float>(buffer);
         await buffer.DisposeAsync();
         stopwatch.Stop();
@@ -80,7 +80,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
         var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
         const int bufferCount = 10;
         const int bufferSize = 512;
-        var buffers = new System.Collections.Generic.List<IMemoryBuffer>();
+        var buffers = new List<IMemoryBuffer>();
 
         try
         {
@@ -90,7 +90,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
             for (var i = 0; i < bufferCount; i++)
             {
                 var data = GenerateTestFloatArray(bufferSize, i, i + 10);
-                var buffer = await CreateInputBuffer<float>(memoryManager, data);
+                var buffer = await CreateInputBuffer(memoryManager, data);
                 buffers.Add(buffer);
             }
 
@@ -218,7 +218,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
         // Arrange
         var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
         using var semaphore = new SemaphoreSlim(maxConcurrent, maxConcurrent);
-        var tasks = new System.Collections.Generic.List<Task<bool>>();
+        var tasks = new List<Task<bool>>();
 
         // Act
         var stopwatch = Stopwatch.StartNew();
@@ -244,7 +244,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
     {
         // Arrange
         var memoryManager = ServiceProvider.GetRequiredService<IMemoryManager>();
-        var allocatedBuffers = new System.Collections.Generic.List<IMemoryBuffer>();
+        var allocatedBuffers = new List<IMemoryBuffer>();
         var successCount = 0;
         const int maxAttempts = 50; // Reduced for faster testing
 
@@ -256,7 +256,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
                 try
                 {
                     var data = GenerateTestFloatArray(1024, i, i + 1); // 4KB per buffer
-                    var buffer = await CreateInputBuffer<float>(memoryManager, data);
+                    var buffer = await CreateInputBuffer(memoryManager, data);
                     allocatedBuffers.Add(buffer);
                     successCount++;
                 }
@@ -301,7 +301,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
 
         // Act & Assert
         _ = await Assert.ThrowsAsync<ArgumentException>(() =>
-            CreateInputBuffer<float>(memoryManager, Array.Empty<float>()));
+            CreateInputBuffer(memoryManager, Array.Empty<float>()));
 
         TestOutput.WriteLine("Invalid input error handling validated");
     }
@@ -318,7 +318,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
         {
             await Task.Delay(50, cts.Token); // Will be cancelled
             var data = GenerateTestFloatArray(1024, 0, 1);
-            var buffer = await CreateInputBuffer<float>(memoryManager, data);
+            var buffer = await CreateInputBuffer(memoryManager, data);
             await buffer.DisposeAsync();
         });
 
@@ -345,12 +345,12 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
         var stopwatch = Stopwatch.StartNew();
 
         // Stage 1: Load data
-        var inputBuffer = await CreateInputBuffer<float>(memoryManager, inputData);
+        var inputBuffer = await CreateInputBuffer(memoryManager, inputData);
         var loadedData = await ReadBufferAsync<float>(inputBuffer);
 
         // Stage 2: Process data(square all values)
         var processedData = loadedData.Select(x => x * x).ToArray();
-        var processBuffer = await CreateInputBuffer<float>(memoryManager, processedData);
+        var processBuffer = await CreateInputBuffer(memoryManager, processedData);
         var processResult = await ReadBufferAsync<float>(processBuffer);
 
         // Stage 3: Aggregate results
@@ -387,7 +387,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
         for (var batch = 0; batch < batchSize; batch++)
         {
             var data = GenerateTestFloatArray(elementCount, batch, batch + 1);
-            var buffer = await CreateInputBuffer<float>(memoryManager, data);
+            var buffer = await CreateInputBuffer(memoryManager, data);
             var readData = await ReadBufferAsync<float>(buffer);
             processedElements += readData.Length;
             await buffer.DisposeAsync();
@@ -420,7 +420,7 @@ public sealed class Week3WorkingIntegrationTests(ITestOutputHelper output) : Int
         {
             // Simple buffer operation: allocate, write, read, dispose
             var data = GenerateTestFloatArray(64, operationId, operationId + 1);
-            var buffer = await CreateInputBuffer<float>(memoryManager, data);
+            var buffer = await CreateInputBuffer(memoryManager, data);
             var readData = await ReadBufferAsync<float>(buffer);
             await buffer.DisposeAsync();
             return readData.Length == data.Length && Math.Abs(readData[0] - operationId) < 0.1f;

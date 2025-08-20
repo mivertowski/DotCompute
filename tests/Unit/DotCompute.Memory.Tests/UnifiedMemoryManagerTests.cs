@@ -6,7 +6,7 @@ using DotCompute.Memory;
 using Moq;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Memory.Tests;
 
 
 /// <summary>
@@ -40,7 +40,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         var mockDeviceBuffer = Mock.Of<IMemoryBuffer>(b => b.SizeInBytes == length * sizeof(int));
 
         _ = _baseMemoryManagerMock
-            .Setup(m => m.AllocateAsync(length * sizeof(int), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.AllocateAsync(length * sizeof(int), It.IsAny<Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockDeviceBuffer);
 
         // Act
@@ -58,11 +58,11 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
     {
         // Arrange
         const int length = 256;
-        var options = DotCompute.Memory.MemoryOptions.HostVisible | DotCompute.Memory.MemoryOptions.Cached;
+        var options = MemoryOptions.HostVisible | MemoryOptions.Cached;
         var mockDeviceBuffer = Mock.Of<IMemoryBuffer>();
 
         _ = _baseMemoryManagerMock
-            .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
+            .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(mockDeviceBuffer);
 
         // Act
@@ -71,7 +71,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         // Assert - Note: The method doesn't directly pass memory options to the base manager currently
         // This test verifies that the method can be called with options without throwing
         _baseMemoryManagerMock.Verify(m =>
-            m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()),
+            m.AllocateAsync(It.IsAny<long>(), It.IsAny<Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()),
             Times.Never); // The current implementation doesn't call AllocateAsync during creation
     }
 
@@ -137,8 +137,8 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
 
         // Use a callback to verify the mock is being called and return the buffer
         _ = _baseMemoryManagerMock
-            .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
-            .Callback<long, DotCompute.Abstractions.MemoryOptions, CancellationToken>((size, options, ct) =>
+            .Setup(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()))
+            .Callback<long, Abstractions.MemoryOptions, CancellationToken>((size, options, ct) =>
             {
                 // This helps debug if the mock is being called
                 // In a real test we wouldn't use Console.WriteLine
@@ -160,7 +160,7 @@ public sealed class UnifiedMemoryManagerTests : IDisposable
         Assert.True(unifiedBuffer.IsOnDevice);
 
         // Verify the mock was called for allocation
-        _baseMemoryManagerMock.Verify(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<DotCompute.Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+        _baseMemoryManagerMock.Verify(m => m.AllocateAsync(It.IsAny<long>(), It.IsAny<Abstractions.MemoryOptions>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]

@@ -7,7 +7,7 @@ using DotCompute.Tests.Mocks;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests;
+namespace DotCompute.Memory.Tests;
 
 /// <summary>
 /// Integration tests for MultiGpuMemoryManager with real P2P scenarios.
@@ -77,7 +77,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         using var sourceBuffer = await CreateMockBuffer<float>(sourceDevice, 1024);
 
         // Act
-        using var slice = await _memoryManager.CreateBufferSliceAsync<float>(
+        using var slice = await _memoryManager.CreateBufferSliceAsync(
             sourceBuffer, targetDevice, 256, 512);
 
         // Assert
@@ -196,7 +196,7 @@ public sealed class MultiGpuMemoryManagerIntegrationTests : IAsyncDisposable
         using var sourceBuffer = await CreateMockBuffer<float>(device, 1024);
 
         // Act
-        var slice = await _memoryManager.CreateBufferSliceAsync<float>(
+        var slice = await _memoryManager.CreateBufferSliceAsync(
             sourceBuffer, device, 128, 256);
 
         // Assert

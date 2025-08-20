@@ -2,7 +2,7 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Abstractions.Tests;
 
 
 public sealed class MemoryOptionsTests
@@ -14,7 +14,7 @@ public sealed class MemoryOptionsTests
         var options = MemoryOptions.None;
 
         // Assert
-        _ = options.Should().Be((MemoryOptions)0);
+        _ = options.Should().Be(0);
     }
 
     [Fact]

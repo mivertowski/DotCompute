@@ -5,13 +5,13 @@ using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
+using DotCompute.Tests.Common;
 
-namespace DotCompute.Tests.Hardware.Unit;
+namespace DotCompute.Hardware.Cuda.Tests.Unit;
 
 
 /// <summary>

@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Core.Pipelines;
+using DotCompute.Integration.Tests;
 using DotCompute.Tests.Common.Hardware;
 using DotCompute.Tests.Integration;
 using Microsoft.Extensions.DependencyInjection;
@@ -15,7 +16,7 @@ using Xunit.Abstractions;
 
 #pragma warning disable CA1848 // Use LoggerMessage delegates - suppressed for test infrastructure
 
-namespace DotCompute.Tests.Integration.Infrastructure;
+namespace DotCompute.Integration.Tests.Infrastructure;
 
 
 /// <summary>
@@ -209,7 +210,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
         // Allocate input buffers
         foreach (var input in workflow.Inputs)
         {
-            var buffer = await CreateInputBuffer<float>(memoryManager, input.Data);
+            var buffer = await CreateInputBuffer(memoryManager, input.Data);
             context.InputBuffers[input.Name] = buffer;
         }
 
@@ -409,7 +410,7 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
     {
         var totalDataMB = workflow.Inputs.Sum(i => i.Data.Length * sizeof(float)) +
                          workflow.Outputs.Sum(o => o.Size * sizeof(float));
-        totalDataMB /= (1024 * 1024); // Convert to MB
+        totalDataMB /= 1024 * 1024; // Convert to MB
 
         return totalDataMB / duration.TotalSeconds;
     }
@@ -421,7 +422,10 @@ public abstract class ComputeWorkflowTestBase : IntegrationTestBase
     {
         private static readonly Random Random = new(42); // Fixed seed for reproducibility
 
-        public static float[] GenerateFloatArray(int size, float min = 0f, float max = 100f) => [.. Enumerable.Range(0, size).Select(_ => min + ((float)Random.NextDouble() * (max - min)))];
+        public static float[] GenerateFloatArray(int size, float min = 0f, float max = 100f)
+        {
+            return [.. Enumerable.Range(0, size).Select(_ => min + (float)Random.NextDouble() * (max - min))];
+        }
 
         public static float[] GenerateGaussianArray(int size, float mean = 0f, float stdDev = 1f)
         {

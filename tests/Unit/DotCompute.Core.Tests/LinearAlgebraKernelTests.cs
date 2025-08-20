@@ -8,7 +8,7 @@ using Moq;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 
 /// <summary>
@@ -639,10 +639,9 @@ public sealed class LinearAlgebraKernelTests : IDisposable
 /// Mock linear algebra kernels for testing purposes.
 /// In a real implementation, this would use actual GPU compute shaders/kernels.
 /// </summary>
-#pragma warning disable CS9113 // Parameter is unread
 public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<LinearAlgebraKernels> logger) : IDisposable
-#pragma warning restore CS9113
 {
+    private readonly ILogger<LinearAlgebraKernels> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     // Vector Operations
     public static async Task<float[]> VectorAddAsync(float[] a, float[] b)
@@ -812,7 +811,7 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
         {
             for (var j = 0; j < size && isIdentity; j++)
             {
-                var expected = (i == j) ? 1.0f : 0.0f;
+                var expected = i == j ? 1.0f : 0.0f;
                 if (Math.Abs(matrix[i * size + j] - expected) > 1e-6f)
                     isIdentity = false;
             }
@@ -989,7 +988,7 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
         {
             // One real root
             var S = (float)Math.Pow(R + Math.Sqrt(discriminant), 1.0 / 3.0) * Math.Sign(R + Math.Sqrt(discriminant));
-            var T = (Math.Abs(S) > 1e-10f) ? Q / S : 0.0f;
+            var T = Math.Abs(S) > 1e-10f ? Q / S : 0.0f;
             roots.Add(S + T - p_over_3);
         }
         else if (Math.Abs(discriminant) < 1e-10f)
@@ -1064,7 +1063,7 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
                 {
                     if (i != j)
                     {
-                        denominator *= (roots[i] - roots[j]);
+                        denominator *= roots[i] - roots[j];
                     }
                 }
 
@@ -1161,7 +1160,7 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
             var sum = values[0] + values[values.Length - 1];
             for (var i = 1; i < values.Length - 1; i++)
             {
-                var multiplier = (i % 2 == 1) ? 4.0f : 2.0f;
+                var multiplier = i % 2 == 1 ? 4.0f : 2.0f;
                 sum += multiplier * values[i];
             }
             return sum * h / 3.0f;
@@ -1174,7 +1173,7 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
 
             for (var i = 1; i < n; i++)
             {
-                var multiplier = (i % 2 == 1) ? 4.0f : 2.0f;
+                var multiplier = i % 2 == 1 ? 4.0f : 2.0f;
                 sum += multiplier * values[i];
             }
             return sum * h / 3.0f;
@@ -1243,7 +1242,7 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
             return x;
 
         // For non-power-of-2 sizes, use DFT
-        if ((n & (n - 1)) != 0)
+        if ((n & n - 1) != 0)
         {
             return DirectDFT(x);
         }
@@ -1292,7 +1291,9 @@ public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<Linea
         return result;
     }
 
-    public void Dispose() => GC.SuppressFinalize(this);
+    public void Dispose()
+        // Clean up resources if needed
+        => GC.SuppressFinalize(this);
 }
 
 #endregion

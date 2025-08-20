@@ -9,7 +9,7 @@ using Xunit;
 using FluentAssertions;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Hardware.Unit;
+namespace DotCompute.Hardware.Cuda.Tests.Unit;
 
 
 /// <summary>

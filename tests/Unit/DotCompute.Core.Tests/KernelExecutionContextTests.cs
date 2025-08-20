@@ -2,7 +2,7 @@ using DotCompute.Core;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 
 public sealed class KernelExecutionContextTests

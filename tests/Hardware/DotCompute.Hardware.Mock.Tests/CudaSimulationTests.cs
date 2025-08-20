@@ -4,7 +4,7 @@
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.Mock.Tests;
 
 
 /// <summary>
@@ -43,7 +43,7 @@ public class CudaSimulationTests(ITestOutputHelper output)
         const int memoryBusWidth = 192; // bits
 
         // Theoretical bandwidth =(Clock Rate * Bus Width) / 8
-        var theoreticalBandwidth = (memoryClockRateKHz / 1000.0 * memoryBusWidth) / 8.0 / 1000.0;
+        var theoreticalBandwidth = memoryClockRateKHz / 1000.0 * memoryBusWidth / 8.0 / 1000.0;
 
         _output.WriteLine($"Theoretical memory bandwidth: {theoreticalBandwidth:F1} GB/s");
         _ = theoreticalBandwidth.Should().BeGreaterThan(300, "RTX 2000 Ada Gen should have >300 GB/s theoretical bandwidth");

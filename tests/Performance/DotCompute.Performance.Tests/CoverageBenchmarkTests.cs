@@ -4,14 +4,14 @@ using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Loggers;
 using BdnLogger = BenchmarkDotNet.Loggers.ILogger;
 using BenchmarkDotNet.Running;
-using DotCompute.Tests.Utilities.TestInfrastructure;
 using Microsoft.Extensions.Logging;
 using System.Diagnostics.CodeAnalysis;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Tests.Common.TestInfrastructure;
 
-namespace DotCompute.Tests.Performance;
+namespace DotCompute.Performance.Tests;
 
 
 /// <summary>
@@ -106,7 +106,7 @@ public sealed class CoverageBenchmarkTests(ITestOutputHelper output) : Performan
                 iterations: 50,
                 operationName: $"Data transfer({size} bytes)");
 
-            var bandwidthMBps = (size / (1024.0 * 1024.0)) / result.AverageTime.TotalSeconds;
+            var bandwidthMBps = size / (1024.0 * 1024.0) / result.AverageTime.TotalSeconds;
 
             LogDataTransferBenchmark(Logger, size, bandwidthMBps, null);
 
@@ -290,7 +290,7 @@ public class SimpleBenchmark
     private readonly byte[] _data = new byte[1024];
 
     [Benchmark]
-    public int SimpleOperation() => _data.Sum(b => (int)b);
+    public int SimpleOperation() => _data.Sum(b => b);
 
     [Benchmark]
     public async Task<int> AsyncOperation()

@@ -10,7 +10,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware;
+namespace DotCompute.Hardware.Cuda.Tests;
 
 
 /// <summary>
@@ -121,7 +121,7 @@ public sealed class CudaPerformanceBenchmarks : IDisposable
                 }
                 stopwatch.Stop();
 
-                var h2dBandwidth = (10.0 * sizeBytes / 1024 / 1024 / 1024) / (stopwatch.ElapsedMilliseconds / 1000.0);
+                var h2dBandwidth = 10.0 * sizeBytes / 1024 / 1024 / 1024 / (stopwatch.ElapsedMilliseconds / 1000.0);
 
                 // Measure device to host transfer
                 var readData = new byte[sizeBytes];
@@ -132,7 +132,7 @@ public sealed class CudaPerformanceBenchmarks : IDisposable
                 }
                 stopwatch.Stop();
 
-                var d2hBandwidth = (10.0 * sizeBytes / 1024 / 1024 / 1024) / (stopwatch.ElapsedMilliseconds / 1000.0);
+                var d2hBandwidth = 10.0 * sizeBytes / 1024 / 1024 / 1024 / (stopwatch.ElapsedMilliseconds / 1000.0);
 
                 LogMemoryBandwidth(_logger, sizeMB, h2dBandwidth, d2hBandwidth, null);
 
@@ -190,8 +190,8 @@ extern ""C"" __global__ void saxpy(float* x, float* y, float alpha, int n)
     }
 }";
 
-            var kernelSourceObj = new TextKernelSource(kernelSource, "saxpy", DotCompute.Abstractions.KernelLanguage.Cuda, "saxpy");
-            var kernelDefinition = new KernelDefinition("saxpy", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+            var kernelSourceObj = new TextKernelSource(kernelSource, "saxpy", KernelLanguage.Cuda, "saxpy");
+            var kernelDefinition = new KernelDefinition("saxpy", kernelSourceObj, new CompilationOptions());
             var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
 
@@ -212,8 +212,8 @@ extern ""C"" __global__ void saxpy(float* x, float* y, float alpha, int n)
 
             // Calculate performance metrics
             var totalOps = (long)RUNS * N * 2; // 2 ops per element(multiply + add)
-            var gflops = (totalOps / 1e9) / (stopwatch.ElapsedMilliseconds / 1000.0);
-            var bandwidth = ((long)RUNS * N * 3 * sizeof(float) / 1024.0 / 1024 / 1024) / (stopwatch.ElapsedMilliseconds / 1000.0); // 3 accesses per element
+            var gflops = totalOps / 1e9 / (stopwatch.ElapsedMilliseconds / 1000.0);
+            var bandwidth = (long)RUNS * N * 3 * sizeof(float) / 1024.0 / 1024 / 1024 / (stopwatch.ElapsedMilliseconds / 1000.0); // 3 accesses per element
 
             LogSAXPYPerformance(_logger, gflops, bandwidth, null);
 
@@ -258,8 +258,8 @@ extern ""C"" __global__ void emptyKernel()
     }
 }";
 
-        var kernelSourceObj = new TextKernelSource(kernelSource, "emptyKernel", DotCompute.Abstractions.KernelLanguage.Cuda, "emptyKernel");
-        var kernelDefinition = new KernelDefinition("emptyKernel", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+        var kernelSourceObj = new TextKernelSource(kernelSource, "emptyKernel", KernelLanguage.Cuda, "emptyKernel");
+        var kernelDefinition = new KernelDefinition("emptyKernel", kernelSourceObj, new CompilationOptions());
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
 
         // Warm up
@@ -339,8 +339,8 @@ extern ""C"" __global__ void emptyKernel()
             foreach (var optLevel in optimizationLevels)
             {
                 var options = new CompilationOptions { OptimizationLevel = optLevel };
-                var kernelSourceObj = new TextKernelSource(kernelSource, kernelName, DotCompute.Abstractions.KernelLanguage.Cuda, kernelName);
-                var definition = new KernelDefinition($"{kernelName}_{optLevel}", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+                var kernelSourceObj = new TextKernelSource(kernelSource, kernelName, KernelLanguage.Cuda, kernelName);
+                var definition = new KernelDefinition($"{kernelName}_{optLevel}", kernelSourceObj, options);
 
                 var stopwatch = Stopwatch.StartNew();
                 var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
@@ -381,8 +381,8 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
     }
 }";
 
-        var kernelSourceObj = new TextKernelSource(kernelSource, "workload", DotCompute.Abstractions.KernelLanguage.Cuda, "workload");
-        var kernelDefinition = new KernelDefinition("workload", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
+        var kernelSourceObj = new TextKernelSource(kernelSource, "workload", KernelLanguage.Cuda, "workload");
+        var kernelDefinition = new KernelDefinition("workload", kernelSourceObj, new CompilationOptions());
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
 
         // Test sequential execution

@@ -5,7 +5,7 @@ using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Hardware.StressTests;
+namespace DotCompute.Hardware.RTX2000.Tests.StressTests;
 
 
 /// <summary>
@@ -26,7 +26,7 @@ public sealed class HardwareStressTests : IDisposable
     private static readonly Action<ILogger, string, Exception?> LogStressTest =
         LoggerMessage.Define<string>(LogLevel.Information, new EventId(7001), "Stress test: {TestName}");
 #pragma warning restore CA1823
-    private IntPtr _cudaContext;
+    private nint _cudaContext;
     private bool _cudaInitialized;
     private readonly CancellationTokenSource _cancellationTokenSource;
 
@@ -65,7 +65,7 @@ public sealed class HardwareStressTests : IDisposable
 
         const int maxAllocations = 1000;
         const int baseAllocationSizeMB = 32;
-        var allocations = new List<IntPtr>();
+        var allocations = new List<nint>();
         var allocationSizes = new List<long>();
         var random = new Random(42);
 
@@ -86,7 +86,7 @@ public sealed class HardwareStressTests : IDisposable
                 var sizeMB = baseAllocationSizeMB + random.Next(0, baseAllocationSizeMB * 2);
                 var sizeBytes = sizeMB * 1024 * 1024;
 
-                var devicePtr = IntPtr.Zero;
+                var devicePtr = nint.Zero;
                 var result = CudaMalloc(ref devicePtr, sizeBytes);
 
                 if (result == 0)
@@ -96,7 +96,7 @@ public sealed class HardwareStressTests : IDisposable
                     successfulAllocations++;
 
                     // Log progress every 50 allocations
-                    if ((successfulAllocations % 50) == 0)
+                    if (successfulAllocations % 50 == 0)
                     {
                         var totalAllocatedMB = allocationSizes.Sum() / (1024 * 1024);
                         _output.WriteLine($"Allocated {successfulAllocations} buffers, total: {totalAllocatedMB} MB");
@@ -155,7 +155,7 @@ public sealed class HardwareStressTests : IDisposable
                     var sizeMB = baseAllocationSizeMB + random.Next(0, baseAllocationSizeMB);
                     var sizeBytes = sizeMB * 1024 * 1024;
 
-                    var devicePtr = IntPtr.Zero;
+                    var devicePtr = nint.Zero;
                     var result = CudaMalloc(ref devicePtr, sizeBytes);
 
                     if (result == 0)
@@ -223,8 +223,8 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
     }
 }";
 
-        IntPtr program = IntPtr.Zero, module = IntPtr.Zero, kernel = IntPtr.Zero;
-        var deviceBuffers = new IntPtr[concurrentKernels];
+        nint program = nint.Zero, module = nint.Zero, kernel = nint.Zero;
+        var deviceBuffers = new nint[concurrentKernels];
         var hostBuffers = new float[concurrentKernels][];
 
         try
@@ -284,8 +284,8 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             while (stressTestSw.ElapsedMilliseconds < stressTestDurationMs && !_cancellationTokenSource.Token.IsCancellationRequested)
             {
                 // Launch concurrent kernels to maximize heat generation
-                var kernelParams = new IntPtr[concurrentKernels][];
-                var kernelParamsPtrs = new IntPtr[concurrentKernels];
+                var kernelParams = new nint[concurrentKernels][];
+                var kernelParamsPtrs = new nint[concurrentKernels];
 
                 try
                 {
@@ -293,7 +293,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                     {
                         kernelParams[i] =
                         [
-                            Marshal.AllocHGlobal(IntPtr.Size),
+                            Marshal.AllocHGlobal(nint.Size),
                         Marshal.AllocHGlobal(sizeof(int)),
                         Marshal.AllocHGlobal(sizeof(int))
                         ];
@@ -302,7 +302,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                         Marshal.WriteInt32(kernelParams[i][1], dataSize);
                         Marshal.WriteInt32(kernelParams[i][2], 1000); // High iteration count for heat
 
-                        kernelParamsPtrs[i] = Marshal.AllocHGlobal(kernelParams[i].Length * IntPtr.Size);
+                        kernelParamsPtrs[i] = Marshal.AllocHGlobal(kernelParams[i].Length * nint.Size);
                         Marshal.Copy(kernelParams[i], 0, kernelParamsPtrs[i], kernelParams[i].Length);
 
                         // Launch kernel
@@ -312,9 +312,9 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                         result = CuLaunchKernel(
                             kernel,
                            (uint)gridSize, 1, 1,
-                           (uint)blockSize, 1, 1,
-                            0, IntPtr.Zero,
-                            kernelParamsPtrs[i], IntPtr.Zero);
+                           blockSize, 1, 1,
+                            0, nint.Zero,
+                            kernelParamsPtrs[i], nint.Zero);
 
                         if (result != 0)
                         {
@@ -337,7 +337,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                     if (iterationCount % 10 == 0)
                     {
                         var elapsedSeconds = stressTestSw.ElapsedMilliseconds / 1000.0;
-                        var progress = (stressTestSw.ElapsedMilliseconds * 100.0) / stressTestDurationMs;
+                        var progress = stressTestSw.ElapsedMilliseconds * 100.0 / stressTestDurationMs;
                         _output.WriteLine($"Stress test progress: {progress:F1}% ({elapsedSeconds:F1}s), iterations: {iterationCount}, failures: {kernelFailures}");
                     }
                 }
@@ -353,7 +353,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                                 Marshal.FreeHGlobal(param);
                             }
                         }
-                        if (kernelParamsPtrs[i] != IntPtr.Zero)
+                        if (kernelParamsPtrs[i] != nint.Zero)
                         {
                             Marshal.FreeHGlobal(kernelParamsPtrs[i]);
                         }
@@ -370,10 +370,10 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             _output.WriteLine($"  Duration: {stressTestSw.ElapsedMilliseconds / 1000.0:F1} seconds");
             _output.WriteLine($"  Total iterations: {iterationCount}");
             _output.WriteLine($"  Kernel failures: {kernelFailures}");
-            _output.WriteLine($"  Failure rate: {(kernelFailures * 100.0) / (iterationCount * concurrentKernels):F2}%");
+            _output.WriteLine($"  Failure rate: {kernelFailures * 100.0 / (iterationCount * concurrentKernels):F2}%");
 
             // Validate thermal stability
-            var failureRate = (kernelFailures * 100.0) / (iterationCount * concurrentKernels);
+            var failureRate = kernelFailures * 100.0 / (iterationCount * concurrentKernels);
             _ = failureRate.Should().BeLessThan(5.0, "Failure rate should be low even under thermal stress");
             _ = iterationCount.Should().BeGreaterThan(10, "Should complete multiple stress iterations");
 
@@ -384,12 +384,12 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             // Cleanup
             for (var i = 0; i < concurrentKernels; i++)
             {
-                if (deviceBuffers[i] != IntPtr.Zero)
+                if (deviceBuffers[i] != nint.Zero)
                     _ = CudaFree(deviceBuffers[i]);
             }
-            if (module != IntPtr.Zero)
+            if (module != nint.Zero)
                 _ = CuModuleUnload(module);
-            if (program != IntPtr.Zero)
+            if (program != nint.Zero)
                 _ = NvrtcDestroyProgram(ref program);
         }
     }
@@ -405,8 +405,8 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
         _output.WriteLine($"Starting concurrent stream stress test with {streamCount} streams");
 
-        var streams = new IntPtr[streamCount];
-        var deviceBuffers = new List<IntPtr>[streamCount];
+        var streams = new nint[streamCount];
+        var deviceBuffers = new List<nint>[streamCount];
         var completedOperations = new int[streamCount];
 
         try
@@ -441,7 +441,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                         try
                         {
                             // Allocate memory
-                            var devicePtr = IntPtr.Zero;
+                            var devicePtr = nint.Zero;
                             var result = CudaMalloc(ref devicePtr, dataSize * sizeof(float));
                             if (result == 0)
                             {
@@ -526,7 +526,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
             for (var i = 0; i < streamCount; i++)
             {
-                var utilization = (completedOperations[i] * 100.0) / operationsPerStream;
+                var utilization = completedOperations[i] * 100.0 / operationsPerStream;
                 _output.WriteLine($"    Stream {i}: {completedOperations[i]}/{operationsPerStream}{utilization:F1}%)");
             }
 
@@ -550,7 +550,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                 }
 
                 // Destroy stream
-                if (streams[i] != IntPtr.Zero)
+                if (streams[i] != nint.Zero)
                     _ = CudaStreamDestroy(streams[i]);
             }
             _output.WriteLine("Cleanup completed for concurrent stream stress test");
@@ -574,7 +574,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             try
             {
                 // Try to free invalid pointer
-                var result = CudaFree(new IntPtr(0xDEADBEEF));
+                var result = CudaFree(new nint(0xDEADBEEF));
                 if (result != 0)
                     totalErrors++;
 
@@ -582,7 +582,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
                 var dummyPtr = Marshal.AllocHGlobal(1024);
                 try
                 {
-                    result = CudaMemcpyHtoD(new IntPtr(0xBADCAFE), dummyPtr, 1024);
+                    result = CudaMemcpyHtoD(new nint(0xBADCAFE), dummyPtr, 1024);
                     if (result != 0)
                         totalErrors++;
                 }
@@ -621,9 +621,9 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             {
                 // Try to launch with invalid kernel handle
                 var result = CuLaunchKernel(
-                    new IntPtr(0xDEADBEEF),
+                    new nint(0xDEADBEEF),
                     1, 1, 1, 1, 1, 1, 0,
-                    IntPtr.Zero, IntPtr.Zero, IntPtr.Zero);
+                    nint.Zero, nint.Zero, nint.Zero);
 
                 if (result != 0)
                     invalidKernelErrors++;
@@ -646,14 +646,14 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
         // Test 3: Memory exhaustion recovery
         _output.WriteLine("Testing memory exhaustion recovery...");
         var exhaustionRecoveries = 0;
-        var largeAllocations = new List<IntPtr>();
+        var largeAllocations = new List<nint>();
 
         try
         {
             // Allocate until exhaustion
             for (var i = 0; i < 100; i++)
             {
-                var devicePtr = IntPtr.Zero;
+                var devicePtr = nint.Zero;
                 var result = CudaMalloc(ref devicePtr, 512 * 1024 * 1024); // 512 MB chunks
 
                 if (result == 0)
@@ -680,7 +680,7 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
             largeAllocations.RemoveRange(0, halfCount);
 
             // Try to allocate again
-            var recoveryPtr = IntPtr.Zero;
+            var recoveryPtr = nint.Zero;
             var recoveryResult = CudaMalloc(ref recoveryPtr, 256 * 1024 * 1024);
             if (recoveryResult == 0)
             {
@@ -716,10 +716,10 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
     {
         _cancellationTokenSource.Cancel();
 
-        if (_cudaContext != IntPtr.Zero)
+        if (_cudaContext != nint.Zero)
         {
             _ = CudaCtxDestroy(_cudaContext);
-            _cudaContext = IntPtr.Zero;
+            _cudaContext = nint.Zero;
         }
         _cudaInitialized = false;
 
@@ -735,11 +735,11 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxCreate_v2", ExactSpelling = true)]
-    private static extern int CudaCtxCreate(ref IntPtr ctx, uint flags, int dev);
+    private static extern int CudaCtxCreate(ref nint ctx, uint flags, int dev);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxDestroy_v2", ExactSpelling = true)]
-    private static extern int CudaCtxDestroy(IntPtr ctx);
+    private static extern int CudaCtxDestroy(nint ctx);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuCtxSynchronize", ExactSpelling = true)]
@@ -751,78 +751,78 @@ extern ""C"" __global__ void thermalStress(float* data, int n, int iterations)
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemAlloc_v2", ExactSpelling = true)]
-    private static extern int CudaMalloc(ref IntPtr dptr, long bytesize);
+    private static extern int CudaMalloc(ref nint dptr, long bytesize);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemFree_v2", ExactSpelling = true)]
-    private static extern int CudaFree(IntPtr dptr);
+    private static extern int CudaFree(nint dptr);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoD_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyHtoD(IntPtr dstDevice, IntPtr srcHost, long byteCount);
+    private static extern int CudaMemcpyHtoD(nint dstDevice, nint srcHost, long byteCount);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoH_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyDtoH(IntPtr dstHost, IntPtr srcDevice, long byteCount);
+    private static extern int CudaMemcpyDtoH(nint dstHost, nint srcDevice, long byteCount);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyHtoDAsync_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyHtoDAsync(IntPtr dstDevice, IntPtr srcHost, long byteCount, IntPtr stream);
+    private static extern int CudaMemcpyHtoDAsync(nint dstDevice, nint srcHost, long byteCount, nint stream);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuMemcpyDtoHAsync_v2", ExactSpelling = true)]
-    private static extern int CudaMemcpyDtoHAsync(IntPtr dstHost, IntPtr srcDevice, long byteCount, IntPtr stream);
+    private static extern int CudaMemcpyDtoHAsync(nint dstHost, nint srcDevice, long byteCount, nint stream);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuStreamCreate", ExactSpelling = true)]
-    private static extern int CudaStreamCreate(ref IntPtr stream, uint flags);
+    private static extern int CudaStreamCreate(ref nint stream, uint flags);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuStreamDestroy_v2", ExactSpelling = true)]
-    private static extern int CudaStreamDestroy(IntPtr stream);
+    private static extern int CudaStreamDestroy(nint stream);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuStreamSynchronize", ExactSpelling = true)]
-    private static extern int CudaStreamSynchronize(IntPtr stream);
+    private static extern int CudaStreamSynchronize(nint stream);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuLaunchKernel", ExactSpelling = true)]
-    private static extern int CuLaunchKernel(IntPtr f, uint gridDimX, uint gridDimY, uint gridDimZ,
-        uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, IntPtr hStream,
-        IntPtr kernelParams, IntPtr extra);
+    private static extern int CuLaunchKernel(nint f, uint gridDimX, uint gridDimY, uint gridDimZ,
+        uint blockDimX, uint blockDimY, uint blockDimZ, uint sharedMemBytes, nint hStream,
+        nint kernelParams, nint extra);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuModuleLoadData", ExactSpelling = true)]
-    private static extern int CuModuleLoadData(ref IntPtr module, byte[] image);
+    private static extern int CuModuleLoadData(ref nint module, byte[] image);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuModuleUnload", ExactSpelling = true)]
-    private static extern int CuModuleUnload(IntPtr module);
+    private static extern int CuModuleUnload(nint module);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvcuda", EntryPoint = "cuModuleGetFunction", ExactSpelling = true)]
-    private static extern int CuModuleGetFunction(ref IntPtr hfunc, IntPtr hmod, byte[] name);
+    private static extern int CuModuleGetFunction(ref nint hfunc, nint hmod, byte[] name);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCreateProgram", ExactSpelling = true)]
-    private static extern int NvrtcCreateProgram(ref IntPtr prog, string src, string name,
+    private static extern int NvrtcCreateProgram(ref nint prog, string src, string name,
         int numHeaders, string[] headers, string[] includeNames);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcDestroyProgram", ExactSpelling = true)]
-    private static extern int NvrtcDestroyProgram(ref IntPtr prog);
+    private static extern int NvrtcDestroyProgram(ref nint prog);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcCompileProgram", ExactSpelling = true)]
-    private static extern int NvrtcCompileProgram(IntPtr prog, int numOptions, string[] options);
+    private static extern int NvrtcCompileProgram(nint prog, int numOptions, string[] options);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTXSize", ExactSpelling = true)]
-    private static extern int NvrtcGetPTXSize(IntPtr prog, ref long ptxSizeRet);
+    private static extern int NvrtcGetPTXSize(nint prog, ref long ptxSizeRet);
 
     [DefaultDllImportSearchPaths(DllImportSearchPath.SafeDirectories)]
     [DllImport("nvrtc64_120_0", EntryPoint = "nvrtcGetPTX", ExactSpelling = true)]
-    private static extern int NvrtcGetPTX(IntPtr prog, byte[] ptx);
+    private static extern int NvrtcGetPTX(nint prog, byte[] ptx);
 
     #endregion
 }

@@ -9,7 +9,7 @@ using Xunit.Abstractions;
 using DotCompute.Core.Pipelines;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Integration.Tests;
 
 
 /// <summary>
@@ -150,8 +150,8 @@ public sealed class EndToEndWorkflowTests(ITestOutputHelper output) : Integratio
         var context = new PipelineExecutionContext
         {
             Inputs = new Dictionary<string, object> { ["input"] = input },
-            Device = ServiceProvider.GetRequiredService<DotCompute.Core.IComputeDevice>(),
-            MemoryManager = ServiceProvider.GetRequiredService<DotCompute.Core.Pipelines.IPipelineMemoryManager>(),
+            Device = ServiceProvider.GetRequiredService<Core.IComputeDevice>(),
+            MemoryManager = ServiceProvider.GetRequiredService<IPipelineMemoryManager>(),
             Options = new PipelineExecutionOptions { ContinueOnError = false }
         };
 
@@ -259,7 +259,7 @@ public sealed class EndToEndWorkflowTests(ITestOutputHelper output) : Integratio
         {
             if (input is float[] arrayInput)
             {
-                var buffer = await CreateInputBuffer<float>(memoryManager, arrayInput);
+                var buffer = await CreateInputBuffer(memoryManager, arrayInput);
                 buffers.Add(buffer);
                 arguments.Add(buffer);
             }

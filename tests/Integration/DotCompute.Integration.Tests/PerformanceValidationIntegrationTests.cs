@@ -7,13 +7,13 @@
 
 using System.Diagnostics;
 using DotCompute.Abstractions;
-using DotCompute.Tests.Integration.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Integration.Tests.Infrastructure;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Integration.Tests;
 
 
 /// <summary>
@@ -119,7 +119,7 @@ public sealed class PerformanceValidationIntegrationTests : ComputeWorkflowTestB
             _ = result.Success.Should().BeTrue();
 
             var transferTime = result.Duration;
-            var dataMB = (size * sizeof(float) * 2) / 1024.0 / 1024.0; // Round trip
+            var dataMB = size * sizeof(float) * 2 / 1024.0 / 1024.0; // Round trip
             var bandwidth = dataMB / transferTime.TotalSeconds;
 
             var bandwidthResult = new MemoryBandwidthResult

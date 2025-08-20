@@ -5,7 +5,7 @@ using FluentAssertions;
 
 #pragma warning disable CA2012 // Use ValueTasks correctly - NSubstitute mock setup requires storing ValueTask
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Abstractions.Tests;
 
 
 public sealed class AcceleratorMockTests
@@ -19,7 +19,7 @@ public sealed class AcceleratorMockTests
         var memoryManager = Substitute.For<IMemoryManager>();
         var compiledKernel = Substitute.For<ICompiledKernel>();
         var kernelSource = new TextKernelSource("test code", "test", KernelLanguage.CSharpIL);
-        var kernelDef = new KernelDefinition { Name = "test", Source = kernelSource.Code };
+        var kernelDef = new KernelDefinition("test", kernelSource, new CompilationOptions());
 
         _ = accelerator.Info.Returns(info);
         _ = accelerator.Memory.Returns(memoryManager);
@@ -297,11 +297,11 @@ public sealed class MemoryManagerMockTests
         var memoryManager = Substitute.For<IMemoryManager>();
         var buffer = Substitute.For<IMemoryBuffer>();
         var data = new int[] { 1, 2, 3, 4, 5 };
-        _ = memoryManager.AllocateAndCopyAsync<int>(new ReadOnlyMemory<int>(data), MemoryOptions.None, default)
+        _ = memoryManager.AllocateAndCopyAsync(new ReadOnlyMemory<int>(data), MemoryOptions.None, default)
             .Returns(ValueTask.FromResult(buffer));
 
         // Act
-        var result = await memoryManager.AllocateAndCopyAsync<int>(new ReadOnlyMemory<int>(data));
+        var result = await memoryManager.AllocateAndCopyAsync(new ReadOnlyMemory<int>(data));
 
         // Assert
         _ = result.Should().BeSameAs(buffer);

@@ -4,13 +4,13 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Tests.Integration.Infrastructure;
 using DotCompute.Tests.Common.Hardware;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Integration.Tests.Infrastructure;
 
 namespace DotCompute.Tests.Integration;
 

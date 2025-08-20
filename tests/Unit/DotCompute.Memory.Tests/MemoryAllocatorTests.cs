@@ -3,7 +3,7 @@ using FluentAssertions;
 using DotCompute.Memory;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Memory.Tests;
 
 
 public sealed class MemoryAllocatorTests : IDisposable

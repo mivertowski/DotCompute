@@ -13,7 +13,7 @@ using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Plugins.Tests;
 
 
 /// <summary>

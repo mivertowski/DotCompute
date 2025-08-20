@@ -2,7 +2,7 @@ using Xunit;
 using FluentAssertions;
 using DotCompute.Core;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 
 public sealed class CommandQueueOptionsTests

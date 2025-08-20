@@ -5,7 +5,7 @@ using DotCompute.Tests.Implementations.Accelerators;
 using DotCompute.Tests.Implementations.Memory;
 using DotCompute.Tests.Implementations.Kernels;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 /// <summary>
 /// Integration tests using real test implementations instead of mocks.
@@ -52,7 +52,7 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
 
         // Act - Read data back
         var readbackData = new float[elementCount];
-        await buffer.CopyToHostAsync<float>(readbackData.AsMemory());
+        await buffer.CopyToHostAsync(readbackData.AsMemory());
 
         // Assert - Verify data integrity
         for (var i = 0; i < elementCount; i++)
@@ -94,7 +94,7 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
             EntryPoint = "main",
             Language = KernelLanguage.OpenCL
         };
-        var kernelDefinition = new KernelDefinition("TestKernel", kernelSource.Code, kernelSource.EntryPoint);
+        var kernelDefinition = new KernelDefinition("TestKernel", kernelSource, new CompilationOptions());
 
         // Act - Compile kernel
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
@@ -136,7 +136,7 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
             EntryPoint = "process",
             Language = KernelLanguage.OpenCL
         };
-        var kernelDef = new KernelDefinition("DataProcessing", kernelSource.Code, kernelSource.EntryPoint);
+        var kernelDef = new KernelDefinition("DataProcessing", kernelSource, new CompilationOptions());
 
         var kernel = await _accelerator.CompileKernelAsync(kernelDef);
         var args = new KernelArguments(inputBuffer, outputBuffer, dataSize);
@@ -193,15 +193,15 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
         // Arrange & Act
         var source1 = new TestKernelSource { Name = "Kernel1", Code = "kernel1 code", Language = KernelLanguage.OpenCL };
         var kernel1 = await _accelerator.CompileKernelAsync(
-            new KernelDefinition("Kernel1", source1.Code, source1.EntryPoint));
+            new KernelDefinition("Kernel1", source1, new CompilationOptions()));
 
         var source2 = new TestKernelSource { Name = "Kernel2", Code = "kernel2 code", Language = KernelLanguage.OpenCL };
         var kernel2 = await _accelerator.CompileKernelAsync(
-            new KernelDefinition("Kernel2", source2.Code, source2.EntryPoint));
+            new KernelDefinition("Kernel2", source2, new CompilationOptions()));
 
         var source3 = new TestKernelSource { Name = "simple_kernel", Code = "simple kernel code", Language = KernelLanguage.OpenCL };
         var kernel3 = await _accelerator.CompileKernelAsync(
-            new KernelDefinition("simple_kernel", source3.Code, source3.EntryPoint));
+            new KernelDefinition("simple_kernel", source3, new CompilationOptions()));
 
         // Assert
         Assert.NotNull(kernel1);
@@ -245,7 +245,7 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
 
         // Act - Read back
         var readback = new double[elementCount];
-        await buffer.CopyToHostAsync<double>(readback.AsMemory());
+        await buffer.CopyToHostAsync(readback.AsMemory());
 
         // Assert - Verify data
         for (var i = 0; i < Math.Min(10, elementCount); i++)
@@ -306,7 +306,7 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
             Language = KernelLanguage.OpenCL
         };
         var vectorAddKernel = await _accelerator.CompileKernelAsync(
-            new KernelDefinition("VectorAdd", kernelSource.Code, kernelSource.EntryPoint));
+            new KernelDefinition("VectorAdd", kernelSource, new CompilationOptions()));
 
         // Step 5: Execute kernel
         _output.WriteLine("Executing kernel...");
@@ -320,7 +320,7 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
         // Step 7: Read results
         _output.WriteLine("Reading results...");
         var results = new float[dataSize];
-        await bufferResult.CopyToHostAsync<float>(results.AsMemory());
+        await bufferResult.CopyToHostAsync(results.AsMemory());
 
         // Step 8: Verify results(approximate since we're simulating)
         _output.WriteLine("Verifying results...");

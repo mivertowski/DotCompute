@@ -4,11 +4,10 @@
 using DotCompute.Abstractions;
 using DotCompute.Core.Memory;
 using DotCompute.Tests.Mocks;
-using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests;
+namespace DotCompute.Memory.Tests;
 
 
 /// <summary>

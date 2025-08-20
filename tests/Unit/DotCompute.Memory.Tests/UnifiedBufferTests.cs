@@ -5,7 +5,7 @@ using DotCompute.Memory;
 using NSubstitute;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Memory.Tests;
 
 
 public sealed class UnifiedBufferTests : IDisposable
@@ -190,7 +190,7 @@ public sealed class UnifiedBufferTests : IDisposable
         using var buffer = new UnifiedBuffer<int>(_memoryManager, 10);
 
         // Act & Assert
-        _ = buffer.Options.Should().Be(DotCompute.Abstractions.MemoryOptions.None);
+        _ = buffer.Options.Should().Be(Abstractions.MemoryOptions.None);
     }
 
     [Fact]

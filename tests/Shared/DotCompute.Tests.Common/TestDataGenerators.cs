@@ -1,6 +1,6 @@
 using System.Numerics;
 
-namespace DotCompute.Tests.Utilities;
+namespace DotCompute.Tests.Common;
 
 
 /// <summary>
@@ -103,7 +103,7 @@ public static class TestDataGenerators
                 {
                     for (var x = 0; x < width; x++)
                     {
-                        data[y, x] = ((x + y) % 2 == 0) ? 1.0f : 0.0f;
+                        data[y, x] = (x + y) % 2 == 0 ? 1.0f : 0.0f;
                     }
                 }
                 break;

@@ -12,7 +12,7 @@ using DotCompute.Backends.CPU.Kernels;
 using Xunit.Abstractions;
 
 #pragma warning disable CA1515 // Make types internal
-namespace DotCompute.Backends.CPU;
+namespace DotCompute.Backends.CPU.Tests;
 
 
 /// <summary>

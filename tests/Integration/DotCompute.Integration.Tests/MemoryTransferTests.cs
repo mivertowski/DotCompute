@@ -2,13 +2,14 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.DependencyInjection;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Tests.Integration;
+using DotCompute.Tests.Common;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Integration.Tests;
 
 
 /// <summary>
@@ -636,7 +637,7 @@ public sealed class MemoryTransferTests(ITestOutputHelper output) : IntegrationT
             return result;
         });
 
-        return [.. (await Task.WhenAll(tasks))];
+        return [.. await Task.WhenAll(tasks)];
     }
 
     private async Task<MemoryTypeResult> TestMemoryTypeTransfer(

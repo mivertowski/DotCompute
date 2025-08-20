@@ -8,22 +8,18 @@ using BenchmarkDotNet.Attributes;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Tests.Common;
 
-namespace DotCompute.Tests.Hardware.Integration;
+namespace DotCompute.Hardware.Cuda.Tests.Integration;
 
 
 /// <summary>
 /// Performance benchmarks and tests for CUDA backend operations
 /// </summary>
-[Trait("Category", "HardwareRequired")]
-[Trait("Category", "CudaRequired")]
-[Trait("Hardware", "CUDA")]
-[Trait("Category", "Performance")]
 [Collection("CUDA Hardware Tests")]
 public sealed class CudaPerformanceTests : IDisposable
 {
@@ -157,7 +153,7 @@ public sealed class CudaPerformanceTests : IDisposable
 
         // Assert
         var avgTimeMs = stopwatch.ElapsedMilliseconds / (double)benchmarkRuns;
-        var bandwidthGBps = (sizeInBytes / 1024.0 / 1024.0 / 1024.0) / (avgTimeMs / 1000.0);
+        var bandwidthGBps = sizeInBytes / 1024.0 / 1024.0 / 1024.0 / (avgTimeMs / 1000.0);
 
         _ = bandwidthGBps.Should().BeGreaterThan(0.1, "Host-to-device transfer should achieve reasonable bandwidth");
 
@@ -212,7 +208,7 @@ public sealed class CudaPerformanceTests : IDisposable
 
         // Assert
         var avgTimeMs = stopwatch.ElapsedMilliseconds / (double)benchmarkRuns;
-        var bandwidthGBps = (sizeInBytes / 1024.0 / 1024.0 / 1024.0) / (avgTimeMs / 1000.0);
+        var bandwidthGBps = sizeInBytes / 1024.0 / 1024.0 / 1024.0 / (avgTimeMs / 1000.0);
 
         _ = bandwidthGBps.Should().BeGreaterThan(0.1, "Device-to-host transfer should achieve reasonable bandwidth");
 
@@ -324,7 +320,7 @@ public sealed class CudaPerformanceTests : IDisposable
 
         // Assert
         Assert.Equal(concurrentKernels, compiledKernels.Length);
-        _ = compiledKernels.Should().AllSatisfy((k => k.Should().NotBeNull()));
+        _ = compiledKernels.Should().AllSatisfy(k => k.Should().NotBeNull());
 
         var avgTimePerKernel = stopwatch.ElapsedMilliseconds / (double)concurrentKernels;
         _ = avgTimePerKernel.Should().BeLessThan(15000,
@@ -399,7 +395,7 @@ public sealed class CudaPerformanceTests : IDisposable
         stopwatch.Stop();
 
         // Assert
-        var avgQueryTime = (stopwatch.ElapsedTicks * 1000000.0 / Stopwatch.Frequency) / (double)queryCount;
+        var avgQueryTime = stopwatch.ElapsedTicks * 1000000.0 / Stopwatch.Frequency / queryCount;
         _ = avgQueryTime.Should().BeLessThan(1000, "Memory statistics queries should be very fast");
 
         _output.WriteLine($"Average memory statistics query time: {avgQueryTime:F2}μs{queryCount} queries)");
@@ -528,7 +524,7 @@ __global__ void benchmark_kernel(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "benchmark_kernel",
-            Code = kernelSource,
+            Code = Encoding.UTF8.GetBytes(kernelSource),
             EntryPoint = "benchmark_kernel"
         };
     }
@@ -559,7 +555,7 @@ __global__ void complex_kernel(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "complex_kernel",
-            Code = kernelSource,
+            Code = Encoding.UTF8.GetBytes(kernelSource),
             EntryPoint = "complex_kernel"
         };
     }
@@ -577,7 +573,7 @@ __global__ void {name}(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = name,
-            Code = kernelSource,
+            Code = Encoding.UTF8.GetBytes(kernelSource),
             EntryPoint = name
         };
     }
@@ -595,7 +591,7 @@ __global__ void {name}(float* input, float* output, int n)
         }
     }
 
-    private static bool IsNvrtcAvailable() => DotCompute.Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
+    private static bool IsNvrtcAvailable() => Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
 
     public void Dispose()
     {

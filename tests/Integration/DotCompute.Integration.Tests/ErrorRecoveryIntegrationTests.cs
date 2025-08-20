@@ -6,11 +6,11 @@ using System.Diagnostics;
 using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Tests.Common.Hardware;
-using DotCompute.Tests.Integration.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Integration.Tests.Infrastructure;
 
 namespace DotCompute.Tests.Integration;
 

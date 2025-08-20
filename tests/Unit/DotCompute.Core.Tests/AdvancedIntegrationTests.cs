@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 using DotCompute.Tests.Implementations.Kernels;
 using DotCompute.Tests.Implementations.Accelerators;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Core.Tests;
 
 /// <summary>
 /// Advanced integration tests demonstrating real implementations working together
@@ -280,7 +280,7 @@ public sealed class AdvancedIntegrationTests(ITestOutputHelper output) : IAsyncL
 
         // Step 6: Verify results(simplified)
         var hostC = new float[matrixSize * matrixSize];
-        await bufferC.CopyToHostAsync<float>(hostC.AsMemory());
+        await bufferC.CopyToHostAsync(hostC.AsMemory());
 
         // Check that output buffer was written to(simplified check)
         // In test implementation, the buffer remains unchanged but we verify the operation completed
@@ -316,8 +316,13 @@ public sealed class AdvancedIntegrationTests(ITestOutputHelper output) : IAsyncL
                 var kernel = await accelerator.CompileKernelAsync(
                     new KernelDefinition(
                         $"Kernel_{index}",
-                        "test",
-                        "main"));
+                        new TestKernelSource
+                        {
+                            Name = $"Kernel_{index}",
+                            Code = "test",
+                            Language = KernelLanguage.OpenCL
+                        },
+                        new CompilationOptions()));
 
                 var args = new KernelArguments();
                 await kernel.ExecuteAsync(args);
@@ -408,9 +413,9 @@ public sealed class AdvancedIntegrationTests(ITestOutputHelper output) : IAsyncL
         var readback2 = new int[data2.Length];
         var readback3 = new int[data3.Length];
 
-        await view1.CopyToHostAsync<int>(readback1.AsMemory());
-        await view2.CopyToHostAsync<int>(readback2.AsMemory());
-        await view3.CopyToHostAsync<int>(readback3.AsMemory());
+        await view1.CopyToHostAsync(readback1.AsMemory());
+        await view2.CopyToHostAsync(readback2.AsMemory());
+        await view3.CopyToHostAsync(readback3.AsMemory());
 
         // Verify
         Assert.Equal(data1[0], readback1[0]);

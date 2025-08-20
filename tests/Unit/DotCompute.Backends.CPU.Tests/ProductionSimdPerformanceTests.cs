@@ -14,7 +14,7 @@ using DotCompute.Backends.CPU.Optimization;
 using Xunit.Abstractions;
 
 #pragma warning disable CA1515 // Make types internal
-namespace DotCompute.Backends.CPU;
+namespace DotCompute.Backends.CPU.Tests;
 
 
 /// <summary>
@@ -417,7 +417,7 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
             for (var i = 0; i < vectorSize; i++)
             {
                 var col = startCol + i;
-                values[i] = (row < matrixSize && col < matrix[row].Length) ? matrix[row][col] : 0f;
+                values[i] = row < matrixSize && col < matrix[row].Length ? matrix[row][col] : 0f;
             }
         }
         else
@@ -426,7 +426,7 @@ public sealed class ProductionSimdPerformanceTests(ITestOutputHelper output)
             for (var i = 0; i < vectorSize; i++)
             {
                 var matrixRow = startCol + i;
-                values[i] = (matrixRow < matrixSize && row < matrix[matrixRow].Length) ? matrix[matrixRow][row] : 0f;
+                values[i] = matrixRow < matrixSize && row < matrix[matrixRow].Length ? matrix[matrixRow][row] : 0f;
             }
         }
 

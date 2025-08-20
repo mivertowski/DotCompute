@@ -3,7 +3,7 @@ using DotCompute.Abstractions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace DotCompute.Tests.Utilities.TestFixtures;
+namespace DotCompute.Tests.Common.TestFixtures;
 
 
 /// <summary>
@@ -82,7 +82,7 @@ public sealed class MemoryTestFixture(ITestOutputHelper? output = null) : IAsync
         var elementCount = (int)(buffer.SizeInBytes / Marshal.SizeOf<T>());
         var hostData = new T[elementCount];
 
-        await buffer.CopyToHostAsync<T>(hostData.AsMemory());
+        await buffer.CopyToHostAsync(hostData.AsMemory());
 
         for (var i = 0; i < elementCount; i++)
         {
@@ -148,7 +148,7 @@ public sealed class MemoryTestFixture(ITestOutputHelper? output = null) : IAsync
                     // Perform some operations
                     var data = new byte[Math.Min(1024, size)];
                     await buffer.CopyFromHostAsync<byte>(data.AsMemory());
-                    await buffer.CopyToHostAsync<byte>(data.AsMemory());
+                    await buffer.CopyToHostAsync(data.AsMemory());
 
                     await buffer.DisposeAsync();
 

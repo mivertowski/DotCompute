@@ -7,22 +7,18 @@ using System.Globalization;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Tests.Common;
 
-namespace DotCompute.Tests.Hardware.Integration;
+namespace DotCompute.Hardware.Cuda.Tests.Integration;
 
 
 /// <summary>
 /// Integration tests for CUDA host-device memory transfer operations
 /// </summary>
-[Trait("Category", "HardwareRequired")]
-[Trait("Category", "CudaRequired")]
-[Trait("Hardware", "CUDA")]
-[Trait("Category", "Integration")]
 [Collection("CUDA Hardware Tests")]
 public sealed class CudaMemoryTransferTests : IDisposable
 {

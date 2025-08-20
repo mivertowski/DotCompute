@@ -2,7 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using DotCompute.Abstractions;
 using Microsoft.Extensions.Logging;
 
-namespace DotCompute.Tests.Utilities.TestInfrastructure;
+namespace DotCompute.Tests.Common.TestInfrastructure;
 
 
 /// <summary>
@@ -117,7 +117,7 @@ public sealed class SimulatedAccelerator : IAccelerator
     public AcceleratorType Type { get; }
     public AcceleratorInfo Info { get; }
     public IMemoryManager Memory => _memoryManager;
-    public AcceleratorContext Context { get; } = new(IntPtr.Zero, 0);
+    public AcceleratorContext Context { get; } = new(nint.Zero, 0);
     public long AvailableMemory => Info.TotalMemory - _memory.Values.Sum(m => m.Length);
     public bool IsAvailable => _failureMessage == null && !_disposed;
 
@@ -171,10 +171,10 @@ public sealed class SimulatedAccelerator : IAccelerator
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
 
-        if (!IsAvailable)
+        if (!IsAvailable || definition.Code is null)
             throw new InvalidOperationException(_failureMessage ?? "Accelerator not available");
 
-        var kernel = new TestCompiledKernel(definition.Name, definition.Code ?? string.Empty, options ?? new CompilationOptions());
+        var kernel = new TestCompiledKernel(definition.Name, definition.Code, options ?? new CompilationOptions());
         return ValueTask.FromResult<ICompiledKernel>(kernel);
     }
 
@@ -286,9 +286,7 @@ public sealed class SimulatedAccelerator : IAccelerator
 /// Simulated accelerator context
 /// </summary>
 [ExcludeFromCodeCoverage]
-#pragma warning disable CS9113 // Parameter is unread
 public class SimulatedAcceleratorContext(SimulatedAccelerator accelerator)
-#pragma warning restore CS9113
 {
     public static void Synchronize()
         // Simulate synchronization

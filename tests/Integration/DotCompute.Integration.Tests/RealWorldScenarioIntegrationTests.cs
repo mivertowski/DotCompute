@@ -4,13 +4,13 @@
 // Licensed under the MIT License. See LICENSE file in the project root for license information.
 
 using DotCompute.Abstractions;
-using DotCompute.Tests.Integration.Infrastructure;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Integration.Tests.Infrastructure;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Integration.Tests;
 
 
 /// <summary>
@@ -597,7 +597,7 @@ public sealed class RealWorldScenarioIntegrationTests(ITestOutputHelper output) 
 
         // Performance validation for big data processing
         var recordsPerSecond = recordCount / result.Duration.TotalSeconds;
-        var throughputMBps = (recordCount * dimensionCount * sizeof(float)) / 1024.0 / 1024.0 / result.Duration.TotalSeconds;
+        var throughputMBps = recordCount * dimensionCount * sizeof(float) / 1024.0 / 1024.0 / result.Duration.TotalSeconds;
 
         Logger.LogInformation("Big data analytics performance: {RecordsPerSec:E2} records/s, {Throughput:F2} MB/s " +
                              "for {Records:E0} records",
@@ -695,7 +695,7 @@ public sealed class RealWorldScenarioIntegrationTests(ITestOutputHelper output) 
         x = Math.Abs(x);
 
         var t = 1.0 / (1.0 + p * x);
-        var y = 1.0 - (((a5 * t + a4) * t) + a3) * t + a2 * t + a1 * t * Math.Exp(-x * x);
+        var y = 1.0 - ((a5 * t + a4) * t + a3) * t + a2 * t + a1 * t * Math.Exp(-x * x);
 
         return sign * y;
     }

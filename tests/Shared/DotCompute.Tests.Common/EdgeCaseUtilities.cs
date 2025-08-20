@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
-namespace DotCompute.Tests.Utilities;
+namespace DotCompute.Tests.Common;
 
 
 /// <summary>
@@ -174,7 +174,7 @@ public static class EdgeCaseUtilities
             case TestPattern.Checksum:
                 for (var i = 0; i < size; i++)
                 {
-                    data[i] = (byte)(i ^ (i >> 8) ^ (i >> 16) ^ (i >> 24));
+                    data[i] = (byte)(i ^ i >> 8 ^ i >> 16 ^ i >> 24);
                 }
                 break;
         }
@@ -233,7 +233,7 @@ public static class EdgeCaseUtilities
             case TestPattern.Checksum:
                 for (var i = 0; i < data.Length; i++)
                 {
-                    var expected = (byte)(i ^ (i >> 8) ^ (i >> 16) ^ (i >> 24));
+                    var expected = (byte)(i ^ i >> 8 ^ i >> 16 ^ i >> 24);
                     if (data[i] != expected)
                     {
                         return false;

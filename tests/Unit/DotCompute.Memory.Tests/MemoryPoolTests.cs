@@ -4,7 +4,7 @@ using DotCompute.Memory;
 using NSubstitute;
 using Xunit;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Memory.Tests;
 
 
 public sealed class MemoryPoolTests : IDisposable

@@ -6,22 +6,18 @@ using System.Text;
 using DotCompute.Abstractions;
 using DotCompute.Backends.CUDA;
 using DotCompute.Backends.CUDA.Native;
-using DotCompute.Tests.Utilities;
 using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Tests.Common;
 
-namespace DotCompute.Tests.Hardware.Integration;
+namespace DotCompute.Hardware.Cuda.Tests.Integration;
 
 
 /// <summary>
 /// End-to-end integration tests for the complete CUDA pipeline
 /// </summary>
-[Trait("Category", "HardwareRequired")]
-[Trait("Category", "CudaRequired")]
-[Trait("Hardware", "CUDA")]
-[Trait("Category", "Integration")]
 [Collection("CUDA Hardware Tests")]
 public sealed class CudaEndToEndTests : IDisposable
 {
@@ -481,7 +477,7 @@ __global__ void vector_add(float* a, float* b, float* c, int n)
         return new KernelDefinition
         {
             Name = "vector_add",
-            Code = kernelSource,
+            Code = Encoding.UTF8.GetBytes(kernelSource),
             EntryPoint = "vector_add"
         };
     }
@@ -505,7 +501,7 @@ __global__ void matrix_multiply(float* A, float* B, float* C, int n)
         return new KernelDefinition
         {
             Name = "matrix_multiply",
-            Code = kernelSource,
+            Code = Encoding.UTF8.GetBytes(kernelSource),
             EntryPoint = "matrix_multiply"
         };
     }
@@ -523,7 +519,7 @@ __global__ void scalar_multiply(float* input, float* output, float scalar, int n
         return new KernelDefinition
         {
             Name = "scalar_multiply",
-            Code = kernelSource,
+            Code = Encoding.UTF8.GetBytes(kernelSource),
             EntryPoint = "scalar_multiply"
         };
     }
@@ -541,7 +537,7 @@ __global__ void scalar_add(float* input, float* output, float scalar, int n)
         return new KernelDefinition
         {
             Name = "scalar_add",
-            Code = kernelSource,
+            Code = Encoding.UTF8.GetBytes(kernelSource),
             EntryPoint = "scalar_add"
         };
     }
@@ -560,7 +556,7 @@ __global__ void memory_intensive(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "memory_intensive",
-            Code = kernelSource,
+            Code = Encoding.UTF8.GetBytes(kernelSource),
             EntryPoint = "memory_intensive"
         };
     }
@@ -570,7 +566,7 @@ __global__ void memory_intensive(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = "invalid_kernel",
-            Code = "invalid cuda syntax {{{ this will fail",
+            Code = Encoding.UTF8.GetBytes("invalid cuda syntax {{{ this will fail"),
             EntryPoint = "invalid_kernel"
         };
     }
@@ -588,7 +584,7 @@ __global__ void {name}(float* input, float* output, int n)
         return new KernelDefinition
         {
             Name = name,
-            Code = kernelSource,
+            Code = Encoding.UTF8.GetBytes(kernelSource),
             EntryPoint = name
         };
     }
@@ -606,7 +602,7 @@ __global__ void {name}(float* input, float* output, int n)
         }
     }
 
-    private static bool IsNvrtcAvailable() => DotCompute.Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
+    private static bool IsNvrtcAvailable() => Backends.CUDA.Compilation.CudaKernelCompiler.IsNvrtcAvailable();
 
     public void Dispose()
     {

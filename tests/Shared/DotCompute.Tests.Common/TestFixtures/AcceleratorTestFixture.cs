@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 using DotCompute.Abstractions;
 using Xunit;
 
-namespace DotCompute.Tests.Utilities.TestFixtures;
+namespace DotCompute.Tests.Common.TestFixtures;
 
 
 /// <summary>

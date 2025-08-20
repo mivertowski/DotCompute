@@ -2,7 +2,7 @@ using DotCompute.Abstractions;
 using Xunit;
 using FluentAssertions;
 
-namespace DotCompute.Tests.Unit;
+namespace DotCompute.Abstractions.Tests;
 
 
 public sealed class AcceleratorInfoTests

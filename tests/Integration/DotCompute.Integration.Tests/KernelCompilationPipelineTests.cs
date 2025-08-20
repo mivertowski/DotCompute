@@ -12,8 +12,9 @@ using Microsoft.Extensions.Logging;
 using Xunit;
 using Xunit.Abstractions;
 using FluentAssertions;
+using DotCompute.Tests.Integration;
 
-namespace DotCompute.Tests.Integration;
+namespace DotCompute.Integration.Tests;
 
 
 /// <summary>
@@ -530,7 +531,7 @@ public sealed class KernelCompilationPipelineTests(ITestOutputHelper output) : I
                 compilationOptions);
         });
 
-        return [.. (await Task.WhenAll(tasks))];
+        return [.. await Task.WhenAll(tasks)];
     }
 
     private async Task<CompilationResult> CompileKernelWithTiming(
@@ -571,7 +572,7 @@ public sealed class KernelCompilationPipelineTests(ITestOutputHelper output) : I
 
     private static string GenerateLargeKernelSource(int functionCount)
     {
-        var source = new System.Text.StringBuilder();
+        var source = new StringBuilder();
 
         // Generate many similar functions
         for (var i = 0; i < functionCount; i++)

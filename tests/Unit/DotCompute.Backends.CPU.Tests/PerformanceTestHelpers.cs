@@ -4,7 +4,7 @@
 
 using System.Runtime.InteropServices;
 
-namespace DotCompute.Backends.CPU;
+namespace DotCompute.Backends.CPU.Tests;
 
 
 /// <summary>
@@ -22,7 +22,7 @@ internal static class PerformanceTestHelpers
         {
             try
             {
-                var osRelease = System.IO.File.ReadAllText("/proc/version");
+                var osRelease = File.ReadAllText("/proc/version");
                 if (osRelease.Contains("microsoft", StringComparison.OrdinalIgnoreCase) ||
                     osRelease.Contains("WSL", StringComparison.OrdinalIgnoreCase))
                 {
@@ -35,7 +35,7 @@ internal static class PerformanceTestHelpers
         // Check for common virtualization indicators
         try
         {
-            var cpuInfo = System.IO.File.ReadAllText("/proc/cpuinfo");
+            var cpuInfo = File.ReadAllText("/proc/cpuinfo");
             if (cpuInfo.Contains("hypervisor", StringComparison.OrdinalIgnoreCase))
             {
                 return true;
