@@ -24,13 +24,17 @@ namespace DotCompute.Benchmarks;
 [Config(typeof(BlasConfig))]
 [MemoryDiagnoser]
 [ThreadingDiagnoser]
-public sealed class BlasBenchmarks : IDisposable
+#pragma warning disable CA1812 // BenchmarkDotNet instantiates this class via reflection
+internal sealed class BlasBenchmarks : IDisposable
+#pragma warning restore CA1812
 {
     /// <summary>
     /// 
     /// </summary>
     /// <seealso cref="BenchmarkDotNet.Configs.ManualConfig" />
-    public sealed class BlasConfig : ManualConfig
+#pragma warning disable CA1812 // BenchmarkDotNet uses this configuration class
+    internal sealed class BlasConfig : ManualConfig
+#pragma warning restore CA1812
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="BlasConfig"/> class.
@@ -174,7 +178,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// </summary>
     /// <returns></returns>
     [Benchmark(Baseline = true)]
-    public float DotProduct_CPU_Scalar()
+    public float DotProductCpuScalar()
     {
         float result = 0;
         for (var i = 0; i < VectorSize; i++)
@@ -189,7 +193,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// </summary>
     /// <returns></returns>
     [Benchmark]
-    public float DotProduct_CPU_SIMD()
+    public float DotProductCpuSimd()
     {
         float result = 0;
         var vectorSize = Vector<float>.Count;
@@ -221,7 +225,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// </summary>
     /// <returns></returns>
     [Benchmark]
-    public float DotProduct_GPU_cuBLAS()
+    public float DotProductGpuCuBlas()
     {
         if (!HasGpu || _cublas == null || _gpuVectorA == null || _gpuVectorB == null)
         {
@@ -235,7 +239,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// Axpies the cpu scalar.
     /// </summary>
     [Benchmark]
-    public void AXPY_CPU_Scalar()
+    public void AxpyCpuScalar()
     {
         const float alpha = 2.5f;
         for (var i = 0; i < VectorSize; i++)
@@ -248,7 +252,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// Axpies the cpu simd.
     /// </summary>
     [Benchmark]
-    public void AXPY_CPU_SIMD()
+    public void AxpyCpuSimd()
     {
         const float alpha = 2.5f;
         var vectorSize = Vector<float>.Count;
@@ -273,7 +277,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// Axpies the gpu cu blas.
     /// </summary>
     [Benchmark]
-    public void AXPY_GPU_cuBLAS()
+    public void AxpyGpuCuBlas()
     {
         if (!HasGpu || _cublas == null)
         {
@@ -294,7 +298,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// Gemvs the cpu scalar.
     /// </summary>
     [Benchmark]
-    public void GEMV_CPU_Scalar()
+    public void GemvCpuScalar()
     {
         // y = A * x
         var result = new float[MatrixSize];
@@ -314,7 +318,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// Gemvs the cpu simd.
     /// </summary>
     [Benchmark]
-    public void GEMV_CPU_SIMD()
+    public void GemvCpuSimd()
     {
         var result = new float[MatrixSize];
         var vectorSize = Vector<float>.Count;
@@ -351,7 +355,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// </summary>
     /// <exception cref="System.InvalidOperationException"></exception>
     [Benchmark]
-    public void GEMV_GPU_cuBLAS()
+    public void GemvGpuCuBlas()
     {
         if (!HasGpu || _cublas == null)
         {
@@ -376,7 +380,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// Gemms the cpu scalar.
     /// </summary>
     [Benchmark]
-    public void GEMM_CPU_Scalar()
+    public void GemmCpuScalar()
     {
         // C = A * B
         for (var i = 0; i < MatrixSize; i++)
@@ -397,7 +401,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// Gemms the cpu blocked.
     /// </summary>
     [Benchmark]
-    public void GEMM_CPU_Blocked()
+    public void GemmCpuBlocked()
     {
         const int blockSize = 64;
         Array.Clear(_matrixC, 0, _matrixC.Length);
@@ -431,7 +435,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// Gemms the gpu cu blas.
     /// </summary>
     [Benchmark]
-    public void GEMM_GPU_cuBLAS()
+    public void GemmGpuCuBlas()
     {
         if (!HasGpu || _cublas == null)
         {
@@ -449,7 +453,7 @@ public sealed class BlasBenchmarks : IDisposable
     /// Gemms the gpu cu blas tensor cores.
     /// </summary>
     [Benchmark]
-    public void GEMM_GPU_cuBLAS_TensorCores()
+    public void GemmGpuCuBlasTensorCores()
     {
         if (!HasGpu || _cublas == null)
         {

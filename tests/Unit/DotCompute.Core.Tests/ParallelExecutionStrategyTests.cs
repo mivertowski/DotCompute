@@ -542,11 +542,15 @@ public sealed class ParallelExecutionStrategyTests : IAsyncDisposable
     {
         // Create actual ManagedCompiledKernel instances instead of mocking them
         var mockAccelerator = Mock.Of<IAccelerator>();
+        
+        // ManagedCompiledKernel takes ownership of the CompiledKernel and will dispose it
+#pragma warning disable CA2000 // Dispose objects before losing scope
         var compiledKernel = new CompiledKernel(Guid.NewGuid(), nint.Zero, 1024, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
         var kernel1 = new Execution.ManagedCompiledKernel("linear_kernel", mockAccelerator, compiledKernel);
 
         var compiledKernel2 = new CompiledKernel(Guid.NewGuid(), nint.Zero, 512, new KernelConfiguration(new Dim3(256, 1, 1), new Dim3(1, 1, 1)));
         var kernel2 = new Execution.ManagedCompiledKernel("relu_kernel", mockAccelerator, compiledKernel2);
+#pragma warning restore CA2000 // Dispose objects before losing scope
 
         return new ModelParallelWorkload<T>
         {

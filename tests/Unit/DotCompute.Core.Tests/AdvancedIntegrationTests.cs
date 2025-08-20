@@ -313,16 +313,17 @@ public sealed class AdvancedIntegrationTests(ITestOutputHelper output) : IAsyncL
             .Take(3)
             .Select(async (accelerator, index) =>
             {
+                var kernelSource = new TestKernelSource
+                {
+                    Name = $"Kernel_{index}",
+                    Code = "test",
+                    Language = KernelLanguage.OpenCL
+                };
                 var kernel = await accelerator.CompileKernelAsync(
                     new KernelDefinition(
                         $"Kernel_{index}",
-                        new TestKernelSource
-                        {
-                            Name = $"Kernel_{index}",
-                            Code = "test",
-                            Language = KernelLanguage.OpenCL
-                        },
-                        new CompilationOptions()));
+                        kernelSource.Code,
+                        kernelSource.EntryPoint));
 
                 var args = new KernelArguments();
                 await kernel.ExecuteAsync(args);

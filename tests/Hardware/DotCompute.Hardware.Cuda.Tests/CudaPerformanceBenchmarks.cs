@@ -191,7 +191,7 @@ extern ""C"" __global__ void saxpy(float* x, float* y, float alpha, int n)
 }";
 
             var kernelSourceObj = new TextKernelSource(kernelSource, "saxpy", KernelLanguage.Cuda, "saxpy");
-            var kernelDefinition = new KernelDefinition("saxpy", kernelSourceObj, new CompilationOptions());
+            var kernelDefinition = new KernelDefinition("saxpy", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
             var options = new CompilationOptions { OptimizationLevel = OptimizationLevel.Maximum };
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
 
@@ -259,7 +259,7 @@ extern ""C"" __global__ void emptyKernel()
 }";
 
         var kernelSourceObj = new TextKernelSource(kernelSource, "emptyKernel", KernelLanguage.Cuda, "emptyKernel");
-        var kernelDefinition = new KernelDefinition("emptyKernel", kernelSourceObj, new CompilationOptions());
+        var kernelDefinition = new KernelDefinition("emptyKernel", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
 
         // Warm up
@@ -340,7 +340,7 @@ extern ""C"" __global__ void emptyKernel()
             {
                 var options = new CompilationOptions { OptimizationLevel = optLevel };
                 var kernelSourceObj = new TextKernelSource(kernelSource, kernelName, KernelLanguage.Cuda, kernelName);
-                var definition = new KernelDefinition($"{kernelName}_{optLevel}", kernelSourceObj, options);
+                var definition = new KernelDefinition($"{kernelName}_{optLevel}", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
 
                 var stopwatch = Stopwatch.StartNew();
                 var compiledKernel = await _accelerator.CompileKernelAsync(definition, options);
@@ -382,7 +382,7 @@ extern ""C"" __global__ void workload(float* data, int n, int iterations)
 }";
 
         var kernelSourceObj = new TextKernelSource(kernelSource, "workload", KernelLanguage.Cuda, "workload");
-        var kernelDefinition = new KernelDefinition("workload", kernelSourceObj, new CompilationOptions());
+        var kernelDefinition = new KernelDefinition("workload", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
 
         // Test sequential execution

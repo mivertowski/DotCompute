@@ -277,35 +277,35 @@ public static class CudaTestData
         public static KernelDefinition SimpleVectorAdd() => new()
         {
             Name = "vector_add",
-            Code = Encoding.UTF8.GetBytes(@"
+            Code = @"
 __global__ void vector_add(float* a, float* b, float* c, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx < n) {
         c[idx] = a[idx] + b[idx];
     }
-}"),
+}",
             EntryPoint = "vector_add"
         };
 
         public static KernelDefinition SimpleScalarMultiply() => new()
         {
             Name = "scalar_multiply",
-            Code = Encoding.UTF8.GetBytes(@"
+            Code = @"
 __global__ void scalar_multiply(float* input, float* output, float scalar, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
     if(idx < n) {
         output[idx] = input[idx] * scalar;
     }
-}"),
+}",
             EntryPoint = "scalar_multiply"
         };
 
         public static KernelDefinition SharedMemoryReduction() => new()
         {
             Name = "reduce_sum",
-            Code = Encoding.UTF8.GetBytes(@"
+            Code = @"
 __global__ void reduce_sum(float* input, float* output, int n)
 {
     __shared__ float shared_data[256];
@@ -325,14 +325,14 @@ __global__ void reduce_sum(float* input, float* output, int n)
     if(tid == 0) {
         output[blockIdx.x] = shared_data[0];
     }
-}"),
+}",
             EntryPoint = "reduce_sum"
         };
 
         public static KernelDefinition MatrixMultiply() => new()
         {
             Name = "matrix_multiply",
-            Code = Encoding.UTF8.GetBytes(@"
+            Code = @"
 __global__ void matrix_multiply(float* A, float* B, float* C, int n)
 {
     int row = blockIdx.y * blockDim.y + threadIdx.y;
@@ -345,21 +345,21 @@ __global__ void matrix_multiply(float* A, float* B, float* C, int n)
         }
         C[row * n + col] = sum;
     }
-}"),
+}",
             EntryPoint = "matrix_multiply"
         };
 
         public static KernelDefinition InvalidSyntax() => new()
         {
             Name = "invalid_kernel",
-            Code = Encoding.UTF8.GetBytes("invalid cuda syntax {{{ this will not compile"),
+            Code = "invalid cuda syntax {{{ this will not compile",
             EntryPoint = "invalid_kernel"
         };
 
         public static KernelDefinition WithMathFunctions() => new()
         {
             Name = "math_kernel",
-            Code = Encoding.UTF8.GetBytes(@"
+            Code = @"
 __global__ void math_kernel(float* input, float* output, int n)
 {
     int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -367,14 +367,14 @@ __global__ void math_kernel(float* input, float* output, int n)
         float val = input[idx];
         output[idx] = sinf(val) + cosf(val) + sqrtf(val);
     }
-}"),
+}",
             EntryPoint = "math_kernel"
         };
 
         public static KernelDefinition TensorCoreExample() => new()
         {
             Name = "tensor_core_gemm",
-            Code = Encoding.UTF8.GetBytes(@"
+            Code = @"
 #include <mma.h>
 using namespace nvcuda;
 using FluentAssertions;
@@ -399,7 +399,7 @@ __global__ void tensor_core_gemm(half* a, half* b, float* c, int n)
         
         wmma::store_matrix_sync(c + warp_row * n + warp_col, c_frag, n, wmma::mem_row_major);
     }
-}"),
+}",
             EntryPoint = "tensor_core_gemm"
         };
     }

@@ -19,7 +19,7 @@ public sealed class AcceleratorMockTests
         var memoryManager = Substitute.For<IMemoryManager>();
         var compiledKernel = Substitute.For<ICompiledKernel>();
         var kernelSource = new TextKernelSource("test code", "test", KernelLanguage.CSharpIL);
-        var kernelDef = new KernelDefinition("test", kernelSource, new CompilationOptions());
+        var kernelDef = new KernelDefinition("test", kernelSource.Code, kernelSource.EntryPoint);
 
         _ = accelerator.Info.Returns(info);
         _ = accelerator.Memory.Returns(memoryManager);

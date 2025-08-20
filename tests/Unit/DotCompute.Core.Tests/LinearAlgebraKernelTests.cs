@@ -641,7 +641,6 @@ public sealed class LinearAlgebraKernelTests : IDisposable
 /// </summary>
 public sealed class LinearAlgebraKernels(IAccelerator accelerator, ILogger<LinearAlgebraKernels> logger) : IDisposable
 {
-    private readonly ILogger<LinearAlgebraKernels> _logger = logger ?? throw new ArgumentNullException(nameof(logger));
 
     // Vector Operations
     public static async Task<float[]> VectorAddAsync(float[] a, float[] b)

@@ -34,7 +34,7 @@ public sealed class CompilationOptionsTests
         {
             OptimizationLevel = OptimizationLevel.Maximum,
             EnableDebugInfo = true,
-            AdditionalFlags = flags,
+            AdditionalFlags = new List<string>(flags),
             Defines = defines,
             FastMath = true,
             UnrollLoops = true
@@ -89,13 +89,13 @@ public sealed class CompilationOptionsTests
     }
 
     [Fact]
-    public void Defines_CanBeNull()
+    public void Defines_CanBeEmpty()
     {
         // Act
-        var options = new CompilationOptions { Defines = null };
+        var options = new CompilationOptions { Defines = new Dictionary<string, string>() };
 
         // Assert
-        _ = options.Defines.Should().BeNull();
+        _ = options.Defines.Should().BeEmpty();
     }
 
     [Fact]

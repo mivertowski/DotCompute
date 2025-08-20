@@ -527,7 +527,7 @@ extern ""C"" __global__ void testKernel(float* input, float* output, int n)
 }";
 
         var kernelSource = new TextKernelSource(cudaSource, "testKernel", Abstractions.KernelLanguage.Cuda, "testKernel");
-        var definition = new KernelDefinition("testKernel", kernelSource, new CompilationOptions());
+        var definition = new KernelDefinition("testKernel", kernelSource.Code, kernelSource.EntryPoint);
 
         // Test different optimization levels
         var optimizationLevels = Enum.GetValues<OptimizationLevel>();
@@ -603,7 +603,7 @@ extern ""C"" __global__ void configTest(int* data, int n)
 }";
 
         var kernelSourceObj = new TextKernelSource(kernelSource, "configTest", Abstractions.KernelLanguage.Cuda, "configTest");
-        var definition = new KernelDefinition("configTest", kernelSourceObj, new CompilationOptions());
+        var definition = new KernelDefinition("configTest", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
         var compiledKernel = await _accelerator.CompileKernelAsync(definition) as CudaCompiledKernel;
         Assert.NotNull(compiledKernel);
 
@@ -677,7 +677,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
 }";
 
         var kernelSourceObj = new TextKernelSource(invalidKernelSource, "invalidKernel", Abstractions.KernelLanguage.Cuda, "invalidKernel");
-        var definition = new KernelDefinition("invalidKernel", kernelSourceObj, new CompilationOptions());
+        var definition = new KernelDefinition("invalidKernel", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
 
         var compilationException = await Assert.ThrowsAsync<InvalidOperationException>(
             async () => await _accelerator.CompileKernelAsync(definition));
@@ -698,7 +698,7 @@ extern ""C"" __global__ void invalidKernel(float* data)
         // Test execution error handling(null arguments)
         var validSource = @"extern ""C"" __global__ void validKernel(float* data, int n) { }";
         var validKernelSource = new TextKernelSource(validSource, "validKernel", Abstractions.KernelLanguage.Cuda, "validKernel");
-        var validDefinition = new KernelDefinition("validKernel", validKernelSource, new CompilationOptions());
+        var validDefinition = new KernelDefinition("validKernel", validKernelSource.Code, validKernelSource.EntryPoint);
         var validKernel = await _accelerator.CompileKernelAsync(validDefinition);
 
         try

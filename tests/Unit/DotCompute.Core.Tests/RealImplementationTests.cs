@@ -94,7 +94,7 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
             EntryPoint = "main",
             Language = KernelLanguage.OpenCL
         };
-        var kernelDefinition = new KernelDefinition("TestKernel", kernelSource, new CompilationOptions());
+        var kernelDefinition = new KernelDefinition("TestKernel", kernelSource.Code, kernelSource.EntryPoint);
 
         // Act - Compile kernel
         var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
@@ -136,7 +136,7 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
             EntryPoint = "process",
             Language = KernelLanguage.OpenCL
         };
-        var kernelDef = new KernelDefinition("DataProcessing", kernelSource, new CompilationOptions());
+        var kernelDef = new KernelDefinition("DataProcessing", kernelSource.Code, kernelSource.EntryPoint);
 
         var kernel = await _accelerator.CompileKernelAsync(kernelDef);
         var args = new KernelArguments(inputBuffer, outputBuffer, dataSize);
@@ -193,15 +193,15 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
         // Arrange & Act
         var source1 = new TestKernelSource { Name = "Kernel1", Code = "kernel1 code", Language = KernelLanguage.OpenCL };
         var kernel1 = await _accelerator.CompileKernelAsync(
-            new KernelDefinition("Kernel1", source1, new CompilationOptions()));
+            new KernelDefinition("Kernel1", source1.Code, source1.EntryPoint));
 
         var source2 = new TestKernelSource { Name = "Kernel2", Code = "kernel2 code", Language = KernelLanguage.OpenCL };
         var kernel2 = await _accelerator.CompileKernelAsync(
-            new KernelDefinition("Kernel2", source2, new CompilationOptions()));
+            new KernelDefinition("Kernel2", source2.Code, source2.EntryPoint));
 
         var source3 = new TestKernelSource { Name = "simple_kernel", Code = "simple kernel code", Language = KernelLanguage.OpenCL };
         var kernel3 = await _accelerator.CompileKernelAsync(
-            new KernelDefinition("simple_kernel", source3, new CompilationOptions()));
+            new KernelDefinition("simple_kernel", source3.Code, source3.EntryPoint));
 
         // Assert
         Assert.NotNull(kernel1);
@@ -306,7 +306,7 @@ public sealed class RealImplementationTests(ITestOutputHelper output) : IAsyncLi
             Language = KernelLanguage.OpenCL
         };
         var vectorAddKernel = await _accelerator.CompileKernelAsync(
-            new KernelDefinition("VectorAdd", kernelSource, new CompilationOptions()));
+            new KernelDefinition("VectorAdd", kernelSource.Code, kernelSource.EntryPoint));
 
         // Step 5: Execute kernel
         _output.WriteLine("Executing kernel...");

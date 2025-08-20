@@ -178,7 +178,7 @@ extern ""C"" __global__ void vectorAdd(float* a, float* b, float* c, int n)
             };
 
             var kernelSourceObj = new TextKernelSource(kernelSource, "vectorAdd", Abstractions.KernelLanguage.Cuda, "vectorAdd");
-            var kernelDefinition = new KernelDefinition("vectorAdd", kernelSourceObj, options);
+            var kernelDefinition = new KernelDefinition("vectorAdd", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
 
             // Compile kernel
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
@@ -254,7 +254,7 @@ extern ""C"" __global__ void matrixMul(float* A, float* B, float* C, int size)
             };
 
             var kernelSourceObj = new TextKernelSource(kernelSource, "matrixMul", Abstractions.KernelLanguage.Cuda, "matrixMul");
-            var kernelDefinition = new KernelDefinition("matrixMul", kernelSourceObj, options);
+            var kernelDefinition = new KernelDefinition("matrixMul", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
 
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
 
@@ -370,7 +370,7 @@ extern ""C"" __global__ void simpleAdd(float* data, float value, int n)
 }";
 
             var kernelSourceObj = new TextKernelSource(kernelSource, "simpleAdd", Abstractions.KernelLanguage.Cuda, "simpleAdd");
-            var kernelDefinition = new KernelDefinition("simpleAdd", kernelSourceObj, new CompilationOptions());
+            var kernelDefinition = new KernelDefinition("simpleAdd", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
 
             var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition);
 
@@ -469,7 +469,7 @@ extern ""C"" __global__ void computeIntensive(float* input, float* output, int n
                     EnableDebugInfo = false
                 };
 
-                var kernelDefinition = new KernelDefinition($"computeIntensive_{optLevel}", kernelSourceObj, options);
+                var kernelDefinition = new KernelDefinition($"computeIntensive_{optLevel}", kernelSourceObj.Code, kernelSourceObj.EntryPoint);
 
                 var stopwatch = System.Diagnostics.Stopwatch.StartNew();
                 var compiledKernel = await _accelerator.CompileKernelAsync(kernelDefinition, options);
